@@ -12,6 +12,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
 use Qualimetrix\Analysis\Evidence\Size\LocVisitor;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\FileDeclarationIndex;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use SplFileInfo;
@@ -270,6 +271,63 @@ PHP;
         self::assertSame(1, $metrics->get('size.cloc'));
         // LLOC = 6 - 1 empty - 1 pure comment = 4
         self::assertSame(4, $metrics->get('size.lloc'));
+
+        $punctuation = <<<'PHP'
+<?php
+
+// comment only
+# hash comment only
+/* block comment only */
+/**
+ * docblock body
+ */
+function f(array $a): array
+{
+    { // brace-open + //
+        $b = [ # x
+            1,
+            2, // comma + //
+        ]; // close array + //
+        $c = \count(
+            $a
+        ); /* close call + block */
+        if ($b) {
+            $c++;
+        } // brace-close + //
+        if ($c) {
+            $c--;
+        } # brace-close + hash
+        if ($a) {
+            $c--;
+        } /* brace-close + block */
+        if ($a) {
+            $c--;
+        } /** brace-close + docblock */
+        if ($a) {
+            $c--;
+        }
+        $d = 1; // code + comment
+        /* lead */ $e = 2;
+        $f = [
+        ] // ] + // (statement ends next line)
+        ;
+        $h = f(
+            [] // [] + //
+        );
+        $i = array_map(function ($v) {
+            return $v;
+        }, $a); // }, $a); has code token
+        $j = array_map(static function ($v) {
+            return $v;
+        }); // }); + //
+    /* c */ }
+}
+PHP;
+
+        $punctuationMetrics = $this->collectMetrics($punctuation);
+        self::assertSame(49, $punctuationMetrics->get('size.loc'));
+        self::assertSame(42, $punctuationMetrics->get('size.lloc'));
+        self::assertSame(6, $punctuationMetrics->get('size.cloc'));
     }
 
     #[Test]
@@ -646,6 +704,26 @@ PHP;
         self::assertSame(4, $metrics->get('size.loc'));
         self::assertSame(1, $metrics->get('size.cloc'));
         self::assertSame(2, $metrics->get('size.lloc'));
+    }
+
+    #[Test]
+    public function itKeepsBothSameFileClassSpans(): void
+    {
+        $this->collectMetrics(<<<'PHP'
+<?php
+namespace App;
+class Twin {}
+if (false) {
+    class Twin
+    {
+        public function run(): void {}
+    }
+}
+PHP);
+
+        $classes = $this->collector->getClassesWithMetrics(RelativePath::fromString('src/Duplicate.php'));
+        self::assertCount(2, $classes);
+        self::assertSame([1, 4], array_map(static fn($class): int|float|null => $class->metrics->get('size.class-loc'), $classes));
     }
 
     private function collectMetrics(string $code): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag

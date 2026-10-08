@@ -15,7 +15,6 @@ use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
 
@@ -66,7 +65,7 @@ final readonly class LayerAssignmentResolver
     private function classPaths(MetricRepositoryInterface $repository): array
     {
         $classPaths = [];
-        foreach ($repository->all(SymbolLevel::Class_) as $classSymbol) {
+        foreach ($repository->allLogicalClasses() as $classSymbol) {
             $classPaths[] = $classSymbol->symbolPath;
         }
 

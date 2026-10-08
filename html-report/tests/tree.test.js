@@ -17,7 +17,13 @@ describe('findNode', () => {
             path: 'App\\Payment',
             type: 'namespace',
             children: [
-              { name: 'Processor', path: 'App\\Payment\\Processor', type: 'class', metrics: {} },
+              {
+                id: 'declaration:class:App\\Payment\\Processor@src/Processor.php#0',
+                name: 'Processor',
+                path: 'App\\Payment\\Processor',
+                type: 'class',
+                metrics: {},
+              },
             ],
           },
         ],
@@ -36,13 +42,27 @@ describe('findNode', () => {
   });
 
   it('finds class node', () => {
-    const node = findNode(tree, 'App\\Payment\\Processor');
+    const node = findNode(tree, 'declaration:class:App\\Payment\\Processor@src/Processor.php#0');
     expect(node).not.toBeNull();
     expect(node.type).toBe('class');
   });
 
   it('returns null for non-existent path', () => {
     expect(findNode(tree, 'NonExistent')).toBeNull();
+  });
+
+  it('keeps same-name declarations in separate files addressable', () => {
+    const duplicate = {
+      id: 'declaration:class:App\\Payment\\Processor@src/legacy/Processor.php#0',
+      name: 'Processor',
+      path: 'App\\Payment\\Processor',
+      type: 'class',
+      metrics: {},
+    };
+    const duplicateTree = structuredClone(tree);
+    duplicateTree.children[0].children[0].children.push(duplicate);
+
+    expect(findNode(duplicateTree, duplicate.id)).toBe(duplicate);
   });
 });
 

@@ -17,6 +17,7 @@ namespace Qualimetrix\Analysis\Evidence\Measurement\Contract;
  */
 final class MetricName
 {
+    public const string NAMESPACE_FILE_CONTRIBUTION = 'internal.namespace-file-contribution';
     // -- Complexity ------------------------------------------------------------
 
     public const string COMPLEXITY_CCN = 'complexity.ccn';

@@ -64,7 +64,7 @@ final class UnusedPrivateRule extends AbstractRule
 
         $findings = [];
 
-        foreach ($context->metrics->allDeclarations() as $classInfo) {
+        foreach ($context->metrics->allClassDeclarations() as $classInfo) {
             $findings = [...$findings, ...$this->findingsForDeclaration($classInfo, $context)];
         }
 

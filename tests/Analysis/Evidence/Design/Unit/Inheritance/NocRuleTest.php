@@ -72,7 +72,7 @@ final class NocRuleTest extends TestCase
         $rule = new NocRule(new NocOptions(enabled: false));
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('allDeclarations');
+        $repository->expects(self::never())->method('allClassDeclarations');
 
         $context = new AnalysisContext($repository);
 
@@ -85,7 +85,7 @@ final class NocRuleTest extends TestCase
         $rule = new NocRule(new NocOptions());
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -105,9 +105,9 @@ final class NocRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('design.noc', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -128,9 +128,9 @@ final class NocRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('design.noc', 12);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -157,9 +157,9 @@ final class NocRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('design.noc', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -182,9 +182,9 @@ final class NocRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('design.noc', 3);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -205,9 +205,9 @@ final class NocRuleTest extends TestCase
         $metricBag = new MetricBag();
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -223,8 +223,8 @@ final class NocRuleTest extends TestCase
         $subject = $classInfo->subject;
         self::assertNotNull($subject);
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn((new MetricBag())->with('design.noc', 6));
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('design.noc', 6));
         $context = new AnalysisContext(
             metrics: $repository,
             thresholdOverrides: [
@@ -295,9 +295,9 @@ final class NocRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('design.noc', $noc);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -341,11 +341,11 @@ final class NocRuleTest extends TestCase
     {
         $class = SymbolPath::forClass('App\\Service', 'Twin');
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([
+        $repository->method('allClassDeclarations')->willReturn([
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn((new MetricBag())->with('design.noc', 12));
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('design.noc', 12));
 
         $findings = (new NocRule(new NocOptions()))
             ->analyze(new AnalysisContext($repository));

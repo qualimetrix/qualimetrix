@@ -165,19 +165,33 @@ def parse_qmx_artifact(raw: str) -> tuple[dict, dict]:
         raise ComparisonError("Qualimetrix artifact has no complete summary")
     require_complete_qmx_coverage(data)
 
-    classes: dict[str, dict] = {}
-    methods: dict[str, dict] = {}
+    class_records: dict[str, dict] = {}
+    method_records: dict[str, dict] = {}
+    names: dict[str, dict[str, list[str]]] = {"classes": defaultdict(list), "methods": defaultdict(list)}
     for symbol in data["symbols"]:
         if not isinstance(symbol, dict) or not isinstance(symbol.get("metrics"), dict):
             raise ComparisonError("Qualimetrix emitted a malformed symbol")
         name = canonical_fqn(str(symbol.get("name", "")))
         if symbol.get("type") == "class":
-            insert_unique(classes, name, symbol["metrics"], "Qualimetrix", "class")
+            subject = symbol.get("subject")
+            insert_unique(class_records, subject, symbol["metrics"], "Qualimetrix", "class")
+            names["classes"][name].append(subject)
         elif symbol.get("type") == "method":
-            insert_unique(methods, name, symbol["metrics"], "Qualimetrix", "method")
-    if not classes and not methods:
+            subject = symbol.get("subject")
+            insert_unique(method_records, subject, symbol["metrics"], "Qualimetrix", "method")
+            names["methods"][name].append(subject)
+    classes = {name: class_records[ids[0]] for name, ids in names["classes"].items() if len(ids) == 1}
+    methods = {name: method_records[ids[0]] for name, ids in names["methods"].items() if len(ids) == 1}
+    if not class_records and not method_records:
         raise ComparisonError("Qualimetrix artifact contains no class or method metrics")
-    indexed = {"classes": classes, "methods": methods, "collisions": {"classes": 0, "methods": 0}}
+    indexed = {
+        "classes": classes, "methods": methods,
+        "class_records": class_records, "method_records": method_records,
+        "collisions": {
+            "classes": sum(len(ids) for ids in names["classes"].values() if len(ids) > 1),
+            "methods": sum(len(ids) for ids in names["methods"].values() if len(ids) > 1),
+        },
+    }
     return data, indexed
 
 

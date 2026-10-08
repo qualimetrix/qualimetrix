@@ -1,0 +1,22 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 2795
++visible 2810
+@@ -11,3 +11,3 @@
+-::error title=size.class-count::Corpus\Design\Anonymous: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces
+-::error title=size.class-count::Corpus\Design\Hierarchy: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces
+-::warning title=size.class-count::Corpus\Design\Model: Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces
++::error file=src/Anonymous/AnonTrait.php,title=size.class-count::Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces
++::error file=src/Hierarchy/Base.php,title=size.class-count::Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces
++::warning file=src/Model/Order.php,title=size.class-count::Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces
+@@ -19,1 +19,1 @@
+-invocation-format:github 2795
++invocation-format:github 2810
+@@ -29,3 +29,3 @@
+-::error title=size.class-count::Corpus\Design\Anonymous: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces
+-::error title=size.class-count::Corpus\Design\Hierarchy: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces
+-::warning title=size.class-count::Corpus\Design\Model: Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces
++::error file=src/Anonymous/AnonTrait.php,title=size.class-count::Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces
++::error file=src/Hierarchy/Base.php,title=size.class-count::Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces
++::warning file=src/Model/Order.php,title=size.class-count::Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces

@@ -78,7 +78,7 @@ final class DataClassRule extends AbstractRule
 
         $findings = [];
 
-        foreach ($context->metrics->allDeclarations() as $classInfo) {
+        foreach ($context->metrics->allClassDeclarations() as $classInfo) {
             if ($classInfo->subject?->toSymbolPath()->getType() !== SymbolType::Class_) {
                 continue;
             }
@@ -94,7 +94,7 @@ final class DataClassRule extends AbstractRule
     private function evaluateClass(AnalysisContext $context, SymbolInfo $classInfo): ?Finding
     {
         $subject = $classInfo->subject ?? throw new LogicException('Data class findings require an exact class declaration subject');
-        $metrics = $context->metrics->get($subject->toSymbolPath());
+        $metrics = $context->metrics->getSubject($subject);
 
         // Apply `@qmx-threshold` overrides for this class
         $effectiveOptions = $this->getEffectiveOptions(

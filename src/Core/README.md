@@ -217,6 +217,7 @@ Value Object — one concrete callable declaration with collected metrics.
 - `anonymousSyntax: ?string` — `closure` or `arrow` for anonymous callables
 - `lexicalClassContext: ?DeclarationPath` — enclosing class declaration where applicable
 - `classAggregationOwner: ?LogicalClassPath` — explicit owner for method/property-hook class roll-up
+- `classAggregationOwnerDeclaration: ?DeclarationPath` — exact named-class owner paired with the logical owner; anonymous contexts have no aggregation owner even when lexical context exists
 - `metrics: MetricBag` — collected metrics
 
 ### ClassWithMetrics
@@ -251,12 +252,12 @@ Access to collected metrics for rules. Aggregate APIs remain `SymbolPath`-based;
 typed APIs preserve declaration and logical-class identity without collapsing them.
 
 **Methods:**
-- `get(SymbolPath $symbol): MetricBag` — metrics for any symbol
-- `all(SymbolLevel $level): iterable<SymbolInfo>` — iterator over symbols measured at a given aggregation level; `SymbolLevel::Callable` is the same enumeration as `allCallables()`
-- `has(SymbolPath $symbol): bool` — check if metrics exist
+- `get(SymbolPath $symbol): MetricBag` / `has(SymbolPath $symbol): bool` — aggregate lookup; class, method and function paths refuse, even with one declaration
+- `all(SymbolLevel $level): iterable<SymbolInfo>` — aggregation-level iteration except `Class_`, which refuses; `Callable` is the same enumeration as `allCallables()`
 - `getSubject(MetricSubject $subject): MetricBag` / `hasSubject(...)` — typed lookup
 - `addSubject(...)` and `addCallable(CallableWithMetrics $callable)` — typed writes
-- `allDeclarations()`, `allCallables()`, `allLogicalClasses()` — typed iteration
+- `allDeclarations()`, `allCallables()`, `allClassDeclarations()` — exact declaration iteration
+- `allLogicalClasses()` — the separate logical graph-name population
 
 All symbol levels (Callable, Class, File, Namespace, Project) return `MetricBag`.
 Aggregated metrics use naming convention: `{metric}.{strategy}` (e.g., `complexity.ccn.sum`, `size.loc.avg`).
@@ -316,11 +317,14 @@ Value Object — describes a metric and its aggregation strategies.
 - `name: string` — base name (`complexity.ccn`, `size.loc`, `size.class-count`)
 - `collectedAt: SymbolLevel` — collection level
 - `aggregations: array<string, list<AggregationStrategy>>` — strategies by level
+- `classKeyScope: ?ClassKeyScope` — declared class area, declaration or logical name
+- `namespaceFileContribution: bool` — namespace totals with a file population, not arbitrary class samples
 
 **Methods:**
 - `aggregatedName(AggregationStrategy $strategy): string` — `{name}.{strategy}`
 - `getStrategiesForLevel(SymbolLevel $level): list<AggregationStrategy>`
 - `hasAggregationsForLevel(SymbolLevel $level): bool`
+- `publishedSuffixes(SymbolLevel $level): list<string>` — declared publication, including the count accompanying an average
 
 **Example:**
 ```php
@@ -1060,6 +1064,8 @@ Determines whether a namespace belongs to the project (not an external dependenc
 - `symbolPath: SymbolPath`
 - `file: ?RelativePath`
 - `line: ?int`
+- `subject: ?MetricSubject` — exact declaration or aggregate identity when present
+- `classAggregationOwner: ?LogicalClassPath` and `classAggregationOwnerDeclaration: ?DeclarationPath` — paired callable owner metadata preserved during registration and merge
 
 ---
 
@@ -1118,3 +1124,7 @@ documentation.
 - SymbolPath with null namespace — starts with `::` for global functions
 - MetricBag::get() for non-existent metric — null
 - MetricBag::merge() with key conflict — value from `$other`
+
+Callable SymbolInfo retains the traversal's `anonymousClassContext` fact.
+It distinguishes a valid unowned anonymous-class method from a named method
+whose owner metadata is missing; consumers do not infer this from the name.

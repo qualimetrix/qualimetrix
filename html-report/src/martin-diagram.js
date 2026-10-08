@@ -368,6 +368,7 @@ function renderDots(g, data, xScale, yScale, radiusScale, colorScale, drillMap, 
       .attr('data-testid', `md-dot-${d.node.name}`)
       .attr('data-name', d.node.name)
       .attr('data-path', d.node.path || '')
+      .attr('data-id', d.node.id ?? d.node.path ?? '')
       .attr('data-instability', fmt2(d.instability))
       .attr('data-abstractness', fmt2(d.abstractness))
       .attr('data-distance', fmt2(d.distance));

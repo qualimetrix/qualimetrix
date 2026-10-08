@@ -79,4 +79,16 @@ describe('filterNodes', () => {
     const results = filterNodes(bigIndex, 'Class');
     expect(results.length).toBeLessThanOrEqual(20);
   });
+
+  it('preserves each duplicate class declaration identity for highlighting', () => {
+    const duplicateNames = [
+      { name: 'Handler', path: 'Vendor\\Handler', id: 'declaration:class:Vendor\\Handler@src/one.php#0', type: 'class' },
+      { name: 'Handler', path: 'Vendor\\Handler', id: 'declaration:class:Vendor\\Handler@src/two.php#0', type: 'class' },
+    ];
+
+    expect(filterNodes(duplicateNames, 'Handler').map(result => result.id)).toEqual([
+      'declaration:class:Vendor\\Handler@src/one.php#0',
+      'declaration:class:Vendor\\Handler@src/two.php#0',
+    ]);
+  });
 });

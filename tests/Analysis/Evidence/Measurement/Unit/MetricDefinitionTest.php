@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassKeyScope;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
@@ -45,6 +47,75 @@ final class MetricDefinitionTest extends TestCase
         self::assertSame('size.loc', $definition->name);
         self::assertSame(SymbolLevel::File, $definition->collectedAt);
         self::assertSame([], $definition->aggregations);
+        self::assertNull($definition->classKeyScope);
+    }
+
+    #[Test]
+    public function itDescribesThePublicationAreaForAClassMetric(): void
+    {
+        $definition = new MetricDefinition(
+            name: 'size.class-loc',
+            collectedAt: SymbolLevel::Class_,
+            classKeyScope: ClassKeyScope::Declaration,
+        );
+
+        self::assertSame(ClassKeyScope::Declaration, $definition->classKeyScope);
+    }
+
+    #[Test]
+    public function itKeepsDirectBasePublicationSeparateFromAggregatedSuffixes(): void
+    {
+        $definition = new MetricDefinition(
+            name: 'coupling.ce',
+            collectedAt: SymbolLevel::Class_,
+            aggregations: [SymbolLevel::Namespace_->value => [AggregationStrategy::Average]],
+            directPublicationLevels: [SymbolLevel::Namespace_],
+        );
+
+        self::assertSame([SymbolLevel::Class_, SymbolLevel::Namespace_], $definition->publicationLevels());
+        self::assertSame(['avg', 'count'], $definition->publishedSuffixes(SymbolLevel::Namespace_));
+        self::assertSame([], $definition->publishedSuffixes(SymbolLevel::Project));
+    }
+
+    #[Test]
+    public function itRefusesRepeatingTheCollectedLevelAsAnExtraPublicationLevel(): void
+    {
+        $this->expectException(LogicException::class);
+        new MetricDefinition('size.loc', SymbolLevel::File, directPublicationLevels: [SymbolLevel::File]);
+    }
+
+    #[Test]
+    public function itRefusesDuplicateExtraPublicationLevels(): void
+    {
+        $this->expectException(LogicException::class);
+        new MetricDefinition('size.loc', SymbolLevel::File, directPublicationLevels: [SymbolLevel::Namespace_, SymbolLevel::Namespace_]);
+    }
+
+    #[Test]
+    public function itPublishesTheCountSuffixRequiredByAnAverage(): void
+    {
+        $definition = new MetricDefinition(
+            name: 'complexity.ccn',
+            collectedAt: SymbolLevel::Callable,
+            aggregations: [
+                SymbolLevel::Class_->value => [AggregationStrategy::Average],
+            ],
+        );
+
+        self::assertSame(['avg', 'count'], $definition->publishedSuffixes(SymbolLevel::Class_));
+    }
+
+    #[Test]
+    public function itRefusesAnUnsupportedNamespaceFileContributionStrategy(): void
+    {
+        $this->expectException(LogicException::class);
+
+        new MetricDefinition(
+            name: 'size.loc',
+            collectedAt: SymbolLevel::File,
+            aggregations: [SymbolLevel::Namespace_->value => [AggregationStrategy::Max]],
+            namespaceFileContribution: true,
+        );
     }
 
     #[DataProvider('aggregatedNameProvider')]

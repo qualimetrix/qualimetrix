@@ -129,7 +129,8 @@ PHP);
         self::assertCount(1, $globalNamespace);
         self::assertSame(0, $globalNamespace[0]['metrics']['size.class-count.sum']);
         self::assertSame(0, $globalNamespace[0]['metrics']['size.abstract-class-count.sum']);
-        self::assertSame(1, $globalNamespace[0]['metrics']['size.class-count.count']);
+        self::assertSame(0, $globalNamespace[0]['metrics']['size.class-count']);
+        self::assertArrayNotHasKey('size.class-count.count', $globalNamespace[0]['metrics']);
         self::assertGreaterThan(0, $globalNamespace[0]['metrics']['size.loc.sum']);
     }
 

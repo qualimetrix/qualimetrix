@@ -12,6 +12,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\TccLccCollector;
+use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector;
 use Qualimetrix\Analysis\Evidence\Coupling\RfcCollector;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthCollector;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageCollector;
@@ -55,6 +56,7 @@ final class ClassProducerOrdinalTest extends TestCase
         UnusedPrivateCollector::class => 'src/Analysis/Evidence/CodeSmell/UnusedPrivateCollector.php',
         LcomCollector::class => 'src/Analysis/Evidence/Cohesion/LcomCollector.php',
         TccLccCollector::class => 'src/Analysis/Evidence/Cohesion/TccLccCollector.php',
+        CyclomaticComplexityCollector::class => 'src/Analysis/Evidence/Complexity/CyclomaticComplexityCollector.php',
         RfcCollector::class => 'src/Analysis/Evidence/Coupling/RfcCollector.php',
         InheritanceDepthCollector::class => 'src/Analysis/Evidence/Design/Inheritance/InheritanceDepthCollector.php',
         TypeCoverageCollector::class => 'src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageVisitor.php',
@@ -62,17 +64,10 @@ final class ClassProducerOrdinalTest extends TestCase
         MethodCountCollector::class => 'src/Analysis/Evidence/Size/MethodCountCollector.php',
     ];
 
-    /**
-     * The surviving record is the second declaration, because the class maps
-     * are keyed by FQN and overwrite. That loss predates the numbering and is
-     * not repaired by it; what is asserted is that the survivor gets its own
-     * honest number rather than the first one's.
-     *
-     * @param class-string<ClassMetricsProviderInterface&AbstractCollector> $producer
-     */
+    /** @param class-string<ClassMetricsProviderInterface&AbstractCollector> $producer */
     #[Test]
     #[DataProvider('provideClassProducers')]
-    public function itNumbersTheSecondDeclarationOfOneClassIdentity(string $producer, string $source): void
+    public function itPreservesBothDeclarationsOfOneClassIdentity(string $producer, string $source): void
     {
         $file = sys_get_temp_dir() . '/qmx-dup-class-' . bin2hex(random_bytes(6)) . '.php';
         file_put_contents($file, $source);
@@ -99,7 +94,11 @@ final class ClassProducerOrdinalTest extends TestCase
 
             $classes = $collector->getClassesWithMetrics(RelativePath::fromString('src/Dup.php'));
 
-            self::assertCount(1, $classes, 'The FQN-keyed class map keeps the last declaration only');
+            self::assertCount(2, $classes);
+            self::assertSame(0, $classes[0]->declarationPath->ordinal->value);
+            self::assertSame('declaration:class:App\Greeter@src/Dup.php', $classes[0]->declarationPath->toCanonical());
+            self::assertNotSame($classes[0]->startFilePos, $classes[1]->startFilePos);
+            $classes = [$classes[1]];
             self::assertSame(1, $classes[0]->declarationPath->ordinal->value);
             self::assertSame(
                 'declaration:class:App\Greeter@src/Dup.php#1',

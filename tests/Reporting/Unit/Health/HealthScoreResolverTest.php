@@ -149,13 +149,14 @@ final class HealthScoreResolverTest extends TestCase
     public function itClassFilterReturnsClassHealthScores(): void
     {
         $classPath = SymbolPath::forClass('App', 'UserService');
-        $classSymbol = new SymbolInfo($classPath, RelativePath::fromString('src/UserService.php'), null);
+        $classPathSubject = self::exactClassSubject($classPath, 'src/UserService.php');
+        $classSymbol = new SymbolInfo($classPathSubject, RelativePath::fromString('src/UserService.php'), null);
 
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             classes: [$classSymbol],
             classMetrics: [
-                $classPath->toCanonical() => (new MetricBag())
+                $classPathSubject->toCanonical() => (new MetricBag())
                     ->with('health.complexity', 85.0)
                     ->with('health.cohesion', 70.0)
                     ->with('health.overall', 78.0),

@@ -50,6 +50,7 @@ final class ViolationDensityTest extends TestCase
     {
         // 200-line class with 10 findings => density = 10/200*100 = 5.0
         $classSymbol = SymbolPath::forClass('App\\Service', 'HeavyService');
+        $classSymbolSubject = self::exactClassSubject($classSymbol, 'src/HeavyService.php');
         $classMetrics = MetricBag::fromArray([
             'health.overall' => 30.0,
             'health.complexity' => 25.0,
@@ -58,8 +59,8 @@ final class ViolationDensityTest extends TestCase
 
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray(['health.overall' => 60.0]),
-            classes: [new SymbolInfo($classSymbol, RelativePath::fromString('src/Service/HeavyService.php'), 1)],
-            classMetrics: ['class:App\\Service\\HeavyService' => $classMetrics],
+            classes: [new SymbolInfo($classSymbolSubject, RelativePath::fromString('src/HeavyService.php'), 1)],
+            classMetrics: [$classSymbolSubject->toCanonical() => $classMetrics],
         );
 
         $findings = $this->createFindingsForClass('App\\Service', 'HeavyService', 10);
@@ -123,6 +124,7 @@ final class ViolationDensityTest extends TestCase
     public function itDensityZeroWhenNoFindings(): void
     {
         $classSymbol = SymbolPath::forClass('App\\Service', 'CleanService');
+        $classSymbolSubject = self::exactClassSubject($classSymbol, 'src/Service/CleanService.php');
         $classMetrics = MetricBag::fromArray([
             'health.overall' => 80.0,
             'health.complexity' => 75.0,
@@ -131,8 +133,8 @@ final class ViolationDensityTest extends TestCase
 
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray(['health.overall' => 80.0]),
-            classes: [new SymbolInfo($classSymbol, RelativePath::fromString('src/Service/CleanService.php'), 1)],
-            classMetrics: ['class:App\\Service\\CleanService' => $classMetrics],
+            classes: [new SymbolInfo($classSymbolSubject, RelativePath::fromString('src/Service/CleanService.php'), 1)],
+            classMetrics: [$classSymbolSubject->toCanonical() => $classMetrics],
         );
 
         $report = new Report(
@@ -155,6 +157,7 @@ final class ViolationDensityTest extends TestCase
     public function itDensityNullWhenLocZero(): void
     {
         $classSymbol = SymbolPath::forClass('App\\Service', 'EmptyClass');
+        $classSymbolSubject = self::exactClassSubject($classSymbol, 'src/EmptyClass.php');
         $classMetrics = MetricBag::fromArray([
             'health.overall' => 50.0,
             'health.complexity' => 45.0,
@@ -163,8 +166,8 @@ final class ViolationDensityTest extends TestCase
 
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray(['health.overall' => 60.0]),
-            classes: [new SymbolInfo($classSymbol, RelativePath::fromString('src/Service/EmptyClass.php'), 1)],
-            classMetrics: ['class:App\\Service\\EmptyClass' => $classMetrics],
+            classes: [new SymbolInfo($classSymbolSubject, RelativePath::fromString('src/EmptyClass.php'), 1)],
+            classMetrics: [$classSymbolSubject->toCanonical() => $classMetrics],
         );
 
         $findings = $this->createFindingsForClass('App\\Service', 'EmptyClass', 3);
@@ -189,6 +192,7 @@ final class ViolationDensityTest extends TestCase
     public function itDensityNullWhenLocMissing(): void
     {
         $classSymbol = SymbolPath::forClass('App\\Service', 'NoLocClass');
+        $classSymbolSubject = self::exactClassSubject($classSymbol, 'src/NoLocClass.php');
         $classMetrics = MetricBag::fromArray([
             'health.overall' => 50.0,
             'health.complexity' => 45.0,
@@ -197,8 +201,8 @@ final class ViolationDensityTest extends TestCase
 
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray(['health.overall' => 60.0]),
-            classes: [new SymbolInfo($classSymbol, RelativePath::fromString('src/Service/NoLocClass.php'), 1)],
-            classMetrics: ['class:App\\Service\\NoLocClass' => $classMetrics],
+            classes: [new SymbolInfo($classSymbolSubject, RelativePath::fromString('src/NoLocClass.php'), 1)],
+            classMetrics: [$classSymbolSubject->toCanonical() => $classMetrics],
         );
 
         $findings = $this->createFindingsForClass('App\\Service', 'NoLocClass', 2);
@@ -224,6 +228,7 @@ final class ViolationDensityTest extends TestCase
     {
         // 300-line class with 7 findings => density = 7/300*100 = 2.333... => 2.3
         $classSymbol = SymbolPath::forClass('App\\Service', 'OddClass');
+        $classSymbolSubject = self::exactClassSubject($classSymbol, 'src/OddClass.php');
         $classMetrics = MetricBag::fromArray([
             'health.overall' => 35.0,
             'health.complexity' => 30.0,
@@ -232,8 +237,8 @@ final class ViolationDensityTest extends TestCase
 
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray(['health.overall' => 60.0]),
-            classes: [new SymbolInfo($classSymbol, RelativePath::fromString('src/Service/OddClass.php'), 1)],
-            classMetrics: ['class:App\\Service\\OddClass' => $classMetrics],
+            classes: [new SymbolInfo($classSymbolSubject, RelativePath::fromString('src/OddClass.php'), 1)],
+            classMetrics: [$classSymbolSubject->toCanonical() => $classMetrics],
         );
 
         $findings = $this->createFindingsForClass('App\\Service', 'OddClass', 7);

@@ -1,106 +1,44 @@
 --- candidate
 +++ reference (mapped)
 @@ -1,1 +1,1 @@
--visible 3523
-+visible 2418
-@@ -11,29 +11,19 @@
--         coupling.cbo: Efferent coupling too high: depends on 6 classes (CBO: 8, threshold: 5)
--         Recommendation: Top dependencies: RepositoryInterface, MailerInterface, CacheInterface, Clock, Logger. CBO: 8 (threshold: 5) — extract dependencies to reduce outbound coupling
--  2. [ERR] 11.8  src/Kernel/Clock.php  [30min]
+-visible 3517
++visible 3523
+@@ -13,4 +13,4 @@
+-  2. [ERR] 11.8  Corpus\Coupling\Kernel  [30min]
 -         coupling.distance: Distance from main sequence is 1.00 (A=0.00, I=0.00), exceeds threshold of 0.90. Balance abstractness and stability (namespace: Corpus\Coupling\Kernel)
 -         Recommendation: Distance: 1.00 (threshold: 0.90) — poor balance of abstraction and stability
--  3. [WRN] 5.92  src/Kernel/Clock.php  [45min]
--         coupling.cbo: Afferent coupling too high: 5 classes depend on this (CBO: 2 namespaces, threshold: 2) (namespace: Corpus\Coupling\Kernel)
--         Recommendation: CBO: 2 namespaces (threshold: 2) — this namespace is a coupling magnet, consider if it is a healthy abstraction point
--  4. [WRN] 5.92  src/Kernel/Clock.php  [45min]
--         coupling.cbo: Afferent coupling too high: 4 classes depend on this (CBO: 4, threshold: 2)
--         Recommendation: CBO: 4 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
--  5. [WRN] 4.90  src/Kernel/Logger.php  [45min]
--         coupling.cbo: Afferent coupling too high: 3 classes depend on this (CBO: 3, threshold: 2)
--         Recommendation: CBO: 3 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
--  6. [WRN] 4.66  src/Service/CacheService.php  [48min]
+-  3. [WRN] 5.92  Corpus\Coupling\Kernel  [45min]
++  2. [ERR] 11.8  src/Kernel/Clock.php  [30min]
++         coupling.distance: Distance from main sequence is 1.00 (A=0.00, I=0.00), exceeds threshold of 0.90. Balance abstractness and stability (namespace: Corpus\Coupling\Kernel)
++         Recommendation: Distance: 1.00 (threshold: 0.90) — poor balance of abstraction and stability
++  3. [WRN] 5.92  src/Kernel/Clock.php  [45min]
+@@ -25,4 +25,4 @@
+-  6. [WRN] 4.66  Corpus\Coupling\Service  [48min]
 -         coupling.distance: Distance from main sequence is 0.25 (A=0.00, I=0.75), exceeds threshold of 0.05. Balance abstractness and stability (namespace: Corpus\Coupling\Service)
 -         Recommendation: Distance: 0.25 (threshold: 0.05) — poor balance of abstraction and stability
--  7. [WRN] 4.37  src/Service/CacheService.php  [45min]
--         coupling.cbo: Efferent coupling too high: depends on 6 classes (CBO: 3 namespaces, threshold: 2) (namespace: Corpus\Coupling\Service)
--         Recommendation: CBO: 3 namespaces (threshold: 2) — extract dependencies to reduce outbound coupling
--  8. [WRN] 4.02  src/Kernel/Uuid.php  [45min]
--         coupling.cbo: Afferent coupling too high: 2 classes depend on this (CBO: 2, threshold: 2)
--         Recommendation: CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
--  9. [WRN] 3.95  src/Contract/CacheInterface.php  [45min]
--         coupling.cbo: Afferent coupling too high: 2 classes depend on this (CBO: 2, threshold: 2)
--         Recommendation: CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
--  10. [WRN] 3.95  src/Contract/RepositoryInterface.php  [45min]
--          coupling.cbo: Afferent coupling too high: 2 classes depend on this (CBO: 2, threshold: 2)
--          Recommendation: CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
-+         coupling.cbo: Top dependencies: RepositoryInterface, MailerInterface, CacheInterface, Clock, Logger. CBO: 8 (threshold: 5) — extract dependencies to reduce outbound coupling
-+  2. [ERR] 11.8  src/Kernel/Clock.php  [30min]
-+         coupling.distance: Distance: 1.00 (threshold: 0.90) — poor balance of abstraction and stability (namespace: Corpus\Coupling\Kernel)
-+  3. [WRN] 5.92  src/Kernel/Clock.php  [45min]
-+         coupling.cbo: CBO: 2 namespaces (threshold: 2) — this namespace is a coupling magnet, consider if it is a healthy abstraction point (namespace: Corpus\Coupling\Kernel)
-+  4. [WRN] 5.92  src/Kernel/Clock.php  [45min]
-+         coupling.cbo: CBO: 4 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
-+  5. [WRN] 4.90  src/Kernel/Logger.php  [45min]
-+         coupling.cbo: CBO: 3 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
+-  7. [WRN] 4.37  Corpus\Coupling\Service  [45min]
 +  6. [WRN] 4.66  src/Service/CacheService.php  [48min]
-+         coupling.distance: Distance: 0.25 (threshold: 0.05) — poor balance of abstraction and stability (namespace: Corpus\Coupling\Service)
++         coupling.distance: Distance from main sequence is 0.25 (A=0.00, I=0.75), exceeds threshold of 0.05. Balance abstractness and stability (namespace: Corpus\Coupling\Service)
++         Recommendation: Distance: 0.25 (threshold: 0.05) — poor balance of abstraction and stability
 +  7. [WRN] 4.37  src/Service/CacheService.php  [45min]
-+         coupling.cbo: CBO: 3 namespaces (threshold: 2) — extract dependencies to reduce outbound coupling (namespace: Corpus\Coupling\Service)
-+  8. [WRN] 4.02  src/Kernel/Uuid.php  [45min]
-+         coupling.cbo: CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
-+  9. [WRN] 3.95  src/Contract/CacheInterface.php  [45min]
-+         coupling.cbo: CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
-+  10. [WRN] 3.95  src/Contract/RepositoryInterface.php  [45min]
-+          coupling.cbo: CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
-@@ -45,1 +35,1 @@
--invocation-format:summary 3523
-+invocation-format:summary 2418
-@@ -55,29 +45,19 @@
--         coupling.cbo: Efferent coupling too high: depends on 6 classes (CBO: 8, threshold: 5)
--         Recommendation: Top dependencies: RepositoryInterface, MailerInterface, CacheInterface, Clock, Logger. CBO: 8 (threshold: 5) — extract dependencies to reduce outbound coupling
--  2. [ERR] 11.8  src/Kernel/Clock.php  [30min]
+@@ -45,1 +45,1 @@
+-invocation-format:summary 3517
++invocation-format:summary 3523
+@@ -57,4 +57,4 @@
+-  2. [ERR] 11.8  Corpus\Coupling\Kernel  [30min]
 -         coupling.distance: Distance from main sequence is 1.00 (A=0.00, I=0.00), exceeds threshold of 0.90. Balance abstractness and stability (namespace: Corpus\Coupling\Kernel)
 -         Recommendation: Distance: 1.00 (threshold: 0.90) — poor balance of abstraction and stability
--  3. [WRN] 5.92  src/Kernel/Clock.php  [45min]
--         coupling.cbo: Afferent coupling too high: 5 classes depend on this (CBO: 2 namespaces, threshold: 2) (namespace: Corpus\Coupling\Kernel)
--         Recommendation: CBO: 2 namespaces (threshold: 2) — this namespace is a coupling magnet, consider if it is a healthy abstraction point
--  4. [WRN] 5.92  src/Kernel/Clock.php  [45min]
--         coupling.cbo: Afferent coupling too high: 4 classes depend on this (CBO: 4, threshold: 2)
--         Recommendation: CBO: 4 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
--  5. [WRN] 4.90  src/Kernel/Logger.php  [45min]
--         coupling.cbo: Afferent coupling too high: 3 classes depend on this (CBO: 3, threshold: 2)
--         Recommendation: CBO: 3 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
--  6. [WRN] 4.66  src/Service/CacheService.php  [48min]
+-  3. [WRN] 5.92  Corpus\Coupling\Kernel  [45min]
++  2. [ERR] 11.8  src/Kernel/Clock.php  [30min]
++         coupling.distance: Distance from main sequence is 1.00 (A=0.00, I=0.00), exceeds threshold of 0.90. Balance abstractness and stability (namespace: Corpus\Coupling\Kernel)
++         Recommendation: Distance: 1.00 (threshold: 0.90) — poor balance of abstraction and stability
++  3. [WRN] 5.92  src/Kernel/Clock.php  [45min]
+@@ -69,4 +69,4 @@
+-  6. [WRN] 4.66  Corpus\Coupling\Service  [48min]
 -         coupling.distance: Distance from main sequence is 0.25 (A=0.00, I=0.75), exceeds threshold of 0.05. Balance abstractness and stability (namespace: Corpus\Coupling\Service)
 -         Recommendation: Distance: 0.25 (threshold: 0.05) — poor balance of abstraction and stability
--  7. [WRN] 4.37  src/Service/CacheService.php  [45min]
--         coupling.cbo: Efferent coupling too high: depends on 6 classes (CBO: 3 namespaces, threshold: 2) (namespace: Corpus\Coupling\Service)
--         Recommendation: CBO: 3 namespaces (threshold: 2) — extract dependencies to reduce outbound coupling
--  8. [WRN] 4.02  src/Kernel/Uuid.php  [45min]
--         coupling.cbo: Afferent coupling too high: 2 classes depend on this (CBO: 2, threshold: 2)
--         Recommendation: CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
--  9. [WRN] 3.95  src/Contract/CacheInterface.php  [45min]
--         coupling.cbo: Afferent coupling too high: 2 classes depend on this (CBO: 2, threshold: 2)
--         Recommendation: CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
--  10. [WRN] 3.95  src/Contract/RepositoryInterface.php  [45min]
--          coupling.cbo: Afferent coupling too high: 2 classes depend on this (CBO: 2, threshold: 2)
--          Recommendation: CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
-+         coupling.cbo: Top dependencies: RepositoryInterface, MailerInterface, CacheInterface, Clock, Logger. CBO: 8 (threshold: 5) — extract dependencies to reduce outbound coupling
-+  2. [ERR] 11.8  src/Kernel/Clock.php  [30min]
-+         coupling.distance: Distance: 1.00 (threshold: 0.90) — poor balance of abstraction and stability (namespace: Corpus\Coupling\Kernel)
-+  3. [WRN] 5.92  src/Kernel/Clock.php  [45min]
-+         coupling.cbo: CBO: 2 namespaces (threshold: 2) — this namespace is a coupling magnet, consider if it is a healthy abstraction point (namespace: Corpus\Coupling\Kernel)
-+  4. [WRN] 5.92  src/Kernel/Clock.php  [45min]
-+         coupling.cbo: CBO: 4 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
-+  5. [WRN] 4.90  src/Kernel/Logger.php  [45min]
-+         coupling.cbo: CBO: 3 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
+-  7. [WRN] 4.37  Corpus\Coupling\Service  [45min]
 +  6. [WRN] 4.66  src/Service/CacheService.php  [48min]
-+         coupling.distance: Distance: 0.25 (threshold: 0.05) — poor balance of abstraction and stability (namespace: Corpus\Coupling\Service)
++         coupling.distance: Distance from main sequence is 0.25 (A=0.00, I=0.75), exceeds threshold of 0.05. Balance abstractness and stability (namespace: Corpus\Coupling\Service)
++         Recommendation: Distance: 0.25 (threshold: 0.05) — poor balance of abstraction and stability
 +  7. [WRN] 4.37  src/Service/CacheService.php  [45min]
-+         coupling.cbo: CBO: 3 namespaces (threshold: 2) — extract dependencies to reduce outbound coupling (namespace: Corpus\Coupling\Service)
-+  8. [WRN] 4.02  src/Kernel/Uuid.php  [45min]
-+         coupling.cbo: CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
-+  9. [WRN] 3.95  src/Contract/CacheInterface.php  [45min]
-+         coupling.cbo: CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
-+  10. [WRN] 3.95  src/Contract/RepositoryInterface.php  [45min]
-+          coupling.cbo: CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point

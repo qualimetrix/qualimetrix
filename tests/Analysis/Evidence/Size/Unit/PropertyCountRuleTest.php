@@ -143,9 +143,9 @@ final class PropertyCountRuleTest extends TestCase
         );
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$symbolInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($bag);
 
         $context = new AnalysisContext($repository);
@@ -165,8 +165,8 @@ final class PropertyCountRuleTest extends TestCase
         $subject = $classInfo->subject;
         self::assertNotNull($subject);
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn((new MetricBag())->with('size.property-count', 12));
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('size.property-count', 12));
         $context = new AnalysisContext(
             metrics: $repository,
             thresholdOverrides: [
@@ -322,9 +322,9 @@ final class PropertyCountRuleTest extends TestCase
         );
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$symbolInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($bag);
 
         return new AnalysisContext($repository);
@@ -334,11 +334,11 @@ final class PropertyCountRuleTest extends TestCase
     {
         $class = SymbolPath::forClass('App\\Service', 'Twin');
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([
+        $repository->method('allClassDeclarations')->willReturn([
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn(
+        $repository->method('getSubject')->willReturn(
             (new MetricBag())
                 ->with('size.property-count', 12)
                 ->with('design.is-readonly', 0)

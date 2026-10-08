@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter;
 
 use LogicException;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -65,32 +67,11 @@ final class MetricsJsonFormatter implements FormatterInterface
 
         if ($report->metrics !== null) {
             foreach (self::LEVELS as $level) {
-                foreach (self::byDeclarationKind($report->metrics->all($level)) as $symbolInfo) {
-                    $bag = $report->metrics->get($symbolInfo->symbolPath);
-                    // Filter out internal derived-metric keys (contain ':')
-                    $rawMetrics = array_filter(
-                        $bag->all(),
-                        static fn(string $key): bool => !str_contains($key, ':'),
-                        \ARRAY_FILTER_USE_KEY,
-                    );
-
-                    // Replace non-finite values (NAN/INF from edge-case calculations) with null for JSON compatibility
-                    $metricsArray = array_map(
-                        static fn(int|float $v): int|float|null => \is_int($v) || is_finite($v) ? $v : null,
-                        $rawMetrics,
-                    );
-
-                    if ($metricsArray === []) {
-                        continue;
+                foreach (self::byDeclarationKind($report->metrics, $level) as $symbolInfo) {
+                    $record = self::publishedSymbol($report->metrics, $symbolInfo);
+                    if ($record !== null) {
+                        $symbols[] = $record;
                     }
-
-                    $symbols[] = [
-                        'type' => $symbolInfo->symbolPath->getType()->value,
-                        'name' => $symbolInfo->symbolPath->toString(),
-                        'file' => $symbolInfo->file?->value() ?? '',
-                        'line' => $symbolInfo->line,
-                        'metrics' => $metricsArray,
-                    ];
                 }
             }
         }
@@ -119,7 +100,7 @@ final class MetricsJsonFormatter implements FormatterInterface
                 'warnings' => $report->warningCount,
                 'info' => $report->infoCount,
             ],
-            'outOfScope' => self::outOfScope($report),
+            'outOfScope' => $report->outOfScope?->published(),
         ];
 
         $repairs = 0;
@@ -128,17 +109,33 @@ final class MetricsJsonFormatter implements FormatterInterface
         return new FormattedReport($body, $repairs);
     }
 
-    /**
-     * What a `--namespace`/`--class` selection left out of `summary`, which
-     * counts only the selection; the key stays, as null, without one.
-     *
-     * @return array<string, mixed>|null
-     */
-    private static function outOfScope(Report $report): ?array
+    /** @return array<string, mixed>|null */
+    private static function publishedSymbol(MetricRepositoryInterface $repository, SymbolInfo $symbolInfo): ?array
     {
-        $outOfScope = $report->outOfScope;
+        $subject = $symbolInfo->subject ?? MetricSubject::aggregate($symbolInfo->symbolPath);
+        $bag = $repository->getSubject($subject);
+        $rawMetrics = array_filter(
+            $bag->all(),
+            static fn(string $key): bool => !str_contains($key, ':'),
+            \ARRAY_FILTER_USE_KEY,
+        );
+        $metricsArray = array_map(
+            static fn(int|float $value): int|float|null => \is_int($value) || is_finite($value) ? $value : null,
+            $rawMetrics,
+        );
 
-        return $outOfScope?->published();
+        if ($metricsArray === []) {
+            return null;
+        }
+
+        return [
+            'type' => $symbolInfo->symbolPath->getType()->value,
+            'name' => $symbolInfo->symbolPath->toString(),
+            'subject' => $subject->toCanonical(),
+            'file' => $symbolInfo->file?->value(),
+            'line' => $symbolInfo->line,
+            'metrics' => $metricsArray,
+        ];
     }
 
     public function publicationKind(): PublicationKind
@@ -157,12 +154,15 @@ final class MetricsJsonFormatter implements FormatterInterface
     }
 
     /**
-     * @param iterable<SymbolInfo> $symbols
-     *
      * @return list<SymbolInfo>
      */
-    private static function byDeclarationKind(iterable $symbols): array
+    private static function byDeclarationKind(MetricRepositoryInterface $metrics, SymbolLevel $level): array
     {
+        $symbols = match ($level) {
+            SymbolLevel::Class_ => $metrics->allClassDeclarations(),
+            SymbolLevel::Callable => $metrics->allCallables(),
+            default => $metrics->all($level),
+        };
         $buckets = [];
         foreach ($symbols as $symbolInfo) {
             $buckets[$symbolInfo->symbolPath->getType()->value][] = $symbolInfo;

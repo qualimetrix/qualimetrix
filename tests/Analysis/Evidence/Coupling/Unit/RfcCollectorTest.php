@@ -189,6 +189,28 @@ PHP;
         self::assertNotContains(\Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface::class, class_implements($this->collector));
     }
 
+    #[Test]
+    public function itKeepsDistinctResponsesForSameFileDeclarations(): void
+    {
+        $this->collectMetrics(<<<'PHP'
+<?php
+namespace App;
+class Twin { public function one(): void {} }
+if (false) {
+    class Twin {
+        public function one(): void { Logger::log(); }
+        public function two(): void {}
+    }
+}
+PHP);
+
+        $visitor = $this->collector->getVisitor();
+        self::assertInstanceOf(RfcVisitor::class, $visitor);
+        $classes = array_values($visitor->getClassesData());
+        self::assertCount(2, $classes);
+        self::assertSame([1, 3], array_map(static fn($class): int => $class->getRfc(), $classes));
+    }
+
     private function collectMetrics(string $code): MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();

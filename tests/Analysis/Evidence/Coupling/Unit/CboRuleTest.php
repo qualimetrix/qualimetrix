@@ -118,7 +118,7 @@ final class CboRuleTest extends TestCase
     public function itReturnsEmptyForTheUnsupportedCallableDispatchWithoutReadingMetrics(): void
     {
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('allDeclarations');
+        $repository->expects(self::never())->method('allClassDeclarations');
         $repository->expects(self::never())->method('all');
 
         self::assertSame([], (new CboRule(new CboOptions()))
@@ -131,10 +131,10 @@ final class CboRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App', 'ContextOwned');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/ContextOwned.php'), 10);
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
         $repository->expects(self::exactly(2))
-            ->method('get')
-            ->with($symbolPath)
+            ->method('getSubject')
+            ->with($classInfo->subject)
             ->willReturn((new MetricBag())->with('coupling.cbo', 18)->with('coupling.ca', 8)->with('coupling.ce', 10));
 
         $findings = (new CboRule(new CboOptions()))
@@ -151,7 +151,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -170,9 +170,9 @@ final class CboRuleTest extends TestCase
         $metricBag = new MetricBag();
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -195,9 +195,9 @@ final class CboRuleTest extends TestCase
             ->with('coupling.ce', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -221,9 +221,9 @@ final class CboRuleTest extends TestCase
             ->with('coupling.ce', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -252,9 +252,9 @@ final class CboRuleTest extends TestCase
             ->with('coupling.ce', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -288,9 +288,9 @@ final class CboRuleTest extends TestCase
             ->with('coupling.ce', 6);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -318,9 +318,9 @@ final class CboRuleTest extends TestCase
             ->with('coupling.ce', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -347,9 +347,9 @@ final class CboRuleTest extends TestCase
             ->with('coupling.ce', 22);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -376,9 +376,9 @@ final class CboRuleTest extends TestCase
             ->with('coupling.ce', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -608,13 +608,9 @@ final class CboRuleTest extends TestCase
                 SymbolLevel::Namespace_ => [$nsInfo],
                 default => [],
             });
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')
-            ->willReturnCallback(fn(SymbolPath $path) => match ($path) {
-                $classPath => $classBag,
-                $nsPath => $nsBag,
-                default => new MetricBag(),
-            });
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn($classBag);
+        $repository->method('get')->willReturn($nsBag);
 
         $context = new AnalysisContext($repository);
         $findings = $rule->analyze($context);
@@ -770,9 +766,9 @@ final class CboRuleTest extends TestCase
             ->with('coupling.ce', 22);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $location = new Location(RelativePath::fromString('src/Service/GodService.php'), 10);
@@ -820,9 +816,9 @@ final class CboRuleTest extends TestCase
             ->with('coupling.ce', 22);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $location = new Location(RelativePath::fromString('src/Service/HugeService.php'), 10);
@@ -877,9 +873,9 @@ final class CboRuleTest extends TestCase
             ->with('coupling.ce', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         // No dependency graph
@@ -906,9 +902,9 @@ final class CboRuleTest extends TestCase
             ->with('coupling.ce', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $graph = self::createStub(DependencyGraphInterface::class);
@@ -968,9 +964,9 @@ final class CboRuleTest extends TestCase
             ->with('coupling.ce', 17);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $location = new Location(RelativePath::fromString('src/Service/MyService.php'), 10);
@@ -1018,9 +1014,9 @@ final class CboRuleTest extends TestCase
             ->with('coupling.ce', $cbo - 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -1073,8 +1069,8 @@ final class CboRuleTest extends TestCase
             ->with('coupling.ce', 25)
             ->with('coupling.ce-framework', 23);
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn($metricBag);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn($metricBag);
 
         $findings = $rule->analyzeLevel(SymbolLevel::Class_, new AnalysisContext($repository));
 
@@ -1109,9 +1105,9 @@ final class CboRuleTest extends TestCase
             ->with('coupling.ce', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -1145,9 +1141,9 @@ final class CboRuleTest extends TestCase
             ->with('coupling.ce-framework', 23);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -1188,9 +1184,9 @@ final class CboRuleTest extends TestCase
             ->with('coupling.ce', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -1260,11 +1256,11 @@ final class CboRuleTest extends TestCase
     {
         $class = SymbolPath::forClass('App\\Service', 'Twin');
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([
+        $repository->method('allClassDeclarations')->willReturn([
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn(
+        $repository->method('getSubject')->willReturn(
             (new MetricBag())->with('coupling.cbo', 18)->with('coupling.ca', 8)->with('coupling.ce', 10),
         );
 

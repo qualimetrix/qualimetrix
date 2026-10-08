@@ -681,6 +681,12 @@ Results will appear in the **Code Quality** tab with inline comments in the MR.
 
 ## MetricsJsonFormatter
 
+Each declaration has its own exported record, addressed by `subject`; `name`
+may repeat. Classes use declaration metric views, including logical graph
+inputs. Namespace and project records have `file: null` and `line: null`.
+The HTML class node uses the same subject as its navigation id, keeping
+same-name declarations independently selectable.
+
 **Name:** `metrics`
 
 Exports raw metric values for all symbols (methods, classes, namespaces, files) as JSON. Unlike `json` which outputs findings, this formatter outputs the actual metric data collected during analysis — useful for cross-tool comparison, metrics analysis, and custom dashboards.
@@ -699,6 +705,7 @@ Exports raw metric values for all symbols (methods, classes, namespaces, files) 
     {
       "type": "method",
       "name": "App\\Service\\UserService::calculateDiscount",
+      "subject": "declaration:callable:App\\Service\\UserService::calculateDiscount@src/Service/UserService.php",
       "file": "src/Service/UserService.php",
       "line": 42,
       "metrics": {

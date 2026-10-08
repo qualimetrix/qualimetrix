@@ -1,0 +1,24 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 1947
++visible 1902
+@@ -6,0 +6,1 @@
++    <error line="1" severity="warning" message="Class count is 6, exceeds threshold of 1. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
+@@ -21,4 +22,1 @@
+-  <file name="Corpus\NameCase">
+-    <error line="1" severity="warning" message="Class count is 6, exceeds threshold of 1. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
+-  </file>
+-  <file name="Corpus\NameCase\Web">
++  <file name="src/WebFirst.php">
+@@ -32,1 +30,1 @@
+-invocation-format:checkstyle 1947
++invocation-format:checkstyle 1902
+@@ -37,0 +35,1 @@
++    <error line="1" severity="warning" message="Class count is 6, exceeds threshold of 1. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
+@@ -52,4 +51,1 @@
+-  <file name="Corpus\NameCase">
+-    <error line="1" severity="warning" message="Class count is 6, exceeds threshold of 1. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
+-  </file>
+-  <file name="Corpus\NameCase\Web">
++  <file name="src/WebFirst.php">

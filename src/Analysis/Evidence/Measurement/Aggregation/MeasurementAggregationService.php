@@ -14,15 +14,17 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInt
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /** Owns initial aggregation, global collection, and global re-aggregation. */
-final class MeasurementAggregationService implements MeasurementAggregationInterface, MetricReachCatalogInterface
+final class MeasurementAggregationService implements MeasurementAggregationInterface, MetricReachCatalogInterface, MetricDefinitionCatalogInterface
 {
     /** @var list<GlobalContextCollectorInterface> */
     private readonly array $sortedCollectors;
@@ -52,7 +54,14 @@ final class MeasurementAggregationService implements MeasurementAggregationInter
         $regularDefinitions = AggregationHelper::collectDefinitions($regularCollectors);
         $derivedDefinitions = self::definitions($derivedCollectors);
         $this->globalDefinitions = self::definitions($this->sortedCollectors);
-        $this->allDefinitions = [...$regularDefinitions, ...$derivedDefinitions, ...$this->globalDefinitions];
+        $this->allDefinitions = [
+            ...$regularDefinitions,
+            ...$derivedDefinitions,
+            ...$this->globalDefinitions,
+            new MetricDefinition(name: MetricName::SIZE_SYMBOL_METHOD_COUNT, collectedAt: SymbolLevel::Class_, directPublicationLevels: [SymbolLevel::Namespace_, SymbolLevel::Project]),
+            new MetricDefinition(name: MetricName::SIZE_SYMBOL_CLASS_COUNT, collectedAt: SymbolLevel::Namespace_, directPublicationLevels: [SymbolLevel::Project]),
+            new MetricDefinition(name: MetricName::SIZE_SYMBOL_DECLARING_NAMESPACE_COUNT, collectedAt: SymbolLevel::Project),
+        ];
         $reachByMetric = array_fill_keys(self::providedMetrics($regularCollectors, $derivedCollectors), MetricReach::Members);
         // Aggregation writes these metrics directly rather than through a collector.
         foreach ([MetricName::SIZE_SYMBOL_METHOD_COUNT, MetricName::SIZE_SYMBOL_CLASS_COUNT, MetricName::SIZE_SYMBOL_DECLARING_NAMESPACE_COUNT, MetricName::COMPLEXITY_WMC] as $key) {
@@ -70,6 +79,11 @@ final class MeasurementAggregationService implements MeasurementAggregationInter
     {
         return $this->reachByMetric[MetricName::base($metricKey)]
             ?? throw new LogicException(\sprintf('Unknown measured metric "%s".', $metricKey));
+    }
+
+    public function all(): array
+    {
+        return $this->allDefinitions;
     }
 
     public function aggregate(MetricRepositoryInterface $repository, DependencyGraphInterface $dependencies): NamespaceTree

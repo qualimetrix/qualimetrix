@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Measurement\Contract;
 
+use LogicException;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
@@ -17,8 +18,6 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * Example for classCount:
  *   - Collected at: File level
  *   - Aggregations: Namespace→[Sum], Project→[Sum]
- *
- * @qmx-threshold coupling.cbo 33 -- Collector and aggregation consumers intentionally share this provider-owned definition; current raw CBO 32 gets one-edge headroom.
  */
 final readonly class MetricDefinition
 {
@@ -28,12 +27,50 @@ final readonly class MetricDefinition
      * @param array<string, list<AggregationStrategy>> $aggregations
      *                                                               Map of target level (SymbolLevel->value) to list of aggregation strategies.
      *                                                               Example: ['class' => [Sum, Average, Max], 'namespace' => [Sum, Average]]
+     * @param list<SymbolLevel> $directPublicationLevels Additional levels that publish the base key directly
      */
     public function __construct(
         public string $name,
         public SymbolLevel $collectedAt,
         public array $aggregations = [],
-    ) {}
+        public bool $namespaceFileContribution = false,
+        public ?ClassKeyScope $classKeyScope = null,
+        public array $directPublicationLevels = [],
+    ) {
+        $seenLevels = [$collectedAt->value => true];
+        foreach ($directPublicationLevels as $level) {
+            if (isset($seenLevels[$level->value])) {
+                throw new LogicException('Direct publication levels must be unique and distinct from the collected level');
+            }
+            $seenLevels[$level->value] = true;
+        }
+
+        if ($namespaceFileContribution) {
+            foreach ($this->getStrategiesForLevel(SymbolLevel::Namespace_) as $strategy) {
+                if (\in_array($strategy, [AggregationStrategy::Max, AggregationStrategy::Min, AggregationStrategy::Percentile95, AggregationStrategy::Percentile5], true)) {
+                    throw new LogicException('Namespace file contributions support only sum, count and average');
+                }
+            }
+        }
+    }
+
+    /** @return list<SymbolLevel> */
+    public function publicationLevels(): array
+    {
+        return [$this->collectedAt, ...$this->directPublicationLevels];
+    }
+
+    /** @return list<string> */
+    public function publishedSuffixes(SymbolLevel $level): array
+    {
+        $strategies = $this->getStrategiesForLevel($level);
+        if (\in_array(AggregationStrategy::Average, $strategies, true)
+            && !\in_array(AggregationStrategy::Count, $strategies, true)) {
+            $strategies[] = AggregationStrategy::Count;
+        }
+
+        return array_map(static fn(AggregationStrategy $strategy): string => $strategy->value, $strategies);
+    }
 
     /**
      * Returns the name for an aggregated metric.

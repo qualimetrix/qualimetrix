@@ -39,10 +39,7 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
 {
     use ClassVisitorStackTrait;
 
-    /**
-     * @var array<string, LcomClassData>
-     *                                   Class FQN => LCOM data
-     */
+    /** @var array<int, LcomClassData> */
     private array $classData = [];
 
     /**
@@ -60,7 +57,7 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
     }
 
     /**
-     * @return array<string, LcomClassData>
+     * @return array<int, LcomClassData>
      */
     public function getClassData(): array
     {
@@ -79,12 +76,12 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
         // Track class-like types
         if ($this->isClassLikeNode($node)) {
             $className = $this->extractClassLikeName($node);
-            $this->pushClass($className);
+            $this->pushClass($className, $className === null ? null : $node->getStartFilePos());
 
             // Only create data for named classes
             if ($className !== null) {
-                $fqn = $this->buildClassFqn($className);
-                $this->classData[$fqn] = new LcomClassData(
+                $position = $node->getStartFilePos();
+                $this->classData[$position] = new LcomClassData(
                     namespace: $this->currentNamespace,
                     className: $className,
                     line: $node->getStartLine(),
@@ -132,20 +129,20 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
 
             // Only register with classData for named classes
             if ($currentClass !== null) {
-                $fqn = $this->buildClassFqn($currentClass);
-                if (isset($this->classData[$fqn])) {
-                    $this->classData[$fqn]->addMethod($methodName);
+                $position = $this->getCurrentClassPosition();
+                if (isset($this->classData[$position])) {
+                    $this->classData[$position]->addMethod($methodName);
 
                     if ($node->isStatic()) {
-                        $this->classData[$fqn]->markStatic($methodName);
+                        $this->classData[$position]->markStatic($methodName);
                     }
 
                     if ($this->isStatelessConstant($node)) {
-                        $this->classData[$fqn]->markStatelessConstant($methodName);
+                        $this->classData[$position]->markStatelessConstant($methodName);
                     }
 
                     if (!$this->isMethodTrivial($node)) {
-                        $this->classData[$fqn]->markNonTrivial();
+                        $this->classData[$position]->markNonTrivial();
                     }
                 }
             }
@@ -158,8 +155,8 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
             return null;
         }
 
-        $fqn = $this->buildClassFqn($currentClass);
-        if (!isset($this->classData[$fqn])) {
+        $position = $this->getCurrentClassPosition();
+        if (!isset($this->classData[$position])) {
             return null;
         }
 
@@ -170,7 +167,7 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
         ) {
             $propertyName = $this->extractPropertyName($node);
             if ($propertyName !== null) {
-                $this->classData[$fqn]->addPropertyAccess($currentMethod, $propertyName);
+                $this->classData[$position]->addPropertyAccess($currentMethod, $propertyName);
             }
 
             return null;
@@ -182,7 +179,7 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
             && $node->var->name === 'this'
             && $node->name instanceof Identifier
         ) {
-            $this->classData[$fqn]->addMethodCall($currentMethod, $node->name->toString());
+            $this->classData[$position]->addMethodCall($currentMethod, $node->name->toString());
 
             return null;
         }

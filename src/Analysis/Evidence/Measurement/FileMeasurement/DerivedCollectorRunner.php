@@ -133,21 +133,34 @@ final readonly class DerivedCollectorRunner
             foreach ($collector->getCallablesWithMetrics($file) as $callable) {
                 $key = $callable->kind->value . ':' . $callable->declarationPath->toCanonical();
                 $existing = $callables[$key] ?? null;
-                self::assertOneDeclarationPerKey($key, $existing?->startFilePos, $callable->startFilePos);
-                $callables[$key] = $existing === null ? $callable : new CallableWithMetrics(
-                    $existing->declarationPath,
-                    $existing->startFilePos,
-                    $existing->kind,
-                    $existing->anonymousSyntax,
-                    $existing->lexicalClassContext,
-                    $existing->classAggregationOwner,
-                    $existing->metrics->merge($callable->metrics),
-                    $existing->sourceLine,
-                );
+                $callables[$key] = $existing === null ? $callable : self::mergeCallable($existing, $callable, $key);
             }
         }
 
         return $callables;
+    }
+
+    private static function mergeCallable(CallableWithMetrics $existing, CallableWithMetrics $callable, string $key): CallableWithMetrics
+    {
+        self::assertOneDeclarationPerKey($key, $existing->startFilePos, $callable->startFilePos);
+        if ($existing->classAggregationOwner?->toCanonical() !== $callable->classAggregationOwner?->toCanonical()
+            || $existing->classAggregationOwnerDeclaration?->toCanonical() !== $callable->classAggregationOwnerDeclaration?->toCanonical()
+            || $existing->anonymousClassContext !== $callable->anonymousClassContext) {
+            throw new LogicException(\sprintf('Collectors disagree on class owner for %s', $key));
+        }
+
+        return new CallableWithMetrics(
+            $existing->declarationPath,
+            $existing->startFilePos,
+            $existing->kind,
+            $existing->anonymousSyntax,
+            $existing->lexicalClassContext,
+            $existing->classAggregationOwner,
+            $existing->metrics->merge($callable->metrics),
+            $existing->sourceLine,
+            $existing->classAggregationOwnerDeclaration,
+            $existing->anonymousClassContext,
+        );
     }
 
     /** @param list<MetricCollectorInterface> $collectors

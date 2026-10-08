@@ -17,18 +17,18 @@ export function buildTreeData(rawTree) {
 }
 
 /**
- * Finds a node by its path in the tree.
+ * Finds a node by its published identity in the tree.
  *
  * @param {object} root - Root tree node
  * @param {string} path - Node path (e.g., "App\\Payment")
  * @returns {object|null} Found node or null
  */
-export function findNode(root, path) {
-  if (root.path === path) return root;
+export function findNode(root, id) {
+  if ((root.id ?? root.path) === id) return root;
   if (!root.children) return null;
 
   for (const child of root.children) {
-    const found = findNode(child, path);
+    const found = findNode(child, id);
     if (found) return found;
   }
   return null;

@@ -22,6 +22,7 @@ use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
@@ -80,11 +81,11 @@ final class ClassRankCollectorTest extends TestCase
     public function itWritesNoMetricsForAnEmptyGraph(): void
     {
         $graph = $this->graph([]);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
 
         $this->collector->calculate($graph, $repository);
 
-        $classes = iterator_to_array($repository->all(SymbolLevel::Class_));
+        $classes = iterator_to_array($repository->allLogicalClasses());
         self::assertSame([], $classes, 'Empty graph should produce no class-level metrics');
     }
 
@@ -97,13 +98,13 @@ final class ClassRankCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Foo');
 
         $this->collector->calculate($graph, $repository);
 
         $fooPath = SymbolPath::forClass('App', 'Foo');
-        $metrics = $repository->get($fooPath);
+        $metrics = $this->logicalMetrics($repository, $fooPath);
 
         self::assertEqualsWithDelta(1.0, $metrics->get('coupling.class-rank'), 0.001);
     }
@@ -113,14 +114,14 @@ final class ClassRankCollectorTest extends TestCase
     {
         $isolated = new LogicalClassPath(SymbolPath::forClass('App\\Isolated', 'Standalone'));
         $graph = $this->graph([], [$isolated]);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Isolated\\Standalone');
 
         $this->collector->calculate($graph, $repository);
 
         self::assertSame(
             1.0,
-            $repository->get(SymbolPath::forClass('App\\Isolated', 'Standalone'))->get('coupling.class-rank'),
+            $this->logicalMetrics($repository, SymbolPath::forClass('App\\Isolated', 'Standalone'))->get('coupling.class-rank'),
         );
     }
 
@@ -129,7 +130,7 @@ final class ClassRankCollectorTest extends TestCase
     {
         $class = SymbolPath::forClass('App\\Service', 'Twin');
         $graph = $this->graph([], [new LogicalClassPath($class)]);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $repository->addSubject(
             \Qualimetrix\Core\Symbol\MetricSubject::declaration(DeclarationPath::of($class, RelativePath::fromString('src/FirstTwin.php'), DeclarationOrdinal::fromRank(0))),
             new MetricBag(),
@@ -147,7 +148,7 @@ final class ClassRankCollectorTest extends TestCase
 
         self::assertCount(1, iterator_to_array($repository->allLogicalClasses()));
         self::assertCount(2, iterator_to_array($repository->allDeclarations()));
-        self::assertSame(1.0, $repository->get($class)->get('coupling.class-rank'));
+        self::assertSame(1.0, $this->logicalMetrics($repository, $class)->get('coupling.class-rank'));
     }
 
     #[Test]
@@ -160,16 +161,16 @@ final class ClassRankCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\A');
         $this->registerClass($repository, 'App\\B');
         $this->registerClass($repository, 'App\\C');
 
         $this->collector->calculate($graph, $repository);
 
-        $rankA = $repository->get(SymbolPath::forClass('App', 'A'))->get('coupling.class-rank');
-        $rankB = $repository->get(SymbolPath::forClass('App', 'B'))->get('coupling.class-rank');
-        $rankC = $repository->get(SymbolPath::forClass('App', 'C'))->get('coupling.class-rank');
+        $rankA = $this->logicalMetrics($repository, SymbolPath::forClass('App', 'A'))->get('coupling.class-rank');
+        $rankB = $this->logicalMetrics($repository, SymbolPath::forClass('App', 'B'))->get('coupling.class-rank');
+        $rankC = $this->logicalMetrics($repository, SymbolPath::forClass('App', 'C'))->get('coupling.class-rank');
 
         self::assertNotNull($rankA);
         self::assertNotNull($rankB);
@@ -191,16 +192,16 @@ final class ClassRankCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\A');
         $this->registerClass($repository, 'App\\B');
         $this->registerClass($repository, 'App\\C');
 
         $this->collector->calculate($graph, $repository);
 
-        $rankA = (float) $repository->get(SymbolPath::forClass('App', 'A'))->get('coupling.class-rank');
-        $rankB = (float) $repository->get(SymbolPath::forClass('App', 'B'))->get('coupling.class-rank');
-        $rankC = (float) $repository->get(SymbolPath::forClass('App', 'C'))->get('coupling.class-rank');
+        $rankA = (float) $this->logicalMetrics($repository, SymbolPath::forClass('App', 'A'))->get('coupling.class-rank');
+        $rankB = (float) $this->logicalMetrics($repository, SymbolPath::forClass('App', 'B'))->get('coupling.class-rank');
+        $rankC = (float) $this->logicalMetrics($repository, SymbolPath::forClass('App', 'C'))->get('coupling.class-rank');
 
         self::assertGreaterThan($rankA, $rankB, 'B should rank higher than A');
         self::assertGreaterThan($rankB, $rankC, 'C should rank higher than B');
@@ -215,7 +216,7 @@ final class ClassRankCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\A');
 
         $this->collector->calculate($graph, $repository);
@@ -223,12 +224,12 @@ final class ClassRankCollectorTest extends TestCase
         // Vendor\Bar must NOT be added to repository
         $vendorPath = SymbolPath::forClass('Vendor', 'Bar');
         self::assertFalse(
-            $repository->has($vendorPath),
+            $this->hasLogical($repository, $vendorPath),
             'Vendor classes must not be added to the repository',
         );
 
         // A should still get a rank (single project class)
-        $rankA = $repository->get(SymbolPath::forClass('App', 'A'))->get('coupling.class-rank');
+        $rankA = $this->logicalMetrics($repository, SymbolPath::forClass('App', 'A'))->get('coupling.class-rank');
         self::assertEqualsWithDelta(1.0, $rankA, 0.001);
     }
 
@@ -242,15 +243,15 @@ final class ClassRankCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\A');
         $this->registerClass($repository, 'App\\B');
 
         $this->collector->calculate($graph, $repository);
 
         // Self-dependency should not boost A's own rank
-        $rankA = (float) $repository->get(SymbolPath::forClass('App', 'A'))->get('coupling.class-rank');
-        $rankB = (float) $repository->get(SymbolPath::forClass('App', 'B'))->get('coupling.class-rank');
+        $rankA = (float) $this->logicalMetrics($repository, SymbolPath::forClass('App', 'A'))->get('coupling.class-rank');
+        $rankB = (float) $this->logicalMetrics($repository, SymbolPath::forClass('App', 'B'))->get('coupling.class-rank');
 
         // B should have higher rank than A (A votes for B, not for itself)
         self::assertGreaterThan($rankA, $rankB);
@@ -267,14 +268,14 @@ final class ClassRankCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\A');
         $this->registerClass($repository, 'App\\B');
 
         $this->collector->calculate($graph, $repository);
 
-        $rankA = (float) $repository->get(SymbolPath::forClass('App', 'A'))->get('coupling.class-rank');
-        $rankB = (float) $repository->get(SymbolPath::forClass('App', 'B'))->get('coupling.class-rank');
+        $rankA = (float) $this->logicalMetrics($repository, SymbolPath::forClass('App', 'A'))->get('coupling.class-rank');
+        $rankB = (float) $this->logicalMetrics($repository, SymbolPath::forClass('App', 'B'))->get('coupling.class-rank');
 
         // Both should have equal rank (isolated nodes get (1-d)/N from teleportation + dangling)
         self::assertEqualsWithDelta($rankA, $rankB, 0.001);
@@ -295,16 +296,16 @@ final class ClassRankCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\A');
         $this->registerClass($repository, 'App\\B');
         $this->registerClass($repository, 'App\\C');
 
         $this->collector->calculate($graph, $repository);
 
-        $rankA = (float) $repository->get(SymbolPath::forClass('App', 'A'))->get('coupling.class-rank');
-        $rankB = (float) $repository->get(SymbolPath::forClass('App', 'B'))->get('coupling.class-rank');
-        $rankC = (float) $repository->get(SymbolPath::forClass('App', 'C'))->get('coupling.class-rank');
+        $rankA = (float) $this->logicalMetrics($repository, SymbolPath::forClass('App', 'A'))->get('coupling.class-rank');
+        $rankB = (float) $this->logicalMetrics($repository, SymbolPath::forClass('App', 'B'))->get('coupling.class-rank');
+        $rankC = (float) $this->logicalMetrics($repository, SymbolPath::forClass('App', 'C'))->get('coupling.class-rank');
 
         // PageRank scores should sum to approximately 1.0
         self::assertEqualsWithDelta(1.0, $rankA + $rankB + $rankC, 0.01);
@@ -319,7 +320,7 @@ final class ClassRankCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\A');
         $this->registerClass($repository, 'App\\B');
 
@@ -327,7 +328,7 @@ final class ClassRankCollectorTest extends TestCase
 
         $vendorPath = SymbolPath::forClass('Vendor', 'External');
         self::assertFalse(
-            $repository->has($vendorPath),
+            $this->hasLogical($repository, $vendorPath),
             'Global collectors must not create symbols for external classes',
         );
     }
@@ -344,7 +345,7 @@ final class ClassRankCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\A');
         $this->registerClass($repository, 'App\\B');
         $this->registerClass($repository, 'App\\C');
@@ -353,8 +354,8 @@ final class ClassRankCollectorTest extends TestCase
 
         $this->collector->calculate($graph, $repository);
 
-        $rankCenter = (float) $repository->get(SymbolPath::forClass('App', 'Center'))->get('coupling.class-rank');
-        $rankA = (float) $repository->get(SymbolPath::forClass('App', 'A'))->get('coupling.class-rank');
+        $rankCenter = (float) $this->logicalMetrics($repository, SymbolPath::forClass('App', 'Center'))->get('coupling.class-rank');
+        $rankA = (float) $this->logicalMetrics($repository, SymbolPath::forClass('App', 'A'))->get('coupling.class-rank');
 
         // Center should have the highest rank by far
         self::assertGreaterThan($rankA, $rankCenter);
@@ -396,6 +397,20 @@ final class ClassRankCollectorTest extends TestCase
 
     private function registerClass(InMemoryMetricRepository $repository, string $fqn): void
     {
-        $repository->add(SymbolPath::fromClassFqn($fqn), new MetricBag(), RelativePath::fromString('test.php'), 1);
+        $repository->addSubject(MetricSubject::declaration(DeclarationPath::of(
+            SymbolPath::fromClassFqn($fqn),
+            RelativePath::fromString('test.php'),
+            DeclarationOrdinal::fromRank(0),
+        )), new MetricBag(), RelativePath::fromString('test.php'), 1);
     }
+    private function logicalMetrics(InMemoryMetricRepository $repository, SymbolPath $path): MetricBag
+    {
+        return $repository->getSubject(MetricSubject::logicalClass(new LogicalClassPath($path)));
+    }
+
+    private function hasLogical(InMemoryMetricRepository $repository, SymbolPath $path): bool
+    {
+        return $repository->hasSubject(MetricSubject::logicalClass(new LogicalClassPath($path)));
+    }
+
 }

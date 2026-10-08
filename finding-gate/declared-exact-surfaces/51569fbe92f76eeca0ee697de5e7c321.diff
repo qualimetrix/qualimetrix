@@ -1,0 +1,308 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 38044
++visible 41453
+@@ -370,5 +370,19 @@
+-                        "text": "Corpus\\Coupling\\Kernel: Afferent coupling too high: 5 classes depend on this (CBO: 2 namespaces, threshold: 2)"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "coupling.cbo:ns:Corpus\\Coupling\\Kernel"
+-                    }
++                        "text": "Afferent coupling too high: 5 classes depend on this (CBO: 2 namespaces, threshold: 2)"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "coupling.cbo:ns:Corpus\\Coupling\\Kernel"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/Kernel/Clock.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 3,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]
+@@ -381,5 +395,19 @@
+-                        "text": "Corpus\\Coupling\\Service: Efferent coupling too high: depends on 6 classes (CBO: 3 namespaces, threshold: 2)"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "coupling.cbo:ns:Corpus\\Coupling\\Service"
+-                    }
++                        "text": "Efferent coupling too high: depends on 6 classes (CBO: 3 namespaces, threshold: 2)"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "coupling.cbo:ns:Corpus\\Coupling\\Service"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/Service/CacheService.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 3,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]
+@@ -392,5 +420,19 @@
+-                        "text": "Corpus\\Coupling\\Wiring: Efferent coupling too high: depends on 5 classes (CBO: 2 namespaces, threshold: 2)"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "coupling.cbo:ns:Corpus\\Coupling\\Wiring"
+-                    }
++                        "text": "Efferent coupling too high: depends on 5 classes (CBO: 2 namespaces, threshold: 2)"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "coupling.cbo:ns:Corpus\\Coupling\\Wiring"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/Wiring/Bootstrap.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 3,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]
+@@ -653,5 +695,19 @@
+-                        "text": "Corpus\\Coupling\\Kernel: Distance from main sequence is 1.00 (A=0.00, I=0.00), exceeds threshold of 0.90. Balance abstractness and stability"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "coupling.distance:ns:Corpus\\Coupling\\Kernel"
+-                    }
++                        "text": "Distance from main sequence is 1.00 (A=0.00, I=0.00), exceeds threshold of 0.90. Balance abstractness and stability"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "coupling.distance:ns:Corpus\\Coupling\\Kernel"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/Kernel/Clock.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 3,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]
+@@ -664,5 +720,19 @@
+-                        "text": "Corpus\\Coupling\\Service: Distance from main sequence is 0.25 (A=0.00, I=0.75), exceeds threshold of 0.05. Balance abstractness and stability"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "coupling.distance:ns:Corpus\\Coupling\\Service"
+-                    }
++                        "text": "Distance from main sequence is 0.25 (A=0.00, I=0.75), exceeds threshold of 0.05. Balance abstractness and stability"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "coupling.distance:ns:Corpus\\Coupling\\Service"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/Service/CacheService.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 3,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]
+@@ -775,5 +845,19 @@
+-                        "text": "Corpus\\Coupling\\Service: Instability is 0.75 (Ca=2, Ce=6), exceeds threshold of 0.40. Reduce outgoing dependencies"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "coupling.instability:ns:Corpus\\Coupling\\Service"
+-                    }
++                        "text": "Instability is 0.75 (Ca=2, Ce=6), exceeds threshold of 0.40. Reduce outgoing dependencies"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "coupling.instability:ns:Corpus\\Coupling\\Service"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/Service/CacheService.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 3,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]
+@@ -807,1 +891,1 @@
+-invocation-format:sarif 38044
++invocation-format:sarif 41453
+@@ -1176,5 +1260,19 @@
+-                        "text": "Corpus\\Coupling\\Kernel: Afferent coupling too high: 5 classes depend on this (CBO: 2 namespaces, threshold: 2)"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "coupling.cbo:ns:Corpus\\Coupling\\Kernel"
+-                    }
++                        "text": "Afferent coupling too high: 5 classes depend on this (CBO: 2 namespaces, threshold: 2)"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "coupling.cbo:ns:Corpus\\Coupling\\Kernel"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/Kernel/Clock.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 3,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]
+@@ -1187,5 +1285,19 @@
+-                        "text": "Corpus\\Coupling\\Service: Efferent coupling too high: depends on 6 classes (CBO: 3 namespaces, threshold: 2)"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "coupling.cbo:ns:Corpus\\Coupling\\Service"
+-                    }
++                        "text": "Efferent coupling too high: depends on 6 classes (CBO: 3 namespaces, threshold: 2)"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "coupling.cbo:ns:Corpus\\Coupling\\Service"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/Service/CacheService.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 3,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]
+@@ -1198,5 +1310,19 @@
+-                        "text": "Corpus\\Coupling\\Wiring: Efferent coupling too high: depends on 5 classes (CBO: 2 namespaces, threshold: 2)"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "coupling.cbo:ns:Corpus\\Coupling\\Wiring"
+-                    }
++                        "text": "Efferent coupling too high: depends on 5 classes (CBO: 2 namespaces, threshold: 2)"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "coupling.cbo:ns:Corpus\\Coupling\\Wiring"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/Wiring/Bootstrap.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 3,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]
+@@ -1459,5 +1585,19 @@
+-                        "text": "Corpus\\Coupling\\Kernel: Distance from main sequence is 1.00 (A=0.00, I=0.00), exceeds threshold of 0.90. Balance abstractness and stability"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "coupling.distance:ns:Corpus\\Coupling\\Kernel"
+-                    }
++                        "text": "Distance from main sequence is 1.00 (A=0.00, I=0.00), exceeds threshold of 0.90. Balance abstractness and stability"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "coupling.distance:ns:Corpus\\Coupling\\Kernel"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/Kernel/Clock.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 3,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]
+@@ -1470,5 +1610,19 @@
+-                        "text": "Corpus\\Coupling\\Service: Distance from main sequence is 0.25 (A=0.00, I=0.75), exceeds threshold of 0.05. Balance abstractness and stability"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "coupling.distance:ns:Corpus\\Coupling\\Service"
+-                    }
++                        "text": "Distance from main sequence is 0.25 (A=0.00, I=0.75), exceeds threshold of 0.05. Balance abstractness and stability"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "coupling.distance:ns:Corpus\\Coupling\\Service"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/Service/CacheService.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 3,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]
+@@ -1581,5 +1735,19 @@
+-                        "text": "Corpus\\Coupling\\Service: Instability is 0.75 (Ca=2, Ce=6), exceeds threshold of 0.40. Reduce outgoing dependencies"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "coupling.instability:ns:Corpus\\Coupling\\Service"
+-                    }
++                        "text": "Instability is 0.75 (Ca=2, Ce=6), exceeds threshold of 0.40. Reduce outgoing dependencies"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "coupling.instability:ns:Corpus\\Coupling\\Service"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/Service/CacheService.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 3,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]

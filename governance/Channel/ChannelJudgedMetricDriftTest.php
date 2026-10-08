@@ -89,23 +89,6 @@ use RuntimeException;
  * The first four and the sixth are outside by construction: they publish no
  * catalog metric, or none this repository declares. Only the fifth is a
  * standing trade, and it is recorded in ADR 0017 rather than overlooked.
- *
- * **A seventh, narrower than a channel: one subject at a time.** A finding on
- * a class name that the case declares in more than one file is compared
- * against a metric export that has one row per name, carrying the deepest of
- * that name's declarations (ADR 0073). The oracle cannot say which
- * declaration that row describes, so for those subjects equality widens to an
- * inequality: the published number must not *exceed* the exported one. That
- * is a weaker check, not an absent one — a channel publishing above the
- * name's maximum still fails, the declared key must still exist, and every
- * subject of a singly-declared name is compared exactly as before. Closing it
- * needs a declaration-addressable metric export, which is a change to what
- * `--format=metrics` publishes rather than to this guard.
- *
- * The set of duplicated names is read off the case's own findings, so it
- * depends on the thresholds those findings fired at. That is a weakness of
- * this oracle rather than of the rule it judges, and it errs safely: a case
- * whose duplicate never fires is compared strictly.
  */
 #[CoversClass(ChannelDeclaration::class)]
 final class ChannelJudgedMetricDriftTest extends TestCase
@@ -146,7 +129,7 @@ final class ChannelJudgedMetricDriftTest extends TestCase
     private static ?array $observed = null;
 
     /**
-     * Case directory => "kind\0symbol name" => metric key => value.
+     * Case directory => canonical subject => metric key => value.
      *
      * @var array<string, array<string, array<string, int|float>>>|null
      */
@@ -156,17 +139,6 @@ final class ChannelJudgedMetricDriftTest extends TestCase
      * @var array<string, list<string>>|null channel name => declared judged metric keys
      */
     private static ?array $judging = null;
-
-    /**
-     * Case directory => folded class symbol name => the declaration subjects seen carrying it.
-     *
-     * Built from every finding of the case, not only the judging ones, because
-     * it answers a question about the corpus rather than about a channel: is
-     * this name declared once, or in several files?
-     *
-     * @var array<string, array<string, array<string, true>>>|null
-     */
-    private static ?array $classDeclarations = null;
 
     #[Test]
     public function itRequiresEveryFindingToPublishOneOfTheMetricsItsChannelDeclares(): void
@@ -187,21 +159,6 @@ final class ChannelJudgedMetricDriftTest extends TestCase
 
                 if (abs($measured[$key] - $finding['value']) <= self::MAGNITUDE_TOLERANCE) {
                     continue 2;
-                }
-            }
-
-            // A class name declared in two files has one row in the metric
-            // export, carrying the deepest of its declarations (ADR 0073), so
-            // this oracle cannot say which declaration that row describes. It
-            // still knows one thing about it: a declaration's own value cannot
-            // exceed a maximum taken over all of them. The comparison widens
-            // to that bound instead of being dropped, so a number above the
-            // exported one stays a disagreement even here.
-            if (self::nameCarriesSeveralDeclarations($finding)) {
-                foreach ($candidates as $measuredValue) {
-                    if ($finding['value'] <= $measuredValue + self::MAGNITUDE_TOLERANCE) {
-                        continue 2;
-                    }
                 }
             }
 
@@ -308,7 +265,6 @@ final class ChannelJudgedMetricDriftTest extends TestCase
         $judging = self::judgingChannels();
         $observed = [];
         $catalog = [];
-        $classDeclarations = [];
 
         foreach (CorpusCaseRun::cases(CorpusCaseRun::repositoryRoot()) as $directory => $case) {
             if (!CorpusCaseRun::isAnalysis($case)) {
@@ -322,10 +278,6 @@ final class ChannelJudgedMetricDriftTest extends TestCase
                 $subject = $finding['subject'] ?? null;
                 $symbol = $finding['symbol'] ?? null;
                 $value = $finding['metricValue'] ?? null;
-
-                if (\is_string($subject) && \is_string($symbol) && str_starts_with($subject, 'declaration:class:')) {
-                    $classDeclarations[$directory][strtolower($symbol)][$subject] = true;
-                }
 
                 if (!\is_string($channel) || !isset($judging[$channel])) {
                     continue;
@@ -361,54 +313,24 @@ final class ChannelJudgedMetricDriftTest extends TestCase
 
         self::$catalog = $catalog;
         self::$observed = $observed;
-        self::$classDeclarations = $classDeclarations;
     }
 
-    /**
-     * Whether this finding's class name is declared in more than one file.
-     *
-     * @param array{case: string, channel: string, subject: string, symbol: string, value: int|float} $finding
-     */
-    private static function nameCarriesSeveralDeclarations(array $finding): bool
-    {
-        self::measure();
-        \assert(self::$classDeclarations !== null);
-
-        if (!str_starts_with($finding['subject'], 'declaration:class:')) {
-            return false;
-        }
-
-        return \count(self::$classDeclarations[$finding['case']][strtolower($finding['symbol'])] ?? []) > 1;
-    }
-
-    /**
-     * Every metric of one case, keyed by the declaration it was measured on.
-     *
-     * The key pairs the declaration kind with the symbol name rather than
-     * using the name alone: a namespace and a class can be spelled the same,
-     * and a wrong join would compare a real number against a real number and
-     * look like agreement.
-     *
-     * Classes and namespaces use PHP's ASCII name identity: the export has one
-     * canonical spelling while findings retain each declaration's spelling.
-     *
-     * @return array<string, array<string, int|float>>
-     */
+    /** @return array<string, array<string, int|float>> */
     private static function indexMetrics(string $directory, CaseDefinition $case): array
     {
         $index = [];
 
         foreach (CorpusCaseRun::metrics($directory, $case) as $symbol) {
-            $kind = $symbol['type'] ?? null;
-            $name = $symbol['name'] ?? null;
+            $subject = $symbol['subject'] ?? null;
             $metrics = $symbol['metrics'] ?? null;
 
-            if (!\is_string($kind) || !\is_string($name) || !\is_array($metrics)) {
+            if (!\is_string($subject) || !\is_array($metrics)) {
                 throw new RuntimeException(\sprintf('The metric export of %s carries a malformed symbol.', $directory));
             }
 
             /** @var array<string, int|float> $metrics */
-            $index[self::metricKey($kind, $name)] = $metrics;
+            self::assertArrayNotHasKey($subject, $index, 'The metric export repeats an exact subject.');
+            $index[$subject] = $metrics;
         }
 
         return $index;
@@ -426,55 +348,17 @@ final class ChannelJudgedMetricDriftTest extends TestCase
         self::measure();
         \assert(self::$catalog !== null);
 
-        $kind = self::declarationKindOf($finding['subject']);
-        // The project has one row in the export and a name of its own
-        // (`(project)`), which is not the symbol a project-level finding
-        // names; every other kind is addressed by its symbol.
-        $key = self::metricKey($kind, $kind === 'project' ? '(project)' : $finding['symbol']);
-        $measured = self::$catalog[$finding['case']][$key] ?? null;
+        $measured = self::$catalog[$finding['case']][$finding['subject']] ?? null;
 
         self::assertIsArray($measured, \sprintf(
-            'The metric export of %s has no %s named "%s", which channel "%s" reported a finding on. The two'
+            'The metric export of %s has no subject "%s", which channel "%s" reported a finding on. The two'
             . ' runs of the same case disagree about what exists.',
             basename($finding['case']),
-            $kind,
-            $finding['symbol'],
+            $finding['subject'],
             $finding['channel'],
         ));
 
         return $measured;
     }
 
-    private static function metricKey(string $kind, string $name): string
-    {
-        return $kind . "\0" . (\in_array($kind, ['class', 'namespace'], true) ? strtolower($name) : $name);
-    }
-
-    /**
-     * The declaration kind a finding's subject names, in the vocabulary the
-     * metric export publishes.
-     *
-     * Its own small parser rather than a call into the product's subject
-     * handling, for the same reason the sibling level guard keeps one: a
-     * derivation sharing code with what it checks agrees by construction. It
-     * refuses an unknown head rather than guessing, so a new subject form
-     * arrives as a red run.
-     */
-    private static function declarationKindOf(string $subject): string
-    {
-        $parts = explode(':', $subject);
-
-        return match ($parts[0]) {
-            'declaration' => match ($parts[1] ?? '') {
-                'callable' => 'method',
-                'func' => 'function',
-                'class' => 'class',
-                default => throw new RuntimeException(\sprintf('Unrecognised finding subject "%s".', $subject)),
-            },
-            'ns' => 'namespace',
-            'file' => 'file',
-            'project' => 'project',
-            default => throw new RuntimeException(\sprintf('Unrecognised finding subject "%s".', $subject)),
-        };
-    }
 }

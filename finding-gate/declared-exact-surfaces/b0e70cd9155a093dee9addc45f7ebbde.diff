@@ -1,106 +1,46 @@
 --- candidate
 +++ reference (mapped)
 @@ -1,1 +1,1 @@
--visible 3307
-+visible 2027
-@@ -11,29 +11,19 @@
--         size.class-count: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces (namespace: Corpus\Design\Hierarchy)
--         Recommendation: Classes: 7 (threshold: 6) — too many classes in namespace
--  2. [ERR] 11.3  src/Model/Order.php  [2h]
--         design.god-class: God Class detected (4/4 criteria): high WMC (4 >= 4), high LCOM (2 >= 1), low TCC (0.33 < 0.90), large size (27 >= 10 LOC)
--         Recommendation: Apply the Single Responsibility Principle. Extract cohesive method groups into separate classes.
--  3. [ERR] 7.24  src/Anonymous/AnonTrait.php  [30min]
--         size.class-count: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces (namespace: Corpus\Design\Anonymous)
--         Recommendation: Classes: 7 (threshold: 6) — too many classes in namespace
--  4. [WRN] 3.38  src/Hierarchy/Base.php  [20min]
--         design.noc: NOC (Number of Children) is 3, exceeds threshold of 2. Consider using interfaces instead of inheritance
--         Recommendation: NOC: 3 (threshold: 2) — too many direct subclasses
--  5. [ERR] 2.60  src/Model/Product.php  [15min]
--         size.property-count: Property count is 4, reaches threshold of 4. Consider splitting the class or using composition
--         Recommendation: Properties: 4 (threshold: 4) — too many properties
--  6. [WRN] 1.73  src/Hierarchy/GreatGrandchild.php  [30min]
--         design.dit: DIT (Depth of Inheritance) is 3, reaches threshold of 3. Prefer composition over deep inheritance
--         Recommendation: DIT: 3 (threshold: 3) — deep inheritance, fragile hierarchy
--  7. [WRN] 1.73  src/Model/Order.php  [30min]
+-visible 3304
++visible 3307
+@@ -10,1 +10,1 @@
+-  1. [ERR] 15.2  Corpus\Design\Hierarchy  [30min]
++  1. [ERR] 15.2  src/Hierarchy/Base.php  [30min]
+@@ -16,1 +16,1 @@
+-  3. [ERR] 7.24  Corpus\Design\Anonymous  [30min]
++  3. [ERR] 7.24  src/Anonymous/AnonTrait.php  [30min]
+@@ -25,6 +25,6 @@
+-  6. [WRN] 1.73  Corpus\Design\Model  [30min]
 -         size.class-count: Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces (namespace: Corpus\Design\Model)
 -         Recommendation: Classes: 3 (threshold: 2) — too many classes in namespace
--  8. [WRN] 1.73  src/Model/Product.php  [30min]
--         design.data-class: Data Class detected: only 0% of the public interface is behavior (WOC, threshold 50%) and complexity is low (WMC=8, threshold 10). Consider encapsulating behavior or using a DTO pattern
--         Recommendation: Add behavior methods that operate on the data, or confirm this is intentionally a DTO.
--  9. [ERR] 1.41  src/Model/Untyped.php  [15min]
--         design.type-coverage.param: Parameter type coverage is 0.0% (minimum: 50.0%). Add type declarations to method parameters
--         Recommendation: Parameter type coverage: 0.0% (threshold: 50.0%) — missing type declarations
--  10. [ERR] 1.41  src/Model/Untyped.php  [15min]
--          design.type-coverage.return: Return type coverage is 0.0% (minimum: 50.0%). Add return type declarations to methods
--          Recommendation: Return type coverage: 0.0% (threshold: 50.0%) — missing type declarations
-+         size.class-count: Classes: 7 (threshold: 6) — too many classes in namespace (namespace: Corpus\Design\Hierarchy)
-+  2. [ERR] 11.3  src/Model/Order.php  [2h]
-+         design.god-class: Apply the Single Responsibility Principle. Extract cohesive method groups into separate classes.
-+  3. [ERR] 7.24  src/Anonymous/AnonTrait.php  [30min]
-+         size.class-count: Classes: 7 (threshold: 6) — too many classes in namespace (namespace: Corpus\Design\Anonymous)
-+  4. [WRN] 3.38  src/Hierarchy/Base.php  [20min]
-+         design.noc: NOC: 3 (threshold: 2) — too many direct subclasses
-+  5. [ERR] 2.60  src/Model/Product.php  [15min]
-+         size.property-count: Properties: 4 (threshold: 4) — too many properties
-+  6. [WRN] 1.73  src/Hierarchy/GreatGrandchild.php  [30min]
-+         design.dit: DIT: 3 (threshold: 3) — deep inheritance, fragile hierarchy
-+  7. [WRN] 1.73  src/Model/Order.php  [30min]
-+         size.class-count: Classes: 3 (threshold: 2) — too many classes in namespace (namespace: Corpus\Design\Model)
-+  8. [WRN] 1.73  src/Model/Product.php  [30min]
-+         design.data-class: Add behavior methods that operate on the data, or confirm this is intentionally a DTO.
-+  9. [ERR] 1.41  src/Model/Untyped.php  [15min]
-+         design.type-coverage.param: Parameter type coverage: 0.0% (threshold: 50.0%) — missing type declarations
-+  10. [ERR] 1.41  src/Model/Untyped.php  [15min]
-+          design.type-coverage.return: Return type coverage: 0.0% (threshold: 50.0%) — missing type declarations
-@@ -45,1 +35,1 @@
--invocation-format:summary 3307
-+invocation-format:summary 2027
-@@ -55,29 +45,19 @@
--         size.class-count: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces (namespace: Corpus\Design\Hierarchy)
--         Recommendation: Classes: 7 (threshold: 6) — too many classes in namespace
--  2. [ERR] 11.3  src/Model/Order.php  [2h]
--         design.god-class: God Class detected (4/4 criteria): high WMC (4 >= 4), high LCOM (2 >= 1), low TCC (0.33 < 0.90), large size (27 >= 10 LOC)
--         Recommendation: Apply the Single Responsibility Principle. Extract cohesive method groups into separate classes.
--  3. [ERR] 7.24  src/Anonymous/AnonTrait.php  [30min]
--         size.class-count: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces (namespace: Corpus\Design\Anonymous)
--         Recommendation: Classes: 7 (threshold: 6) — too many classes in namespace
--  4. [WRN] 3.38  src/Hierarchy/Base.php  [20min]
--         design.noc: NOC (Number of Children) is 3, exceeds threshold of 2. Consider using interfaces instead of inheritance
--         Recommendation: NOC: 3 (threshold: 2) — too many direct subclasses
--  5. [ERR] 2.60  src/Model/Product.php  [15min]
--         size.property-count: Property count is 4, reaches threshold of 4. Consider splitting the class or using composition
--         Recommendation: Properties: 4 (threshold: 4) — too many properties
--  6. [WRN] 1.73  src/Hierarchy/GreatGrandchild.php  [30min]
+-  7. [WRN] 1.73  src/Hierarchy/GreatGrandchild.php  [30min]
 -         design.dit: DIT (Depth of Inheritance) is 3, reaches threshold of 3. Prefer composition over deep inheritance
 -         Recommendation: DIT: 3 (threshold: 3) — deep inheritance, fragile hierarchy
--  7. [WRN] 1.73  src/Model/Order.php  [30min]
++  6. [WRN] 1.73  src/Hierarchy/GreatGrandchild.php  [30min]
++         design.dit: DIT (Depth of Inheritance) is 3, reaches threshold of 3. Prefer composition over deep inheritance
++         Recommendation: DIT: 3 (threshold: 3) — deep inheritance, fragile hierarchy
++  7. [WRN] 1.73  src/Model/Order.php  [30min]
++         size.class-count: Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces (namespace: Corpus\Design\Model)
++         Recommendation: Classes: 3 (threshold: 2) — too many classes in namespace
+@@ -45,1 +45,1 @@
+-invocation-format:summary 3304
++invocation-format:summary 3307
+@@ -54,1 +54,1 @@
+-  1. [ERR] 15.2  Corpus\Design\Hierarchy  [30min]
++  1. [ERR] 15.2  src/Hierarchy/Base.php  [30min]
+@@ -60,1 +60,1 @@
+-  3. [ERR] 7.24  Corpus\Design\Anonymous  [30min]
++  3. [ERR] 7.24  src/Anonymous/AnonTrait.php  [30min]
+@@ -69,6 +69,6 @@
+-  6. [WRN] 1.73  Corpus\Design\Model  [30min]
 -         size.class-count: Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces (namespace: Corpus\Design\Model)
 -         Recommendation: Classes: 3 (threshold: 2) — too many classes in namespace
--  8. [WRN] 1.73  src/Model/Product.php  [30min]
--         design.data-class: Data Class detected: only 0% of the public interface is behavior (WOC, threshold 50%) and complexity is low (WMC=8, threshold 10). Consider encapsulating behavior or using a DTO pattern
--         Recommendation: Add behavior methods that operate on the data, or confirm this is intentionally a DTO.
--  9. [ERR] 1.41  src/Model/Untyped.php  [15min]
--         design.type-coverage.param: Parameter type coverage is 0.0% (minimum: 50.0%). Add type declarations to method parameters
--         Recommendation: Parameter type coverage: 0.0% (threshold: 50.0%) — missing type declarations
--  10. [ERR] 1.41  src/Model/Untyped.php  [15min]
--          design.type-coverage.return: Return type coverage is 0.0% (minimum: 50.0%). Add return type declarations to methods
--          Recommendation: Return type coverage: 0.0% (threshold: 50.0%) — missing type declarations
-+         size.class-count: Classes: 7 (threshold: 6) — too many classes in namespace (namespace: Corpus\Design\Hierarchy)
-+  2. [ERR] 11.3  src/Model/Order.php  [2h]
-+         design.god-class: Apply the Single Responsibility Principle. Extract cohesive method groups into separate classes.
-+  3. [ERR] 7.24  src/Anonymous/AnonTrait.php  [30min]
-+         size.class-count: Classes: 7 (threshold: 6) — too many classes in namespace (namespace: Corpus\Design\Anonymous)
-+  4. [WRN] 3.38  src/Hierarchy/Base.php  [20min]
-+         design.noc: NOC: 3 (threshold: 2) — too many direct subclasses
-+  5. [ERR] 2.60  src/Model/Product.php  [15min]
-+         size.property-count: Properties: 4 (threshold: 4) — too many properties
+-  7. [WRN] 1.73  src/Hierarchy/GreatGrandchild.php  [30min]
+-         design.dit: DIT (Depth of Inheritance) is 3, reaches threshold of 3. Prefer composition over deep inheritance
+-         Recommendation: DIT: 3 (threshold: 3) — deep inheritance, fragile hierarchy
 +  6. [WRN] 1.73  src/Hierarchy/GreatGrandchild.php  [30min]
-+         design.dit: DIT: 3 (threshold: 3) — deep inheritance, fragile hierarchy
++         design.dit: DIT (Depth of Inheritance) is 3, reaches threshold of 3. Prefer composition over deep inheritance
++         Recommendation: DIT: 3 (threshold: 3) — deep inheritance, fragile hierarchy
 +  7. [WRN] 1.73  src/Model/Order.php  [30min]
-+         size.class-count: Classes: 3 (threshold: 2) — too many classes in namespace (namespace: Corpus\Design\Model)
-+  8. [WRN] 1.73  src/Model/Product.php  [30min]
-+         design.data-class: Add behavior methods that operate on the data, or confirm this is intentionally a DTO.
-+  9. [ERR] 1.41  src/Model/Untyped.php  [15min]
-+         design.type-coverage.param: Parameter type coverage: 0.0% (threshold: 50.0%) — missing type declarations
-+  10. [ERR] 1.41  src/Model/Untyped.php  [15min]
-+          design.type-coverage.return: Return type coverage: 0.0% (threshold: 50.0%) — missing type declarations
++         size.class-count: Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces (namespace: Corpus\Design\Model)
++         Recommendation: Classes: 3 (threshold: 2) — too many classes in namespace

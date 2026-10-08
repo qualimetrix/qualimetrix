@@ -62,7 +62,7 @@ final class NocRule extends AbstractRule
 
         $findings = [];
 
-        foreach ($context->metrics->allDeclarations() as $classInfo) {
+        foreach ($context->metrics->allClassDeclarations() as $classInfo) {
             $finding = $this->findingForClass($classInfo, $context, $this->options);
             if ($finding !== null) {
                 $findings[] = $finding;
@@ -79,7 +79,7 @@ final class NocRule extends AbstractRule
             return null;
         }
 
-        $noc = $context->metrics->get($subject->toSymbolPath())->get(MetricName::DESIGN_NOC);
+        $noc = $context->metrics->getSubject($subject)->get(MetricName::DESIGN_NOC);
         if ($noc === null || $noc === 0) {
             return null;
         }

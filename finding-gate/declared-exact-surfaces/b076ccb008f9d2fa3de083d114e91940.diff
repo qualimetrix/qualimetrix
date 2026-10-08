@@ -1,0 +1,34 @@
+--- candidate
++++ reference (mapped)
+@@ -1,3 +1,3 @@
+-visible 2995
+-Corpus\Design\Anonymous: error[size.class-count]: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces (namespace: Corpus\Design\Anonymous)
+-Corpus\Design\Hierarchy: error[size.class-count]: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces (namespace: Corpus\Design\Hierarchy)
++visible 2998
++src/Anonymous/AnonTrait.php: error[size.class-count]: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces (namespace: Corpus\Design\Anonymous)
++src/Hierarchy/Base.php: error[size.class-count]: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces (namespace: Corpus\Design\Hierarchy)
+@@ -9,4 +9,4 @@
+-Corpus\Design\Model: warning[size.class-count]: Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces (namespace: Corpus\Design\Model)
+-src/Hierarchy/Base.php: warning[design.noc]: NOC (Number of Children) is 3, exceeds threshold of 2. Consider using interfaces instead of inheritance (Base)
+-src/Hierarchy/GreatGrandchild.php: warning[design.dit]: DIT (Depth of Inheritance) is 3, reaches threshold of 3. Prefer composition over deep inheritance (GreatGrandchild)
+-src/Hierarchy/GreatGreatGrandchild.php: warning[design.dit]: DIT (Depth of Inheritance) is 4, exceeds threshold of 3. Prefer composition over deep inheritance (GreatGreatGrandchild)
++src/Hierarchy/Base.php: warning[design.noc]: NOC (Number of Children) is 3, exceeds threshold of 2. Consider using interfaces instead of inheritance (Base)
++src/Hierarchy/GreatGrandchild.php: warning[design.dit]: DIT (Depth of Inheritance) is 3, reaches threshold of 3. Prefer composition over deep inheritance (GreatGrandchild)
++src/Hierarchy/GreatGreatGrandchild.php: warning[design.dit]: DIT (Depth of Inheritance) is 4, exceeds threshold of 3. Prefer composition over deep inheritance (GreatGreatGrandchild)
++src/Model/Order.php: warning[size.class-count]: Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces (namespace: Corpus\Design\Model)
+@@ -24,3 +24,3 @@
+-invocation-format:text 2995
+-Corpus\Design\Anonymous: error[size.class-count]: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces (namespace: Corpus\Design\Anonymous)
+-Corpus\Design\Hierarchy: error[size.class-count]: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces (namespace: Corpus\Design\Hierarchy)
++invocation-format:text 2998
++src/Anonymous/AnonTrait.php: error[size.class-count]: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces (namespace: Corpus\Design\Anonymous)
++src/Hierarchy/Base.php: error[size.class-count]: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces (namespace: Corpus\Design\Hierarchy)
+@@ -32,4 +32,4 @@
+-Corpus\Design\Model: warning[size.class-count]: Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces (namespace: Corpus\Design\Model)
+-src/Hierarchy/Base.php: warning[design.noc]: NOC (Number of Children) is 3, exceeds threshold of 2. Consider using interfaces instead of inheritance (Base)
+-src/Hierarchy/GreatGrandchild.php: warning[design.dit]: DIT (Depth of Inheritance) is 3, reaches threshold of 3. Prefer composition over deep inheritance (GreatGrandchild)
+-src/Hierarchy/GreatGreatGrandchild.php: warning[design.dit]: DIT (Depth of Inheritance) is 4, exceeds threshold of 3. Prefer composition over deep inheritance (GreatGreatGrandchild)
++src/Hierarchy/Base.php: warning[design.noc]: NOC (Number of Children) is 3, exceeds threshold of 2. Consider using interfaces instead of inheritance (Base)
++src/Hierarchy/GreatGrandchild.php: warning[design.dit]: DIT (Depth of Inheritance) is 3, reaches threshold of 3. Prefer composition over deep inheritance (GreatGrandchild)
++src/Hierarchy/GreatGreatGrandchild.php: warning[design.dit]: DIT (Depth of Inheritance) is 4, exceeds threshold of 3. Prefer composition over deep inheritance (GreatGreatGrandchild)
++src/Model/Order.php: warning[size.class-count]: Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces (namespace: Corpus\Design\Model)

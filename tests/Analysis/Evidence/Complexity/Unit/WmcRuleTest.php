@@ -73,7 +73,7 @@ final class WmcRuleTest extends TestCase
         $rule = new WmcRule(new WmcOptions(enabled: false));
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('allDeclarations');
+        $repository->expects(self::never())->method('allClassDeclarations');
 
         $context = new AnalysisContext($repository);
 
@@ -86,7 +86,7 @@ final class WmcRuleTest extends TestCase
         $rule = new WmcRule(new WmcOptions());
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -106,9 +106,9 @@ final class WmcRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('complexity.wmc', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -129,9 +129,9 @@ final class WmcRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('complexity.wmc', 60)->with('size.method-count', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -162,9 +162,9 @@ final class WmcRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('complexity.wmc', 85)->with('size.method-count', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -194,9 +194,9 @@ final class WmcRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('complexity.wmc', 93)->with('size.method-count', 31);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -221,9 +221,9 @@ final class WmcRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('complexity.wmc', 60)->with('size.method-count', 30);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -248,9 +248,9 @@ final class WmcRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('complexity.wmc', 60);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -271,8 +271,8 @@ final class WmcRuleTest extends TestCase
         $subject = $classInfo->subject;
         self::assertNotNull($subject);
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn(
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn(
             (new MetricBag())->with('complexity.wmc', 60)->with('size.method-count', 0),
         );
         $context = new AnalysisContext(
@@ -303,9 +303,9 @@ final class WmcRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('complexity.wmc', 25);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -327,9 +327,9 @@ final class WmcRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('complexity.wmc', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -353,14 +353,14 @@ final class WmcRuleTest extends TestCase
         $metricBag2 = (new MetricBag())->with('complexity.wmc', 90); // Error
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo1, $classInfo2]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturnCallback(function ($path) use ($symbolPath1, $symbolPath2, $metricBag1, $metricBag2) {
-                if ($path === $symbolPath1) {
+                if ($path->toSymbolPath()->toCanonical() === $symbolPath1->toCanonical()) {
                     return $metricBag1;
                 }
-                if ($path === $symbolPath2) {
+                if ($path->toSymbolPath()->toCanonical() === $symbolPath2->toCanonical()) {
                     return $metricBag2;
                 }
                 throw new RuntimeException('Unexpected path');
@@ -386,9 +386,9 @@ final class WmcRuleTest extends TestCase
         $metricBag = new MetricBag();
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -451,9 +451,9 @@ final class WmcRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('complexity.wmc', $wmc);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -539,9 +539,9 @@ final class WmcRuleTest extends TestCase
             ->with('design.is-data-class', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -565,9 +565,9 @@ final class WmcRuleTest extends TestCase
             ->with('design.is-data-class', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -582,11 +582,11 @@ final class WmcRuleTest extends TestCase
     {
         $class = SymbolPath::forClass('App\\Service', 'Twin');
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([
+        $repository->method('allClassDeclarations')->willReturn([
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn(
+        $repository->method('getSubject')->willReturn(
             (new MetricBag())->with('complexity.wmc', 60)->with('size.method-count', 15),
         );
 

@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedCo
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\DefaultMetricRepositoryFactory;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
@@ -39,6 +40,7 @@ use Qualimetrix\Analysis\Run\InlineDirectiveRun;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Analysis\Run\RuleProducerPreparation;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Infrastructure\DependencyInjection\MeasurementRepositoryFactory;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
@@ -296,7 +298,13 @@ final class TestPipelineBuilder
             computedMetricEvaluation: $this->computedMetricEvaluation ?? throw new LogicException(
                 'TestPipelineBuilder: computedMetricEvaluation is required (call withComputedMetricEvaluation())',
             ),
-            repositoryFactory: $this->repositoryFactory ?? new DefaultMetricRepositoryFactory(),
+            repositoryFactory: $this->repositoryFactory ?? new MeasurementRepositoryFactory(
+                $this->measurementAggregation instanceof MetricDefinitionCatalogInterface
+                    ? $this->measurementAggregation
+                    : throw new LogicException('TestPipelineBuilder: measurement aggregation must supply finite definitions'),
+                new ResolvedComputedMetricDefinitions([]),
+                new DefaultMetricRepositoryFactory(),
+            ),
             graphBuilder: $this->graphBuilder ?? AdjacencyGraphBuilder::builder(),
             logger: $this->logger ?? new NullLogger(),
             profiler: $this->profiler ?? throw new LogicException(

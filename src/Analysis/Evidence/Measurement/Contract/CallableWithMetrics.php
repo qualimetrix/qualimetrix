@@ -23,8 +23,8 @@ use Qualimetrix\Core\Symbol\LogicalClassPath;
 final readonly class CallableWithMetrics
 {
     /**
-     * @qmx-threshold code-smell.constructor-overinjection warning=9 error=9 -- Exact callable measurement record carries eight independent facts about one declaration; bundling them would recreate the prohibited array record.
-     * @qmx-threshold code-smell.long-parameter-list warning=9 error=9 -- Exact callable measurement record carries eight independent facts about one declaration; bundling them would recreate the prohibited array record.
+     * @qmx-threshold code-smell.constructor-overinjection warning=11 error=11 -- This immutable declaration record carries ten independent facts; grouping them would hide the exact callable identity and ownership evidence in an array.
+     * @qmx-threshold code-smell.long-parameter-list warning=11 error=11 -- All ten constructor arguments are independent declaration facts required to preserve exact callable attribution and anonymous context.
      */
     public function __construct(
         public DeclarationPath $declarationPath,
@@ -35,6 +35,8 @@ final readonly class CallableWithMetrics
         public ?LogicalClassPath $classAggregationOwner,
         public MetricBag $metrics,
         public ?int $sourceLine = null,
+        public ?DeclarationPath $classAggregationOwnerDeclaration = null,
+        public bool $anonymousClassContext = false,
     ) {
         if ($kind === CallableKind::AnonymousCallable && !\in_array($anonymousSyntax, ['closure', 'arrow'], true)) {
             throw new InvalidArgumentException('Anonymous callable metrics require closure or arrow syntax metadata');

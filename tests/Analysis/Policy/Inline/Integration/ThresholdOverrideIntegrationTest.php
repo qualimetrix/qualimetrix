@@ -121,8 +121,8 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         $symbolInfo = new SymbolInfo($subject, RelativePath::fromString('src/Service/BigService.php'), 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$symbolInfo]);
-        $repository->method('get')->willReturn(
+        $repository->method('allClassDeclarations')->willReturn([$symbolInfo]);
+        $repository->method('getSubject')->willReturn(
             MetricBag::fromArray([MetricName::SIZE_METHOD_COUNT => 25]),
         );
 
@@ -434,8 +434,8 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         $symbolInfo = new SymbolInfo($subject, RelativePath::fromString('src/Service/BigService.php'), 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$symbolInfo]);
-        $repository->method('get')->willReturn(
+        $repository->method('allClassDeclarations')->willReturn([$symbolInfo]);
+        $repository->method('getSubject')->willReturn(
             MetricBag::fromArray([MetricName::SIZE_METHOD_COUNT => 35]),
         );
 
@@ -521,10 +521,10 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\\Service', 'Hub');
         $subject = self::declarationSubject($symbolPath, 'src/Service/Hub.php', 100);
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([
+        $repository->method('allClassDeclarations')->willReturn([
             new SymbolInfo($subject, RelativePath::fromString('src/Service/Hub.php'), 10),
         ]);
-        $repository->method('get')->willReturn(
+        $repository->method('getSubject')->willReturn(
             MetricBag::fromArray([MetricName::COUPLING_CBO => 18, MetricName::COUPLING_CA => 8, MetricName::COUPLING_CE => 10]),
         );
         $context = new AnalysisContext(
@@ -555,10 +555,10 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\\Service', 'TypedService');
         $subject = self::declarationSubject($symbolPath, 'src/Service/TypedService.php', 100);
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([
+        $repository->method('allClassDeclarations')->willReturn([
             new SymbolInfo($subject, RelativePath::fromString('src/Service/TypedService.php'), 10),
         ]);
-        $repository->method('get')->willReturn(MetricBag::fromArray([
+        $repository->method('getSubject')->willReturn(MetricBag::fromArray([
             MetricName::DESIGN_TYPE_COVERAGE_PARAM_TOTAL => 1,
             MetricName::DESIGN_TYPE_COVERAGE_PARAM => 70.0,
             MetricName::DESIGN_TYPE_COVERAGE_RETURN_TOTAL => 1,

@@ -4,15 +4,25 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Measurement\Repository;
 
+use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolLevelProjection;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 /** Project, file, and namespace aggregate metrics and their source information. */
 final class AggregateMetricIndex
 {
+    public static function assertAggregateSymbol(SymbolPath $symbol): void
+    {
+        if (\in_array($symbol->getType(), [SymbolType::Class_, SymbolType::Method, SymbolType::Function_], true)) {
+            throw new LogicException('Declaration metrics require an exact subject');
+        }
+    }
+
     /** @var array<string, MetricBag> */
     private array $metrics = [];
 
@@ -31,6 +41,10 @@ final class AggregateMetricIndex
 
     public function add(SymbolPath $symbol, MetricBag $metrics, ?RelativePath $file, ?int $line): SymbolInfo
     {
+        if (\in_array($symbol->getType(), [SymbolType::Namespace_, SymbolType::Project], true)) {
+            $file = null;
+            $line = null;
+        }
         $canonical = $symbol->toCanonical();
         $info = new SymbolInfo($symbol, $file, $line);
         if (isset($this->metrics[$canonical])) {
@@ -56,6 +70,16 @@ final class AggregateMetricIndex
     public function infos(): array
     {
         return $this->infos;
+    }
+
+    /** @return iterable<SymbolInfo> */
+    public function all(SymbolLevel $level): iterable
+    {
+        foreach ($this->infos as $info) {
+            if (SymbolLevelProjection::ofDeclaration($info->symbolPath->getType()) === $level) {
+                yield $info;
+            }
+        }
     }
 
     public function mergeWith(self $other, NamespaceMetricIndex $namespaceSpellings): self

@@ -60,9 +60,8 @@ final class ClassToNamespaceAggregator implements AggregationPhaseInterface
             );
             $namespaceBag = AggregationHelper::addSymbolCounts($namespaceBag, $symbolInfos);
 
-            $firstFile = $symbolInfos[0]->file;
             $namespacePath = SymbolPath::forNamespace($namespace);
-            $repository->add($namespacePath, $namespaceBag, $firstFile, null);
+            $repository->add($namespacePath, $namespaceBag, null, null);
         }
         $profiler->stop('aggregation.to_namespaces.process');
     }

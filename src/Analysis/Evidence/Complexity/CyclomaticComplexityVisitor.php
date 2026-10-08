@@ -18,11 +18,13 @@ use PhpParser\Node\Expr\Ternary;
 use PhpParser\Node\MatchArm;
 use PhpParser\Node\Stmt\Case_;
 use PhpParser\Node\Stmt\Catch_;
+use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\Do_;
 use PhpParser\Node\Stmt\ElseIf_;
 use PhpParser\Node\Stmt\For_;
 use PhpParser\Node\Stmt\Foreach_;
 use PhpParser\Node\Stmt\If_;
+use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\Node\Stmt\While_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
@@ -68,11 +70,19 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements D
     /** @var list<array{fqn: string, depth: int}> Stack of nested methods/functions */
     private array $methodStack = [];
 
+    /** @var list<string> */
+    private array $namespaceStack = [];
+
+    /** @var array<int, array{namespace: string, name: string, position: int, line: int}> */
+    private array $namedClasses = [];
+
     public function reset(): void
     {
         $this->complexities = [];
         $this->scopes = [];
         $this->methodStack = [];
+        $this->namespaceStack = [];
+        $this->namedClasses = [];
         $this->resetVisitorMethodContext();
     }
 
@@ -105,8 +115,27 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements D
         return $result;
     }
 
+    /** @return list<array{namespace: string, name: string, position: int, line: int}> */
+    public function getNamedClasses(): array
+    {
+        return array_values($this->namedClasses);
+    }
+
     public function enterNode(Node $node): ?int
     {
+        if ($node instanceof Namespace_) {
+            $this->namespaceStack[] = $node->name?->toString() ?? '';
+        }
+        if ($node instanceof ClassLike && $node->name !== null) {
+            $position = $node->getStartFilePos();
+            $namespaceKey = array_key_last($this->namespaceStack);
+            $this->namedClasses[$position] = [
+                'namespace' => $namespaceKey === null ? '' : $this->namespaceStack[$namespaceKey],
+                'name' => $node->name->toString(),
+                'position' => $position,
+                'line' => $node->getStartLine(),
+            ];
+        }
         $scope = $this->enterVisitorMethodContext($node);
         if ($scope !== null) {
             $this->startMethod($scope);
@@ -125,6 +154,10 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements D
         $scope = $this->leaveVisitorMethodContext($node);
         if ($scope !== null) {
             $this->endMethod($scope);
+        }
+
+        if ($node instanceof Namespace_) {
+            array_pop($this->namespaceStack);
         }
 
         return null;

@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MetricAggregator;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountCollector;
@@ -23,6 +24,8 @@ use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(MetricAggregator::class)]
@@ -31,7 +34,7 @@ final class MetricAggregatorTest extends TestCase
     #[Test]
     public function itAggregatesMetricsByNamespace(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->createRepository();
 
         // Add methods with CCN
         $method1Metrics = (new MetricBag())->with('complexity.ccn', 5);
@@ -56,7 +59,7 @@ final class MetricAggregatorTest extends TestCase
         $aggregator->aggregate($repository);
 
         // Check class-level aggregation
-        $classMetrics = $repository->get(SymbolPath::forClass('App\\Service', 'UserService'));
+        $classMetrics = $this->classMetrics($repository, 'App\\Service', 'UserService', 'src/Service/UserService.php');
         self::assertSame(8, (int) $classMetrics->get('complexity.ccn.sum')); // 5 + 3
         self::assertEquals(4.0, $classMetrics->get('complexity.ccn.avg')); // (5 + 3) / 2 - use assertEquals for int/float comparison
         self::assertSame(5, (int) $classMetrics->get('complexity.ccn.max'));
@@ -74,7 +77,7 @@ final class MetricAggregatorTest extends TestCase
     #[Test]
     public function itAggregatesMethodCountAtClassLevel(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->createRepository();
 
         // Class with 3 methods
         $method1 = (new MetricBag())->with('complexity.ccn', 2);
@@ -108,7 +111,7 @@ final class MetricAggregatorTest extends TestCase
         $aggregator->aggregate($repository);
 
         // Check class-level metrics
-        $classMetrics = $repository->get(SymbolPath::forClass('App\\Service', 'OrderService'));
+        $classMetrics = $this->classMetrics($repository, 'App\\Service', 'OrderService', 'src/Service/OrderService.php');
 
         // Method count
         self::assertSame(3, $classMetrics->get(MetricName::SIZE_SYMBOL_METHOD_COUNT));
@@ -122,7 +125,7 @@ final class MetricAggregatorTest extends TestCase
     #[Test]
     public function itAggregatesProjectLevelMetrics(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->createRepository();
 
         // Namespace 1
         $method1 = (new MetricBag())->with('complexity.ccn', 4);
@@ -159,7 +162,7 @@ final class MetricAggregatorTest extends TestCase
     #[Test]
     public function itHandlesEmptyRepository(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->createRepository();
 
         $aggregator = $this->createAggregator();
         $aggregator->aggregate($repository);
@@ -175,7 +178,7 @@ final class MetricAggregatorTest extends TestCase
     #[Test]
     public function itHandlesNamespaceWithoutMethods(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->createRepository();
 
         // Add file-level metrics only (no methods)
         $fileMetrics = (new MetricBag())
@@ -211,7 +214,7 @@ final class MetricAggregatorTest extends TestCase
     #[Test]
     public function itAggregatesLocMetrics(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->createRepository();
 
         // Add file with LOC metrics
         $file1Metrics = (new MetricBag())
@@ -248,7 +251,7 @@ final class MetricAggregatorTest extends TestCase
     #[Test]
     public function itAggregatesClassCountMetrics(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->createRepository();
 
         // Add files with class counts
         $file1Metrics = (new MetricBag())
@@ -287,7 +290,7 @@ final class MetricAggregatorTest extends TestCase
         $collectorWithoutDefinitions->method('getMetricDefinitions')->willReturn([]);
         $collectorWithoutDefinitions->method('getName')->willReturn('empty');
 
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->createRepository();
 
         // Add some data
         $method1 = (new MetricBag())->with('test', 1);
@@ -306,29 +309,25 @@ final class MetricAggregatorTest extends TestCase
         $aggregator->aggregate($repository);
 
         // Should not crash, no class-level metrics should be added
-        $classMetrics = $repository->get(SymbolPath::forClass('App', 'Service'));
+        $classMetrics = $this->classMetrics($repository, 'App', 'Service', 'test.php');
         self::assertSame([], $classMetrics->all());
     }
 
     #[Test]
     public function itSkipsAggregationForClassesWithoutMethods(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->createRepository();
 
         // Add only class without methods
         $classMetrics = new MetricBag();
-        $repository->add(
-            SymbolPath::forClass('App\\Service', 'EmptyClass'),
-            $classMetrics,
-            RelativePath::fromString('src/Service/EmptyClass.php'),
-            1,
-        );
+        $emptyDeclaration = DeclarationPath::of(SymbolPath::forClass('App\\Service', 'EmptyClass'), RelativePath::fromString('src/Service/EmptyClass.php'), DeclarationOrdinal::fromRank(0));
+        $repository->addSubject(MetricSubject::declaration($emptyDeclaration), $classMetrics, $emptyDeclaration->file, 1);
 
         $aggregator = $this->createAggregator();
         $aggregator->aggregate($repository);
 
         // Should not have aggregated metrics since there are no methods
-        $classResult = $repository->get(SymbolPath::forClass('App\\Service', 'EmptyClass'));
+        $classResult = $repository->getSubject(MetricSubject::declaration($emptyDeclaration));
         // Original class metrics should be unchanged (no ccn.sum, etc.)
         self::assertNull($classResult->get('complexity.ccn.sum'));
     }
@@ -336,7 +335,7 @@ final class MetricAggregatorTest extends TestCase
     #[Test]
     public function itHandlesEmptyNamespace(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->createRepository();
 
         // Add class in global namespace (empty namespace)
         $method = (new MetricBag())->with('complexity.ccn', 5);
@@ -352,7 +351,7 @@ final class MetricAggregatorTest extends TestCase
         $aggregator->aggregate($repository);
 
         // Should aggregate to class in empty namespace
-        $classMetrics = $repository->get(SymbolPath::forClass('', 'GlobalClass'));
+        $classMetrics = $this->classMetrics($repository, '', 'GlobalClass', 'global.php');
         self::assertSame(5, (int) $classMetrics->get('complexity.ccn.sum'));
     }
 
@@ -369,7 +368,7 @@ final class MetricAggregatorTest extends TestCase
             AggregationHelper::collectDefinitions($collectors),
             self::createStub(ProfilerInterface::class),
         );
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->createRepository();
 
         // Add test data
         $method = (new MetricBag())->with('complexity.ccn', 3);
@@ -384,14 +383,14 @@ final class MetricAggregatorTest extends TestCase
         $aggregator->aggregate($repository);
 
         // Should work same as with array
-        $classMetrics = $repository->get(SymbolPath::forClass('App', 'Test'));
+        $classMetrics = $this->classMetrics($repository, 'App', 'Test', 'test.php');
         self::assertSame(3, (int) $classMetrics->get('complexity.ccn.sum'));
     }
 
     #[Test]
     public function itHandlesMultipleNamespaces(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->createRepository();
 
         // Namespace 1 with 2 classes
         $method1 = (new MetricBag())->with('complexity.ccn', 5);
@@ -450,8 +449,33 @@ final class MetricAggregatorTest extends TestCase
         ]), self::createStub(ProfilerInterface::class));
     }
 
+    private function createRepository(): InMemoryMetricRepository
+    {
+        return new InMemoryMetricRepository([
+            ...AggregationHelper::collectDefinitions([
+                new CyclomaticComplexityCollector(),
+                new ClassCountCollector(),
+                new LocCollector(),
+            ]),
+            new MetricDefinition(MetricName::SIZE_SYMBOL_METHOD_COUNT, SymbolLevel::Class_),
+        ]);
+    }
+
+    private function classMetrics(InMemoryMetricRepository $repository, string $namespace, string $class, string $file): MetricBag
+    {
+        $declaration = DeclarationPath::of(SymbolPath::forClass($namespace, $class), RelativePath::fromString($file), DeclarationOrdinal::fromRank(0));
+
+        return $repository->getSubject(MetricSubject::declaration($declaration));
+    }
+
     private function addCallable(InMemoryMetricRepository $repository, SymbolPath $symbol, MetricBag $metrics, RelativePath $file, int $startFilePos): void
     {
+        $classDeclaration = DeclarationPath::of(
+            SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? ''),
+            $file,
+            DeclarationOrdinal::fromRank(0),
+        );
+        $repository->addSubject(MetricSubject::declaration($classDeclaration), new MetricBag(), $file, 1);
         $repository->addCallable(new CallableWithMetrics(
             DeclarationPath::of($symbol, $file, DeclarationOrdinal::fromRank(0)),
             $startFilePos,
@@ -460,6 +484,7 @@ final class MetricAggregatorTest extends TestCase
             null,
             new LogicalClassPath(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? '')),
             $metrics,
+            classAggregationOwnerDeclaration: $classDeclaration,
         ));
     }
 }

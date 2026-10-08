@@ -185,18 +185,27 @@ final class AnalysisResultTest extends TestCase
 
         $merged = $result1->merge($result2);
 
-        // Both metrics should be present in merged result
+        $subjectA = MetricSubject::declaration(DeclarationPath::of(
+            SymbolPath::forMethod('App', 'ServiceA', 'method1'),
+            RelativePath::fromString('ServiceA.php'),
+            DeclarationOrdinal::fromRank(0),
+        ));
+        $subjectB = MetricSubject::declaration(DeclarationPath::of(
+            SymbolPath::forMethod('App', 'ServiceB', 'method2'),
+            RelativePath::fromString('ServiceB.php'),
+            DeclarationOrdinal::fromRank(0),
+        ));
         self::assertInstanceOf(InMemoryMetricRepository::class, $merged->measured->repository);
-        self::assertTrue($merged->measured->repository->has(SymbolPath::forMethod('App', 'ServiceA', 'method1')));
-        self::assertTrue($merged->measured->repository->has(SymbolPath::forMethod('App', 'ServiceB', 'method2')));
+        self::assertTrue($merged->measured->repository->hasSubject($subjectA));
+        self::assertTrue($merged->measured->repository->hasSubject($subjectB));
 
         self::assertSame(
             5,
-            $merged->measured->repository->get(SymbolPath::forMethod('App', 'ServiceA', 'method1'))->get('complexity.ccn'),
+            $merged->measured->repository->getSubject($subjectA)->get('complexity.ccn'),
         );
         self::assertSame(
             10,
-            $merged->measured->repository->get(SymbolPath::forMethod('App', 'ServiceB', 'method2'))->get('complexity.ccn'),
+            $merged->measured->repository->getSubject($subjectB)->get('complexity.ccn'),
         );
     }
 

@@ -109,7 +109,7 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions(enabled: false));
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('allDeclarations');
+        $repository->expects(self::never())->method('allClassDeclarations');
 
         $context = new AnalysisContext($repository);
 
@@ -127,8 +127,8 @@ final class DataClassRuleTest extends TestCase
         $metricBag = $this->makeMetricBag(['size.method-count.total' => 1, 'size.property-count' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn($metricBag);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
 
@@ -146,8 +146,8 @@ final class DataClassRuleTest extends TestCase
         $metricBag = $this->makeMetricBag(['design.is-readonly' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn($metricBag);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
 
@@ -165,8 +165,8 @@ final class DataClassRuleTest extends TestCase
         $metricBag = $this->makeMetricBag(['design.is-readonly' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn($metricBag);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
         $findings = $rule->analyze($context);
@@ -186,8 +186,8 @@ final class DataClassRuleTest extends TestCase
         $metricBag = $this->makeMetricBag(['design.is-promoted-properties-only' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn($metricBag);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
 
@@ -205,8 +205,8 @@ final class DataClassRuleTest extends TestCase
         $metricBag = $this->makeMetricBag(['design.is-promoted-properties-only' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn($metricBag);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
         $findings = $rule->analyze($context);
@@ -226,8 +226,8 @@ final class DataClassRuleTest extends TestCase
         $metricBag = $this->makeMetricBag(['design.woc' => 0]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn($metricBag);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
 
@@ -245,8 +245,8 @@ final class DataClassRuleTest extends TestCase
         $metricBag = $this->makeMetricBag();
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn($metricBag);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
         $findings = $rule->analyze($context);
@@ -273,8 +273,8 @@ final class DataClassRuleTest extends TestCase
         $metricBag = $this->makeMetricBag(['design.woc' => 50]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn($metricBag);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
 
@@ -292,8 +292,8 @@ final class DataClassRuleTest extends TestCase
         $metricBag = $this->makeMetricBag(['complexity.wmc' => 15]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn($metricBag);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
 
@@ -320,8 +320,8 @@ final class DataClassRuleTest extends TestCase
             ->with('design.is-exception', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn($metricBag);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
 
@@ -341,8 +341,8 @@ final class DataClassRuleTest extends TestCase
         $metricBag = $this->makeMetricBag(['design.is-interface' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn($metricBag);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
 
@@ -360,8 +360,8 @@ final class DataClassRuleTest extends TestCase
         $metricBag = $this->makeMetricBag(['design.is-abstract' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn($metricBag);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
 
@@ -379,8 +379,8 @@ final class DataClassRuleTest extends TestCase
         $metricBag = $this->makeMetricBag(['size.property-count' => 0]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn($metricBag);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
 
@@ -398,8 +398,8 @@ final class DataClassRuleTest extends TestCase
         $metricBag = $this->makeMetricBag(['design.is-exception' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn($metricBag);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
 
@@ -417,8 +417,8 @@ final class DataClassRuleTest extends TestCase
         $metricBag = $this->makeMetricBag(['design.is-exception' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn($metricBag);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
         $findings = $rule->analyze($context);
@@ -496,11 +496,11 @@ final class DataClassRuleTest extends TestCase
     {
         $class = SymbolPath::forClass('App\\Service', 'Twin');
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([
+        $repository->method('allClassDeclarations')->willReturn([
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn($this->makeMetricBag());
+        $repository->method('getSubject')->willReturn($this->makeMetricBag());
 
         $findings = (new DataClassRule(new DataClassOptions()))
             ->analyze(new AnalysisContext($repository));

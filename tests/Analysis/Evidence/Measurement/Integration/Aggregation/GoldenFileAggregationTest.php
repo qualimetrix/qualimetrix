@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregatio
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
@@ -70,7 +71,7 @@ final class GoldenFileAggregationTest extends TestCase
         ];
 
         foreach ($cases as [$ns, $class, $method, $ccn, $cognitive, $npath]) {
-            $metrics = self::$repository->get(
+            $metrics = self::metricsFor(
                 SymbolPath::forMethod($ns, $class, $method),
             );
 
@@ -81,7 +82,7 @@ final class GoldenFileAggregationTest extends TestCase
         }
 
         // Standalone function
-        $fnMetrics = self::$repository->get(
+        $fnMetrics = self::metricsFor(
             SymbolPath::forGlobalFunction('GoldenMetrics\App\Repository', 'findFirstMatch'),
         );
         self::assertSame(4, $fnMetrics->get('complexity.ccn'), 'findFirstMatch ccn');
@@ -90,7 +91,7 @@ final class GoldenFileAggregationTest extends TestCase
 
         // Interface methods (ccn=1, cognitive=0, npath=1)
         foreach (['findById', 'findAll', 'save'] as $ifaceMethod) {
-            $metrics = self::$repository->get(
+            $metrics = self::metricsFor(
                 SymbolPath::forMethod('GoldenMetrics\App\Repository', 'UserRepositoryInterface', $ifaceMethod),
             );
             self::assertSame(1, $metrics->get('complexity.ccn'), "UserRepositoryInterface::{$ifaceMethod} ccn");
@@ -109,14 +110,14 @@ final class GoldenFileAggregationTest extends TestCase
         ];
 
         foreach ($cases as [$namespace, $class, $method, $statementCount, $mi]) {
-            $metrics = self::$repository->get(SymbolPath::forMethod($namespace, $class, $method));
+            $metrics = self::metricsFor(SymbolPath::forMethod($namespace, $class, $method));
             $label = "{$class}::{$method}";
 
             self::assertSame($statementCount, $metrics->get('size.method-statement-count'), "{$label} statement count");
             self::assertEqualsWithDelta($mi, $metrics->get('maintainability.mi'), 0.0001, "{$label} MI");
         }
 
-        $function = self::$repository->get(
+        $function = self::metricsFor(
             SymbolPath::forGlobalFunction('GoldenMetrics\App\Repository', 'findFirstMatch'),
         );
         self::assertSame(6, $function->get('size.method-statement-count'), 'findFirstMatch statement count');
@@ -136,7 +137,7 @@ final class GoldenFileAggregationTest extends TestCase
     public function itVerifiesClassLevelAggregation(): void
     {
         // UserRepository
-        $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\Repository', 'UserRepository'));
+        $m = self::metricsFor(SymbolPath::forClass('GoldenMetrics\App\Repository', 'UserRepository'));
         self::assertSame(8, $m->get('complexity.ccn.sum'), 'UserRepository ccn.sum');
         self::assertSame(3, $m->get('complexity.ccn.max'), 'UserRepository ccn.max');
         self::assertEqualsWithDelta(2.0, $m->get('complexity.ccn.avg'), 0.01, 'UserRepository ccn.avg');
@@ -146,7 +147,7 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertSame(55, $m->get('size.class-loc'), 'UserRepository classLoc');
 
         // UserRepositoryInterface
-        $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\Repository', 'UserRepositoryInterface'));
+        $m = self::metricsFor(SymbolPath::forClass('GoldenMetrics\App\Repository', 'UserRepositoryInterface'));
         self::assertSame(3, $m->get('complexity.ccn.sum'), 'UserRepositoryInterface ccn.sum');
         self::assertSame(1, $m->get('complexity.ccn.max'), 'UserRepositoryInterface ccn.max');
         self::assertEqualsWithDelta(1.0, $m->get('complexity.ccn.avg'), 0.01, 'UserRepositoryInterface ccn.avg');
@@ -155,7 +156,7 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertSame(0, $m->get('size.property-count'), 'UserRepositoryInterface propertyCount');
 
         // TokenValidator
-        $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\Service\Auth', 'TokenValidator'));
+        $m = self::metricsFor(SymbolPath::forClass('GoldenMetrics\App\Service\Auth', 'TokenValidator'));
         self::assertSame(6, $m->get('complexity.ccn.sum'), 'TokenValidator ccn.sum');
         self::assertSame(3, $m->get('complexity.ccn.max'), 'TokenValidator ccn.max');
         self::assertEqualsWithDelta(2.0, $m->get('complexity.ccn.avg'), 0.01, 'TokenValidator ccn.avg');
@@ -164,7 +165,7 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertSame(2, $m->get('size.property-count'), 'TokenValidator propertyCount');
 
         // SessionManager
-        $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\Service\Auth', 'SessionManager'));
+        $m = self::metricsFor(SymbolPath::forClass('GoldenMetrics\App\Service\Auth', 'SessionManager'));
         self::assertSame(5, $m->get('complexity.ccn.sum'), 'SessionManager ccn.sum');
         self::assertSame(3, $m->get('complexity.ccn.max'), 'SessionManager ccn.max');
         self::assertEqualsWithDelta(2.5, $m->get('complexity.ccn.avg'), 0.01, 'SessionManager ccn.avg');
@@ -173,7 +174,7 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertSame(1, $m->get('size.property-count'), 'SessionManager propertyCount');
 
         // UserService
-        $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\Service', 'UserService'));
+        $m = self::metricsFor(SymbolPath::forClass('GoldenMetrics\App\Service', 'UserService'));
         self::assertSame(12, $m->get('complexity.ccn.sum'), 'UserService ccn.sum');
         self::assertSame(5, $m->get('complexity.ccn.max'), 'UserService ccn.max');
         self::assertEqualsWithDelta(3.0, $m->get('complexity.ccn.avg'), 0.01, 'UserService ccn.avg');
@@ -182,7 +183,7 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertSame(2, $m->get('size.property-count'), 'UserService propertyCount');
 
         // OrderService
-        $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\Service', 'OrderService'));
+        $m = self::metricsFor(SymbolPath::forClass('GoldenMetrics\App\Service', 'OrderService'));
         self::assertSame(6, $m->get('complexity.ccn.sum'), 'OrderService ccn.sum');
         self::assertSame(3, $m->get('complexity.ccn.max'), 'OrderService ccn.max');
         self::assertEqualsWithDelta(2.0, $m->get('complexity.ccn.avg'), 0.01, 'OrderService ccn.avg');
@@ -191,18 +192,56 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertSame(1, $m->get('size.property-count'), 'OrderService propertyCount');
 
         // EmptyMarker
-        $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\ValueObject', 'EmptyMarker'));
+        $m = self::metricsFor(SymbolPath::forClass('GoldenMetrics\App\ValueObject', 'EmptyMarker'));
         self::assertSame(0, $m->get('size.method-count'), 'EmptyMarker methodCount');
         self::assertSame(1, $m->get('size.property-count'), 'EmptyMarker propertyCount');
         self::assertSame(4, $m->get('size.class-loc'), 'EmptyMarker classLoc');
 
         // GlobalHelper
-        $m = self::$repository->get(SymbolPath::forClass('', 'GlobalHelper'));
+        $m = self::metricsFor(SymbolPath::forClass('', 'GlobalHelper'));
         self::assertSame(2, $m->get('complexity.ccn.sum'), 'GlobalHelper ccn.sum');
         self::assertSame(2, $m->get('complexity.ccn.max'), 'GlobalHelper ccn.max');
         self::assertEqualsWithDelta(2.0, $m->get('complexity.ccn.avg'), 0.01, 'GlobalHelper ccn.avg');
         self::assertSame(2, $m->get('complexity.wmc'), 'GlobalHelper wmc');
         self::assertSame(1, $m->get('size.method-count'), 'GlobalHelper methodCount');
+    }
+
+    #[Test]
+    public function itPreservesMetricsForBothDeclarationsOfOneClassInAFile(): void
+    {
+        $fixtureFile = AbsolutePath::fromString(\dirname(__DIR__, 2) . '/Fixtures/AggregationExport/duplicate.php');
+        $root = AbsolutePath::fromString((string) getcwd());
+        $fixture = PreparedAnalysis::start($root, [$fixtureFile], ['include_generated' => true]);
+
+        try {
+            $pipeline = $fixture->container()->get(AnalysisPipelineInterface::class);
+            \assert($pipeline instanceof AnalysisPipelineInterface);
+            $repository = $pipeline->analyze($fixture->prepared()->runConfiguration)->measured->repository;
+
+            $classes = [];
+            foreach ($repository->allClassDeclarations() as $info) {
+                $declaration = $info->subject?->declarationPath();
+                if ($declaration?->logical->toCanonical() !== SymbolPath::forClass('AggregationExport\\Leaf', 'Example')->toCanonical()) {
+                    continue;
+                }
+
+                $classes[$declaration->ordinal->value] = $repository->getSubject($info->subject);
+            }
+
+            self::assertCount(2, $classes);
+            self::assertSame(1, $classes[0]->get('size.method-count'));
+            self::assertSame(2, $classes[1]->get('size.method-count'));
+            self::assertSame(11, $classes[0]->get('size.class-loc'));
+            self::assertSame(6, $classes[1]->get('size.class-loc'));
+            self::assertSame(2, $classes[0]->get('complexity.wmc'));
+            self::assertSame(2, $classes[1]->get('complexity.wmc'));
+
+            $namespace = $repository->get(SymbolPath::forNamespace('AggregationExport\\Leaf'));
+            self::assertSame(2, $namespace->get('size.method-count.count'));
+            self::assertSame(2, $namespace->get('coupling.cbo.count'));
+        } finally {
+            $fixture->close();
+        }
     }
 
     // ──────────────────────────────────────────────────────────────────
@@ -213,7 +252,7 @@ final class GoldenFileAggregationTest extends TestCase
     public function itVerifiesClassLevelCohesion(): void
     {
         // UserRepository: tcc=1, lcc=1, lcom=1
-        $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\Repository', 'UserRepository'));
+        $m = self::metricsFor(SymbolPath::forClass('GoldenMetrics\App\Repository', 'UserRepository'));
         self::assertEqualsWithDelta(1.0, $m->get('cohesion.tcc'), 0.01, 'UserRepository tcc');
         self::assertEqualsWithDelta(1.0, $m->get('cohesion.lcc'), 0.01, 'UserRepository lcc');
         self::assertSame(1, $m->get('cohesion.lcom'), 'UserRepository lcom');
@@ -221,31 +260,31 @@ final class GoldenFileAggregationTest extends TestCase
         // TokenValidator: tcc=0, lcc=0, lcom=2 (validate/isExpired touch different
         // properties and don't call each other; __construct is excluded from the
         // graph, so it can no longer bridge them the way it did before)
-        $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\Service\Auth', 'TokenValidator'));
+        $m = self::metricsFor(SymbolPath::forClass('GoldenMetrics\App\Service\Auth', 'TokenValidator'));
         self::assertEqualsWithDelta(0.0, $m->get('cohesion.tcc'), 0.01, 'TokenValidator tcc');
         self::assertEqualsWithDelta(0.0, $m->get('cohesion.lcc'), 0.01, 'TokenValidator lcc');
         self::assertSame(2, $m->get('cohesion.lcom'), 'TokenValidator lcom');
 
         // SessionManager: tcc=1, lcc=1, lcom=1
-        $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\Service\Auth', 'SessionManager'));
+        $m = self::metricsFor(SymbolPath::forClass('GoldenMetrics\App\Service\Auth', 'SessionManager'));
         self::assertEqualsWithDelta(1.0, $m->get('cohesion.tcc'), 0.01, 'SessionManager tcc');
         self::assertEqualsWithDelta(1.0, $m->get('cohesion.lcc'), 0.01, 'SessionManager lcc');
         self::assertSame(1, $m->get('cohesion.lcom'), 'SessionManager lcom');
 
         // UserService: tcc=1, lcc=1, lcom=1
-        $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\Service', 'UserService'));
+        $m = self::metricsFor(SymbolPath::forClass('GoldenMetrics\App\Service', 'UserService'));
         self::assertEqualsWithDelta(1.0, $m->get('cohesion.tcc'), 0.01, 'UserService tcc');
         self::assertEqualsWithDelta(1.0, $m->get('cohesion.lcc'), 0.01, 'UserService lcc');
         self::assertSame(1, $m->get('cohesion.lcom'), 'UserService lcom');
 
         // OrderService: tcc=0, lcc=0, lcom=2
-        $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\Service', 'OrderService'));
+        $m = self::metricsFor(SymbolPath::forClass('GoldenMetrics\App\Service', 'OrderService'));
         self::assertEqualsWithDelta(0.0, $m->get('cohesion.tcc'), 0.01, 'OrderService tcc');
         self::assertEqualsWithDelta(0.0, $m->get('cohesion.lcc'), 0.01, 'OrderService lcc');
         self::assertSame(2, $m->get('cohesion.lcom'), 'OrderService lcom');
 
         // EmptyMarker: lcom=0
-        $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\ValueObject', 'EmptyMarker'));
+        $m = self::metricsFor(SymbolPath::forClass('GoldenMetrics\App\ValueObject', 'EmptyMarker'));
         self::assertSame(0, $m->get('cohesion.lcom'), 'EmptyMarker lcom');
     }
 
@@ -258,7 +297,7 @@ final class GoldenFileAggregationTest extends TestCase
     {
         // UserRepository: cbo=3 (implements UserRepositoryInterface + used by UserService, OrderService)
         // ca=2 (UserService, OrderService), ce=1 (UserRepositoryInterface), instability=1/3
-        $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\Repository', 'UserRepository'));
+        $m = self::metricsFor(SymbolPath::forClass('GoldenMetrics\App\Repository', 'UserRepository'));
         self::assertSame(3, $m->get('coupling.cbo'), 'UserRepository cbo');
         self::assertSame(2, $m->get('coupling.ca'), 'UserRepository ca');
         self::assertSame(1, $m->get('coupling.ce'), 'UserRepository ce');
@@ -266,7 +305,7 @@ final class GoldenFileAggregationTest extends TestCase
 
         // UserService: cbo=1 (depends on UserRepository)
         // ca=0 (nobody depends on it), ce=1 (UserRepository), instability=1.0
-        $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\Service', 'UserService'));
+        $m = self::metricsFor(SymbolPath::forClass('GoldenMetrics\App\Service', 'UserService'));
         self::assertSame(1, $m->get('coupling.cbo'), 'UserService cbo');
         self::assertSame(0, $m->get('coupling.ca'), 'UserService ca');
         self::assertSame(1, $m->get('coupling.ce'), 'UserService ce');
@@ -274,7 +313,7 @@ final class GoldenFileAggregationTest extends TestCase
 
         // OrderService: cbo=1 (depends on UserRepository)
         // ca=0 (nobody depends on it), ce=1 (UserRepository), instability=1.0
-        $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\Service', 'OrderService'));
+        $m = self::metricsFor(SymbolPath::forClass('GoldenMetrics\App\Service', 'OrderService'));
         self::assertSame(1, $m->get('coupling.cbo'), 'OrderService cbo');
         self::assertSame(0, $m->get('coupling.ca'), 'OrderService ca');
         self::assertSame(1, $m->get('coupling.ce'), 'OrderService ce');
@@ -289,19 +328,19 @@ final class GoldenFileAggregationTest extends TestCase
     public function itVerifiesInheritanceMetrics(): void
     {
         // SessionManager extends TokenValidator (dit=1)
-        $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\Service\Auth', 'SessionManager'));
+        $m = self::metricsFor(SymbolPath::forClass('GoldenMetrics\App\Service\Auth', 'SessionManager'));
         self::assertSame(1, $m->get('design.dit'), 'SessionManager dit');
 
         // TokenValidator (dit=0, no parent)
-        $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\Service\Auth', 'TokenValidator'));
+        $m = self::metricsFor(SymbolPath::forClass('GoldenMetrics\App\Service\Auth', 'TokenValidator'));
         self::assertSame(0, $m->get('design.dit'), 'TokenValidator dit');
 
         // UserRepository (dit=0)
-        $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\Repository', 'UserRepository'));
+        $m = self::metricsFor(SymbolPath::forClass('GoldenMetrics\App\Repository', 'UserRepository'));
         self::assertSame(0, $m->get('design.dit'), 'UserRepository dit');
 
         // EmptyMarker (dit=0)
-        $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\ValueObject', 'EmptyMarker'));
+        $m = self::metricsFor(SymbolPath::forClass('GoldenMetrics\App\ValueObject', 'EmptyMarker'));
         self::assertSame(0, $m->get('design.dit'), 'EmptyMarker dit');
     }
 
@@ -356,7 +395,7 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertSame(3, $m->get('complexity.ccn.max'), 'Auth ccn.max');
         self::assertSame(5, $m->get(MetricName::SIZE_SYMBOL_METHOD_COUNT), 'Auth symbolMethodCount');
         self::assertSame(2, $m->get(MetricName::SIZE_SYMBOL_CLASS_COUNT), 'Auth symbolClassCount');
-        self::assertSame(123.0, $m->get('size.loc.sum'), 'Auth loc.sum = namespace spans 57 + 66');
+        self::assertSame(123, $m->get('size.loc.sum'), 'Auth loc.sum = namespace spans 57 + 66');
     }
 
     // ──────────────────────────────────────────────────────────────────
@@ -373,7 +412,7 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertEqualsWithDelta(2.4167, $m->get('complexity.ccn.avg'), 0.01, 'Service ccn.avg');
         self::assertSame(12, $m->get(MetricName::SIZE_SYMBOL_METHOD_COUNT), 'Service symbolMethodCount');
         self::assertSame(4, $m->get(MetricName::SIZE_SYMBOL_CLASS_COUNT), 'Service symbolClassCount');
-        self::assertSame(281.0, $m->get('size.loc.sum'), 'Service loc.sum = own spans 95 + 63 + Auth spans 57 + 66');
+        self::assertSame(281, $m->get('size.loc.sum'), 'Service loc.sum = own spans 95 + 63 + Auth spans 57 + 66');
     }
 
     // ──────────────────────────────────────────────────────────────────
@@ -390,7 +429,7 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertEqualsWithDelta(2.2, $m->get('complexity.ccn.avg'), 0.01, 'App ccn.avg');
         self::assertSame(20, $m->get(MetricName::SIZE_SYMBOL_METHOD_COUNT), 'App symbolMethodCount');
         self::assertSame(7, $m->get(MetricName::SIZE_SYMBOL_CLASS_COUNT), 'App symbolClassCount');
-        self::assertSame(413.0, $m->get('size.loc.sum'), 'App loc.sum = Repository 114 + Service 281 + ValueObject 18');
+        self::assertSame(413, $m->get('size.loc.sum'), 'App loc.sum = Repository 114 + Service 281 + ValueObject 18');
     }
 
     #[Test]
@@ -461,16 +500,16 @@ final class GoldenFileAggregationTest extends TestCase
     #[Test]
     public function itKeepsClassDerivedTypingMetricsOnExactClassDeclarations(): void
     {
-        $class = self::$repository->get(SymbolPath::forClass('GoldenMetrics\\App\\Repository', 'UserRepository'));
+        $class = self::metricsFor(SymbolPath::forClass('GoldenMetrics\\App\\Repository', 'UserRepository'));
         self::assertSame(100.0, $class->get('design.type-coverage.all'));
         self::assertSame(100.0, $class->get('health.typing'));
 
-        $method = self::$repository->get(
+        $method = self::metricsFor(
             SymbolPath::forMethod('GoldenMetrics\\App\\Repository', 'UserRepository', 'findById'),
         );
         self::assertNull($method->get('design.type-coverage.all'));
 
-        $emptyClass = self::$repository->get(SymbolPath::forClass('GoldenMetrics\\App\\ValueObject', 'EmptyMarker'));
+        $emptyClass = self::metricsFor(SymbolPath::forClass('GoldenMetrics\\App\\ValueObject', 'EmptyMarker'));
         self::assertSame(100.0, $emptyClass->get('design.type-coverage.all'), 'empty class surface is fully typed');
     }
 
@@ -482,7 +521,7 @@ final class GoldenFileAggregationTest extends TestCase
     public function itHandlesGlobalNamespace(): void
     {
         // GlobalHelper is in the global namespace (empty string)
-        $m = self::$repository->get(SymbolPath::forClass('', 'GlobalHelper'));
+        $m = self::metricsFor(SymbolPath::forClass('', 'GlobalHelper'));
         self::assertSame(2, $m->get('complexity.ccn.sum'), 'GlobalHelper ccn.sum');
         self::assertSame(1, $m->get('size.method-count'), 'GlobalHelper methodCount');
 
@@ -493,4 +532,18 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertSame(1, $nsMetrics->get(MetricName::SIZE_SYMBOL_CLASS_COUNT), 'global ns symbolClassCount');
         self::assertSame(28, $nsMetrics->get('size.loc.sum'), 'global ns loc.sum');
     }
+    private static function metricsFor(SymbolPath $logical): MetricBag
+    {
+        $matches = [];
+        foreach (self::$repository->allDeclarations() as $info) {
+            $declaration = $info->subject?->declarationPath();
+            if ($declaration?->logical->toCanonical() === $logical->toCanonical()) {
+                $matches[] = $info->subject;
+            }
+        }
+        self::assertCount(1, $matches, 'Golden fixture requires one exact declaration for ' . $logical->toCanonical());
+
+        return self::$repository->getSubject($matches[0]);
+    }
+
 }

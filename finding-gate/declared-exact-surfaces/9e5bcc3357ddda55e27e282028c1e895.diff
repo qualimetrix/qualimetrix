@@ -1,0 +1,45 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 3544
++visible 3452
+@@ -17,0 +17,1 @@
++    <error line="1" severity="warning" message="Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
+@@ -28,13 +29,8 @@
+-  </file>
+-  <file name="Corpus\Design\Anonymous">
+-    <error line="1" severity="error" message="Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
+-  </file>
+-  <file name="Corpus\Design\Hierarchy">
+-    <error line="1" severity="error" message="Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
+-  </file>
+-  <file name="Corpus\Design\Model">
+-    <error line="1" severity="warning" message="Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
+-  </file>
+-</checkstyle>
+-
+-invocation-format:checkstyle 3544
++    <error line="1" severity="error" message="Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
++  </file>
++  <file name="src/Anonymous/AnonTrait.php">
++    <error line="1" severity="error" message="Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
++  </file>
++</checkstyle>
++
++invocation-format:checkstyle 3452
+@@ -56,0 +52,1 @@
++    <error line="1" severity="warning" message="Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
+@@ -67,9 +64,4 @@
+-  </file>
+-  <file name="Corpus\Design\Anonymous">
+-    <error line="1" severity="error" message="Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
+-  </file>
+-  <file name="Corpus\Design\Hierarchy">
+-    <error line="1" severity="error" message="Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
+-  </file>
+-  <file name="Corpus\Design\Model">
+-    <error line="1" severity="warning" message="Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
++    <error line="1" severity="error" message="Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
++  </file>
++  <file name="src/Anonymous/AnonTrait.php">
++    <error line="1" severity="error" message="Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>

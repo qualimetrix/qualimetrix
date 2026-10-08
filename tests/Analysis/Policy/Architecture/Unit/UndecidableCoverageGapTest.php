@@ -35,6 +35,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\AllowListBuilder;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\LayerVerdicts;
@@ -779,6 +780,12 @@ final class UndecidableCoverageGapTest extends TestCase
 
         $repository = new InMemoryMetricRepository();
         $repository->add($child, new MetricBag(), RelativePath::fromString('src/dummy.php'), 1);
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of($child, RelativePath::fromString('src/dummy.php'), DeclarationOrdinal::fromRank(0))),
+            new MetricBag(),
+            RelativePath::fromString('src/dummy.php'),
+            1,
+        );
 
         ProcessorBuilder::prepared($architecture, $graph, $repository, $this->processor);
 

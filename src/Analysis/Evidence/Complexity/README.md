@@ -9,9 +9,8 @@ rules that interpret that evidence: `complexity.ccn`,
 
 The leaf does not publish a `Contract/` surface. It consumes Measurement's
 collector, metric and aggregation contracts and Finding's rule and finding
-contracts. Measurement retains `CallableToClassAggregator` and the
-`MetricName::COMPLEXITY_WMC` derived metric: WMC is the class-level sum of
-callable CCN, while this leaf owns its rule and options.
+contracts. Complexity also owns the `complexity.wmc` definition and its
+declaration-scoped collection: the sum of the CCN values of owned methods.
 
 ## Structure
 
@@ -266,11 +265,15 @@ new MetricDefinition(
 
 ## WMC (Weighted Methods per Class)
 
-WMC is derived by Measurement as `MetricName::COMPLEXITY_WMC`: the sum of the
-callable-level CCN values for a class. `WmcRule` consumes that metric together
-with data-class and method-count evidence; it does not collect or aggregate
-WMC itself. Its `complexity.wmc` channel retains the existing warning/error
-thresholds and `excludeDataClasses` option.
+`CyclomaticComplexityCollector` publishes `MetricName::COMPLEXITY_WMC` for each
+named class-like declaration. Its existing shared visitor records namespace,
+name, physical position and line; the registrar index supplies the exact
+declaration ordinal. Every named class, interface, trait and enum starts with
+WMC zero, including those with no callables. Only methods owned by that exact
+declaration contribute CCN; hooks and anonymous-class methods do not. The
+roster and namespace state reset between files without another AST traversal.
+`WmcRule` consumes this value with data-class and method-count evidence; its
+warning/error thresholds and `excludeDataClasses` option are unchanged.
 
 Threshold messages compare the raw metric with the selected effective boundary:
 equality "reaches" it, while a greater value "exceeds" it. A rounded display

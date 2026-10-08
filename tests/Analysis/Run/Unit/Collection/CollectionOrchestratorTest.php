@@ -40,6 +40,7 @@ use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use ReflectionMethod;
@@ -71,7 +72,7 @@ final class CollectionOrchestratorTest extends TestCase
     public function itHandlesEmptyFileList(): void
     {
         $orchestrator = $this->createOrchestrator();
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         $result = $orchestrator->collect([], $repository, AbsolutePath::fromString('/tmp'));
 
@@ -122,7 +123,7 @@ final class CollectionOrchestratorTest extends TestCase
         $progress->expects(self::once())->method('finish');
 
         $orchestrator = $this->createOrchestratorWith(progress: $progress);
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         $result = $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
@@ -167,7 +168,7 @@ final class CollectionOrchestratorTest extends TestCase
         $logger->expects(self::once())->method('warning');
 
         $orchestrator = $this->createOrchestratorWith(logger: $logger);
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         $result = $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
@@ -196,12 +197,12 @@ final class CollectionOrchestratorTest extends TestCase
         $this->strategy->method('execute')->willReturn($processingResults);
 
         $orchestrator = $this->createOrchestrator();
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
-        self::assertTrue($repository->has($symbolPath));
-        self::assertSame(5, $repository->get($symbolPath)->get('complexity.ccn'));
+        self::assertTrue($repository->hasSubject($this->exact($symbolPath)));
+        self::assertSame(5, $repository->getSubject($this->exact($symbolPath))->get('complexity.ccn'));
     }
 
     #[Test]
@@ -234,12 +235,12 @@ final class CollectionOrchestratorTest extends TestCase
         $this->strategy->method('execute')->willReturn($processingResults);
 
         $orchestrator = $this->createOrchestrator();
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
-        self::assertTrue($repository->has($symbolPath));
-        self::assertSame(25, $repository->get($symbolPath)->get('complexity.wmc'));
+        self::assertTrue($repository->hasSubject($this->exact($symbolPath)));
+        self::assertSame(25, $repository->getSubject($this->exact($symbolPath))->get('complexity.wmc'));
     }
 
     #[Test]
@@ -298,7 +299,7 @@ final class CollectionOrchestratorTest extends TestCase
             self::createStub(ProfilerInterface::class),
             $this->logger,
         );
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
@@ -329,7 +330,7 @@ final class CollectionOrchestratorTest extends TestCase
         $this->strategy->method('execute')->willReturn($processingResults);
 
         $orchestrator = $this->createOrchestrator();
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         $result = $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
@@ -372,7 +373,7 @@ final class CollectionOrchestratorTest extends TestCase
         $this->strategy->method('execute')->willReturn($processingResults);
 
         $orchestrator = $this->createOrchestrator();
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         $result = $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
@@ -399,7 +400,7 @@ final class CollectionOrchestratorTest extends TestCase
         $logger->expects(self::exactly(2))->method('warning');
 
         $orchestrator = $this->createOrchestratorWith(logger: $logger);
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         $result = $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
@@ -449,7 +450,7 @@ final class CollectionOrchestratorTest extends TestCase
         );
 
         $orchestrator = $this->createOrchestratorWith(logger: $logger);
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         $result = $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
@@ -551,7 +552,7 @@ final class CollectionOrchestratorTest extends TestCase
         );
         $progress->expects(self::exactly(5))->method('advance');
         $progress->expects(self::once())->method('finish');
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         $output = $this->createOrchestratorWith(logger: $logger, progress: $progress)->collect(
             $files,
@@ -627,7 +628,7 @@ final class CollectionOrchestratorTest extends TestCase
 
         $output = $orchestrator->collect(
             $files,
-            new InMemoryMetricRepository(),
+            $this->repository(),
             AbsolutePath::fromString('/tmp'),
         );
 
@@ -675,7 +676,7 @@ final class CollectionOrchestratorTest extends TestCase
         $progress->expects(self::once())->method('finish');
 
         $orchestrator = $this->createOrchestratorWith(progress: $progress);
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
     }
@@ -708,7 +709,7 @@ final class CollectionOrchestratorTest extends TestCase
             ]);
 
         $orchestrator = $this->createOrchestratorWith(strategySelector: $strategySelector);
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
     }
@@ -759,13 +760,13 @@ final class CollectionOrchestratorTest extends TestCase
             logger: $this->logger,
         );
 
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
         // Verify that derived metric was added to method symbol
-        self::assertTrue($repository->has($methodSymbol));
-        $methodBag = $repository->get($methodSymbol);
+        self::assertTrue($repository->hasSubject($this->exact($methodSymbol)));
+        $methodBag = $repository->getSubject($this->exact($methodSymbol));
         self::assertSame(85.5, $methodBag->get('maintainability.mi'));
     }
 
@@ -807,13 +808,13 @@ final class CollectionOrchestratorTest extends TestCase
             logger: $this->logger,
         );
 
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
         // Verify that derived metric was NOT added (method doesn't exist)
         $nonExistentSymbol = SymbolPath::forMethod('App', 'NonExistent', 'method');
-        self::assertFalse($repository->has($nonExistentSymbol));
+        self::assertFalse($repository->hasSubject($this->exact($nonExistentSymbol)));
     }
 
     #[Test]
@@ -856,7 +857,7 @@ final class CollectionOrchestratorTest extends TestCase
             logger: $this->logger,
         );
 
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         // Should not throw exceptions
         $result = $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
@@ -908,13 +909,13 @@ final class CollectionOrchestratorTest extends TestCase
             logger: $this->logger,
         );
 
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
         // Verify that derived metric was added
-        self::assertTrue($repository->has($methodSymbol));
-        $methodBag = $repository->get($methodSymbol);
+        self::assertTrue($repository->hasSubject($this->exact($methodSymbol)));
+        $methodBag = $repository->getSubject($this->exact($methodSymbol));
         self::assertSame(85.5, $methodBag->get('maintainability.mi'));
     }
 
@@ -963,13 +964,13 @@ final class CollectionOrchestratorTest extends TestCase
             logger: $this->logger,
         );
 
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
         // Only 'maintainability.mi' should be added as derived metric
         $methodSymbol = SymbolPath::forMethod('App', 'Service', 'method');
-        $methodBag = $repository->get($methodSymbol);
+        $methodBag = $repository->getSubject($this->exact($methodSymbol));
 
         self::assertTrue($methodBag->has('maintainability.mi'));
         self::assertFalse($methodBag->has('complexity.ccn')); // base metrics not added via derived path
@@ -1014,7 +1015,7 @@ final class CollectionOrchestratorTest extends TestCase
             logger: $this->logger,
         );
 
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         // Should not throw exceptions
         $result = $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
@@ -1063,13 +1064,13 @@ final class CollectionOrchestratorTest extends TestCase
             logger: $this->logger,
         );
 
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
         // Verify that method metrics were registered normally
-        self::assertTrue($repository->has($methodSymbol));
-        self::assertSame(5, $repository->get($methodSymbol)->get('complexity.ccn'));
+        self::assertTrue($repository->hasSubject($this->exact($methodSymbol)));
+        self::assertSame(5, $repository->getSubject($this->exact($methodSymbol))->get('complexity.ccn'));
     }
 
     #[Test]
@@ -1117,13 +1118,13 @@ final class CollectionOrchestratorTest extends TestCase
             logger: $this->logger,
         );
 
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
         // Verify that derived metric was added for method with non-ASCII identifiers
-        self::assertTrue($repository->has($methodSymbol));
-        $methodBag = $repository->get($methodSymbol);
+        self::assertTrue($repository->hasSubject($this->exact($methodSymbol)));
+        $methodBag = $repository->getSubject($this->exact($methodSymbol));
         self::assertSame(85.5, $methodBag->get('maintainability.mi'));
     }
 
@@ -1150,10 +1151,10 @@ final class CollectionOrchestratorTest extends TestCase
 
         $orchestrator = $this->createOrchestratorWith(strategySelector: $strategySelector);
 
-        $repository1 = new InMemoryMetricRepository();
+        $repository1 = $this->repository();
         $orchestrator->collect($files, $repository1, AbsolutePath::fromString('/tmp'));
 
-        $repository2 = new InMemoryMetricRepository();
+        $repository2 = $this->repository();
         $orchestrator->collect($files, $repository2, AbsolutePath::fromString('/tmp'));
     }
 
@@ -1213,4 +1214,22 @@ final class CollectionOrchestratorTest extends TestCase
             new Location($path, $line),
         );
     }
+    private function repository(): InMemoryMetricRepository
+    {
+        return new InMemoryMetricRepository([
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+            new MetricDefinition('design.type-coverage.param.total', SymbolLevel::Class_),
+            new MetricDefinition('design.type-coverage.all', SymbolLevel::Class_),
+        ]);
+    }
+
+    private function exact(SymbolPath $logical): MetricSubject
+    {
+        return MetricSubject::declaration(DeclarationPath::of(
+            $logical,
+            RelativePath::fromString('tmp/test.php'),
+            DeclarationOrdinal::fromRank(0),
+        ));
+    }
+
 }

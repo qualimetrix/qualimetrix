@@ -21,7 +21,7 @@ final class LocVisitor extends NodeVisitorAbstract implements ResettableVisitorI
     private ?string $currentNamespace = null;
 
     /**
-     * @var array<string, array{namespace: ?string, className: string, startLine: int, startFilePos: int, endLine: int}>
+     * @var array<int, array{namespace: ?string, className: string, startLine: int, startFilePos: int, endLine: int}>
      */
     private array $classRanges = [];
 
@@ -49,9 +49,7 @@ final class LocVisitor extends NodeVisitorAbstract implements ResettableVisitorI
 
         if ($node instanceof ClassLike && $node->name !== null) {
             $className = $node->name->toString();
-            $fqn = $this->buildClassFqn($className);
-
-            $this->classRanges[$fqn] = [
+            $this->classRanges[max(0, $node->getStartFilePos())] = [
                 'namespace' => $this->currentNamespace,
                 'className' => $className,
                 'startLine' => $node->getStartLine(),
@@ -73,7 +71,7 @@ final class LocVisitor extends NodeVisitorAbstract implements ResettableVisitorI
     }
 
     /**
-     * @return array<string, array{namespace: ?string, className: string, startLine: int, startFilePos: int, endLine: int}>
+     * @return array<int, array{namespace: ?string, className: string, startLine: int, startFilePos: int, endLine: int}>
      */
     public function getClassRanges(): array
     {
@@ -88,12 +86,4 @@ final class LocVisitor extends NodeVisitorAbstract implements ResettableVisitorI
         return $this->namespaceRanges;
     }
 
-    private function buildClassFqn(string $className): string
-    {
-        if ($this->currentNamespace !== null && $this->currentNamespace !== '') {
-            return $this->currentNamespace . '\\' . $className;
-        }
-
-        return $className;
-    }
 }

@@ -165,6 +165,27 @@ final class FileProcessor implements FileProcessorInterface
         \Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics $callable,
         string $key,
     ): \Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics {
+        self::assertCompatibleCallables($existing, $callable, $key);
+
+        return new \Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics(
+            $existing->declarationPath,
+            $existing->startFilePos,
+            $existing->kind,
+            $existing->anonymousSyntax,
+            $existing->lexicalClassContext,
+            $existing->classAggregationOwner,
+            $existing->metrics->merge($callable->metrics),
+            $existing->sourceLine ?? $callable->sourceLine,
+            $existing->classAggregationOwnerDeclaration,
+            $existing->anonymousClassContext,
+        );
+    }
+
+    private static function assertCompatibleCallables(
+        \Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics $existing,
+        \Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics $callable,
+        string $key,
+    ): void {
         if ($existing->startFilePos !== $callable->startFilePos) {
             throw new LogicException(\sprintf(
                 'Callable declaration %s was collected at file positions %d and %d',
@@ -184,16 +205,24 @@ final class FileProcessor implements FileProcessorInterface
             ));
         }
 
-        return new \Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics(
-            $existing->declarationPath,
-            $existing->startFilePos,
-            $existing->kind,
-            $existing->anonymousSyntax,
-            $existing->lexicalClassContext,
-            $existing->classAggregationOwner,
-            $existing->metrics->merge($callable->metrics),
-            $existing->sourceLine ?? $callable->sourceLine,
-        );
+        if (!self::sameClassOwner($existing, $callable)) {
+            throw new LogicException(\sprintf('Callable collectors disagree on class owner for %s', $key));
+        }
+    }
+
+    private static function sameClassOwner(
+        \Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics $first,
+        \Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics $second,
+    ): bool {
+        return [
+            $first->classAggregationOwner?->toCanonical(),
+            $first->classAggregationOwnerDeclaration?->toCanonical(),
+            $first->anonymousClassContext,
+        ] === [
+            $second->classAggregationOwner?->toCanonical(),
+            $second->classAggregationOwnerDeclaration?->toCanonical(),
+            $second->anonymousClassContext,
+        ];
     }
 
     /**

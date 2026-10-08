@@ -20,17 +20,11 @@ final class VisitorCallableMetadata
     public function create(VisitorCallableScope $scope, RelativePath $file, MetricBag $metrics): CallableWithMetrics
     {
         $namespace = $scope->namespace ?? '';
-        $logical = \in_array($scope->kind, [CallableKind::Method, CallableKind::PropertyHook], true) && $scope->class !== null
-            ? SymbolPath::forMethod($namespace, $scope->class, $scope->member)
-            : SymbolPath::forGlobalFunction($namespace, $scope->member);
-        $lexical = $scope->class !== null && $scope->classOrdinal !== null
-            ? DeclarationPath::of(SymbolPath::forClass($namespace, $scope->class), $file, $scope->classOrdinal)
+        $logical = self::logicalPath($scope, $namespace);
+        $lexical = self::lexicalClass($scope, $namespace, $file);
+        $owner = $lexical !== null && !$scope->anonymousClassContext && self::isClassMember($scope)
+            ? new LogicalClassPath($lexical->logical)
             : null;
-        $owner = $lexical !== null
-            && !$scope->anonymousClassContext
-            && \in_array($scope->kind, [CallableKind::Method, CallableKind::PropertyHook], true)
-                ? new LogicalClassPath($lexical->logical)
-                : null;
 
         return new CallableWithMetrics(
             DeclarationPath::of($logical, $file, $scope->ordinal),
@@ -41,7 +35,28 @@ final class VisitorCallableMetadata
             $owner,
             $metrics,
             $scope->sourceLine,
+            $owner !== null ? $lexical : null,
+            $scope->anonymousClassContext,
         );
+    }
+
+    private static function logicalPath(VisitorCallableScope $scope, string $namespace): SymbolPath
+    {
+        return self::isClassMember($scope) && $scope->class !== null
+            ? SymbolPath::forMethod($namespace, $scope->class, $scope->member)
+            : SymbolPath::forGlobalFunction($namespace, $scope->member);
+    }
+
+    private static function lexicalClass(VisitorCallableScope $scope, string $namespace, RelativePath $file): ?DeclarationPath
+    {
+        return $scope->class !== null && $scope->classOrdinal !== null
+            ? DeclarationPath::of(SymbolPath::forClass($namespace, $scope->class), $file, $scope->classOrdinal)
+            : null;
+    }
+
+    private static function isClassMember(VisitorCallableScope $scope): bool
+    {
+        return \in_array($scope->kind, [CallableKind::Method, CallableKind::PropertyHook], true);
     }
 
     /**

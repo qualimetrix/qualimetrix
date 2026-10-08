@@ -68,7 +68,7 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions(enabled: false));
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('allDeclarations');
+        $repository->expects(self::never())->method('allClassDeclarations');
 
         $context = new AnalysisContext($repository);
 
@@ -92,9 +92,9 @@ final class GodClassRuleTest extends TestCase
             ->with('design.is-readonly', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -119,9 +119,9 @@ final class GodClassRuleTest extends TestCase
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -146,9 +146,9 @@ final class GodClassRuleTest extends TestCase
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -180,9 +180,9 @@ final class GodClassRuleTest extends TestCase
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -211,9 +211,9 @@ final class GodClassRuleTest extends TestCase
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -240,9 +240,9 @@ final class GodClassRuleTest extends TestCase
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -269,9 +269,9 @@ final class GodClassRuleTest extends TestCase
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -298,9 +298,9 @@ final class GodClassRuleTest extends TestCase
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -328,9 +328,9 @@ final class GodClassRuleTest extends TestCase
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -357,9 +357,9 @@ final class GodClassRuleTest extends TestCase
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -389,9 +389,9 @@ final class GodClassRuleTest extends TestCase
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -418,9 +418,9 @@ final class GodClassRuleTest extends TestCase
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -505,11 +505,11 @@ final class GodClassRuleTest extends TestCase
     {
         $class = SymbolPath::forClass('App\\Service', 'Twin');
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([
+        $repository->method('allClassDeclarations')->willReturn([
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn(
+        $repository->method('getSubject')->willReturn(
             (new MetricBag())
                 ->with('complexity.wmc', 50)
                 ->with('cohesion.lcom', 4)

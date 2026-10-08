@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary;
 
+use LogicException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
@@ -28,7 +29,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 /**
  * Builds health scores and offender projections from measured evidence.
  *
- * @qmx-threshold complexity.wmc warning=62 error=62 — Publishing what a score covers cost this class one short method, and WMC charges a method's existence: the same code inline scored 60 and the extraction that made each method simpler scored 61. One-method headroom, not a licence to grow.
+ * @qmx-threshold complexity.wmc warning=63 error=63 -- Exact subject and ranked-score refusals leave WMC 62 across twelve methods after simplifying the shared routes; moving those guards into the evidence readers transfers the branches. One-point headroom preserves the next growth signal.
+ * @qmx-threshold coupling.cbo 21 -- This health projection composes nineteen evidence, catalog and value types (CBO 20); a catalog forwarding method only relocates the same dependency and adds a surface. Keep the direct composition with one-edge headroom.
  */
 final readonly class HealthSummaryBuilder
 {
@@ -138,7 +140,7 @@ final readonly class HealthSummaryBuilder
             array_map(function ($symbol) use ($metrics, $inputs): array {
                 $selection = $this->decomposition->selectContributorMetrics(
                     $inputs,
-                    $metrics->get($symbol->symbolPath)->get(...),
+                    $metrics->getSubject($symbol->subject ?? throw new LogicException('Class contributor requires an exact subject'))->get(...),
                 );
 
                 return [
@@ -146,7 +148,7 @@ final readonly class HealthSummaryBuilder
                     'primaryValue' => $selection['primaryValue'],
                     'contributorMetrics' => $selection['contributorMetrics'],
                 ];
-            }, iterator_to_array($metrics->all(SymbolLevel::Class_), false)),
+            }, iterator_to_array($metrics->allClassDeclarations(), false)),
             $inputs[0]['direction'],
         );
     }
@@ -246,12 +248,28 @@ final readonly class HealthSummaryBuilder
         NamespaceTree $tree,
     ): array {
         [$warnThreshold, $errorThreshold] = $this->thresholds(HealthDimension::Overall);
+        $candidates = self::rankedCandidates($repository, $level);
+        $violationCounts = $this->countFindingsPerSymbol($repository, $findings, $level, $tree);
+        $offenders = [];
 
-        /** @var list<array{score: float, info: \Qualimetrix\Core\Symbol\SymbolInfo}> $candidates */
+        foreach (\array_slice($candidates, 0, $limit) as $candidate) {
+            $offenders[] = $this->offenderFromCandidate($candidate, $violationCounts, $level, $warnThreshold, $errorThreshold)
+                ?? throw new LogicException('Ranked offender candidates require an overall score');
+        }
+
+        return $offenders;
+    }
+
+    /** @return list<array{score: float, info: \Qualimetrix\Core\Symbol\SymbolInfo, metrics: MetricBag}> */
+    private static function rankedCandidates(MetricRepositoryInterface $repository, SymbolLevel $level): array
+    {
         $candidates = [];
 
-        foreach ($repository->all($level) as $symbolInfo) {
-            $metrics = $repository->get($symbolInfo->symbolPath);
+        $symbols = $level === SymbolLevel::Class_ ? $repository->allClassDeclarations() : $repository->all($level);
+        foreach ($symbols as $symbolInfo) {
+            $metrics = $symbolInfo->subject === null
+                ? $repository->get($symbolInfo->symbolPath)
+                : $repository->getSubject($symbolInfo->subject);
             $healthOverall = $metrics->get(HealthDimension::Overall->value);
 
             if ($healthOverall === null) {
@@ -270,59 +288,51 @@ final readonly class HealthSummaryBuilder
                 continue;
             }
 
-            $candidates[] = ['score' => $scoreValue, 'info' => $symbolInfo];
+            $candidates[] = ['score' => $scoreValue, 'info' => $symbolInfo, 'metrics' => $metrics];
         }
 
         // Sort by score ascending (worst first), with stable secondary sort by canonical path
         usort($candidates, static fn(array $a, array $b): int => ($a['score'] <=> $b['score']) !== 0 ? ($a['score'] <=> $b['score'])
-                : ($a['info']->symbolPath->toCanonical() <=> $b['info']->symbolPath->toCanonical()));
+                : (($a['info']->subject?->toCanonical() ?? $a['info']->symbolPath->toCanonical())
+                    <=> ($b['info']->subject?->toCanonical() ?? $b['info']->symbolPath->toCanonical())));
 
-        $violationCounts = $this->countFindingsPerSymbol($findings, $level, $tree);
+        return $candidates;
+    }
 
-        $offenders = [];
+    /**
+     * @param array{score: float, info: \Qualimetrix\Core\Symbol\SymbolInfo, metrics: MetricBag} $candidate
+     * @param array<string, int> $violationCounts
+     */
+    private function offenderFromCandidate(
+        array $candidate,
+        array $violationCounts,
+        SymbolLevel $level,
+        float $warnThreshold,
+        float $errorThreshold,
+    ): ?WorstOffender {
+        $symbolInfo = $candidate['info'];
+        $metrics = $candidate['metrics'];
+        $symbolCanonical = $symbolInfo->subject?->toCanonical() ?? $symbolInfo->symbolPath->toCanonical();
+        $classCount = $level === SymbolLevel::Namespace_
+            ? (int) ($metrics->get(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)) ?? 0)
+            : 0;
 
-        foreach (\array_slice($candidates, 0, $limit) as $candidate) {
-            $symbolInfo = $candidate['info'];
-            $metrics = $repository->get($symbolInfo->symbolPath);
-            $scoreValue = $candidate['score'];
-
-            $perDimensionScores = $this->getPerDimensionScores($metrics);
-
-            $symbolCanonical = $symbolInfo->symbolPath->toCanonical();
-            $violationCount = $violationCounts[$symbolCanonical] ?? 0;
-            $classCount = $level === SymbolLevel::Namespace_
-                ? (int) ($metrics->get(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)) ?? 0)
-                : 0;
-
-            $notableMetrics = $this->getNotableMetrics($metrics, $level);
-
-            $offender = $this->offenderBuilder->build(
-                [
-                    'symbol' => $symbolInfo,
-                    'overall' => $scoreValue,
-                    'dimensionScores' => $perDimensionScores,
-                    'loc' => $metrics->get(
-                        $level === SymbolLevel::Namespace_
-                            ? MetricName::agg(MetricName::SIZE_LOC, AggregationStrategy::Sum)
-                            : MetricName::SIZE_CLASS_LOC,
-                    ),
-                    'notableMetrics' => $notableMetrics,
-                ],
-                new WorstOffenderEvidence(
-                    $violationCount,
-                    $classCount,
-                    [],
-                    [],
+        return $this->offenderBuilder->build(
+            [
+                'symbol' => $symbolInfo,
+                'overall' => $candidate['score'],
+                'dimensionScores' => $this->getPerDimensionScores($metrics),
+                'loc' => $metrics->get(
+                    $level === SymbolLevel::Namespace_
+                        ? MetricName::agg(MetricName::SIZE_LOC, AggregationStrategy::Sum)
+                        : MetricName::SIZE_CLASS_LOC,
                 ),
-                $warnThreshold,
-                $errorThreshold,
-            );
-            if ($offender !== null) {
-                $offenders[] = $offender;
-            }
-        }
-
-        return $offenders;
+                'notableMetrics' => $this->getNotableMetrics($metrics, $level),
+            ],
+            new WorstOffenderEvidence($violationCounts[$symbolCanonical] ?? 0, $classCount, [], []),
+            $warnThreshold,
+            $errorThreshold,
+        );
     }
 
     /**
@@ -348,37 +358,24 @@ final readonly class HealthSummaryBuilder
      *
      * @return array<string, int>
      */
-    private function countFindingsPerSymbol(array $findings, SymbolLevel $level, NamespaceTree $tree): array
+    private function countFindingsPerSymbol(MetricRepositoryInterface $repository, array $findings, SymbolLevel $level, NamespaceTree $tree): array
     {
+        if ($level === SymbolLevel::Class_) {
+            return $this->offenderBuilder->countClassFindings($repository, $findings);
+        }
         $counts = [];
 
         foreach ($findings as $finding) {
-            if ($level === SymbolLevel::Class_) {
-                // Count findings by class
-                $classPath = SymbolPath::forClass(
-                    $finding->symbolPath->namespace ?? '',
-                    $finding->symbolPath->type ?? '',
-                );
+            $ns = $finding->symbolPath->namespace;
+            if ($ns === null || $ns === '') {
+                continue;
+            }
+            $key = SymbolPath::forNamespace($ns)->toCanonical();
+            $counts[$key] = ($counts[$key] ?? 0) + 1;
 
-                if ($finding->symbolPath->type !== null) {
-                    $key = $classPath->toCanonical();
-                    $counts[$key] = ($counts[$key] ?? 0) + 1;
-                }
-            } elseif ($level === SymbolLevel::Namespace_) {
-                // Count findings by namespace, walking up the hierarchy via NamespaceTree
-                $ns = $finding->symbolPath->namespace;
-
-                if ($ns !== null && $ns !== '') {
-                    $nsPath = SymbolPath::forNamespace($ns);
-                    $key = $nsPath->toCanonical();
-                    $counts[$key] = ($counts[$key] ?? 0) + 1;
-
-                    foreach ($tree->getAncestors($ns) as $ancestor) {
-                        $ancestorPath = SymbolPath::forNamespace($ancestor);
-                        $key = $ancestorPath->toCanonical();
-                        $counts[$key] = ($counts[$key] ?? 0) + 1;
-                    }
-                }
+            foreach ($tree->getAncestors($ns) as $ancestor) {
+                $key = SymbolPath::forNamespace($ancestor)->toCanonical();
+                $counts[$key] = ($counts[$key] ?? 0) + 1;
             }
         }
 

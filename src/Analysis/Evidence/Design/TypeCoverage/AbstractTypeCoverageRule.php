@@ -85,14 +85,14 @@ abstract class AbstractTypeCoverageRule extends AbstractRule
 
         $findings = [];
 
-        foreach ($context->metrics->allDeclarations() as $classInfo) {
+        foreach ($context->metrics->allClassDeclarations() as $classInfo) {
             $subject = $classInfo->subject ?? throw new LogicException('Type coverage findings require an exact class declaration subject');
 
             if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
                 continue;
             }
 
-            $finding = $this->judge($context, $subject, $classInfo, $context->metrics->get($subject->toSymbolPath()));
+            $finding = $this->judge($context, $subject, $classInfo, $context->metrics->getSubject($subject));
 
             if ($finding !== null) {
                 $findings[] = $finding;

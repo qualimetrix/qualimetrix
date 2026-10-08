@@ -19,4 +19,5 @@ rule-path-suppression	coupling.instability: exact:src/Analysis/Evidence/Cohesion
 rule-path-suppression	coupling.instability: exact:src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php
 rule-path-suppression	duplication.clone: exact:src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php
 rule-path-suppression	duplication.clone: regex:src/Analysis/Run/ExcludeBinding/.*Options\.php
+rule-path-suppression	health.cohesion: exact:src/Analysis/Evidence/Measurement/Aggregation/MeasurementAggregationService.php
 rule-path-suppression	health.cohesion: exact:src/Infrastructure/Console/Application.php

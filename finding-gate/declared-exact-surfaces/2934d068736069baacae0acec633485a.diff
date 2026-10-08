@@ -1,0 +1,92 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 13484
++visible 13485
+@@ -141,3 +141,3 @@
+-            "path": "Corpus\\Coupling\\Kernel",
+-            "lines": {
+-                "begin": 1
++            "path": "src/Kernel/Clock.php",
++            "lines": {
++                "begin": 3
+@@ -153,3 +153,3 @@
+-            "path": "Corpus\\Coupling\\Service",
+-            "lines": {
+-                "begin": 1
++            "path": "src/Service/CacheService.php",
++            "lines": {
++                "begin": 3
+@@ -165,3 +165,3 @@
+-            "path": "Corpus\\Coupling\\Wiring",
+-            "lines": {
+-                "begin": 1
++            "path": "src/Wiring/Bootstrap.php",
++            "lines": {
++                "begin": 3
+@@ -297,3 +297,3 @@
+-            "path": "Corpus\\Coupling\\Kernel",
+-            "lines": {
+-                "begin": 1
++            "path": "src/Kernel/Clock.php",
++            "lines": {
++                "begin": 3
+@@ -309,3 +309,3 @@
+-            "path": "Corpus\\Coupling\\Service",
+-            "lines": {
+-                "begin": 1
++            "path": "src/Service/CacheService.php",
++            "lines": {
++                "begin": 3
+@@ -369,3 +369,3 @@
+-            "path": "Corpus\\Coupling\\Service",
+-            "lines": {
+-                "begin": 1
++            "path": "src/Service/CacheService.php",
++            "lines": {
++                "begin": 3
+@@ -388,1 +388,1 @@
+-invocation-format:gitlab 13484
++invocation-format:gitlab 13485
+@@ -528,3 +528,3 @@
+-            "path": "Corpus\\Coupling\\Kernel",
+-            "lines": {
+-                "begin": 1
++            "path": "src/Kernel/Clock.php",
++            "lines": {
++                "begin": 3
+@@ -540,3 +540,3 @@
+-            "path": "Corpus\\Coupling\\Service",
+-            "lines": {
+-                "begin": 1
++            "path": "src/Service/CacheService.php",
++            "lines": {
++                "begin": 3
+@@ -552,3 +552,3 @@
+-            "path": "Corpus\\Coupling\\Wiring",
+-            "lines": {
+-                "begin": 1
++            "path": "src/Wiring/Bootstrap.php",
++            "lines": {
++                "begin": 3
+@@ -684,3 +684,3 @@
+-            "path": "Corpus\\Coupling\\Kernel",
+-            "lines": {
+-                "begin": 1
++            "path": "src/Kernel/Clock.php",
++            "lines": {
++                "begin": 3
+@@ -696,3 +696,3 @@
+-            "path": "Corpus\\Coupling\\Service",
+-            "lines": {
+-                "begin": 1
++            "path": "src/Service/CacheService.php",
++            "lines": {
++                "begin": 3
+@@ -756,3 +756,3 @@
+-            "path": "Corpus\\Coupling\\Service",
+-            "lines": {
+-                "begin": 1
++            "path": "src/Service/CacheService.php",
++            "lines": {
++                "begin": 3

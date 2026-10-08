@@ -1,13 +1,2 @@
 change	report	view	field	reason
-added	json	ranking	subject	Publish the common finding record and accepted-level judgement on ranked JSON findings.
-added	json	ranking	channel	Publish the common finding record and accepted-level judgement on ranked JSON findings.
-added	json	ranking	occurrence	Publish the common finding record and accepted-level judgement on ranked JSON findings.
-added	json	ranking	edge	Publish the common finding record and accepted-level judgement on ranked JSON findings.
-added	json	ranking	namespace	Publish the common finding record and accepted-level judgement on ranked JSON findings.
-added	json	ranking	code	Publish the common finding record and accepted-level judgement on ranked JSON findings.
-added	json	ranking	metricValue	Publish the common finding record and accepted-level judgement on ranked JSON findings.
-added	json	ranking	threshold	Publish the common finding record and accepted-level judgement on ranked JSON findings.
-added	json	ranking	techDebtMinutes	Publish the common finding record and accepted-level judgement on ranked JSON findings.
-added	json	ranking	acceptedLevel	Publish the common finding record and accepted-level judgement on ranked JSON findings.
-added	json	ranking	baselineVerdict	Publish the common finding record and accepted-level judgement on ranked JSON findings.
-added	json	ranking	baselineReason	Publish the common finding record and accepted-level judgement on ranked JSON findings.
+added	metrics	format:metrics	subject	Publish the canonical exact declaration or aggregate subject for each metrics record; display names may repeat.

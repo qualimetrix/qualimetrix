@@ -33,8 +33,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final readonly class FrameworkClassificationSites
 {
     /**
-     * @param callable(SymbolPath): bool $measured whether the run holds metrics for a class — the
-     *                                             collector's own `$repository->has()` question, passed
+     * @param callable(SymbolPath): bool $measured whether the run holds a logical class subject — the
+     *                                             collector's exact membership question, passed
      *                                             as the predicate rather than the whole repository so
      *                                             this class depends on the one answer it needs
      *

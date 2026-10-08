@@ -11,6 +11,9 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -102,21 +105,13 @@ final class MetricsJsonFormatterTest extends TestCase
         $methodPath = SymbolPath::forMethod('App\\Service', 'UserService', 'calculate');
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(static function (SymbolLevel $level) use ($classPath, $methodPath): array {
-                if ($level === SymbolLevel::Class_) {
-                    return [new SymbolInfo($classPath, RelativePath::fromString('src/Service/UserService.php'), 10)];
-                }
-                if ($level === SymbolLevel::Callable) {
-                    return [new SymbolInfo($methodPath, RelativePath::fromString('src/Service/UserService.php'), 42)];
-                }
-
-                return [];
-            });
-
-        $repository->method('get')
-            ->willReturnCallback(static function (SymbolPath $path) use ($classPath): MetricBag {
-                if ($path === $classPath) {
+        $classSubject = MetricSubject::declaration(DeclarationPath::of($classPath, RelativePath::fromString('src/Service/UserService.php'), DeclarationOrdinal::fromRank(0)));
+        $methodSubject = MetricSubject::declaration(DeclarationPath::of($methodPath, RelativePath::fromString('src/Service/UserService.php'), DeclarationOrdinal::fromRank(0)));
+        $repository->method('allClassDeclarations')->willReturn([new SymbolInfo($classSubject, RelativePath::fromString('src/Service/UserService.php'), 10)]);
+        $repository->method('allCallables')->willReturn([new SymbolInfo($methodSubject, RelativePath::fromString('src/Service/UserService.php'), 42)]);
+        $repository->method('getSubject')
+            ->willReturnCallback(static function (MetricSubject $subject) use ($classSubject): MetricBag {
+                if ($subject === $classSubject) {
                     return MetricBag::fromArray(['size.method-count' => 5, 'complexity.ccn.sum' => 25]);
                 }
 
@@ -142,6 +137,7 @@ final class MetricsJsonFormatterTest extends TestCase
         $classSymbol = $data['symbols'][0];
         self::assertSame('class', $classSymbol['type']);
         self::assertSame('App\\Service\\UserService', $classSymbol['name']);
+        self::assertSame($classSubject->toCanonical(), $classSymbol['subject']);
         self::assertSame('src/Service/UserService.php', $classSymbol['file']);
         self::assertSame(10, $classSymbol['line']);
         self::assertSame(5, $classSymbol['metrics']['size.method-count']);
@@ -151,6 +147,7 @@ final class MetricsJsonFormatterTest extends TestCase
         $methodSymbol = $data['symbols'][1];
         self::assertSame('method', $methodSymbol['type']);
         self::assertSame('App\\Service\\UserService::calculate', $methodSymbol['name']);
+        self::assertSame($methodSubject->toCanonical(), $methodSymbol['subject']);
         self::assertSame('src/Service/UserService.php', $methodSymbol['file']);
         self::assertSame(42, $methodSymbol['line']);
         self::assertSame(12, $methodSymbol['metrics']['complexity.ccn']);
@@ -171,6 +168,7 @@ final class MetricsJsonFormatterTest extends TestCase
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
         $methodPath = SymbolPath::forMethod('App\\Service', 'UserService', 'calculate');
         $functionPath = SymbolPath::forGlobalFunction('App\\Service', 'helper');
+        $file = RelativePath::fromString('src/Service/UserService.php');
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -178,29 +176,24 @@ final class MetricsJsonFormatterTest extends TestCase
                 $filePath,
                 $projectPath,
                 $namespacePath,
-                $classPath,
-                $methodPath,
-                $functionPath,
+                $file,
             ): array {
-                $file = RelativePath::fromString('src/Service/UserService.php');
-
                 return match ($level) {
                     SymbolLevel::File => [new SymbolInfo($filePath, $file, 1)],
                     SymbolLevel::Project => [new SymbolInfo($projectPath, null, null)],
                     SymbolLevel::Namespace_ => [new SymbolInfo($namespacePath, null, null)],
-                    SymbolLevel::Class_ => [new SymbolInfo($classPath, $file, 10)],
-                    // The function first: one enumeration holds both kinds, and
-                    // the published order must not follow this one.
-                    SymbolLevel::Callable => [
-                        new SymbolInfo($functionPath, $file, 80),
-                        new SymbolInfo($methodPath, $file, 42),
-                    ],
+                    default => [],
                 };
             });
-
-        // Every symbol must carry a metric: one with an empty bag is skipped
-        // outright, so a fixture without metrics passes under any ordering.
-        $repository->method('get')->willReturn(MetricBag::fromArray(['complexity.ccn' => 1]));
+        $classSubject = MetricSubject::declaration(DeclarationPath::of($classPath, $file, DeclarationOrdinal::fromRank(0)));
+        $methodSubject = MetricSubject::declaration(DeclarationPath::of($methodPath, $file, DeclarationOrdinal::fromRank(0)));
+        $functionSubject = MetricSubject::declaration(DeclarationPath::of($functionPath, $file, DeclarationOrdinal::fromRank(0)));
+        $repository->method('allClassDeclarations')->willReturn([new SymbolInfo($classSubject, $file, 10)]);
+        $repository->method('allCallables')->willReturn([
+            new SymbolInfo($functionSubject, $file, 80),
+            new SymbolInfo($methodSubject, $file, 42),
+        ]);
+        $repository->method('getSubject')->willReturn(MetricBag::fromArray(['complexity.ccn' => 1]));
 
         $report = new Report(
             findings: [],
@@ -219,6 +212,17 @@ final class MetricsJsonFormatterTest extends TestCase
             ['file', 'project', 'namespace', 'class', 'method', 'function'],
             array_column($data['symbols'], 'type'),
         );
+        self::assertSame(
+            [
+                MetricSubject::aggregate($filePath)->toCanonical(),
+                MetricSubject::aggregate($projectPath)->toCanonical(),
+                MetricSubject::aggregate($namespacePath)->toCanonical(),
+                $classSubject->toCanonical(),
+                $methodSubject->toCanonical(),
+                $functionSubject->toCanonical(),
+            ],
+            array_column($data['symbols'], 'subject'),
+        );
         self::assertSame('App\\Service\\UserService::calculate', $data['symbols'][4]['name']);
         self::assertSame('App\\Service\\helper', $data['symbols'][5]['name']);
     }
@@ -229,17 +233,9 @@ final class MetricsJsonFormatterTest extends TestCase
         $classPath = SymbolPath::forClass('App', 'Empty');
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(static function (SymbolLevel $level) use ($classPath): array {
-                if ($level === SymbolLevel::Class_) {
-                    return [new SymbolInfo($classPath, RelativePath::fromString('src/Empty.php'), 1)];
-                }
-
-                return [];
-            });
-
-        $repository->method('get')
-            ->willReturn(MetricBag::fromArray([]));
+        $classSubject = MetricSubject::declaration(DeclarationPath::of($classPath, RelativePath::fromString('src/Empty.php'), DeclarationOrdinal::fromRank(0)));
+        $repository->method('allClassDeclarations')->willReturn([new SymbolInfo($classSubject, RelativePath::fromString('src/Empty.php'), 1)]);
+        $repository->method('getSubject')->willReturn(MetricBag::fromArray([]));
 
         $report = new Report(
             findings: [],
@@ -263,16 +259,9 @@ final class MetricsJsonFormatterTest extends TestCase
         $classPath = SymbolPath::forClass('App', 'Test');
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(static function (SymbolLevel $level) use ($classPath): array {
-                if ($level === SymbolLevel::Class_) {
-                    return [new SymbolInfo($classPath, RelativePath::fromString('src/Test.php'), 1)];
-                }
-
-                return [];
-            });
-
-        $repository->method('get')
+        $classSubject = MetricSubject::declaration(DeclarationPath::of($classPath, RelativePath::fromString('src/Test.php'), DeclarationOrdinal::fromRank(0)));
+        $repository->method('allClassDeclarations')->willReturn([new SymbolInfo($classSubject, RelativePath::fromString('src/Test.php'), 1)]);
+        $repository->method('getSubject')
             ->willReturn(MetricBag::fromArray([
                 'valid' => 42,
                 'nan' => \NAN,
@@ -322,7 +311,7 @@ final class MetricsJsonFormatterTest extends TestCase
                 return [];
             });
 
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn(MetricBag::fromArray([
                 'size.loc' => 100,
                 'complexity.ccn' => 5,

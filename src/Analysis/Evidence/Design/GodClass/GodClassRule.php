@@ -67,7 +67,7 @@ final class GodClassRule extends AbstractRule
 
         $findings = [];
 
-        foreach ($context->metrics->allDeclarations() as $classInfo) {
+        foreach ($context->metrics->allClassDeclarations() as $classInfo) {
             $finding = $this->evaluateClass($context, $classInfo);
             if ($finding !== null) {
                 $findings[] = $finding;
@@ -83,7 +83,7 @@ final class GodClassRule extends AbstractRule
         if ($subject === null || $subject->toSymbolPath()->getType() !== SymbolType::Class_) {
             return null;
         }
-        $metrics = $context->metrics->get($subject->toSymbolPath());
+        $metrics = $context->metrics->getSubject($subject);
 
         // Apply `@qmx-threshold` overrides for this class
         $effectiveOptions = $this->getEffectiveOptions(

@@ -151,7 +151,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
 
         $findings = [];
 
-        foreach ($context->metrics->allDeclarations() as $classInfo) {
+        foreach ($context->metrics->allClassDeclarations() as $classInfo) {
             $subject = $classInfo->subject ?? throw new LogicException('Instability class findings require an exact class declaration subject');
             if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
                 continue;
@@ -172,7 +172,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
         AnalysisContext $context,
         ClassInstabilityOptions $options,
     ): ?Finding {
-        $metrics = $context->metrics->get($subject->toSymbolPath());
+        $metrics = $context->metrics->getSubject($subject);
         $instability = $metrics->get(MetricName::COUPLING_INSTABILITY);
         if ($instability === null) {
             return null;

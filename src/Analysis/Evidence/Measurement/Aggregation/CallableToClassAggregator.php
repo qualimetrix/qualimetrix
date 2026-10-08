@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Measurement\Aggregation;
 
 use LogicException;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -46,32 +45,22 @@ final class CallableToClassAggregator implements AggregationPhaseInterface
             }
 
             $firstInfo = $callableInfos[0];
-            $logicalOwner = $firstInfo->classAggregationOwner;
-            if ($logicalOwner === null) {
+            $owner = $firstInfo->classAggregationOwnerDeclaration;
+            if ($owner === null) {
                 continue;
+            }
+            $classSubject = MetricSubject::declaration($owner);
+            if (!$repository->hasSubject($classSubject)) {
+                throw new LogicException('Callable aggregation requires its exact named-owner class declaration');
             }
 
             $metricValues = $this->collectMetricValues($repository, $callableInfos, $callableDefinitions);
             $classBag = AggregationHelper::applyAggregations($metricValues, $callableDefinitions, SymbolLevel::Class_);
 
-            $methodValues = $this->collectMetricValues(
-                $repository,
-                array_values(array_filter(
-                    $callableInfos,
-                    static fn(SymbolInfo $info): bool => $info->callableKind === CallableKind::Method,
-                )),
-                $callableDefinitions,
-            );
-            $methodBag = AggregationHelper::applyAggregations($methodValues, $callableDefinitions, SymbolLevel::Class_);
-            $ccnSum = $methodBag->get(MetricName::agg(MetricName::COMPLEXITY_CCN, AggregationStrategy::Sum));
-            if ($ccnSum !== null) {
-                $classBag = $classBag->with(MetricName::COMPLEXITY_WMC, $ccnSum);
-            }
-
-            $classBag = $classBag->with(MetricName::SIZE_SYMBOL_METHOD_COUNT, \count($callableInfos));
+            $classBag = $classBag->with('size.symbol-method-count', \count($callableInfos));
 
             $repository->addSubject(
-                MetricSubject::logicalClass($logicalOwner),
+                $classSubject,
                 $classBag,
                 $firstInfo->file,
                 0,
@@ -88,7 +77,7 @@ final class CallableToClassAggregator implements AggregationPhaseInterface
         $callablesByClass = [];
 
         foreach ($repository->allCallables() as $callableInfo) {
-            $owner = $callableInfo->classAggregationOwner;
+            $owner = self::namedOwner($callableInfo);
             if ($owner === null) {
                 continue;
             }
@@ -99,6 +88,26 @@ final class CallableToClassAggregator implements AggregationPhaseInterface
         }
 
         return $callablesByClass;
+    }
+
+    private static function namedOwner(SymbolInfo $callableInfo): ?DeclarationPath
+    {
+        if ($callableInfo->anonymousClassContext) {
+            if ($callableInfo->classAggregationOwner !== null || $callableInfo->classAggregationOwnerDeclaration !== null) {
+                throw new LogicException('Anonymous-class callable cannot have a named class owner');
+            }
+
+            return null;
+        }
+        if (\in_array($callableInfo->callableKind, [CallableKind::Method, CallableKind::PropertyHook], true)
+            && ($callableInfo->classAggregationOwner === null || $callableInfo->classAggregationOwnerDeclaration === null)) {
+            throw new LogicException('Named callable owner requires an exact class declaration');
+        }
+        if (($callableInfo->classAggregationOwner === null) !== ($callableInfo->classAggregationOwnerDeclaration === null)) {
+            throw new LogicException('Incomplete class owner metadata');
+        }
+
+        return $callableInfo->classAggregationOwnerDeclaration;
     }
 
     /**

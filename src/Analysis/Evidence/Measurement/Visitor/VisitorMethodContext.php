@@ -22,7 +22,7 @@ use Qualimetrix\Core\Symbol\FileDeclarationIndex;
  * Fan-out is what a composition root is for, and it is the price of the parts
  * below it staying separable.
  *
- * @qmx-threshold coupling.cbo 22 -- Composition root of traversal identity: four collaborators plus the node types it routes; raw CBO 21 gets one-edge headroom.
+ * @qmx-threshold coupling.cbo 24 -- This traversal composition root coordinates four identity collaborators and routes promoted property hooks through Param and Variable nodes; raw CBO 23 gets one-edge headroom.
  * @qmx-threshold coupling.instability warning=0.95 error=0.95 -- A composition root depends outward on everything it assembles and is depended on by one trait; instability near one is its shape, not its defect.
  *
  * @qmx-ignore health.cohesion -- Composition root: `subjects`, `numbering`, `lexicalScope`, and `callableMetadata` are four independent collaborators bundled here only so ~13 unrelated visitors (via VisitorMethodTrackingTrait) each hold one dependency instead of four; LCOM4 measures within-class property sharing, which a bundling facade lacks by design, not by defect. The `health.cohesion` producer has no threshold-override support, so `@qmx-threshold` cannot express this exception; `@qmx-ignore` is the only inline mechanism available.
@@ -57,18 +57,31 @@ final class VisitorMethodContext
 
     public function enter(Node $node): ?VisitorCallableScope
     {
-        match (true) {
-            $node instanceof Node\Stmt\Namespace_ => $this->lexicalScope->enterNamespace($node->name?->toString()),
-            $node instanceof Node\Stmt\ClassLike => $this->lexicalScope->enterClass($node->name?->toString(), $node->getStartFilePos()),
-            $node instanceof Node\Stmt\Property => $this->lexicalScope->enterProperty(\count($node->props) === 1 ? $node->props[0]->name->toString() : null),
-            default => null,
-        };
+        $this->enterLexicalScope($node);
 
         return $this->enterCallable(
             $node,
             $this->lexicalScope->currentClass(),
             $this->lexicalScope->namespace(),
         );
+    }
+
+    private function enterLexicalScope(Node $node): void
+    {
+        match (true) {
+            $node instanceof Node\Stmt\Namespace_ => $this->lexicalScope->enterNamespace($node->name?->toString()),
+            $node instanceof Node\Stmt\ClassLike => $this->lexicalScope->enterClass($node->name?->toString(), $node->getStartFilePos()),
+            $node instanceof Node\Stmt\Property => $this->lexicalScope->enterProperty(\count($node->props) === 1 ? $node->props[0]->name->toString() : null),
+            $node instanceof Node\Param && $node->isPromoted() => $this->lexicalScope->enterProperty(self::promotedPropertyName($node)),
+            default => null,
+        };
+    }
+
+    private static function promotedPropertyName(Node\Param $param): ?string
+    {
+        return $param->var instanceof Node\Expr\Variable && \is_string($param->var->name)
+            ? $param->var->name
+            : null;
     }
 
     /** @param ?array{namespace: ?string, class: string, start: int, ordinal: DeclarationOrdinal, anonymous: bool, subject: ?string} $class */
@@ -88,7 +101,12 @@ final class VisitorMethodContext
             $node instanceof Node\Expr\Closure => $this->enterAnonymousCallable($node, $class, $namespace, 'closure'),
             $node instanceof Node\Expr\ArrowFunction => $this->enterAnonymousCallable($node, $class, $namespace, 'arrow'),
             $node instanceof Node\Stmt\ClassMethod => $this->enterMember($node->name->toString(), $node, CallableKind::Method, $class),
-            $node instanceof Node\PropertyHook => $this->enterPropertyHook($node, $class),
+            $node instanceof Node\PropertyHook => $this->enterMember(
+                $this->lexicalScope->currentProperty() === null ? '' : $this->lexicalScope->currentProperty() . '::' . $node->name->toString(),
+                $node,
+                CallableKind::PropertyHook,
+                $class,
+            ),
             default => null,
         };
     }
@@ -115,17 +133,23 @@ final class VisitorMethodContext
             || $node instanceof Node\Expr\Closure
             || $node instanceof Node\Expr\ArrowFunction
             || $node instanceof Node\PropertyHook
-                ? $this->lexicalScope->leaveCallable()
-                : null;
+            ? $this->lexicalScope->leaveCallable()
+            : null;
 
+        $this->leaveLexicalScope($node);
+
+        return $scope;
+    }
+
+    private function leaveLexicalScope(Node $node): void
+    {
         match (true) {
             $node instanceof Node\Stmt\Property => $this->lexicalScope->leaveProperty(),
+            $node instanceof Node\Param && $node->isPromoted() => $this->lexicalScope->leaveProperty(),
             $node instanceof Node\Stmt\ClassLike => $this->lexicalScope->leaveClass(),
             $node instanceof Node\Stmt\Namespace_ => $this->lexicalScope->leaveNamespace(),
             default => null,
         };
-
-        return $scope;
     }
 
     public function currentFileEntrySubjectId(): string
@@ -170,12 +194,4 @@ final class VisitorMethodContext
         );
     }
 
-    /** @param ?array{namespace: ?string, class: string, start: int, ordinal: DeclarationOrdinal, anonymous: bool, subject: ?string} $class */
-    private function enterPropertyHook(Node\PropertyHook $node, ?array $class): VisitorCallableScope
-    {
-        $property = $this->lexicalScope->currentProperty();
-        $member = $property === null ? '' : $property . '::' . $node->name->toString();
-
-        return $this->enterMember($member, $node, CallableKind::PropertyHook, $class);
-    }
 }

@@ -83,9 +83,7 @@ final class NamespaceMetricIndex
 
         foreach ($subjectInfos as $info) {
             $classDeclaration = $info->subject?->declarationPath();
-            if ($classDeclaration?->logical->getType() === SymbolType::Class_) {
-                $this->observe($classDeclaration->logical->namespace ?? '');
-            } elseif ($info->subject?->aggregatePath() === null) {
+            if ($info->subject?->aggregatePath() === null) {
                 $this->add($info);
             }
         }

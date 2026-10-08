@@ -10,10 +10,23 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummaryBuilder;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
+use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(HealthSummaryBuilder::class)]
@@ -25,32 +38,38 @@ final class HealthSummaryBuilderTest extends TestCase
     public function itEnrichesWithHealthScores(): void
     {
         $classPath = SymbolPath::forClass('App', 'Service');
-        $metrics = $this->createMetricRepository(
-            projectMetrics: MetricBag::fromArray([
-                'health.complexity' => 65.0,
-                'health.cohesion' => 45.0,
-                'health.coupling' => 80.0,
-                'health.typing' => 90.0,
-                'health.maintainability' => 58.0,
-                'health.overall' => 72.0,
-                'complexity.ccn.avg' => 8.2,
-                'complexity.cognitive.avg' => 6.1,
-                'cohesion.tcc.avg' => 0.15,
-                'cohesion.lcom.avg' => 4.0,
-                // Written from the symbol list by every run; each health
-                // coverage divides by one of them.
-                'size.symbol-class-count' => 1,
-                'size.symbol-method-count' => 2,
-                'size.symbol-declaring-namespace-count' => 1,
-            ]),
-            classes: [new SymbolInfo($classPath, RelativePath::fromString('src/Service.php'), null)],
-            classMetrics: [
-                $classPath->toCanonical() => MetricBag::fromArray([
-                    'complexity.ccn.sum' => 12,
-                    'complexity.cognitive.sum' => 8,
-                ]),
-            ],
-        );
+        $classSubject = MetricSubject::declaration(DeclarationPath::of(
+            $classPath,
+            RelativePath::fromString('src/Service.php'),
+            DeclarationOrdinal::fromRank(0),
+        ));
+        $classInfo = new SymbolInfo($classSubject, RelativePath::fromString('src/Service.php'), null);
+        $classBag = MetricBag::fromArray([
+            'complexity.ccn.sum' => 12,
+            'complexity.cognitive.sum' => 8,
+        ]);
+        $projectMetrics = MetricBag::fromArray([
+            'health.complexity' => 65.0,
+            'health.cohesion' => 45.0,
+            'health.coupling' => 80.0,
+            'health.typing' => 90.0,
+            'health.maintainability' => 58.0,
+            'health.overall' => 72.0,
+            'complexity.ccn.avg' => 8.2,
+            'complexity.cognitive.avg' => 6.1,
+            'cohesion.tcc.avg' => 0.15,
+            'cohesion.lcom.avg' => 4.0,
+            // Written from the symbol list by every run; each health
+            // coverage divides by one of them.
+            'size.symbol-class-count' => 1,
+            'size.symbol-method-count' => 2,
+            'size.symbol-declaring-namespace-count' => 1,
+        ]);
+        $metrics = self::createStub(MetricRepositoryInterface::class);
+        $metrics->method('get')->willReturn($projectMetrics);
+        $metrics->method('all')->willReturn([]);
+        $metrics->method('allClassDeclarations')->willReturn([$classInfo]);
+        $metrics->method('getSubject')->willReturn($classBag);
         $builder = new HealthSummaryBuilder(
             new HealthMetricCatalog(),
             self::createStub(ComputedMetricDefinitionCatalogInterface::class),
@@ -120,5 +139,54 @@ final class HealthSummaryBuilderTest extends TestCase
         );
 
         self::assertSame(['ns:Cont\\A'], $ranked);
+    }
+
+    #[Test]
+    public function itCountsAnOwnedFindingOnlyForItsExactDuplicateClass(): void
+    {
+        $firstFile = RelativePath::fromString('src/First.php');
+        $secondFile = RelativePath::fromString('src/Second.php');
+        $class = SymbolPath::forClass('App', 'Twin');
+        $first = DeclarationPath::of($class, $firstFile, DeclarationOrdinal::fromRank(0));
+        $second = DeclarationPath::of($class, $secondFile, DeclarationOrdinal::fromRank(0));
+        $method = DeclarationPath::of(SymbolPath::forMethod('App', 'Twin', 'run'), $firstFile, DeclarationOrdinal::fromRank(0));
+        $repository = new InMemoryMetricRepository([
+            new MetricDefinition('health.overall', SymbolLevel::Class_),
+            new MetricDefinition('size.class-loc', SymbolLevel::Class_),
+        ]);
+        $repository->addSubject(MetricSubject::declaration($first), MetricBag::fromArray([
+            'health.overall' => 30.0, 'size.class-loc' => 50,
+        ]), $firstFile, 1);
+        $repository->addSubject(MetricSubject::declaration($second), MetricBag::fromArray([
+            'health.overall' => 40.0, 'size.class-loc' => 200,
+        ]), $secondFile, 1);
+        $repository->addCallable(new CallableWithMetrics(
+            $method,
+            10,
+            CallableKind::Method,
+            null,
+            $first,
+            new LogicalClassPath($class),
+            new MetricBag(),
+            2,
+            $first,
+        ));
+        $finding = new Finding(
+            Location::none(),
+            MetricSubject::declaration($method),
+            $method->logical,
+            'complexity.ccn',
+            'complexity.ccn',
+            'Method finding',
+            Severity::Warning,
+        );
+
+        $summary = (new HealthSummaryBuilder(
+            new HealthMetricCatalog(),
+            self::createStub(ComputedMetricDefinitionCatalogInterface::class),
+        ))->build($repository, new NamespaceTree([]), [$finding]);
+
+        self::assertSame([1, 0], array_map(static fn($offender): int => $offender->violationCount, $summary->worstClasses));
+        self::assertSame([2.0, 0.0], array_map(static fn($offender): ?float => $offender->violationDensity, $summary->worstClasses));
     }
 }

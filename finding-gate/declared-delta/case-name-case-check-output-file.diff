@@ -1,5 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -56,1 +56,1 @@
--            "recommendation": "Cycle path: B → FOO → B (2 classes). Break by introducing an interface to invert one dependency.\nCycle data: {\"cycle\":[\"Corpus\\\\NameCase\\\\B\",\"Corpus\\\\NameCase\\\\FOO\",\"Corpus\\\\NameCase\\\\B\"],\"length\":2,\"category\":\"small\"}",
-+            "recommendation": "Cycle path: B \u2192 FOO \u2192 B (2 classes). Break by introducing an interface to invert one dependency.\nCycle data: {\"cycle\":[\"Corpus\\\\NameCase\\\\B\",\"Corpus\\\\NameCase\\\\FOO\",\"Corpus\\\\NameCase\\\\B\"],\"length\":2,\"category\":\"small\"}",

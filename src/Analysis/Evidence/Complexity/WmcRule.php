@@ -64,7 +64,7 @@ final class WmcRule extends AbstractRule
 
         $findings = [];
 
-        foreach ($context->metrics->allDeclarations() as $classInfo) {
+        foreach ($context->metrics->allClassDeclarations() as $classInfo) {
             $finding = $this->findingForClass($classInfo, $context, $this->options);
             if ($finding !== null) {
                 $findings[] = $finding;
@@ -81,7 +81,7 @@ final class WmcRule extends AbstractRule
             return null;
         }
 
-        $metrics = $context->metrics->get($subject->toSymbolPath());
+        $metrics = $context->metrics->getSubject($subject);
         if ($options->excludeDataClasses && $metrics->get(MetricName::DESIGN_IS_DATA_CLASS) === 1) {
             return null;
         }

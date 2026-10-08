@@ -234,15 +234,14 @@ final class AnonymousClassContextRegressionTest extends TestCase
 
         $classInfos = $visitor->getClassInfos();
 
-        self::assertArrayHasKey(
-            'App\Service\OuterClass',
-            $classInfos,
-            'OuterClass should be tracked by TypeCoverageVisitor',
-        );
+        self::assertCount(1, $classInfos, 'Only the named outer class should be tracked');
+        $position = array_key_first($classInfos);
+        self::assertSame('App\Service', $classInfos[$position]['namespace']);
+        self::assertSame('OuterClass', $classInfos[$position]['class']);
 
         $typeInfo = $visitor->getClassTypeInfo();
         self::assertArrayHasKey(
-            'App\Service\OuterClass',
+            $position,
             $typeInfo,
             'OuterClass type info should be present',
         );
@@ -250,8 +249,8 @@ final class AnonymousClassContextRegressionTest extends TestCase
         // OuterClass has 3 named methods with return types:
         // beforeAnonymous(): void, methodWithAnonymous(): void, afterAnonymous(): int
         // All have return type declarations
-        self::assertSame(3, $typeInfo['App\Service\OuterClass']['returnTotal']);
-        self::assertSame(3, $typeInfo['App\Service\OuterClass']['returnTyped']);
+        self::assertSame(3, $typeInfo[$position]['returnTotal']);
+        self::assertSame(3, $typeInfo[$position]['returnTyped']);
     }
 
     // ──────────────────────────────────────────────────────────────────

@@ -11,7 +11,9 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassKeyScope;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\AggregateMetricIndex;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\LogicalClassMetricIndex;
@@ -42,21 +44,22 @@ final class InMemoryMetricRepositoryTest extends TestCase
 
         $this->addCallable($repository, $symbol, $metrics, RelativePath::fromString('src/Service/UserService.php'), 420);
 
-        $retrieved = $repository->get($symbol);
+        $declaration = DeclarationPath::of($symbol, RelativePath::fromString('src/Service/UserService.php'), DeclarationOrdinal::fromRank(1));
+        $retrieved = $repository->getSubject(MetricSubject::declaration($declaration));
 
         self::assertInstanceOf(MetricBag::class, $retrieved); // @phpstan-ignore staticMethod.alreadyNarrowedType
         self::assertSame(5, $retrieved->get('complexity.ccn'));
     }
 
     #[Test]
-    public function itReturnsEmptyMetricBagForUnknownSymbol(): void
+    public function itRefusesLogicalClassReadsEvenWhenTheClassIsUnknown(): void
     {
         $repository = new InMemoryMetricRepository();
 
-        $retrieved = $repository->get(SymbolPath::forClass('Unknown', 'Class'));
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Declaration metrics require an exact subject');
 
-        self::assertInstanceOf(MetricBag::class, $retrieved); // @phpstan-ignore staticMethod.alreadyNarrowedType
-        self::assertSame([], $retrieved->all());
+        $repository->get(SymbolPath::forClass('Unknown', 'Class'));
     }
 
     #[Test]
@@ -93,10 +96,11 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $repository = new InMemoryMetricRepository();
 
         $existing = SymbolPath::forClass('App', 'Test');
-        $repository->add($existing, new MetricBag(), RelativePath::fromString('test.php'), 1);
+        $existingSubject = self::classSubject($existing, RelativePath::fromString('test.php'));
+        $repository->addSubject($existingSubject, new MetricBag(), RelativePath::fromString('test.php'), 1);
 
-        self::assertTrue($repository->has($existing));
-        self::assertFalse($repository->has(SymbolPath::forClass('Unknown', 'Class')));
+        self::assertTrue($repository->hasSubject($existingSubject));
+        self::assertFalse($repository->hasSubject(self::classSubject(SymbolPath::forClass('Unknown', 'Class'), RelativePath::fromString('unknown.php'))));
     }
 
     #[Test]
@@ -106,25 +110,60 @@ final class InMemoryMetricRepositoryTest extends TestCase
         // ->add(symbol, metrics, null, …) on existing class/namespace symbols.
         // The repository must NOT overwrite the original SymbolInfo's file in that case;
         // otherwise downstream consumers (formatters, ranking) lose file association.
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            new MetricDefinition('size.method-count', SymbolLevel::Class_),
+            new MetricDefinition('coupling.cbo', SymbolLevel::Class_, classKeyScope: ClassKeyScope::LogicalName),
+        ]);
 
         $symbol = SymbolPath::forClass('App\\Service', 'UserService');
         $originalFile = RelativePath::fromString('src/Service/UserService.php');
+        $subject = self::classSubject($symbol, $originalFile);
 
-        $repository->add($symbol, (new MetricBag())->with('size.method-count', 5), $originalFile, 10);
+        $repository->addSubject($subject, (new MetricBag())->with('size.method-count', 5), $originalFile, 10);
         // Graph-phase merge with no file context (CouplingCollector pattern).
         $repository->add($symbol, (new MetricBag())->with('coupling.cbo', 3), null, 0);
 
-        $symbols = iterator_to_array($repository->all(SymbolLevel::Class_), false);
+        $symbols = iterator_to_array($repository->allClassDeclarations(), false);
 
         self::assertCount(1, $symbols);
         self::assertNotNull($symbols[0]->file);
         self::assertTrue($symbols[0]->file->equals($originalFile));
         self::assertSame(10, $symbols[0]->line);
 
-        $bag = $repository->get($symbol);
+        $bag = $repository->getSubject($subject);
         self::assertSame(5, $bag->get('size.method-count'));
         self::assertSame(3, $bag->get('coupling.cbo'));
+    }
+
+    #[Test]
+    public function itRegistersAnExtraDirectClassPublicationLevelWithItsDeclaredScope(): void
+    {
+        $definition = new MetricDefinition(
+            'fixture.direct-class',
+            SymbolLevel::Namespace_,
+            classKeyScope: ClassKeyScope::Declaration,
+            directPublicationLevels: [SymbolLevel::Class_],
+        );
+        $repository = new InMemoryMetricRepository([$definition]);
+        $logical = SymbolPath::forClass('App', 'Exact');
+        $file = RelativePath::fromString('src/Exact.php');
+        $subject = self::classSubject($logical, $file);
+        $repository->addSubject($subject, new MetricBag(), $file, 1);
+        $repository->addSubjectScalar($subject, 'fixture.direct-class', 7);
+        self::assertSame(7, $repository->getSubject($subject)->get('fixture.direct-class'));
+
+        $this->expectException(LogicException::class);
+        $repository->addSubjectScalar(MetricSubject::logicalClass(new LogicalClassPath($logical)), 'fixture.direct-class', 8);
+    }
+
+    #[Test]
+    public function itRefusesAConflictingScopeForAnExtraDirectClassPublicationLevel(): void
+    {
+        $this->expectException(LogicException::class);
+        new InMemoryMetricRepository([
+            new MetricDefinition('fixture.direct-class', SymbolLevel::Class_, classKeyScope: ClassKeyScope::LogicalName),
+            new MetricDefinition('fixture.direct-class', SymbolLevel::Namespace_, directPublicationLevels: [SymbolLevel::Class_]),
+        ]);
     }
 
     #[Test]
@@ -187,10 +226,10 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $class2 = SymbolPath::forClass('App', 'Repository');
 
         $this->addCallable($repository, $method, new MetricBag(), RelativePath::fromString('test.php'), 100);
-        $repository->add($class1, new MetricBag(), RelativePath::fromString('test.php'), 1);
-        $repository->add($class2, new MetricBag(), RelativePath::fromString('test2.php'), 1);
+        $repository->addSubject(self::classSubject($class1, RelativePath::fromString('test.php')), new MetricBag(), RelativePath::fromString('test.php'), 1);
+        $repository->addSubject(self::classSubject($class2, RelativePath::fromString('test2.php')), new MetricBag(), RelativePath::fromString('test2.php'), 1);
 
-        $classes = iterator_to_array($repository->all(SymbolLevel::Class_), false);
+        $classes = iterator_to_array($repository->allClassDeclarations(), false);
 
         self::assertCount(2, $classes);
     }
@@ -273,7 +312,8 @@ final class InMemoryMetricRepositoryTest extends TestCase
 
         $serviceSymbols = iterator_to_array($repository->forNamespace('App\\Service'), false);
 
-        self::assertCount(2, $serviceSymbols);
+        self::assertCount(3, $serviceSymbols);
+        self::assertCount(1, array_filter($serviceSymbols, static fn(SymbolInfo $info): bool => $info->subject?->declarationPath()?->logical->getType() === \Qualimetrix\Core\Symbol\SymbolType::Class_));
     }
 
     #[Test]
@@ -305,46 +345,50 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $merged = $repo1->mergedWith($repo2) ?? throw new LogicException('In-memory repositories must be merge-compatible');
 
         // Both symbols should exist in merged repository
-        self::assertTrue($merged->has(SymbolPath::forMethod('App', 'ServiceA', 'method1')));
-        self::assertTrue($merged->has(SymbolPath::forMethod('App', 'ServiceB', 'method2')));
+        $first = MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'ServiceA', 'method1'), RelativePath::fromString('ServiceA.php'), DeclarationOrdinal::fromRank(1)));
+        $second = MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'ServiceB', 'method2'), RelativePath::fromString('ServiceB.php'), DeclarationOrdinal::fromRank(1)));
+        self::assertTrue($merged->hasSubject($first));
+        self::assertTrue($merged->hasSubject($second));
 
         // Metrics should be correct
-        self::assertSame(5, $merged->get(SymbolPath::forMethod('App', 'ServiceA', 'method1'))->get('complexity.ccn'));
-        self::assertSame(10, $merged->get(SymbolPath::forMethod('App', 'ServiceB', 'method2'))->get('complexity.ccn'));
+        self::assertSame(5, $merged->getSubject($first)->get('complexity.ccn'));
+        self::assertSame(10, $merged->getSubject($second)->get('complexity.ccn'));
 
         // Original repositories should be unchanged
-        self::assertFalse($repo1->has(SymbolPath::forMethod('App', 'ServiceB', 'method2')));
-        self::assertFalse($repo2->has(SymbolPath::forMethod('App', 'ServiceA', 'method1')));
+        self::assertFalse($repo1->hasSubject($second));
+        self::assertFalse($repo2->hasSubject($first));
     }
 
     #[Test]
     public function itMergesOverlappingSymbols(): void
     {
-        $repo1 = new InMemoryMetricRepository();
-        $repo2 = new InMemoryMetricRepository();
+        $repo1 = $this->declarationRepository(['size.method-count', 'size.class-loc', 'complexity.ccn.sum']);
+        $repo2 = $this->declarationRepository(['size.method-count', 'size.class-loc', 'complexity.ccn.sum']);
 
         $symbol = SymbolPath::forClass('App', 'Service');
+        $file = RelativePath::fromString('Service.php');
+        $subject = self::classSubject($symbol, $file);
 
         // Add metrics to first repository
         $metrics1 = (new MetricBag())
             ->with('size.method-count', 5)
-            ->with('size.loc', 100);
-        $repo1->add($symbol, $metrics1, RelativePath::fromString('Service.php'), 1);
+            ->with('size.class-loc', 100);
+        $repo1->addSubject($subject, $metrics1, $file, 1);
 
         // Add different metrics to second repository for same symbol
         $metrics2 = (new MetricBag())
             ->with('complexity.ccn.sum', 25)
-            ->with('size.loc', 150); // Override
-        $repo2->add($symbol, $metrics2, RelativePath::fromString('Service.php'), 1);
+            ->with('size.class-loc', 150); // Override
+        $repo2->addSubject($subject, $metrics2, $file, 1);
 
         $merged = $repo1->mergedWith($repo2) ?? throw new LogicException('In-memory repositories must be merge-compatible');
 
-        $result = $merged->get($symbol);
+        $result = $merged->getSubject($subject);
 
         // Metrics from both should be present, with second overriding duplicates
         self::assertSame(5, $result->get('size.method-count')); // From repo1
         self::assertSame(25, $result->get('complexity.ccn.sum')); // From repo2
-        self::assertSame(150, $result->get('size.loc')); // Overridden by repo2
+        self::assertSame(150, $result->get('size.class-loc')); // Overridden by repo2
     }
 
     #[Test]
@@ -365,23 +409,26 @@ final class InMemoryMetricRepositoryTest extends TestCase
         // Merge with empty
         $merged = $repo1->mergedWith($repo2) ?? throw new LogicException('In-memory repositories must be merge-compatible');
 
-        self::assertTrue($merged->has(SymbolPath::forMethod('App', 'Service', 'method')));
-        self::assertSame(5, $merged->get(SymbolPath::forMethod('App', 'Service', 'method'))->get('complexity.ccn'));
+        $subject = MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'method'), RelativePath::fromString('Service.php'), DeclarationOrdinal::fromRank(1)));
+        self::assertTrue($merged->hasSubject($subject));
+        self::assertSame(5, $merged->getSubject($subject)->get('complexity.ccn'));
     }
 
     #[Test]
     public function itUpdatesLineFromZeroToPositiveOnSubsequentAdd(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->declarationRepository(['complexity.wmc', 'size.class-loc']);
         $symbol = SymbolPath::forClass('App\\Service', 'UserService');
+        $file = RelativePath::fromString('src/Service/UserService.php');
+        $subject = self::classSubject($symbol, $file);
 
         // First add with line=0 (e.g., from aggregator)
-        $repository->add($symbol, (new MetricBag())->with('complexity.wmc', 10), RelativePath::fromString('src/Service/UserService.php'), 0);
+        $repository->addSubject($subject, (new MetricBag())->with('complexity.wmc', 10), $file, 0);
 
         // Second add with real line number
-        $repository->add($symbol, (new MetricBag())->with('size.loc', 100), RelativePath::fromString('src/Service/UserService.php'), 42);
+        $repository->addSubject($subject, (new MetricBag())->with('size.class-loc', 100), $file, 42);
 
-        $infos = iterator_to_array($repository->all(SymbolLevel::Class_), false);
+        $infos = iterator_to_array($repository->allClassDeclarations(), false);
         $info = $infos[0];
 
         self::assertSame(42, $info->line);
@@ -390,16 +437,18 @@ final class InMemoryMetricRepositoryTest extends TestCase
     #[Test]
     public function itKeepsPositiveLineWhenSubsequentAddHasZero(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->declarationRepository(['complexity.wmc', 'size.class-loc']);
         $symbol = SymbolPath::forClass('App\\Service', 'UserService');
+        $file = RelativePath::fromString('src/Service/UserService.php');
+        $subject = self::classSubject($symbol, $file);
 
         // First add with real line number
-        $repository->add($symbol, (new MetricBag())->with('size.loc', 100), RelativePath::fromString('src/Service/UserService.php'), 42);
+        $repository->addSubject($subject, (new MetricBag())->with('size.class-loc', 100), $file, 42);
 
         // Second add with line=0 should NOT overwrite
-        $repository->add($symbol, (new MetricBag())->with('complexity.wmc', 10), RelativePath::fromString('src/Service/UserService.php'), 0);
+        $repository->addSubject($subject, (new MetricBag())->with('complexity.wmc', 10), $file, 0);
 
-        $infos = iterator_to_array($repository->all(SymbolLevel::Class_), false);
+        $infos = iterator_to_array($repository->allClassDeclarations(), false);
         $info = $infos[0];
 
         self::assertSame(42, $info->line);
@@ -408,20 +457,22 @@ final class InMemoryMetricRepositoryTest extends TestCase
     #[Test]
     public function itUpdatesLineFromZeroToPositiveDuringMergeWith(): void
     {
-        $repo1 = new InMemoryMetricRepository();
-        $repo2 = new InMemoryMetricRepository();
+        $repo1 = $this->declarationRepository(['complexity.wmc', 'size.class-loc']);
+        $repo2 = $this->declarationRepository(['complexity.wmc', 'size.class-loc']);
 
         $symbol = SymbolPath::forClass('App', 'Service');
+        $file = RelativePath::fromString('Service.php');
+        $subject = self::classSubject($symbol, $file);
 
         // repo1 has line=0
-        $repo1->add($symbol, (new MetricBag())->with('complexity.wmc', 10), RelativePath::fromString('Service.php'), 0);
+        $repo1->addSubject($subject, (new MetricBag())->with('complexity.wmc', 10), $file, 0);
 
         // repo2 has line=42
-        $repo2->add($symbol, (new MetricBag())->with('size.loc', 100), RelativePath::fromString('Service.php'), 42);
+        $repo2->addSubject($subject, (new MetricBag())->with('size.class-loc', 100), $file, 42);
 
         $merged = $repo1->mergedWith($repo2) ?? throw new LogicException('In-memory repositories must be merge-compatible');
 
-        $infos = iterator_to_array($merged->all(SymbolLevel::Class_), false);
+        $infos = iterator_to_array($merged->allClassDeclarations(), false);
         $info = $infos[0];
 
         self::assertSame(42, $info->line);
@@ -430,19 +481,21 @@ final class InMemoryMetricRepositoryTest extends TestCase
     #[Test]
     public function itAddScalarDoesNotDuplicateDataBagEntries(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->declarationRepository(['complexity.ccn', 'size.class-loc']);
 
         $symbol = SymbolPath::forClass('App\\Service', 'UserService');
+        $file = RelativePath::fromString('src/Service/UserService.php');
+        $subject = self::classSubject($symbol, $file);
         $metrics = (new MetricBag())
             ->with('complexity.ccn', 5)
             ->withEntry('dependencies', ['name' => 'Foo'])
             ->withEntry('dependencies', ['name' => 'Bar']);
 
-        $repository->add($symbol, $metrics, RelativePath::fromString('src/Service/UserService.php'), 1);
+        $repository->addSubject($subject, $metrics, $file, 1);
 
-        $repository->addScalar($symbol, 'size.loc', 100);
+        $repository->addSubjectScalar($subject, 'size.class-loc', 100);
 
-        $retrieved = $repository->get($symbol);
+        $retrieved = $repository->getSubject($subject);
 
         self::assertSame(2, $retrieved->entryCount('dependencies'));
     }
@@ -452,7 +505,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
     {
         $repository = new InMemoryMetricRepository();
 
-        $symbol = SymbolPath::forClass('App\\Service', 'NonExistent');
+        $symbol = SymbolPath::forNamespace('App\\Service');
 
         $repository->addScalar($symbol, 'complexity.ccn', 10);
 
@@ -462,18 +515,20 @@ final class InMemoryMetricRepositoryTest extends TestCase
     #[Test]
     public function itAddScalarUpdatesExistingMetric(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->declarationRepository(['foo', 'bar']);
 
         $symbol = SymbolPath::forClass('App\\Service', 'UserService');
+        $file = RelativePath::fromString('src/Service/UserService.php');
+        $subject = self::classSubject($symbol, $file);
         $metrics = (new MetricBag())
             ->with('foo', 10)
             ->with('bar', 42);
 
-        $repository->add($symbol, $metrics, RelativePath::fromString('src/Service/UserService.php'), 1);
+        $repository->addSubject($subject, $metrics, $file, 1);
 
-        $repository->addScalar($symbol, 'foo', 20);
+        $repository->addSubjectScalar($subject, 'foo', 20);
 
-        $retrieved = $repository->get($symbol);
+        $retrieved = $repository->getSubject($subject);
 
         self::assertSame(20, $retrieved->get('foo'));
         self::assertSame(42, $retrieved->get('bar'));
@@ -609,11 +664,11 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $firstSubject = MetricSubject::declaration($firstPath);
         $secondSubject = MetricSubject::declaration($secondPath);
 
-        $first = new InMemoryMetricRepository();
+        $first = $this->declarationRepository(['first', 'second']);
         $first->addSubject($firstSubject, MetricBag::fromArray(['first' => 1]), $firstPath->file, 11);
         $this->assertLocationFreeLogicalClassProjection($first);
 
-        $second = new InMemoryMetricRepository();
+        $second = $this->declarationRepository(['first', 'second']);
         $second->addSubject($secondSubject, MetricBag::fromArray(['second' => 2]), $secondPath->file, 22);
 
         foreach ([($first->mergedWith($second) ?? throw new LogicException('In-memory repositories must be merge-compatible')), ($second->mergedWith($first) ?? throw new LogicException('In-memory repositories must be merge-compatible'))] as $repository) {
@@ -634,7 +689,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
     #[Test]
     public function itPublishesFoldedClassAndNamespaceEvidenceWithoutCollapsingDeclarations(): void
     {
-        $first = new InMemoryMetricRepository();
+        $first = $this->declarationRepository(['first', 'second']);
         $firstPath = DeclarationPath::of(
             SymbolPath::forClass('App', 'Service'),
             RelativePath::fromString('src/First.php'),
@@ -642,7 +697,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         );
         $first->addSubject(MetricSubject::declaration($firstPath), MetricBag::fromArray(['first' => 1]), $firstPath->file, 1);
 
-        $second = new InMemoryMetricRepository();
+        $second = $this->declarationRepository(['first', 'second']);
         $secondPath = DeclarationPath::of(
             SymbolPath::forClass('app', 'service'),
             RelativePath::fromString('src/Second.php'),
@@ -663,7 +718,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
     #[Test]
     public function itPreservesLogicalOnlySpellingEvidenceAcrossRepeatedMerges(): void
     {
-        $mixed = new InMemoryMetricRepository();
+        $mixed = $this->logicalRepository(['first', 'second', 'other']);
         $mixed->add(SymbolPath::forNamespace('app'), MetricBag::fromArray(['namespace' => 4]), null, null);
         $mixed->add(SymbolPath::fromClassFqn('app\\service'), MetricBag::fromArray(['second' => 2]), null, null);
         $mixed->add(SymbolPath::fromClassFqn('App\\Service'), MetricBag::fromArray(['first' => 1]), null, null);
@@ -672,7 +727,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
             static fn(SymbolInfo $info): bool => $info->subject?->logicalClassPath() !== null,
         ));
         self::assertSame(4, $mixed->get(SymbolPath::forNamespace('APP'))->get('namespace'));
-        $other = new InMemoryMetricRepository();
+        $other = $this->logicalRepository(['first', 'second', 'other']);
         $other->add(SymbolPath::fromClassFqn('Other\\Thing'), MetricBag::fromArray(['other' => 3]), null, null);
 
         $repository = $mixed->mergedWith($other)
@@ -687,15 +742,15 @@ final class InMemoryMetricRepositoryTest extends TestCase
             static fn(SymbolInfo $info): bool => $info->subject?->logicalClassPath() !== null,
         ));
         self::assertSame(4, $repository->get(SymbolPath::forNamespace('APP'))->get('namespace'));
-        self::assertSame(1, $repository->get(SymbolPath::fromClassFqn('APP\\SERVICE'))->get('first'));
-        self::assertSame(2, $repository->get(SymbolPath::fromClassFqn('APP\\SERVICE'))->get('second'));
-        self::assertSame(3, $repository->get(SymbolPath::fromClassFqn('OTHER\\THING'))->get('other'));
+        self::assertSame(1, $repository->getSubject(MetricSubject::logicalClass(new LogicalClassPath(SymbolPath::fromClassFqn('APP\\SERVICE'))))->get('first'));
+        self::assertSame(2, $repository->getSubject(MetricSubject::logicalClass(new LogicalClassPath(SymbolPath::fromClassFqn('APP\\SERVICE'))))->get('second'));
+        self::assertSame(3, $repository->getSubject(MetricSubject::logicalClass(new LogicalClassPath(SymbolPath::fromClassFqn('OTHER\\THING'))))->get('other'));
     }
 
     #[Test]
     public function itRekeysANamespaceAggregateWhenAnExactClassChangesItsCanonicalSpelling(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->declarationRepository(['size.class-loc']);
         $lower = SymbolPath::forNamespace('App\\foo');
         $repository->add($lower, MetricBag::fromArray(['size.loc.sum' => 17]), null, null);
         $class = SymbolPath::fromClassFqn('App\\Foo\\Example');
@@ -720,13 +775,13 @@ final class InMemoryMetricRepositoryTest extends TestCase
     #[Test]
     public function itRekeysANamespaceAggregateWhenALogicalClassChangesItsCanonicalSpelling(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->logicalRepository(['coupling.cbo']);
         $lower = SymbolPath::forNamespace('App\\foo');
         $repository->add($lower, MetricBag::fromArray(['size.loc.sum' => 17]), null, null);
 
         $repository->addSubject(
             MetricSubject::logicalClass(new LogicalClassPath(SymbolPath::forClass('App\\Foo', 'Example'))),
-            MetricBag::fromArray(['size.class-loc' => 5]),
+            MetricBag::fromArray(['coupling.cbo' => 5]),
             null,
             0,
         );
@@ -865,8 +920,8 @@ final class InMemoryMetricRepositoryTest extends TestCase
             $infos = iterator_to_array($repository->all(SymbolLevel::Namespace_), false);
             self::assertCount(1, $infos);
             self::assertSame('App', $infos[0]->symbolPath->namespace);
-            self::assertSame($file, $infos[0]->file);
-            self::assertSame($line, $infos[0]->line);
+            self::assertNull($infos[0]->file);
+            self::assertNull($infos[0]->line);
             foreach ([$lowerPath, $upperPath, SymbolPath::forNamespace('APP')] as $path) {
                 $bag = $repository->get($path);
                 self::assertSame(7, $bag->get('first'));
@@ -1021,8 +1076,8 @@ final class InMemoryMetricRepositoryTest extends TestCase
         self::assertSame($public->entries('source'), $repository->getSubject($subject)->entries('source'));
 
         $info = $repository->forNamespace('App')[0];
-        self::assertSame($file, $info->file);
-        self::assertSame(13, $info->line);
+        self::assertNull($info->file);
+        self::assertNull($info->line);
         self::assertCount(1, $repository->forNamespace('App'));
     }
 
@@ -1052,15 +1107,15 @@ final class InMemoryMetricRepositoryTest extends TestCase
             self::assertSame($public->entries('source'), $typedMetrics->entries('source'));
             self::assertCount(1, $repository->forNamespace('App'));
             self::assertCount(1, iterator_to_array($repository->all(SymbolLevel::Namespace_), false));
-            self::assertSame($expectedFile, $repository->forNamespace('App')[0]->file);
-            self::assertSame(13, $repository->forNamespace('App')[0]->line);
+            self::assertNull($repository->forNamespace('App')[0]->file);
+            self::assertNull($repository->forNamespace('App')[0]->line);
         }
     }
 
     #[Test]
-    public function itAddsOneScalarToAnExistingClassDeclarationAndItsProjection(): void
+    public function itAddsOneScalarOnlyToAnExistingExactClassDeclaration(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->declarationRepository(['size.class-loc', 'design.dit']);
         $logical = SymbolPath::forClass('App', 'Shim');
         $declaration = DeclarationPath::of($logical, RelativePath::fromString('src/Shim.php'), DeclarationOrdinal::fromRank(0));
         $subject = MetricSubject::declaration($declaration);
@@ -1068,17 +1123,15 @@ final class InMemoryMetricRepositoryTest extends TestCase
 
         $repository->addSubjectScalar($subject, 'design.dit', 2);
 
-        // Both views: the declaration answers exactly, and the logical class --
-        // which aggregation and the metrics export read -- follows the write.
         self::assertSame(2, $repository->getSubject($subject)->get('design.dit'));
         self::assertSame(12, $repository->getSubject($subject)->get('size.class-loc'));
-        self::assertSame(2, $repository->get($logical)->get('design.dit'));
+        self::assertNull($repository->getSubject(MetricSubject::logicalClass(new LogicalClassPath($logical)))->get('design.dit'));
     }
 
     #[Test]
-    public function itLeavesTheRepositoryAloneForASubjectItDoesNotHold(): void
+    public function itRefusesAClassScalarWithoutAnExistingDeclaration(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->declarationRepository(['design.dit']);
         $declaration = DeclarationPath::of(
             SymbolPath::forClass('App', 'Absent'),
             RelativePath::fromString('src/Absent.php'),
@@ -1086,12 +1139,9 @@ final class InMemoryMetricRepositoryTest extends TestCase
         );
         $subject = MetricSubject::declaration($declaration);
 
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('Class scalar requires an existing exact declaration');
         $repository->addSubjectScalar($subject, 'design.dit', 7);
-
-        // Same contract as addScalar(): enriching what is not there creates
-        // nothing, so a collector cannot invent a subject by writing to it.
-        self::assertFalse($repository->hasSubject($subject));
-        self::assertNull($repository->getSubject($subject)->get('design.dit'));
     }
 
     #[Test]
@@ -1109,7 +1159,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         // must stop at its own subject.
         self::assertSame(5, $repository->getSubject($subject)->get('complexity.cognitive'));
         self::assertSame(3, $repository->getSubject($subject)->get('complexity.ccn'));
-        self::assertNull($repository->get(SymbolPath::forClass('App', 'Service'))->get('complexity.cognitive'));
+        self::assertNull($repository->getSubject(MetricSubject::logicalClass(new LogicalClassPath(SymbolPath::forClass('App', 'Service'))))->get('complexity.cognitive'));
     }
 
     #[Test]
@@ -1124,12 +1174,188 @@ final class InMemoryMetricRepositoryTest extends TestCase
         self::assertSame(4, $repository->get($namespacePath)->get('design.dit.max'));
     }
 
+    #[Test]
+    public function itOverlaysOneLogicalGraphValueOnEachExactDuplicateWithoutCollapsingDeclarationValues(): void
+    {
+        $logical = SymbolPath::forClass('App', 'Twin');
+        $first = self::classSubject($logical, RelativePath::fromString('src/First.php'));
+        $second = self::classSubject($logical, RelativePath::fromString('src/Second.php'));
+        $repository = new InMemoryMetricRepository([
+            new MetricDefinition('size.class-loc', SymbolLevel::Class_),
+            new MetricDefinition('coupling.cbo', SymbolLevel::Class_, classKeyScope: ClassKeyScope::LogicalName),
+        ]);
+        $repository->addSubject($first, MetricBag::fromArray(['size.class-loc' => 10]), RelativePath::fromString('src/First.php'), 1);
+        $repository->addSubject($second, MetricBag::fromArray(['size.class-loc' => 20]), RelativePath::fromString('src/Second.php'), 1);
+        $repository->add($logical, MetricBag::fromArray(['coupling.cbo' => 3]), null, null);
+
+        self::assertCount(2, iterator_to_array($repository->allClassDeclarations(), false));
+        self::assertCount(1, iterator_to_array($repository->allLogicalClasses(), false));
+        self::assertCount(3, $repository->forNamespace('App'));
+        self::assertSame(10, $repository->getSubject($first)->get('size.class-loc'));
+        self::assertSame(20, $repository->getSubject($second)->get('size.class-loc'));
+        self::assertSame(3, $repository->getSubject($first)->get('coupling.cbo'));
+        self::assertSame(3, $repository->getSubject($second)->get('coupling.cbo'));
+        self::assertNull($repository->getSubject(MetricSubject::logicalClass(new LogicalClassPath($logical)))->get('size.class-loc'));
+    }
+
+    #[Test]
+    public function itRefusesEveryUntypedClassReaderEvenWithOneDeclaration(): void
+    {
+        $logical = SymbolPath::forClass('App', 'Only');
+        $repository = new InMemoryMetricRepository();
+        $repository->addSubject(self::classSubject($logical, RelativePath::fromString('src/Only.php')), new MetricBag(), RelativePath::fromString('src/Only.php'), 1);
+
+        foreach ([
+            static fn() => $repository->get($logical),
+            static fn() => $repository->has($logical),
+            static fn() => iterator_to_array($repository->all(SymbolLevel::Class_), false),
+        ] as $read) {
+            try {
+                $read();
+                self::fail('An untyped class read must refuse even one declaration');
+            } catch (LogicException $e) {
+                self::assertNotSame('', $e->getMessage());
+            }
+        }
+    }
+
+    #[Test]
+    public function itRefusesAnUndeclaredClassKeyAndAConflictingMergeRegistry(): void
+    {
+        $logical = SymbolPath::forClass('App', 'Only');
+        $subject = self::classSubject($logical, RelativePath::fromString('src/Only.php'));
+        $unregistered = new InMemoryMetricRepository();
+        try {
+            $unregistered->addSubject($subject, MetricBag::fromArray(['size.class-loc' => 1]), null, null);
+            self::fail('Undeclared class metrics must refuse');
+        } catch (LogicException $e) {
+            self::assertStringContainsString('not declared', $e->getMessage());
+        }
+
+        $declaration = $this->declarationRepository(['fixture.scope']);
+        $logicalRepository = $this->logicalRepository(['fixture.scope']);
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('Conflicting class scope');
+        $declaration->mergedWith($logicalRepository);
+    }
+
+    #[Test]
+    public function itKeepsClassScopeRegistriesIndependentAcrossSuccessfulAndConflictingMerges(): void
+    {
+        $logical = SymbolPath::forClass('App', 'Scoped');
+        $subject = self::classSubject($logical, RelativePath::fromString('src/Scoped.php'));
+        $left = $this->declarationRepository(['fixture.left']);
+        $right = $this->declarationRepository(['fixture.right']);
+
+        foreach ([$left->mergedWith($right), $right->mergedWith($left)] as $merged) {
+            self::assertNotNull($merged);
+            $merged->addSubject($subject, MetricBag::fromArray(['fixture.left' => 1, 'fixture.right' => 2]), null, null);
+            self::assertSame(1, $merged->getSubject($subject)->get('fixture.left'));
+            self::assertSame(2, $merged->getSubject($subject)->get('fixture.right'));
+        }
+
+        foreach ([[$left, 'fixture.left', 'fixture.right'], [$right, 'fixture.right', 'fixture.left']] as [$original, $own, $foreign]) {
+            $original->addSubject($subject, MetricBag::fromArray([$own => 1]), null, null);
+            try {
+                $original->addSubject($subject, MetricBag::fromArray([$foreign => 2]), null, null);
+                self::fail('Successful merge must not add foreign scopes to an original repository');
+            } catch (LogicException $e) {
+                self::assertStringContainsString('not declared', $e->getMessage());
+            }
+        }
+
+        $declaration = $this->declarationRepository(['fixture.conflict']);
+        $logicalRepository = $this->logicalRepository(['fixture.conflict']);
+        foreach ([[$declaration, $logicalRepository], [$logicalRepository, $declaration]] as [$first, $second]) {
+            try {
+                $first->mergedWith($second);
+                self::fail('Conflicting class scopes must refuse in either merge order');
+            } catch (LogicException $e) {
+                self::assertStringContainsString('Conflicting class scope', $e->getMessage());
+            }
+        }
+
+        $declaration->addSubject($subject, MetricBag::fromArray(['fixture.conflict' => 1]), null, null);
+        $logicalRepository->addSubject(MetricSubject::logicalClass(new LogicalClassPath($logical)), MetricBag::fromArray(['fixture.conflict' => 2]), null, null);
+        foreach ([
+            static fn() => $declaration->addSubject(MetricSubject::logicalClass(new LogicalClassPath($logical)), MetricBag::fromArray(['fixture.conflict' => 3]), null, null),
+            static fn() => $logicalRepository->addSubject($subject, MetricBag::fromArray(['fixture.conflict' => 3]), null, null),
+        ] as $foreignWrite) {
+            try {
+                $foreignWrite();
+                self::fail('Failed merge must not change either original class scope');
+            } catch (LogicException $e) {
+                self::assertStringContainsString('not declared', $e->getMessage());
+            }
+        }
+    }
+
+    #[Test]
+    public function itRefusesConflictingAnonymousContextWhenMergingCallableRecords(): void
+    {
+        $file = RelativePath::fromString('src/Anonymous.php');
+        $method = DeclarationPath::of(SymbolPath::forMethod('App', 'Anonymous', 'run'), $file, DeclarationOrdinal::fromRank(0));
+        $first = new InMemoryMetricRepository();
+        $second = new InMemoryMetricRepository();
+        $first->addCallable(new CallableWithMetrics(
+            $method,
+            10,
+            CallableKind::Method,
+            null,
+            null,
+            null,
+            new MetricBag(),
+            2,
+            null,
+            true,
+        ));
+        $second->addCallable(new CallableWithMetrics(
+            $method,
+            10,
+            CallableKind::Method,
+            null,
+            null,
+            null,
+            new MetricBag(),
+            2,
+            null,
+            false,
+        ));
+
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Conflicting callable metadata');
+        $first->mergedWith($second);
+    }
+
     private function assertLocationFreeLogicalClassProjection(InMemoryMetricRepository $repository): void
     {
         $logicalClasses = iterator_to_array($repository->allLogicalClasses(), false);
         self::assertCount(1, $logicalClasses);
         self::assertNull($logicalClasses[0]->file);
         self::assertNull($logicalClasses[0]->line);
+    }
+
+    private static function classSubject(SymbolPath $logical, RelativePath $file, int $ordinal = 0): MetricSubject
+    {
+        return MetricSubject::declaration(DeclarationPath::of($logical, $file, DeclarationOrdinal::fromRank($ordinal)));
+    }
+
+    /** @param list<string> $keys */
+    private function declarationRepository(array $keys): InMemoryMetricRepository
+    {
+        return new InMemoryMetricRepository(array_map(
+            static fn(string $key): MetricDefinition => new MetricDefinition($key, SymbolLevel::Class_, classKeyScope: ClassKeyScope::Declaration),
+            $keys,
+        ));
+    }
+
+    /** @param list<string> $keys */
+    private function logicalRepository(array $keys): InMemoryMetricRepository
+    {
+        return new InMemoryMetricRepository(array_map(
+            static fn(string $key): MetricDefinition => new MetricDefinition($key, SymbolLevel::Class_, classKeyScope: ClassKeyScope::LogicalName),
+            $keys,
+        ));
     }
 
     private function addCallable(
@@ -1139,6 +1365,12 @@ final class InMemoryMetricRepositoryTest extends TestCase
         RelativePath $file,
         int $startFilePos,
     ): void {
+        $ownerDeclaration = DeclarationPath::of(
+            SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? ''),
+            $file,
+            DeclarationOrdinal::fromRank(0),
+        );
+        $repository->addSubject(MetricSubject::declaration($ownerDeclaration), new MetricBag(), $file, 1);
         $repository->addCallable(new CallableWithMetrics(
             DeclarationPath::of($symbol, $file, DeclarationOrdinal::fromRank(1)),
             $startFilePos,
@@ -1147,6 +1379,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
             null,
             new LogicalClassPath(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? '')),
             $metrics,
+            classAggregationOwnerDeclaration: $ownerDeclaration,
         ));
     }
 }

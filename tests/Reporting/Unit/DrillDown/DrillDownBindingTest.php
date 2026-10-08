@@ -16,6 +16,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\DrillDown\DrillDownBinding;
 
@@ -236,14 +237,22 @@ final class DrillDownBindingTest extends TestCase
     private function repository(): InMemoryMetricRepository
     {
         $repository = new InMemoryMetricRepository();
-        $repository->add(
-            SymbolPath::forClass('Demo\\Alpha', 'Widget'),
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(
+                SymbolPath::forClass('Demo\\Alpha', 'Widget'),
+                RelativePath::fromString('src/Alpha/Widget.php'),
+                DeclarationOrdinal::fromRank(0),
+            )),
             new MetricBag(),
             RelativePath::fromString('src/Alpha/Widget.php'),
             5,
         );
-        $repository->add(
-            SymbolPath::forClass('Demo\\Beta\\Deep', 'Thing'),
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(
+                SymbolPath::forClass('Demo\\Beta\\Deep', 'Thing'),
+                RelativePath::fromString('src/Beta/Deep/Thing.php'),
+                DeclarationOrdinal::fromRank(0),
+            )),
             new MetricBag(),
             RelativePath::fromString('src/Beta/Deep/Thing.php'),
             5,
