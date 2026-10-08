@@ -1135,12 +1135,8 @@ final class DirectivesCommandTest extends TestCase
     }
 
     /**
-     * Route 28 (`m6-routes-merged.md`): the ladder's last clause, which answers
-     * exit 1 and `Internal error:` for a throwable neither
-     * `catch (ConfigurationRefusal)` (route 27, exit 3) nor
-     * `catch (InvalidArgumentException)` recognises, and hands it to
-     * {@see \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter::internalError()}
-     * rather than to a `DirectivesCommand`-only dialect.
+     * An exception the audit did not anticipate reaches the shared classifier
+     * as an internal error, with exit 5 and the real error envelope.
      *
      * **The exception is planted rather than provoked, because nothing this
      * command can be given provokes one.** Eight inputs were measured against
@@ -1160,7 +1156,7 @@ final class DirectivesCommandTest extends TestCase
      * real ladder and the real error envelope.
      */
     #[Test]
-    public function itAnswersExitOneForAnUnrecognisedExceptionFromTheAudit(): void
+    public function itAnswersExitFiveForAnUnrecognisedExceptionFromTheAudit(): void
     {
         $this->writeSource('Live.php', self::sevenParameterMethod(
             '@qmx-threshold code-smell.long-parameter-list warning=9 error=12 — live',
@@ -1177,7 +1173,7 @@ final class DirectivesCommandTest extends TestCase
             ['capture_stderr_separately' => true],
         );
 
-        self::assertSame(1, $tester->getStatusCode());
+        self::assertSame(5, $tester->getStatusCode());
         self::assertSame('', $tester->getDisplay());
         self::assertStringContainsString('Internal error:', $tester->getErrorOutput());
     }

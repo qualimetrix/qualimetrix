@@ -217,10 +217,10 @@ PHP;
 
         $exit = $session->run($output, 'json', static fn(): int => 0);
 
-        self::assertSame(1, $exit);
+        self::assertSame(5, $exit);
         /** @var array{error: string, exit_code: int} $envelope */
         $envelope = json_decode($output->fetch(), true, flags: \JSON_THROW_ON_ERROR);
-        self::assertSame(1, $envelope['exit_code']);
+        self::assertSame(5, $envelope['exit_code']);
         self::assertStringContainsString('Internal error:', $envelope['error']);
         self::assertStringContainsString('logger reset failed', $envelope['error']);
     }

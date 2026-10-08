@@ -107,7 +107,7 @@ final class ErrorStream
      * The fallback is taken whenever there is no writer, and a run bound to a
      * single-channel output has none: its diagnostics are dropped by design.
      * Dropping applies to diagnostics, not to the message that ends the run —
-     * an uncaught throwable would otherwise leave exit code 1 and an empty
+     * an uncaught throwable would otherwise leave an internal error and an empty
      * screen, which is worse than writing the trace into the one channel the
      * caller gave, and is what Symfony does when no owner is involved at all.
      */

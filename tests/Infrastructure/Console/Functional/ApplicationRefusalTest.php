@@ -28,7 +28,7 @@ final class ApplicationRefusalTest extends TestCase
 {
     private const int REFUSAL = 3;
 
-    private const int INTERNAL_ERROR = 1;
+    private const int INTERNAL_ERROR = 5;
 
     private string $fixture = '';
 

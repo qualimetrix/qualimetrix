@@ -441,11 +441,11 @@ final class ConfigurationRefusalRoutingTest extends TestCase
      * from anything a CLI invocation supplies, so the CLI path this test
      * drives can never throw it. The clause is absent; this case proves the
      * exception falls all the way to
-     * `catch (Throwable)` and answers as a product defect, code 1, not 3 —
+     * `catch (Throwable)` and answers as a product defect, code 5, not 3 —
      * the behaviour the removal is supposed to have, not a regression of it.
      */
     #[Test]
-    public function itLeavesConflictingCliAliasAtExitOneAsAnInternalError(): void
+    public function itLeavesConflictingCliAliasAtExitFiveAsAnInternalError(): void
     {
         $container = (new ContainerFactory())->create();
         /** @var RuntimeConfigurator $runtime */
@@ -472,7 +472,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
         $tester = new CommandTester($command);
         $code = $tester->execute(['paths' => ['src']]);
 
-        self::assertSame(1, $code);
+        self::assertSame(5, $code);
     }
 
     private function freshPresenter(): RefusalPresenter

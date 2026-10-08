@@ -145,7 +145,7 @@ final class ErrorStreamOwnershipTest extends TestCase
     {
         // The fallback drops *diagnostics*, not the message that ends the run.
         // A run bound to a single-channel output has no diagnostic writer at
-        // all, and an uncaught throwable would then leave exit code 1 and an
+        // all, and an uncaught throwable would then leave exit code 5 and an
         // empty screen — strictly worse than folding the trace into the one
         // channel the caller gave, which is what Symfony itself does.
         $errorStream = new ErrorStream();
@@ -157,7 +157,7 @@ final class ErrorStreamOwnershipTest extends TestCase
 
         $exitCode = $application->run(new ArrayInput(['command' => 'boom']), $output);
 
-        self::assertSame(1, $exitCode);
+        self::assertSame(5, $exitCode);
         self::assertStringContainsString('a failure with nowhere to go', $output->fetch());
     }
 

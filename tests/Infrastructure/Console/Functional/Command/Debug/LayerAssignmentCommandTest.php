@@ -549,7 +549,7 @@ final class LayerAssignmentCommandTest extends TestCase
         $tester = new CommandTester($this->buildCommand(AnalysisPreflightProfile::graph()));
         $exit = $tester->execute(['fqn' => 'App\\Service\\Known', '--config' => $configPath]);
 
-        self::assertSame(Command::FAILURE, $exit);
+        self::assertSame(5, $exit);
         self::assertStringContainsString('completed finding enablement', $tester->getDisplay());
         self::assertStringNotContainsString('Assigned to:', $tester->getDisplay());
     }
