@@ -26,6 +26,7 @@ use QmxFindingGate\RenameMaps;
 use QmxFindingGate\RunContext;
 use QmxFindingGate\SelfTestOutcomes;
 use QmxFindingGate\SyntheticTree;
+use ReflectionMethod;
 use WeakReference;
 
 /**
@@ -258,7 +259,12 @@ PHP;
         foreach ([false, true] as $malformed) {
             $tree = SelfTestOutcomes::fixture();
             if ($malformed) {
-                $tree['candidateAnswers']['case:alpha|format:json']['stdout'] = '{"violations":[]}';
+                $publication = (new ReflectionMethod(SyntheticTree::class, 'findingPublication'))->invoke(null, []);
+                $stdout = json_encode($publication, \JSON_THROW_ON_ERROR);
+                $tree['candidateAnswers']['case:alpha|format:json']['stdout'] = $stdout;
+                $tree['candidateAnswers']['case:alpha|format:json']['ranked'] = ['stdout' => $stdout];
+                $tree['candidateAnswers']['case:alpha|format:json']['physical'] = ['stdout' => $stdout];
+                self::assertSame('records', \QmxFindingGate\PublicationForms::classify('case:alpha|format:json', $stdout));
             }
             $root = SyntheticTree::create($tree);
             try {
