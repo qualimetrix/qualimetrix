@@ -1870,7 +1870,7 @@ rules:
       - subtree: Qualimetrix\Core\Symbol
       - subtree: Qualimetrix\Core\Path
     suppress_namespace_channels:
-      # S11c exposes the real declaration census in these exact orchestration namespaces.
+      # The exact declaration census exposes these orchestration namespace unions.
       # Their required capability composition gives own unions 22, 67, 40, 18 and 78;
       # moving the wiring only moves the signal. Declaration checks remain active.
       coupling.cbo:
@@ -2007,9 +2007,8 @@ rules:
         # anywhere cheaper —
         # every namespace already in the union is an analysis capability, not a
         # composition root — and a namespace channel is not addressable by
-        # `@qmx-threshold`. Class CBO inside this namespace stays measured:
-        # `MetricName`, `MetricBag`, `AbstractCollector` and the rest each keep
-        # their own point threshold.
+        # `@qmx-threshold`. Class CBO is governed separately by exact path
+        # exclusions and point thresholds; its metric facts remain published.
         - exact: 'Qualimetrix\Analysis\Evidence\Measurement\Contract'
     suppress_paths:
       # Shared declaration metadata and numbering promises: Ca/Ce 34/3 and 22/1.

@@ -255,14 +255,13 @@ not consult mutable global profiler state. The exact span order is initial
 `aggregation`, `global`, and optional `aggregation.global`, with the completion
 log between the first two spans.
 
-High fan-in of the public Measurement surface is governed by point thresholds,
-not a namespace-wide exclusion. Current CBO thresholds give one-edge headroom:
-`AbstractCollector` 27, `AggregationStrategy` 38, `MetricBag` 68,
-`MetricDefinition` 33, `MetricName` 65, `MetricRepositoryInterface` 46, and
-`ResettableVisitorInterface` 23. `MetricBag` and
-`MetricRepositoryInterface` also carry rounded point ClassRank warning/error
-thresholds of 0.035 and 0.020 respectively for their intentional contract-hub
-role.
+Intentional contract readership is governed by exact CBO path exclusions and
+an exact namespace-channel exclusion in `qmx.yaml`, alongside point thresholds.
+The remaining CBO point thresholds give one-edge headroom: `AbstractCollector`
+27, `AggregationStrategy` 38, and `ResettableVisitorInterface` 23. `MetricBag`
+also carries a rounded point ClassRank warning/error threshold of 0.035 for its
+intentional contract-hub role. Signal exclusions do not remove the underlying
+metric facts from publication.
 
 ## Test ownership and Definition of Done
 
