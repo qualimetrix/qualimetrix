@@ -61,6 +61,7 @@ final class VisitorMethodContext
             $node instanceof Node\Stmt\Namespace_ => $this->lexicalScope->enterNamespace($node->name?->toString()),
             $node instanceof Node\Stmt\ClassLike => $this->lexicalScope->enterClass($node->name?->toString(), $node->getStartFilePos()),
             $node instanceof Node\Stmt\Property => $this->lexicalScope->enterProperty(\count($node->props) === 1 ? $node->props[0]->name->toString() : null),
+            $node instanceof Node\Param && $node->isPromoted() => $this->lexicalScope->enterProperty($node->var instanceof Node\Expr\Variable && \is_string($node->var->name) ? $node->var->name : null),
             default => null,
         };
 
@@ -120,6 +121,7 @@ final class VisitorMethodContext
 
         match (true) {
             $node instanceof Node\Stmt\Property => $this->lexicalScope->leaveProperty(),
+            $node instanceof Node\Param && $node->isPromoted() => $this->lexicalScope->leaveProperty(),
             $node instanceof Node\Stmt\ClassLike => $this->lexicalScope->leaveClass(),
             $node instanceof Node\Stmt\Namespace_ => $this->lexicalScope->leaveNamespace(),
             default => null,
