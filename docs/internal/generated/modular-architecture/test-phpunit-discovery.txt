@@ -123,13 +123,13 @@ Available tests:
  - QmxFindingGate\Tests\CaptureTest::itKeepsSarifResultsAndNeighboringMetadataProtectedFromNormalization
  - QmxFindingGate\Tests\CaptureTest::itKeepsTheExactHtmlRefusalAndJudgesReadableNeighboringArtifacts
  - QmxFindingGate\Tests\CaptureTest::itKeepsTheNormalizationBudgetLocalToEachPublication
+ - QmxFindingGate\Tests\CaptureTest::itKeepsUnreadableHtmlAsWholeBytesWithoutAReportedPredecessor
  - QmxFindingGate\Tests\CaptureTest::itNormalizesOnlyDeclaredSarifCaptureUrisWithoutChangingRecordBytes
  - QmxFindingGate\Tests\CaptureTest::itNormalizesOnlyTheGuardedOutputDestinationField
  - QmxFindingGate\Tests\CaptureTest::itRefusesAMissingReplayKeyThroughThePublicGateWithoutWriting
  - QmxFindingGate\Tests\CaptureTest::itRefusesIncompleteOrUnrecognizedDirectivesAndNeighboringCommandExits
  - QmxFindingGate\Tests\CaptureTest::itRefusesIntentOnlyAndInexactCaptureExitMeasurements
  - QmxFindingGate\Tests\CaptureTest::itRefusesPrivateEvidenceThatChangesOnlyOnTheSecondCandidatePass
- - QmxFindingGate\Tests\CaptureTest::itRefusesUnreadableHtmlWithoutItsExactReportedPredecessor
  - QmxFindingGate\Tests\CaptureTest::itRefusesUnsizedRankingMetadataRatherThanInventingACompleteCapture
  - QmxFindingGate\Tests\CaptureTest::itRejectsPublicationsMissingFromEitherCandidateRun
  - QmxFindingGate\Tests\CaptureTest::itRemovesBothCacheLocationsWhenTheCacheProofThrows
@@ -180,16 +180,16 @@ Available tests:
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itDoesNotHoldAnIncompleteAnalysisToABaselineFileItCannotWrite
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itHoldsAnAnalysisToItsBaselineFile
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itJudgesNormalizationMeasurementsByTheirCanonicalOutcomeSide
+ - QmxFindingGate\Tests\CaseOutcomeCheckTest::itJudgesOnlyNativeRecordsAgainstADeclaredRefusalEnvelope"a different exit"
+ - QmxFindingGate\Tests\CaseOutcomeCheckTest::itJudgesOnlyNativeRecordsAgainstADeclaredRefusalEnvelope"a malformed position"
+ - QmxFindingGate\Tests\CaseOutcomeCheckTest::itJudgesOnlyNativeRecordsAgainstADeclaredRefusalEnvelope"an analysis envelope"
+ - QmxFindingGate\Tests\CaseOutcomeCheckTest::itJudgesOnlyNativeRecordsAgainstADeclaredRefusalEnvelope"an empty error"
+ - QmxFindingGate\Tests\CaseOutcomeCheckTest::itJudgesOnlyNativeRecordsAgainstADeclaredRefusalEnvelope"malformed JSON"
+ - QmxFindingGate\Tests\CaseOutcomeCheckTest::itJudgesOnlyNativeRecordsAgainstADeclaredRefusalEnvelope"no exact error keys"
+ - QmxFindingGate\Tests\CaseOutcomeCheckTest::itJudgesOnlyNativeRecordsAgainstADeclaredRefusalEnvelope"the coherent envelope"
+ - QmxFindingGate\Tests\CaseOutcomeCheckTest::itJudgesOnlyNativeRecordsAgainstADeclaredRefusalEnvelope"the envelope before source publication"
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itReadsTheExplicitEnvelopeFromTheRepairingEncoder
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRefusesInvalidCorpusMetadataBeforeEveryCorpusReadingModeWrites
- - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRequiresACoherentRefusalEnvelope"a different exit"
- - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRequiresACoherentRefusalEnvelope"a malformed position"
- - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRequiresACoherentRefusalEnvelope"an analysis envelope"
- - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRequiresACoherentRefusalEnvelope"an empty error"
- - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRequiresACoherentRefusalEnvelope"malformed JSON"
- - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRequiresACoherentRefusalEnvelope"no exact error keys"
- - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRequiresACoherentRefusalEnvelope"the coherent envelope"
- - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRequiresACoherentRefusalEnvelope"the envelope before source publication"
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRequiresTheCompleteIncompleteEnding"baseline exists"
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRequiresTheCompleteIncompleteEnding"baseline succeeds"
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRequiresTheCompleteIncompleteEnding"coverage claims completeness"
@@ -650,6 +650,11 @@ Available tests:
  - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryClassWithoutAProducer"a class raised nowhere"
  - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryClassWithoutAProducer"a second site of an observed class"
  - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryClassWithoutAProducer"every site observed"
+ - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryClassWithoutAProducer"narrowed class needs a real scoped observation"
+ - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryClassWithoutAProducer"retired helper identity cannot be credited"
+ - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryClassWithoutAProducer"retired helper keeps vocabulary without native site credit"
+ - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryClassWithoutAProducer"retirement does not exempt another active class"
+ - QmxFindingGate\Tests\WitnessRegistryTest::itNamesEverySiteWithoutAWitnessAndEveryClassWithoutAProducer"scope-only run-failed keeps other classes exact"
  - QmxTautologyControls\Tests\TautologyControlDeclarationTest::itDeclaresExactlyOnePositiveControlAndNoRepeatedId
  - QmxTautologyControls\Tests\TautologyControlDeclarationTest::itNamesOnlyCasesThatExist
  - QmxTautologyControls\Tests\TautologyControlDeclarationTest::itPlantsEachBreakageInProductionCodeThatStillLooksLikeThat
