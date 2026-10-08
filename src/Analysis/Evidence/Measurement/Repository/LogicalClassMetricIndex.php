@@ -65,12 +65,21 @@ final class LogicalClassMetricIndex
         return $this->store(new SymbolInfo($subject, $file, $line), $metrics);
     }
 
+    public function addScalarToExisting(MetricSubject $subject, string $key, int|float $value): void
+    {
+        if (!$this->has($subject)) {
+            throw new LogicException('Logical class scalar requires an existing class identity');
+        }
+
+        $this->addSubject($subject, (new MetricBag())->with($key, $value), null, null);
+    }
+
     /** Projects an exact class or its callable owner onto the logical class view. */
     public function project(SymbolInfo $exact, MetricBag $metrics): ?SymbolInfo
     {
         $declaration = $exact->subject?->declarationPath();
         if ($declaration?->logical->getType() === SymbolType::Class_) {
-            return $this->addLogicalClass($declaration->logical, $metrics, null, null);
+            return $this->addLogicalClass($declaration->logical, new MetricBag(), null, null);
         }
 
         $owner = $exact->classAggregationOwner;
@@ -131,6 +140,8 @@ final class LogicalClassMetricIndex
             $info->line,
             $info->callableKind,
             $info->classAggregationOwner,
+            $info->classAggregationOwnerDeclaration,
+            $info->anonymousClassContext,
         );
         if (isset($this->metrics[$canonical])) {
             $this->metrics[$canonical] = RepositoryMerge::metrics($this->metrics[$canonical], $metrics);
@@ -176,6 +187,8 @@ final class LogicalClassMetricIndex
                 $previousInfo->line,
                 $previousInfo->callableKind,
                 $previousInfo->classAggregationOwner,
+                $previousInfo->classAggregationOwnerDeclaration,
+                $previousInfo->anonymousClassContext,
             );
         }
         $this->canonicalByFold[$folded] = $canonical;

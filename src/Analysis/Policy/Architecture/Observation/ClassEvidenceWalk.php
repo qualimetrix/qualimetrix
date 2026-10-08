@@ -11,7 +11,6 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ShadowExemption;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerShadowing;
-use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /** Collects class-side layer evidence from one prepared run. */
 final readonly class ClassEvidenceWalk
@@ -49,7 +48,7 @@ final readonly class ClassEvidenceWalk
         $doubtedClasses = [];
         $analysedDeclarations = 0;
 
-        foreach ($this->context->metrics->all(SymbolLevel::Class_) as $classSymbol) {
+        foreach ($this->context->metrics->allLogicalClasses() as $classSymbol) {
             $analysedDeclarations++;
             $path = $classSymbol->symbolPath;
             $canonical = $path->toCanonical();

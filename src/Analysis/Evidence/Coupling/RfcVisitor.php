@@ -45,7 +45,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterfac
 final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
 {
     /**
-     * @var array<string, ClassRfcData> Class FQN => RFC data
+     * @var array<int, ClassRfcData> Physical class position => RFC data
      */
     private array $classes = [];
 
@@ -55,7 +55,7 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
      * Stack of class contexts to handle nested classes.
      * null = anonymous class (ignored).
      *
-     * @var list<string|null>
+     * @var list<int|null>
      */
     private array $classStack = [];
 
@@ -74,14 +74,14 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
     }
 
     /**
-     * @return array<string, ClassRfcData>
+     * @return array<int, ClassRfcData>
      */
     public function getClassesData(): array
     {
         return $this->classes;
     }
 
-    private function getCurrentClass(): ?string
+    private function getCurrentClass(): ?int
     {
         if ($this->classStack === []) {
             return null;
@@ -124,12 +124,12 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
     private function handleClassLikeNode(Node $node): void
     {
         $className = $this->extractClassLikeName($node);
-        $this->classStack[] = $className;
+        $this->classStack[] = $className === null ? null : $node->getStartFilePos();
 
         // Only create metrics for named classes
         if ($className !== null) {
-            $fqn = $this->buildClassFqn($className);
-            $this->classes[$fqn] = new ClassRfcData(
+            $position = $node->getStartFilePos();
+            $this->classes[$position] = new ClassRfcData(
                 namespace: $this->currentNamespace,
                 className: $className,
                 line: $node->getStartLine(),
@@ -139,51 +139,51 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
             // Collect own methods
             if ($node instanceof Interface_) {
                 // Interface methods are always abstract, but they ARE own methods of the interface
-                $this->collectInterfaceMethods($node, $fqn);
+                $this->collectInterfaceMethods($node, $position);
             } elseif ($node instanceof Class_ || $node instanceof Trait_ || $node instanceof Enum_) {
                 // Class_, Trait_, and Enum_: only non-abstract methods and property hooks
-                $this->collectOwnMethods($node, $fqn);
-                $this->collectOwnPropertyHooks($node, $fqn);
+                $this->collectOwnMethods($node, $position);
+                $this->collectOwnPropertyHooks($node, $position);
             }
         }
     }
 
-    private function collectOwnMethods(Class_|Trait_|Enum_ $class, string $fqn): void
+    private function collectOwnMethods(Class_|Trait_|Enum_ $class, int $position): void
     {
         foreach ($class->getMethods() as $method) {
             if (!$method->isAbstract()) {
-                $this->classes[$fqn]->addOwnMethod($method->name->toString());
+                $this->classes[$position]->addOwnMethod($method->name->toString());
             }
         }
     }
 
-    private function collectInterfaceMethods(Interface_ $interface, string $fqn): void
+    private function collectInterfaceMethods(Interface_ $interface, int $position): void
     {
         foreach ($interface->getMethods() as $method) {
-            $this->classes[$fqn]->addOwnMethod($method->name->toString());
+            $this->classes[$position]->addOwnMethod($method->name->toString());
         }
     }
 
-    private function collectOwnPropertyHooks(Class_|Trait_|Enum_ $class, string $fqn): void
+    private function collectOwnPropertyHooks(Class_|Trait_|Enum_ $class, int $position): void
     {
         foreach ($class->stmts as $stmt) {
             if ($stmt instanceof Property) {
-                $this->addOwnPropertyHooks($stmt->hooks, $fqn);
+                $this->addOwnPropertyHooks($stmt->hooks, $position);
             }
 
             if ($stmt instanceof ClassMethod) {
                 foreach ($stmt->params as $param) {
-                    $this->addOwnPropertyHooks($param->hooks, $fqn);
+                    $this->addOwnPropertyHooks($param->hooks, $position);
                 }
             }
         }
     }
 
     /** @param array<PropertyHook> $hooks */
-    private function addOwnPropertyHooks(array $hooks, string $fqn): void
+    private function addOwnPropertyHooks(array $hooks, int $position): void
     {
         foreach ($hooks as $hook) {
-            $this->classes[$fqn]->addOwnMethod($hook->name->toString());
+            $this->classes[$position]->addOwnMethod($hook->name->toString());
         }
     }
 
@@ -194,18 +194,18 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
             return;
         }
 
-        $fqn = $this->buildClassFqn($currentClass);
+        $position = $currentClass;
 
         if ($this->isNonExecutingCallableExpression($node)) {
             return;
         }
 
         match (true) {
-            $node instanceof MethodCall => $this->handleMethodCall($node, $fqn),
-            $node instanceof NullsafeMethodCall => $this->handleNullsafeMethodCall($node, $fqn),
-            $node instanceof StaticCall => $this->handleStaticCall($node, $fqn),
-            $node instanceof FuncCall => $this->handleFunctionCall($node, $fqn),
-            $node instanceof New_ => $this->handleConstructorCall($node, $fqn),
+            $node instanceof MethodCall => $this->handleMethodCall($node, $position),
+            $node instanceof NullsafeMethodCall => $this->handleNullsafeMethodCall($node, $position),
+            $node instanceof StaticCall => $this->handleStaticCall($node, $position),
+            $node instanceof FuncCall => $this->handleFunctionCall($node, $position),
+            $node instanceof New_ => $this->handleConstructorCall($node, $position),
             default => null,
         };
     }
@@ -227,7 +227,7 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
             && strtolower($node->name->toString()) === 'clone';
     }
 
-    private function handleMethodCall(MethodCall $node, string $fqn): void
+    private function handleMethodCall(MethodCall $node, int $position): void
     {
         $methodName = $node->name instanceof Identifier ? $node->name->toString() : null;
         if ($methodName === null) {
@@ -241,11 +241,11 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
             // Use receiver identifier + method name as dedup key to distinguish
             // $repo->save() from $cache->save() (different receiver types).
             $receiverName = $this->extractReceiverName($node->var);
-            $this->classes[$fqn]->addExternalMethod($receiverName . '->' . $methodName);
+            $this->classes[$position]->addExternalMethod($receiverName . '->' . $methodName);
         }
     }
 
-    private function handleNullsafeMethodCall(NullsafeMethodCall $node, string $fqn): void
+    private function handleNullsafeMethodCall(NullsafeMethodCall $node, int $position): void
     {
         $methodName = $node->name instanceof Identifier ? $node->name->toString() : null;
         if ($methodName === null) {
@@ -254,10 +254,10 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
 
         // Nullsafe calls are always external (cannot be $this?->method())
         $receiverName = $this->extractReceiverName($node->var);
-        $this->classes[$fqn]->addExternalMethod($receiverName . '->' . $methodName);
+        $this->classes[$position]->addExternalMethod($receiverName . '->' . $methodName);
     }
 
-    private function handleStaticCall(StaticCall $node, string $fqn): void
+    private function handleStaticCall(StaticCall $node, int $position): void
     {
         $methodName = $node->name instanceof Identifier ? $node->name->toString() : null;
         if ($methodName === null || !$node->class instanceof Name) {
@@ -268,21 +268,21 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
 
         // Ignore internal calls (self::, static::, parent::)
         if (!\in_array($className, ['self', 'static', 'parent'], true)) {
-            $this->classes[$fqn]->addExternalMethod($className . '::' . $methodName);
+            $this->classes[$position]->addExternalMethod($className . '::' . $methodName);
         }
     }
 
-    private function handleFunctionCall(FuncCall $node, string $fqn): void
+    private function handleFunctionCall(FuncCall $node, int $position): void
     {
         if (!$node->name instanceof Name) {
             return;
         }
 
         $funcName = $node->name->toString();
-        $this->classes[$fqn]->addExternalMethod($funcName);
+        $this->classes[$position]->addExternalMethod($funcName);
     }
 
-    private function handleConstructorCall(New_ $node, string $fqn): void
+    private function handleConstructorCall(New_ $node, int $position): void
     {
         if (!$node->class instanceof Name) {
             return;
@@ -295,7 +295,7 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
             return;
         }
 
-        $this->classes[$fqn]->addExternalMethod($className . '::__construct');
+        $this->classes[$position]->addExternalMethod($className . '::__construct');
     }
 
     public function leaveNode(Node $node): ?int
@@ -371,14 +371,6 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
         return '*@' . spl_object_id($expr);
     }
 
-    private function buildClassFqn(string $className): string
-    {
-        if ($this->currentNamespace !== null && $this->currentNamespace !== '') {
-            return $this->currentNamespace . '\\' . $className;
-        }
-
-        return $className;
-    }
 }
 
 /**

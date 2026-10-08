@@ -574,8 +574,12 @@ final class ResultPresenterTest extends TestCase
     private function analyzedRepository(): InMemoryMetricRepository
     {
         $repository = new InMemoryMetricRepository();
-        $repository->add(
-            SymbolPath::forClass('Demo\\Alpha', 'Widget'),
+        $repository->addSubject(
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(
+                SymbolPath::forClass('Demo\\Alpha', 'Widget'),
+                RelativePath::fromString('src/Alpha/Widget.php'),
+                \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0),
+            )),
             new MetricBag(),
             RelativePath::fromString('src/Alpha/Widget.php'),
             5,

@@ -624,10 +624,8 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
             ->with('size.method-count', 10)
             ->with('design.is-readonly', 0);
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('all')
-            ->willReturnCallback(static fn(SymbolLevel $level): array => $level === SymbolLevel::Class_ ? [$classInfo] : []);
-        $repository->method('get')->willReturn($metrics);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn($metrics);
 
         $findings = (new GodClassRule(new GodClassOptions()))->analyze(new AnalysisContext($repository));
 

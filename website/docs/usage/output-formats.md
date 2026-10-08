@@ -512,7 +512,9 @@ Raw metric values for every symbol (file, class, namespace, method, function, pr
 
 **When to use:** Custom dashboards, trend analysis, data science pipelines, or building your own quality gates on raw metrics.
 
-**Top-level keys:** `version`, `toolVersion`, `package`, `timestamp`, `docs`, `llmsTxt`, `symbols[]` (each with `type`: file/class/namespace/method/function/project, `name`, `file`, `line`, `metrics: {...}`), `outOfScope`, `projectScope`, `coverage`, `summary`. Under `--namespace`/`--class` the `summary` counts only the selection and `outOfScope` counts what it left out; `symbols[]` is never narrowed. There is no `callable` type; a single `project` entry aggregates project-wide statistical metrics (min/max/avg/p95 across all symbols) and has a `null` `line`. Here `version` is the version of this export format and `toolVersion` the version of Qualimetrix; `docs` and `llmsTxt` are the documentation addresses `json` carries in its `meta`.
+**Top-level keys:** `version`, `toolVersion`, `package`, `timestamp`, `docs`, `llmsTxt`, `symbols[]` (each with `type`: file/class/namespace/method/function/project, `name`, `subject`, `file`, `line`, `metrics: {...}`), `outOfScope`, `projectScope`, `coverage`, `summary`. Under `--namespace`/`--class` the `summary` counts only the selection and `outOfScope` counts what it left out; `symbols[]` is never narrowed. There is no `callable` type; a single `project` entry aggregates project-wide statistical metrics (min/max/avg/p95 across all symbols) and has `null` `file` and `line`. Here `version` is the version of this export format and `toolVersion` the version of Qualimetrix; `docs` and `llmsTxt` are the documentation addresses `json` carries in its `meta`.
+
+Each class or callable declaration is published separately. `name` may repeat; `subject` identifies the record. Logical graph values repeat in every declaration of their name, and class aggregates count declarations. Namespace and project records have `null` `file` and `line`. A `.count` beside `.avg` is its sample size; namespace `size.*-count` metrics no longer publish a separate file-count suffix. For namespace `size.loc|lloc|cloc`, `.sum` is the integer subtree total, `.count` the number of contributing files and `.avg` their ratio.
 
 <!-- llms:skip-begin -->
 **Example output (abbreviated):**
@@ -529,6 +531,7 @@ Raw metric values for every symbol (file, class, namespace, method, function, pr
         {
             "type": "file",
             "name": "src/Service/UserService.php",
+            "subject": "file:src/Service/UserService.php",
             "file": "src/Service/UserService.php",
             "line": 1,
             "metrics": {
@@ -540,6 +543,7 @@ Raw metric values for every symbol (file, class, namespace, method, function, pr
         {
             "type": "class",
             "name": "App\\Service\\UserService",
+            "subject": "declaration:class:App\\Service\\UserService@src/Service/UserService.php",
             "file": "src/Service/UserService.php",
             "line": 10,
             "metrics": {
@@ -556,6 +560,7 @@ Raw metric values for every symbol (file, class, namespace, method, function, pr
         {
             "type": "method",
             "name": "App\\Service\\UserService::calculate",
+            "subject": "declaration:callable:App\\Service\\UserService::calculate@src/Service/UserService.php",
             "file": "src/Service/UserService.php",
             "line": 42,
             "metrics": {

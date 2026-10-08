@@ -27,7 +27,12 @@ Coupling/
 
 ## Metrics
 
-Coupling metrics measure dependencies between components. All collectors in this category use `GlobalContextCollectorInterface` and work with the dependency graph.
+Coupling metrics measure dependencies between components. Graph collectors use
+`GlobalContextCollectorInterface`; RFC is collected from each named class
+declaration. Same-name declarations retain independent RFC evidence, including
+when they occur in one file. Graph values remain logical-name measurements and
+appear in every exact declaration view. Class-derived aggregates sample those
+views once each; the logical graph record is not an extra sample.
 
 ---
 
@@ -345,6 +350,8 @@ measured number of dependents.
 new MetricDefinition(
     name: 'coupling.instability',
     collectedAt: SymbolLevel::Class_,
+    classKeyScope: ClassKeyScope::LogicalName,
+    directPublicationLevels: [SymbolLevel::Namespace_],
     aggregations: [
         SymbolLevel::Namespace_->value => [Average],
     ],

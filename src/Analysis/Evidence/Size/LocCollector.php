@@ -94,10 +94,12 @@ final class LocCollector extends AbstractCollector implements DeclarationIndexAw
             ->with(MetricName::SIZE_LLOC, $metrics[MetricName::SIZE_LLOC])
             ->with(MetricName::SIZE_CLOC, $metrics[MetricName::SIZE_CLOC]);
 
-        // Store class-level LOC with class FQN as key
         \assert($this->visitor instanceof LocVisitor);
 
-        foreach ($this->visitor->getClassRanges() as $classFqn => $range) {
+        foreach ($this->visitor->getClassRanges() as $range) {
+            $classFqn = $range['namespace'] !== null && $range['namespace'] !== ''
+                ? $range['namespace'] . '\\' . $range['className']
+                : $range['className'];
             $classLoc = $range['endLine'] - $range['startLine'] + 1;
             $bag = $bag->with(MetricName::SIZE_CLASS_LOC . ':' . $classFqn, $classLoc);
         }

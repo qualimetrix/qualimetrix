@@ -153,14 +153,16 @@ final class HealthContributorTest extends TestCase
     public function itClassWithNullMetricSkipped(): void
     {
         // Build manually with one class missing the primary metric
+        $hasCcn = self::exactClassSubject(SymbolPath::forClass('App', 'HasCcn'), 'src/HasCcn.php');
+        $noCcn = self::exactClassSubject(SymbolPath::forClass('App', 'NoCcn'), 'src/NoCcn.php');
         $classes = [
-            new SymbolInfo(SymbolPath::forClass('App', 'HasCcn'), RelativePath::fromString('src/HasCcn.php'), 1),
-            new SymbolInfo(SymbolPath::forClass('App', 'NoCcn'), RelativePath::fromString('src/NoCcn.php'), 1),
+            new SymbolInfo($hasCcn, RelativePath::fromString('src/HasCcn.php'), 1),
+            new SymbolInfo($noCcn, RelativePath::fromString('src/NoCcn.php'), 1),
         ];
 
         $classMetrics = [
-            'class:App\\HasCcn' => MetricBag::fromArray(['complexity.ccn.sum' => 10, 'complexity.cognitive.sum' => 5]),
-            'class:App\\NoCcn' => MetricBag::fromArray(['complexity.cognitive.sum' => 3]), // no ccn.sum
+            $hasCcn->toCanonical() => MetricBag::fromArray(['complexity.ccn.sum' => 10, 'complexity.cognitive.sum' => 5]),
+            $noCcn->toCanonical() => MetricBag::fromArray(['complexity.cognitive.sum' => 3]), // no ccn.sum
         ];
 
         $metrics = $this->createMetricRepository(
@@ -266,7 +268,9 @@ final class HealthContributorTest extends TestCase
 
         foreach ($classSpecs as $spec) {
             $symbol = SymbolPath::forClass($spec['ns'], $spec['name']);
-            $classes[] = new SymbolInfo($symbol, RelativePath::fromString('src/' . $spec['name'] . '.php'), 1);
+            $file = 'src/' . $spec['name'] . '.php';
+            $subject = self::exactClassSubject($symbol, $file);
+            $classes[] = new SymbolInfo($subject, RelativePath::fromString($file), 1);
 
             $bag = [];
 
@@ -306,7 +310,7 @@ final class HealthContributorTest extends TestCase
                 $dimensionMetrics['maintainability.mi.avg'] ??= 65.0;
             }
 
-            $classMetrics[$symbol->toCanonical()] = MetricBag::fromArray($bag);
+            $classMetrics[$subject->toCanonical()] = MetricBag::fromArray($bag);
         }
 
         $metrics = $this->createMetricRepository(

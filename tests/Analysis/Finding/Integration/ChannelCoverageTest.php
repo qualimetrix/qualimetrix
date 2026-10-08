@@ -226,9 +226,9 @@ final class ChannelCoverageTest extends TestCase
         $metricBag = (new MetricBag())->with('coupling.class-rank', 0.9)->with('coupling.ca', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn([$classInfo]);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn($metricBag);
+        $repository->method('allLogicalClasses')->willReturn([$classInfo]);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn($metricBag);
 
         $findings = $rule->analyze(new AnalysisContext($repository));
         self::assertCount(1, $findings);
@@ -250,8 +250,8 @@ final class ChannelCoverageTest extends TestCase
             ->with('design.type-coverage.property.total', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn($metricBag);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn($metricBag);
 
         $findings = $rule->analyze(new AnalysisContext($repository));
         self::assertCount(1, $findings);

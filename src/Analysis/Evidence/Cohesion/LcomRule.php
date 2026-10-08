@@ -67,7 +67,7 @@ final class LcomRule extends AbstractRule
 
         $findings = [];
 
-        foreach ($context->metrics->allDeclarations() as $classInfo) {
+        foreach ($context->metrics->allClassDeclarations() as $classInfo) {
             $finding = $this->findingForClass($classInfo, $context, $this->options);
             if ($finding !== null) {
                 $findings[] = $finding;
@@ -84,7 +84,7 @@ final class LcomRule extends AbstractRule
             return null;
         }
 
-        $metrics = $context->metrics->get($subject->toSymbolPath());
+        $metrics = $context->metrics->getSubject($subject);
         $lcomValue = $this->eligibleLcom($metrics, $options);
         if ($lcomValue === null) {
             return null;

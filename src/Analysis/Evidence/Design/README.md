@@ -119,13 +119,13 @@ it.
   rule flagged once the walk grew a second index — the collector now keeps the
   protocol and the repository pass, and the campaign that replaces external
   ancestry has one class to replace instead of a method inside a collector.
-- `DitGlobalCollector` resolves and writes a depth per class **declaration**,
-  and only then writes one value per name onto the logical class — the maximum
-  over that name's declarations. One name can be declared in two files with two
-  different parents, and the name-keyed map it used before let the file read
-  last decide for all of them. `InheritanceRule` reads the declaration subject
-  it iterates, because the logical projection cannot hold two answers
-  (ADR 0073).
+- `DitGlobalCollector` resolves and writes a depth per class **declaration**.
+  DIT has no logical-name overwrite: two declarations with different parents
+  keep their own answers. `InheritanceRule` reads the exact subject it iterates.
+  The per-file visitor retains every physical declaration; local evidence starts
+  at that declaration's own immediate parent before resolving ancestor names.
+  Type-coverage collection likewise keeps independent counts for same-name
+  declarations and joins its facts by physical declaration identity.
 - `NocCollector` derives direct-child counts from the same DependencyModel
   graph and retains its collector name, definitions, ordering, and aggregation
   semantics. It counts distinct child **names**: a subclass declared in two

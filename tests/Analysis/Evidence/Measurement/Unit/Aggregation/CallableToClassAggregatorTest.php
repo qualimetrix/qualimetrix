@@ -16,7 +16,10 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
+use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -35,29 +38,42 @@ final class CallableToClassAggregatorTest extends TestCase
     #[Test]
     public function itRefusesACallableWithoutAnExactDeclarationSubject(): void
     {
-        $owner = new LogicalClassPath(SymbolPath::forClass('App', 'Service'));
-        $subjectless = new SymbolInfo(
-            SymbolPath::forMethod('App', 'Service', 'calculate'),
-            RelativePath::fromString('src/Service.php'),
-            10,
-            CallableKind::Method,
-            $owner,
-        );
-        self::assertNull($subjectless->subject, 'the fixture must actually carry no subject');
-
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allCallables')->willReturn([$subjectless]);
-        $repository->method('get')->willReturn(new MetricBag());
-        $repository->method('getSubject')->willReturn(new MetricBag());
-
+        $file = RelativePath::fromString('src/Service.php');
+        $ownerDeclaration = DeclarationPath::of(SymbolPath::forClass('App', 'Service'), $file, DeclarationOrdinal::fromRank(0));
+        $callablePath = SymbolPath::forMethod('App', 'Service', 'calculate');
+        $callableDeclaration = DeclarationPath::of($callablePath, $file, DeclarationOrdinal::fromRank(0));
+        $exactSubject = MetricSubject::declaration($callableDeclaration);
+        $cases = [
+            [$callablePath, null, true, 'Callable metrics require an exact declaration subject; App\\Service::calculate carries none'],
+            [$exactSubject, $exactSubject, false, 'Callable aggregation requires its exact named-owner class declaration'],
+        ];
         $definitions = [new MetricDefinition('complexity.ccn', SymbolLevel::Callable, [
             SymbolLevel::Class_->value => [AggregationStrategy::Sum],
         ])];
 
-        self::expectException(LogicException::class);
-        self::expectExceptionMessage('Callable metrics require an exact declaration subject');
+        foreach ($cases as [$identity, $expectedSubject, $hasOwner, $expectedMessage]) {
+            $callable = new SymbolInfo(
+                $identity,
+                $file,
+                10,
+                CallableKind::Method,
+                new LogicalClassPath(SymbolPath::forClass('App', 'Service')),
+                $ownerDeclaration,
+            );
+            self::assertSame($expectedSubject, $callable->subject);
 
-        (new CallableToClassAggregator(self::createStub(ProfilerInterface::class)))
-            ->aggregate($repository, $definitions);
+            $repository = self::createStub(MetricRepositoryInterface::class);
+            $repository->method('allCallables')->willReturn([$callable]);
+            $repository->method('hasSubject')->willReturn($hasOwner);
+            $repository->method('getSubject')->willReturn(new MetricBag());
+
+            try {
+                (new CallableToClassAggregator(self::createStub(ProfilerInterface::class)))
+                    ->aggregate($repository, $definitions);
+                self::fail('Expected a refusal: ' . $expectedMessage);
+            } catch (LogicException $exception) {
+                self::assertSame($expectedMessage, $exception->getMessage());
+            }
+        }
     }
 }

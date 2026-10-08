@@ -1019,6 +1019,28 @@ PHP;
         self::assertSame(1, $metrics->get('design.is-exception:App\\Failure'));
     }
 
+    #[Test]
+    public function itKeepsDistinctCountsForSameFileClassDeclarations(): void
+    {
+        $this->collectMetrics(<<<'PHP'
+<?php
+namespace App;
+class Twin { public function one(): void {} }
+if (false) {
+    class Twin {
+        public function one(): void {}
+        public function two(): void {}
+    }
+}
+PHP);
+
+        $visitor = $this->collector->getVisitor();
+        self::assertInstanceOf(MethodCountVisitor::class, $visitor);
+        $classes = array_values($visitor->getClassMetrics());
+        self::assertCount(2, $classes);
+        self::assertSame([1, 2], array_map(static fn(MethodCountMetrics $class): int => $class->methodCount(), $classes));
+    }
+
     private function collectMetrics(string $code): MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();

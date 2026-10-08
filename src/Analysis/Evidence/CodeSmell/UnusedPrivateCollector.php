@@ -12,9 +12,11 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareTrait;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\DataBag;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
 
@@ -71,8 +73,11 @@ final class UnusedPrivateCollector extends AbstractCollector implements Declarat
 
         $bag = new MetricBag();
 
-        foreach ($this->visitor->getClassData() as $classFqn => $classData) {
-            $bag = $this->addClassMetrics($bag, $classFqn, $classData);
+        foreach ($this->visitor->getClassData() as $classData) {
+            $classFqn = $classData->namespace !== null && $classData->namespace !== ''
+                ? $classData->namespace . '\\' . $classData->className
+                : $classData->className;
+            $bag = $this->addClassMetrics($bag, $classData, $classFqn);
         }
 
         return $bag;
@@ -88,7 +93,7 @@ final class UnusedPrivateCollector extends AbstractCollector implements Declarat
         $result = [];
 
         foreach ($this->visitor->getClassData() as $classData) {
-            $bag = $this->buildClassMetricBag($classData);
+            $bag = $this->addClassMetrics(new MetricBag(), $classData, null);
 
             $result[] = $this->classWithMetrics(SymbolPath::forClass($classData->namespace ?? '', $classData->className), $file, $classData->startFilePos, $classData->line, $bag);
         }
@@ -99,41 +104,24 @@ final class UnusedPrivateCollector extends AbstractCollector implements Declarat
     #[Override]
     public function getMetricDefinitions(): array
     {
-        return [];
+        return [new MetricDefinition(name: MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL, collectedAt: SymbolLevel::Class_)];
     }
 
-    private function addClassMetrics(MetricBag $bag, string $classFqn, UnusedPrivateClassData $data): MetricBag
+    private function addClassMetrics(MetricBag $bag, UnusedPrivateClassData $data, ?string $classFqn): MetricBag
     {
         $unusedMethods = $data->getUnusedMethods();
         $unusedProperties = $data->getUnusedProperties();
         $unusedConstants = $data->getUnusedConstants();
+        $suffix = $classFqn === null ? '' : ':' . $classFqn;
 
         $bag = $bag->with(
-            MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL . ':' . $classFqn,
+            MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL . $suffix,
             \count($unusedMethods) + \count($unusedProperties) + \count($unusedConstants),
         );
 
         $bag = $this->addEntries($bag, $classFqn, self::ENTRY_METHOD, $unusedMethods);
         $bag = $this->addEntries($bag, $classFqn, self::ENTRY_PROPERTY, $unusedProperties);
         $bag = $this->addEntries($bag, $classFqn, self::ENTRY_CONSTANT, $unusedConstants);
-
-        return $bag;
-    }
-
-    private function buildClassMetricBag(UnusedPrivateClassData $data): MetricBag
-    {
-        $unusedMethods = $data->getUnusedMethods();
-        $unusedProperties = $data->getUnusedProperties();
-        $unusedConstants = $data->getUnusedConstants();
-
-        $bag = (new MetricBag())->with(
-            MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL,
-            \count($unusedMethods) + \count($unusedProperties) + \count($unusedConstants),
-        );
-
-        $bag = $this->addEntries($bag, null, self::ENTRY_METHOD, $unusedMethods);
-        $bag = $this->addEntries($bag, null, self::ENTRY_PROPERTY, $unusedProperties);
-        $bag = $this->addEntries($bag, null, self::ENTRY_CONSTANT, $unusedConstants);
 
         return $bag;
     }

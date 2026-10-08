@@ -1834,6 +1834,28 @@ PHP);
         self::assertSame(0, $metrics->entryCount('code-smell.unused-private.method:App\\Subject'));
     }
 
+    #[Test]
+    public function itKeepsDistinctUnusedMembersForSameFileDeclarations(): void
+    {
+        $this->parseAndTraverse(<<<'PHP'
+<?php
+namespace App;
+class Twin { private function first(): void {} }
+if (false) {
+    class Twin {
+        private function first(): void {}
+        private function second(): void {}
+    }
+}
+PHP);
+
+        $visitor = $this->collector->getVisitor();
+        self::assertInstanceOf(UnusedPrivateVisitor::class, $visitor);
+        $classes = array_values($visitor->getClassData());
+        self::assertCount(2, $classes);
+        self::assertSame([1, 2], array_map(static fn(UnusedPrivateClassData $class): int => \count($class->getUnusedMethods()), $classes));
+    }
+
     private function collectMetrics(string $code): MetricBag
     {
         $this->parseAndTraverse($code);

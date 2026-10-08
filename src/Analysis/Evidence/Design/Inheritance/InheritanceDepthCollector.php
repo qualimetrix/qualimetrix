@@ -92,8 +92,11 @@ final class InheritanceDepthCollector extends AbstractCollector implements Decla
         $result = [];
         $classParents = $this->visitor->getClassParents();
 
-        foreach ($this->visitor->getClassInfo() as $classFqn => $info) {
-            $dit = $this->calculateDit($classFqn, $classParents);
+        foreach ($this->visitor->getClassInfo() as $info) {
+            $classFqn = $info->namespace !== null && $info->namespace !== ''
+                ? $info->namespace . '\\' . $info->className
+                : $info->className;
+            $dit = $this->calculateDitFromParent($classFqn, $info->parentFqn, $classParents);
 
             $bag = (new MetricBag())->with(MetricName::DESIGN_DIT, $dit);
 
@@ -114,8 +117,15 @@ final class InheritanceDepthCollector extends AbstractCollector implements Decla
      */
     private function calculateDit(string $classFqn, array $classParents, array $visited = []): int
     {
-        // Get parent
-        $parentFqn = $classParents[$classFqn] ?? null;
+        return $this->calculateDitFromParent($classFqn, $classParents[$classFqn] ?? null, $classParents, $visited);
+    }
+
+    /**
+     * @param array<string, string|null> $classParents
+     * @param array<string, true> $visited
+     */
+    private function calculateDitFromParent(string $classFqn, ?string $parentFqn, array $classParents, array $visited = []): int
+    {
 
         // No parent = DIT 0
         if ($parentFqn === null) {

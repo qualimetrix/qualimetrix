@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Path\RelativePath;
@@ -22,6 +23,7 @@ use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -31,19 +33,24 @@ final class NamespaceToProjectAggregatorTest extends TestCase
     #[Test]
     public function itComputesWeightedAverageAcrossNamespacesAtProjectLevel(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $collector = new MaintainabilityIndexCollector();
+        $definitions = [
+            ...$collector->getMetricDefinitions(),
+            new MetricDefinition(MetricName::SIZE_SYMBOL_METHOD_COUNT, SymbolLevel::Class_),
+        ];
+        $repository = new InMemoryMetricRepository($definitions);
 
         // Namespace App\Service: 2 classes, total 12 methods
-        $repository->add(
-            SymbolPath::forClass('App\\Service', 'UserService'),
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Service', 'UserService'), RelativePath::fromString('src/Service/UserService.php'), DeclarationOrdinal::fromRank(0))),
             (new MetricBag())->with('maintainability.mi.avg', 80.0)->with('maintainability.mi.count', 10)->with('maintainability.mi.min', 70.0),
             RelativePath::fromString('src/Service/UserService.php'),
             10,
         );
         $this->addMethodsWithMi($repository, 'App\\Service', 'UserService', 'src/Service/UserService.php', 10, 80.0);
 
-        $repository->add(
-            SymbolPath::forClass('App\\Service', 'OrderService'),
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Service', 'OrderService'), RelativePath::fromString('src/Service/OrderService.php'), DeclarationOrdinal::fromRank(0))),
             (new MetricBag())->with('maintainability.mi.avg', 60.0)->with('maintainability.mi.count', 2)->with('maintainability.mi.min', 50.0),
             RelativePath::fromString('src/Service/OrderService.php'),
             10,
@@ -51,16 +58,15 @@ final class NamespaceToProjectAggregatorTest extends TestCase
         $this->addMethodsWithMi($repository, 'App\\Service', 'OrderService', 'src/Service/OrderService.php', 2, 60.0);
 
         // Namespace App\Repository: 1 class, 8 methods
-        $repository->add(
-            SymbolPath::forClass('App\\Repository', 'UserRepository'),
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Repository', 'UserRepository'), RelativePath::fromString('src/Repository/UserRepository.php'), DeclarationOrdinal::fromRank(0))),
             (new MetricBag())->with('maintainability.mi.avg', 90.0)->with('maintainability.mi.count', 8)->with('maintainability.mi.min', 85.0),
             RelativePath::fromString('src/Repository/UserRepository.php'),
             10,
         );
         $this->addMethodsWithMi($repository, 'App\\Repository', 'UserRepository', 'src/Repository/UserRepository.php', 8, 90.0);
 
-        $collector = new MaintainabilityIndexCollector();
-        $aggregator = new MetricAggregator($collector->getMetricDefinitions(), self::createStub(ProfilerInterface::class));
+        $aggregator = new MetricAggregator($definitions, self::createStub(ProfilerInterface::class));
         $aggregator->aggregate($repository);
 
         $projectMetrics = $repository->get(SymbolPath::forProject());
@@ -80,14 +86,14 @@ final class NamespaceToProjectAggregatorTest extends TestCase
         $repository = new InMemoryMetricRepository();
 
         // Register classes so namespaces exist in the repository
-        $repository->add(
-            SymbolPath::forClass('App\\Service', 'Svc'),
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Service', 'Svc'), RelativePath::fromString('src/Service/Svc.php'), DeclarationOrdinal::fromRank(0))),
             new MetricBag(),
             RelativePath::fromString('src/Service/Svc.php'),
             10,
         );
-        $repository->add(
-            SymbolPath::forClass('App\\Repository', 'Repo'),
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Repository', 'Repo'), RelativePath::fromString('src/Repository/Repo.php'), DeclarationOrdinal::fromRank(0))),
             new MetricBag(),
             RelativePath::fromString('src/Repository/Repo.php'),
             10,
@@ -141,14 +147,14 @@ final class NamespaceToProjectAggregatorTest extends TestCase
     public function itCountsANamespaceThatDeclaresTypesAndAlsoHasSubNamespaces(): void
     {
         $repository = new InMemoryMetricRepository();
-        $repository->add(
-            SymbolPath::forClass('App', 'OwnClass'),
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'OwnClass'), RelativePath::fromString('src/OwnClass.php'), DeclarationOrdinal::fromRank(0))),
             new MetricBag(),
             RelativePath::fromString('src/OwnClass.php'),
             10,
         );
-        $repository->add(
-            SymbolPath::forClass('App\\Sub', 'Nested'),
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Sub', 'Nested'), RelativePath::fromString('src/Sub/Nested.php'), DeclarationOrdinal::fromRank(0))),
             new MetricBag(),
             RelativePath::fromString('src/Sub/Nested.php'),
             10,
@@ -171,8 +177,8 @@ final class NamespaceToProjectAggregatorTest extends TestCase
     public function itDoesNotCountANamespaceThatDeclaresNoType(): void
     {
         $repository = new InMemoryMetricRepository();
-        $repository->add(
-            SymbolPath::forClass('Util', 'Helper'),
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('Util', 'Helper'), RelativePath::fromString('src/Util/Helper.php'), DeclarationOrdinal::fromRank(0))),
             new MetricBag(),
             RelativePath::fromString('src/Util/Helper.php'),
             10,
@@ -243,6 +249,7 @@ final class NamespaceToProjectAggregatorTest extends TestCase
         float $miValue,
     ): void {
         $relFile = RelativePath::fromString($file);
+        $ownerDeclaration = DeclarationPath::of(SymbolPath::forClass($namespace, $class), $relFile, DeclarationOrdinal::fromRank(0));
         for ($i = 1; $i <= $count; $i++) {
             $repository->addCallable(new CallableWithMetrics(
                 DeclarationPath::of(SymbolPath::forMethod($namespace, $class, "m{$i}"), $relFile, DeclarationOrdinal::fromRank(0)),
@@ -252,6 +259,7 @@ final class NamespaceToProjectAggregatorTest extends TestCase
                 null,
                 new LogicalClassPath(SymbolPath::forClass($namespace, $class)),
                 (new MetricBag())->with('maintainability.mi', $miValue),
+                classAggregationOwnerDeclaration: $ownerDeclaration,
             ));
         }
     }

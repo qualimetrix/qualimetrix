@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Measurement\Repository;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 
@@ -56,6 +57,8 @@ final class RepositoryMerge
             $left->line ?? $right->line,
             $left->callableKind,
             $left->classAggregationOwner,
+            $left->classAggregationOwnerDeclaration,
+            $left->anonymousClassContext,
         );
     }
 
@@ -63,6 +66,8 @@ final class RepositoryMerge
     {
         if ($left->callableKind === $right->callableKind
             && self::sameLogicalClass($left->classAggregationOwner, $right->classAggregationOwner)
+            && self::sameDeclaration($left->classAggregationOwnerDeclaration, $right->classAggregationOwnerDeclaration)
+            && $left->anonymousClassContext === $right->anonymousClassContext
             && self::sameFile($left->file, $right->file)
             && self::sameSourceLine($left->line, $right->line)
         ) {
@@ -76,6 +81,11 @@ final class RepositoryMerge
     }
 
     private static function sameLogicalClass(?LogicalClassPath $left, ?LogicalClassPath $right): bool
+    {
+        return $left?->toCanonical() === $right?->toCanonical();
+    }
+
+    private static function sameDeclaration(?DeclarationPath $left, ?DeclarationPath $right): bool
     {
         return $left?->toCanonical() === $right?->toCanonical();
     }

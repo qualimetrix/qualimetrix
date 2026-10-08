@@ -8,7 +8,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -17,6 +19,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Reporting\FindingProjection\SuppressedFinding;
@@ -202,8 +205,17 @@ final class InvalidUtf8PublicationTest extends TestCase
             relatedLocations: $relatedPath === null ? [] : [new Location(RelativePath::fromString($relatedPath), 1)],
         );
 
-        $metrics = new InMemoryMetricRepository();
-        $metrics->add($symbol, MetricBag::fromArray(['complexity.ccn.sum' => 12]), $file, 3);
+        $metrics = new InMemoryMetricRepository([
+            new MetricDefinition('complexity.ccn', SymbolLevel::Callable, [
+                SymbolLevel::Class_->value => [AggregationStrategy::Sum],
+            ]),
+        ]);
+        $metrics->addSubject(
+            MetricSubject::declaration(DeclarationPath::of($symbol, $file, DeclarationOrdinal::fromRank(0))),
+            MetricBag::fromArray(['complexity.ccn.sum' => 12]),
+            $file,
+            3,
+        );
 
         $report = ReportBuilder::create()
             ->metrics($metrics)

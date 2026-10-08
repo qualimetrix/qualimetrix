@@ -4,14 +4,20 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\HealthScoreDrillDown;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(HealthScoreDrillDown::class)]
@@ -54,6 +60,7 @@ final class HealthScoreDrillDownTest extends TestCase
     public function itSubtreeHealthScoresMatchesExactNamespace(): void
     {
         $classPath = SymbolPath::forClass('App\Service', 'Worker');
+        $classPathSubject = self::exactClassSubject($classPath, 'src/Service/Worker.php');
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             namespaces: [
@@ -66,9 +73,9 @@ final class HealthScoreDrillDownTest extends TestCase
                     'size.class-count.sum' => 3,
                 ]),
             ],
-            classes: [new SymbolInfo($classPath, RelativePath::fromString('src/Service/Worker.php'), null)],
+            classes: [new SymbolInfo($classPathSubject, RelativePath::fromString('src/Service/Worker.php'), null)],
             classMetrics: [
-                $classPath->toCanonical() => MetricBag::fromArray([
+                $classPathSubject->toCanonical() => MetricBag::fromArray([
                     'complexity.ccn.sum' => 9,
                     'complexity.cognitive.sum' => 6,
                 ]),
@@ -92,6 +99,7 @@ final class HealthScoreDrillDownTest extends TestCase
     public function itBuildsHealthScoresForAnExactSelector(): void
     {
         $classPath = SymbolPath::forClass('App\Service', 'Worker');
+        $classPathSubject = self::exactClassSubject($classPath, 'src/Service/Worker.php');
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             namespaces: [
@@ -103,9 +111,9 @@ final class HealthScoreDrillDownTest extends TestCase
                     'size.class-count.sum' => 3,
                 ]),
             ],
-            classes: [new SymbolInfo($classPath, RelativePath::fromString('src/Service/Worker.php'), null)],
+            classes: [new SymbolInfo($classPathSubject, RelativePath::fromString('src/Service/Worker.php'), null)],
             classMetrics: [
-                $classPath->toCanonical() => MetricBag::fromArray(['complexity.ccn.sum' => 9]),
+                $classPathSubject->toCanonical() => MetricBag::fromArray(['complexity.ccn.sum' => 9]),
             ],
         );
 
@@ -227,17 +235,65 @@ final class HealthScoreDrillDownTest extends TestCase
     }
 
     #[Test]
+    public function itRequiresExactClassRowsInHealthFixtures(): void
+    {
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('exact declaration subject');
+        $this->createMetricRepository(
+            projectMetrics: new MetricBag(),
+            classes: [new SymbolInfo(SymbolPath::forClass('App', 'Legacy'), RelativePath::fromString('src/Legacy.php'), 1)],
+        );
+    }
+
+    #[Test]
+    public function itRefusesLegacyClassReadsInHealthFixtures(): void
+    {
+        $metrics = $this->createMetricRepository(projectMetrics: new MetricBag());
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('exact subject');
+        $metrics->get(SymbolPath::forClass('App', 'Legacy'));
+    }
+
+    #[Test]
+    public function itRefusesLegacyClassEnumerationInHealthFixtures(): void
+    {
+        $metrics = $this->createMetricRepository(projectMetrics: new MetricBag());
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('exact declarations');
+        iterator_to_array($metrics->all(SymbolLevel::Class_));
+    }
+
+    #[Test]
+    public function itRefusesAnAmbiguousClassNameAcrossExactDeclarations(): void
+    {
+        $class = SymbolPath::forClass('App\\Service', 'Duplicated');
+        $repository = new InMemoryMetricRepository();
+        foreach (['src/First.php', 'src/Second.php'] as $path) {
+            $file = RelativePath::fromString($path);
+            $declaration = DeclarationPath::of($class, $file, DeclarationOrdinal::fromRank(0));
+            $repository->addSubject(MetricSubject::declaration($declaration), new MetricBag(), $file, 1);
+        }
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('one exact declaration');
+        $this->drillDown->buildClassHealthScores($repository, 'App\\Service\\Duplicated');
+    }
+
+    #[Test]
     public function itBuildClassHealthScoresReturnsDimensionScores(): void
     {
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
+        $classPathSubject = self::exactClassSubject($classPath, 'src/Service/UserService.php');
 
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             classes: [
-                new SymbolInfo($classPath, RelativePath::fromString('src/Service/UserService.php'), 1),
+                new SymbolInfo($classPathSubject, RelativePath::fromString('src/Service/UserService.php'), 1),
             ],
             classMetrics: [
-                'class:App\\Service\\UserService' => MetricBag::fromArray([
+                $classPathSubject->toCanonical() => MetricBag::fromArray([
                     'health.complexity' => 85.0,
                     'health.cohesion' => 70.0,
                     'health.coupling' => 90.0,
@@ -265,14 +321,15 @@ final class HealthScoreDrillDownTest extends TestCase
     public function itBuildClassHealthScoresSkipsMissingDimensions(): void
     {
         $classPath = SymbolPath::forClass('App\\Service', 'Partial');
+        $classPathSubject = self::exactClassSubject($classPath, 'src/Service/Partial.php');
 
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             classes: [
-                new SymbolInfo($classPath, RelativePath::fromString('src/Service/Partial.php'), 1),
+                new SymbolInfo($classPathSubject, RelativePath::fromString('src/Service/Partial.php'), 1),
             ],
             classMetrics: [
-                'class:App\\Service\\Partial' => MetricBag::fromArray([
+                $classPathSubject->toCanonical() => MetricBag::fromArray([
                     'health.complexity' => 80.0,
                     // Other dimensions missing
                 ]),
@@ -289,14 +346,15 @@ final class HealthScoreDrillDownTest extends TestCase
     public function itBuildClassHealthScoresMatchesGlobalClass(): void
     {
         $classPath = SymbolPath::forClass('', 'GlobalClass');
+        $classPathSubject = self::exactClassSubject($classPath, 'src/GlobalClass.php');
 
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             classes: [
-                new SymbolInfo($classPath, RelativePath::fromString('src/GlobalClass.php'), 1),
+                new SymbolInfo($classPathSubject, RelativePath::fromString('src/GlobalClass.php'), 1),
             ],
             classMetrics: [
-                'class:GlobalClass' => MetricBag::fromArray([
+                $classPathSubject->toCanonical() => MetricBag::fromArray([
                     'health.overall' => 50.0,
                 ]),
             ],

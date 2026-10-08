@@ -131,6 +131,13 @@ than reporting zero: `health.overall` composes the other dimensions, `health.typ
 is computed from typed/total sums that publish no `.count`, and a class-level or
 namespace-filtered score is not an aggregate over symbols at all.
 
+Class inputs and `size.symbol-class-count` count declarations, including
+separate declarations of the same name. Their sample counts use that same
+population; coverage is not clamped to hide a mismatch.
+
+!!! info "Deviation from original spec"
+    Coupling graph metrics remain defined over logical names. When a name has several declarations, its graph values are sampled once per declaration in namespace and project aggregates. This is a declaration-weighted extension of the logical graph metrics.
+
 Coverage appears in `--format=json` (a `coverage` object per dimension), in
 `--format=health` (a `Coverage` column plus one line per dimension in the
 decomposition), in `--format=summary` (one line under each score) and in

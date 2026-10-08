@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\NocCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\Path\RelativePath;
@@ -69,26 +70,30 @@ final class NocCollectorTest extends TestCase
     #[Test]
     public function itMeasuresNocOnClassesOnly(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            new MetricDefinition('design.dit', SymbolLevel::Class_),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+            ...$this->collector->getMetricDefinitions(),
+        ]);
         $graph = $this->graph([
             $this->createExtends('N\\B', 'N\\A', interfaceExtends: true),
             $this->createExtends('N\\D', 'N\\C'),
         ]);
 
         foreach (['N\\A', 'N\\B', 'N\\T', 'N\\E'] as $typeWithoutDit) {
-            $repository->add(SymbolPath::fromClassFqn($typeWithoutDit), new MetricBag(), RelativePath::fromString('all.php'), 1);
+            $this->addClass($repository, SymbolPath::fromClassFqn($typeWithoutDit), new MetricBag(), RelativePath::fromString('all.php'), 1);
         }
         foreach (['N\\C', 'N\\D'] as $class) {
-            $repository->add(SymbolPath::fromClassFqn($class), self::measuredClass(), RelativePath::fromString('all.php'), 1);
+            $this->addClass($repository, SymbolPath::fromClassFqn($class), self::measuredClass(), RelativePath::fromString('all.php'), 1);
         }
 
         $this->collector->calculate($graph, $repository);
 
         foreach (['N\\A', 'N\\B', 'N\\T', 'N\\E'] as $typeWithoutDit) {
-            self::assertFalse($repository->get(SymbolPath::fromClassFqn($typeWithoutDit))->has('design.noc'), $typeWithoutDit);
+            self::assertFalse($this->classMetrics($repository, SymbolPath::fromClassFqn($typeWithoutDit))->has('design.noc'), $typeWithoutDit);
         }
-        self::assertSame(1, $repository->get(SymbolPath::fromClassFqn('N\\C'))->get('design.noc'));
-        self::assertSame(0, $repository->get(SymbolPath::fromClassFqn('N\\D'))->get('design.noc'));
+        self::assertSame(1, $this->classMetrics($repository, SymbolPath::fromClassFqn('N\\C'))->get('design.noc'));
+        self::assertSame(0, $this->classMetrics($repository, SymbolPath::fromClassFqn('N\\D'))->get('design.noc'));
     }
 
     #[Test]
@@ -113,16 +118,20 @@ final class NocCollectorTest extends TestCase
     public function itAssignsNocZeroToAClassWithoutChildren(): void
     {
         // Leaf class with no children
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            new MetricDefinition('design.dit', SymbolLevel::Class_),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+            ...$this->collector->getMetricDefinitions(),
+        ]);
         $graph = $this->graph([]);
 
         // Add leaf class without parent
         $leafPath = SymbolPath::forClass('App', 'LeafClass');
-        $repository->add($leafPath, self::measuredClass(), RelativePath::fromString('test.php'), 10);
+        $this->addClass($repository, $leafPath, self::measuredClass(), RelativePath::fromString('test.php'), 10);
 
         $this->collector->calculate($graph, $repository);
 
-        $metrics = $repository->get($leafPath);
+        $metrics = $this->classMetrics($repository, $leafPath);
         self::assertSame(0, $metrics->get('design.noc'));
     }
 
@@ -130,7 +139,11 @@ final class NocCollectorTest extends TestCase
     public function itAssignsNocOneToAClassWithOneChild(): void
     {
         // Parent class with one child
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            new MetricDefinition('design.dit', SymbolLevel::Class_),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+            ...$this->collector->getMetricDefinitions(),
+        ]);
 
         // Create dependency graph with extends relationship
         $extends = $this->createExtends('App\\ChildClass', 'App\\BaseClass', 'child.php', 20);
@@ -138,18 +151,18 @@ final class NocCollectorTest extends TestCase
 
         // Add parent class
         $parentPath = SymbolPath::forClass('App', 'BaseClass');
-        $repository->add($parentPath, self::measuredClass(), RelativePath::fromString('base.php'), 10);
+        $this->addClass($repository, $parentPath, self::measuredClass(), RelativePath::fromString('base.php'), 10);
 
         // Add child class
         $childPath = SymbolPath::forClass('App', 'ChildClass');
-        $repository->add($childPath, self::measuredClass(), RelativePath::fromString('child.php'), 20);
+        $this->addClass($repository, $childPath, self::measuredClass(), RelativePath::fromString('child.php'), 20);
 
         $this->collector->calculate($graph, $repository);
 
-        $parentMetrics = $repository->get($parentPath);
+        $parentMetrics = $this->classMetrics($repository, $parentPath);
         self::assertSame(1, $parentMetrics->get('design.noc'));
 
-        $childMetricsAfter = $repository->get($childPath);
+        $childMetricsAfter = $this->classMetrics($repository, $childPath);
         self::assertSame(0, $childMetricsAfter->get('design.noc'));
     }
 
@@ -157,7 +170,11 @@ final class NocCollectorTest extends TestCase
     public function itAssignsNocTwoToAClassWithTwoChildren(): void
     {
         // Parent class with two direct children
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            new MetricDefinition('design.dit', SymbolLevel::Class_),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+            ...$this->collector->getMetricDefinitions(),
+        ]);
 
         // Create dependency graph with two extends relationships
         $graph = $this->graph([
@@ -167,19 +184,19 @@ final class NocCollectorTest extends TestCase
 
         // Add parent class
         $parentPath = SymbolPath::forClass('App', 'BaseClass');
-        $repository->add($parentPath, self::measuredClass(), RelativePath::fromString('base.php'), 10);
+        $this->addClass($repository, $parentPath, self::measuredClass(), RelativePath::fromString('base.php'), 10);
 
         // Add first child
         $child1Path = SymbolPath::forClass('App', 'ChildA');
-        $repository->add($child1Path, self::measuredClass(), RelativePath::fromString('child1.php'), 20);
+        $this->addClass($repository, $child1Path, self::measuredClass(), RelativePath::fromString('child1.php'), 20);
 
         // Add second child
         $child2Path = SymbolPath::forClass('App', 'ChildB');
-        $repository->add($child2Path, self::measuredClass(), RelativePath::fromString('child2.php'), 30);
+        $this->addClass($repository, $child2Path, self::measuredClass(), RelativePath::fromString('child2.php'), 30);
 
         $this->collector->calculate($graph, $repository);
 
-        $parentMetrics = $repository->get($parentPath);
+        $parentMetrics = $this->classMetrics($repository, $parentPath);
         self::assertSame(2, $parentMetrics->get('design.noc'));
     }
 
@@ -188,7 +205,11 @@ final class NocCollectorTest extends TestCase
     {
         // A extends B extends C
         // NOC(C) = 1 (only B), not 2 (B and A)
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            new MetricDefinition('design.dit', SymbolLevel::Class_),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+            ...$this->collector->getMetricDefinitions(),
+        ]);
 
         // Create dependency graph with two-level inheritance chain
         $graph = $this->graph([
@@ -198,28 +219,28 @@ final class NocCollectorTest extends TestCase
 
         // Add grandparent
         $grandparentPath = SymbolPath::forClass('App', 'GrandParent');
-        $repository->add($grandparentPath, self::measuredClass(), RelativePath::fromString('grand.php'), 10);
+        $this->addClass($repository, $grandparentPath, self::measuredClass(), RelativePath::fromString('grand.php'), 10);
 
         // Add parent (child of grandparent)
         $parentPath = SymbolPath::forClass('App', 'Parent');
-        $repository->add($parentPath, self::measuredClass(), RelativePath::fromString('parent.php'), 20);
+        $this->addClass($repository, $parentPath, self::measuredClass(), RelativePath::fromString('parent.php'), 20);
 
         // Add child (child of parent)
         $childPath = SymbolPath::forClass('App', 'Child');
-        $repository->add($childPath, self::measuredClass(), RelativePath::fromString('child.php'), 30);
+        $this->addClass($repository, $childPath, self::measuredClass(), RelativePath::fromString('child.php'), 30);
 
         $this->collector->calculate($graph, $repository);
 
         // GrandParent has only 1 direct child (Parent)
-        $grandparentMetrics = $repository->get($grandparentPath);
+        $grandparentMetrics = $this->classMetrics($repository, $grandparentPath);
         self::assertSame(1, $grandparentMetrics->get('design.noc'));
 
         // Parent has only 1 direct child (Child)
-        $parentMetricsAfter = $repository->get($parentPath);
+        $parentMetricsAfter = $this->classMetrics($repository, $parentPath);
         self::assertSame(1, $parentMetricsAfter->get('design.noc'));
 
         // Child has no children
-        $childMetricsAfter = $repository->get($childPath);
+        $childMetricsAfter = $this->classMetrics($repository, $childPath);
         self::assertSame(0, $childMetricsAfter->get('design.noc'));
     }
 
@@ -227,7 +248,11 @@ final class NocCollectorTest extends TestCase
     public function itCountsChildrenDeclaredInOtherFiles(): void
     {
         // Parent in one namespace, children in another
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            new MetricDefinition('design.dit', SymbolLevel::Class_),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+            ...$this->collector->getMetricDefinitions(),
+        ]);
 
         // Create dependency graph with cross-namespace extends
         $graph = $this->graph([
@@ -237,18 +262,18 @@ final class NocCollectorTest extends TestCase
 
         // Add parent in Vendor namespace
         $parentPath = SymbolPath::forClass('Vendor', 'BaseService');
-        $repository->add($parentPath, self::measuredClass(), RelativePath::fromString('vendor/base.php'), 10);
+        $this->addClass($repository, $parentPath, self::measuredClass(), RelativePath::fromString('vendor/base.php'), 10);
 
         // Add children in App namespace
         $child1Path = SymbolPath::forClass('App', 'ServiceA');
-        $repository->add($child1Path, self::measuredClass(), RelativePath::fromString('app/service-a.php'), 20);
+        $this->addClass($repository, $child1Path, self::measuredClass(), RelativePath::fromString('app/service-a.php'), 20);
 
         $child2Path = SymbolPath::forClass('App', 'ServiceB');
-        $repository->add($child2Path, self::measuredClass(), RelativePath::fromString('app/service-b.php'), 30);
+        $this->addClass($repository, $child2Path, self::measuredClass(), RelativePath::fromString('app/service-b.php'), 30);
 
         $this->collector->calculate($graph, $repository);
 
-        $parentMetrics = $repository->get($parentPath);
+        $parentMetrics = $this->classMetrics($repository, $parentPath);
         self::assertSame(2, $parentMetrics->get('design.noc'));
     }
 
@@ -256,7 +281,11 @@ final class NocCollectorTest extends TestCase
     public function itCountsAChildExtendingAGlobalNamespaceParent(): void
     {
         // Parent in global namespace
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            new MetricDefinition('design.dit', SymbolLevel::Class_),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+            ...$this->collector->getMetricDefinitions(),
+        ]);
 
         // Create dependency graph with global namespace parent
         $graph = $this->graph([
@@ -265,15 +294,15 @@ final class NocCollectorTest extends TestCase
 
         // Add parent in global namespace
         $parentPath = SymbolPath::forClass('', 'GlobalParent');
-        $repository->add($parentPath, self::measuredClass(), RelativePath::fromString('global.php'), 10);
+        $this->addClass($repository, $parentPath, self::measuredClass(), RelativePath::fromString('global.php'), 10);
 
         // Add child extending global parent
         $childPath = SymbolPath::forClass('App', 'Child');
-        $repository->add($childPath, self::measuredClass(), RelativePath::fromString('child.php'), 20);
+        $this->addClass($repository, $childPath, self::measuredClass(), RelativePath::fromString('child.php'), 20);
 
         $this->collector->calculate($graph, $repository);
 
-        $parentMetrics = $repository->get($parentPath);
+        $parentMetrics = $this->classMetrics($repository, $parentPath);
         self::assertSame(1, $parentMetrics->get('design.noc'));
     }
 
@@ -282,7 +311,11 @@ final class NocCollectorTest extends TestCase
     {
         // Child in namespace extending parent not in repository (e.g. built-in Exception).
         // The parent should NOT get NOC metrics — only project classes get metrics.
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            new MetricDefinition('design.dit', SymbolLevel::Class_),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+            ...$this->collector->getMetricDefinitions(),
+        ]);
 
         $graph = $this->graph([
             $this->createExtends('App\\Service\\MyException', 'Exception', 'exception.php', 10),
@@ -290,16 +323,16 @@ final class NocCollectorTest extends TestCase
 
         // Only the project class is in the repository
         $childPath = SymbolPath::forClass('App\\Service', 'MyException');
-        $repository->add($childPath, self::measuredClass(), RelativePath::fromString('exception.php'), 10);
+        $this->addClass($repository, $childPath, self::measuredClass(), RelativePath::fromString('exception.php'), 10);
 
         $this->collector->calculate($graph, $repository);
 
         // Exception (parent) is NOT in the repository, so it should NOT get NOC metric
         $parentPath = SymbolPath::forClass('', 'Exception');
-        self::assertFalse($repository->has($parentPath));
+        self::assertFalse($repository->hasSubject(MetricSubject::logicalClass(new LogicalClassPath($parentPath))));
 
         // Child should have NOC = 0 (no children of its own)
-        $childMetrics = $repository->get($childPath);
+        $childMetrics = $this->classMetrics($repository, $childPath);
         self::assertSame(0, $childMetrics->get('design.noc'));
     }
 
@@ -307,21 +340,26 @@ final class NocCollectorTest extends TestCase
     public function itAssignsTheNocMetricToEveryClass(): void
     {
         // Ensure all classes get NOC metric, even if 0
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            new MetricDefinition('design.dit', SymbolLevel::Class_),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+            ...$this->collector->getMetricDefinitions(),
+        ]);
         $graph = $this->graph([]);
 
         // Add multiple classes
         $class1Path = SymbolPath::forClass('App', 'ClassA');
-        $repository->add($class1Path, self::measuredClass(), RelativePath::fromString('a.php'), 10);
+        $this->addClass($repository, $class1Path, self::measuredClass(), RelativePath::fromString('a.php'), 10);
 
         $class2Path = SymbolPath::forClass('App', 'ClassB');
-        $repository->add($class2Path, self::measuredClass(), RelativePath::fromString('b.php'), 20);
+        $this->addClass($repository, $class2Path, self::measuredClass(), RelativePath::fromString('b.php'), 20);
 
         $this->collector->calculate($graph, $repository);
 
         // All classes should have noc metric
-        foreach ($repository->all(SymbolLevel::Class_) as $classInfo) {
-            $metrics = $repository->get($classInfo->symbolPath);
+        foreach ($repository->allClassDeclarations() as $classInfo) {
+            self::assertNotNull($classInfo->subject);
+            $metrics = $repository->getSubject($classInfo->subject);
             self::assertTrue($metrics->has('design.noc'));
         }
     }
@@ -336,7 +374,11 @@ final class NocCollectorTest extends TestCase
     #[Test]
     public function itDoesNotCountAFlaggedExtendsEdgeAsAChild(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            new MetricDefinition('design.dit', SymbolLevel::Class_),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+            ...$this->collector->getMetricDefinitions(),
+        ]);
 
         // An\L1 extends An\L0 for real; An\Host's anonymous class extends
         // An\L1, flagged -- Host must not be counted as An\L1's child.
@@ -346,25 +388,29 @@ final class NocCollectorTest extends TestCase
         ]);
 
         $l0Path = SymbolPath::forClass('An', 'L0');
-        $repository->add($l0Path, self::measuredClass(), RelativePath::fromString('l0.php'), 1);
+        $this->addClass($repository, $l0Path, self::measuredClass(), RelativePath::fromString('l0.php'), 1);
 
         $l1Path = SymbolPath::forClass('An', 'L1');
-        $repository->add($l1Path, self::measuredClass(), RelativePath::fromString('l1.php'), 1);
+        $this->addClass($repository, $l1Path, self::measuredClass(), RelativePath::fromString('l1.php'), 1);
 
         $hostPath = SymbolPath::forClass('An', 'Host');
-        $repository->add($hostPath, self::measuredClass(), RelativePath::fromString('host.php'), 1);
+        $this->addClass($repository, $hostPath, self::measuredClass(), RelativePath::fromString('host.php'), 1);
 
         $this->collector->calculate($graph, $repository);
 
-        self::assertSame(1, $repository->get($l0Path)->get('design.noc'), 'L0 has one real child, L1');
-        self::assertSame(0, $repository->get($l1Path)->get('design.noc'), 'The flagged edge must not count Host as a child of L1');
+        self::assertSame(1, $this->classMetrics($repository, $l0Path)->get('design.noc'), 'L0 has one real child, L1');
+        self::assertSame(0, $this->classMetrics($repository, $l1Path)->get('design.noc'), 'The flagged edge must not count Host as a child of L1');
     }
 
     #[Test]
     public function itPreservesExistingMetricsWhenAddingNoc(): void
     {
         // NOC calculation should not overwrite existing metrics
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            new MetricDefinition('design.dit', SymbolLevel::Class_),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+            ...$this->collector->getMetricDefinitions(),
+        ]);
 
         // Create dependency graph
         $graph = $this->graph([
@@ -374,16 +420,16 @@ final class NocCollectorTest extends TestCase
         // Add parent with existing metrics
         $parentPath = SymbolPath::forClass('App', 'BaseClass');
         $existingMetrics = (new MetricBag())->with('design.dit', 2)->with('complexity.wmc', 10);
-        $repository->add($parentPath, $existingMetrics, RelativePath::fromString('base.php'), 10);
+        $this->addClass($repository, $parentPath, $existingMetrics, RelativePath::fromString('base.php'), 10);
 
         // Add child
         $childPath = SymbolPath::forClass('App', 'ChildClass');
-        $repository->add($childPath, self::measuredClass(), RelativePath::fromString('child.php'), 20);
+        $this->addClass($repository, $childPath, self::measuredClass(), RelativePath::fromString('child.php'), 20);
 
         $this->collector->calculate($graph, $repository);
 
         // Parent should still have original metrics + noc
-        $parentMetrics = $repository->get($parentPath);
+        $parentMetrics = $this->classMetrics($repository, $parentPath);
         self::assertSame(2, $parentMetrics->get('design.dit'));
         self::assertSame(10, $parentMetrics->get('complexity.wmc'));
         self::assertSame(1, $parentMetrics->get('design.noc'));
@@ -392,7 +438,11 @@ final class NocCollectorTest extends TestCase
     #[Test]
     public function itCountsASubclassDeclaredInTwoFilesOnce(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            new MetricDefinition('design.dit', SymbolLevel::Class_),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+            ...$this->collector->getMetricDefinitions(),
+        ]);
 
         // The `class_exists()`-guarded polyfill shape: one subclass name, two
         // files, and only one of them alive in any run.
@@ -402,14 +452,14 @@ final class NocCollectorTest extends TestCase
         ]);
 
         $parentPath = SymbolPath::forClass('App', 'BaseClass');
-        $repository->add($parentPath, self::measuredClass(), RelativePath::fromString('base.php'), 10);
+        $this->addClass($repository, $parentPath, self::measuredClass(), RelativePath::fromString('base.php'), 10);
 
         $childPath = SymbolPath::forClass('App', 'Shim');
-        $repository->add($childPath, self::measuredClass(), RelativePath::fromString('native.php'), 30);
+        $this->addClass($repository, $childPath, self::measuredClass(), RelativePath::fromString('native.php'), 30);
 
         $this->collector->calculate($graph, $repository);
 
-        self::assertSame(1, $repository->get($parentPath)->get('design.noc'));
+        self::assertSame(1, $this->classMetrics($repository, $parentPath)->get('design.noc'));
     }
 
     /**
@@ -420,7 +470,11 @@ final class NocCollectorTest extends TestCase
     #[Test]
     public function itReportsOneCountForAParentNameDeclaredInTwoFiles(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            new MetricDefinition('design.dit', SymbolLevel::Class_),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+            ...$this->collector->getMetricDefinitions(),
+        ]);
 
         $graph = $this->graph([
             $this->createExtends('App\\ChildA', 'App\\BaseClass', 'child-a.php', 20),
@@ -428,14 +482,16 @@ final class NocCollectorTest extends TestCase
         ]);
 
         $parentPath = SymbolPath::forClass('App', 'BaseClass');
+        $first = MetricSubject::declaration(DeclarationPath::of($parentPath, RelativePath::fromString('base-one.php'), DeclarationOrdinal::fromRank(0)));
         $repository->addSubject(
-            MetricSubject::declaration(DeclarationPath::of($parentPath, RelativePath::fromString('base-one.php'), DeclarationOrdinal::fromRank(0))),
+            $first,
             self::measuredClass(),
             RelativePath::fromString('base-one.php'),
             10,
         );
+        $second = MetricSubject::declaration(DeclarationPath::of($parentPath, RelativePath::fromString('base-two.php'), DeclarationOrdinal::fromRank(0)));
         $repository->addSubject(
-            MetricSubject::declaration(DeclarationPath::of($parentPath, RelativePath::fromString('base-two.php'), DeclarationOrdinal::fromRank(0))),
+            $second,
             self::measuredClass(),
             RelativePath::fromString('base-two.php'),
             10,
@@ -443,7 +499,8 @@ final class NocCollectorTest extends TestCase
 
         $this->collector->calculate($graph, $repository);
 
-        self::assertSame(2, $repository->get($parentPath)->get('design.noc'));
+        self::assertSame(2, $repository->getSubject($first)->get('design.noc'));
+        self::assertSame(2, $repository->getSubject($second)->get('design.noc'));
     }
 
     /** @param list<Dependency> $dependencies */
@@ -461,4 +518,27 @@ final class NocCollectorTest extends TestCase
 
         return AdjacencyGraphBuilder::builder()->build($dependencies, $universe)->graph;
     }
+    private function addClass(InMemoryMetricRepository $repository, SymbolPath $path, MetricBag $metrics, RelativePath $file, int $line): void
+    {
+        $repository->addSubject(MetricSubject::declaration(DeclarationPath::of(
+            $path,
+            $file,
+            DeclarationOrdinal::fromRank(0),
+        )), $metrics, $file, $line);
+    }
+
+    private function classMetrics(InMemoryMetricRepository $repository, SymbolPath $logical): MetricBag
+    {
+        $subjects = [];
+        foreach ($repository->allClassDeclarations() as $info) {
+            if ($info->symbolPath->toCanonical() === $logical->toCanonical()) {
+                $subjects[] = $info->subject;
+            }
+        }
+        self::assertCount(1, $subjects, 'Class fixture must identify exactly one declaration');
+        self::assertNotNull($subjects[0]);
+
+        return $repository->getSubject($subjects[0]);
+    }
+
 }

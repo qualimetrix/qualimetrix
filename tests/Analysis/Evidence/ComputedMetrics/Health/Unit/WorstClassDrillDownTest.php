@@ -14,8 +14,10 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -39,13 +41,14 @@ final class WorstClassDrillDownTest extends TestCase
     #[Test]
     public function itBuildWorstClassesReturnsEmptyWhenNoClassesMatch(): void
     {
+        $other = self::exactClassSubject(SymbolPath::forClass('App\\Other', 'Foo'), 'src/Other/Foo.php');
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             classes: [
-                new SymbolInfo(SymbolPath::forClass('App\\Other', 'Foo'), RelativePath::fromString('src/Other/Foo.php'), 1),
+                new SymbolInfo($other, RelativePath::fromString('src/Other/Foo.php'), 1),
             ],
             classMetrics: [
-                'class:App\\Other\\Foo' => MetricBag::fromArray([
+                $other->toCanonical() => MetricBag::fromArray([
                     'health.overall' => 80.0,
                 ]),
             ],
@@ -60,20 +63,22 @@ final class WorstClassDrillDownTest extends TestCase
     public function itBuildWorstClassesSortedByHealthAscending(): void
     {
         $classA = SymbolPath::forClass('App\\Service', 'Alpha');
+        $classASubject = self::exactClassSubject($classA, 'src/Service/Alpha.php');
         $classB = SymbolPath::forClass('App\\Service', 'Beta');
+        $classBSubject = self::exactClassSubject($classB, 'src/Service/Beta.php');
 
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             classes: [
-                new SymbolInfo($classA, RelativePath::fromString('src/Service/Alpha.php'), 1),
-                new SymbolInfo($classB, RelativePath::fromString('src/Service/Beta.php'), 1),
+                new SymbolInfo($classASubject, RelativePath::fromString('src/Service/Alpha.php'), 1),
+                new SymbolInfo($classBSubject, RelativePath::fromString('src/Service/Beta.php'), 1),
             ],
             classMetrics: [
-                'class:App\\Service\\Alpha' => MetricBag::fromArray([
+                $classASubject->toCanonical() => MetricBag::fromArray([
                     'health.overall' => 80.0,
                     'health.complexity' => 90.0,
                 ]),
-                'class:App\\Service\\Beta' => MetricBag::fromArray([
+                $classBSubject->toCanonical() => MetricBag::fromArray([
                     'health.overall' => 40.0,
                     'health.complexity' => 30.0,
                 ]),
@@ -92,19 +97,28 @@ final class WorstClassDrillDownTest extends TestCase
     public function itBuildWorstClassesCountsFindingsPerClass(): void
     {
         $classPath = SymbolPath::forClass('App\\Service', 'Foo');
+        $classPathSubject = self::exactClassSubject($classPath, 'src/Service/Foo.php');
         $methodPath = SymbolPath::forMethod('App\\Service', 'Foo', 'bar');
 
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             classes: [
-                new SymbolInfo($classPath, RelativePath::fromString('src/Service/Foo.php'), 1),
+                new SymbolInfo($classPathSubject, RelativePath::fromString('src/Service/Foo.php'), 1),
             ],
             classMetrics: [
-                'class:App\\Service\\Foo' => MetricBag::fromArray([
+                $classPathSubject->toCanonical() => MetricBag::fromArray([
                     'health.overall' => 60.0,
                     'size.class-loc' => 100,
                 ]),
             ],
+            callables: [new SymbolInfo(
+                MetricSubject::declaration(DeclarationPath::of($methodPath, RelativePath::fromString('src/Service/Foo.php'), DeclarationOrdinal::fromRank(0))),
+                RelativePath::fromString('src/Service/Foo.php'),
+                20,
+                CallableKind::Method,
+                new LogicalClassPath($classPath),
+                $classPathSubject->declarationPath(),
+            )],
         );
 
         // Two findings: one class-level, one callable-level (both count toward the class)
@@ -140,15 +154,16 @@ final class WorstClassDrillDownTest extends TestCase
     public function itBuildWorstClassesSkipsNamespaceLevelFindings(): void
     {
         $classPath = SymbolPath::forClass('App\\Service', 'Foo');
+        $classPathSubject = self::exactClassSubject($classPath, 'src/Service/Foo.php');
         $nsPath = SymbolPath::forNamespace('App\\Service');
 
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             classes: [
-                new SymbolInfo($classPath, RelativePath::fromString('src/Service/Foo.php'), 1),
+                new SymbolInfo($classPathSubject, RelativePath::fromString('src/Service/Foo.php'), 1),
             ],
             classMetrics: [
-                'class:App\\Service\\Foo' => MetricBag::fromArray([
+                $classPathSubject->toCanonical() => MetricBag::fromArray([
                     'health.overall' => 60.0,
                 ]),
             ],
@@ -176,14 +191,15 @@ final class WorstClassDrillDownTest extends TestCase
     public function itBuildWorstClassesSkipsClassesWithoutHealthOverall(): void
     {
         $classPath = SymbolPath::forClass('App\\Service', 'NoHealth');
+        $classPathSubject = self::exactClassSubject($classPath, 'src/Service/NoHealth.php');
 
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             classes: [
-                new SymbolInfo($classPath, RelativePath::fromString('src/Service/NoHealth.php'), 1),
+                new SymbolInfo($classPathSubject, RelativePath::fromString('src/Service/NoHealth.php'), 1),
             ],
             classMetrics: [
-                'class:App\\Service\\NoHealth' => MetricBag::fromArray([
+                $classPathSubject->toCanonical() => MetricBag::fromArray([
                     'health.complexity' => 80.0,
                     // no health.overall
                 ]),
@@ -199,14 +215,15 @@ final class WorstClassDrillDownTest extends TestCase
     public function itBuildWorstClassesIncludesNotableMetricsWhenRequested(): void
     {
         $classPath = SymbolPath::forClass('App\\Service', 'Rich');
+        $classPathSubject = self::exactClassSubject($classPath, 'src/Service/Rich.php');
 
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             classes: [
-                new SymbolInfo($classPath, RelativePath::fromString('src/Service/Rich.php'), 1),
+                new SymbolInfo($classPathSubject, RelativePath::fromString('src/Service/Rich.php'), 1),
             ],
             classMetrics: [
-                'class:App\\Service\\Rich' => MetricBag::fromArray([
+                $classPathSubject->toCanonical() => MetricBag::fromArray([
                     'health.overall' => 70.0,
                     'size.method-count' => 15,
                     'coupling.cbo' => 8,
@@ -228,14 +245,15 @@ final class WorstClassDrillDownTest extends TestCase
     public function itBuildWorstClassesOmitsNotableMetricsByDefault(): void
     {
         $classPath = SymbolPath::forClass('App\\Service', 'Simple');
+        $classPathSubject = self::exactClassSubject($classPath, 'src/Service/Simple.php');
 
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             classes: [
-                new SymbolInfo($classPath, RelativePath::fromString('src/Service/Simple.php'), 1),
+                new SymbolInfo($classPathSubject, RelativePath::fromString('src/Service/Simple.php'), 1),
             ],
             classMetrics: [
-                'class:App\\Service\\Simple' => MetricBag::fromArray([
+                $classPathSubject->toCanonical() => MetricBag::fromArray([
                     'health.overall' => 70.0,
                     'size.method-count' => 5,
                 ]),

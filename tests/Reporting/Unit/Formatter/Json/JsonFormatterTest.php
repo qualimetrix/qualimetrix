@@ -1343,11 +1343,9 @@ final class JsonFormatterTest extends TestCase
                 default => new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag(),
             },
         );
-        $metrics->method('all')->willReturnCallback(
-            static fn(\Qualimetrix\Core\Symbol\SymbolLevel $level): array => $level === \Qualimetrix\Core\Symbol\SymbolLevel::Class_
-                ? [new \Qualimetrix\Core\Symbol\SymbolInfo($classPath, \Qualimetrix\Core\Path\RelativePath::fromString('src/Service/UserService.php'), 1)]
-                : [],
-        );
+        $subject = \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($classPath, \Qualimetrix\Core\Path\RelativePath::fromString('src/Service/UserService.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)));
+        $metrics->method('allClassDeclarations')->willReturn([new \Qualimetrix\Core\Symbol\SymbolInfo($subject, \Qualimetrix\Core\Path\RelativePath::fromString('src/Service/UserService.php'), 1)]);
+        $metrics->method('getSubject')->willReturn($classMetrics);
 
         $report = new Report(
             findings: [],

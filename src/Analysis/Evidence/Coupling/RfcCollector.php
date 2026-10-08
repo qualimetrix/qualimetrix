@@ -85,7 +85,10 @@ final class RfcCollector extends AbstractCollector implements DeclarationIndexAw
 
         \assert($this->visitor instanceof RfcVisitor);
 
-        foreach ($this->visitor->getClassesData() as $classFqn => $data) {
+        foreach ($this->visitor->getClassesData() as $data) {
+            $classFqn = $data->namespace !== null && $data->namespace !== ''
+                ? $data->namespace . '\\' . $data->className
+                : $data->className;
             $bag = $bag
                 ->with(self::METRIC_RFC . ':' . $classFqn, $data->getRfc())
                 ->with(self::METRIC_RFC_OWN . ':' . $classFqn, $data->getOwnMethodsCount())

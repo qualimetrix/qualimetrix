@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown;
 
+use LogicException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
@@ -13,14 +14,11 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Symbol\SymbolInfo;
-use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * Shared logic for namespace-level drill-down: health scores and worst classes.
  *
  * Used by SummaryFormatter and JsonFormatter when --namespace filter is active.
- *
- * @qmx-threshold coupling.instability 0.81 -- Namespace drill-down intentionally composes eight stable contracts while two reporting services depend on it. Raw instability 0.80 is accepted; further outward growth is reported.
  */
 final readonly class WorstClassDrillDown
 {
@@ -52,6 +50,7 @@ final readonly class WorstClassDrillDown
             : [];
 
         $offenders = $this->offenderBuilder->buildWorstClasses(
+            $metrics,
             $this->snapshots($metrics, $notableMetricNames),
             $namespace,
             $findings,
@@ -72,8 +71,8 @@ final readonly class WorstClassDrillDown
      */
     private function snapshots(MetricRepositoryInterface $repository, array $notableMetricNames): iterable
     {
-        foreach ($repository->all(SymbolLevel::Class_) as $symbol) {
-            $metrics = $repository->get($symbol->symbolPath);
+        foreach ($repository->allClassDeclarations() as $symbol) {
+            $metrics = $repository->getSubject($symbol->subject ?? throw new LogicException('Class snapshots require exact subjects'));
             $overall = $metrics->get($this->decomposition->overallMetric());
             yield [
                 'symbol' => $symbol,

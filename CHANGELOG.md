@@ -9,6 +9,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- `MetricDefinition::publicationLevels()` now declares direct base-key output levels independently of aggregate suffixes. Custom definitions must declare every direct level in `directPublicationLevels`; duplicate levels refuse, and direct Class publication requires a class area.
+
+- Callable measurement records and `SymbolInfo` preserve explicit anonymous-class context; named methods and property hooks without exact owner metadata are refused during class finding attribution.
+
+- `MetricRepositoryFactoryInterface::create()` now accepts a finite optional list of metric definitions; native store factories apply it, while configured composition factories add their resolved catalogs.
+
+- Metrics exports publish each class and callable declaration separately,
+  rather than collapsing same-name declarations. Index records by canonical
+  `subject`; `name` remains display identity and can repeat. Each declaration
+  carries its own metrics and source location, including conditional duplicate
+  declarations within one file.
+- Namespace and project metric records publish `file: null` and `line: null`
+  instead of borrowing a declaration's location. Handle these records as
+  aggregates without a source link.
+- Namespace `size.{class,abstract-class,interface,trait,enum,implementing-enum,function}-count.count`
+  keys are removed: they were internal file-contribution counts. Read the
+  declared count metric itself for the symbol population.
+- Named class-like declarations without methods now publish `complexity.wmc: 0`
+  instead of omitting WMC. Owned methods contribute to their exact class
+  declaration; property hooks and anonymous-class methods do not contribute.
+- Class-derived namespace samples and class coverage count declarations.
+  Graph-only values repeat in each same-name declaration's record and each
+  contributes to the sample; graph algorithms still operate on logical names.
+  Recheck aggregate consumers that assumed a distinct-name denominator.
+- HTML class IDs and links use canonical declaration subjects instead of
+  logical names. Regenerate saved class links and keep names for display.
+- `MetricRepositoryInterface::get()/has()` refuse class and callable logical
+  paths, including unambiguous names; `all(Class_)` refuses. Use `getSubject()`
+  and `allClassDeclarations()` for values, or `allLogicalClasses()` for graph
+  names. Carry both logical and exact callable aggregation owners through
+  custom collection and merge code.
+- Exportable class writes require owning metric definitions and their declared
+  class areas. Supply definitions when creating standalone metric repositories;
+  undeclared or wrong-area class scalars and conflicting merged areas refuse.
 - JSON `violationGroups` dictionary keys use total percent encoding rather
   than display spelling, preserving byte-distinct file groups. Decode keys
   with `rawurldecode`; read each finding's `file` as display text.
@@ -1594,6 +1628,11 @@ What changes for a configuration you already have:
 
 ### Fixed
 
+- Namespace LOC contributions preserve integer sums and compute subtree
+  averages and counts from each file contribution exactly once.
+- Promoted constructor properties retain their names in get/set hook subjects.
+- LOC treats punctuation beside comments as code, including braces, commas and
+  closing delimiters, instead of counting those physical lines as comment-only.
 - Baseline checks now restore raw file paths from canonical file and declaration
   subjects before comparing analyzed-file coverage. A newly generated baseline
   for a filename containing `%` or `#` now compares against an unchanged run.

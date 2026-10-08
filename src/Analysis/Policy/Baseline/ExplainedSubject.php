@@ -124,12 +124,7 @@ final readonly class ExplainedSubject
             });
         }
 
-        $projectedSources = [$repository->allLogicalClasses()];
-        foreach (SymbolLevel::cases() as $level) {
-            $projectedSources[] = $repository->all($level);
-        }
-
-        foreach ($projectedSources as $symbols) {
+        foreach (self::projectedSources($repository) as $symbols) {
             foreach ($symbols as $info) {
                 $key = $info->subject?->toCanonical() ?? $info->symbolPath->toCanonical();
                 $index[$key] ??= self::record($info->subject, $info->file, $info->line);
@@ -137,6 +132,19 @@ final readonly class ExplainedSubject
         }
 
         return $index;
+    }
+
+    /** @return list<iterable<\Qualimetrix\Core\Symbol\SymbolInfo>> */
+    private static function projectedSources(MetricRepositoryInterface $repository): array
+    {
+        $sources = [$repository->allLogicalClasses()];
+        foreach (SymbolLevel::cases() as $level) {
+            if ($level !== SymbolLevel::Class_) {
+                $sources[] = $repository->all($level);
+            }
+        }
+
+        return $sources;
     }
 
     /**

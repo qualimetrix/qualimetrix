@@ -30,7 +30,8 @@ export function parseHash(hash) {
 
   let decodedPath;
   try {
-    decodedPath = decodeURIComponent(rest).replace(/\//g, '\\');
+    decodedPath = decodeURIComponent(rest);
+    if (prefix !== 'cl') decodedPath = decodedPath.replace(/\//g, '\\');
   } catch {
     return null; // Malformed percent-encoding
   }
@@ -79,7 +80,10 @@ export function generateHash(node, view = 'treemap') {
     return '';
   }
 
-  const encodedPath = encodeURIComponent(node.path.replace(/\\/g, '/'));
+  const identity = node.id ?? node.path;
+  const encodedPath = node.type === 'class'
+    ? encodeURIComponent(identity)
+    : encodeURIComponent(identity.replace(/\\/g, '/'));
   const prefix = node.type === 'class' ? 'cl' : 'ns';
   return `#${prefix}:${encodedPath}`;
 }

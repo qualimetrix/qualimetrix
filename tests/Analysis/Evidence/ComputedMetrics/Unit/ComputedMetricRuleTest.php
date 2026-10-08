@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetri
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Finding\ComputedMetricFindingBuilder;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
@@ -77,7 +78,7 @@ final class ComputedMetricRuleTest extends TestCase
         );
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('allDeclarations');
+        $repository->expects(self::never())->method('allClassDeclarations');
 
         $context = new AnalysisContext($repository);
 
@@ -101,9 +102,9 @@ final class ComputedMetricRuleTest extends TestCase
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([self::subjectInfo($classPath, RelativePath::fromString('src/UserService.php'), 10)]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn(new MetricBag());
 
         $findings = $rule->analyze(new AnalysisContext($repository));
@@ -124,7 +125,7 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('allDeclarations');
+        $repository->expects(self::never())->method('allClassDeclarations');
 
         $findings = $rule->analyze(new AnalysisContext($repository));
 
@@ -155,9 +156,9 @@ final class ComputedMetricRuleTest extends TestCase
         $classPath = SymbolPath::forClass('App', 'Test');
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([self::subjectInfo($classPath, RelativePath::fromString('test.php'), 1)]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn(
                 (new MetricBag())
                     ->with('health.alpha', 15.0)
@@ -190,16 +191,16 @@ final class ComputedMetricRuleTest extends TestCase
         $nsPath = SymbolPath::forNamespace('App');
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([self::subjectInfo($classPath, RelativePath::fromString('test.php'), 1)]);
         $repository->method('getNamespaces')
             ->willReturn(['App']);
-        $repository->method('get')
-            ->willReturnCallback(static function (SymbolPath $path) use ($classPath, $nsPath): MetricBag {
-                if ($path->toCanonical() === $classPath->toCanonical()) {
+        $repository->method('getSubject')
+            ->willReturnCallback(static function (MetricSubject $subject) use ($classPath, $nsPath): MetricBag {
+                if ($subject->toSymbolPath()->toCanonical() === $classPath->toCanonical()) {
                     return (new MetricBag())->with('health.multi', 15.0);
                 }
-                if ($path->toCanonical() === $nsPath->toCanonical()) {
+                if ($subject->toSymbolPath()->toCanonical() === $nsPath->toCanonical()) {
                     return (new MetricBag())->with('health.multi', 12.0);
                 }
 
@@ -227,7 +228,7 @@ final class ComputedMetricRuleTest extends TestCase
         $projectPath = SymbolPath::forProject();
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn((new MetricBag())->with('health.project', 8.0));
 
         $findings = $rule->analyze(new AnalysisContext($repository));
@@ -254,7 +255,7 @@ final class ComputedMetricRuleTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('getNamespaces')
             ->willReturn(['App\\Service']);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn((new MetricBag())->with('health.ns', 8.0));
 
         $findings = $rule->analyze(new AnalysisContext($repository));
@@ -279,9 +280,9 @@ final class ComputedMetricRuleTest extends TestCase
         $classPath = SymbolPath::forClass('App', 'Foo');
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([self::subjectInfo($classPath, RelativePath::fromString('src/Foo.php'), 42)]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn((new MetricBag())->with('health.cls', 10.0));
 
         $findings = $rule->analyze(new AnalysisContext($repository));
@@ -302,7 +303,7 @@ final class ComputedMetricRuleTest extends TestCase
             inverted: false,
             warningThreshold: 5.0,
         );
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([new MetricDefinition('health.cls', SymbolLevel::Class_)]);
         $class = SymbolPath::forClass('App', 'Foo');
         $declaration = DeclarationPath::of($class, RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0));
         $repository->addSubject(
@@ -358,7 +359,7 @@ final class ComputedMetricRuleTest extends TestCase
             inverted: false,
             warningThreshold: 5.0,
         );
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([new MetricDefinition('health.cls', SymbolLevel::Class_)]);
         $class = SymbolPath::forClass('App', 'Foo');
         $owner = new LogicalClassPath($class);
         $method = SymbolPath::forMethod('App', 'Foo', 'run');
@@ -375,7 +376,7 @@ final class ComputedMetricRuleTest extends TestCase
         $repository->addCallable($callable);
         $repository->addSubject(
             MetricSubject::logicalClass($owner),
-            MetricBag::fromArray(['health.cls' => 10.0]),
+            new MetricBag(),
             null,
             null,
         );
@@ -480,7 +481,7 @@ final class ComputedMetricRuleTest extends TestCase
         int $startFilePos,
         int $line,
     ): InMemoryMetricRepository {
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([new MetricDefinition('health.cls', SymbolLevel::Class_)]);
         $declaration = DeclarationPath::of($class, RelativePath::fromString($file), DeclarationOrdinal::fromRank(0));
         $repository->addSubject(
             MetricSubject::declaration($declaration),

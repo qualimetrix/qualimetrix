@@ -89,7 +89,7 @@ final class PropertyCountRule extends AbstractRule
 
         $findings = [];
 
-        foreach ($context->metrics->allDeclarations() as $classInfo) {
+        foreach ($context->metrics->allClassDeclarations() as $classInfo) {
             $finding = $this->findingForClass($classInfo, $context, $this->options);
             if ($finding !== null) {
                 $findings[] = $finding;
@@ -109,7 +109,7 @@ final class PropertyCountRule extends AbstractRule
             return null;
         }
 
-        $metrics = $context->metrics->get($subject->toSymbolPath());
+        $metrics = $context->metrics->getSubject($subject);
         $propertyCountValue = $this->eligiblePropertyCount($metrics, $options);
         if ($propertyCountValue === null) {
             return null;

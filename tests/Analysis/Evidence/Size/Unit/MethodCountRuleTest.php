@@ -93,7 +93,7 @@ final class MethodCountRuleTest extends TestCase
         $rule = new MethodCountRule(new MethodCountOptions(enabled: false));
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('allDeclarations');
+        $repository->expects(self::never())->method('allClassDeclarations');
 
         $context = new AnalysisContext($repository);
 
@@ -111,9 +111,9 @@ final class MethodCountRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('size.method-count', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -132,9 +132,9 @@ final class MethodCountRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('size.method-count', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -159,9 +159,9 @@ final class MethodCountRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('size.method-count', 25);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -188,9 +188,9 @@ final class MethodCountRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('size.method-count', $methodCount);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -253,11 +253,11 @@ final class MethodCountRuleTest extends TestCase
     {
         $class = SymbolPath::forClass('App\\Service', 'Twin');
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([
+        $repository->method('allClassDeclarations')->willReturn([
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn((new MetricBag())->with('size.method-count', 15));
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('size.method-count', 15));
 
         $findings = (new MethodCountRule(new MethodCountOptions(warning: 10, error: 20)))
             ->analyze(new AnalysisContext($repository));

@@ -12,7 +12,9 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMe
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\CoverageUnit;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
@@ -21,6 +23,11 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder;
@@ -52,7 +59,7 @@ final class HtmlTreeBuilderTest extends TestCase
     #[Test]
     public function itPublishesTheGlobalNamespaceBagWithoutClasses(): void
     {
-        $metrics = new InMemoryMetricRepository();
+        $metrics = self::repository();
         $bag = ['size.loc.sum' => 9, 'health.overall' => 92.07, 'coupling.instability' => 0.5];
         $metrics->add(SymbolPath::forNamespace(''), MetricBag::fromArray($bag), null, null);
 
@@ -69,9 +76,9 @@ final class HtmlTreeBuilderTest extends TestCase
     #[Test]
     public function itPreservesRepositoryMetricsWithoutInventingLocOrHealth(): void
     {
-        $metrics = new InMemoryMetricRepository();
+        $metrics = self::repository();
         $metrics->add(SymbolPath::forFile(RelativePath::fromString('Pair.php')), MetricBag::fromArray(['size.loc' => 100]), RelativePath::fromString('Pair.php'), 1);
-        $metrics->add(SymbolPath::forClass('', 'Pair'), MetricBag::fromArray(['size.class-loc' => 10, 'health.complexity' => 80.0]), RelativePath::fromString('Pair.php'), 2);
+        self::addClass($metrics, '', 'Pair', MetricBag::fromArray(['size.class-loc' => 10, 'health.complexity' => 80.0]), RelativePath::fromString('Pair.php'), 2);
         $metrics->add(SymbolPath::forNamespace(''), MetricBag::fromArray(['size.loc.sum' => 100]), null, null);
 
         $report = ReportBuilder::create()->metrics($metrics)->build();
@@ -88,7 +95,7 @@ final class HtmlTreeBuilderTest extends TestCase
     #[Test]
     public function itPublishesEveryBagInAClasslessNamespaceChain(): void
     {
-        $metrics = new InMemoryMetricRepository();
+        $metrics = self::repository();
         $bags = [
             'App' => ['size.loc.sum' => 13, 'health.overall' => 72.0],
             'App\\Nested' => ['size.loc.sum' => 7, 'health.complexity' => 88.0],
@@ -137,7 +144,7 @@ final class HtmlTreeBuilderTest extends TestCase
     #[Test]
     public function itBuildsWithEmptyMetrics(): void
     {
-        $metrics = new InMemoryMetricRepository();
+        $metrics = self::repository();
 
         $report = ReportBuilder::create()
             ->filesAnalyzed(3)
@@ -158,7 +165,7 @@ final class HtmlTreeBuilderTest extends TestCase
     #[Test]
     public function itBuildsSingleNamespace(): void
     {
-        $metrics = new InMemoryMetricRepository();
+        $metrics = self::repository();
 
         // Add namespace metrics
         $metrics->add(
@@ -169,14 +176,18 @@ final class HtmlTreeBuilderTest extends TestCase
         );
 
         // Add classes
-        $metrics->add(
-            SymbolPath::forClass('App\\Service', 'UserService'),
+        self::addClass(
+            $metrics,
+            'App\\Service',
+            'UserService',
             MetricBag::fromArray(['complexity.ccn.sum' => 5, 'size.class-loc' => 120]),
             RelativePath::fromString('src/Service/UserService.php'),
             10,
         );
-        $metrics->add(
-            SymbolPath::forClass('App\\Service', 'OrderService'),
+        self::addClass(
+            $metrics,
+            'App\\Service',
+            'OrderService',
             MetricBag::fromArray(['complexity.ccn.sum' => 3, 'size.class-loc' => 80]),
             RelativePath::fromString('src/Service/OrderService.php'),
             5,
@@ -222,16 +233,20 @@ final class HtmlTreeBuilderTest extends TestCase
     #[Test]
     public function itBuildsMultipleRootNamespaces(): void
     {
-        $metrics = new InMemoryMetricRepository();
+        $metrics = self::repository();
 
-        $metrics->add(
-            SymbolPath::forClass('App\\Controller', 'HomeController'),
+        self::addClass(
+            $metrics,
+            'App\\Controller',
+            'HomeController',
             MetricBag::fromArray(['complexity.ccn.sum' => 2]),
             RelativePath::fromString('src/Controller/HomeController.php'),
             1,
         );
-        $metrics->add(
-            SymbolPath::forClass('Domain\\User', 'UserEntity'),
+        self::addClass(
+            $metrics,
+            'Domain\\User',
+            'UserEntity',
             MetricBag::fromArray(['complexity.ccn.sum' => 1]),
             RelativePath::fromString('src/Domain/User/UserEntity.php'),
             1,
@@ -260,7 +275,7 @@ final class HtmlTreeBuilderTest extends TestCase
     #[Test]
     public function itBuildsNestedNamespaces(): void
     {
-        $metrics = new InMemoryMetricRepository();
+        $metrics = self::repository();
 
         $metrics->add(
             SymbolPath::forNamespace('App\\Payment\\Processing'),
@@ -268,8 +283,10 @@ final class HtmlTreeBuilderTest extends TestCase
             null,
             null,
         );
-        $metrics->add(
-            SymbolPath::forClass('App\\Payment\\Processing', 'PaymentProcessor'),
+        self::addClass(
+            $metrics,
+            'App\\Payment\\Processing',
+            'PaymentProcessor',
             MetricBag::fromArray(['complexity.ccn.sum' => 4]),
             RelativePath::fromString('src/Payment/Processing/PaymentProcessor.php'),
             1,
@@ -305,10 +322,12 @@ final class HtmlTreeBuilderTest extends TestCase
     #[Test]
     public function itBuildsProceduralFiles(): void
     {
-        $metrics = new InMemoryMetricRepository();
+        $metrics = self::repository();
 
-        $metrics->add(
-            SymbolPath::forClass('', 'GlobalHelper'),
+        self::addClass(
+            $metrics,
+            '',
+            'GlobalHelper',
             MetricBag::fromArray(['complexity.ccn.sum' => 1]),
             RelativePath::fromString('src/GlobalHelper.php'),
             1,
@@ -337,14 +356,17 @@ final class HtmlTreeBuilderTest extends TestCase
     #[Test]
     public function itAttachesFindingToTreeNode(): void
     {
-        $metrics = new InMemoryMetricRepository();
+        $metrics = self::repository();
 
-        $metrics->add(
-            SymbolPath::forClass('App\\Service', 'UserService'),
+        self::addClass(
+            $metrics,
+            'App\\Service',
+            'UserService',
             MetricBag::fromArray(['complexity.ccn.sum' => 15]),
             RelativePath::fromString('src/Service/UserService.php'),
             10,
         );
+        self::addOwnedMethod($metrics, 'App\\Service', 'UserService', 'calculate', RelativePath::fromString('src/Service/UserService.php'));
 
         // Method-level finding should be attached to the class
         $finding = self::finding(
@@ -391,20 +413,25 @@ final class HtmlTreeBuilderTest extends TestCase
     #[Test]
     public function itCountsFindingsTotalBottomUp(): void
     {
-        $metrics = new InMemoryMetricRepository();
+        $metrics = self::repository();
 
-        $metrics->add(
-            SymbolPath::forClass('App\\A', 'ClassA'),
+        self::addClass(
+            $metrics,
+            'App\\A',
+            'ClassA',
             MetricBag::fromArray(['complexity.ccn.sum' => 10]),
             RelativePath::fromString('src/A/ClassA.php'),
             1,
         );
-        $metrics->add(
-            SymbolPath::forClass('App\\B', 'ClassB'),
+        self::addClass(
+            $metrics,
+            'App\\B',
+            'ClassB',
             MetricBag::fromArray(['complexity.ccn.sum' => 5]),
             RelativePath::fromString('src/B/ClassB.php'),
             1,
         );
+        self::addOwnedMethod($metrics, 'App\\A', 'ClassA', 'doStuff', RelativePath::fromString('src/A/ClassA.php'));
 
         $v1 = self::finding(
             location: new Location(RelativePath::fromString('src/A/ClassA.php'), 10),
@@ -475,10 +502,12 @@ final class HtmlTreeBuilderTest extends TestCase
     #[Test]
     public function itNullsNanAndInfMetricValues(): void
     {
-        $metrics = new InMemoryMetricRepository();
+        $metrics = self::repository();
 
-        $metrics->add(
-            SymbolPath::forClass('App', 'Calculator'),
+        self::addClass(
+            $metrics,
+            'App',
+            'Calculator',
             MetricBag::fromArray(['normal' => 42, 'nan_val' => \NAN, 'inf_val' => \INF]),
             RelativePath::fromString('src/Calculator.php'),
             1,
@@ -506,10 +535,12 @@ final class HtmlTreeBuilderTest extends TestCase
     #[Test]
     public function itCalculatesDebtDuringBuild(): void
     {
-        $metrics = new InMemoryMetricRepository();
+        $metrics = self::repository();
 
-        $metrics->add(
-            SymbolPath::forClass('App', 'Service'),
+        self::addClass(
+            $metrics,
+            'App',
+            'Service',
             MetricBag::fromArray(['complexity.ccn.sum' => 10]),
             RelativePath::fromString('src/Service.php'),
             1,
@@ -548,7 +579,7 @@ final class HtmlTreeBuilderTest extends TestCase
     #[Test]
     public function itIncludesHealthScoresInSummary(): void
     {
-        $metrics = new InMemoryMetricRepository();
+        $metrics = self::repository();
 
         $metrics->add(
             SymbolPath::forProject(),
@@ -586,7 +617,7 @@ final class HtmlTreeBuilderTest extends TestCase
     #[Test]
     public function itIncludesHealthCoverageInSummary(): void
     {
-        $metrics = new InMemoryMetricRepository();
+        $metrics = self::repository();
         $metrics->add(SymbolPath::forProject(), MetricBag::fromArray(['health.cohesion' => 82.9]), null, null);
 
         $report = new Report(
@@ -616,10 +647,12 @@ final class HtmlTreeBuilderTest extends TestCase
     #[Test]
     public function itEscapesHtmlTagsInJsonEncoding(): void
     {
-        $metrics = new InMemoryMetricRepository();
+        $metrics = self::repository();
 
-        $metrics->add(
-            SymbolPath::forClass('App', 'ScriptTag</script>Test'),
+        self::addClass(
+            $metrics,
+            'App',
+            'ScriptTag</script>Test',
             MetricBag::fromArray(['complexity.ccn.sum' => 1]),
             RelativePath::fromString('src/ScriptTagTest.php'),
             1,
@@ -787,10 +820,12 @@ final class HtmlTreeBuilderTest extends TestCase
     #[Test]
     public function itFiltersInternalMetricsFromOutput(): void
     {
-        $metrics = new InMemoryMetricRepository();
+        $metrics = self::repository();
 
-        $metrics->add(
-            SymbolPath::forClass('App', 'Service'),
+        self::addClass(
+            $metrics,
+            'App',
+            'Service',
             MetricBag::fromArray([
                 'complexity.ccn.sum' => 5,
                 'internal:cache_key' => 42,
@@ -819,10 +854,12 @@ final class HtmlTreeBuilderTest extends TestCase
     #[Test]
     public function itNullsNanMetricValueInFinding(): void
     {
-        $metrics = new InMemoryMetricRepository();
+        $metrics = self::repository();
 
-        $metrics->add(
-            SymbolPath::forClass('App', 'Service'),
+        self::addClass(
+            $metrics,
+            'App',
+            'Service',
             MetricBag::fromArray(['maintainability.mi' => 50.0]),
             RelativePath::fromString('src/Service.php'),
             1,
@@ -855,16 +892,20 @@ final class HtmlTreeBuilderTest extends TestCase
     #[Test]
     public function itLeavesMissingNamespaceAndProjectBagsEmpty(): void
     {
-        $metrics = new InMemoryMetricRepository();
+        $metrics = self::repository();
 
-        $metrics->add(
-            SymbolPath::forClass('App\\Service', 'UserService'),
+        self::addClass(
+            $metrics,
+            'App\\Service',
+            'UserService',
             MetricBag::fromArray(['size.class-loc' => 100]),
             RelativePath::fromString('src/Service/UserService.php'),
             1,
         );
-        $metrics->add(
-            SymbolPath::forClass('App\\Service', 'OrderService'),
+        self::addClass(
+            $metrics,
+            'App\\Service',
+            'OrderService',
             MetricBag::fromArray(['size.class-loc' => 150]),
             RelativePath::fromString('src/Service/OrderService.php'),
             1,
@@ -894,10 +935,12 @@ final class HtmlTreeBuilderTest extends TestCase
     #[Test]
     public function itForcesEmptyMetricsToJsonObject(): void
     {
-        $metrics = new InMemoryMetricRepository();
+        $metrics = self::repository();
 
-        $metrics->add(
-            SymbolPath::forClass('App', 'EmptyClass'),
+        self::addClass(
+            $metrics,
+            'App',
+            'EmptyClass',
             new MetricBag(),
             RelativePath::fromString('src/EmptyClass.php'),
             1,
@@ -949,10 +992,12 @@ final class HtmlTreeBuilderTest extends TestCase
     #[Test]
     public function itAttachesEveryFindingSoTheTreeCountsWhatTheSummaryCounts(): void
     {
-        $metrics = new InMemoryMetricRepository();
+        $metrics = self::repository();
         $metrics->add(SymbolPath::forNamespace('App'), MetricBag::fromArray([]), null, null);
-        $metrics->add(
-            SymbolPath::forClass('App', 'Foo'),
+        self::addClass(
+            $metrics,
+            'App',
+            'Foo',
             MetricBag::fromArray(['complexity.ccn.sum' => 5]),
             RelativePath::fromString('src/Foo.php'),
             1,
@@ -997,10 +1042,12 @@ final class HtmlTreeBuilderTest extends TestCase
     #[Test]
     public function itAggregatesTheRootDebtFromEveryAttachedFinding(): void
     {
-        $metrics = new InMemoryMetricRepository();
+        $metrics = self::repository();
         $metrics->add(SymbolPath::forNamespace('App'), MetricBag::fromArray([]), null, null);
-        $metrics->add(
-            SymbolPath::forClass('App', 'Foo'),
+        self::addClass(
+            $metrics,
+            'App',
+            'Foo',
             MetricBag::fromArray(['complexity.ccn.sum' => 5]),
             RelativePath::fromString('src/Foo.php'),
             1,
@@ -1039,6 +1086,53 @@ final class HtmlTreeBuilderTest extends TestCase
         $catalog->method('all')->willReturnCallback(fn(): array => $this->definitions);
 
         return $catalog;
+    }
+
+    private static function repository(): InMemoryMetricRepository
+    {
+        $keys = [
+            'complexity.ccn.sum', 'size.class-loc', 'health.complexity',
+            'normal', 'nan_val', 'inf_val', 'maintainability.mi',
+            'internal:cache_key', 'some:internal:value',
+        ];
+
+        return new InMemoryMetricRepository(array_map(
+            static fn(string $key): MetricDefinition => new MetricDefinition($key, SymbolLevel::Class_),
+            $keys,
+        ));
+    }
+
+    private static function addClass(
+        InMemoryMetricRepository $repository,
+        string $namespace,
+        string $name,
+        MetricBag $metrics,
+        RelativePath $file,
+        int $line,
+        int $ordinal = 0,
+    ): void {
+        $symbol = SymbolPath::forClass($namespace, $name);
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of($symbol, $file, DeclarationOrdinal::fromRank($ordinal))),
+            $metrics,
+            $file,
+            $line,
+        );
+    }
+
+    private static function addOwnedMethod(InMemoryMetricRepository $repository, string $namespace, string $class, string $method, RelativePath $file): void
+    {
+        $owner = DeclarationPath::of(SymbolPath::forClass($namespace, $class), $file, DeclarationOrdinal::fromRank(0));
+        $repository->addCallable(new CallableWithMetrics(
+            DeclarationPath::of(SymbolPath::forMethod($namespace, $class, $method), $file, DeclarationOrdinal::fromRank(0)),
+            0,
+            CallableKind::Method,
+            null,
+            $owner,
+            new LogicalClassPath($owner->logical),
+            new MetricBag(),
+            classAggregationOwnerDeclaration: $owner,
+        ));
     }
 
     /** @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations */

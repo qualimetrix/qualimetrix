@@ -14,7 +14,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
-use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
@@ -106,32 +105,11 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
         $tally = new UnreadChainTally();
         $resolver = InheritanceDepthResolver::fromGraph($graph, $this->projectClassNames($repository), $measured, $this->externalAncestry, $tally);
 
-        /** @var array<string, non-empty-list<int>> $depthsByName */
-        $depthsByName = [];
-
         foreach ($population as $entry) {
             $dit = $resolver->depthOf($entry['declaration']);
 
             $repository->addSubjectScalar($entry['subject'], MetricName::DESIGN_DIT, $dit);
 
-            $depthsByName[$entry['fqn']][] = $dit;
-        }
-
-        // One value per name for the readers that only know names --
-        // the aggregates, the metrics export and a user formula. It is written
-        // after the per-declaration pass on purpose: `addSubject` projects each
-        // declaration onto the shared logical bag, so without this the name
-        // would again carry whichever declaration was stored last.
-        foreach ($depthsByName as $classFqn => $depths) {
-            // The resolver's answer, not the maximum of what was written: a
-            // file declaring one name twice produces two `extends` edges but
-            // only one measured declaration, and publishing the written half
-            // would leave a child reporting a greater depth than its parent.
-            $repository->addScalar(
-                SymbolPath::fromClassFqn($classFqn),
-                MetricName::DESIGN_DIT,
-                $resolver->deepestForName($classFqn) ?? max($depths),
-            );
         }
 
         $this->reportUnreadChains($tally);
@@ -187,7 +165,7 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
     {
         $names = [];
 
-        foreach ($repository->all(SymbolLevel::Class_) as $classSymbol) {
+        foreach ($repository->allLogicalClasses() as $classSymbol) {
             $names[$classSymbol->symbolPath->toString()] = true;
         }
 
@@ -209,9 +187,8 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
      */
     private function measuredClassDeclarations(MetricRepositoryInterface $repository): iterable
     {
-        foreach ($repository->allDeclarations() as $declarationSymbol) {
+        foreach ($repository->allClassDeclarations() as $declarationSymbol) {
             $subject = $declarationSymbol->subject;
-            // The enumeration also carries methods and global functions.
             $declaration = $subject?->declarationPath();
 
             if ($subject === null || $declaration === null || $declaration->logical->getType() !== SymbolType::Class_) {

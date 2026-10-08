@@ -150,7 +150,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         }
         $findings = [];
 
-        foreach ($context->metrics->allDeclarations() as $classInfo) {
+        foreach ($context->metrics->allClassDeclarations() as $classInfo) {
             $finding = $this->classFinding($classInfo, $context, $this->options->class);
             if ($finding !== null) {
                 $findings[] = $finding;
@@ -167,7 +167,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             return null;
         }
 
-        $metrics = $context->metrics->get($subject->toSymbolPath());
+        $metrics = $context->metrics->getSubject($subject);
         $applicationScope = $options->scope === 'application';
         $metricName = $applicationScope ? MetricName::COUPLING_CBO_APP : MetricName::COUPLING_CBO;
         $cbo = $metrics->get($metricName);
@@ -256,7 +256,9 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     ): ?Finding {
         /** @var ClassCboOptions|NamespaceCboOptions $options */
         $options = $this->getEffectiveOptions($context, $options, $subject);
-        $metrics = $context->metrics->get($subject->toSymbolPath());
+        $metrics = $presentation['namespaceLevel']
+            ? $context->metrics->get($symbolInfo->symbolPath)
+            : $context->metrics->getSubject($subject);
         // A namespace is judged on its own scope, so its direction is read there too.
         $ca = (int) $metrics->require($presentation['namespaceLevel'] ? MetricName::COUPLING_CA_OWN : MetricName::COUPLING_CA);
         $ce = (int) $metrics->require($presentation['namespaceLevel'] ? MetricName::COUPLING_CE_OWN : MetricName::COUPLING_CE);

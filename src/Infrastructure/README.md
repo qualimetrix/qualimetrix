@@ -96,6 +96,7 @@ Infrastructure/
 │   └── Export/
 ├── DependencyInjection/
 │   ├── ContainerFactory.php           # Thin orchestrator (delegates to configurators)
+│   ├── MeasurementRepositoryFactory.php # Fresh stores from measured/computed definitions
 │   ├── Configurator/                  # Decomposed container configuration
 │   │   ├── ContainerConfiguratorInterface.php
 │   │   ├── CoreServicesConfigurator.php
@@ -520,3 +521,8 @@ measured findings at 1/2 from refusal/incomplete/internal outcomes at 3/4/5.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+Measurement repository composition resolves the measured and computed definition
+catalogs for every fresh store after invocation configuration. Class key scopes
+are assembled here; Measurement itself does not import ComputedMetrics. The
+container's direct repository service uses the same factory.

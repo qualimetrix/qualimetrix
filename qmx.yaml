@@ -440,6 +440,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassKeyScope'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectionOutput'
@@ -456,6 +457,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinitionCatalogInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface'
@@ -478,6 +480,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\DerivedMetricExtractor'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Namespace_\ProjectNamespaceResolver'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Repository\AggregateMetricIndex'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Repository\ClassMetricScopeRegistry'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Repository\DefaultMetricRepositoryFactory'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Repository\LogicalClassMetricIndex'
@@ -1316,6 +1319,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\SecurityConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\SizeConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory'
+        - 'Qualimetrix\Infrastructure\DependencyInjection\MeasurementRepositoryFactory'
         - 'Qualimetrix\Infrastructure\DependencyInjection\ProjectManifest\ProjectManifestConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Registration\EvidenceRegistration'
     - name: infrastructure-git
@@ -1535,6 +1539,7 @@ architecture:
     analysis-evidence-computedmetrics-health:
       - analysis-evidence-computedmetrics
       - analysis-evidence-measurement
+      - analysis-finding
       - core-neutral
       - core-path
       - core-symbol
@@ -1739,6 +1744,7 @@ architecture:
       - analysis-run
       - core-neutral
       - core-profiler
+      - core-symbol
       - infrastructure-ast
       - infrastructure-cache
       - infrastructure-composer
@@ -1864,6 +1870,15 @@ rules:
       - subtree: Qualimetrix\Core\Symbol
       - subtree: Qualimetrix\Core\Path
     suppress_namespace_channels:
+      # S11c exposes the real declaration census in these exact orchestration namespaces.
+      # Their required capability composition gives own unions 22, 67, 40, 18 and 78;
+      # moving the wiring only moves the signal. Declaration checks remain active.
+      coupling.cbo:
+        - exact: 'Qualimetrix\Analysis\Run\Pipeline'
+        - exact: 'Qualimetrix\Infrastructure\Console'
+        - exact: 'Qualimetrix\Infrastructure\Console\Command'
+        - exact: 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass'
+        - exact: 'Qualimetrix\Infrastructure\DependencyInjection\Configurator'
       coupling.cbo:namespace:
         # Publishing byte-distinct JSON group keys adds the required neutral SourceBytes boundary; own union 16.
         - exact: 'Qualimetrix\Reporting\Formatter\Json'
@@ -1997,6 +2012,10 @@ rules:
         # their own point threshold.
         - exact: 'Qualimetrix\Analysis\Evidence\Measurement\Contract'
     suppress_paths:
+      # Shared declaration metadata and numbering promises: Ca/Ce 34/3 and 22/1.
+      # Their measured CBO 37 and 23 is the intended contract readership.
+      - exact: src/Analysis/Evidence/Measurement/Contract/MetricDefinition.php
+      - exact: src/Analysis/Evidence/Measurement/Contract/DeclarationIndexAwareInterface.php
       # Shared repository read port: 42 inbound classes, total CBO 48, at its explicit bound.
       - exact: src/Analysis/Evidence/Measurement/Contract/MetricRepositoryInterface.php
       # Shared formatter publication port: 15 inbound classes, total CBO 20, at its explicit bound.
@@ -2227,6 +2246,10 @@ rules:
 
   coupling.instability:
     suppress_namespace_channels:
+      # Console composes delivery for capabilities: Ca=3, Ce=234, I=0.987342.
+      # Its required dependency direction is the same as the measured command adapters.
+      coupling.instability:
+        - exact: 'Qualimetrix\Infrastructure\Console'
       coupling.instability:namespace:
         # Container assembly references the registered Finding forms service: Ca=4, Ce=35→36, I=0.9.
         # Moving that required wiring only transfers the edge; declaration-level checks stay active.
@@ -2265,6 +2288,9 @@ rules:
         # services; moving one incoming edge cannot reduce that responsibility.
         - exact: 'Qualimetrix\Infrastructure\DependencyInjection\Configurator'
     suppress_paths:
+      # Exact finding attribution has two readers and thirteen required evidence types.
+      # Moving one reader transfers the small-population instability signal (0.866667).
+      - exact: src/Analysis/Evidence/ComputedMetrics/Health/Offender/WorstOffenderBuilder.php
       # These exact run-bound operations have two readers each; splitting moved that same small-population signal.
       - exact: src/Analysis/Evidence/DependencyModel/Extraction/DependencyRecorder.php
       - exact: src/Analysis/Policy/Architecture/Layer/ClassContext/Ancestry.php

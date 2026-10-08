@@ -22,6 +22,7 @@ tests/Analysis/Configuration/Fixtures/Document	Analysis/Configuration	"Move atom
 tests/Analysis/Evidence/Design/Fixtures	Analysis/Evidence/Design	"Move atomically with the owning subject."
 tests/Analysis/Evidence/Design/Fixtures/UnloadableParent	Analysis/Evidence/Design	"Move atomically with the owning subject."
 tests/Analysis/Evidence/Measurement/Fixtures	Analysis/Evidence/Measurement	"Move atomically with the owning subject."
+tests/Analysis/Evidence/Measurement/Fixtures/AggregationExport	Analysis/Evidence/Measurement	"Move atomically with the owning subject."
 tests/Analysis/Evidence/Measurement/Fixtures/GlobalNamespaceOnly	Analysis/Evidence/Measurement	"Move atomically with the owning subject."
 tests/Analysis/Evidence/Measurement/Fixtures/GoldenMetrics	Analysis/Evidence/Measurement	"Move atomically with the owning subject."
 tests/Analysis/Evidence/Measurement/Fixtures/GoldenMetrics/App	Analysis/Evidence/Measurement	"Move atomically with the owning subject."

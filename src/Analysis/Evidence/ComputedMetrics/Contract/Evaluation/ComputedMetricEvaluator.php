@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation;
 
+use LogicException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDependencyGraphCalculator;
@@ -78,9 +79,10 @@ class ComputedMetricEvaluator
         $skipped = [];
         $missingKeys = [];
 
-        foreach ($symbols as [$symbolPath, $file, $line]) {
+        foreach ($symbols as [$subject, $file, $line]) {
+            $symbolPath = $subject->toSymbolPath();
             try {
-                [$missing, $result] = $this->expression->evaluateOn($formula, new MetricLookup($repo->get($symbolPath)->all()));
+                [$missing, $result] = $this->expression->evaluateOn($formula, new MetricLookup($repo->getSubject($subject)->all()));
             } catch (Throwable $e) {
                 $this->logger->warning('Computed metric evaluation failed', [
                     'metric' => $definition->name,
@@ -124,7 +126,7 @@ class ComputedMetricEvaluator
                 continue;
             }
 
-            $repo->addScalar($symbolPath, $definition->name, $result);
+            $repo->addSubjectScalar($subject, $definition->name, $result);
         }
 
         $this->reportSkipped($definition, $level, $skipped, $missingKeys);
@@ -180,7 +182,7 @@ class ComputedMetricEvaluator
      * `m["computed.x"] ?? m["size.y"]`, whose measured link only a run can
      * judge.
      *
-     * @param list<array{SymbolPath, ?RelativePath, ?int}> $symbols
+     * @param list<array{\Qualimetrix\Core\Symbol\MetricSubject, ?RelativePath, ?int}> $symbols
      *
      * @throws \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal if the formula names a metric no symbol at this level carries
      */
@@ -222,15 +224,15 @@ class ComputedMetricEvaluator
     /**
      * Collects the union of all known metric keys across all symbols at a level.
      *
-     * @param list<array{SymbolPath, ?RelativePath, ?int}> $symbols
+     * @param list<array{\Qualimetrix\Core\Symbol\MetricSubject, ?RelativePath, ?int}> $symbols
      *
      * @return array<string, true>
      */
     private function collectKnownMetricKeys(MetricRepositoryInterface $repo, array $symbols): array
     {
         $allKnownKeys = [];
-        foreach ($symbols as [$symbolPath]) {
-            foreach (array_keys($repo->get($symbolPath)->all()) as $key) {
+        foreach ($symbols as [$subject]) {
+            foreach (array_keys($repo->getSubject($subject)->all()) as $key) {
                 $allKnownKeys[$key] = true;
             }
         }
@@ -260,19 +262,19 @@ class ComputedMetricEvaluator
     }
 
     /**
-     * @return list<array{SymbolPath, ?RelativePath, ?int}>
+     * @return list<array{\Qualimetrix\Core\Symbol\MetricSubject, ?RelativePath, ?int}>
      */
     private function getSymbolsForLevel(MetricRepositoryInterface $repo, SymbolLevel $level): array
     {
         return match ($level) {
-            SymbolLevel::Project => [[SymbolPath::forProject(), null, null]],
+            SymbolLevel::Project => [[\Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forProject()), null, null]],
             SymbolLevel::Namespace_ => array_map(
-                static fn(string $ns) => [SymbolPath::forNamespace($ns), null, null],
+                static fn(string $ns) => [\Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace($ns)), null, null],
                 $repo->getNamespaces(),
             ),
             SymbolLevel::Class_ => array_map(
-                static fn($info) => [$info->symbolPath, $info->file, $info->line],
-                iterator_to_array($repo->all(SymbolLevel::Class_), false),
+                static fn($info) => [$info->subject ?? throw new LogicException('Computed class metric requires exact declaration subject'), $info->file, $info->line],
+                iterator_to_array($repo->allClassDeclarations(), false),
             ),
             SymbolLevel::Callable, SymbolLevel::File => [],
         };

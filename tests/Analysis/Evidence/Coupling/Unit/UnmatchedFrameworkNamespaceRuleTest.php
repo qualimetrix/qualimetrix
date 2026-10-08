@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -24,6 +25,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
@@ -185,7 +187,17 @@ final class UnmatchedFrameworkNamespaceRuleTest extends TestCase
 
         $metrics = self::createStub(MetricRepositoryInterface::class);
         $metrics->method('has')->willReturnCallback(
-            static fn(SymbolPath $path): bool => \in_array($path->toCanonical(), $canonical, true),
+            static function (): never {
+                throw new LogicException('Class membership must use the exact logical subject');
+            },
+        );
+        $metrics->method('hasSubject')->willReturnCallback(
+            static function (MetricSubject $subject) use ($canonical): bool {
+                $logical = $subject->logicalClassPath()
+                    ?? throw new LogicException('Framework membership requires a logical class subject');
+
+                return \in_array($logical->toCanonical(), $canonical, true);
+            },
         );
 
         return new AnalysisContext($metrics, $graph, projectScope: new ProjectScopeJudgement($coversProjectScope ? [] : [ProjectScopeDoor::Paths]));

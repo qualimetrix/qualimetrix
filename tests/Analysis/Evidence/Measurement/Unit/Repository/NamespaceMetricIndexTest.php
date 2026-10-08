@@ -43,7 +43,7 @@ final class NamespaceMetricIndexTest extends TestCase
     }
 
     #[Test]
-    public function itRebuildsWithoutExactClassDeclarations(): void
+    public function itRebuildsExactDeclarationsAndLogicalClassProjectionsIndependently(): void
     {
         $index = new NamespaceMetricIndex();
         $logicalClass = SymbolPath::forClass('App', 'Service');
@@ -57,7 +57,7 @@ final class NamespaceMetricIndexTest extends TestCase
         $index->rebuild([], [$exactClass, $projection, $projection]);
 
         self::assertSame(['App'], $index->namespaces());
-        self::assertCount(1, $index->forNamespace('App'));
+        self::assertCount(2, $index->forNamespace('App'));
     }
 
     #[Test]

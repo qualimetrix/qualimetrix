@@ -514,7 +514,9 @@ bin/qmx check src/ --format=json --no-progress > report.json
 
 **Когда использовать:** Пользовательские дашборды, анализ трендов, пайплайны data science или создание собственных критериев качества на основе сырых метрик.
 
-**Ключи верхнего уровня:** `version`, `toolVersion`, `package`, `timestamp`, `docs`, `llmsTxt`, `symbols[]` (каждый с `type`: file/class/namespace/method/function/project, `name`, `file`, `line`, `metrics: {...}`), `outOfScope`, `projectScope`, `coverage`, `summary`. При `--namespace`/`--class` `summary` считает только выборку, а `outOfScope` — то, что осталось вне её; `symbols[]` выборка не сужает никогда. Типа `callable` не существует; одна запись `project` агрегирует статистические метрики по всему проекту (min/max/avg/p95 по всем символам) и имеет `line` равным `null`. Здесь `version` — версия формата этой выгрузки, а `toolVersion` — версия Qualimetrix; `docs` и `llmsTxt` — те же адреса документации, что `json` публикует в `meta`.
+**Ключи верхнего уровня:** `version`, `toolVersion`, `package`, `timestamp`, `docs`, `llmsTxt`, `symbols[]` (каждый с `type`: file/class/namespace/method/function/project, `name`, `subject`, `file`, `line`, `metrics: {...}`), `outOfScope`, `projectScope`, `coverage`, `summary`. При `--namespace`/`--class` `summary` считает только выборку, а `outOfScope` — то, что осталось вне её; `symbols[]` выборка не сужает никогда. Типа `callable` не существует; одна запись `project` агрегирует статистические метрики по всему проекту (min/max/avg/p95 по всем символам) и имеет `file` и `line` равными `null`. Здесь `version` — версия формата этой выгрузки, а `toolVersion` — версия Qualimetrix; `docs` и `llmsTxt` — те же адреса документации, что `json` публикует в `meta`.
+
+Каждое объявление класса или callable публикуется отдельно. Поле `name` может повторяться; идентичность записи задаёт `subject`. Графовые значения имени повторяются в каждом его объявлении, а class-агрегаты считают объявления. У `namespace` и `project` поля `file` и `line` равны `null`. Суффикс `.count` рядом с `.avg` — размер выборки; отдельный файловый `.count` у `size.*-count` неймспейса не публикуется. Для `size.loc|lloc|cloc` неймспейса `.sum` — целый итог поддерева, `.count` — число вкладывающих файлов, `.avg` — их отношение.
 
 <!-- llms:skip-begin -->
 **Пример вывода (сокращённо):**
@@ -531,6 +533,7 @@ bin/qmx check src/ --format=json --no-progress > report.json
         {
             "type": "file",
             "name": "src/Service/UserService.php",
+            "subject": "file:src/Service/UserService.php",
             "file": "src/Service/UserService.php",
             "line": 1,
             "metrics": {
@@ -542,6 +545,7 @@ bin/qmx check src/ --format=json --no-progress > report.json
         {
             "type": "class",
             "name": "App\\Service\\UserService",
+            "subject": "declaration:class:App\\Service\\UserService@src/Service/UserService.php",
             "file": "src/Service/UserService.php",
             "line": 10,
             "metrics": {
@@ -558,6 +562,7 @@ bin/qmx check src/ --format=json --no-progress > report.json
         {
             "type": "method",
             "name": "App\\Service\\UserService::calculate",
+            "subject": "declaration:callable:App\\Service\\UserService::calculate@src/Service/UserService.php",
             "file": "src/Service/UserService.php",
             "line": 42,
             "metrics": {

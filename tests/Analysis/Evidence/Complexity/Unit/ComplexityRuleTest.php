@@ -107,7 +107,7 @@ final class ComplexityRuleTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
             ->willReturn([]);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -128,11 +128,11 @@ final class ComplexityRuleTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
             ->willReturn([$methodInfo]);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$methodInfo]);
         $repository->method('getSubject')
             ->willReturn($metricBag);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -161,11 +161,11 @@ final class ComplexityRuleTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
             ->willReturn([$methodInfo]);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$methodInfo]);
         $repository->method('getSubject')
             ->willReturn($metricBag);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -193,11 +193,11 @@ final class ComplexityRuleTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
             ->willReturn([$methodInfo]);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$methodInfo]);
         $repository->method('getSubject')
             ->willReturn($metricBag);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -221,11 +221,11 @@ final class ComplexityRuleTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
             ->willReturn([$methodInfo]);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$methodInfo]);
         $repository->method('getSubject')
             ->willReturn($metricBag);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -248,11 +248,11 @@ final class ComplexityRuleTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
             ->willReturn([$methodInfo]);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$methodInfo]);
         $repository->method('getSubject')
             ->willReturn($metricBag);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -295,11 +295,11 @@ final class ComplexityRuleTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
             ->willReturn([$classInfo]);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('getSubject')
             ->willReturn($metricBag);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -324,11 +324,11 @@ final class ComplexityRuleTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
             ->willReturn([$classInfo]);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('getSubject')
             ->willReturn($metricBag);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -357,14 +357,13 @@ final class ComplexityRuleTest extends TestCase
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([$methodInfo]);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::Class_ ? [$classInfo] : []);
-        $repository->method('getSubject')->willReturn($methodBag);
-        $repository->method('get')
-            ->willReturnCallback(fn(SymbolPath $path) => match ($path) {
-                $methodPath => $methodBag,
-                $classPath => $classBag,
+        $repository->method('getSubject')
+            ->willReturnCallback(fn($subject) => match ($subject->toSymbolPath()->toCanonical()) {
+                $methodPath->toCanonical() => $methodBag,
+                $classPath->toCanonical() => $classBag,
                 default => new MetricBag(),
             });
 
@@ -498,11 +497,11 @@ final class ComplexityRuleTest extends TestCase
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
             ->willReturn([$methodInfo]);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$methodInfo]);
         $repository->method('getSubject')
             ->willReturn($metricBag);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -534,11 +533,11 @@ final class ComplexityRuleTest extends TestCase
     {
         $class = SymbolPath::forClass('App\\Service', 'Twin');
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([
+        $repository->method('allClassDeclarations')->willReturn([
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn((new MetricBag())->with('complexity.ccn.max', 35));
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('complexity.ccn.max', 35));
 
         $findings = (new ComplexityRule(new ComplexityOptions()))
             ->analyzeLevel(SymbolLevel::Class_, new AnalysisContext($repository));

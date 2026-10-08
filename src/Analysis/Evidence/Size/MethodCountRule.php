@@ -87,12 +87,12 @@ final class MethodCountRule extends AbstractRule
 
         $findings = [];
 
-        foreach ($context->metrics->allDeclarations() as $classInfo) {
+        foreach ($context->metrics->allClassDeclarations() as $classInfo) {
             $subject = $classInfo->subject ?? throw new LogicException('Method count findings require an exact class declaration subject');
             if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
                 continue;
             }
-            $metrics = $context->metrics->get($subject->toSymbolPath());
+            $metrics = $context->metrics->getSubject($subject);
             $methodCount = $metrics->get(MetricName::SIZE_METHOD_COUNT);
 
             if ($methodCount === null) {

@@ -634,14 +634,41 @@ final class BoundaryExplanationServiceTest extends TestCase
         self::assertSame(2, $repository->calls['allCallables']);
         self::assertSame(4, $repository->iterations['allCallables']);
         self::assertArrayNotHasKey('all:' . SymbolLevel::Callable->value, $repository->calls);
+        self::assertArrayNotHasKey('all:' . SymbolLevel::Class_->value, $repository->calls);
         foreach (SymbolLevel::cases() as $level) {
-            if ($level === SymbolLevel::Callable) {
+            if ($level === SymbolLevel::Callable || $level === SymbolLevel::Class_) {
                 continue;
             }
 
             self::assertSame(1, $repository->calls['all:' . $level->value]);
         }
         self::assertSame(1, $repository->iterations['all:' . SymbolLevel::Namespace_->value]);
+    }
+
+    #[Test]
+    public function itEnumeratesOnlyExactClassDeclarationsWithoutReadingOtherSources(): void
+    {
+        $file = RelativePath::fromString('src/Multiple.php');
+        $class = SymbolPath::forClass('App', 'Multiple');
+        $classSubject = MetricSubject::declaration(DeclarationPath::of($class, $file, DeclarationOrdinal::fromRank(0)));
+        $methodSubject = MetricSubject::declaration(DeclarationPath::of(
+            SymbolPath::forMethod('App', 'Multiple', 'run'),
+            $file,
+            DeclarationOrdinal::fromRank(0),
+        ));
+        $repository = new CountingBoundaryRepository(
+            declarations: [new SymbolInfo($classSubject, $file, 1), new SymbolInfo($methodSubject, $file, 2)],
+            logicalClasses: [new SymbolInfo(MetricSubject::logicalClass(new LogicalClassPath($class)), null, null)],
+        );
+
+        $classes = iterator_to_array($repository->allClassDeclarations(), false);
+
+        self::assertCount(1, $classes);
+        self::assertSame($classSubject, $classes[0]->subject);
+        self::assertSame(1, $repository->calls['allClassDeclarations']);
+        self::assertSame(1, $repository->iterations['allClassDeclarations']);
+        self::assertArrayNotHasKey('allDeclarations', $repository->calls);
+        self::assertArrayNotHasKey('allLogicalClasses', $repository->calls);
     }
 
     #[Test]
@@ -1073,6 +1100,20 @@ final class CountingBoundaryRepository implements MetricRepositoryInterface
         $this->count($this->calls, __FUNCTION__);
 
         return $this->iterate(__FUNCTION__, $this->logicalClasses);
+    }
+
+    public function allClassDeclarations(): iterable
+    {
+        $this->count($this->calls, __FUNCTION__);
+
+        foreach ($this->declarations as $info) {
+            if ($info->symbolPath->getType() !== \Qualimetrix\Core\Symbol\SymbolType::Class_) {
+                continue;
+            }
+
+            $this->count($this->iterations, __FUNCTION__);
+            yield $info;
+        }
     }
 
     public function addScalar(SymbolPath $symbol, string $key, int|float $value): void {}

@@ -105,7 +105,7 @@ final class ComputedMetricRule extends AbstractRule
         $symbols = $this->getSymbolsForLevel($context, $level);
 
         foreach ($symbols as [$subject, $symbolPath, $location]) {
-            $metrics = $context->metrics->get($symbolPath);
+            $metrics = $context->metrics->getSubject($subject);
             $value = $metrics->get($definition->name);
 
             if ($value === null) {
@@ -148,7 +148,7 @@ final class ComputedMetricRule extends AbstractRule
     private function getClassSymbolsWithPresentationLocations(AnalysisContext $context): array
     {
         $symbols = [];
-        foreach ($context->metrics->allDeclarations() as $declarationInfo) {
+        foreach ($context->metrics->allClassDeclarations() as $declarationInfo) {
             $declaration = $declarationInfo->subject?->declarationPath();
             if ($declaration?->logical->getType() !== SymbolType::Class_) {
                 continue;

@@ -2768,6 +2768,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\MeasurementRepositoryFactory"
         }
       ]
     },
@@ -4586,6 +4590,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Collection\\FileProcessor"
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CyclomaticComplexityCollector"
         }
       ]
     },
@@ -4698,6 +4706,10 @@
         {
           "owner": "Analysis.Evidence.Size",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodStatementCountVisitor"
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CyclomaticComplexityCollector"
         }
       ]
     },
@@ -4738,6 +4750,10 @@
         {
           "owner": "Analysis.Evidence.Size",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CyclomaticComplexityCollector"
         }
       ]
     },
@@ -5186,6 +5202,14 @@
         {
           "owner": "Analysis.Evidence.Size",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodStatementCountCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.CodeSmell",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateCollector"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\MeasurementRepositoryFactory"
         }
       ]
     },
@@ -5458,6 +5482,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Health\\SummaryEnricher"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Collection\\CollectionOrchestrator"
         }
       ]
     },
@@ -5486,6 +5514,10 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\MeasurementConfigurator"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\MeasurementRepositoryFactory"
         }
       ]
     },
@@ -5598,6 +5630,18 @@
         {
           "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryRunFacts"
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\WorstOffenderBuilder"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\MeasurementRepositoryFactory"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\MetricsJsonFormatter"
         }
       ]
     },
@@ -5972,7 +6016,16 @@
       "kind": "class",
       "owner": "Analysis.Evidence.Measurement",
       "visibility": "internal",
-      "consumers": []
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\MeasurementConfigurator",
+          "operations": [
+            "service_registration"
+          ]
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\InMemoryMetricRepository": {
       "path": "src/Analysis/Evidence/Measurement/Repository/InMemoryMetricRepository.php",
@@ -7772,6 +7825,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\FindingRecord"
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\WorstOffenderBuilder"
         }
       ]
     },
@@ -12664,22 +12721,10 @@
         {
           "owner": "Infrastructure.Console",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\LayerAssignment"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\LayerAssignmentShadowVerdict"
         },
         {
-          "owner": "Infrastructure.Console",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\LayerAssignmentShadowVerdict"
-        },
-        {
           "owner": "Infrastructure.DependencyInjection",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ArchitectureConfigurator",
@@ -12689,6 +12734,18 @@
           "owner": "Infrastructure.DependencyInjection",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ArchitectureConfigurator",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\LayerAssignmentShadowVerdict"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\LayerAssignment"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\LayerAssignmentShadowVerdict"
         }
       ]
@@ -16675,10 +16732,6 @@
         },
         {
           "owner": "Analysis.Evidence.Measurement",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Aggregation\\TreeAwareNamespaceAggregator"
-        },
-        {
-          "owner": "Analysis.Evidence.Measurement",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\CallableMetricsProviderInterface"
         },
         {
@@ -17585,10 +17638,6 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.Measurement",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Aggregation\\CallableToClassAggregator"
-        },
-        {
-          "owner": "Analysis.Evidence.Measurement",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\CallableWithMetrics"
         },
         {
@@ -17618,6 +17667,18 @@
         {
           "owner": "Analysis.Evidence.Cohesion",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods"
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CyclomaticComplexityCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\WorstOffenderBuilder"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Aggregation\\CallableToClassAggregator"
         }
       ]
     },
@@ -17742,6 +17803,18 @@
         {
           "owner": "Analysis.Evidence.DependencyModel",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\DependencyRecorder"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\RepositoryMerge"
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\WorstOffenderBuilder"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Aggregation\\CallableToClassAggregator"
         }
       ]
     },
@@ -17836,8 +17909,28 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\LogicalClassMetricIndex"
         },
         {
-          "owner": "Analysis.Evidence.Measurement",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\InMemoryMetricRepository"
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\WorstOffenderBuilder"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CouplingCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Prioritization",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Prioritization\\Impact\\ClassRankResolver"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\UnmatchedFrameworkNamespaceRule"
         }
       ]
     },
@@ -18102,6 +18195,42 @@
         {
           "owner": "Analysis.Evidence.Measurement",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\LogicalClassMetricIndex"
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluator"
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\WorstOffenderBuilder"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CouplingCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Prioritization",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Prioritization\\Impact\\ClassRankResolver"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlFindingPartitioner"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\MetricsJsonFormatter"
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\HealthScoreDrillDown"
         }
       ]
     },
@@ -18273,10 +18402,6 @@
         },
         {
           "owner": "Analysis.Evidence.Measurement",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Aggregation\\CallableToClassAggregator"
-        },
-        {
-          "owner": "Analysis.Evidence.Measurement",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Aggregation\\NamespaceMetricContributions"
         },
         {
@@ -18318,6 +18443,18 @@
         {
           "owner": "Analysis.Evidence.Measurement",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\InMemoryMetricRepository"
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\WorstOffenderBuilder"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Aggregation\\CallableToClassAggregator"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\MetricsJsonFormatter"
         }
       ]
     },
@@ -18454,10 +18591,6 @@
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\HealthScoreDrillDown"
-        },
-        {
-          "owner": "Analysis.Evidence.ComputedMetrics.Health",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\WorstClassDrillDown"
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
@@ -18632,10 +18765,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\InMemoryMetricRepository"
         },
         {
-          "owner": "Analysis.Evidence.Prioritization",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Prioritization\\Impact\\ClassRankResolver"
-        },
-        {
           "owner": "Analysis.Evidence.Security",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Security\\AbstractSecurityPatternRule"
         },
@@ -18784,24 +18913,12 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeRule"
         },
         {
-          "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline"
-        },
-        {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineConfiguredThresholds"
         },
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver"
-        },
-        {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\DrillDown\\DrillDownBinding"
-        },
-        {
-          "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlFindingPartitioner"
         },
         {
           "owner": "Reporting",
@@ -18880,10 +18997,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\RuleProducerPreparation"
         },
         {
-          "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Observation\\ClassEvidenceWalk"
-        },
-        {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\FindingPlace"
         },
@@ -18894,6 +19007,26 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\PublishedFinding"
+        },
+        {
+          "owner": "Analysis.Evidence.CodeSmell",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Aggregation\\MeasurementAggregationService"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\MeasurementRepositoryFactory"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\ClassMetricScopeRegistry"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\AggregateMetricIndex"
         }
       ]
     },
@@ -18906,10 +19039,6 @@
         {
           "owner": "Analysis.Evidence.Measurement",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Aggregation\\NamespaceMetricContributions"
-        },
-        {
-          "owner": "Analysis.Evidence.Measurement",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\InMemoryMetricRepository"
         },
         {
           "owner": "Analysis.Finding",
@@ -18926,6 +19055,10 @@
         {
           "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\IdentityBoundaryExplanation"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\AggregateMetricIndex"
         }
       ]
     },
@@ -19034,10 +19167,6 @@
         {
           "owner": "Analysis.Evidence.DependencyModel",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\NamespaceCouplings"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector"
         },
         {
           "owner": "Analysis.Evidence.Design",
@@ -19197,10 +19326,6 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlFindingPartitioner"
-        },
-        {
-          "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder"
         },
         {
@@ -19280,10 +19405,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\NamespaceMetricIndex"
         },
         {
-          "owner": "Analysis.Evidence.ComputedMetrics.Health",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\WorstOffenderBuilder"
-        },
-        {
           "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineWriter"
         },
@@ -19294,6 +19415,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\PublishedFinding"
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CyclomaticComplexityCollector"
         }
       ]
     },
@@ -19446,6 +19571,14 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Filter\\FindingNamespace"
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\WorstOffenderBuilder"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\MetricSubjectIndex"
         }
       ]
     },
@@ -24543,19 +24676,7 @@
         {
           "owner": "Analysis.Run",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphBuilderInterface"
-        },
-        {
-          "owner": "Analysis.Run",
-          "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\DependencyGraphAnalyzer",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphBuilderInterface"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphBuilderInterface"
         },
         {
@@ -24603,19 +24724,7 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankCollector",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphInterface"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CoupledNamespaces",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphInterface"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CouplingCollector",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphInterface"
         },
         {
@@ -24625,33 +24734,9 @@
           "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphInterface"
         },
         {
-          "owner": "Analysis.Evidence.Coupling",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\FrameworkClassificationSites",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphInterface"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphInterface"
-        },
-        {
           "owner": "Analysis.Evidence.Design",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthResolver",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphInterface"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocCollector",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphInterface"
-        },
-        {
-          "owner": "Analysis.Evidence.Measurement",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Aggregation\\MeasurementAggregationService",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphInterface"
         },
         {
@@ -24765,12 +24850,6 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\MeasurementConfigurator",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyTraversalParticipantInterface"
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyTraversalParticipantInterface"
         },
@@ -24793,6 +24872,60 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\DeclarationRelations"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankCollector",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphInterface"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CouplingCollector",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphInterface"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\FrameworkClassificationSites",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphInterface"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphInterface"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocCollector",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphInterface"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Aggregation\\MeasurementAggregationService",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphInterface"
+        },
+        {
+          "owner": "Analysis.Run",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphBuilderInterface"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphBuilderInterface"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\MeasurementConfigurator",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyTraversalParticipantInterface"
         }
       ]
     },
@@ -24833,15 +24966,15 @@
           "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\LayerAssignment"
         },
         {
-          "owner": "Infrastructure.Console",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\LayerAssignment"
-        },
-        {
           "owner": "Infrastructure.DependencyInjection",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ArchitectureConfigurator",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\LayerAssignment"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\LayerAssignment"
         }
       ]
@@ -24855,19 +24988,7 @@
         {
           "owner": "Analysis.Run",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphBuilderInterface"
-        },
-        {
-          "owner": "Analysis.Run",
-          "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\DependencyGraphAnalyzer",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphBuilderInterface"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphBuilderInterface"
         },
         {
@@ -24886,6 +25007,18 @@
           "owner": "Infrastructure.DependencyInjection",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphBuilderInterface"
+        },
+        {
+          "owner": "Analysis.Run",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphBuilderInterface"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphBuilderInterface"
         }
       ]
@@ -24922,15 +25055,15 @@
           "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\LayerAssignmentShadowVerdict"
         },
         {
-          "owner": "Infrastructure.Console",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\LayerAssignmentShadowVerdict"
-        },
-        {
           "owner": "Infrastructure.DependencyInjection",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ArchitectureConfigurator",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\LayerAssignmentShadowVerdict"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\LayerAssignmentShadowVerdict"
         }
       ]
@@ -25436,6 +25569,60 @@
           "source_fqcn": "Qualimetrix\\Reporting\\DrillDown\\FindingFilter"
         }
       ]
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\ClassKeyScope": {
+      "path": "src/Analysis/Evidence/Measurement/Contract/ClassKeyScope.php",
+      "kind": "enum",
+      "owner": "Analysis.Evidence.Measurement",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CouplingCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocCollector"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\MeasurementRepositoryFactory"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\MetricDefinitionCatalogInterface": {
+      "path": "src/Analysis/Evidence/Measurement/Contract/MetricDefinitionCatalogInterface.php",
+      "kind": "interface",
+      "owner": "Analysis.Evidence.Measurement",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\MeasurementConfigurator"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\MeasurementRepositoryFactory"
+        }
+      ]
+    },
+    "Qualimetrix\\Infrastructure\\DependencyInjection\\MeasurementRepositoryFactory": {
+      "path": "src/Infrastructure/DependencyInjection/MeasurementRepositoryFactory.php",
+      "kind": "class",
+      "owner": "Infrastructure.DependencyInjection",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\ClassMetricScopeRegistry": {
+      "path": "src/Analysis/Evidence/Measurement/Repository/ClassMetricScopeRegistry.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Measurement",
+      "visibility": "internal",
+      "consumers": []
     }
   },
   "enforcement_seams": {}

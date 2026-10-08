@@ -112,7 +112,7 @@ final class InstabilityRuleTest extends TestCase
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -131,9 +131,9 @@ final class InstabilityRuleTest extends TestCase
         $metricBag = new MetricBag();
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -156,9 +156,9 @@ final class InstabilityRuleTest extends TestCase
             ->with('coupling.ce', 12);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -187,9 +187,9 @@ final class InstabilityRuleTest extends TestCase
             ->with('coupling.ce', 32);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -215,9 +215,9 @@ final class InstabilityRuleTest extends TestCase
             ->with('coupling.ce', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -245,9 +245,9 @@ final class InstabilityRuleTest extends TestCase
             ->with('coupling.ce', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -266,8 +266,8 @@ final class InstabilityRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\\Service', 'LeafService');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/LeafService.php'), 10);
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn(
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn(
             (new MetricBag())->with('coupling.instability', 1.0),
         );
 
@@ -300,9 +300,9 @@ final class InstabilityRuleTest extends TestCase
             ->with('coupling.ce', 11);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -330,9 +330,9 @@ final class InstabilityRuleTest extends TestCase
             ->with('coupling.ce', 12);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -598,13 +598,9 @@ final class InstabilityRuleTest extends TestCase
                 SymbolLevel::Namespace_ => [$nsInfo],
                 default => [],
             });
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')
-            ->willReturnCallback(fn(SymbolPath $path) => match ($path) {
-                $classPath => $classBag,
-                $nsPath => $nsBag,
-                default => new MetricBag(),
-            });
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn($classBag);
+        $repository->method('get')->willReturn($nsBag);
 
         $context = new AnalysisContext($repository);
         $findings = $rule->analyze($context);
@@ -769,9 +765,9 @@ final class InstabilityRuleTest extends TestCase
             ->with('coupling.ce', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -903,11 +899,11 @@ final class InstabilityRuleTest extends TestCase
     {
         $class = SymbolPath::forClass('App\\Service', 'Twin');
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([
+        $repository->method('allClassDeclarations')->willReturn([
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn(
+        $repository->method('getSubject')->willReturn(
             (new MetricBag())->with('coupling.instability', 0.85)->with('coupling.ca', 2)->with('coupling.ce', 12),
         );
 

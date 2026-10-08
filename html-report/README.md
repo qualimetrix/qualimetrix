@@ -76,3 +76,11 @@ The HTML payload and detail viewer retain acceptedLevel for both breached and
 not-compared findings. baselineVerdict and nullable baselineReason distinguish
 those states; an accepted cap alone never labels a finding as a breach. The
 project-level unused-entry warning remains visible after Git projection.
+
+## Declaration navigation
+
+A class node carries `id` equal to its canonical declaration `subject`; `path`
+retains the logical name for display. Hash links, search results, treemap
+selection and Martin points address the id, so two declarations of one name
+remain independently selectable. Class bags include the graph metrics of their
+logical name; namespace and project records carry no source file or line.

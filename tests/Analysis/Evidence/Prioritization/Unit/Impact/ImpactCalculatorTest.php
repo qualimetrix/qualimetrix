@@ -62,9 +62,9 @@ final class ImpactCalculatorTest extends TestCase
         );
 
         $metrics = self::createStub(MetricRepositoryInterface::class);
-        $metrics->method('get')->willReturnCallback(
-            static function (SymbolPath $sp): MetricBag {
-                return match ($sp->toCanonical()) {
+        $metrics->method('getSubject')->willReturnCallback(
+            static function ($subject): MetricBag {
+                return match ($subject->toSymbolPath()->toCanonical()) {
                     'class:App\Service\ErrorClass' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.05),
                     'class:App\Service\WarningClass' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.02),
                     default => new MetricBag(),
@@ -95,9 +95,9 @@ final class ImpactCalculatorTest extends TestCase
         $v3 = $this->createFinding('src/c.php', 1, Severity::Warning, SymbolPath::forClass('App', 'Mid'), 'code-smell.debug-code');
 
         $metrics = self::createStub(MetricRepositoryInterface::class);
-        $metrics->method('get')->willReturnCallback(
-            static function (SymbolPath $sp): MetricBag {
-                return match ($sp->toCanonical()) {
+        $metrics->method('getSubject')->willReturnCallback(
+            static function ($subject): MetricBag {
+                return match ($subject->toSymbolPath()->toCanonical()) {
                     'class:App\Low' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.01),
                     'class:App\High' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.10),
                     'class:App\Mid' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.05),
@@ -122,7 +122,7 @@ final class ImpactCalculatorTest extends TestCase
         $v2 = $this->createFinding('src/a.php', 5, Severity::Warning, SymbolPath::forClass('App', 'Same'), 'code-smell.debug-code');
 
         $metrics = self::createStub(MetricRepositoryInterface::class);
-        $metrics->method('get')->willReturn(
+        $metrics->method('getSubject')->willReturn(
             (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.05),
         );
 
@@ -159,8 +159,8 @@ final class ImpactCalculatorTest extends TestCase
         );
 
         $metrics = self::createStub(MetricRepositoryInterface::class);
-        $metrics->method('all')->willReturn([]);
-        $metrics->method('get')->willReturn(new MetricBag());
+        $metrics->method('allClassDeclarations')->willReturn([]);
+        $metrics->method('getSubject')->willReturn(new MetricBag());
 
         $calculator = new ImpactCalculator($this->resolver, $this->registry);
         $issues = $calculator->computeTopIssues([$finding], $metrics);
@@ -198,13 +198,13 @@ final class ImpactCalculatorTest extends TestCase
         );
 
         $metrics = self::createStub(MetricRepositoryInterface::class);
-        $metrics->method('all')->willReturn([
-            new SymbolInfo(SymbolPath::forClass('App', 'ClassA'), RelativePath::fromString('src/a.php'), 1),
-            new SymbolInfo(SymbolPath::forClass('App', 'ClassB'), RelativePath::fromString('src/b.php'), 1),
+        $metrics->method('allClassDeclarations')->willReturn([
+            $this->classInfo(SymbolPath::forClass('App', 'ClassA'), RelativePath::fromString('src/a.php'), 1),
+            $this->classInfo(SymbolPath::forClass('App', 'ClassB'), RelativePath::fromString('src/b.php'), 1),
         ]);
-        $metrics->method('get')->willReturnCallback(
-            static function (SymbolPath $sp): MetricBag {
-                return match ($sp->toCanonical()) {
+        $metrics->method('getSubject')->willReturnCallback(
+            static function ($subject): MetricBag {
+                return match ($subject->toSymbolPath()->toCanonical()) {
                     'class:App\ClassA' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.01),
                     'class:App\ClassB' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.03),
                     default => new MetricBag(),
@@ -252,7 +252,7 @@ final class ImpactCalculatorTest extends TestCase
         );
 
         $metrics = self::createStub(MetricRepositoryInterface::class);
-        $metrics->method('get')->willReturn(
+        $metrics->method('getSubject')->willReturn(
             (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.1),
         );
 
@@ -283,7 +283,7 @@ final class ImpactCalculatorTest extends TestCase
         );
 
         $metrics = self::createStub(MetricRepositoryInterface::class);
-        $metrics->method('get')->willReturn(
+        $metrics->method('getSubject')->willReturn(
             (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.0),
         );
 
@@ -312,4 +312,15 @@ final class ImpactCalculatorTest extends TestCase
             severity: $severity,
         );
     }
+    private function classInfo(SymbolPath $path, ?RelativePath $file, int $line): SymbolInfo
+    {
+        $identityFile = $file ?? RelativePath::fromString('src/WithoutFile.php');
+
+        return new SymbolInfo(MetricSubject::declaration(DeclarationPath::of(
+            $path,
+            $identityFile,
+            DeclarationOrdinal::fromRank(0),
+        )), $file, $line);
+    }
+
 }

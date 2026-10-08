@@ -66,8 +66,7 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
     ];
 
     /**
-     * @var array<string, MethodCountMetrics>
-     *                                        Class FQN => metrics
+     * @var array<int, MethodCountMetrics>
      */
     private array $classMetrics = [];
 
@@ -75,9 +74,9 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
 
     /**
      * Stack of class contexts (to handle nested/anonymous classes).
-     * Each entry is the class name or null for anonymous classes.
+     * Each entry is the class position or null for anonymous classes.
      *
-     * @var list<string|null>
+     * @var list<int|null>
      */
     private array $classStack = [];
 
@@ -89,9 +88,9 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
     }
 
     /**
-     * Returns current class name or null if inside anonymous class or no class.
+     * Returns the current class position or null inside an anonymous class.
      */
-    private function getCurrentClass(): ?string
+    private function getCurrentClass(): ?int
     {
         if ($this->classStack === []) {
             return null;
@@ -101,7 +100,7 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
     }
 
     /**
-     * @return array<string, MethodCountMetrics>
+     * @return array<int, MethodCountMetrics>
      */
     public function getClassMetrics(): array
     {
@@ -119,35 +118,7 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
 
         // Track class-like types
         if ($node instanceof ClassLike) {
-            $className = $node->name?->toString();
-            // Push to stack (null for anonymous classes)
-            $this->classStack[] = $className;
-
-            // Only create metrics for named classes
-            if ($className !== null) {
-                $fqn = $this->buildClassFqn($className);
-                $this->classMetrics[$fqn] = new MethodCountMetrics(
-                    namespace: $this->currentNamespace,
-                    className: $className,
-                    line: $node->getStartLine(),
-                    startFilePos: $node->getStartFilePos(),
-                );
-
-                // Track interface flag
-                if ($node instanceof Interface_) {
-                    $this->classMetrics[$fqn]->isInterface = true;
-                }
-
-                // Process class characteristics and promoted properties
-                if ($node instanceof Class_) {
-                    // RFC-008: Collect isReadonly for false positive reduction
-                    $this->classMetrics[$fqn]->isReadonly = $node->isReadonly();
-                    $this->classMetrics[$fqn]->isAbstract = $node->isAbstract();
-                    $this->classMetrics[$fqn]->isException = $this->isExceptionClass($node);
-
-                    $this->processConstructorPromotedProperties($node, $fqn);
-                }
-            }
+            $this->enterClassLike($node);
 
             return null;
         }
@@ -170,6 +141,33 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
         return null;
     }
 
+    private function enterClassLike(ClassLike $node): void
+    {
+        $className = $node->name?->toString();
+        $this->classStack[] = $className === null ? null : $node->getStartFilePos();
+
+        if ($className === null) {
+            return;
+        }
+
+        $position = $node->getStartFilePos();
+        $metrics = new MethodCountMetrics(
+            namespace: $this->currentNamespace,
+            className: $className,
+            line: $node->getStartLine(),
+            startFilePos: $position,
+        );
+        $this->classMetrics[$position] = $metrics;
+        $metrics->isInterface = $node instanceof Interface_;
+
+        if ($node instanceof Class_) {
+            $metrics->isReadonly = $node->isReadonly();
+            $metrics->isAbstract = $node->isAbstract();
+            $metrics->isException = $this->isExceptionClass($node);
+            $this->processConstructorPromotedProperties($node, $position);
+        }
+    }
+
     public function leaveNode(Node $node): ?int
     {
         // Exit class-like scope
@@ -185,15 +183,13 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
         return null;
     }
 
-    private function countMethod(ClassMethod $method, string $className): void
+    private function countMethod(ClassMethod $method, int $position): void
     {
-        $fqn = $this->buildClassFqn($className);
-
-        if (!isset($this->classMetrics[$fqn])) {
+        if (!isset($this->classMetrics[$position])) {
             return;
         }
 
-        $metrics = $this->classMetrics[$fqn];
+        $metrics = $this->classMetrics[$position];
         $methodName = $method->name->toString();
 
         // RFC-008: Track constructor presence for isDataClass calculation
@@ -295,24 +291,13 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
         return false;
     }
 
-    private function buildClassFqn(string $className): string
-    {
-        if ($this->currentNamespace !== null && $this->currentNamespace !== '') {
-            return $this->currentNamespace . '\\' . $className;
-        }
-
-        return $className;
-    }
-
     /**
      * Count properties in a property declaration.
      * Note: One Property node can contain multiple properties (e.g., public $a, $b, $c).
      */
-    private function countProperty(Property $property, string $className): void
+    private function countProperty(Property $property, int $position): void
     {
-        $fqn = $this->buildClassFqn($className);
-
-        if (!isset($this->classMetrics[$fqn])) {
+        if (!isset($this->classMetrics[$position])) {
             return;
         }
 
@@ -322,14 +307,14 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
         $count = \count($property->props);
 
         for ($i = 0; $i < $count; $i++) {
-            $this->classMetrics[$fqn]->addProperty($visibility);
+            $this->classMetrics[$position]->addProperty($visibility);
         }
     }
 
     /**
      * Process promoted properties from constructor.
      */
-    private function processConstructorPromotedProperties(Class_ $class, string $fqn): void
+    private function processConstructorPromotedProperties(Class_ $class, int $position): void
     {
         $constructor = $class->getMethod('__construct');
 
@@ -340,7 +325,7 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
         foreach ($constructor->params as $param) {
             if ($this->isPromotedProperty($param)) {
                 $visibility = $this->getParamVisibility($param);
-                $this->classMetrics[$fqn]->addProperty($visibility, isPromoted: true);
+                $this->classMetrics[$position]->addProperty($visibility, isPromoted: true);
             }
         }
     }

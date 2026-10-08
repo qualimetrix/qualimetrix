@@ -42,6 +42,13 @@ resolved so the HTML report picks by the node's own level. Which class dragged a
 parent score down is a separate question with a separate list — the contributor
 keys — and the two must not be conflated.
 
+Class scores and their inputs are read on exact declaration subjects. Class
+aggregate samples and `size.symbol-class-count` count declarations, including
+duplicate names. Graph inputs remain logical-name values overlaid on each
+declaration, so every class input uses the same declaration population.
+Class finding counts and LOC density use that declaration's own findings and
+`size.class-loc`, rather than mixing findings of namesakes.
+
 Every input line also declares what it covers: the `.count` its aggregate
 already publishes and the population that count is a share of. A score reports
 the *narrowest* of its inputs' ratios, because a score is only as much a

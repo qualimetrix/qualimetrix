@@ -197,7 +197,7 @@ final class TypeCoverageRuleTest extends TestCase
     {
         $ruleClass = $dimension['class'];
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('allDeclarations');
+        $repository->expects(self::never())->method('allClassDeclarations');
 
         $rule = new $ruleClass(new TypeCoverageOptions(enabled: false));
 
@@ -349,11 +349,11 @@ final class TypeCoverageRuleTest extends TestCase
     {
         $class = SymbolPath::forClass('App\\Service', 'Twin');
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([
+        $repository->method('allClassDeclarations')->willReturn([
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn(MetricBag::fromArray([
+        $repository->method('getSubject')->willReturn(MetricBag::fromArray([
             MetricName::DESIGN_TYPE_COVERAGE_PARAM_TOTAL => 4,
             MetricName::DESIGN_TYPE_COVERAGE_PARAM => 25.0,
         ]));
@@ -385,8 +385,8 @@ final class TypeCoverageRuleTest extends TestCase
         );
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn(MetricBag::fromArray($metrics));
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn(MetricBag::fromArray($metrics));
 
         return (new $ruleClass($options ?? new TypeCoverageOptions()))->analyze(new AnalysisContext($repository));
     }

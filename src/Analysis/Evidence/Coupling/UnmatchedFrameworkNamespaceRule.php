@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -175,7 +176,7 @@ final class UnmatchedFrameworkNamespaceRule extends AbstractRule
 
         $classified = FrameworkClassificationSites::names(
             $graph,
-            static fn(SymbolPath $class): bool => $context->metrics->has($class),
+            static fn(SymbolPath $class): bool => $context->metrics->hasSubject(MetricSubject::logicalClass(new LogicalClassPath($class))),
         );
         if ($classified === []) {
             return [];

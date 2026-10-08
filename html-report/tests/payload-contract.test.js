@@ -10,6 +10,17 @@ import { renderDetail } from '../src/detail.js';
 
 const payload = JSON.parse(readFileSync(new URL('./fixtures/payload.json', import.meta.url), 'utf8'));
 const fresh = () => structuredClone(payload);
+const classNode = (tree, logicalPath) => {
+  const node = findNode(tree, logicalPath);
+  if (node?.type === 'class') return node;
+  const stack = [tree];
+  while (stack.length) {
+    const current = stack.pop();
+    if (current.type === 'class' && current.path === logicalPath) return current;
+    stack.push(...(current.children || []));
+  }
+  return null;
+};
 let previous;
 beforeEach(() => {
   previous = { document: globalThis.document, window: globalThis.window, getComputedStyle: globalThis.getComputedStyle };
@@ -43,7 +54,7 @@ describe('native HTML payload consumer', () => {
   it('uses the class-like own LOC as the area weight', () => {
     const data = fresh();
     for (const name of ['App\\Cx\\Greeter', 'App\\Cx\\Greeting', 'App\\Cx\\Status', 'App\\Cx\\Bytes%FF']) {
-      const node = findNode(data.tree, name);
+      const node = classNode(data.tree, name);
       expect(node.metrics).not.toHaveProperty('size.loc.sum');
       expect(getLoc(node)).toBe(node.metrics['size.class-loc']);
       expect(getLoc(node)).toBeGreaterThan(0);
@@ -66,7 +77,7 @@ describe('native HTML payload consumer', () => {
 
   it('renders and sorts actual current records with separate message, advice and accepted status', () => {
     const data = fresh();
-    const bytes = findNode(data.tree, 'App\\Cx\\Bytes%FF');
+    const bytes = classNode(data.tree, 'App\\Cx\\Bytes%FF');
     expect(bytes.violations.filter(record => record.severity === 'error')).toHaveLength(2);
     expect(() => renderDetail(bytes, data.summary, 'health.overall')).not.toThrow();
     const cells = [...document.querySelectorAll('#violations-table tbody tr')].map(row => [...row.querySelectorAll('td')].map(cell => cell.textContent));
@@ -94,7 +105,7 @@ describe('native HTML payload consumer', () => {
 
   it('shows own class LOC and labels namespace scores as published values', () => {
     const data = fresh();
-    const greeter = findNode(data.tree, 'App\\Cx\\Greeter');
+    const greeter = classNode(data.tree, 'App\\Cx\\Greeter');
     renderDetail(greeter, data.summary, 'health.overall');
     expect(document.getElementById('node-summary').textContent).toContain(`Lines of Code${getLoc(greeter) || greeter.metrics['size.class-loc']}`);
     renderDetail(findNode(data.tree, 'App'), data.summary, 'health.overall');
@@ -137,7 +148,7 @@ describe('native HTML payload consumer', () => {
     const data = fresh();
     expect(findNode(data.tree, '(no namespace)').metrics['coupling.instability']).toBe(0);
     expect(data.invalidUtf8Replaced).toBeGreaterThan(0);
-    const bytes = findNode(data.tree, 'App\\Cx\\Bytes%FF');
+    const bytes = classNode(data.tree, 'App\\Cx\\Bytes%FF');
     const edge = bytes.violations.find(record => record.edge);
     expect(edge.edge.target).toBe('class:App\\Domain\\Port');
     expect(edge.occurrence).toMatch(/^[a-f0-9]+$/);

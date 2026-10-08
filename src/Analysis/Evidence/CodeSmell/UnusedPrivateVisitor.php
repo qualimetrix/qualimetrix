@@ -64,16 +64,16 @@ final class UnusedPrivateVisitor extends NodeVisitorAbstract implements Resettab
     ];
 
     /**
-     * @var array<string, UnusedPrivateClassData>
+     * @var array<int, UnusedPrivateClassData>
      */
     private array $classData = [];
 
     private ?string $currentNamespace = null;
 
     /**
-     * Stack of class FQNs. Null for anonymous classes, interfaces, traits.
+     * Stack of class positions. Null for anonymous classes, interfaces, traits.
      *
-     * @var list<string|null>
+     * @var list<int|null>
      */
     private array $classStack = [];
 
@@ -111,7 +111,7 @@ final class UnusedPrivateVisitor extends NodeVisitorAbstract implements Resettab
     }
 
     /**
-     * @return array<string, UnusedPrivateClassData>
+     * @return array<int, UnusedPrivateClassData>
      */
     public function getClassData(): array
     {
@@ -148,8 +148,8 @@ final class UnusedPrivateVisitor extends NodeVisitorAbstract implements Resettab
             $this->sameClassReceiverScopes[] = [];
         }
 
-        $currentFqn = $this->getCurrentClassFqn();
-        $classData = $currentFqn === null ? null : ($this->classData[$currentFqn] ?? null);
+        $currentPosition = $this->getCurrentClassPosition();
+        $classData = $currentPosition === null ? null : ($this->classData[$currentPosition] ?? null);
 
         if ($node instanceof ClassMethod) {
             $this->methodStack[] = $classData === null ? null : $node->name->toLowerString();
@@ -254,10 +254,10 @@ final class UnusedPrivateVisitor extends NodeVisitorAbstract implements Resettab
             return null;
         }
 
-        $fqn = $this->buildFqn($className);
-        $this->classStack[] = $fqn;
+        $position = $node->getStartFilePos();
+        $this->classStack[] = $position;
 
-        $this->classData[$fqn] = new UnusedPrivateClassData(
+        $this->classData[$position] = new UnusedPrivateClassData(
             namespace: $this->currentNamespace,
             className: $className,
             line: $node->getStartLine(),
@@ -267,7 +267,7 @@ final class UnusedPrivateVisitor extends NodeVisitorAbstract implements Resettab
         // Resolve same-file trait usages
         if (($node instanceof Class_ || $node instanceof Enum_) && $this->traitDefinitions !== []) {
             $resolver = new TraitUsageResolver($this->traitDefinitions);
-            $resolver->resolve($node->stmts, $this->classData[$fqn]);
+            $resolver->resolve($node->stmts, $this->classData[$position]);
         }
 
         return null;
@@ -320,22 +320,13 @@ final class UnusedPrivateVisitor extends NodeVisitorAbstract implements Resettab
             || $node instanceof Trait_;
     }
 
-    private function getCurrentClassFqn(): ?string
+    private function getCurrentClassPosition(): ?int
     {
         if ($this->classStack === []) {
             return null;
         }
 
         return $this->classStack[array_key_last($this->classStack)];
-    }
-
-    private function buildFqn(string $className): string
-    {
-        if ($this->currentNamespace !== null && $this->currentNamespace !== '') {
-            return $this->currentNamespace . '\\' . $className;
-        }
-
-        return $className;
     }
 
     private function trackSameClassReceiverAssignment(Node $node, UnusedPrivateClassData $data): void

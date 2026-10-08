@@ -7,8 +7,6 @@ namespace Qualimetrix\Reporting\Formatter\Html;
 use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Core\Symbol\SymbolLevel;
-use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Reporting\Formatter\FindingRecord;
 use Qualimetrix\Reporting\FormatterContext;
@@ -50,9 +48,10 @@ final readonly class HtmlFindingPartitioner
         /** @var array<string, list<Finding>> $result */
         $result = [];
         $soleClassByFile = self::soleClassByFile($metrics);
+        $classByCallable = self::classByCallable($metrics);
 
         foreach ($findings as $finding) {
-            $result[$this->nodePathOf($finding, $nodesByPath, $soleClassByFile)][] = $finding;
+            $result[$this->nodePathOf($finding, $nodesByPath, $soleClassByFile, $classByCallable)][] = $finding;
         }
 
         return $result;
@@ -61,10 +60,11 @@ final readonly class HtmlFindingPartitioner
     /**
      * @param array<string, HtmlTreeNode> $nodesByPath
      * @param array<string, string> $soleClassByFile
+     * @param array<string, string> $classByCallable
      */
-    private function nodePathOf(Finding $finding, array $nodesByPath, array $soleClassByFile): string
+    private function nodePathOf(Finding $finding, array $nodesByPath, array $soleClassByFile, array $classByCallable): string
     {
-        foreach ($this->candidatePaths($finding, $soleClassByFile) as $candidate) {
+        foreach ($this->candidatePaths($finding, $soleClassByFile, $classByCallable) as $candidate) {
             if (isset($nodesByPath[$candidate])) {
                 return $candidate;
             }
@@ -94,12 +94,13 @@ final readonly class HtmlFindingPartitioner
         }
 
         $classesByFile = [];
-        foreach ($metrics->all(SymbolLevel::Class_) as $symbolInfo) {
+        foreach ($metrics->allClassDeclarations() as $symbolInfo) {
             if ($symbolInfo->file === null || ($symbolInfo->symbolPath->type ?? '') === '') {
                 continue;
             }
 
-            $classesByFile[$symbolInfo->file->value()][] = $symbolInfo->symbolPath->toString();
+            $classesByFile[$symbolInfo->file->value()][] = $symbolInfo->subject?->toCanonical()
+                ?? throw new LogicException('HTML class file binding requires an exact declaration subject');
         }
 
         return array_map(
@@ -108,22 +109,39 @@ final readonly class HtmlFindingPartitioner
         );
     }
 
+    /** @return array<string, string> */
+    private static function classByCallable(?MetricRepositoryInterface $metrics): array
+    {
+        if ($metrics === null) {
+            return [];
+        }
+        $owners = [];
+        foreach ($metrics->allCallables() as $info) {
+            if ($info->subject !== null && $info->classAggregationOwnerDeclaration !== null) {
+                $owners[$info->subject->toCanonical()] = \Qualimetrix\Core\Symbol\MetricSubject::declaration($info->classAggregationOwnerDeclaration)->toCanonical();
+            }
+        }
+
+        return $owners;
+    }
+
     /**
      * Node paths to try, most specific first.
      *
      * @param array<string, string> $soleClassByFile
+     * @param array<string, string> $classByCallable
      *
      * @return list<string>
      */
-    private function candidatePaths(Finding $finding, array $soleClassByFile): array
+    private function candidatePaths(Finding $finding, array $soleClassByFile, array $classByCallable): array
     {
         $symbolPath = $finding->symbolPath;
         $namespace = $symbolPath->namespace ?? '';
         $namespaceNode = $namespace === '' ? '(no namespace)' : $namespace;
 
         return match ($symbolPath->getType()) {
-            SymbolType::Method => [SymbolPath::forClass($namespace, $symbolPath->type ?? '')->toString(), $namespaceNode],
-            SymbolType::Class_ => [$symbolPath->toString(), $namespaceNode],
+            SymbolType::Method => [$classByCallable[$finding->subject->toCanonical()] ?? '', $namespaceNode],
+            SymbolType::Class_ => [$finding->subject->toCanonical(), $namespaceNode],
             SymbolType::Function_, SymbolType::Namespace_ => [$namespaceNode],
             SymbolType::File => self::fileCandidatePaths($symbolPath->toString(), $soleClassByFile),
             default => [],

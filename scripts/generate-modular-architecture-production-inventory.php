@@ -2437,6 +2437,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0103-layer-policy-declaration-evidence-and-selection.md' => 'Analysis.Policy.Architecture',
         'docs/adr/0104-source-bytes-and-prose-publication.md' => 'Reporting',
         'docs/adr/0105-finding-publication-and-drill-down.md' => 'Reporting',
+        'docs/adr/0106-declaration-metric-records-and-declared-publication.md' => 'Analysis.Evidence.Measurement',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/ProjectManifest/README.md' => 'Analysis.ProjectManifest',

@@ -274,7 +274,7 @@ foreach ($projects as $project) {
                 'name' => $symbol['name'],
                 'coupling.cbo' => $symbol['metrics']['coupling.cbo'] ?? null,
                 'health.coupling' => $symbol['metrics']['health.coupling'] ?? null,
-                'size.loc' => $symbol['metrics']['size.loc'] ?? null,
+                'size.class-loc' => $symbol['metrics']['size.class-loc'] ?? null,
             ];
         }
     }

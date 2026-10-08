@@ -43,6 +43,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricAnalysis;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\HealthFormulaExclusionInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
@@ -77,7 +78,9 @@ use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MeasurementAggregation
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceResolverInterface;
 use Qualimetrix\Analysis\Evidence\Security\CommandInjectionRule;
 use Qualimetrix\Analysis\Evidence\Security\HardcodedCredentialsRule;
@@ -112,6 +115,12 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeRule;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\CacheInterface;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
@@ -254,6 +263,38 @@ final class ContainerFactoryTest extends TestCase
             $gitScopeQuery,
             (new ReflectionProperty($projector, 'gitScopeQuery'))->getValue($projector),
         );
+    }
+
+    #[Test]
+    public function itCreatesFreshRepositoriesFromTheConfiguredComputedCatalog(): void
+    {
+        $container = $this->factory->create();
+        $catalog = $container->get(ComputedMetricDefinitionCatalogInterface::class);
+        self::assertInstanceOf(ComputedMetricAnalysis::class, $catalog);
+        $catalog->replace(new ResolvedComputedMetricDefinitions([new ComputedMetricDefinition(
+            'computed.container-fixture',
+            ['class' => '1'],
+            'fixture',
+            [SymbolLevel::Class_],
+        )]));
+
+        $pipeline = $container->get(AnalysisPipelineInterface::class);
+        $factory = (new ReflectionProperty(AnalysisPipeline::class, 'repositoryFactory'))->getValue($pipeline);
+        self::assertInstanceOf(MetricRepositoryFactoryInterface::class, $factory);
+        $subject = MetricSubject::declaration(DeclarationPath::of(
+            SymbolPath::forClass('App', 'Fixture'),
+            RelativePath::fromString('src/Fixture.php'),
+            DeclarationOrdinal::fromRank(0),
+        ));
+        $first = $factory->create();
+        $first->addSubject($subject, MetricBag::fromArray([
+            'computed.container-fixture' => 1,
+            'complexity.wmc' => 0,
+        ]), RelativePath::fromString('src/Fixture.php'), 1);
+
+        self::assertSame(1, $first->getSubject($subject)->get('computed.container-fixture'));
+        self::assertSame(0, $first->getSubject($subject)->get('complexity.wmc'));
+        self::assertFalse($factory->create()->hasSubject($subject));
     }
 
     #[Test]

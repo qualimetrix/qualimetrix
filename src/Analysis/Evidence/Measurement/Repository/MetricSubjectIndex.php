@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolType;
 
 /** Exact declaration metrics and logical callable lookup. */
 final class MetricSubjectIndex
@@ -46,7 +47,25 @@ final class MetricSubjectIndex
             $callable->sourceLine,
             $callable->kind,
             $callable->classAggregationOwner,
+            $callable->classAggregationOwnerDeclaration,
+            $callable->anonymousClassContext,
         ), $callable->metrics);
+    }
+
+    /** @return ?array{info: SymbolInfo, metrics: MetricBag} */
+    public function addScalarToExisting(MetricSubject $subject, string $key, int|float $value): ?array
+    {
+        if (!$this->has($subject)) {
+            if ($subject->declarationPath()?->logical->getType() === SymbolType::Class_) {
+                throw new LogicException('Class scalar requires an existing exact declaration');
+            }
+
+            return null;
+        }
+
+        $metrics = (new MetricBag())->with($key, $value);
+
+        return ['info' => $this->add($subject, $metrics, null, null), 'metrics' => $metrics];
     }
 
     /** @return array<string, SymbolInfo> */
@@ -73,6 +92,16 @@ final class MetricSubjectIndex
     {
         foreach ($this->infos as $info) {
             if ($info->subject?->declarationPath() !== null) {
+                yield $info;
+            }
+        }
+    }
+
+    /** @return iterable<SymbolInfo> */
+    public function allClassDeclarations(): iterable
+    {
+        foreach ($this->allDeclarations() as $info) {
+            if ($info->symbolPath->getType() === SymbolType::Class_) {
                 yield $info;
             }
         }

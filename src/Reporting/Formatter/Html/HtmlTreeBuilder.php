@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Html;
 
+use LogicException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
@@ -112,7 +113,7 @@ final class HtmlTreeBuilder
         }
 
         // Add classes
-        foreach ($metrics->all(SymbolLevel::Class_) as $symbolInfo) {
+        foreach ($metrics->allClassDeclarations() as $symbolInfo) {
             $symbolPath = $symbolInfo->symbolPath;
             $namespace = $symbolPath->namespace ?? '';
             $className = $symbolPath->type ?? '';
@@ -126,8 +127,9 @@ final class HtmlTreeBuilder
                 ? ($nodesByPath[$namespace] ?? $this->ensureNamespaceChain($root, $namespace, $nodesByPath, $metrics))
                 : $this->getNoNamespaceNode($root, $nodesByPath, $metrics);
 
-            $classNode = new HtmlTreeNode($className, $symbolPath->toString(), SymbolLevel::Class_->value);
-            $classBag = $metrics->get($symbolPath);
+            $subject = $symbolInfo->subject ?? throw new LogicException('HTML classes require exact declaration subjects');
+            $classNode = new HtmlTreeNode($className, $symbolPath->toString(), SymbolLevel::Class_->value, $subject->toCanonical());
+            $classBag = $metrics->getSubject($subject);
             $classNode->metrics = $this->filterMetrics($classBag->all());
 
             $parentNode->children[] = $classNode;
@@ -241,7 +243,7 @@ final class HtmlTreeBuilder
      */
     private function indexNodesRecursive(HtmlTreeNode $node, array &$index): void
     {
-        $index[$node->path] = $node;
+        $index[$node->id] = $node;
 
         foreach ($node->children as $child) {
             $this->indexNodesRecursive($child, $index);

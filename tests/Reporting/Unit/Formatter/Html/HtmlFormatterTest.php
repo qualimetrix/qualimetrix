@@ -14,6 +14,9 @@ use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepositor
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\CoverageFailure;
 use Qualimetrix\Reporting\Formatter\Html\HtmlFormatter;
@@ -47,11 +50,17 @@ final class HtmlFormatterTest extends TestCase
     #[Test]
     public function itEmbedsRepositoryMetricsForTheGlobalNamespaceAndClass(): void
     {
-        $metrics = new InMemoryMetricRepository();
+        $metrics = new InMemoryMetricRepository([new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition('size.class-loc', \Qualimetrix\Core\Symbol\SymbolLevel::Class_)]);
         $namespaceBag = ['size.loc.sum' => 9, 'health.overall' => 92.07, 'coupling.instability' => 0.5];
         $classBag = ['size.class-loc' => 4];
         $metrics->add(SymbolPath::forNamespace(''), MetricBag::fromArray($namespaceBag), null, null);
-        $metrics->add(SymbolPath::forClass('', 'Greeter'), MetricBag::fromArray($classBag), RelativePath::fromString('Greeter.php'), 2);
+        $class = SymbolPath::forClass('', 'Greeter');
+        $metrics->addSubject(
+            MetricSubject::declaration(DeclarationPath::of($class, RelativePath::fromString('Greeter.php'), DeclarationOrdinal::fromRank(0))),
+            MetricBag::fromArray($classBag),
+            RelativePath::fromString('Greeter.php'),
+            2,
+        );
         $report = ReportBuilder::create()->metrics($metrics)->build();
 
         $payload = self::payload($this->formatter->format($report, new FormatterContext())->body);

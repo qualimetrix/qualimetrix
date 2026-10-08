@@ -14,6 +14,8 @@ final readonly class SymbolInfo
         public ?int $line,
         public ?CallableKind $callableKind = null,
         public ?LogicalClassPath $classAggregationOwner = null,
+        public ?DeclarationPath $classAggregationOwnerDeclaration = null,
+        public bool $anonymousClassContext = false,
     ) {
         $this->subject = $symbolPath instanceof MetricSubject ? $symbolPath : null;
         $this->symbolPath = $symbolPath instanceof MetricSubject ? $symbolPath->toSymbolPath() : $symbolPath;

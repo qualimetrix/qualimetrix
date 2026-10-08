@@ -8,8 +8,12 @@ describe('parseHash', () => {
   });
 
   it('parses class hash', () => {
-    const result = parseHash('#cl:App/Payment/Processor');
-    expect(result).toEqual({ type: 'class', path: 'App\\Payment\\Processor', view: 'treemap' });
+    const result = parseHash('#cl:declaration%3Aclass%3AApp%5CPayment%5CProcessor%40src%2FProcessor.php%230');
+    expect(result).toEqual({
+      type: 'class',
+      path: 'declaration:class:App\\Payment\\Processor@src/Processor.php#0',
+      view: 'treemap',
+    });
   });
 
   it('parses Martin diagram hash', () => {
@@ -54,8 +58,12 @@ describe('generateHash', () => {
   });
 
   it('generates class hash', () => {
-    const node = { path: 'App\\Payment\\Processor', type: 'class' };
-    expect(generateHash(node)).toBe('#cl:App%2FPayment%2FProcessor');
+    const node = {
+      id: 'declaration:class:App\\Payment\\Processor@src/Processor.php#0',
+      path: 'App\\Payment\\Processor',
+      type: 'class',
+    };
+    expect(generateHash(node)).toBe('#cl:declaration%3Aclass%3AApp%5CPayment%5CProcessor%40src%2FProcessor.php%230');
   });
 
   it('generates Martin diagram hash', () => {

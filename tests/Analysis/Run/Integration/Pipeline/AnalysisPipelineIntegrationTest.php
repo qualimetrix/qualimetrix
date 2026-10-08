@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Run\Integration\Pipeline;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\Attributes\Test;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
@@ -92,6 +93,7 @@ use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -469,14 +471,14 @@ final class AnalysisPipelineIntegrationTest extends TestCase
 
         // Pre-populate the repository with the classes so CouplingCollector can find them
         $repository = new InMemoryMetricRepository();
-        $repository->add(
-            SymbolPath::forClass('Fixtures\CircularDeps', 'ServiceA'),
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('Fixtures\CircularDeps', 'ServiceA'), RelativePath::fromString('tmp/ServiceA.php'), DeclarationOrdinal::fromRank(0))),
             new MetricBag(),
             RelativePath::fromString('tmp/ServiceA.php'),
             1,
         );
-        $repository->add(
-            SymbolPath::forClass('Fixtures\CircularDeps', 'ServiceB'),
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('Fixtures\CircularDeps', 'ServiceB'), RelativePath::fromString('tmp/ServiceB.php'), DeclarationOrdinal::fromRank(0))),
             new MetricBag(),
             RelativePath::fromString('tmp/ServiceB.php'),
             1,
@@ -656,16 +658,16 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         ];
 
         // Pre-populate repository with classes (so CouplingCollector finds them)
-        $repository = new InMemoryMetricRepository();
-        $repository->add(
-            SymbolPath::forClass('App\Service', 'OrderService'),
-            (new MetricBag())->with('size.loc', 50),
+        $repository = new InMemoryMetricRepository((new CouplingCollector(new CouplingAnalysis()))->getMetricDefinitions());
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\Service', 'OrderService'), RelativePath::fromString('tmp/OrderService.php'), DeclarationOrdinal::fromRank(0))),
+            new MetricBag(),
             RelativePath::fromString('tmp/OrderService.php'),
             1,
         );
-        $repository->add(
-            SymbolPath::forClass('App\Service', 'PaymentService'),
-            (new MetricBag())->with('size.loc', 30),
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\Service', 'PaymentService'), RelativePath::fromString('tmp/PaymentService.php'), DeclarationOrdinal::fromRank(0))),
+            new MetricBag(),
             RelativePath::fromString('tmp/PaymentService.php'),
             1,
         );
@@ -705,8 +707,8 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $result = $pipeline->analyze(self::runConfiguration(AbsolutePath::fromString(sys_get_temp_dir())));
 
         // Verify class-level CBO was computed (sanity check)
-        $orderServiceBag = $result->measured->repository->get(
-            SymbolPath::forClass('App\Service', 'OrderService'),
+        $orderServiceBag = $result->measured->repository->getSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\Service', 'OrderService'), RelativePath::fromString('tmp/OrderService.php'), DeclarationOrdinal::fromRank(0))),
         );
         self::assertNotNull(
             $orderServiceBag->get('coupling.cbo'),
@@ -1012,11 +1014,15 @@ PHP);
 
             self::assertSame(1, $inner->parsed, 'the second cached run must not parse');
             self::assertSame(
-                ['8:bound', '12:refused'],
+                ['8:bound', '8:bound', '12:refused'],
                 array_map(
                     static fn($suppression): string => $suppression->line . ':' . ($suppression->refusal === null ? 'bound' : 'refused'),
                     $fresh->suppressions(),
                 ),
+            );
+            self::assertNotSame(
+                $fresh->suppressions()[0]->binding?->subject->toCanonical(),
+                $fresh->suppressions()[1]->binding?->subject->toCanonical(),
             );
             self::assertEquals($fresh->suppressions(), $miss->suppressions());
             self::assertEquals($fresh->suppressions(), $hit->suppressions());
@@ -1068,9 +1074,10 @@ PHP);
             function (array $files, $repository) use ($dependencies, $existingRepository): CollectionPhaseOutput {
                 // If we have a pre-populated repository, copy its data
                 if ($existingRepository !== null) {
-                    foreach ($existingRepository->all(SymbolLevel::Class_) as $info) {
-                        $bag = $existingRepository->get($info->symbolPath);
-                        $repository->add($info->symbolPath, $bag, $info->file, $info->line);
+                    foreach ($existingRepository->allClassDeclarations() as $info) {
+                        $subject = $info->subject ?? throw new LogicException('Class declaration requires an exact subject');
+                        $bag = $existingRepository->getSubject($subject);
+                        $repository->addSubject($subject, $bag, $info->file, $info->line);
                     }
                 }
 
@@ -1128,11 +1135,12 @@ PHP);
         $orchestrator->method('collect')->willReturnCallback(
             function (array $files, $repository) use ($dependencies, $existingRepository): CollectionPhaseOutput {
                 // Copy pre-populated symbols into the pipeline's repository
-                foreach ([SymbolLevel::Class_, SymbolLevel::Namespace_] as $level) {
-                    foreach ($existingRepository->all($level) as $info) {
-                        $bag = $existingRepository->get($info->symbolPath);
-                        $repository->add($info->symbolPath, $bag, $info->file, $info->line);
-                    }
+                foreach ($existingRepository->allClassDeclarations() as $info) {
+                    $subject = $info->subject ?? throw new LogicException('Class declaration requires an exact subject');
+                    $repository->addSubject($subject, $existingRepository->getSubject($subject), $info->file, $info->line);
+                }
+                foreach ($existingRepository->all(SymbolLevel::Namespace_) as $info) {
+                    $repository->add($info->symbolPath, $existingRepository->get($info->symbolPath), $info->file, $info->line);
                 }
 
                 return new CollectionPhaseOutput([
@@ -1355,7 +1363,10 @@ PHP);
             $logger,
         );
         $strategy = $selector->select($projectRoot);
-        $output = $orchestrator->collect($files, new InMemoryMetricRepository(), $projectRoot);
+        $output = $orchestrator->collect($files, new InMemoryMetricRepository([
+            ...(new LocCollector())->getMetricDefinitions(),
+            ...(new CyclomaticComplexityCollector())->getMetricDefinitions(),
+        ]), $projectRoot);
 
         return [
             'dependencies' => $output->dependencies,

@@ -20,6 +20,8 @@ final class HtmlTreeNode
     /** Full namespace path (e.g., "App\Payment"). */
     public string $path;
 
+    public string $id;
+
     /** Node type: "project", "namespace", or "class". */
     public string $type;
 
@@ -36,10 +38,11 @@ final class HtmlTreeNode
     /** @var list<self> */
     public array $children = [];
 
-    public function __construct(string $name, string $path, string $type)
+    public function __construct(string $name, string $path, string $type, ?string $id = null)
     {
         $this->name = $name;
         $this->path = $path;
+        $this->id = $id ?? $path;
         $this->type = $type;
     }
 
@@ -53,6 +56,7 @@ final class HtmlTreeNode
         $result = [
             'name' => $this->name,
             'path' => $this->path,
+            'id' => $this->id,
             'type' => $this->type,
             'metrics' => (object) $this->metrics, // Force {} in JSON even when empty
             'violations' => $this->findings,

@@ -9,7 +9,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 
@@ -40,7 +39,7 @@ final readonly class ClassRankResolver
 
         $tree = $tree ?? new NamespaceTree($metrics->getNamespaces());
 
-        foreach ($metrics->all(SymbolLevel::Class_) as $symbolInfo) {
+        foreach ($metrics->allClassDeclarations() as $symbolInfo) {
             if ($symbolInfo->symbolPath->type === null) {
                 continue;
             }
@@ -50,7 +49,7 @@ final readonly class ClassRankResolver
                 $symbolInfo->symbolPath->type,
             );
 
-            $value = $metrics->get($classPath)->get(MetricName::COUPLING_CLASS_RANK);
+            $value = $symbolInfo->subject === null ? null : $metrics->getSubject($symbolInfo->subject)->get(MetricName::COUPLING_CLASS_RANK);
             $rank = $this->sanitize($value);
 
             if ($rank === null) {
@@ -145,7 +144,7 @@ final readonly class ClassRankResolver
 
     private function resolveForClassPath(SymbolPath $classPath, MetricRepositoryInterface $metrics): ?float
     {
-        $value = $metrics->get($classPath)->get(MetricName::COUPLING_CLASS_RANK);
+        $value = $metrics->getSubject(\Qualimetrix\Core\Symbol\MetricSubject::logicalClass(new \Qualimetrix\Core\Symbol\LogicalClassPath($classPath)))->get(MetricName::COUPLING_CLASS_RANK);
 
         return $this->sanitize($value);
     }

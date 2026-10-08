@@ -67,7 +67,7 @@ final class ClassRankRuleTest extends TestCase
         $rule = new ClassRankRule(new ClassRankOptions(enabled: false));
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('all');
+        $repository->expects(self::never())->method('allLogicalClasses');
 
         $context = new AnalysisContext($repository);
 
@@ -80,7 +80,7 @@ final class ClassRankRuleTest extends TestCase
         $rule = new ClassRankRule(new ClassRankOptions());
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allLogicalClasses')
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -96,10 +96,10 @@ final class ClassRankRuleTest extends TestCase
         $classes = $this->createDummyClasses(100, 'src/SomeClass.php', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allLogicalClasses')
             ->willReturn($classes);
-        $repository->method('allDeclarations')->willReturn($classes);
-        $repository->method('get')
+        $repository->method('allClassDeclarations')->willReturn($classes);
+        $repository->method('getSubject')
             ->willReturn(new MetricBag());
 
         $context = new AnalysisContext($repository);
@@ -117,9 +117,9 @@ final class ClassRankRuleTest extends TestCase
         self::assertNotNull($subject);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn($this->createDummyClasses(100));
-        $repository->method('allDeclarations')->willReturn([$targetInfo]);
-        $repository->method('get')->willReturn((new MetricBag())->with('coupling.class-rank', 0.03)->with('coupling.ca', 2));
+        $repository->method('allLogicalClasses')->willReturn($this->createDummyClasses(100));
+        $repository->method('allClassDeclarations')->willReturn([$targetInfo]);
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('coupling.class-rank', 0.03)->with('coupling.ca', 2));
 
         self::assertCount(1, $rule->analyze(new AnalysisContext($repository)));
 
@@ -146,10 +146,10 @@ final class ClassRankRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('coupling.class-rank', 0.01)->with('coupling.ca', 2);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allLogicalClasses')
             ->willReturn($classes);
-        $repository->method('allDeclarations')->willReturn($classes);
-        $repository->method('get')
+        $repository->method('allClassDeclarations')->willReturn($classes);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -176,11 +176,11 @@ final class ClassRankRuleTest extends TestCase
         $classes[] = $targetInfo;
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allLogicalClasses')
             ->willReturn($classes);
-        $repository->method('allDeclarations')->willReturn($classes);
-        $repository->method('get')
-            ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
+        $repository->method('allClassDeclarations')->willReturn($classes);
+        $repository->method('getSubject')
+            ->willReturnCallback(static fn($subject) => $subject->toSymbolPath()->toCanonical() === $targetPath->toCanonical() ? $targetBag : $normalBag);
 
         $context = new AnalysisContext($repository);
         $findings = $rule->analyze($context);
@@ -212,11 +212,11 @@ final class ClassRankRuleTest extends TestCase
         $classes[] = $targetInfo;
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allLogicalClasses')
             ->willReturn($classes);
-        $repository->method('allDeclarations')->willReturn($classes);
-        $repository->method('get')
-            ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
+        $repository->method('allClassDeclarations')->willReturn($classes);
+        $repository->method('getSubject')
+            ->willReturnCallback(static fn($subject) => $subject->toSymbolPath()->toCanonical() === $targetPath->toCanonical() ? $targetBag : $normalBag);
 
         $context = new AnalysisContext($repository);
         $findings = $rule->analyze($context);
@@ -250,11 +250,11 @@ final class ClassRankRuleTest extends TestCase
         $classes[] = $targetInfo;
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allLogicalClasses')
             ->willReturn($classes);
-        $repository->method('allDeclarations')->willReturn($classes);
-        $repository->method('get')
-            ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
+        $repository->method('allClassDeclarations')->willReturn($classes);
+        $repository->method('getSubject')
+            ->willReturnCallback(static fn($subject) => $subject->toSymbolPath()->toCanonical() === $targetPath->toCanonical() ? $targetBag : $normalBag);
 
         $context = new AnalysisContext($repository);
         $findings = $rule->analyze($context);
@@ -336,11 +336,11 @@ final class ClassRankRuleTest extends TestCase
         $classes[] = $targetInfo;
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allLogicalClasses')
             ->willReturn($classes);
-        $repository->method('allDeclarations')->willReturn($classes);
-        $repository->method('get')
-            ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
+        $repository->method('allClassDeclarations')->willReturn($classes);
+        $repository->method('getSubject')
+            ->willReturnCallback(static fn($subject) => $subject->toSymbolPath()->toCanonical() === $targetPath->toCanonical() ? $targetBag : $normalBag);
 
         $context = new AnalysisContext($repository);
         $findings = $rule->analyze($context);
@@ -374,11 +374,11 @@ final class ClassRankRuleTest extends TestCase
         $classes[] = $targetInfo;
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allLogicalClasses')
             ->willReturn($classes);
-        $repository->method('allDeclarations')->willReturn($classes);
-        $repository->method('get')
-            ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
+        $repository->method('allClassDeclarations')->willReturn($classes);
+        $repository->method('getSubject')
+            ->willReturnCallback(static fn($subject) => $subject->toSymbolPath()->toCanonical() === $targetPath->toCanonical() ? $targetBag : $normalBag);
 
         $context = new AnalysisContext($repository);
         $findings = $rule->analyze($context);
@@ -409,11 +409,11 @@ final class ClassRankRuleTest extends TestCase
         $classes[] = $targetInfo;
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allLogicalClasses')
             ->willReturn($classes);
-        $repository->method('allDeclarations')->willReturn($classes);
-        $repository->method('get')
-            ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
+        $repository->method('allClassDeclarations')->willReturn($classes);
+        $repository->method('getSubject')
+            ->willReturnCallback(static fn($subject) => $subject->toSymbolPath()->toCanonical() === $targetPath->toCanonical() ? $targetBag : $normalBag);
 
         $context = new AnalysisContext($repository);
         $findings = $rule->analyze($context);
@@ -443,11 +443,11 @@ final class ClassRankRuleTest extends TestCase
         $classes[] = $targetInfo;
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allLogicalClasses')
             ->willReturn($classes);
-        $repository->method('allDeclarations')->willReturn($classes);
-        $repository->method('get')
-            ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
+        $repository->method('allClassDeclarations')->willReturn($classes);
+        $repository->method('getSubject')
+            ->willReturnCallback(static fn($subject) => $subject->toSymbolPath()->toCanonical() === $targetPath->toCanonical() ? $targetBag : $normalBag);
 
         $context = new AnalysisContext($repository);
         $findings = $rule->analyze($context);
@@ -484,9 +484,9 @@ final class ClassRankRuleTest extends TestCase
         ];
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn($classes);
-        $repository->method('allDeclarations')->willReturn($classes);
-        $repository->method('get')->willReturnCallback(static fn(SymbolPath $sp): MetricBag => $bags[$sp->toCanonical()]);
+        $repository->method('allLogicalClasses')->willReturn($classes);
+        $repository->method('allClassDeclarations')->willReturn($classes);
+        $repository->method('getSubject')->willReturnCallback(static fn($subject): MetricBag => $bags[$subject->toSymbolPath()->toCanonical()]);
 
         $findings = $rule->analyze(new AnalysisContext($repository));
 
@@ -580,9 +580,9 @@ final class ClassRankRuleTest extends TestCase
         $first = self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100);
         $second = self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200);
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn($this->createDummyClasses(100));
-        $repository->method('allDeclarations')->willReturn([$first, $second]);
-        $repository->method('get')->willReturn((new MetricBag())->with('coupling.class-rank', 0.03)->with('coupling.ca', 2));
+        $repository->method('allLogicalClasses')->willReturn($this->createDummyClasses(100));
+        $repository->method('allClassDeclarations')->willReturn([$first, $second]);
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('coupling.class-rank', 0.03)->with('coupling.ca', 2));
 
         $findings = (new ClassRankRule(new ClassRankOptions()))
             ->analyze(new AnalysisContext($repository));

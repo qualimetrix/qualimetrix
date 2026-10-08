@@ -7,12 +7,13 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score;
 /**
  * What a health input's `.count` counts, and what the whole of that population is.
  *
- * The denominator is a count of *symbols the run measured*, never the `.count`
+ * The denominator is a count of *declarations the run measured*, never the `.count`
  * of a neighbouring metric: a denominator that is itself a measurement shrinks
  * whenever the measurement fails, and a coverage ratio that hides its own gap
  * is worse than none. `size.symbol-class-count` and `size.symbol-method-count`
  * are written by {@see \Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationHelper::addSymbolCounts()}
- * from the symbol list itself.
+ * from exact declarations. A graph metric measured once per logical name is
+ * sampled once for every exact declaration of that name.
  *
  * Measured against the seventeen-project corpus, 2026-09-15:
  * `coupling.cbo.count` equals `size.symbol-class-count` on all seventeen and

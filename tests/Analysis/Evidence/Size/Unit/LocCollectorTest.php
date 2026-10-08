@@ -12,6 +12,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
 use Qualimetrix\Analysis\Evidence\Size\LocVisitor;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\FileDeclarationIndex;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use SplFileInfo;
@@ -703,6 +704,26 @@ PHP;
         self::assertSame(4, $metrics->get('size.loc'));
         self::assertSame(1, $metrics->get('size.cloc'));
         self::assertSame(2, $metrics->get('size.lloc'));
+    }
+
+    #[Test]
+    public function itKeepsBothSameFileClassSpans(): void
+    {
+        $this->collectMetrics(<<<'PHP'
+<?php
+namespace App;
+class Twin {}
+if (false) {
+    class Twin
+    {
+        public function run(): void {}
+    }
+}
+PHP);
+
+        $classes = $this->collector->getClassesWithMetrics(RelativePath::fromString('src/Duplicate.php'));
+        self::assertCount(2, $classes);
+        self::assertSame([1, 4], array_map(static fn($class): int|float|null => $class->metrics->get('size.class-loc'), $classes));
     }
 
     private function collectMetrics(string $code): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag

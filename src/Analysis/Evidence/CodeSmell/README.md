@@ -120,6 +120,14 @@ The complete repeated-expression stack is collector → visitor → `RepeatedExp
 The only internal dogfood control is `CredentialLiterals` `@qmx-ignore health.cohesion -- Stateless credential-literal shapes share one classification policy and location boundary.` It is a structural explanation, not a metric behavior change or baseline debt. `HardcodedCredentialsVisitor` carried a matching `design.data-class` control until that rule was corrected to gate on a low share of functional public methods; a delegating traversal adapter is no longer read as a data surface.
 
 
+## Private-member declaration evidence
+
+`UnusedPrivateVisitor` and `UnusedPrivateCollector` retain one exact record per
+named declaration. Conditional declarations sharing a name keep independent
+member definitions and references; nested anonymous classes do not contribute
+to an enclosing class's unused-member evidence. The collector declares
+`code-smell.unused-private.total` with its other class metrics.
+
 ## Rule option key declarations
 
 `BooleanArgumentOptions`, `CodeSmellOptions`, `ConstructorOverinjectionOptions`,

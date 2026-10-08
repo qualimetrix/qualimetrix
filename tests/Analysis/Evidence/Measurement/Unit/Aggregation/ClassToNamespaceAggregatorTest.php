@@ -14,8 +14,10 @@ use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MetricAggregator;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\NamespaceMetricContributions;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassKeyScope;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountCollector;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
@@ -25,6 +27,7 @@ use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -34,9 +37,42 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class ClassToNamespaceAggregatorTest extends TestCase
 {
     #[Test]
+    public function itFoldsTwoDeclarationsButNotTheirLogicalGraphProjection(): void
+    {
+        $definitions = [
+            new MetricDefinition('size.method-count', SymbolLevel::Class_, [SymbolLevel::Namespace_->value => [AggregationStrategy::Sum, AggregationStrategy::Average]]),
+            new MetricDefinition('coupling.cbo', SymbolLevel::Class_, [SymbolLevel::Namespace_->value => [AggregationStrategy::Sum, AggregationStrategy::Average]], classKeyScope: ClassKeyScope::LogicalName),
+        ];
+        $repository = new InMemoryMetricRepository($definitions);
+        $file = RelativePath::fromString('src/Duplicate.php');
+        $logical = SymbolPath::forClass('App', 'Duplicate');
+
+        foreach ([1, 2] as $ordinal => $count) {
+            $repository->addSubject(
+                MetricSubject::declaration(DeclarationPath::of($logical, $file, DeclarationOrdinal::fromRank($ordinal))),
+                MetricBag::fromArray(['size.method-count' => $count]),
+                $file,
+                $ordinal + 2,
+            );
+        }
+        $repository->addSubject(MetricSubject::logicalClass(new LogicalClassPath($logical)), MetricBag::fromArray(['coupling.cbo' => 3]), $file, 2);
+
+        (new ClassToNamespaceAggregator(self::createStub(ProfilerInterface::class)))->aggregate($repository, $definitions);
+
+        $namespace = $repository->get(SymbolPath::forNamespace('App'));
+        self::assertSame(3, $namespace->get('size.method-count.sum'));
+        self::assertSame(2, $namespace->get('size.method-count.count'));
+        self::assertSame(6, $namespace->get('coupling.cbo.sum'));
+        self::assertSame(2, $namespace->get('coupling.cbo.count'));
+    }
+
+    #[Test]
     public function itUsesExplicitNamespaceContributionsInsteadOfCopyingTheWholeFileBag(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            new MetricDefinition('size.loc', SymbolLevel::File, [SymbolLevel::Namespace_->value => [AggregationStrategy::Sum, AggregationStrategy::Average]], namespaceFileContribution: true),
+            new MetricDefinition('size.class-count', SymbolLevel::File, [SymbolLevel::Namespace_->value => [AggregationStrategy::Sum]], namespaceFileContribution: true),
+        ]);
         $file = RelativePath::fromString('src/Multi.php');
         $repository->add(SymbolPath::forFile($file), MetricBag::fromArray([
             'size.loc' => 20,
@@ -58,10 +94,10 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $definitions = [
             new MetricDefinition('size.loc', SymbolLevel::File, [
                 SymbolLevel::Namespace_->value => [AggregationStrategy::Sum, AggregationStrategy::Average],
-            ]),
+            ], namespaceFileContribution: true),
             new MetricDefinition('size.class-count', SymbolLevel::File, [
                 SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
-            ]),
+            ], namespaceFileContribution: true),
         ];
 
         (new ClassToNamespaceAggregator(self::createStub(ProfilerInterface::class)))->aggregate($repository, $definitions);
@@ -75,15 +111,17 @@ final class ClassToNamespaceAggregatorTest extends TestCase
     #[Test]
     public function itPreservesNamespaceAverageAcrossMultiplePhysicalFileContributions(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            new MetricDefinition('size.loc', SymbolLevel::File, [SymbolLevel::Namespace_->value => [AggregationStrategy::Sum, AggregationStrategy::Average]], namespaceFileContribution: true),
+        ]);
         $file = RelativePath::fromString('src/A.php');
         $repository->add(SymbolPath::forNamespace('App'), MetricBag::fromArray([
             'size.loc' => 30,
-            'size.loc.count' => 2,
-        ]), $file, 2);
+        ])->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.loc'])
+            ->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.loc']), $file, 2);
         $definitions = [new MetricDefinition('size.loc', SymbolLevel::File, [
             SymbolLevel::Namespace_->value => [AggregationStrategy::Sum, AggregationStrategy::Average],
-        ])];
+        ], namespaceFileContribution: true)];
 
         (new ClassToNamespaceAggregator(self::createStub(ProfilerInterface::class)))->aggregate($repository, $definitions);
 
@@ -96,7 +134,9 @@ final class ClassToNamespaceAggregatorTest extends TestCase
     #[Test]
     public function itAggregatesCaseVariantsIntoOneNamespace(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            new MetricDefinition('size.class-count', SymbolLevel::File, [SymbolLevel::Namespace_->value => [AggregationStrategy::Sum]], namespaceFileContribution: true),
+        ]);
         foreach ([['App\\Web', 'First', 'src/First.php'], ['App\\web', 'Second', 'src/Second.php']] as [$namespace, $class, $path]) {
             $file = RelativePath::fromString($path);
             $repository->add(SymbolPath::forClass($namespace, $class), new MetricBag(), $file, 2);
@@ -109,7 +149,9 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         }
         $repository->add(
             SymbolPath::forNamespace('App\\web'),
-            MetricBag::fromArray(['size.class-count' => 2, 'size.class-count.count' => 2]),
+            MetricBag::fromArray(['size.class-count' => 2])
+                ->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.class-count'])
+                ->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.class-count']),
             RelativePath::fromString('src/Second.php'),
             2,
         );
@@ -117,7 +159,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         (new ClassToNamespaceAggregator(self::createStub(ProfilerInterface::class)))->aggregate($repository, [
             new MetricDefinition('size.class-count', SymbolLevel::File, [
                 SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
-            ]),
+            ], namespaceFileContribution: true),
         ]);
 
         self::assertSame(['App\\Web'], $repository->getNamespaces());
@@ -127,7 +169,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
     #[Test]
     public function itKeepsExplicitCountTotalsExactAcrossTheNamespaceTree(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->methodRepository();
         $namespace = 'App\\Domain\\Leaf';
         $file = RelativePath::fromString('src/Domain/Leaf.php');
 
@@ -189,7 +231,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
     #[Test]
     public function itAggregatesProceduralFileLocToNamespace(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->methodRepository();
 
         // Add a global function in namespace App\Utils (no class in the file)
         $functionPath = SymbolPath::forGlobalFunction('App\\Utils', 'helper');
@@ -224,7 +266,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
     #[Test]
     public function itAggregatesMixedClassAndFunctionFileLocToNamespace(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->methodRepository();
 
         // File with a class
         $repository->add(
@@ -269,14 +311,14 @@ final class ClassToNamespaceAggregatorTest extends TestCase
     #[Test]
     public function itAggregatesNonAdditiveMethodMetricsFromRawMethodValues(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->methodRepository();
 
         // Class with 10 methods, MI avg=80
         $class1 = SymbolPath::forClass('App\\Service', 'UserService');
-        $repository->add($class1, (new MetricBag())
+        $this->addClass($repository, $class1, (new MetricBag())
             ->with('maintainability.mi.avg', 80.0)
             ->with('maintainability.mi.count', 10)
-            ->with('maintainability.mi.min', 70.0), RelativePath::fromString('src/Service/UserService.php'), 10);
+            ->with('maintainability.mi.min', 70.0), 'src/Service/UserService.php', 10);
 
         // Add 10 method symbols with mi=80 each
         for ($i = 1; $i <= 10; $i++) {
@@ -285,10 +327,10 @@ final class ClassToNamespaceAggregatorTest extends TestCase
 
         // Class with 2 methods, MI avg=60
         $class2 = SymbolPath::forClass('App\\Service', 'OrderService');
-        $repository->add($class2, (new MetricBag())
+        $this->addClass($repository, $class2, (new MetricBag())
             ->with('maintainability.mi.avg', 60.0)
             ->with('maintainability.mi.count', 2)
-            ->with('maintainability.mi.min', 50.0), RelativePath::fromString('src/Service/OrderService.php'), 10);
+            ->with('maintainability.mi.min', 50.0), 'src/Service/OrderService.php', 10);
 
         // Add 2 method symbols with mi=60 each
         $this->addMethod($repository, 'App\\Service', 'OrderService', 'method1', 'src/Service/OrderService.php', 'maintainability.mi', 60.0);
@@ -311,21 +353,21 @@ final class ClassToNamespaceAggregatorTest extends TestCase
     #[Test]
     public function itAggregatesMethodMetricsEvenWhenClassLevelCountMissing(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->methodRepository();
 
         // Class-level data without .count — but method symbols exist
         $class1 = SymbolPath::forClass('App\\Service', 'UserService');
-        $repository->add($class1, (new MetricBag())
+        $this->addClass($repository, $class1, (new MetricBag())
             ->with('maintainability.mi.avg', 80.0)
-            ->with('maintainability.mi.min', 70.0), RelativePath::fromString('src/Service/UserService.php'), 10);
+            ->with('maintainability.mi.min', 70.0), 'src/Service/UserService.php', 10);
 
         // 1 method with mi=80
         $this->addMethod($repository, 'App\\Service', 'UserService', 'handle', 'src/Service/UserService.php', 'maintainability.mi', 80.0);
 
         $class2 = SymbolPath::forClass('App\\Service', 'OrderService');
-        $repository->add($class2, (new MetricBag())
+        $this->addClass($repository, $class2, (new MetricBag())
             ->with('maintainability.mi.avg', 60.0)
-            ->with('maintainability.mi.min', 50.0), RelativePath::fromString('src/Service/OrderService.php'), 10);
+            ->with('maintainability.mi.min', 50.0), 'src/Service/OrderService.php', 10);
 
         // 1 method with mi=60
         $this->addMethod($repository, 'App\\Service', 'OrderService', 'process', 'src/Service/OrderService.php', 'maintainability.mi', 60.0);
@@ -345,14 +387,14 @@ final class ClassToNamespaceAggregatorTest extends TestCase
     #[Test]
     public function itHandlesSingleClassNamespaceCorrectly(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->methodRepository();
 
         // Single class with 5 methods, all mi=85
         $class1 = SymbolPath::forClass('App\\Single', 'OnlyService');
-        $repository->add($class1, (new MetricBag())
+        $this->addClass($repository, $class1, (new MetricBag())
             ->with('maintainability.mi.avg', 85.0)
             ->with('maintainability.mi.count', 5)
-            ->with('maintainability.mi.min', 75.0), RelativePath::fromString('src/Single/OnlyService.php'), 10);
+            ->with('maintainability.mi.min', 75.0), 'src/Single/OnlyService.php', 10);
 
         // Add 5 method symbols with mi=85 each
         for ($i = 1; $i <= 5; $i++) {
@@ -375,13 +417,13 @@ final class ClassToNamespaceAggregatorTest extends TestCase
     #[Test]
     public function itAggregatesAdditiveMethodMetricsFromRawMethodValues(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->methodRepository();
 
         // UserService: 4 methods with ccn [5,5,5,5] → sum=20
         $class1 = SymbolPath::forClass('App\\Service', 'UserService');
-        $repository->add($class1, (new MetricBag())
+        $this->addClass($repository, $class1, (new MetricBag())
             ->with('complexity.ccn.sum', 20.0)
-            ->with('complexity.ccn.avg', 5.0), RelativePath::fromString('src/Service/UserService.php'), 10);
+            ->with('complexity.ccn.avg', 5.0), 'src/Service/UserService.php', 10);
 
         for ($i = 1; $i <= 4; $i++) {
             $this->addMethod($repository, 'App\\Service', 'UserService', "method{$i}", 'src/Service/UserService.php', 'complexity.ccn', 5.0);
@@ -389,9 +431,9 @@ final class ClassToNamespaceAggregatorTest extends TestCase
 
         // OrderService: 3 methods with ccn [10,10,10] → sum=30
         $class2 = SymbolPath::forClass('App\\Service', 'OrderService');
-        $repository->add($class2, (new MetricBag())
+        $this->addClass($repository, $class2, (new MetricBag())
             ->with('complexity.ccn.sum', 30.0)
-            ->with('complexity.ccn.avg', 10.0), RelativePath::fromString('src/Service/OrderService.php'), 10);
+            ->with('complexity.ccn.avg', 10.0), 'src/Service/OrderService.php', 10);
 
         for ($i = 1; $i <= 3; $i++) {
             $this->addMethod($repository, 'App\\Service', 'OrderService', "method{$i}", 'src/Service/OrderService.php', 'complexity.ccn', 10.0);
@@ -419,14 +461,14 @@ final class ClassToNamespaceAggregatorTest extends TestCase
     #[Test]
     public function itAdditiveMetricsAggregateFromMethodValuesRegardlessOfClassWeights(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->methodRepository();
 
         // UserService: 4 methods with ccn [5,5,5,5] → sum=20
         $class1 = SymbolPath::forClass('App\\Service', 'UserService');
-        $repository->add($class1, (new MetricBag())
+        $this->addClass($repository, $class1, (new MetricBag())
             ->with('complexity.ccn.sum', 20.0)
             ->with('complexity.ccn.avg', 5.0)
-            ->with('complexity.ccn.count', 4), RelativePath::fromString('src/Service/UserService.php'), 10);
+            ->with('complexity.ccn.count', 4), 'src/Service/UserService.php', 10);
 
         for ($i = 1; $i <= 4; $i++) {
             $this->addMethod($repository, 'App\\Service', 'UserService', "method{$i}", 'src/Service/UserService.php', 'complexity.ccn', 5.0);
@@ -434,10 +476,10 @@ final class ClassToNamespaceAggregatorTest extends TestCase
 
         // OrderService: 3 methods with ccn [10,10,10] → sum=30
         $class2 = SymbolPath::forClass('App\\Service', 'OrderService');
-        $repository->add($class2, (new MetricBag())
+        $this->addClass($repository, $class2, (new MetricBag())
             ->with('complexity.ccn.sum', 30.0)
             ->with('complexity.ccn.avg', 10.0)
-            ->with('complexity.ccn.count', 3), RelativePath::fromString('src/Service/OrderService.php'), 10);
+            ->with('complexity.ccn.count', 3), 'src/Service/OrderService.php', 10);
 
         for ($i = 1; $i <= 3; $i++) {
             $this->addMethod($repository, 'App\\Service', 'OrderService', "method{$i}", 'src/Service/OrderService.php', 'complexity.ccn', 10.0);
@@ -511,16 +553,16 @@ final class ClassToNamespaceAggregatorTest extends TestCase
     #[Test]
     public function itUsesRawMethodValuesNotClassBagForNamespaceAggregation(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->methodRepository();
 
         // Class bag has ccn.sum=999 (stale/incorrect value)
         // but raw method values are [2, 3] → correct sum=5
         $class = SymbolPath::forClass('App\\Service', 'Svc');
-        $repository->add($class, (new MetricBag())
+        $this->addClass($repository, $class, (new MetricBag())
             ->with('complexity.ccn.sum', 999)
             ->with('complexity.ccn.avg', 499.5)
             ->with('complexity.ccn.max', 999)
-            ->with('complexity.ccn.count', 2), RelativePath::fromString('src/Service/Svc.php'), 10);
+            ->with('complexity.ccn.count', 2), 'src/Service/Svc.php', 10);
 
         $this->addMethod($repository, 'App\\Service', 'Svc', 'doA', 'src/Service/Svc.php', 'complexity.ccn', 2);
         $this->addMethod($repository, 'App\\Service', 'Svc', 'doB', 'src/Service/Svc.php', 'complexity.ccn', 3);
@@ -562,11 +604,39 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         );
     }
 
+    private function methodRepository(): InMemoryMetricRepository
+    {
+        return new InMemoryMetricRepository([
+            new MetricDefinition('maintainability.mi', SymbolLevel::Callable, [
+                SymbolLevel::Class_->value => [AggregationStrategy::Average, AggregationStrategy::Min],
+                SymbolLevel::Namespace_->value => [AggregationStrategy::Average, AggregationStrategy::Min],
+            ]),
+            new MetricDefinition('complexity.ccn', SymbolLevel::Callable, [
+                SymbolLevel::Class_->value => [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max],
+                SymbolLevel::Namespace_->value => [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max],
+            ]),
+            new MetricDefinition('size.symbol-method-count', SymbolLevel::Class_),
+        ]);
+    }
+
+    private function addClass(InMemoryMetricRepository $repository, SymbolPath $class, MetricBag $metrics, string $file, int $line): void
+    {
+        $path = RelativePath::fromString($file);
+        $declaration = DeclarationPath::of($class, $path, DeclarationOrdinal::fromRank(0));
+        $repository->addSubject(MetricSubject::declaration($declaration), $metrics, $path, $line);
+    }
+
     private function addCallable(InMemoryMetricRepository $repository, SymbolPath $symbol, MetricBag $metrics, RelativePath $file, int $startFilePos): void
     {
         $owner = $symbol->getType() === \Qualimetrix\Core\Symbol\SymbolType::Method
             ? new LogicalClassPath(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? ''))
             : null;
+        $ownerDeclaration = $owner === null
+            ? null
+            : DeclarationPath::of($owner->symbolPath, $file, DeclarationOrdinal::fromRank(0));
+        if ($ownerDeclaration !== null) {
+            $repository->addSubject(MetricSubject::declaration($ownerDeclaration), new MetricBag(), $file, 1);
+        }
         $repository->addCallable(new CallableWithMetrics(
             DeclarationPath::of($symbol, $file, DeclarationOrdinal::fromRank(0)),
             $startFilePos,
@@ -575,6 +645,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
             null,
             $owner,
             $metrics,
+            classAggregationOwnerDeclaration: $ownerDeclaration,
         ));
     }
 }

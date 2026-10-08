@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\Ranke
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -157,7 +158,7 @@ final readonly class DrillDownBinding
         $universe = [];
 
         foreach (self::NAMED_LEVELS as $level) {
-            foreach ($metrics->all($level) as $info) {
+            foreach (self::recordsAt($metrics, $level) as $info) {
                 foreach (self::comparedStringsOf($info->symbolPath, $level) as $compared) {
                     $universe[$compared] = true;
                 }
@@ -176,6 +177,14 @@ final readonly class DrillDownBinding
         // ever spelled out by the tree. Without them a regex value would be
         // refused for a subtree that exists whenever the tree is absent, so
         // they are synthesized rather than left to depend on it.
+        self::addAncestorNamespaces($universe);
+
+        return $universe;
+    }
+
+    /** @param array<string, true> $universe */
+    private static function addAncestorNamespaces(array &$universe): void
+    {
         foreach (array_keys($universe) as $namespace) {
             $parent = (string) $namespace;
             while (($cut = strrpos($parent, '\\')) !== false) {
@@ -183,8 +192,16 @@ final readonly class DrillDownBinding
                 $universe[$parent] = true;
             }
         }
+    }
 
-        return $universe;
+    /** @return iterable<SymbolInfo> */
+    private static function recordsAt(MetricRepositoryInterface $metrics, SymbolLevel $level): iterable
+    {
+        return match ($level) {
+            SymbolLevel::Callable => $metrics->allCallables(),
+            SymbolLevel::Class_ => $metrics->allClassDeclarations(),
+            default => $metrics->all($level),
+        };
     }
 
     /**
@@ -195,7 +212,7 @@ final readonly class DrillDownBinding
         $universe = [];
 
         foreach (self::NAMED_LEVELS as $level) {
-            foreach ($metrics->all($level) as $info) {
+            foreach (self::recordsAt($metrics, $level) as $info) {
                 $type = $info->symbolPath->type;
                 if ($type === null) {
                     continue;

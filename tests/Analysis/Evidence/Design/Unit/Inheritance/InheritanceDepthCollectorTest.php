@@ -12,6 +12,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthCollector;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\FileDeclarationIndex;
 use Qualimetrix\Tests\Analysis\Evidence\Design\Support\UnloadableClassProbe;
 use RuntimeException;
 use SplFileInfo;
@@ -544,6 +546,24 @@ PHP;
         } finally {
             $probe->stop();
         }
+    }
+
+    #[Test]
+    public function itUsesEachDuplicateDeclarationsOwnImmediateParent(): void
+    {
+        $this->collectMetrics(<<<'PHP'
+<?php
+namespace App;
+class Twin extends \Exception {}
+if (false) {
+    class Twin {}
+}
+PHP);
+
+        $this->collector->useDeclarationIndex(new FileDeclarationIndex());
+        $classes = $this->collector->getClassesWithMetrics(RelativePath::fromString('src/Duplicate.php'));
+        self::assertCount(2, $classes);
+        self::assertSame([1, 0], array_map(static fn($class): int|float|null => $class->metrics->get('design.dit'), $classes));
     }
 
     private function collectMetrics(string $code): MetricBag

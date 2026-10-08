@@ -42,7 +42,6 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\ClassNameSpelling;
 use Qualimetrix\Core\Symbol\MixedSpelling;
-use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
@@ -508,7 +507,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
     private static function collectClassPaths(MetricRepositoryInterface $repository): array
     {
         $paths = [];
-        foreach ($repository->all(SymbolLevel::Class_) as $classSymbol) {
+        foreach ($repository->allLogicalClasses() as $classSymbol) {
             $paths[] = $classSymbol->symbolPath;
         }
 

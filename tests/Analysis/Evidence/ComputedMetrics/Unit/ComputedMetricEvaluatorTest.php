@@ -15,13 +15,18 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMe
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricBranchTrace;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
 use Stringable;
 
 #[CoversClass(ComputedMetricEvaluator::class)]
@@ -31,18 +36,18 @@ final class ComputedMetricEvaluatorTest extends TestCase
     #[Test]
     public function itLeavesTheRepositoryUntouchedWhenGivenNoDefinitions(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
         $this->evaluate($repo, []);
 
-        self::assertSame([], $repo->get(SymbolPath::forProject())->all());
+        self::assertSame([], $this->readFixture($repo, SymbolPath::forProject())->all());
     }
 
     #[Test]
     public function itEvaluatesASimpleClassLevelFormula(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
-        $repo->add($classPath, MetricBag::fromArray([
+        $this->addFixture($repo, $classPath, MetricBag::fromArray([
             'complexity.ccn.avg' => 3.0,
         ]), RelativePath::fromString('src/UserService.php'), 10);
 
@@ -55,16 +60,16 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         $this->evaluate($repo, [$definition]);
 
-        $result = $repo->get($classPath)->get('health.test');
+        $result = $this->readFixture($repo, $classPath)->get('health.test');
         self::assertSame(30.0, $result);
     }
 
     #[Test]
     public function itEvaluatesDependentMetricsInTopologicalOrderRegardlessOfInputOrder(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
-        $repo->add($classPath, MetricBag::fromArray([
+        $this->addFixture($repo, $classPath, MetricBag::fromArray([
             'complexity.ccn.avg' => 5.0,
         ]), RelativePath::fromString('src/UserService.php'), 10);
 
@@ -85,7 +90,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
         // Pass B before A — topological sort should fix the order
         $this->evaluate($repo, [$defB, $defA]);
 
-        $bag = $repo->get($classPath);
+        $bag = $this->readFixture($repo, $classPath);
         self::assertSame(6.0, $bag->get('health.a'));
         self::assertSame(12.0, $bag->get('health.b'));
     }
@@ -93,9 +98,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
     #[Test]
     public function itRefusesAFormulaReferencingAnUnknownMetricWithoutAFallback(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
-        $repo->add($classPath, MetricBag::fromArray(['known' => 1.0]), RelativePath::fromString('src/UserService.php'), 10);
+        $this->addFixture($repo, $classPath, MetricBag::fromArray(['known' => 1.0]), RelativePath::fromString('src/UserService.php'), 10);
 
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
@@ -115,9 +120,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
     #[Test]
     public function itListsAllUnknownMetricsReferencedByAFormula(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
-        $repo->add($classPath, MetricBag::fromArray(['known' => 1.0]), RelativePath::fromString('src/UserService.php'), 10);
+        $this->addFixture($repo, $classPath, MetricBag::fromArray(['known' => 1.0]), RelativePath::fromString('src/UserService.php'), 10);
 
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
@@ -142,10 +147,10 @@ final class ComputedMetricEvaluatorTest extends TestCase
     #[Test]
     public function itRefusesAFallbackChainWhereNoSymbolAtTheLevelCarriesAnyLink(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
         $classPath = SymbolPath::forClass('App', 'Svc');
-        $repo->add($classPath, MetricBag::fromArray(['size.method-count' => 2]), RelativePath::fromString('src/Svc.php'), 1);
-        $repo->add(SymbolPath::forProject(), MetricBag::fromArray(['size.loc' => 10]), null, null);
+        $this->addFixture($repo, $classPath, MetricBag::fromArray(['size.method-count' => 2]), RelativePath::fromString('src/Svc.php'), 1);
+        $this->addFixture($repo, SymbolPath::forProject(), MetricBag::fromArray(['size.loc' => 10]), null, null);
 
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('reads "computed.cls-only", "size.method-count" at level "project", where no symbol carries them');
@@ -169,13 +174,13 @@ final class ComputedMetricEvaluatorTest extends TestCase
     #[Test]
     public function itAcceptsAMetricPresentOnlyOnSomeSymbolsAsKnown(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
 
         // Class A has 'complexity.ccn', class B does not — but union includes 'complexity.ccn', so formula is valid
         $classA = SymbolPath::forClass('App', 'ClassA');
         $classB = SymbolPath::forClass('App', 'ClassB');
-        $repo->add($classA, MetricBag::fromArray(['complexity.ccn' => 5.0]), RelativePath::fromString('src/ClassA.php'), 1);
-        $repo->add($classB, MetricBag::fromArray([]), RelativePath::fromString('src/ClassB.php'), 1);
+        $this->addFixture($repo, $classA, MetricBag::fromArray(['complexity.ccn' => 5.0]), RelativePath::fromString('src/ClassA.php'), 1);
+        $this->addFixture($repo, $classB, MetricBag::fromArray([]), RelativePath::fromString('src/ClassB.php'), 1);
 
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
@@ -186,8 +191,8 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         $this->evaluate($repo, [$definition]);
 
-        self::assertSame(50.0, $repo->get($classA)->get('health.test'));
-        self::assertSame(0.0, $repo->get($classB)->get('health.test'));
+        self::assertSame(50.0, $this->readFixture($repo, $classA)->get('health.test'));
+        self::assertSame(0.0, $this->readFixture($repo, $classB)->get('health.test'));
     }
 
     /**
@@ -200,11 +205,11 @@ final class ComputedMetricEvaluatorTest extends TestCase
     #[Test]
     public function itPublishesNoValueForASymbolMissingAnUnguardedMetric(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
         $rich = SymbolPath::forClass('App', 'Rich');
         $bare = SymbolPath::forClass('App', 'Bare');
-        $repo->add($rich, MetricBag::fromArray(['cohesion.tcc' => 1.0]), RelativePath::fromString('src/Rich.php'), 1);
-        $repo->add($bare, MetricBag::fromArray([]), RelativePath::fromString('src/Bare.php'), 1);
+        $this->addFixture($repo, $rich, MetricBag::fromArray(['cohesion.tcc' => 1.0]), RelativePath::fromString('src/Rich.php'), 1);
+        $this->addFixture($repo, $bare, MetricBag::fromArray([]), RelativePath::fromString('src/Bare.php'), 1);
 
         $definition = new ComputedMetricDefinition(
             name: 'computed.probe',
@@ -229,8 +234,8 @@ final class ComputedMetricEvaluatorTest extends TestCase
         (new ComputedMetricEvaluator($catalog, self::createStub(ProfilerInterface::class), $logger))
             ->evaluate($repo, 1);
 
-        self::assertSame(100.0, $repo->get($rich)->get('computed.probe'));
-        self::assertNull($repo->get($bare)->get('computed.probe'));
+        self::assertSame(100.0, $this->readFixture($repo, $rich)->get('computed.probe'));
+        self::assertNull($this->readFixture($repo, $bare)->get('computed.probe'));
         self::assertCount(1, $logger->contexts);
         self::assertSame(1, $logger->contexts[0]['skipped']);
         self::assertSame('App\\Bare', $logger->contexts[0]['symbols']);
@@ -245,11 +250,11 @@ final class ComputedMetricEvaluatorTest extends TestCase
     #[Test]
     public function itPublishesTheLeftSideOfAFallbackBetweenMetricsWhereOnlyTheLeftIsPresent(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
         $tccOnly = SymbolPath::forClass('App', 'TccOnly');
         $lccOnly = SymbolPath::forClass('App', 'LccOnly');
-        $repo->add($tccOnly, MetricBag::fromArray(['cohesion.tcc' => 0.5]), RelativePath::fromString('src/TccOnly.php'), 1);
-        $repo->add($lccOnly, MetricBag::fromArray(['cohesion.lcc' => 0.7]), RelativePath::fromString('src/LccOnly.php'), 1);
+        $this->addFixture($repo, $tccOnly, MetricBag::fromArray(['cohesion.tcc' => 0.5]), RelativePath::fromString('src/TccOnly.php'), 1);
+        $this->addFixture($repo, $lccOnly, MetricBag::fromArray(['cohesion.lcc' => 0.7]), RelativePath::fromString('src/LccOnly.php'), 1);
 
         $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
             name: 'computed.probe',
@@ -258,8 +263,8 @@ final class ComputedMetricEvaluatorTest extends TestCase
             levels: [SymbolLevel::Class_],
         )]);
 
-        self::assertSame(0.5, $repo->get($tccOnly)->get('computed.probe'));
-        self::assertSame(0.7, $repo->get($lccOnly)->get('computed.probe'));
+        self::assertSame(0.5, $this->readFixture($repo, $tccOnly)->get('computed.probe'));
+        self::assertSame(0.7, $this->readFixture($repo, $lccOnly)->get('computed.probe'));
         self::assertSame([], $logger->records);
     }
 
@@ -271,11 +276,11 @@ final class ComputedMetricEvaluatorTest extends TestCase
     #[Test]
     public function itSkipsASymbolCarryingNeitherSideOfAFallbackBetweenMetrics(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
         $tccOnly = SymbolPath::forClass('App', 'TccOnly');
         $bare = SymbolPath::forClass('App', 'Bare');
-        $repo->add($tccOnly, MetricBag::fromArray(['cohesion.tcc' => 0.5, 'cohesion.lcc' => 0.7]), RelativePath::fromString('src/TccOnly.php'), 1);
-        $repo->add($bare, MetricBag::fromArray(['size.loc' => 3]), RelativePath::fromString('src/Bare.php'), 1);
+        $this->addFixture($repo, $tccOnly, MetricBag::fromArray(['cohesion.tcc' => 0.5, 'cohesion.lcc' => 0.7]), RelativePath::fromString('src/TccOnly.php'), 1);
+        $this->addFixture($repo, $bare, MetricBag::fromArray(['size.loc' => 3]), RelativePath::fromString('src/Bare.php'), 1);
 
         $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
             name: 'computed.probe',
@@ -284,8 +289,8 @@ final class ComputedMetricEvaluatorTest extends TestCase
             levels: [SymbolLevel::Class_],
         )]);
 
-        self::assertSame(0.5, $repo->get($tccOnly)->get('computed.probe'));
-        self::assertNull($repo->get($bare)->get('computed.probe'));
+        self::assertSame(0.5, $this->readFixture($repo, $tccOnly)->get('computed.probe'));
+        self::assertNull($this->readFixture($repo, $bare)->get('computed.probe'));
         self::assertCount(1, $logger->records);
         self::assertSame('App\\Bare', $logger->records[0]['context']['symbols']);
         self::assertSame('cohesion.tcc, cohesion.lcc', $logger->records[0]['context']['missing']);
@@ -300,10 +305,10 @@ final class ComputedMetricEvaluatorTest extends TestCase
     #[Test]
     public function itReportsSkippedSymbolsOnceForTheMetricAndLevel(): void
     {
-        $repo = new InMemoryMetricRepository();
-        $repo->add(SymbolPath::forClass('App', 'Rich'), MetricBag::fromArray(['cohesion.tcc' => 1.0, 'size.loc' => 1]), RelativePath::fromString('src/Rich.php'), 1);
+        $repo = $this->repository();
+        $this->addFixture($repo, SymbolPath::forClass('App', 'Rich'), MetricBag::fromArray(['cohesion.tcc' => 1.0, 'size.loc' => 1]), RelativePath::fromString('src/Rich.php'), 1);
         foreach (range(1, 7) as $i) {
-            $repo->add(SymbolPath::forClass('App', 'Bare' . $i), MetricBag::fromArray(['size.loc' => 1]), RelativePath::fromString('src/Bare' . $i . '.php'), 1);
+            $this->addFixture($repo, SymbolPath::forClass('App', 'Bare' . $i), MetricBag::fromArray(['size.loc' => 1]), RelativePath::fromString('src/Bare' . $i . '.php'), 1);
         }
 
         $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
@@ -330,11 +335,11 @@ final class ComputedMetricEvaluatorTest extends TestCase
     #[Test]
     public function itTreatsAParenthesisedFallbackChainAsGuardedToItsLastLink(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
         $bare = SymbolPath::forClass('App', 'Bare');
         $rich = SymbolPath::forClass('App', 'Rich');
-        $repo->add($bare, MetricBag::fromArray(['size.loc' => 3]), RelativePath::fromString('src/Bare.php'), 1);
-        $repo->add($rich, MetricBag::fromArray(['cohesion.lcc' => 0.7]), RelativePath::fromString('src/Rich.php'), 1);
+        $this->addFixture($repo, $bare, MetricBag::fromArray(['size.loc' => 3]), RelativePath::fromString('src/Bare.php'), 1);
+        $this->addFixture($repo, $rich, MetricBag::fromArray(['cohesion.lcc' => 0.7]), RelativePath::fromString('src/Rich.php'), 1);
 
         $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
             name: 'computed.probe',
@@ -343,8 +348,8 @@ final class ComputedMetricEvaluatorTest extends TestCase
             levels: [SymbolLevel::Class_],
         )]);
 
-        self::assertSame(1.0, $repo->get($bare)->get('computed.probe'));
-        self::assertSame(1.7, $repo->get($rich)->get('computed.probe'));
+        self::assertSame(1.0, $this->readFixture($repo, $bare)->get('computed.probe'));
+        self::assertSame(1.7, $this->readFixture($repo, $rich)->get('computed.probe'));
         self::assertSame([], $logger->records);
     }
 
@@ -357,11 +362,11 @@ final class ComputedMetricEvaluatorTest extends TestCase
     #[Test]
     public function itPublishesTheBranchATernaryTakesWithoutTheKeyOnlyTheOtherBranchReads(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
         $single = SymbolPath::forClass('App', 'Single');
         $empty = SymbolPath::forClass('App', 'Empty');
-        $repo->add($single, MetricBag::fromArray(['size.method-count' => 1]), RelativePath::fromString('src/Single.php'), 1);
-        $repo->add($empty, MetricBag::fromArray(['size.method-count' => 0, 'cohesion.tcc' => 0.25]), RelativePath::fromString('src/Empty.php'), 1);
+        $this->addFixture($repo, $single, MetricBag::fromArray(['size.method-count' => 1]), RelativePath::fromString('src/Single.php'), 1);
+        $this->addFixture($repo, $empty, MetricBag::fromArray(['size.method-count' => 0, 'cohesion.tcc' => 0.25]), RelativePath::fromString('src/Empty.php'), 1);
 
         $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
             name: 'computed.probe',
@@ -370,17 +375,17 @@ final class ComputedMetricEvaluatorTest extends TestCase
             levels: [SymbolLevel::Class_],
         )]);
 
-        self::assertSame(7.0, $repo->get($single)->get('computed.probe'));
-        self::assertSame(0.25, $repo->get($empty)->get('computed.probe'));
+        self::assertSame(7.0, $this->readFixture($repo, $single)->get('computed.probe'));
+        self::assertSame(0.25, $this->readFixture($repo, $empty)->get('computed.probe'));
         self::assertSame([], $logger->records);
     }
 
     #[Test]
     public function itDoesNotRefuseAKeyNoSymbolCarriesWhereOnlyABranchReadsIt(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
         $single = SymbolPath::forClass('App', 'Single');
-        $repo->add($single, MetricBag::fromArray(['size.method-count' => 1]), RelativePath::fromString('src/Single.php'), 1);
+        $this->addFixture($repo, $single, MetricBag::fromArray(['size.method-count' => 1]), RelativePath::fromString('src/Single.php'), 1);
 
         $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
             name: 'computed.probe',
@@ -389,7 +394,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             levels: [SymbolLevel::Class_],
         )]);
 
-        self::assertSame(7.0, $repo->get($single)->get('computed.probe'));
+        self::assertSame(7.0, $this->readFixture($repo, $single)->get('computed.probe'));
         self::assertSame([], $logger->records);
     }
 
@@ -402,11 +407,11 @@ final class ComputedMetricEvaluatorTest extends TestCase
     #[Test]
     public function itPublishesNoValueWhereTheTakenBranchReadsAnAbsentKey(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
         $guarded = SymbolPath::forClass('App', 'Guarded');
         $reached = SymbolPath::forClass('App', 'Reached');
-        $repo->add($guarded, MetricBag::fromArray(['size.method-count' => 0]), RelativePath::fromString('src/Guarded.php'), 1);
-        $repo->add($reached, MetricBag::fromArray(['size.method-count' => 4]), RelativePath::fromString('src/Reached.php'), 1);
+        $this->addFixture($repo, $guarded, MetricBag::fromArray(['size.method-count' => 0]), RelativePath::fromString('src/Guarded.php'), 1);
+        $this->addFixture($repo, $reached, MetricBag::fromArray(['size.method-count' => 4]), RelativePath::fromString('src/Reached.php'), 1);
 
         $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
             name: 'computed.probe',
@@ -415,8 +420,8 @@ final class ComputedMetricEvaluatorTest extends TestCase
             levels: [SymbolLevel::Class_],
         )]);
 
-        self::assertSame(0.0, $repo->get($guarded)->get('computed.probe'));
-        self::assertNull($repo->get($reached)->get('computed.probe'));
+        self::assertSame(0.0, $this->readFixture($repo, $guarded)->get('computed.probe'));
+        self::assertNull($this->readFixture($repo, $reached)->get('computed.probe'));
         self::assertCount(1, $logger->records);
         self::assertSame(1, $logger->records[0]['context']['skipped']);
         self::assertSame('App\\Reached', $logger->records[0]['context']['symbols']);
@@ -430,11 +435,11 @@ final class ComputedMetricEvaluatorTest extends TestCase
     #[Test]
     public function itJudgesTheRightSideOfAndByWhetherTheEvaluationReachedIt(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
         $shortCircuited = SymbolPath::forClass('App', 'ShortCircuited');
         $reached = SymbolPath::forClass('App', 'Reached');
-        $repo->add($shortCircuited, MetricBag::fromArray(['size.method-count' => 0]), RelativePath::fromString('src/ShortCircuited.php'), 1);
-        $repo->add($reached, MetricBag::fromArray(['size.method-count' => 4]), RelativePath::fromString('src/Reached.php'), 1);
+        $this->addFixture($repo, $shortCircuited, MetricBag::fromArray(['size.method-count' => 0]), RelativePath::fromString('src/ShortCircuited.php'), 1);
+        $this->addFixture($repo, $reached, MetricBag::fromArray(['size.method-count' => 4]), RelativePath::fromString('src/Reached.php'), 1);
 
         $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
             name: 'computed.probe',
@@ -443,8 +448,8 @@ final class ComputedMetricEvaluatorTest extends TestCase
             levels: [SymbolLevel::Class_],
         )]);
 
-        self::assertSame(0.0, $repo->get($shortCircuited)->get('computed.probe'));
-        self::assertNull($repo->get($reached)->get('computed.probe'));
+        self::assertSame(0.0, $this->readFixture($repo, $shortCircuited)->get('computed.probe'));
+        self::assertNull($this->readFixture($repo, $reached)->get('computed.probe'));
         self::assertCount(1, $logger->records);
         self::assertSame('App\\Reached', $logger->records[0]['context']['symbols']);
     }
@@ -456,11 +461,11 @@ final class ComputedMetricEvaluatorTest extends TestCase
     #[Test]
     public function itPublishesNoValueWhereTheConditionReadsAnAbsentKey(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
         $rich = SymbolPath::forClass('App', 'Rich');
         $bare = SymbolPath::forClass('App', 'Bare');
-        $repo->add($rich, MetricBag::fromArray(['cohesion.tcc' => 0.75]), RelativePath::fromString('src/Rich.php'), 1);
-        $repo->add($bare, MetricBag::fromArray(['size.loc' => 3]), RelativePath::fromString('src/Bare.php'), 1);
+        $this->addFixture($repo, $rich, MetricBag::fromArray(['cohesion.tcc' => 0.75]), RelativePath::fromString('src/Rich.php'), 1);
+        $this->addFixture($repo, $bare, MetricBag::fromArray(['size.loc' => 3]), RelativePath::fromString('src/Bare.php'), 1);
 
         $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
             name: 'computed.probe',
@@ -469,8 +474,8 @@ final class ComputedMetricEvaluatorTest extends TestCase
             levels: [SymbolLevel::Class_],
         )]);
 
-        self::assertSame(1.0, $repo->get($rich)->get('computed.probe'));
-        self::assertNull($repo->get($bare)->get('computed.probe'));
+        self::assertSame(1.0, $this->readFixture($repo, $rich)->get('computed.probe'));
+        self::assertNull($this->readFixture($repo, $bare)->get('computed.probe'));
         self::assertSame('cohesion.tcc', $logger->records[0]['context']['missing']);
     }
 
@@ -481,9 +486,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
     #[Test]
     public function itLetsAnEnclosingFallbackCatchTheNullOfTheTakenBranch(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
         $bare = SymbolPath::forClass('App', 'Bare');
-        $repo->add($bare, MetricBag::fromArray(['size.method-count' => 4]), RelativePath::fromString('src/Bare.php'), 1);
+        $this->addFixture($repo, $bare, MetricBag::fromArray(['size.method-count' => 4]), RelativePath::fromString('src/Bare.php'), 1);
 
         $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
             name: 'computed.probe',
@@ -492,7 +497,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             levels: [SymbolLevel::Class_],
         )]);
 
-        self::assertSame(5.0, $repo->get($bare)->get('computed.probe'));
+        self::assertSame(5.0, $this->readFixture($repo, $bare)->get('computed.probe'));
         self::assertSame([], $logger->records);
     }
 
@@ -504,9 +509,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
     #[Test]
     public function itNeverRunsTheBranchItEntersWithAnAbsentKey(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
         $reached = SymbolPath::forClass('App', 'Reached');
-        $repo->add($reached, MetricBag::fromArray(['size.method-count' => 4]), RelativePath::fromString('src/Reached.php'), 1);
+        $this->addFixture($repo, $reached, MetricBag::fromArray(['size.method-count' => 4]), RelativePath::fromString('src/Reached.php'), 1);
 
         $raised = [];
         set_error_handler(static function (int $severity, string $message) use (&$raised): bool {
@@ -527,7 +532,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
         }
 
         self::assertSame([], $raised);
-        self::assertNull($repo->get($reached)->get('computed.probe'));
+        self::assertNull($this->readFixture($repo, $reached)->get('computed.probe'));
         self::assertSame('cohesion.tcc', $logger->records[0]['context']['missing']);
     }
 
@@ -538,9 +543,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
     #[Test]
     public function itNamesTheKeyANestedTernaryReadsOnEveryPath(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
         $reached = SymbolPath::forClass('App', 'Reached');
-        $repo->add($reached, MetricBag::fromArray(['size.method-count' => 4, 'size.loc' => 10]), RelativePath::fromString('src/Reached.php'), 1);
+        $this->addFixture($repo, $reached, MetricBag::fromArray(['size.method-count' => 4, 'size.loc' => 10]), RelativePath::fromString('src/Reached.php'), 1);
 
         $logger = $this->evaluateLogging($repo, [new ComputedMetricDefinition(
             name: 'computed.probe',
@@ -549,7 +554,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             levels: [SymbolLevel::Class_],
         )]);
 
-        self::assertNull($repo->get($reached)->get('computed.probe'));
+        self::assertNull($this->readFixture($repo, $reached)->get('computed.probe'));
         self::assertCount(1, $logger->records);
         self::assertSame('cohesion.tcc', $logger->records[0]['context']['missing']);
     }
@@ -557,9 +562,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
     #[Test]
     public function itUsesTheNullCoalescingFallbackForAMissingMetric(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
-        $repo->add($classPath, MetricBag::fromArray([]), RelativePath::fromString('src/UserService.php'), 10);
+        $this->addFixture($repo, $classPath, MetricBag::fromArray([]), RelativePath::fromString('src/UserService.php'), 10);
 
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
@@ -570,15 +575,15 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         $this->evaluate($repo, [$definition]);
 
-        self::assertSame(84.0, $repo->get($classPath)->get('health.test'));
+        self::assertSame(84.0, $this->readFixture($repo, $classPath)->get('health.test'));
     }
 
     #[Test]
     public function itDoesNotStoreANanFormulaResult(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
-        $repo->add($classPath, MetricBag::fromArray([
+        $this->addFixture($repo, $classPath, MetricBag::fromArray([
             'value' => -1.0,
         ]), RelativePath::fromString('src/UserService.php'), 10);
 
@@ -591,15 +596,15 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         $this->evaluate($repo, [$definition]);
 
-        self::assertNull($repo->get($classPath)->get('health.test'));
+        self::assertNull($this->readFixture($repo, $classPath)->get('health.test'));
     }
 
     #[Test]
     public function itDoesNotStoreAnInfiniteFormulaResult(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
-        $repo->add($classPath, MetricBag::fromArray([
+        $this->addFixture($repo, $classPath, MetricBag::fromArray([
             'value' => 0.0,
         ]), RelativePath::fromString('src/UserService.php'), 10);
 
@@ -612,15 +617,15 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         $this->evaluate($repo, [$definition]);
 
-        self::assertNull($repo->get($classPath)->get('health.test'));
+        self::assertNull($this->readFixture($repo, $classPath)->get('health.test'));
     }
 
     #[Test]
     public function itComputesTheDefaultHealthScoresAtClassLevel(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
-        $repo->add($classPath, MetricBag::fromArray([
+        $this->addFixture($repo, $classPath, MetricBag::fromArray([
             'complexity.ccn.avg' => 4.0,
             'complexity.cognitive.avg' => 6.0,
             'complexity.npath.avg' => 10.0,
@@ -636,7 +641,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $defaults = array_values(ComputedMetricDefaults::getDefaults());
         $this->evaluate($repo, $defaults);
 
-        $bag = $repo->get($classPath);
+        $bag = $this->readFixture($repo, $classPath);
 
         // health.complexity = clamp(100 - max(4-2,0)*2.0 - max(6-1,0)*2.0 - max(0-10,0)^0.5*2.0 - max(0-15,0)^0.5*2.0, 0, 100)
         //                   = 100 - 4.0 - 10.0 - 0 - 0 = 86.0
@@ -665,9 +670,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
     #[Test]
     public function itBoostsCohesionHealthForClassesWithPureMethods(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
         $classPath = SymbolPath::forClass('App\\Rules', 'DistanceRule');
-        $repo->add($classPath, MetricBag::fromArray([
+        $this->addFixture($repo, $classPath, MetricBag::fromArray([
             'cohesion.tcc' => 0.0,
             'cohesion.lcom' => 5.0,
             'size.method-count' => 5,
@@ -679,7 +684,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $defaults = array_values(ComputedMetricDefaults::getDefaults());
         $this->evaluate($repo, $defaults);
 
-        $bag = $repo->get($classPath);
+        $bag = $this->readFixture($repo, $classPath);
 
         // tcc_adj = 0.0 + (1 - 0.0) * (4/5) * 0.4 = 0.32
         // lcom_adj = max(5 - 4*0.7, 1) = max(2.2, 1) = 2.2
@@ -696,15 +701,15 @@ final class ComputedMetricEvaluatorTest extends TestCase
     #[Test]
     public function itComputesTheDefaultHealthScoresAtNamespaceLevel(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
 
         // Add a class so the namespace is registered
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
-        $repo->add($classPath, MetricBag::fromArray([]), RelativePath::fromString('src/UserService.php'), 10);
+        $this->addFixture($repo, $classPath, MetricBag::fromArray([]), RelativePath::fromString('src/UserService.php'), 10);
 
         // Add namespace-level metrics
         $nsPath = SymbolPath::forNamespace('App\\Service');
-        $repo->add($nsPath, MetricBag::fromArray([
+        $this->addFixture($repo, $nsPath, MetricBag::fromArray([
             'complexity.ccn.avg' => 3.0,
             'complexity.ccn.sum' => 30.0,
             'complexity.cognitive.avg' => 4.0,
@@ -734,7 +739,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $defaults = array_values(ComputedMetricDefaults::getDefaults());
         $this->evaluate($repo, $defaults);
 
-        $bag = $repo->get($nsPath);
+        $bag = $this->readFixture($repo, $nsPath);
 
         // health.complexity = clamp(100 - max(30/10-2,0)*5.0 - max(40/10-1,0)*4.0 - 0 - 0 - 0, 0, 100)
         //                   = 100 - 5.0 - 12.0 = 83.0 (no p95/max metrics present → ?? 0)
@@ -770,14 +775,14 @@ final class ComputedMetricEvaluatorTest extends TestCase
         // A namespace containing only marker interfaces (no methods, no properties)
         // has zero typeable positions. The metric must return 100 (vacuous truth)
         // rather than 0 — there is literally nothing untyped.
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
 
         // Register an empty interface-like class so the namespace appears.
         $classPath = SymbolPath::forClass('App\\Shared\\Messaging', 'AsyncMessageInterface');
-        $repo->add($classPath, MetricBag::fromArray([]), RelativePath::fromString('src/AsyncMessageInterface.php'), 1);
+        $this->addFixture($repo, $classPath, MetricBag::fromArray([]), RelativePath::fromString('src/AsyncMessageInterface.php'), 1);
 
         $nsPath = SymbolPath::forNamespace('App\\Shared\\Messaging');
-        $repo->add($nsPath, MetricBag::fromArray([
+        $this->addFixture($repo, $nsPath, MetricBag::fromArray([
             // All typeCoverage sums explicitly zero (denotes 0 typeable positions).
             'design.type-coverage.param.typed.sum' => 0.0,
             'design.type-coverage.return.typed.sum' => 0.0,
@@ -792,7 +797,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $typing = ComputedMetricDefaults::getDefaults()['health.typing'];
         $this->evaluate($repo, [$typing]);
 
-        self::assertSame(100.0, $repo->get($nsPath)->get('health.typing'));
+        self::assertSame(100.0, $this->readFixture($repo, $nsPath)->get('health.typing'));
     }
 
     #[Test]
@@ -800,18 +805,18 @@ final class ComputedMetricEvaluatorTest extends TestCase
     {
         // Edge case: namespace bag has NO typeCoverage.* keys at all (rather than explicit 0s).
         // The `?? 0` fallbacks must still resolve the ternary condition to true → 100.
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
 
         $classPath = SymbolPath::forClass('App\\Empty', 'Marker');
-        $repo->add($classPath, MetricBag::fromArray([]), RelativePath::fromString('src/Marker.php'), 1);
+        $this->addFixture($repo, $classPath, MetricBag::fromArray([]), RelativePath::fromString('src/Marker.php'), 1);
 
         $nsPath = SymbolPath::forNamespace('App\\Empty');
-        $repo->add($nsPath, MetricBag::fromArray([]), null, null);
+        $this->addFixture($repo, $nsPath, MetricBag::fromArray([]), null, null);
 
         $typing = ComputedMetricDefaults::getDefaults()['health.typing'];
         $this->evaluate($repo, [$typing]);
 
-        self::assertSame(100.0, $repo->get($nsPath)->get('health.typing'));
+        self::assertSame(100.0, $this->readFixture($repo, $nsPath)->get('health.typing'));
     }
 
     #[Test]
@@ -819,13 +824,13 @@ final class ComputedMetricEvaluatorTest extends TestCase
     {
         // The project-level formula inherits from namespace via getFormulaForLevel,
         // so an entirely type-surface-free project should also yield 100.
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
 
         $classPath = SymbolPath::forClass('App\\Shared\\Messaging', 'AsyncMessageInterface');
-        $repo->add($classPath, MetricBag::fromArray([]), RelativePath::fromString('src/AsyncMessageInterface.php'), 1);
+        $this->addFixture($repo, $classPath, MetricBag::fromArray([]), RelativePath::fromString('src/AsyncMessageInterface.php'), 1);
 
         $projectPath = SymbolPath::forProject();
-        $repo->add($projectPath, MetricBag::fromArray([
+        $this->addFixture($repo, $projectPath, MetricBag::fromArray([
             'design.type-coverage.param.typed.sum' => 0.0,
             'design.type-coverage.return.typed.sum' => 0.0,
             'design.type-coverage.property.typed.sum' => 0.0,
@@ -837,21 +842,21 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $typing = ComputedMetricDefaults::getDefaults()['health.typing'];
         $this->evaluate($repo, [$typing]);
 
-        self::assertSame(100.0, $repo->get($projectPath)->get('health.typing'));
+        self::assertSame(100.0, $this->readFixture($repo, $projectPath)->get('health.typing'));
     }
 
     #[Test]
     public function itPenalizesNamespaceCouplingHealthForHighEfferentBreadth(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
 
         // Register a class so the namespace appears in the repository.
-        $repo->add(SymbolPath::forClass('App\\Big', 'X'), MetricBag::fromArray([]), RelativePath::fromString('src/X.php'), 1);
+        $this->addFixture($repo, SymbolPath::forClass('App\\Big', 'X'), MetricBag::fromArray([]), RelativePath::fromString('src/X.php'), 1);
 
         // Namespace with high efferent coupling: ce.avg=10 (per-class), ce.max=60 (outlier),
         // ce_packages.avg=2 (touches 2 vendor packages on avg per class), ns-level ce=80.
         $nsPath = SymbolPath::forNamespace('App\\Big');
-        $repo->add($nsPath, MetricBag::fromArray([
+        $this->addFixture($repo, $nsPath, MetricBag::fromArray([
             'coupling.ce' => 80,
             'coupling.ce.avg' => 10.0,
             'coupling.ce.max' => 60,
@@ -870,23 +875,23 @@ final class ComputedMetricEvaluatorTest extends TestCase
         // ns breadth              = max(80-50, 0)^0.5 * 0.6 = sqrt(30)*0.6 = 3.2863
         // denom                   = 18 + 1.2 + 14.3246 + 4.3818 + 3.2863 = 41.1927
         // score                   = 100 * 18 / 41.1927                    ≈ 43.70
-        self::assertEqualsWithDelta(43.70, $repo->get($nsPath)->get('health.coupling'), 0.1);
+        self::assertEqualsWithDelta(43.70, $this->readFixture($repo, $nsPath)->get('health.coupling'), 0.1);
     }
 
     #[Test]
     public function itRewardsNamespaceCouplingHealthForLowOutgoingCoupling(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
 
         // Register a class so the namespace appears in the repository.
-        $repo->add(SymbolPath::forClass('App\\Contracts', 'I'), MetricBag::fromArray([]), RelativePath::fromString('src/I.php'), 1);
+        $this->addFixture($repo, SymbolPath::forClass('App\\Contracts', 'I'), MetricBag::fromArray([]), RelativePath::fromString('src/I.php'), 1);
 
         // Stable-contracts namespace: low outgoing coupling (ce=5, ce.avg=1.3, ce.max=4),
         // moderate distance from main sequence. Bidirectional CBO would be high here
         // because of high afferent (every consumer depends on these contracts), but the
         // formula uses efferent metrics only.
         $nsPath = SymbolPath::forNamespace('App\\Contracts');
-        $repo->add($nsPath, MetricBag::fromArray([
+        $this->addFixture($repo, $nsPath, MetricBag::fromArray([
             'coupling.ce' => 5,
             'coupling.ce.avg' => 1.3,
             'coupling.ce.max' => 4,
@@ -900,15 +905,15 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         // distance*6 = 2.4; all other terms clamp to 0.
         // denom = 18 + 2.4 = 20.4 -> 100*18/20.4 ≈ 88.24
-        self::assertEqualsWithDelta(88.24, $repo->get($nsPath)->get('health.coupling'), 0.1);
+        self::assertEqualsWithDelta(88.24, $this->readFixture($repo, $nsPath)->get('health.coupling'), 0.1);
     }
 
     #[Test]
     public function itEvaluatesTheBuiltInMathFunctionsInFormulas(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
         $classPath = SymbolPath::forClass('App\\Service', 'Svc');
-        $repo->add($classPath, MetricBag::fromArray([
+        $this->addFixture($repo, $classPath, MetricBag::fromArray([
             'a' => 16.0,
             'b' => -5.0,
             'c' => 3.0,
@@ -940,7 +945,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         $this->evaluate($repo, $definitions);
 
-        $bag = $repo->get($classPath);
+        $bag = $this->readFixture($repo, $classPath);
         foreach ($tests as [$name, , $expected]) {
             self::assertEqualsWithDelta($expected, $bag->get($name), 0.001, "Failed for {$name}");
         }
@@ -949,13 +954,13 @@ final class ComputedMetricEvaluatorTest extends TestCase
     #[Test]
     public function itComputesAnIndependentMetricValuePerClass(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
 
         $class1 = SymbolPath::forClass('App', 'ClassA');
         $class2 = SymbolPath::forClass('App', 'ClassB');
 
-        $repo->add($class1, MetricBag::fromArray(['complexity.ccn' => 2.0]), RelativePath::fromString('src/ClassA.php'), 1);
-        $repo->add($class2, MetricBag::fromArray(['complexity.ccn' => 8.0]), RelativePath::fromString('src/ClassB.php'), 1);
+        $this->addFixture($repo, $class1, MetricBag::fromArray(['complexity.ccn' => 2.0]), RelativePath::fromString('src/ClassA.php'), 1);
+        $this->addFixture($repo, $class2, MetricBag::fromArray(['complexity.ccn' => 8.0]), RelativePath::fromString('src/ClassB.php'), 1);
 
         $definition = new ComputedMetricDefinition(
             name: 'health.simple',
@@ -966,24 +971,24 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         $this->evaluate($repo, [$definition]);
 
-        self::assertSame(20.0, $repo->get($class1)->get('health.simple'));
-        self::assertSame(80.0, $repo->get($class2)->get('health.simple'));
+        self::assertSame(20.0, $this->readFixture($repo, $class1)->get('health.simple'));
+        self::assertSame(80.0, $this->readFixture($repo, $class2)->get('health.simple'));
     }
 
     #[Test]
     public function itFallsBackToTheNamespaceFormulaAtProjectLevel(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
 
         // Need a class to register the namespace
         $classPath = SymbolPath::forClass('App', 'Svc');
-        $repo->add($classPath, MetricBag::fromArray([]), RelativePath::fromString('src/Svc.php'), 1);
+        $this->addFixture($repo, $classPath, MetricBag::fromArray([]), RelativePath::fromString('src/Svc.php'), 1);
 
         $nsPath = SymbolPath::forNamespace('App');
-        $repo->add($nsPath, MetricBag::fromArray(['value' => 42.0]), null, null);
+        $this->addFixture($repo, $nsPath, MetricBag::fromArray(['value' => 42.0]), null, null);
 
         $projectPath = SymbolPath::forProject();
-        $repo->add($projectPath, MetricBag::fromArray(['value' => 99.0]), null, null);
+        $this->addFixture($repo, $projectPath, MetricBag::fromArray(['value' => 99.0]), null, null);
 
         $definition = new ComputedMetricDefinition(
             name: 'health.inherited',
@@ -994,17 +999,17 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         $this->evaluate($repo, [$definition]);
 
-        self::assertSame(43.0, $repo->get($nsPath)->get('health.inherited'));
+        self::assertSame(43.0, $this->readFixture($repo, $nsPath)->get('health.inherited'));
         // Project should use the namespace formula with project-level metrics
-        self::assertSame(100.0, $repo->get($projectPath)->get('health.inherited'));
+        self::assertSame(100.0, $this->readFixture($repo, $projectPath)->get('health.inherited'));
     }
 
     #[Test]
     public function itFallsBackToInputOrderWithoutCrashingOnACircularDependency(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
         $classPath = SymbolPath::forClass('App', 'Svc');
-        $repo->add($classPath, MetricBag::fromArray(['x' => 1.0]), RelativePath::fromString('src/Svc.php'), 1);
+        $this->addFixture($repo, $classPath, MetricBag::fromArray(['x' => 1.0]), RelativePath::fromString('src/Svc.php'), 1);
 
         $defA = new ComputedMetricDefinition(
             name: 'health.a',
@@ -1023,7 +1028,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $this->evaluate($repo, [$defA, $defB]);
 
         // Both should compute using the fallback ?? 0
-        $bag = $repo->get($classPath);
+        $bag = $this->readFixture($repo, $classPath);
         self::assertNotNull($bag->get('health.a'));
         self::assertNotNull($bag->get('health.b'));
     }
@@ -1031,7 +1036,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     #[Test]
     public function itAveragesComplexityHealthPerMethodRatherThanPerClassAtNamespaceLevel(): void
     {
-        $repo = new InMemoryMetricRepository();
+        $repo = $this->repository();
 
         // Namespace with 2 classes: one has 5 methods (all CCN=2), another has 1 method (CCN=30)
         // WMC class A = 10 (ccn.sum), WMC class B = 30 (ccn.sum)
@@ -1039,10 +1044,10 @@ final class ComputedMetricEvaluatorTest extends TestCase
         // Per-method CCN avg (new formula) = (10+30)/6 = 6.67 → moderate
 
         $classA = SymbolPath::forClass('App\\Service', 'ClassA');
-        $repo->add($classA, MetricBag::fromArray([]), RelativePath::fromString('src/ClassA.php'), 1);
+        $this->addFixture($repo, $classA, MetricBag::fromArray([]), RelativePath::fromString('src/ClassA.php'), 1);
 
         $nsPath = SymbolPath::forNamespace('App\\Service');
-        $repo->add($nsPath, MetricBag::fromArray([
+        $this->addFixture($repo, $nsPath, MetricBag::fromArray([
             'complexity.ccn.sum' => 40.0,          // total CCN across all methods
             'complexity.ccn.avg' => 20.0,          // average WMC (per-class) - NOT per-method
             'complexity.cognitive.sum' => 30.0,
@@ -1057,7 +1062,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $complexityDef = array_filter($defaults, static fn($d) => $d->name === 'health.complexity');
         $this->evaluate($repo, array_values($complexityDef));
 
-        $bag = $repo->get($nsPath);
+        $bag = $this->readFixture($repo, $nsPath);
         $score = $bag->get('health.complexity');
         self::assertNotNull($score);
 
@@ -1079,19 +1084,19 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $catalog->expects(self::once())->method('all')->willReturn([]);
 
         (new ComputedMetricEvaluator($catalog, self::createStub(ProfilerInterface::class)))
-            ->evaluate(new InMemoryMetricRepository(), 1);
+            ->evaluate($this->repository(), 1);
     }
 
     #[Test]
     public function itDoesNothingForZeroAnalyzedFiles(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
         $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
         $catalog->method('all')->willReturn(array_values(ComputedMetricDefaults::getDefaults()));
 
         (new ComputedMetricEvaluator($catalog, self::createStub(ProfilerInterface::class)))->evaluate($repository, 0);
 
-        self::assertSame([], $repository->get(SymbolPath::forProject())->all());
+        self::assertSame([], $this->readFixture($repository, SymbolPath::forProject())->all());
     }
 
     #[Test]
@@ -1115,7 +1120,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
         $catalog->method('all')->willReturn([$definition]);
 
-        (new ComputedMetricEvaluator($catalog, $profiler))->evaluate(new InMemoryMetricRepository(), 1);
+        (new ComputedMetricEvaluator($catalog, $profiler))->evaluate($this->repository(), 1);
         self::assertSame(['computed', 'pipeline'], $starts[0]);
         self::assertSame(['computed.computed.test', 'computed'], $stops);
     }
@@ -1154,4 +1159,113 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         (new ComputedMetricEvaluator($catalog, self::createStub(ProfilerInterface::class)))->evaluate($repository, 1);
     }
+    /** @var list<string> */
+    private const array CLASS_FIXTURE_KEYS = [
+        'a',
+        'b',
+        'c',
+        'd',
+        'e',
+        'f',
+        'cohesion.lcc',
+        'cohesion.lcom',
+        'cohesion.lcom.avg',
+        'cohesion.pure-method-count',
+        'cohesion.tcc',
+        'cohesion.tcc.avg',
+        'complexity.ccn',
+        'complexity.ccn.avg',
+        'complexity.ccn.sum',
+        'complexity.cognitive.avg',
+        'complexity.cognitive.sum',
+        'complexity.npath.avg',
+        'computed.cls-only',
+        'computed.probe',
+        'computed.reader',
+        'computed.test',
+        'coupling.abstractness',
+        'coupling.cbo',
+        'coupling.ce',
+        'coupling.ce-packages.avg',
+        'coupling.ce.avg',
+        'coupling.ce.max',
+        'coupling.distance',
+        'design.dit',
+        'design.dit.avg',
+        'design.type-coverage.all',
+        'design.type-coverage.param.total.sum',
+        'design.type-coverage.param.typed.sum',
+        'design.type-coverage.property.total.sum',
+        'design.type-coverage.property.typed.sum',
+        'design.type-coverage.return.total.sum',
+        'design.type-coverage.return.typed.sum',
+        'health.a',
+        'health.b',
+        'health.cohesion',
+        'health.complexity',
+        'health.coupling',
+        'health.design',
+        'health.inherited',
+        'health.maintainability',
+        'health.overall',
+        'health.simple',
+        'health.sqrt-test',
+        'health.abs-test',
+        'health.min-test',
+        'health.max-test',
+        'health.log-test',
+        'health.log10-test',
+        'health.clamp-test',
+        'health.clamp-low-test',
+        'health.test',
+        'health.typing',
+        'known',
+        'maintainability.mi.avg',
+        'maintainability.mi.min',
+        'maintainability.mi.p5',
+        'size.loc',
+        'size.method-count',
+        'value',
+        'x',
+    ];
+
+    private function repository(): InMemoryMetricRepository
+    {
+        return new InMemoryMetricRepository(array_map(
+            static fn(string $key): MetricDefinition => new MetricDefinition($key, SymbolLevel::Class_),
+            self::CLASS_FIXTURE_KEYS,
+        ));
+    }
+
+    private function addFixture(InMemoryMetricRepository $repository, SymbolPath $path, MetricBag $bag, ?RelativePath $file, ?int $line): void
+    {
+        if ($path->getType() === SymbolType::Class_) {
+            self::assertNotNull($file);
+            $repository->addSubject(MetricSubject::declaration(DeclarationPath::of(
+                $path,
+                $file,
+                DeclarationOrdinal::fromRank(0),
+            )), $bag, $file, $line);
+            return;
+        }
+        $repository->add($path, $bag, $file, $line);
+    }
+
+    private function readFixture(InMemoryMetricRepository $repository, SymbolPath $path): MetricBag
+    {
+        if ($path->getType() !== SymbolType::Class_) {
+            return $repository->get($path);
+        }
+        $subjects = [];
+        foreach ($repository->allClassDeclarations() as $info) {
+            if ($info->symbolPath->toCanonical() === $path->toCanonical()) {
+                $subjects[] = $info->subject;
+            }
+        }
+        self::assertCount(1, $subjects, 'Class fixture must identify one exact declaration');
+        self::assertNotNull($subjects[0]);
+
+        return $repository->getSubject($subjects[0]);
+    }
+
 }

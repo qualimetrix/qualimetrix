@@ -171,6 +171,7 @@ final class SummaryEnricherTest extends TestCase
     public function itWorstClasses(): void
     {
         $classSymbol = SymbolPath::forClass('App\\Service', 'PaymentService');
+        $classSymbolSubject = self::exactClassSubject($classSymbol, 'src/Service/PaymentService.php');
         $classMetrics = MetricBag::fromArray([
             'health.overall' => 28.0,
             'health.complexity' => 22.0,
@@ -187,10 +188,10 @@ final class SummaryEnricherTest extends TestCase
                 'health.overall' => 72.0,
             ]),
             classes: [
-                new SymbolInfo($classSymbol, RelativePath::fromString('src/Service/PaymentService.php'), 10),
+                new SymbolInfo($classSymbolSubject, RelativePath::fromString('src/Service/PaymentService.php'), 10),
             ],
             classMetrics: [
-                'class:App\\Service\\PaymentService' => $classMetrics,
+                $classSymbolSubject->toCanonical() => $classMetrics,
             ],
         );
 
@@ -219,6 +220,7 @@ final class SummaryEnricherTest extends TestCase
     public function itSkipsSymbolsAboveWarningThreshold(): void
     {
         $classSymbol = SymbolPath::forClass('App\\Service', 'GoodService');
+        $classSymbolSubject = self::exactClassSubject($classSymbol, 'src/Service/GoodService.php');
         $classMetrics = MetricBag::fromArray([
             'health.overall' => 85.0,
             'health.complexity' => 80.0,
@@ -229,10 +231,10 @@ final class SummaryEnricherTest extends TestCase
                 'health.overall' => 85.0,
             ]),
             classes: [
-                new SymbolInfo($classSymbol, RelativePath::fromString('src/Service/GoodService.php'), 1),
+                new SymbolInfo($classSymbolSubject, RelativePath::fromString('src/Service/GoodService.php'), 1),
             ],
             classMetrics: [
-                'class:App\\Service\\GoodService' => $classMetrics,
+                $classSymbolSubject->toCanonical() => $classMetrics,
             ],
         );
 

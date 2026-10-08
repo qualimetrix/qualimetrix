@@ -21,6 +21,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceMetricProviderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
@@ -29,6 +30,45 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 #[CoversClass(MeasurementAggregationService::class)]
 final class MeasurementAggregationServiceTest extends TestCase
 {
+    #[Test]
+    public function itPublishesEveryDirectPopulationLevelAndRetainsProviderMetadataInTheCatalog(): void
+    {
+        $provider = self::createStubForIntersectionOfInterfaces([
+            MetricCollectorInterface::class,
+            NamespaceMetricProviderInterface::class,
+        ]);
+        $provider->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('size.fixture', SymbolLevel::File, directPublicationLevels: [SymbolLevel::Project]),
+        ]);
+        $service = new MeasurementAggregationService(
+            [],
+            new CompositeCollector([$provider], new DeclarationRegistrarFactory()),
+            self::createStub(ProfilerInterface::class),
+        );
+        $byName = [];
+        foreach ($service->all() as $definition) {
+            $byName[$definition->name] = $definition;
+        }
+
+        self::assertSame(
+            [SymbolLevel::File, SymbolLevel::Project, SymbolLevel::Namespace_],
+            $byName['size.fixture']->publicationLevels(),
+        );
+        self::assertTrue($byName['size.fixture']->namespaceFileContribution);
+        self::assertSame(
+            [SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project],
+            $byName[MetricName::SIZE_SYMBOL_METHOD_COUNT]->publicationLevels(),
+        );
+        self::assertSame(
+            [SymbolLevel::Namespace_, SymbolLevel::Project],
+            $byName[MetricName::SIZE_SYMBOL_CLASS_COUNT]->publicationLevels(),
+        );
+        self::assertSame(
+            [SymbolLevel::Project],
+            $byName[MetricName::SIZE_SYMBOL_DECLARING_NAMESPACE_COUNT]->publicationLevels(),
+        );
+    }
+
     #[Test]
     public function itPreservesAggregationGlobalAndReaggregationSpansAndLogOrder(): void
     {
@@ -151,6 +191,12 @@ final class MeasurementAggregationServiceTest extends TestCase
         self::assertSame([], $namespaceTree->getAllNamespaces());
         self::assertSame([
             'start:aggregation',
+            'start:aggregation.to_namespaces',
+            'stop:aggregation.to_namespaces',
+            'start:aggregation.namespace_hierarchy',
+            'stop:aggregation.namespace_hierarchy',
+            'start:aggregation.to_project',
+            'stop:aggregation.to_project',
             'stop:aggregation',
             'start:global',
             'stop:global',

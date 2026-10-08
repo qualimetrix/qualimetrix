@@ -75,7 +75,7 @@ final class LcomRuleTest extends TestCase
         $rule = new LcomRule(new LcomOptions(enabled: false));
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('allDeclarations');
+        $repository->expects(self::never())->method('allClassDeclarations');
 
         $context = new AnalysisContext($repository);
 
@@ -88,7 +88,7 @@ final class LcomRuleTest extends TestCase
         $rule = new LcomRule(new LcomOptions());
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -111,9 +111,9 @@ final class LcomRuleTest extends TestCase
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -143,9 +143,9 @@ final class LcomRuleTest extends TestCase
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -168,9 +168,9 @@ final class LcomRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('cohesion.lcom', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -191,9 +191,9 @@ final class LcomRuleTest extends TestCase
         $metricBag = new MetricBag();
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -210,8 +210,8 @@ final class LcomRuleTest extends TestCase
         self::assertNotNull($subject);
         $contextFor = static function (MetricBag $bag, array $overrides = []) use ($classInfo): AnalysisContext {
             $repository = self::createStub(MetricRepositoryInterface::class);
-            $repository->method('allDeclarations')->willReturn([$classInfo]);
-            $repository->method('get')->willReturn($bag);
+            $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+            $repository->method('getSubject')->willReturn($bag);
 
             return new AnalysisContext($repository, thresholdOverrides: $overrides);
         };
@@ -292,9 +292,9 @@ final class LcomRuleTest extends TestCase
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -401,11 +401,11 @@ final class LcomRuleTest extends TestCase
     {
         $class = SymbolPath::forClass('App\\Service', 'Twin');
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([
+        $repository->method('allClassDeclarations')->willReturn([
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn(
+        $repository->method('getSubject')->willReturn(
             (new MetricBag())->with('cohesion.lcom', 4)->with('size.method-count', 5)->with('design.is-readonly', 0),
         );
 
@@ -425,7 +425,7 @@ final class LcomRuleTest extends TestCase
     public function itReportsDistinctUnmatchedExclusionsOnlyForWholeProjectMethodFacts(): void
     {
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([]);
+        $repository->method('allClassDeclarations')->willReturn([]);
         $method = self::subjectInfo(SymbolPath::forMethod('App', 'Worker', 'bridge'), RelativePath::fromString('src/Worker.php'), 10);
         $function = self::subjectInfo(SymbolPath::forGlobalFunction('App', 'helper'), RelativePath::fromString('src/functions.php'), 10);
         $hookSubject = self::subjectInfo(SymbolPath::forMethod('App', 'Worker', 'hookOnly'), RelativePath::fromString('src/Worker.php'), 20);

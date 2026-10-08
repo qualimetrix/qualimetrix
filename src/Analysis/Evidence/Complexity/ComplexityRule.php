@@ -230,12 +230,12 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
 
         $findings = [];
 
-        foreach ($context->metrics->allDeclarations() as $classInfo) {
+        foreach ($context->metrics->allClassDeclarations() as $classInfo) {
             $subject = $classInfo->subject ?? throw new LogicException('Cyclomatic complexity class findings require an exact declaration subject');
             if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
                 continue;
             }
-            $metrics = $context->metrics->get($subject->toSymbolPath());
+            $metrics = $context->metrics->getSubject($subject);
             $maxCcn = $metrics->get(MetricName::agg(MetricName::COMPLEXITY_CCN, AggregationStrategy::Max));
 
             if ($maxCcn === null) {

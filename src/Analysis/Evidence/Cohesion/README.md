@@ -47,7 +47,11 @@ graph or its academic calculation.
 
 `LcomCollector` provides `cohesion.lcom`; `TccLccCollector` provides `cohesion.tcc` and `cohesion.lcc`.
 They retain their collector names, metric keys, class-level aggregation
-definitions, visitor reset semantics, and anonymous-class exclusion.
+definitions, visitor reset semantics, and anonymous-class exclusion. Each named
+class declaration retains its own calculation data, even when the same name
+appears twice in one file. The shared stack keeps physical declaration identity
+separate from the name used to interpret member references. Nested anonymous
+classes cannot change an enclosing declaration's facts.
 
 `cohesion.lcom` is the stable rule ID — its `cohesion` family, and so the
 heading `qmx rules` lists it under, is now read off that name rather than

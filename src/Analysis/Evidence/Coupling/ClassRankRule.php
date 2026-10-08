@@ -60,7 +60,7 @@ final class ClassRankRule extends AbstractRule
         }
 
         // Collect all classes first — we need the count for threshold scaling
-        $classes = iterator_to_array($context->metrics->all(SymbolLevel::Class_), false);
+        $classes = iterator_to_array($context->metrics->allLogicalClasses(), false);
         $classCount = \count($classes);
 
         if ($classCount === 0) {
@@ -76,7 +76,7 @@ final class ClassRankRule extends AbstractRule
 
         $findings = [];
 
-        foreach ($context->metrics->allDeclarations() as $classInfo) {
+        foreach ($context->metrics->allClassDeclarations() as $classInfo) {
             $finding = $this->findingForClass($classInfo, $context, $scaleFactor, $classCount);
             if ($finding !== null) {
                 $findings[] = $finding;
@@ -97,12 +97,12 @@ final class ClassRankRule extends AbstractRule
             return null;
         }
 
-        $classRank = $context->metrics->get($subject->toSymbolPath())->get(MetricName::COUPLING_CLASS_RANK);
+        $classRank = $context->metrics->getSubject($subject)->get(MetricName::COUPLING_CLASS_RANK);
         if ($classRank === null) {
             return null;
         }
 
-        $dependents = (int) $context->metrics->get($subject->toSymbolPath())->require(MetricName::COUPLING_CA);
+        $dependents = (int) $context->metrics->getSubject($subject)->require(MetricName::COUPLING_CA);
         if ($dependents === 0) {
             return null;
         }

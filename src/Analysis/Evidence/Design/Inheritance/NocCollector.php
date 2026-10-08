@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Design\Inheritance;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassKeyScope;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
@@ -68,6 +69,7 @@ final class NocCollector implements GlobalContextCollectorInterface
             new MetricDefinition(
                 name: MetricName::DESIGN_NOC,
                 collectedAt: SymbolLevel::Class_,
+                classKeyScope: ClassKeyScope::LogicalName,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [
                         AggregationStrategy::Sum,
@@ -96,25 +98,29 @@ final class NocCollector implements GlobalContextCollectorInterface
             $parentPath = $children['symbolPath'];
 
             // Skip classes not in the repository (e.g. vendor classes)
-            if (!$repository->has($parentPath)) {
+            if (!$repository->hasSubject(\Qualimetrix\Core\Symbol\MetricSubject::logicalClass(new \Qualimetrix\Core\Symbol\LogicalClassPath($parentPath)))) {
                 continue;
             }
 
             $noc = \count($children['children']);
 
-            $repository->addScalar($parentPath, MetricName::DESIGN_NOC, $noc);
+            $repository->addSubjectScalar(\Qualimetrix\Core\Symbol\MetricSubject::logicalClass(new \Qualimetrix\Core\Symbol\LogicalClassPath($parentPath)), MetricName::DESIGN_NOC, $noc);
         }
 
         // Step 3: every measured class without children gets NOC = 0
-        foreach ($repository->all(SymbolLevel::Class_) as $classSymbol) {
-            if (!$repository->has($classSymbol->symbolPath)) {
+        foreach ($repository->allClassDeclarations() as $classSymbol) {
+            if ($classSymbol->subject === null || !$repository->hasSubject($classSymbol->subject)) {
                 continue;
             }
 
-            $metrics = $repository->get($classSymbol->symbolPath);
+            $metrics = $repository->getSubject($classSymbol->subject);
 
             if ($metrics->has(MetricName::DESIGN_DIT) && !$metrics->has(MetricName::DESIGN_NOC)) {
-                $repository->addScalar($classSymbol->symbolPath, MetricName::DESIGN_NOC, 0);
+                $repository->addSubjectScalar(
+                    \Qualimetrix\Core\Symbol\MetricSubject::logicalClass(new \Qualimetrix\Core\Symbol\LogicalClassPath($classSymbol->symbolPath)),
+                    MetricName::DESIGN_NOC,
+                    0,
+                );
             }
         }
     }

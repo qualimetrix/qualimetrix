@@ -13,6 +13,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassExclusionCheck;
 use Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassOptions;
 use Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassRule;
+use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationHelper;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountCollector;
@@ -20,6 +22,7 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\FileDeclarationIndex;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * Drives the rule from PHP source rather than from a hand-written metric bag.
@@ -265,11 +268,14 @@ final class DataClassDetectionTest extends TestCase
         $traverser->addVisitor($collector->getVisitor());
         $traverser->traverse($ast);
 
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            ...AggregationHelper::collectDefinitions([$collector]),
+            new MetricDefinition(MetricName::COMPLEXITY_WMC, SymbolLevel::Class_),
+        ]);
 
         foreach ($collector->getClassesWithMetrics(RelativePath::fromString('src/Subject.php')) as $class) {
-            // WMC is the rule's other axis; it is aggregated from callable CCN
-            // in Measurement, which this collector-only stand does not run.
+            // This fixture supplies the rule's WMC gate independently of its
+            // MethodCount collector.
             $repository->addSubject(
                 $class->subject,
                 $class->metrics->with(MetricName::COMPLEXITY_WMC, $wmc),

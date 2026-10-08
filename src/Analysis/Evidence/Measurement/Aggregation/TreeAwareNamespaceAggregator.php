@@ -8,8 +8,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
-use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -95,21 +93,9 @@ final class TreeAwareNamespaceAggregator implements AggregationPhaseInterface
             );
             $bag = AggregationHelper::addSymbolCounts($bag, $allSymbolInfos);
 
-            $firstFile = $this->findFirstFile($allSymbolInfos);
             $parentPath = SymbolPath::forNamespace($parentNs);
-            $repository->add($parentPath, $bag, $firstFile, null);
+            $repository->add($parentPath, $bag, null, null);
         }
     }
 
-    /**
-     * @param list<SymbolInfo> $symbolInfos
-     */
-    private function findFirstFile(array $symbolInfos): ?RelativePath
-    {
-        foreach ($symbolInfos as $info) {
-            return $info->file;
-        }
-
-        return null;
-    }
 }

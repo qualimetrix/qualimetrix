@@ -39,9 +39,9 @@ final class ClassRankResolverTest extends TestCase
         $classMetrics = (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.05);
 
         $metrics = self::createStub(MetricRepositoryInterface::class);
-        $metrics->method('get')->willReturnCallback(
-            static function (SymbolPath $sp) use ($classMetrics): MetricBag {
-                if ($sp->toCanonical() === 'class:App\Service\UserService') {
+        $metrics->method('getSubject')->willReturnCallback(
+            static function ($subject) use ($classMetrics): MetricBag {
+                if ($subject->toSymbolPath()->toCanonical() === 'class:App\Service\UserService') {
                     return $classMetrics;
                 }
 
@@ -63,9 +63,9 @@ final class ClassRankResolverTest extends TestCase
         $classMetrics = (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.12);
 
         $metrics = self::createStub(MetricRepositoryInterface::class);
-        $metrics->method('get')->willReturnCallback(
-            static function (SymbolPath $sp) use ($classMetrics): MetricBag {
-                if ($sp->toCanonical() === 'class:App\Service\UserService') {
+        $metrics->method('getSubject')->willReturnCallback(
+            static function ($subject) use ($classMetrics): MetricBag {
+                if ($subject->toSymbolPath()->toCanonical() === 'class:App\Service\UserService') {
                     return $classMetrics;
                 }
 
@@ -88,15 +88,15 @@ final class ClassRankResolverTest extends TestCase
 
         $metrics->method('getNamespaces')->willReturn(['App\Service']);
 
-        $metrics->method('all')->willReturn([
-            new SymbolInfo(SymbolPath::forClass('App\Service', 'UserService'), RelativePath::fromString('src/UserService.php'), 1),
-            new SymbolInfo(SymbolPath::forClass('App\Service', 'OrderService'), RelativePath::fromString('src/OrderService.php'), 1),
-            new SymbolInfo(SymbolPath::forClass('App\Service', 'LogService'), RelativePath::fromString('src/LogService.php'), 1),
+        $metrics->method('allClassDeclarations')->willReturn([
+            $this->classInfo(SymbolPath::forClass('App\Service', 'UserService'), RelativePath::fromString('src/UserService.php'), 1),
+            $this->classInfo(SymbolPath::forClass('App\Service', 'OrderService'), RelativePath::fromString('src/OrderService.php'), 1),
+            $this->classInfo(SymbolPath::forClass('App\Service', 'LogService'), RelativePath::fromString('src/LogService.php'), 1),
         ]);
 
-        $metrics->method('get')->willReturnCallback(
-            static function (SymbolPath $sp): MetricBag {
-                return match ($sp->toCanonical()) {
+        $metrics->method('getSubject')->willReturnCallback(
+            static function ($subject): MetricBag {
+                return match ($subject->toSymbolPath()->toCanonical()) {
                     'class:App\Service\UserService' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.01),
                     'class:App\Service\OrderService' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.05),
                     'class:App\Service\LogService' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.03),
@@ -118,14 +118,14 @@ final class ClassRankResolverTest extends TestCase
 
         $metrics->method('getNamespaces')->willReturn(['App\Service', 'App\Service\Sub']);
 
-        $metrics->method('all')->willReturn([
-            new SymbolInfo(SymbolPath::forClass('App\Service', 'UserService'), RelativePath::fromString('src/UserService.php'), 1),
-            new SymbolInfo(SymbolPath::forClass('App\Service\Sub', 'DeepService'), RelativePath::fromString('src/Sub/DeepService.php'), 1),
+        $metrics->method('allClassDeclarations')->willReturn([
+            $this->classInfo(SymbolPath::forClass('App\Service', 'UserService'), RelativePath::fromString('src/UserService.php'), 1),
+            $this->classInfo(SymbolPath::forClass('App\Service\Sub', 'DeepService'), RelativePath::fromString('src/Sub/DeepService.php'), 1),
         ]);
 
-        $metrics->method('get')->willReturnCallback(
-            static function (SymbolPath $sp): MetricBag {
-                return match ($sp->toCanonical()) {
+        $metrics->method('getSubject')->willReturnCallback(
+            static function ($subject): MetricBag {
+                return match ($subject->toSymbolPath()->toCanonical()) {
                     'class:App\Service\UserService' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.02),
                     'class:App\Service\Sub\DeepService' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.08),
                     default => new MetricBag(),
@@ -146,15 +146,15 @@ final class ClassRankResolverTest extends TestCase
 
         $metrics->method('getNamespaces')->willReturn(['App']);
 
-        $metrics->method('all')->willReturn([
-            new SymbolInfo(SymbolPath::forClass('App', 'ClassA'), RelativePath::fromString('src/target.php'), 1),
-            new SymbolInfo(SymbolPath::forClass('App', 'ClassB'), RelativePath::fromString('src/target.php'), 20),
-            new SymbolInfo(SymbolPath::forClass('App', 'ClassC'), RelativePath::fromString('src/other.php'), 1),
+        $metrics->method('allClassDeclarations')->willReturn([
+            $this->classInfo(SymbolPath::forClass('App', 'ClassA'), RelativePath::fromString('src/target.php'), 1),
+            $this->classInfo(SymbolPath::forClass('App', 'ClassB'), RelativePath::fromString('src/target.php'), 20),
+            $this->classInfo(SymbolPath::forClass('App', 'ClassC'), RelativePath::fromString('src/other.php'), 1),
         ]);
 
-        $metrics->method('get')->willReturnCallback(
-            static function (SymbolPath $sp): MetricBag {
-                return match ($sp->toCanonical()) {
+        $metrics->method('getSubject')->willReturnCallback(
+            static function ($subject): MetricBag {
+                return match ($subject->toSymbolPath()->toCanonical()) {
                     'class:App\ClassA' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.01),
                     'class:App\ClassB' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.07),
                     'class:App\ClassC' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.99),
@@ -180,14 +180,14 @@ final class ClassRankResolverTest extends TestCase
         $metrics = self::createStub(MetricRepositoryInterface::class);
 
         $metrics->method('getNamespaces')->willReturn(['App']);
-        $metrics->method('all')->willReturn([
+        $metrics->method('allClassDeclarations')->willReturn([
             // File present — should land in the file index.
-            new SymbolInfo(SymbolPath::forClass('App', 'WithFile'), RelativePath::fromString('src/WithFile.php'), 1),
+            $this->classInfo(SymbolPath::forClass('App', 'WithFile'), RelativePath::fromString('src/WithFile.php'), 1),
             // File absent — must NOT poison the file index with a phantom entry.
-            new SymbolInfo(SymbolPath::forClass('App', 'WithoutFile'), null, 0),
+            $this->classInfo(SymbolPath::forClass('App', 'WithoutFile'), null, 0),
         ]);
-        $metrics->method('get')->willReturnCallback(
-            static fn(SymbolPath $sp): MetricBag => match ($sp->toCanonical()) {
+        $metrics->method('getSubject')->willReturnCallback(
+            static fn($subject): MetricBag => match ($subject->toSymbolPath()->toCanonical()) {
                 'class:App\WithFile' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.05),
                 'class:App\WithoutFile' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.99),
                 default => new MetricBag(),
@@ -220,7 +220,7 @@ final class ClassRankResolverTest extends TestCase
     public function itReturnsNullWhenTheSubjectHasNoClassRankMetric(): void
     {
         $metrics = self::createStub(MetricRepositoryInterface::class);
-        $metrics->method('get')->willReturn(new MetricBag());
+        $metrics->method('getSubject')->willReturn(new MetricBag());
 
         $finding = $this->createFinding(
             SymbolPath::forClass('App\Service', 'UserService'),
@@ -263,7 +263,7 @@ final class ClassRankResolverTest extends TestCase
         $metrics = self::createStub(MetricRepositoryInterface::class);
 
         // Test NAN
-        $metrics->method('get')->willReturn($nanMetrics);
+        $metrics->method('getSubject')->willReturn($nanMetrics);
 
         $finding = $this->createFinding(
             SymbolPath::forClass('App', 'NanClass'),
@@ -274,7 +274,7 @@ final class ClassRankResolverTest extends TestCase
 
         // Test INF with a fresh mock
         $metricsInf = self::createStub(MetricRepositoryInterface::class);
-        $metricsInf->method('get')->willReturn($infMetrics);
+        $metricsInf->method('getSubject')->willReturn($infMetrics);
 
         $findingInf = $this->createFinding(
             SymbolPath::forClass('App', 'InfClass'),
@@ -301,4 +301,15 @@ final class ClassRankResolverTest extends TestCase
             severity: Severity::Warning,
         );
     }
+    private function classInfo(SymbolPath $path, ?RelativePath $file, int $line): SymbolInfo
+    {
+        $identityFile = $file ?? RelativePath::fromString('src/WithoutFile.php');
+
+        return new SymbolInfo(MetricSubject::declaration(DeclarationPath::of(
+            $path,
+            $identityFile,
+            DeclarationOrdinal::fromRank(0),
+        )), $file, $line);
+    }
+
 }

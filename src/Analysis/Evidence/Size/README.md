@@ -331,7 +331,7 @@ contracts rather than these implementations.
 
 Rule IDs remain stable. `MethodCountCollector` publishes the method/property
 metrics and the WOC input consumed by design policy, while WMC remains the
-Measurement aggregation of callable CCN.
+Complexity-owned sum of method CCN on each exact class declaration.
 
 `design.woc` follows Lanza & Marinescu: functional public methods — neither accessor
 nor constructor — over all other public members, which are public methods
@@ -363,6 +363,10 @@ Size/
 └── PropertyCountRule.php
 ```
 
+LOC classifies physical lines using native PHP tokens: punctuation beside a
+comment still makes a code line. Namespace file contributions retain integer
+totals and contributing-file counts through subtree aggregation.
+
 Collectors keep visitor state per file and reset it between files. Named classes
 only are counted; anonymous classes never create class, method, or property
 evidence.
@@ -379,7 +383,7 @@ anonymous classes, methods, properties, thresholds, and property exclusions.
   role-based subdirectory.
 - `size.class-count`, `size.method-count`, and `size.property-count` and their
   metric keys retain their existing behaviour. `design.woc` is the Lanza & Marinescu
-  ratio described above; WMC stays the Measurement aggregation of callable CCN.
+  ratio described above; WMC stays the Complexity-owned sum of method CCN on each exact class declaration.
 - The seven owned tests remain discovered and cover anonymous-class exclusion,
   LOC, statement, method, property, and class counts.
 

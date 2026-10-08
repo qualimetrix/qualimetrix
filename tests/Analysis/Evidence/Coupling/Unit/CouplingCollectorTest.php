@@ -28,8 +28,10 @@ use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 
@@ -69,6 +71,12 @@ final class CouplingCollectorTest extends TestCase
         $definitions = $this->collector->getMetricDefinitions();
 
         self::assertCount(11, $definitions);
+        foreach (\array_slice($definitions, 0, 4) as $baseGraphDefinition) {
+            self::assertSame([SymbolLevel::Class_, SymbolLevel::Namespace_], $baseGraphDefinition->publicationLevels());
+        }
+        foreach (\array_slice($definitions, 7, 4) as $ownDefinition) {
+            self::assertSame([SymbolLevel::Namespace_], $ownDefinition->publicationLevels());
+        }
 
         // ca metric
         $ca = $definitions[0];
@@ -188,13 +196,13 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Foo');
 
         $this->collector->calculate($graph, $repository);
 
         $fooPath = SymbolPath::forClass('App', 'Foo');
-        $fooMetrics = $repository->get($fooPath);
+        $fooMetrics = $this->metricView($repository, $fooPath);
 
         self::assertSame(0, $fooMetrics->get('coupling.ca'));
         self::assertSame(2, $fooMetrics->get('coupling.ce'));
@@ -212,7 +220,7 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Foo');
         $this->registerClass($repository, 'App\\Baz');
         $this->registerClass($repository, 'App\\Bar');
@@ -220,7 +228,7 @@ final class CouplingCollectorTest extends TestCase
         $this->collector->calculate($graph, $repository);
 
         $barPath = SymbolPath::forClass('App', 'Bar');
-        $barMetrics = $repository->get($barPath);
+        $barMetrics = $this->metricView($repository, $barPath);
 
         self::assertSame(2, $barMetrics->get('coupling.ca'));
         self::assertSame(0, $barMetrics->get('coupling.ce'));
@@ -240,14 +248,14 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Controller');
         $this->registerClass($repository, 'App\\Service');
 
         $this->collector->calculate($graph, $repository);
 
         $servicePath = SymbolPath::forClass('App', 'Service');
-        $serviceMetrics = $repository->get($servicePath);
+        $serviceMetrics = $this->metricView($repository, $servicePath);
 
         self::assertSame(1, $serviceMetrics->get('coupling.ca'));
         self::assertSame(2, $serviceMetrics->get('coupling.ce'));
@@ -265,7 +273,7 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Foo');
         $this->registerClass($repository, 'App\\Baz');
         $this->registerNamespace($repository, 'App');
@@ -273,7 +281,7 @@ final class CouplingCollectorTest extends TestCase
         $this->collector->calculate($graph, $repository);
 
         $appNsPath = SymbolPath::forNamespace('App');
-        $appNsMetrics = $repository->get($appNsPath);
+        $appNsMetrics = $this->metricView($repository, $appNsPath);
 
         self::assertSame(0, $appNsMetrics->get('coupling.ca'));
         self::assertSame(2, $appNsMetrics->get('coupling.ce'));
@@ -290,7 +298,7 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Foo');
         $this->registerClass($repository, 'App\\Bar');
 
@@ -298,7 +306,7 @@ final class CouplingCollectorTest extends TestCase
 
         // Bar only appears as target, so Ce = 0
         $barPath = SymbolPath::forClass('App', 'Bar');
-        $barMetrics = $repository->get($barPath);
+        $barMetrics = $this->metricView($repository, $barPath);
 
         self::assertSame(1, $barMetrics->get('coupling.ca'));
         self::assertSame(0, $barMetrics->get('coupling.ce'));
@@ -310,19 +318,19 @@ final class CouplingCollectorTest extends TestCase
     {
         $isolated = new LogicalClassPath(SymbolPath::forClass('App\\Isolated', 'Standalone'));
         $graph = $this->graph([], [$isolated]);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Isolated\\Standalone');
         $this->registerNamespace($repository, 'App\\Isolated');
 
         $this->collector->calculate($graph, $repository);
 
-        $classMetrics = $repository->get(SymbolPath::forClass('App\\Isolated', 'Standalone'));
+        $classMetrics = $this->metricView($repository, SymbolPath::forClass('App\\Isolated', 'Standalone'));
         self::assertSame(0, $classMetrics->get('coupling.ca'));
         self::assertSame(0, $classMetrics->get('coupling.ce'));
         self::assertSame(0, $classMetrics->get('coupling.cbo'));
         self::assertSame(0.0, $classMetrics->get('coupling.instability'));
 
-        $namespaceMetrics = $repository->get(SymbolPath::forNamespace('App\\Isolated'));
+        $namespaceMetrics = $this->metricView($repository, SymbolPath::forNamespace('App\\Isolated'));
         self::assertSame(0, $namespaceMetrics->get('coupling.ca'));
         self::assertSame(0, $namespaceMetrics->get('coupling.ce'));
         self::assertSame(0, $namespaceMetrics->get('coupling.cbo'));
@@ -349,12 +357,12 @@ final class CouplingCollectorTest extends TestCase
             ),
         ];
         $graph = $this->graph($dependencies);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Consumer');
 
         $this->collector->calculate($graph, $repository);
 
-        $metrics = $repository->get($source);
+        $metrics = $this->metricView($repository, $source);
         self::assertSame(1, $metrics->get('coupling.ce'));
         self::assertSame(1, $metrics->get('coupling.cbo'));
         self::assertSame(1, $metrics->get('coupling.cbo-app'));
@@ -369,14 +377,14 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'GlobalClass');
 
         $this->collector->calculate($graph, $repository);
 
         // Global class should be registered with empty namespace
         $globalPath = SymbolPath::forClass('', 'GlobalClass');
-        $metrics = $repository->get($globalPath);
+        $metrics = $this->metricView($repository, $globalPath);
 
         self::assertSame(0, $metrics->get('coupling.ca'));
         self::assertSame(1, $metrics->get('coupling.ce'));
@@ -397,14 +405,14 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Controller');
         $this->registerClass($repository, 'App\\Service');
 
         $this->collector->calculate($graph, $repository);
 
         $servicePath = SymbolPath::forClass('App', 'Service');
-        $serviceMetrics = $repository->get($servicePath);
+        $serviceMetrics = $this->metricView($repository, $servicePath);
 
         self::assertSame(1, $serviceMetrics->get('coupling.ca'));
         self::assertSame(2, $serviceMetrics->get('coupling.ce'));
@@ -423,14 +431,14 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\A');
         $this->registerClass($repository, 'App\\B');
 
         $this->collector->calculate($graph, $repository);
 
         $aPath = SymbolPath::forClass('App', 'A');
-        $aMetrics = $repository->get($aPath);
+        $aMetrics = $this->metricView($repository, $aPath);
 
         self::assertSame(1, $aMetrics->get('coupling.ca'));
         self::assertSame(1, $aMetrics->get('coupling.ce'));
@@ -438,7 +446,7 @@ final class CouplingCollectorTest extends TestCase
         self::assertSame(1, $aMetrics->get('coupling.cbo'));
 
         $bPath = SymbolPath::forClass('App', 'B');
-        $bMetrics = $repository->get($bPath);
+        $bMetrics = $this->metricView($repository, $bPath);
 
         self::assertSame(1, $bMetrics->get('coupling.ca'));
         self::assertSame(1, $bMetrics->get('coupling.ce'));
@@ -454,7 +462,7 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Foo');
         $this->registerClass($repository, 'App\\Bar');
 
@@ -462,7 +470,7 @@ final class CouplingCollectorTest extends TestCase
 
         // Test Bar which only has incoming dependency
         $barPath = SymbolPath::forClass('App', 'Bar');
-        $barMetrics = $repository->get($barPath);
+        $barMetrics = $this->metricView($repository, $barPath);
 
         self::assertSame(1, $barMetrics->get('coupling.ca'));
         self::assertSame(0, $barMetrics->get('coupling.ce'));
@@ -487,7 +495,7 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\A');
         $this->registerClass($repository, 'App\\B');
         $this->registerClass($repository, 'App\\C');
@@ -496,7 +504,7 @@ final class CouplingCollectorTest extends TestCase
         $this->collector->calculate($graph, $repository);
 
         $servicePath = SymbolPath::forClass('App', 'Service');
-        $serviceMetrics = $repository->get($servicePath);
+        $serviceMetrics = $this->metricView($repository, $servicePath);
 
         self::assertSame(3, $serviceMetrics->get('coupling.ca'));
         self::assertSame(4, $serviceMetrics->get('coupling.ce'));
@@ -514,7 +522,7 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Foo');
         $this->registerClass($repository, 'App\\Baz');
         $this->registerNamespace($repository, 'App');
@@ -522,7 +530,7 @@ final class CouplingCollectorTest extends TestCase
         $this->collector->calculate($graph, $repository);
 
         $appNsPath = SymbolPath::forNamespace('App');
-        $appNsMetrics = $repository->get($appNsPath);
+        $appNsMetrics = $this->metricView($repository, $appNsPath);
 
         self::assertSame(0, $appNsMetrics->get('coupling.ca'));
         self::assertSame(2, $appNsMetrics->get('coupling.ce'));
@@ -542,7 +550,7 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'A\\Foo');
         $this->registerClass($repository, 'A\\Qux');
         $this->registerClass($repository, 'B\\Bar');
@@ -553,7 +561,7 @@ final class CouplingCollectorTest extends TestCase
         $this->collector->calculate($graph, $repository);
 
         $aNsPath = SymbolPath::forNamespace('A');
-        $aNsMetrics = $repository->get($aNsPath);
+        $aNsMetrics = $this->metricView($repository, $aNsPath);
 
         self::assertSame(1, $aNsMetrics->get('coupling.ca'));
         self::assertSame(1, $aNsMetrics->get('coupling.ce'));
@@ -561,7 +569,7 @@ final class CouplingCollectorTest extends TestCase
         self::assertSame(1, $aNsMetrics->get('coupling.cbo'));
 
         $bNsPath = SymbolPath::forNamespace('B');
-        $bNsMetrics = $repository->get($bNsPath);
+        $bNsMetrics = $this->metricView($repository, $bNsPath);
 
         self::assertSame(1, $bNsMetrics->get('coupling.ca'));
         self::assertSame(1, $bNsMetrics->get('coupling.ce'));
@@ -587,7 +595,7 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->realGraph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         foreach (['App\\A\\X', 'App\\B\\Y', 'App\\Foo', 'Ext\\P'] as $class) {
             $this->registerClass($repository, $class);
         }
@@ -597,16 +605,16 @@ final class CouplingCollectorTest extends TestCase
 
         $this->collector->calculate($graph, $repository);
 
-        $app = $repository->get(SymbolPath::forNamespace('App'));
+        $app = $this->metricView($repository, SymbolPath::forNamespace('App'));
         self::assertSame(2, $app->get('coupling.ce'));
         self::assertSame(1, $app->get('coupling.ca'));
         // Ext (both directions) and Ext2; App\A is inside App, not coupled to it.
         self::assertSame(2, $app->get('coupling.cbo'));
 
         // A leaf keeps its own answer: Ext out, and App, where App\Foo lives, in.
-        self::assertSame(2, $repository->get(SymbolPath::forNamespace('App\\A'))->get('coupling.cbo'));
+        self::assertSame(2, $this->metricView($repository, SymbolPath::forNamespace('App\\A'))->get('coupling.cbo'));
         // Ext2 out, Ext in: one namespace each way.
-        self::assertSame(2, $repository->get(SymbolPath::forNamespace('App\\B'))->get('coupling.cbo'));
+        self::assertSame(2, $this->metricView($repository, SymbolPath::forNamespace('App\\B'))->get('coupling.cbo'));
     }
 
     /**
@@ -625,7 +633,7 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->realGraph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         foreach (['App\\MyErr', 'App\\Rand', 'App\\Child'] as $class) {
             $this->registerClass($repository, $class);
         }
@@ -634,18 +642,18 @@ final class CouplingCollectorTest extends TestCase
         $this->collector->calculate($graph, $repository);
 
         foreach (['App\\MyErr', 'App\\Rand'] as $class) {
-            $metrics = $repository->get(SymbolPath::fromClassFqn($class));
+            $metrics = $this->metricView($repository, SymbolPath::fromClassFqn($class));
             foreach (['coupling.ce', 'coupling.cbo', 'coupling.cbo-app', 'coupling.ce-packages'] as $key) {
                 self::assertSame(0, $metrics->get($key), $class . ' ' . $key);
             }
         }
 
         // The neighbour: extending a vendor class is coupling.
-        $child = $repository->get(SymbolPath::fromClassFqn('App\\Child'));
+        $child = $this->metricView($repository, SymbolPath::fromClassFqn('App\\Child'));
         self::assertSame(1, $child->get('coupling.ce'));
         self::assertSame(1, $child->get('coupling.cbo'));
 
-        $namespace = $repository->get(SymbolPath::forNamespace('App'));
+        $namespace = $this->metricView($repository, SymbolPath::forNamespace('App'));
         self::assertSame(1, $namespace->get('coupling.ce'));
         self::assertSame(1, $namespace->get('coupling.cbo'));
     }
@@ -669,9 +677,9 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->realGraph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         foreach ($graph->getAllClasses() as $class) {
-            $repository->add($class, new MetricBag(), RelativePath::fromString('test.php'), 1);
+            $repository->addSubject(MetricSubject::declaration(DeclarationPath::of($class, RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0))), new MetricBag(), RelativePath::fromString('test.php'), 1);
         }
         foreach ($graph->getAllNamespaces() as $namespace) {
             $repository->add($namespace, new MetricBag(), RelativePath::fromString('test.php'), null);
@@ -680,7 +688,7 @@ final class CouplingCollectorTest extends TestCase
         $this->collector->calculate($graph, $repository);
 
         foreach ($graph->getAllNamespaces() as $namespace) {
-            $metrics = $repository->get($namespace);
+            $metrics = $this->metricView($repository, $namespace);
             $classes = (int) $metrics->get('coupling.ca') + (int) $metrics->get('coupling.ce');
             $cbo = (int) $metrics->get('coupling.cbo');
 
@@ -706,14 +714,14 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->realGraph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'A\\Z');
         $this->registerClass($repository, 'A\\B\\X');
         $this->registerNamespace($repository, 'A');
         $this->registerNamespace($repository, 'A\\B');
 
         $this->collector->calculate($graph, $repository);
-        $metrics = $repository->get(SymbolPath::forNamespace('A'));
+        $metrics = $this->metricView($repository, SymbolPath::forNamespace('A'));
 
         self::assertSame(2, $metrics->get('coupling.ce'));
         self::assertSame(1, $metrics->get('coupling.ca'));
@@ -741,7 +749,7 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->realGraph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Svc\\S');
         $this->registerClass($repository, 'App\\Svc\\Exception\\Oops');
         foreach (['App', 'App\\Svc', 'App\\Svc\\Exception'] as $namespace) {
@@ -750,13 +758,13 @@ final class CouplingCollectorTest extends TestCase
 
         $this->collector->calculate($graph, $repository);
 
-        $svc = $repository->get(SymbolPath::forNamespace('App\\Svc'));
+        $svc = $this->metricView($repository, SymbolPath::forNamespace('App\\Svc'));
         // Subtree: Ext and Ext2; the sub-namespace is inside.
         self::assertSame(2, $svc->get('coupling.cbo'));
         // Own: Ext and the sub-namespace; Ext2 is the sub-namespace's.
         self::assertSame(2, $svc->get('coupling.cbo-own'));
-        self::assertSame(2, $repository->get(SymbolPath::forNamespace('App\\Svc\\Exception'))->get('coupling.cbo-own'));
-        self::assertNull($repository->get(SymbolPath::forNamespace('App'))->get('coupling.cbo-own'));
+        self::assertSame(2, $this->metricView($repository, SymbolPath::forNamespace('App\\Svc\\Exception'))->get('coupling.cbo-own'));
+        self::assertNull($this->metricView($repository, SymbolPath::forNamespace('App'))->get('coupling.cbo-own'));
     }
 
     /**
@@ -773,13 +781,13 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->realGraph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Svc\\S');
         $this->registerNamespace($repository, 'App\\Svc');
 
         $this->collector->calculate($graph, $repository);
 
-        $svc = $repository->get(SymbolPath::forNamespace('App\\Svc'));
+        $svc = $this->metricView($repository, SymbolPath::forNamespace('App\\Svc'));
         self::assertSame(2, $svc->get('coupling.cbo-own'));
     }
 
@@ -797,13 +805,13 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->realGraph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'A\\Foo');
         $this->registerClass($repository, 'A\\Qux');
         $this->registerNamespace($repository, 'A');
 
         $this->collector->calculate($graph, $repository);
-        $metrics = $repository->get(SymbolPath::forNamespace('A'));
+        $metrics = $this->metricView($repository, SymbolPath::forNamespace('A'));
 
         self::assertSame($metrics->get('coupling.ce'), $metrics->get('coupling.ce-own'));
         self::assertSame($metrics->get('coupling.ca'), $metrics->get('coupling.ca-own'));
@@ -820,7 +828,7 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Foo');
 
         $this->collector->calculate($graph, $repository);
@@ -828,7 +836,7 @@ final class CouplingCollectorTest extends TestCase
         // Vendor\Bar must NOT be added to the repository
         $vendorPath = SymbolPath::forClass('Vendor', 'Bar');
         self::assertFalse(
-            $repository->has($vendorPath),
+            $repository->hasSubject(MetricSubject::logicalClass(new LogicalClassPath($vendorPath))),
             'Global collectors must not create symbols for external classes (see GlobalContextCollectorInterface::calculate() contract)',
         );
     }
@@ -841,7 +849,7 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Foo');
         $this->registerNamespace($repository, 'App');
 
@@ -868,13 +876,13 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Foo');
 
         $this->collector->calculate($graph, $repository);
 
         $fooPath = SymbolPath::forClass('App', 'Foo');
-        $fooMetrics = $repository->get($fooPath);
+        $fooMetrics = $this->metricView($repository, $fooPath);
 
         self::assertSame(3, $fooMetrics->get('coupling.ce-packages'));
     }
@@ -890,13 +898,13 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Service\\Foo');
 
         $this->collector->calculate($graph, $repository);
 
         $fooPath = SymbolPath::forClass('App\\Service', 'Foo');
-        $fooMetrics = $repository->get($fooPath);
+        $fooMetrics = $this->metricView($repository, $fooPath);
 
         self::assertSame(1, $fooMetrics->get('coupling.ce-packages'));
     }
@@ -911,7 +919,7 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Service\\Foo');
         $this->registerClass($repository, 'App\\Repository\\Bar');
         $this->registerClass($repository, 'App\\Model\\Baz');
@@ -919,7 +927,7 @@ final class CouplingCollectorTest extends TestCase
         $this->collector->calculate($graph, $repository);
 
         $fooPath = SymbolPath::forClass('App\\Service', 'Foo');
-        $fooMetrics = $repository->get($fooPath);
+        $fooMetrics = $this->metricView($repository, $fooPath);
 
         self::assertSame(0, $fooMetrics->get('coupling.ce-packages'));
     }
@@ -933,14 +941,14 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Foo');
         $this->registerClass($repository, 'App\\Bar');
 
         $this->collector->calculate($graph, $repository);
 
         $barPath = SymbolPath::forClass('App', 'Bar');
-        $barMetrics = $repository->get($barPath);
+        $barMetrics = $this->metricView($repository, $barPath);
 
         self::assertSame(0, $barMetrics->get('coupling.ce-packages'));
     }
@@ -962,7 +970,7 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Service');
         $this->registerClass($repository, 'App\\Repository');
         $this->registerClass($repository, 'App\\Controller');
@@ -970,7 +978,7 @@ final class CouplingCollectorTest extends TestCase
         $collector->calculate($graph, $repository);
 
         $servicePath = SymbolPath::forClass('App', 'Service');
-        $serviceMetrics = $repository->get($servicePath);
+        $serviceMetrics = $this->metricView($repository, $servicePath);
 
         // CBO = |{Symfony\Console, PhpParser\Node, App\Repository, App\Controller}| = 4
         self::assertSame(4, $serviceMetrics->get('coupling.cbo'));
@@ -990,14 +998,14 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Service');
         $this->registerClass($repository, 'App\\Repository');
 
         $this->collector->calculate($graph, $repository);
 
         $servicePath = SymbolPath::forClass('App', 'Service');
-        $serviceMetrics = $repository->get($servicePath);
+        $serviceMetrics = $this->metricView($repository, $servicePath);
 
         // When no framework namespaces configured, CBO_APP = CBO
         self::assertSame($serviceMetrics->get('coupling.cbo'), $serviceMetrics->get('coupling.cbo-app'));
@@ -1018,14 +1026,14 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Service');
         $this->registerClass($repository, 'App\\Repository');
 
         $collector->calculate($graph, $repository);
 
         $servicePath = SymbolPath::forClass('App', 'Service');
-        $serviceMetrics = $repository->get($servicePath);
+        $serviceMetrics = $this->metricView($repository, $servicePath);
 
         self::assertSame(3, $serviceMetrics->get('coupling.ce-framework'));
     }
@@ -1042,13 +1050,13 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Service');
 
         $collector->calculate($graph, $repository);
 
         $servicePath = SymbolPath::forClass('App', 'Service');
-        $serviceMetrics = $repository->get($servicePath);
+        $serviceMetrics = $this->metricView($repository, $servicePath);
 
         // CBO = 2 (both deps), CBO_APP = 1 (only PsrExtended), CE_FRAMEWORK = 1 (only Psr\Log)
         self::assertSame(2, $serviceMetrics->get('coupling.cbo'));
@@ -1070,7 +1078,7 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Service');
         $this->registerClass($repository, 'App\\Repository');
         $this->registerClass($repository, 'App\\Model');
@@ -1078,7 +1086,7 @@ final class CouplingCollectorTest extends TestCase
         $collector->calculate($graph, $repository);
 
         $servicePath = SymbolPath::forClass('App', 'Service');
-        $serviceMetrics = $repository->get($servicePath);
+        $serviceMetrics = $this->metricView($repository, $servicePath);
 
         $ce = $serviceMetrics->get('coupling.ce');
         $ceFramework = $serviceMetrics->get('coupling.ce-framework');
@@ -1101,14 +1109,14 @@ final class CouplingCollectorTest extends TestCase
         ];
 
         $graph = $this->graph($deps);
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
         $this->registerClass($repository, 'App\\Service');
         $this->registerClass($repository, 'App\\Other');
 
         $collector->calculate($graph, $repository);
 
         $servicePath = SymbolPath::forClass('App', 'Service');
-        $serviceMetrics = $repository->get($servicePath);
+        $serviceMetrics = $this->metricView($repository, $servicePath);
 
         // CBO = |{Symfony\Console, App\Other}| = 2
         self::assertSame(2, $serviceMetrics->get('coupling.cbo'));
@@ -1174,7 +1182,7 @@ final class CouplingCollectorTest extends TestCase
 
     private function registerClass(InMemoryMetricRepository $repository, string $fqn): void
     {
-        $repository->add(SymbolPath::fromClassFqn($fqn), new MetricBag(), RelativePath::fromString('test.php'), 1);
+        $repository->addSubject(MetricSubject::declaration(DeclarationPath::of(SymbolPath::fromClassFqn($fqn), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0))), new MetricBag(), RelativePath::fromString('test.php'), 1);
     }
 
     private function registerNamespace(InMemoryMetricRepository $repository, string $namespace): void
@@ -1201,4 +1209,11 @@ final class CouplingCollectorTest extends TestCase
             $contributions,
         ), AbsolutePath::fromString('/project'), new CouplingSection());
     }
+    private function metricView(InMemoryMetricRepository $repository, SymbolPath $path): MetricBag
+    {
+        return $path->getType() === SymbolType::Class_
+            ? $repository->getSubject(MetricSubject::logicalClass(new LogicalClassPath($path)))
+            : $repository->get($path);
+    }
+
 }

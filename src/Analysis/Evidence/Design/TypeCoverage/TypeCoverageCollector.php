@@ -74,7 +74,11 @@ final class TypeCoverageCollector extends AbstractCollector implements ClassMetr
 
         \assert($this->visitor instanceof TypeCoverageVisitor);
 
-        foreach ($this->visitor->getClassTypeInfo() as $fqn => $info) {
+        foreach ($this->visitor->getClassTypeInfo() as $position => $info) {
+            $class = $this->visitor->getClassInfos()[$position];
+            $fqn = $class['namespace'] !== null && $class['namespace'] !== ''
+                ? $class['namespace'] . '\\' . $class['class']
+                : $class['class'];
             $bag = $bag
                 ->with(MetricName::DESIGN_TYPE_COVERAGE_PARAM_TOTAL . ':' . $fqn, $info['paramTotal'])
                 ->with(MetricName::DESIGN_TYPE_COVERAGE_PARAM_TYPED . ':' . $fqn, $info['paramTyped'])

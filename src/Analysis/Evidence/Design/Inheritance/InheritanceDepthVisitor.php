@@ -26,9 +26,9 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterfac
 final class InheritanceDepthVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
 {
     /**
-     * Map of class FQN => InheritanceClassInfo.
+     * Map of physical class position => InheritanceClassInfo.
      *
-     * @var array<string, InheritanceClassInfo>
+     * @var array<int, InheritanceClassInfo>
      */
     private array $classInfo = [];
 
@@ -49,7 +49,7 @@ final class InheritanceDepthVisitor extends NodeVisitorAbstract implements Reset
     }
 
     /**
-     * @return array<string, InheritanceClassInfo>
+     * @return array<int, InheritanceClassInfo>
      */
     public function getClassInfo(): array
     {
@@ -62,7 +62,10 @@ final class InheritanceDepthVisitor extends NodeVisitorAbstract implements Reset
     public function getClassParents(): array
     {
         $result = [];
-        foreach ($this->classInfo as $fqn => $info) {
+        foreach ($this->classInfo as $info) {
+            $fqn = $info->namespace !== null && $info->namespace !== ''
+                ? $info->namespace . '\\' . $info->className
+                : $info->className;
             $result[$fqn] = $info->parentFqn;
         }
 
@@ -108,14 +111,13 @@ final class InheritanceDepthVisitor extends NodeVisitorAbstract implements Reset
         // Track class inheritance
         if ($node instanceof Class_ && $node->name !== null) {
             $className = $node->name->toString();
-            $classFqn = $this->buildFqn($className);
 
             $parentFqn = null;
             if ($node->extends !== null) {
                 $parentFqn = $this->resolveClassName($node->extends);
             }
 
-            $this->classInfo[$classFqn] = new InheritanceClassInfo(
+            $this->classInfo[$node->getStartFilePos()] = new InheritanceClassInfo(
                 namespace: $this->currentNamespace,
                 className: $className,
                 line: $node->getStartLine(),
@@ -181,12 +183,4 @@ final class InheritanceDepthVisitor extends NodeVisitorAbstract implements Reset
         return $className;
     }
 
-    private function buildFqn(string $className): string
-    {
-        if ($this->currentNamespace !== null && $this->currentNamespace !== '') {
-            return $this->currentNamespace . '\\' . $className;
-        }
-
-        return $className;
-    }
 }
