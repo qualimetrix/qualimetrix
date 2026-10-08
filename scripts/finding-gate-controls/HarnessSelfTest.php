@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace QmxFindingGateControls;
 
+use QmxFindingGate\DeclaredRecords;
 use QmxFindingGate\GateReport;
 use QmxFindingGate\Tsv;
 use ReflectionClass;
@@ -170,6 +171,37 @@ final class HarnessSelfTest
             $this->same([...$originalTuple->fields, 'probe'], $mutatedTuple->fields, 'the shared added-member mutation reaches the actual finding record');
             $this->same([...$originalTuple->sources, \QmxFindingGate\EquivalenceTuple::source()], $mutatedTuple->sources, 'the added member retains the finding record producer');
             $this->same($originalSource, Shell::read($repository . '/' . $sourcePath), 'the shared mutation leaves the original publisher intact');
+
+            $recordIndex = 'finding-gate/' . DeclaredRecords::INDEX;
+            $recordDerived = 'finding-gate/' . DeclaredRecords::DERIVED;
+            $originalRecordIndex = Shell::read($repository . '/' . $recordIndex);
+            $pairedRecord = '{"channel":"self-test.paired"}';
+            $pairedIntent = ['introduced', 'self-test-case', 'json', 'format:json', $pairedRecord, 'A private measured record.'];
+            $pairedIntentText = Tsv::render(DeclaredRecords::COLUMNS, [$pairedIntent]);
+            $pairedDerivedText = Tsv::render(DeclaredRecords::DERIVED_COLUMNS, [
+                ['introduced', 'self-test-case', 'json', 'format:json', $pairedRecord],
+            ]);
+            Shell::replace($scratch->path($recordIndex), $pairedIntentText);
+            Shell::replace($scratch->path($recordDerived), $pairedDerivedText);
+            $idleMutation = RecordControls::idleSelector()->mutation;
+            $idleMutation->apply($scratch, $repository);
+            $records = DeclaredRecords::load($scratch->path('finding-gate'));
+            $this->same(2, $records->count(), 'the idle selector keeps the measured intent and adds only one new intent');
+            $this->same($pairedIntent, array_values($records->intents('json', 'format:json')[0]), 'the measured record retains its original intent');
+            $this->same($pairedDerivedText, $records->derivedText(), 'the existing derived measurement keeps its bytes');
+            $this->same($pairedIntentText, substr(Shell::read($scratch->path($recordIndex)), 0, \strlen($pairedIntentText)), 'the original intent rows keep their bytes');
+            $this->same(true, $records->claim('introduced', 'self-test-case', 'json', 'format:json', $pairedRecord), 'the existing measured record is still claimable');
+            $stale = $records->staleIntents();
+            $this->same(1, \count($stale), 'only the newly added selector remains stale');
+            $this->same(DeclaredRecords::INDEX, $stale[0]['scope'] ?? null, 'the idle selector is stale in the record index');
+            $this->same(true, str_contains($stale[0]['detail'] ?? '', 'nothing.published'), 'the stale selector is the planted one');
+
+            Shell::replace($scratch->path($recordIndex), Tsv::render(DeclaredRecords::COLUMNS, []));
+            Shell::replace($scratch->path($recordDerived), Tsv::render(DeclaredRecords::DERIVED_COLUMNS, []));
+            $idleMutation->apply($scratch, $repository);
+            $this->same(1, DeclaredRecords::load($scratch->path('finding-gate'))->count(), 'the header-only index gains exactly one idle selector');
+            $this->same($originalRecordIndex, Shell::read($repository . '/' . $recordIndex), 'the original record index retains its bytes');
+
             $orphan = $scratch->path('finding-gate/declared-outcomes');
             if (!is_dir($orphan)) {
                 mkdir($orphan);
