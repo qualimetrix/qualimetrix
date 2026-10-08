@@ -720,6 +720,11 @@ executed history. Its three output inventories are excluded from occurrence
 counts: otherwise a new metric counts its own newly written row on the next
 run. All three inventories still have freshness consumers.
 
+The optional JSON diagnostic report replaces unrepresentable source bytes with
+U+FFFD through PHP's native JSON encoder. This is display-only: captured bytes,
+comparison verdicts, declaration measurements and the raw text diagnostic retain
+the original bytes. The JSON diagnostic is not a reversible source identity.
+
 ## What GREEN does not prove
 
 Each limit needs its own product or delivery check:

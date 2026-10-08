@@ -330,7 +330,7 @@ final class GateReport
             ...$this->declarationCounts(),
         ];
 
-        Fs::write($path, json_encode($payload, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n");
+        Fs::write($path, json_encode($payload, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_INVALID_UTF8_SUBSTITUTE | \JSON_THROW_ON_ERROR) . "\n");
     }
 
     /** @return array<string, int> every declaration count, zero where none was declared */

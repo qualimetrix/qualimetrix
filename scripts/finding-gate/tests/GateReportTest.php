@@ -44,6 +44,31 @@ final class GateReportTest extends TestCase
     }
 
     #[Test]
+    public function itPublishesRedDiagnosticsForInvalidSourceBytesWithoutChangingTheComparison(): void
+    {
+        $report = new GateReport();
+        $detail = 'The reference contains K' . \chr(255) . '.';
+        $report->fail('surface-mismatch', 'case:bytes|format:json', $detail, ['- K' . \chr(254)]);
+        $path = Fs::temporaryDirectory('gate-report-byte-test-') . '/report.json';
+
+        try {
+            $report->writeJson($path);
+            $published = json_decode(Fs::read($path), true, 512, \JSON_THROW_ON_ERROR);
+        } finally {
+            Fs::removeRecursively(\dirname($path));
+        }
+
+        self::assertIsArray($published);
+        self::assertFalse($published['green']);
+        self::assertSame(1, $published['exitCode']);
+        self::assertSame(['surface-mismatch'], $published['failureClasses']);
+        self::assertSame('The reference contains K�.', $published['failures'][0]['detail']);
+        self::assertSame(['- K�'], $published['failures'][0]['diff']);
+        self::assertStringContainsString($detail, $report->render());
+        self::assertStringContainsString('- K' . \chr(254), $report->render());
+    }
+
+    #[Test]
     public function itRefusesACountNoFormPublishes(): void
     {
         $this->expectException(GateError::class);
