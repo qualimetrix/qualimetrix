@@ -571,6 +571,8 @@ final class Harness
             $child = Shell::start(
                 [
                     \PHP_BINARY,
+                    '-d',
+                    'memory_limit=1G',
                     $scratch->path('scripts/finding-gate.php'),
                     '--candidate=' . $scratch->tree,
                     '--reference=' . $this->reference,

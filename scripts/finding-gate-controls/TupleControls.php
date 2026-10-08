@@ -47,7 +47,7 @@ final class TupleControls
     private static function addedMember(): Mutation
     {
         return Mutation::edit(
-            'src/Reporting/Formatter/Json/JsonFindingSection.php',
+            'src/Reporting/Formatter/FindingRecord.php',
             ["            'baselineReason' => \$baseline['baselineReason'],\n        ];" => "            'baselineReason' => \$baseline['baselineReason'],\n            'probe' => 1,\n        ];"],
             'the published finding receives an extra observed member',
         );

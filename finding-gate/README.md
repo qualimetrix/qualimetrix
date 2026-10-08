@@ -684,6 +684,10 @@ changing those constructors also updates the channel probe.
 
 ## Execution, controls and independent checks
 
+The Composer gate and each gate child launched by the controls harness use an
+explicit 1G PHP memory limit. The controls harness passes this limit to the
+child PHP process before the gate script.
+
 The reference tree uses the candidate's installed dependencies. Before artifact
 comparison, the gate compares both `composer.lock` documents through PHP's native
 JSON decoder. Only the top-level `content-hash`, which tracks root

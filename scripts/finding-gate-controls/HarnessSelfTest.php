@@ -161,6 +161,15 @@ final class HarnessSelfTest
             $dirtyProduct = $originalProduct . "\n// A private working-tree variation.\n";
             Shell::replace($scratch->path($productPath), $dirtyProduct);
             $this->same(true, $hasPermissions->invoke($harness), 'the inherited transition is present before preparation');
+            $sourcePath = 'src/Reporting/Formatter/FindingRecord.php';
+            $originalSource = Shell::read($repository . '/' . $sourcePath);
+            $originalTuple = \QmxFindingGate\EquivalenceTuple::derive($repository);
+            $this->same(19, \count($originalTuple->fields), 'the existing finding record publishes nineteen fields');
+            TupleControls::publisherDrift()->mutation->apply($scratch, $repository);
+            $mutatedTuple = \QmxFindingGate\EquivalenceTuple::derive($scratch->tree);
+            $this->same([...$originalTuple->fields, 'probe'], $mutatedTuple->fields, 'the shared added-member mutation reaches the actual finding record');
+            $this->same([...$originalTuple->sources, \QmxFindingGate\EquivalenceTuple::source()], $mutatedTuple->sources, 'the added member retains the finding record producer');
+            $this->same($originalSource, Shell::read($repository . '/' . $sourcePath), 'the shared mutation leaves the original publisher intact');
             $orphan = $scratch->path('finding-gate/declared-outcomes');
             if (!is_dir($orphan)) {
                 mkdir($orphan);
@@ -326,6 +335,37 @@ final class HarnessSelfTest
         $this->same('first' . "\n", $result['stdout'], 'streamed stdout remains buffered once');
         $this->same('second' . "\n", $result['stderr'], 'streamed stderr remains buffered once');
         $this->same(7, $result['exit'], 'the child exit code survives streaming');
+
+        $repository = null;
+        $launched = null;
+        try {
+            $repository = self::throwawayRepository();
+            mkdir($repository . '/scripts');
+            Shell::replace($repository . '/scripts/finding-gate.php', "<?php echo ini_get('memory_limit'), \"\\n\";\n");
+            $harness = (new ReflectionClass(Harness::class))->newInstanceWithoutConstructor();
+            (new ReflectionProperty(Harness::class, 'repository'))->setValue($harness, $repository);
+            (new ReflectionProperty(Harness::class, 'reference'))->setValue($harness, 'HEAD');
+            $launched = (new ReflectionMethod(Harness::class, 'launch'))->invoke($harness, Control::green('budget-probe', 'child PHP budget'));
+            while (!$launched['child']->settled()) {
+                Shell::poll();
+            }
+            $budgetRun = $launched['child']->result();
+            $this->same(0, $budgetRun['exit'], 'the real gate child exits successfully');
+            $this->same("1G\n", $budgetRun['stdout'], 'the real gate child receives a 1G memory budget');
+            $this->same('', $budgetRun['stderr'], 'the real gate child has no diagnostic');
+        } catch (Throwable $error) {
+            $this->failures[] = 'the gate child memory budget (' . $error->getMessage() . ')';
+        } finally {
+            if ($launched !== null) {
+                if (!$launched['child']->settled()) {
+                    Shell::terminateAll();
+                }
+                $launched['scratch']->remove();
+            }
+            if ($repository !== null) {
+                Shell::removeRecursively($repository);
+            }
+        }
 
         $interruption = <<<'PHP'
             require $argv[1] . '/scripts/finding-gate-controls/Shell.php';
