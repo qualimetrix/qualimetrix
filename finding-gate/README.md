@@ -49,6 +49,11 @@ must have their model's exact header. Every authored reason must be nonempty
 and must not be `?`. A declaration that nothing consumes is a failure.
 
 The executable and comparator classes live in `scripts/finding-gate/`;
+`PublicationForms` classifies each captured case/view/side from its own bytes
+and process exit before record authority is read. A parsed native record
+population has form `records`; an error envelope or a non-analysis exit without
+that population has form `refusal`. A malformed successful publication fails
+its native decoder instead of acquiring either form.
 negative controls live in `scripts/finding-gate-controls/`. The shared loaders
 read a fixed set of subject-owned `wiring-*.php` files. Unknown files, unknown
 keys, duplicate registrations and unloaded checks are refused. The retired
@@ -360,10 +365,10 @@ selected reference must analyze: a refusal cannot witness a report's removal.
 Other formats and the excluded cases retain their ordinary comparisons.
 
 GitLab and Checkstyle refuse namespace and class selections on both trees.
-The capture validates their exit 3 and native partial-view refusal reason before
-checking finding projections; the complete stdout, stderr and exit remain
-compared. Another error, malformed envelope or ordinary invocation receives no
-refusal exemption.
+A separate product-semantic guard validates their exit 3, selector and native
+partial-view refusal reason. A reference refusal also cannot establish a
+declared publication withdrawal. These guards do not classify either refusal
+as a record population.
 
 Structural maps translate named paths in configuration documents. Their
 closed document and shape vocabularies live in `DeclaredStructuralMaps`;
@@ -528,6 +533,17 @@ Metrics, directives and suppressed findings retain their complete raw population
 baseline surfaces retain their complete canonical documents. Projections and
 invocation aliases use their actual complete finding source when judging a
 hidden semantic residual, even when their own visible bytes are unchanged.
+Record operations, erasure, comparative schema suppliers, projections and fingerprints
+apply only when both sides supply `records`. Every other pair retains the
+complete invocation's normalized stdout, stderr, file bytes and process exit.
+Baseline generation inherits a capture boundary: its main publication stores
+the generated file bytes in place of native stdout. Baseline comparisons retain
+those file bytes, stderr and exit, plus the JSON refusal for a declared outcome
+transition; they do not claim to compare native baseline-generation stdout.
+An unexplained change uses an exact surface intention for that invocation;
+the measured frame includes all those publications, so a neighbouring stderr
+or exit change cannot hide behind an unchanged stdout. Missing invocation
+artifacts are explicitly framed and cannot pass capture validity for derivation.
 Filtered JSON views use their own source. A finding source used to validate a
 baseline document is not part of that document's frame and cannot select its
 exact route by itself. Same-side source,
@@ -555,13 +571,19 @@ prerequisites when those schema changes apply. These validity checks do not
 extend the document's frame or make a finding-source residual select its exact
 route.
 
-Only a selected exact `baseline-file` with a declared outcome transition may
-frame a refusing side with empty captured baseline content. Capture records
+Every refusing baseline invocation must retain empty captured baseline content.
+Capture records
 bytes, so a missing file and an existing zero-byte file are indistinguishable
-here. A non-analysis `baseline:generate` exit, nonempty stderr and a validated
-JSON refusal are required; the exact frame retains the empty publication, exit,
-stderr and refusal. The analyzing side retains its complete document, finding
-authority and schema prerequisites. The G8 refusal snapshot still covers only
+here. A declared outcome transition additionally requires a non-analysis
+`baseline:generate` exit, nonempty stderr and a validated
+JSON refusal; the exact frame retains the empty publication, exit,
+stderr and refusal. In a mixed pair the analyzing baseline remains an opaque
+canonical document; it does not supply record operations or schema units.
+Before captures are supplied, the footprint describes prospective side-local
+obligations only. Existing field-publication provenance may retain an own-side
+parsed snapshot beside a refusing side; `FieldValuesCheck` does not compare,
+credit, derive or mark that snapshot as schema authority. A supply obligation
+is not a comparative licence. The G8 refusal snapshot still covers only
 `check` invocations.
 
 Declarations belong to a particular reference comparison. Retire consumed maps

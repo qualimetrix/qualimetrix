@@ -27,10 +27,12 @@ final class RecordStage implements SurfaceStage
      */
     public function countInputs(array $candidate, array $reference): array
     {
+        $this->run->publicationForms->supply('candidate', $candidate);
+        $this->run->publicationForms->supply('reference', $reference);
         foreach ($this->run->corpus->cases as $case) {
             $this->records->prepare($case->id);
             $key = 'case:' . $case->id . '|format:json';
-            if ($this->run->isExactSurface($key)) {
+            if ($this->run->isExactSurface($key) || $this->run->publicationForms->recordsPair($key) === false) {
                 continue;
             }
             foreach (['candidate', 'reference'] as $side) {
@@ -71,6 +73,9 @@ final class RecordStage implements SurfaceStage
         if (!str_starts_with($pair->key, 'case:') || $pair->candidate === null || $pair->reference === null) {
             return;
         }
+        if ($this->run->publicationForms->recordsPair($pair->key) === false) {
+            return;
+        }
         $case = substr($pair->key, 5, (int) strpos($pair->key, '|') - 5);
         $report = match ($pair->surface) {
             'format:json', 'check:baseline-source', 'check:output:file', 'check:parallel', 'check:baseline' => 'json',
@@ -84,11 +89,12 @@ final class RecordStage implements SurfaceStage
             'check:baseline' => 'check:baseline',
             default => $report === null ? 'format:json' : ReportViews::main($report),
         };
+        $sourceView = $pair->surface === 'baseline-file' ? $this->baselineView($case) : $view;
+        if ($this->run->publicationForms->recordsPair('case:' . $case . '|' . $sourceView) === false) {
+            return;
+        }
         $definition = $this->definition($case);
         foreach (['candidate', 'reference'] as $side) {
-            if ($this->run->report->sourceValid($side, $pair->key, 'refusal')) {
-                continue;
-            }
             $outcome = CaseOutcome::of($definition, $side);
             if (!CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, $outcome)
                 || ($pair->surface === 'baseline-file' && !CaseOutcome::applies(CaseOutcome::CHECK_BASELINE_FILE, $outcome))) {

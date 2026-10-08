@@ -24,6 +24,7 @@ final class RunContext
     public readonly BaselineEligibility $baselineEligibility;
 
     public readonly CapturePlan $capturePlan;
+    public readonly PublicationForms $publicationForms;
 
     /** @param array<string,string> $publicationCodecs */
     public function __construct(
@@ -41,6 +42,7 @@ final class RunContext
         $this->rankings = new RankingCaptures();
         $this->baselineEligibility = new BaselineEligibility();
         $this->capturePlan = CapturePlan::forCorpus($corpus, $declarations->surfaces);
+        $this->publicationForms = new PublicationForms($this->capturePlan, $report);
     }
 
     public function supplyPublicationTree(string $side, string $treeRoot): void

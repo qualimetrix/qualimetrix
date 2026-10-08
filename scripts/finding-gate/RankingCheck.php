@@ -52,12 +52,14 @@ final class RankingCheck implements CaseCheck
 
     public function checkCase(string $side, CaseDefinition $case, string $outcome, array $artifacts): void
     {
+        $this->run->publicationForms->supply($side, $artifacts);
         if (!CaseOutcome::applies($this->name(), $outcome)) {
             return;
         }
         foreach ($this->run->capturePlan->rankingInvocations() as $descriptor) {
             $key = Surfaces::key($descriptor['scope'], $descriptor['surface']);
-            if ($descriptor['scope'] === 'case:' . $case->id && $this->run->capturePlan->requiredOn($key, $side)) {
+            if ($descriptor['scope'] === 'case:' . $case->id && $this->run->capturePlan->requiredOn($key, $side)
+                && $this->run->publicationForms->recordsPair($key) !== false) {
                 $this->checkCaptureMetadata($side, $key, $artifacts);
             }
         }
@@ -80,6 +82,9 @@ final class RankingCheck implements CaseCheck
             foreach ($this->run->capturePlan->rankingInvocations() as $descriptor) {
                 $key = Surfaces::key($descriptor['scope'], $descriptor['surface']);
                 if ($descriptor['scope'] !== 'case:' . $case->id || !$this->run->capturePlan->requiredOn($key, 'candidate')) {
+                    continue;
+                }
+                if ($this->run->publicationForms->recordsPair($key) === false) {
                     continue;
                 }
                 if ($this->run->report->sourceRejected('candidate', $key, 'ranking')) {
@@ -419,7 +424,8 @@ final class RankingCheck implements CaseCheck
 
     public function supplyFields(string $case): void
     {
-        if ($this->run->declarations->fields->changes('json', 'ranking') === []) {
+        if ($this->run->declarations->fields->changes('json', 'ranking') === []
+            || $this->run->publicationForms->schemaPair($case, 'ranking') === false) {
             return;
         }
         foreach (['candidate', 'reference'] as $side) {

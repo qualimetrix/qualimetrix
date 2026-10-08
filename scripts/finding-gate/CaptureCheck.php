@@ -57,6 +57,8 @@ final class CaptureCheck implements SurfaceStage, RunCheck, Derivation
 
     public function checkRun(array $candidate, array $reference): void
     {
+        $this->run->publicationForms->supply('candidate', $candidate);
+        $this->run->publicationForms->supply('reference', $reference);
         foreach ($this->plan->invocations() as $descriptor) {
             $key = Surfaces::key($descriptor['scope'], $descriptor['surface']);
             $change = $this->plan->changeOf($key);
@@ -72,7 +74,11 @@ final class CaptureCheck implements SurfaceStage, RunCheck, Derivation
                         $this->publicationFailure($side . ' / ' . $artifact, 'A planned invocation omitted this publication.');
                     }
                 }
-                $refused = $case !== null && CapturePlan::partialViewRefusal($case, $descriptor['surface'], $artifacts);
+                $refused = $this->run->publicationForms->of($side, $key) === PublicationForms::REFUSAL;
+                if (($problem = $this->run->publicationForms->problem($side, $key)) !== null) {
+                    $valid = false;
+                    $this->publicationFailure($side . ' / ' . $key, $problem);
+                }
                 $analyzing = $case === null || CaseOutcome::of($case, $side) === CaseOutcome::ANALYSIS;
                 $file = $descriptor['outputFileKind'];
                 if ($analyzing && $file !== null && ($artifacts[Surfaces::key($descriptor['scope'], $file)] ?? '') === '') {
@@ -101,9 +107,9 @@ final class CaptureCheck implements SurfaceStage, RunCheck, Derivation
                     $valid = false;
                     $this->publicationFailure($side . ' / ' . $key, 'The process outcome cannot establish successful population for this command.');
                 }
-                if ($rawExit === '70') {
+                if (!ctype_digit($rawExit) || (int) $rawExit > 255 || $rawExit === '70') {
                     $valid = false;
-                    $this->publicationFailure($side . ' / ' . $key, 'An unknown replay invocation cannot establish successful population.');
+                    $this->publicationFailure($side . ' / ' . $key, 'An invalid process exit or unknown replay invocation cannot establish successful population.');
                 }
                 $this->run->report->sourceEvidence($side, $key, 'capture', $valid);
                 foreach ($this->plan->artifactsOf($key) as $artifact) {

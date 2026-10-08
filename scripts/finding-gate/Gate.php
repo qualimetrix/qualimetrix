@@ -245,6 +245,8 @@ final class Gate
                 return;
             }
             $referenceArtifacts = $referenceCapture->artifacts;
+            $this->context->publicationForms->supply('candidate', $first);
+            $this->context->publicationForms->supply('reference', $referenceArtifacts);
             $this->rankings->supply('candidate', $firstCapture->rankings);
             $this->rankings->supply('reference', $referenceCapture->rankings);
             $this->context->baselineEligibility->supply('candidate', $firstCapture->baselineEligibility);

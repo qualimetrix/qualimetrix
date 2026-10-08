@@ -75,6 +75,9 @@ final class SurfaceComparison
      */
     public function compareSurfaces(array $candidate, array $reference): void
     {
+        $forms = PublicationForms::forReport($this->report);
+        $forms?->supply('candidate', $candidate);
+        $forms?->supply('reference', $reference);
         $countCandidate = $candidate;
         $countReference = $reference;
         foreach ($this->registered['difference'] ?? [] as $stage) {
@@ -142,6 +145,10 @@ final class SurfaceComparison
     private function applyRegisteredStages(string $step, SurfacePair $pair): bool
     {
         foreach ($this->registered[$step] ?? [] as $stage) {
+            if (($stage instanceof RecordStage || $stage instanceof ValueStage)
+                && PublicationForms::forReport($this->report)?->recordInvocation($pair->key) === false) {
+                continue;
+            }
             $stage->applyStage($pair);
             if ($pair->settled) {
                 return true;
@@ -155,6 +162,10 @@ final class SurfaceComparison
      */
     private function trialStep(string $step, SurfacePair $pair, array $residualViews): ?array
     {
+        if (PublicationForms::forReport($this->report)?->recordInvocation($pair->key) === false
+            && \in_array($step, ['payload', 'published-order', 'fingerprints', 'reorder'], true)) {
+            return null;
+        }
         if ($step === 'difference') {
             $authorityResidual = false;
             foreach ($residualViews as $view) {
@@ -213,6 +224,10 @@ final class SurfaceComparison
 
     private function step(string $step, SurfacePair $pair): void
     {
+        if (PublicationForms::forReport($this->report)?->recordInvocation($pair->key) === false
+            && \in_array($step, ['payload', 'published-order', 'fingerprints', 'reorder'], true)) {
+            return;
+        }
         match ($step) {
             'presence' => $this->checkPresence($pair),
             'payload' => $this->extractPayload($pair),
@@ -403,6 +418,9 @@ final class SurfaceComparison
                 continue;
             }
             $key = Surfaces::key('case:' . $case->id, 'format:json');
+            if (PublicationForms::forReport($this->report)?->recordsPair($key) === false) {
+                continue;
+            }
             if ($this->exact?->selected($key) === true) {
                 continue;
             }

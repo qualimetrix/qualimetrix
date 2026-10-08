@@ -39,6 +39,78 @@ final class SurfaceComparisonTest extends TestCase
     private string $root;
 
     #[Test]
+    public function itClassifiesBothPublicationFormsBeforeReadingRecordAuthority(): void
+    {
+        $publications = [
+            ['directives', '{"directives":[],"exit_code":0}', 'directives'],
+            ['format:json', '{"violations":[],"topIssues":[]}', 'violations'],
+            ['format:json', '{"violations":[],"topIssues":[]}', 'topIssues'],
+            ['format:metrics', '{"symbols":[]}', 'symbols'],
+            ['format:suppressed', '{"suppressed":[]}', 'suppressed'],
+            ['baseline-file', '{"version":14,"entries":{}}', 'entries'],
+        ];
+        $maps = RenameMaps::load($this->root . '/finding-gate/maps', MetricVocabulary::ofTree($this->root));
+        foreach ($publications as [$view, $publication, $member]) {
+            foreach ([['records', 'refusal'], ['refusal', 'records'], ['refusal', 'refusal'], ['records', 'records']] as [$candidateForm, $referenceForm]) {
+                $run = new RunContext(
+                    Options::parse(['gate', '--candidate=' . $this->root, '--reference=HEAD'], $this->root),
+                    new GateReport(),
+                    Corpus::load($this->root),
+                    $maps,
+                    ChannelSplit::of($maps),
+                    MetricVocabulary::ofTree($this->root),
+                    Normalization::fromRules([]),
+                    \QmxFindingGate\Declarations::load($this->root),
+                    $this->root,
+                );
+                $key = 'case:alpha|' . $view;
+                $captures = [];
+                foreach (['candidate' => $candidateForm, 'reference' => $referenceForm] as $side => $form) {
+                    $text = $form === 'records' ? $publication : ($view === 'baseline-file' ? '' : '{"error":"Malformed UTF-8","exit_code":3}');
+                    $exit = $form === 'records' ? '0' : '3';
+                    $artifacts = [$key => $text, 'case:alpha|stderr:' . $view => $form === 'records' ? '' : "Refused input\n", 'case:alpha|exit:' . ($view === 'baseline-file' ? 'baseline:generate' : $view) => $exit];
+                    $slot = ['ranked' => ['stdout' => $text, 'stderr' => '', 'exit' => (int) $exit], 'physical' => null];
+                    $captures[$side] = new \QmxFindingGate\CaptureResult($artifacts, [$key => $slot]);
+                }
+                $label = $view . ' / ' . $member . ' / ' . $candidateForm . ' / ' . $referenceForm;
+                self::assertSame($candidateForm !== $referenceForm, ExactSurfaceAuthority::rawResidual($key, $captures, $run, \QmxFindingGate\RecordCheck::create($run)), $label);
+                if ($candidateForm === 'records' && $referenceForm === 'records') {
+                    continue;
+                }
+                $pair = new SurfacePair($key, $view, $captures['candidate']->artifacts[$key], $captures['reference']->artifacts[$key]);
+                [$candidate, $reference] = ExactSurfaceAuthority::pair($pair, $captures, $run);
+                $this->comparison($run->report, [\QmxFindingGate\RecordStage::create($run), \QmxFindingGate\ValueStage::create($run)])->compareSurfaces($captures['candidate']->artifacts, $captures['reference']->artifacts);
+                self::assertSame($candidateForm === $referenceForm ? [] : [FailureClass::SURFACE_MISMATCH], $run->report->failureClasses(), $label);
+                self::assertSame($candidateForm === $referenceForm, $candidate === $reference, $label);
+                self::assertStringContainsString('invocation-exit ', $candidate, $label);
+                self::assertStringContainsString('invocation-stderr ', $reference, $label);
+                self::assertSame([], ExactSurfaceAuthority::footprint($key, $run)['rawSources'], $label);
+                self::assertSame([], ExactSurfaceAuthority::footprint($key, $run)['schemas'], $label);
+                foreach (['stdout', 'stderr', 'exit'] as $changed) {
+                    $artifacts = $captures['reference']->artifacts;
+                    $changedKey = match ($changed) {
+                        'stdout' => $key,
+                        'stderr' => 'case:alpha|stderr:' . $view,
+                        default => 'case:alpha|exit:' . ($view === 'baseline-file' ? 'baseline:generate' : $view),
+                    };
+                    $artifacts[$changedKey] .= $changed === 'exit' ? '1' : " \n";
+                    $changedCapture = new \QmxFindingGate\CaptureResult($artifacts, []);
+                    if ($view === 'baseline-file' && (($changed === 'stdout' && $referenceForm === 'refusal') || ($changed === 'exit' && $referenceForm === 'records'))) {
+                        try {
+                            ExactSurfaceAuthority::pair($pair, ['candidate' => $captures['candidate'], 'reference' => $changedCapture], $run);
+                            self::fail('A nonempty refusing baseline publication was accepted.');
+                        } catch (GateError $error) {
+                            self::assertSame('A refusing baseline invocation must retain empty captured baseline content.', $error->getMessage(), $label);
+                        }
+                    } else {
+                        self::assertNotSame($reference, ExactSurfaceAuthority::pair($pair, ['candidate' => $captures['candidate'], 'reference' => $changedCapture], $run)[1], $label . ' / ' . $changed);
+                    }
+                }
+            }
+        }
+    }
+
+    #[Test]
     public function itComparesUnchangedPartialViewRefusalsWithoutInventingFindingPublications(): void
     {
         $tree = SyntheticTree::clean();

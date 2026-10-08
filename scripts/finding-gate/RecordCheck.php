@@ -75,12 +75,13 @@ final class RecordCheck implements CaseCheck, RunCheck
     /** @param array<string,string> $artifacts */
     public function checkCase(string $side, CaseDefinition $case, string $outcome, array $artifacts): void
     {
+        $this->run->publicationForms->supply($side, $artifacts);
         if (!CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, $outcome)) {
             return;
         }
         $scope = 'case:' . $case->id;
         foreach (ReportViews::forCase($case) as $surface => $report) {
-            if ($this->withdrawn($side, $case, $surface)) {
+            if (!$this->recordPublication($side, $case, $surface, $artifacts)) {
                 continue;
             }
             $key = $scope . '|' . $surface;
@@ -134,7 +135,7 @@ final class RecordCheck implements CaseCheck, RunCheck
         }
         $findings = $this->physical[$case->id]['format:json'][$side];
         foreach (['format:html', 'format:gitlab', 'format:sarif'] as $surface) {
-            if ($this->withdrawn($side, $case, $surface) || $this->refusal($side, $case, $surface, $artifacts)) {
+            if (!$this->recordPublication($side, $case, $surface, $artifacts)) {
                 continue;
             }
             $key = $scope . '|' . $surface;
@@ -184,7 +185,7 @@ final class RecordCheck implements CaseCheck, RunCheck
             }
         }
         $key = $scope . '|format:checkstyle';
-        if (isset($artifacts[$key]) && !$this->withdrawn($side, $case, 'format:checkstyle') && !$this->refusal($side, $case, 'format:checkstyle', $artifacts)) {
+        if (isset($artifacts[$key]) && $this->recordPublication($side, $case, 'format:checkstyle', $artifacts)) {
             try {
                 $actual = ReportRecords::checkstyle($this->mapped($side, 'format:checkstyle', $artifacts[$key]));
                 $expected = array_map(fn(array $record): array => ReportRecords::projection('format:checkstyle', $record, $this->run->publicationCodec($side)), $findings);
@@ -197,7 +198,7 @@ final class RecordCheck implements CaseCheck, RunCheck
             }
         }
         foreach (ProseRecords::SURFACES as $surface) {
-            if ($this->withdrawn($side, $case, $surface)) {
+            if (!$this->recordPublication($side, $case, $surface, $artifacts)) {
                 continue;
             }
             $key = $scope . '|' . $surface;
@@ -233,7 +234,7 @@ final class RecordCheck implements CaseCheck, RunCheck
         }
         $source = $case->baselineSource() === null ? 'format:json' : 'check:baseline-source';
         $key = $scope . '|baseline-file';
-        if (CaseOutcome::applies(CaseOutcome::CHECK_BASELINE_FILE, $outcome) && isset($artifacts[$key])) {
+        if (CaseOutcome::applies(CaseOutcome::CHECK_BASELINE_FILE, $outcome) && isset($artifacts[$key]) && $this->recordPublication($side, $case, 'baseline-file', $artifacts)) {
             try {
                 $sourceRecords = $this->physical[$case->id][$source][$side] ?? throw new GateError('The baseline source publication is unavailable.');
                 ReportRecords::baselineEntries($this->mapped($side, 'baseline-file', $artifacts[$key]), $sourceRecords);
@@ -245,6 +246,9 @@ final class RecordCheck implements CaseCheck, RunCheck
         foreach (['check:output:file', 'check:parallel'] as $surface) {
             $key = $scope . '|' . $surface;
             if (!isset($artifacts[$key])) {
+                continue;
+            }
+            if (!$this->recordPublication($side, $case, $surface, $artifacts)) {
                 continue;
             }
             try {
@@ -260,16 +264,48 @@ final class RecordCheck implements CaseCheck, RunCheck
     }
 
     /** @param array<string,string> $artifacts */
-    private function refusal(string $side, CaseDefinition $case, string $surface, array $artifacts): bool
+    private function recordPublication(string $side, CaseDefinition $case, string $surface, array $artifacts): bool
     {
-        $valid = CapturePlan::partialViewRefusal($case, $surface, $artifacts);
-        $this->run->report->sourceEvidence($side, 'case:' . $case->id . '|' . $surface, 'refusal', $valid);
-        return $valid;
+        $key = 'case:' . $case->id . '|' . $surface;
+        $problem = $this->run->publicationForms->problem($side, $key);
+        if ($problem !== null) {
+            $this->publicationProblem($side, $key, new GateError($problem));
+            return false;
+        }
+        $refused = $this->run->publicationForms->of($side, $key) === PublicationForms::REFUSAL;
+        if ($refused && $surface === 'baseline-file' && ($artifacts[$key] ?? null) !== '') {
+            $this->publicationProblem($side, $key, new GateError('A refusing baseline invocation must retain empty captured baseline content.'));
+        }
+        if ($refused && $side === 'reference'
+            && $this->run->declarations->surfaces->changeFor($surface, $case->id) === DeclaredSurfaces::WITHDRAWN) {
+            $this->publicationProblem($side, $key, new GateError('A reference refusal cannot establish withdrawal of a populated publication.'));
+        }
+        if ($refused && \in_array($surface, ['format:gitlab', 'format:checkstyle'], true)
+            && $this->run->declarations->surfaces->changeFor($surface, $case->id) !== DeclaredSurfaces::WITHDRAWN
+            && !CapturePlan::partialViewRefusal($case, $surface, $artifacts)) {
+            $this->publicationProblem($side, $key, new GateError('The partial-view refusal does not match this invocation selector and native diagnostic.'));
+        }
+        if (!$refused && $this->run->publicationForms->recordsPair($key) === false) {
+            $this->captureSchemaProvenance($side, $case->id, $surface, $artifacts[$key] ?? null);
+        }
+        return !$refused && $this->run->publicationForms->recordsPair($key) !== false;
     }
 
-    private function withdrawn(string $side, CaseDefinition $case, string $surface): bool
+    private function captureSchemaProvenance(string $side, string $case, string $view, ?string $text): void
     {
-        return $side === 'candidate' && $this->run->declarations->surfaces->changeFor($surface, $case->id) === DeclaredSurfaces::WITHDRAWN;
+        if ($text === null) {
+            return;
+        }
+        foreach ($this->run->declarations->fields->requiredPublications($case) as $obligation) {
+            $report = $obligation['report'];
+            if ($obligation['view'] !== $view || $obligation['side'] !== $side || $obligation['supplied']
+                || !isset(ReportViews::REPORTS[$report])) {
+                continue;
+            }
+            $snapshot = ReportRecords::extract($report, $text, $this->fields($report, $view, $side), $this->optionalSubject($report, $view));
+            $rows = array_map(static fn(array $record): array => ['record' => DeclaredRecords::canonical($record), 'fields' => $record], $snapshot);
+            $this->run->declarations->fields->supply($report, $case, $view, $side, $rows);
+        }
     }
 
     private function publicationProblem(string $side, string $key, GateError $error): void
@@ -327,6 +363,9 @@ final class RecordCheck implements CaseCheck, RunCheck
         }
         $this->ranking->supplyFields($case);
         foreach (ReportViews::forCase($definition) as $view => $report) {
+            if ($this->run->publicationForms->recordsPair('case:' . $case . '|' . $view) === false) {
+                continue;
+            }
             $candidate = $this->records[$case][$view]['candidate'] ?? null;
             $reference = $this->records[$case][$view]['reference'] ?? null;
             $left = $this->base($report, $view, $candidate ?? []);

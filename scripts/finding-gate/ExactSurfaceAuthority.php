@@ -12,6 +12,9 @@ final class ExactSurfaceAuthority
      */
     public static function pair(SurfacePair $pair, array $captures, RunContext $run): array
     {
+        foreach ($captures as $side => $capture) {
+            $run->publicationForms->supply($side, $capture->artifacts);
+        }
         return [
             self::one($pair, 'candidate', $captures['candidate'], $run),
             self::one($pair, 'reference', $captures['reference'], $run),
@@ -29,8 +32,21 @@ final class ExactSurfaceAuthority
     {
         $surface = Surfaces::surfaceClass($key);
         $case = str_starts_with($key, 'case:') ? substr($key, 5, (int) strpos($key, '|') - 5) : null;
-        $bearing = $case !== null && ReportViews::recordBearingSurface($surface)
-            && !($run->report->sourceValid('candidate', $key, 'refusal') && $run->report->sourceValid('reference', $key, 'refusal'));
+        if ($run->publicationForms->recordsPair($key) === false) {
+            $required = [];
+            foreach ($run->publicationForms->invocationArtifacts($key) as $artifact) {
+                foreach (['candidate', 'reference'] as $side) {
+                    foreach (['capture', 'surface', 'normalization', 'path'] as $role) {
+                        $required[] = ['side' => $side, 'key' => $artifact, 'role' => $role];
+                    }
+                    if ($side === 'candidate') {
+                        $required[] = ['side' => $side, 'key' => $artifact, 'role' => 'repeatable'];
+                    }
+                }
+            }
+            return ['rawSources' => [], 'residualViews' => [$key], 'required' => $required, 'schemas' => []];
+        }
+        $bearing = $case !== null && ReportViews::recordBearingSurface($surface);
         $refusalSides = [];
         if ($surface === 'baseline-file') {
             foreach (['candidate', 'reference'] as $side) {
@@ -137,6 +153,19 @@ final class ExactSurfaceAuthority
             throw new GateError('An exact surface has no complete visible publication: ' . $pair->key);
         }
         $framed = self::frame('visible', $visible);
+        if ($run->publicationForms->recordsPair($pair->key) === false) {
+            if ($pair->surface === 'baseline-file') {
+                if (self::declaredBaselineRefusal($pair->key, $side, $run)) {
+                    $framed .= self::baselineRefusalFrame($pair->key, $visible, $capture, $run);
+                } elseif ($run->publicationForms->of($side, $pair->key) === PublicationForms::REFUSAL
+                    && ($visible !== '' || ($capture->artifacts[$pair->key] ?? null) !== '')) {
+                    throw new GateError('A refusing baseline invocation must retain empty captured baseline content.');
+                } elseif ($visible !== '') {
+                    $framed .= self::frame('records', self::canonical($visible));
+                }
+            }
+            return $framed . self::invocationFrame($pair->key, $side, $capture, $run);
+        }
         if ($pair->surface === 'baseline-file' && self::declaredBaselineRefusal($pair->key, $side, $run)) {
             return $framed . self::baselineRefusalFrame($pair->key, $visible, $capture, $run);
         }
@@ -236,6 +265,16 @@ final class ExactSurfaceAuthority
     /** @param array{candidate:CaptureResult,reference:CaptureResult} $captures */
     public static function rawResidual(string $source, array $captures, RunContext $run, RecordCheck $records): bool
     {
+        foreach ($captures as $side => $capture) {
+            $run->publicationForms->supply($side, $capture->artifacts);
+        }
+        if ($run->publicationForms->recordsPair($source) === false) {
+            return self::invocationFrame($source, 'candidate', $captures['candidate'], $run)
+                !== self::invocationFrame($source, 'reference', $captures['reference'], $run);
+        }
+        if (Surfaces::surfaceClass($source) === 'baseline-file') {
+            return self::canonical($captures['candidate']->artifacts[$source]) !== self::canonical($captures['reference']->artifacts[$source]);
+        }
         $caseEnd = strpos($source, '|');
         if (!str_starts_with($source, 'case:') || $caseEnd === false) {
             throw new GateError('A raw authority source requires its exact case and view.');
@@ -679,6 +718,25 @@ final class ExactSurfaceAuthority
     private static function frame(string $name, string $bytes): string
     {
         return $name . ' ' . \strlen($bytes) . "\n" . $bytes . "\n";
+    }
+
+    private static function invocationFrame(string $key, string $side, CaptureResult $capture, RunContext $run): string
+    {
+        $frame = '';
+        foreach ($run->publicationForms->invocationArtifacts($key) as $artifact) {
+            $surface = Surfaces::surfaceClass($artifact);
+            $bytes = $capture->artifacts[$artifact] ?? null;
+            if ($bytes === null) {
+                $frame .= self::frame('missing-invocation-artifact', $artifact);
+                continue;
+            }
+            if ($side === 'reference') {
+                $bytes = $run->maps->forward($bytes, $surface);
+            }
+            $label = str_starts_with($surface, 'exit:') ? 'invocation-exit' : (str_starts_with($surface, 'stderr:') ? 'invocation-stderr' : 'invocation-' . $surface);
+            $frame .= self::frame($label, $run->normalization->normalize($surface, $bytes));
+        }
+        return $frame;
     }
 
     private static function canonical(string $raw): string

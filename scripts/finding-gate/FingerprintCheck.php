@@ -35,6 +35,9 @@ final class FingerprintCheck
 
     public function trialSubstitute(string $side, string $key, string $text): ?string
     {
+        if (PublicationForms::forReport($this->report)?->recordsPair($key) === false) {
+            return $text;
+        }
         if (Surfaces::surfaceClass($key) !== Fingerprints::OPAQUE_SURFACE) {
             return $text;
         }
@@ -53,11 +56,15 @@ final class FingerprintCheck
      */
     public function checkFingerprints(string $side, CaseDefinition $case, array $findings, array $artifacts): void
     {
-        $refused = CapturePlan::partialViewRefusal($case, 'format:gitlab', $artifacts);
+        $forms = PublicationForms::forReport($this->report);
+        $forms?->supply($side, $artifacts);
+        if ($forms?->recordsPair('case:' . $case->id . '|format:json') === false) {
+            return;
+        }
         $expected = Fingerprints::expected($findings);
         $scope = 'case:' . $case->id;
 
-        $sarif = $this->decodeFingerprintSurface(
+        $sarif = $forms?->recordsPair('case:' . $case->id . '|format:sarif') === false ? null : $this->decodeFingerprintSurface(
             $side,
             $case,
             $scope,
@@ -65,7 +72,7 @@ final class FingerprintCheck
             $artifacts,
             static fn(string $raw): array => Fingerprints::publishedInSarif($raw),
         );
-        $gitlab = $refused ? null : $this->decodeFingerprintSurface(
+        $gitlab = $forms?->recordsPair('case:' . $case->id . '|format:gitlab') === false ? null : $this->decodeFingerprintSurface(
             $side,
             $case,
             $scope,
@@ -91,11 +98,11 @@ final class FingerprintCheck
         ];
 
         foreach ($comparisons as $label => [$recomputed, $published]) {
-            if ($label === 'gitlab fingerprint' && $refused) {
-                continue;
-            }
             $surface = $label === 'sarif partialFingerprints' ? 'format:sarif' : 'format:gitlab';
             $key = Surfaces::key($scope, $surface);
+            if ($forms?->recordsPair($key) === false) {
+                continue;
+            }
             // A surface that failed to decode already reported RUN_FAILED
             // below and has nothing left to compare against — reporting a
             // mismatch on top would blame the finding identity for what is
@@ -194,6 +201,9 @@ final class FingerprintCheck
      */
     public function substituteFingerprints(string $side, string $key, string $text): string
     {
+        if (PublicationForms::forReport($this->report)?->recordsPair($key) === false) {
+            return $text;
+        }
         if (Surfaces::surfaceClass($key) !== Fingerprints::OPAQUE_SURFACE) {
             return $text;
         }

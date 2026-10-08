@@ -1594,6 +1594,9 @@ What changes for a configuration you already have:
 
 ### Fixed
 
+- `directives` no longer fails with "Malformed UTF-8" when analysed source
+  contains an invalid byte in an identifier; its audit publishes the repaired
+  display spelling while finding identities retain the source bytes.
 - External enums retain their implicit `UnitEnum` and `BackedEnum` interfaces
   when assigning architecture layers.
 - Layer member-attribute criteria no longer include attributes declared inside

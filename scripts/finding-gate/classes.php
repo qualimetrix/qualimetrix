@@ -47,6 +47,7 @@ foreach (
         'CaseOutcome',
         'Corpus',
         'CapturePlan',
+        'PublicationForms',
         'CaptureResult',
         'BaselineEligibility',
         'RankingCaptures',

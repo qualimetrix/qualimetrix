@@ -24,6 +24,9 @@ final class ExactSurfaceDeltaCheck implements Derivation
     public function plan(array $captures, RecordCheck $verifiedRecords, FingerprintCheck $verifiedFingerprints): void
     {
         $this->captures = $captures;
+        foreach ($captures as $side => $capture) {
+            $this->run->publicationForms->supply($side, $capture->artifacts);
+        }
         $intentions = $this->run->declarations->exactSurfaces->keys();
         if ($intentions === []) {
             return;
@@ -50,6 +53,7 @@ final class ExactSurfaceDeltaCheck implements Derivation
         ValueCheck::create($this->run)->trialCopy($trial);
         FieldValuesCheck::create($this->run)->trialCopy($trial);
         foreach ($captures as $side => $capture) {
+            $trial->publicationForms->supply($side, $capture->artifacts);
             $trial->rankings->supply($side, $capture->rankings);
             $trial->baselineEligibility->supply($side, $capture->baselineEligibility);
         }
@@ -78,6 +82,9 @@ final class ExactSurfaceDeltaCheck implements Derivation
             $footprint = ExactSurfaceAuthority::footprint($key, $this->run);
             $result = $comparison->trialSurface($key, $candidate, $reference, $footprint['residualViews']);
             $authorityResidual = $result['authorityResidual'];
+            if ($result['valid'] && $trial->publicationForms->recordsPair($key) === false) {
+                $authorityResidual = ExactSurfaceAuthority::rawResidual($key, $captures, $trial, $records);
+            }
             if ($result['valid'] && $footprint['rawSources'] !== []) {
                 $authorityResidual = false;
                 foreach ($footprint['rawSources'] as $source) {
