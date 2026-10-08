@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace QmxFindingGate;
 
 /**
- * Every failure class has a source producer and an observed whole-run witness.
+ * Active failure classes have source producers and observed whole-run witnesses.
  *
  * For classes with exact coverage, the unit is the raise site and its caller.
  * Those identities come from the gate's source ({@see RaiseSites}); a witness
@@ -14,8 +14,10 @@ namespace QmxFindingGate;
  * RUN_FAILED has a narrower class/side/scope witness claim: native publication
  * routing can make defensive helper sites unreachable in a whole run. Scoped
  * observations do not count as exact site or caller coverage. All other
- * classes retain the exact-site claim. Scheduled controls are not per-PR merge
- * evidence, while both gate self-tests remain part of `check:gate`.
+ * classes retain the exact-site claim. Retired native fingerprint classes stay
+ * in the helper vocabulary but have no native witness or exact-site credit.
+ * Scheduled controls are not per-PR merge evidence, while both gate self-tests
+ * remain part of `check:gate`.
  */
 final class WitnessRegistry
 {
@@ -27,10 +29,11 @@ final class WitnessRegistry
      * @param array<string, string> $sites identity => the class it raises; see {@see RaiseSites}
      * @param list<string> $observed the identities a self-test run was seen raising at
      * @param list<string>|null $scoped classes observed by class/side/scope; null keeps exact-site registry arithmetic
+     * @param list<string> $retired helper classes excluded from native whole-run witness authority
      *
      * @return list<string>
      */
-    public static function problems(array $classes, array $sites, array $observed, ?array $scoped = null): array
+    public static function problems(array $classes, array $sites, array $observed, ?array $scoped = null, array $retired = []): array
     {
         $problems = [];
 
@@ -38,6 +41,13 @@ final class WitnessRegistry
 
         foreach ($sites as $site => $class) {
             $raisedAt[$class][] = $site;
+
+            if (\in_array($class, $retired, true)) {
+                if (\in_array($site, $observed, true)) {
+                    $problems[] = \sprintf('witness registry: retired native class %s claims exact site %s.', $class, $site);
+                }
+                continue;
+            }
 
             if ($scoped !== null && \in_array($class, self::NARROWED_CLASSES, true)) {
                 continue;
@@ -54,6 +64,10 @@ final class WitnessRegistry
         }
 
         foreach ($classes as $class) {
+            if (\in_array($class, $retired, true)) {
+                continue;
+            }
+
             if (!isset($raisedAt[$class])) {
                 $problems[] = \sprintf(
                     'witness registry: %s is raised nowhere in the gate\'s source.',
@@ -68,6 +82,12 @@ final class WitnessRegistry
         foreach ($scoped ?? [] as $class) {
             if (!\in_array($class, self::NARROWED_CLASSES, true)) {
                 $problems[] = \sprintf('witness registry: %s is observed without an exact site but has no narrowed registry claim.', $class);
+            }
+        }
+
+        foreach ($retired as $class) {
+            if (!\in_array($class, $classes, true) || !isset($raisedAt[$class])) {
+                $problems[] = \sprintf('witness registry: retired native class %s has no retained helper producer and vocabulary entry.', $class);
             }
         }
 

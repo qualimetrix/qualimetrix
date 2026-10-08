@@ -50,23 +50,30 @@ and must not be `?`. A declaration that nothing consumes is a failure.
 
 The executable and comparator classes live in `scripts/finding-gate/`;
 `PublicationForms` classifies each captured case/view/side from its own bytes
-before record authority is read. A native decoder proving its own population
-gives `records`; every other supplied publication gives `whole-invocation`.
-Empty stdout, error envelopes, malformed documents and HTML without its own
-finding list remain complete invocations. No process-exit table selects the
-form. Native decoding failures classify the publication; a missing registered
-decoder remains a programmer error. Missing prospective captures remain
-distinct from supplied empty bytes.
+before record authority is read. Only these 12 owned JSON views can be
+`records`: `format:json`, `check:baseline-source`, `check:baseline`,
+`check:output:file`, `check:parallel`, `format:metrics`, `format:suppressed`,
+`directives`, `baseline-file`, `baseline:cleanup:file`,
+`baseline:rename-channels:file`, and `baseline:update:file`. Each requires its
+own positive native typed population. Everything else supplied is
+`whole-invocation`; missing prospective captures remain distinct from supplied
+empty bytes. No exit code, error envelope or outcome selects the form.
 
-JSON decoding preserves native objects and arrays before associative conversion:
-`{}` in a list position is not an empty `[]`. JSON views prove their named lists,
-GitLab proves its root list, and SARIF proves its runs/results/rule-catalog lists.
-HTML reads only native tree-node finding lists and children, including the flat
-native population used by the gate's synthetic stand; a metric named
-`violations` does not prove finding population. Baselines require their supported
-document, an entries object map and an actual entry list per subject. The empty
-entries object is a valid zero-group baseline. Prose proves parsed finding lines
-or a recognized empty-population publication; arbitrary text is not zero records.
+These 10 previously record-bearing views are always whole invocations:
+`format:html`, `format:checkstyle`, `format:sarif`, `format:gitlab`,
+`format:summary`, `format:text`, `format:text-detail`,
+`format:text-verbose`, `format:github`, and `show-suppressed`. SARIF and GitLab
+are excluded even though their serialization is JSON. Their standalone
+decoders remain callable, but the gate gives them no record, projection,
+fingerprint or ranking authority. Other command surfaces keep their byte
+contracts.
+
+Eligible JSON decoding preserves native objects and arrays before associative
+conversion: `{}` in a list position is not an empty `[]`. A JSON view must
+prove its own named list. Baselines require their supported document, an
+entries object map and an actual entry list per subject. The empty entries
+object is a valid zero-group baseline. A malformed or missing own population
+is a whole invocation, not an empty record population.
 
 If either side is `whole-invocation`, comparison retains normalized stdout,
 stderr, exact exit and planned output-file artifacts, including captured missing
@@ -84,12 +91,14 @@ Negative controls live in `scripts/finding-gate-controls/`. The shared loaders
 read a fixed set of subject-owned `wiring-*.php` files. Unknown files, unknown
 keys, duplicate registrations and unloaded checks are refused. The retired
 `pending` key is not accepted, even with an empty value. Every failure class
-requires a source producer and an observed whole-run witness. Every recognized
-raise site and caller requires an exact observed witness except `run-failed`:
+retains a source producer. Every active class requires an observed whole-run
+witness, and every active raise site and caller requires an exact observation
+except `run-failed`:
 its self-test claim is the failure class, side and scope. A scope-only witness
-does not credit any exact source site or caller. This narrower claim retains
-defensive helper branches that native publication routing cannot reach in a
-whole run.
+does not credit any exact source site or caller. `fingerprint-mismatch` and
+`fingerprint-opaque` remain valid helper failure classes but have retired native
+whole-run witness obligations: their SARIF/GitLab sources are excluded from
+record authority. An unexpected native occurrence of either class is RED.
 
 ## Case definition and coverage
 
@@ -192,11 +201,8 @@ The product requires no baseline file for it; the gate verifies exit 4 and
 empty captured baseline bytes. Physical absence and an existing zero-byte file
 are indistinguishable in both incomplete and declared-refusal captures.
 
-Known run notices and exact analysis diagnostics are kept outside the finding
-projection in GitHub, GitLab and Checkstyle. Their original bytes remain under
-surface comparison. Unknown codes, diagnostic levels or shapes do not inherit
-that treatment. HTML is reduced to its payload only for a records pair; any whole
-side retains complete captured HTML bytes independently of the expected outcome.
+GitHub, GitLab, Checkstyle and HTML retain their complete captured bytes under
+whole-invocation comparison, including diagnostics and HTML viewer content.
 
 ## Surfaces and invocation provenance
 
@@ -258,8 +264,8 @@ this complete authority.
 A comparative JSON record is the physical record plus
 `ranking.impactScore` and `ranking.coupling.class-rank`, joined from that
 side's validated complete ranking. Record correspondence and value declarations
-use the comparative form. Tuple supply, fingerprints, cross-format projections
-and edits of published text use the physical form. Virtual fields are never
+use the comparative form. Tuple supply and owned JSON publication checks use
+the physical form. Virtual fields are never
 searched for as fields in a physical formatter's output.
 
 `RecordCheck::pair` groups by report identity. A group with exactly one record
@@ -278,9 +284,8 @@ require exact `type` and `name`. Overlapping selectors are refused.
 equal rows are a multiset. A neighbouring record is never licensed by another
 record's declaration.
 
-Each format's records are checked against its physical authority before a
-declared record is removed or substituted. Checkstyle projections retain
-multiplicity. SARIF catalogues and result indices are canonicalized together.
+Each eligible JSON view's records are checked against its own physical
+authority before a declared record is removed or substituted.
 Baseline entries are joined to their complete source groups; counts and
 magnitude lists must agree. Each tree supplies eligibility by running its own baseline generator on
 the complete raw source groups under the captured configuration, before
@@ -396,8 +401,8 @@ formats and excluded cases retain ordinary comparisons.
 
 The existing selector/diagnostic predicates do not validate arbitrary
 Checkstyle or GitLab whole publications. They cannot veto exact whole evidence
-or establish a record population. A native records decoder is the sole positive
-classification predicate.
+or establish a record population. An eligible view's native JSON decoder is
+the sole positive classification predicate.
 
 Structural maps translate named paths in configuration documents. Their
 closed document and shape vocabularies live in `DeclaredStructuralMaps`;
@@ -461,12 +466,12 @@ name can also move alignment, which requires a residual structural diff.
 
 ## What a fingerprint is compared by
 
-GitLab and SARIF hashes are recomputed from each side's own published identity
-before comparison. A channel rename legitimately changes its hash, so the
-gate then substitutes a comparable identity in that publication. A hash that
-cannot be recomputed is `fingerprint-opaque`, and a wrongly recomputed one is
-`fingerprint-mismatch`. Occurrence and edge discriminators stay part of the
-identity; equal records do not lose multiplicity.
+The native gate compares GitLab and SARIF as complete invocations. It no longer
+recomputes or substitutes their fingerprints as record authority. The retained
+standalone helpers can report `fingerprint-opaque` or
+`fingerprint-mismatch`; these names remain in the failure vocabulary but are
+retired from native whole-run witness coverage. An unexpected native occurrence
+is still a self-test failure.
 
 ## What publication order is compared by
 
@@ -497,9 +502,8 @@ support metadata uses its own exact clock handling and does not credit a
 public normalization row.
 
 JSON is compared as published bytes. `JsonText` edits named spans without
-re-encoding unrelated layout, escaping or number spelling. HTML payload
-extraction likewise retains its JSON bytes while excluding the viewer bundle;
-any whole side retains the complete invocation instead.
+re-encoding unrelated layout, escaping or number spelling. HTML retains its
+complete invocation, including the viewer bundle.
 
 `declared-delta.tsv` has `surface, file, reason` columns and exact unified
 diffs under `declared-delta/`. A row can name one case surface or a surface
@@ -559,11 +563,11 @@ physical finding and ranking identity/value multisets, including hidden
 occurrences and their multiplicity. These raw sets preserve JSON scalar tokens
 through measurement without attributing occurrences through decoded floats.
 Metrics, directives and suppressed findings retain their complete raw population;
-baseline surfaces retain their complete canonical documents. Projections and
+baseline surfaces retain their complete canonical documents. Eligible JSON projections and
 invocation aliases use their actual complete finding source when judging a
 hidden semantic residual, even when their own visible bytes are unchanged.
-Record operations, erasure, comparative schema suppliers, projections and fingerprints
-apply only when both sides supply `records`. Every other pair retains the
+Record operations, erasure, comparative schema suppliers and owned JSON
+projections apply only when both sides supply `records`. Every other pair retains the
 complete invocation's normalized stdout, stderr, file bytes and process exit.
 Baseline generation inherits a capture boundary: its main publication stores
 the generated file bytes in place of native stdout. Baseline comparisons retain
@@ -740,8 +744,10 @@ alone does not determine whether `rules` publishes a catalogue.
 `composer gate:self-test` runs the gate's observed witnesses and the
 controls harness's mechanics. Recognized raise sites are enumerated with their
 nearest callers. The witness registry requires exact whole-run observations for
-every class except `run-failed`; for that class it requires an actual
-class/side/scope observation without claiming site or caller coverage.
+every active class except `run-failed`; for that class it requires an actual
+class/side/scope observation without claiming site or caller coverage. The two
+retired fingerprint classes keep source producer and vocabulary checks without
+native exact-site credit.
 An unexplained source occurrence or stale source exception still fails.
 Controls add corpus evidence; they do not replace observed self-test witnesses.
 

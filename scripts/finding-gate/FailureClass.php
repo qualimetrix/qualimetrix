@@ -160,6 +160,12 @@ final class FailureClass
     /** A `declared-structural-maps.tsv` row that moved nothing in any case input. */
     public const STRUCTURAL_MAP_STALE = 'structural-map-stale';
 
+    /** @var array<string, string> Retained helper failures outside native whole-run witness authority. */
+    public const NATIVE_WITNESS_RETIREMENTS = [
+        self::FINGERPRINT_MISMATCH => 'SARIF and GitLab no longer have native record authority in the gate.',
+        self::FINGERPRINT_OPAQUE => 'GitLab no longer has native fingerprint substitution authority in the gate.',
+    ];
+
     /** @var list<string> */
     public const ALL = [
         self::ENV_MISMATCH,

@@ -279,6 +279,16 @@ final class CheckWitnesses
         $problems = [];
 
         foreach ($failures as $failure) {
+            if (isset(FailureClass::NATIVE_WITNESS_RETIREMENTS[$failure['class']])) {
+                $problems[] = \sprintf(
+                    'witness registry: the %s run raised retired native class %s @ %s at %s.',
+                    $scenario,
+                    $failure['class'],
+                    $failure['scope'],
+                    $failure['identity'],
+                );
+            }
+
             if (!isset($sites->sites[$failure['identity']])) {
                 $problems[] = \sprintf(
                     'witness registry: the %s run raised %s @ %s at %s, which the scan of the gate\'s source does not'
@@ -504,16 +514,7 @@ final class CheckWitnesses
                     [FailureClass::FINDING_TUPLE_MISMATCH, 'reference / alpha / finding #0', 'TupleCheck::checkTupleAgainstFindings <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|check:output:file', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:checkstyle', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:github', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:gitlab', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:html', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:sarif', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:summary', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:text', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:text-detail', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|show-suppressed', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
                 ],
             ),
             self::witness(
@@ -535,10 +536,8 @@ final class CheckWitnesses
                     [FailureClass::TUPLE_FIELD_DRIFT, EquivalenceTuple::TRACKED_PATH, 'TupleCheck::checkTuple#2 <- Gate::compare'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|baseline-file', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:html', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|baseline-file', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|format:html', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
                 ],
             ),
             self::witness(
@@ -641,16 +640,7 @@ final class CheckWitnesses
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:gamma|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|check:output:file', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:checkstyle', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:github', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:gitlab', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:html', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:json', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:sarif', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:summary', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:text', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:text-detail', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|show-suppressed', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
                 ],
                 [[FailureClass::FINDING_TUPLE_MISMATCH, 'reference / gamma / finding #0']],
             ),
@@ -704,9 +694,7 @@ final class CheckWitnesses
                     return $tree;
                 },
                 [
-                    [FailureClass::RUN_FAILED, 'candidate-2 / omega', 'Gate::captureAuthority <- GateModes::compare'],
-                    [FailureClass::RUN_FAILED, 'candidate-claims / omega'],
-                    [FailureClass::RUN_FAILED, 'reference-claims / omega'],
+                    [FailureClass::RUN_FAILED, 'candidate-2 / omega'],
                     [FailureClass::CANDIDATE_INPUT_REFUSED, 'case:omega', 'CoverageCheck::inputRefused <- Gate::compare'],
                 ],
                 [
@@ -732,11 +720,7 @@ final class CheckWitnesses
                     [FailureClass::RANKING_PROJECTION_MISMATCH, 'reference / case:alpha|format:json', 'RankingCheck::projectionProblem <- RecordCheck::checkCase'],
                 ],
                 [
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, '* / case:alpha|format:*'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, '* / case:alpha|show-suppressed'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, '* / case:alpha|baseline-file'],
-                    [FailureClass::FINGERPRINT_MISMATCH, '* / alpha / *'],
-                    [FailureClass::FINGERPRINT_OPAQUE, '* / case:alpha|format:gitlab'],
                     [FailureClass::PUBLISHED_ORDER_DRIFT, 'case:alpha|format:json'],
                     [FailureClass::CASE_CLAIM_MISMATCH, 'case:alpha'],
                     [FailureClass::COVERAGE_SHORTFALL, 'corpus'],
@@ -830,30 +814,6 @@ final class CheckWitnesses
                     return $tree;
                 },
                 [[FailureClass::COVERAGE_SHORTFALL, 'corpus', 'ChannelCoverage::reportShortfall <- CoverageCheck::checkCoverage']],
-            ),
-            self::witness(
-                'fingerprint-mismatch',
-                self::DECLARATIONS,
-                static function (array $tree): array {
-                    $answers = SyntheticTree::caseAnswers('alpha', $tree['findings']['alpha'], false, []);
-                    $document = json_decode(($answers['case:alpha|format:sarif']['stdout'] ?? throw new GateError('A SARIF witness requires stdout.')), true, 512, \JSON_THROW_ON_ERROR);
-                    $document['runs'][0]['results'][0]['partialFingerprints']['primaryLocationLineHash'] = 'not the recomputed identity';
-                    $tree['answers']['case:alpha|format:sarif'] = ['stdout' => self::json($document)];
-
-                    return $tree;
-                },
-                [[FailureClass::FINGERPRINT_MISMATCH, '* / alpha / sarif partialFingerprints', 'FingerprintCheck::checkFingerprints <- Gate::checkFindings']],
-            ),
-            self::witness(
-                'fingerprint-opaque',
-                self::DECLARATIONS,
-                static function (array $tree): array {
-                    $hash = Fingerprints::md5Of(Fingerprints::expected($tree['findings']['alpha']))[0];
-                    $tree['findings']['alpha'][0]['message'] = $hash;
-
-                    return $tree;
-                },
-                [[FailureClass::FINGERPRINT_OPAQUE, '* / case:alpha|format:gitlab', 'FingerprintCheck::substituteFingerprints <- SurfaceComparison::fingerprints']],
             ),
             self::witness(
                 'published-order',
@@ -1092,13 +1052,13 @@ final class CheckWitnesses
                 self::DECLARATIONS,
                 static function (array $tree): array {
                     $tree = SelfTestCapture::withdrawnFixture();
-                    $tree['candidateDeclarations']['declared-surfaces/retired.json'] = self::json(['stdout' => '', 'stderr' => 'a refusal nobody printed', 'exit' => '3']);
+                    $tree['candidateDeclarations']['declared-surfaces/metrics.json'] = self::json(['stdout' => '{"symbols":[]}', 'stderr' => 'a refusal nobody printed', 'exit' => '3']);
 
                     return $tree;
                 },
                 [
-                    [FailureClass::SURFACE_DECLARATION_STALE, 'format:retired', 'StaleDeclarationCheck::checkStaleDeclarations#5 <- Gate::compare'],
-                    [FailureClass::SURFACE_WITHDRAWAL_MISMATCH, 'case:alpha|format:retired', 'CaptureCheck::withdrawal <- Gate::compare'],
+                    [FailureClass::SURFACE_DECLARATION_STALE, 'format:metrics', 'StaleDeclarationCheck::checkStaleDeclarations#5 <- Gate::compare'],
+                    [FailureClass::SURFACE_WITHDRAWAL_MISMATCH, 'case:alpha|format:metrics', 'CaptureCheck::withdrawal <- Gate::compare'],
                 ],
             ),
             self::witness(
