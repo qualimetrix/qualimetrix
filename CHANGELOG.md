@@ -36,8 +36,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Finding caps (`--format-opt=violations|limit`, `--detail=N`) select severity,
   then impact, before the requested grouping. `--top` still sets the impact
   list size. Recheck consumers that depended on first-in-identity-order caps.
-- JSON `topIssues` adds `acceptedLevel`. HTML finding records use the same
-  nineteen keys as JSON: replace `ruleName/violationCode/symbolPath` with
+- JSON `topIssues` adds the common nineteen-field finding record alongside
+  ranking metadata, including exact identity and `acceptedLevel`. HTML finding
+  records use the same nineteen keys as JSON: replace `ruleName/violationCode/symbolPath` with
   `rule/code/symbol` and consume channel, edge, namespace, threshold,
   techDebtMinutes, acceptedLevel and baseline judgement fields.
 - HTML uses published repository bags for every node, including the global

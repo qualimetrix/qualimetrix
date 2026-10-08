@@ -136,12 +136,31 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
 
         foreach ($issues as $rank => $issue) {
             $finding = $issue->finding;
+            $record = $this->findingSection->formatFinding($finding, $context);
             $result[] = [
                 'rank' => $rank + 1,
                 'impactScore' => round($issue->impactScore, 2),
                 'coupling.class-rank' => $issue->classRank !== null ? round($issue->classRank, 4) : null,
                 'debtMinutes' => $issue->debtMinutes,
-                ...$this->findingSection->formatFinding($finding, $context),
+                'file' => $record['file'],
+                'line' => $record['line'],
+                'subject' => $record['subject'],
+                'symbol' => $record['symbol'],
+                'channel' => $record['channel'],
+                'occurrence' => $record['occurrence'],
+                'edge' => $record['edge'],
+                'namespace' => $record['namespace'],
+                'rule' => $record['rule'],
+                'code' => $record['code'],
+                'severity' => $record['severity'],
+                'message' => $record['message'],
+                'recommendation' => $record['recommendation'],
+                'metricValue' => $record['metricValue'],
+                'threshold' => $record['threshold'],
+                'techDebtMinutes' => $record['techDebtMinutes'],
+                'acceptedLevel' => $record['acceptedLevel'],
+                'baselineVerdict' => $record['baselineVerdict'],
+                'baselineReason' => $record['baselineReason'],
             ];
         }
 
