@@ -23,6 +23,11 @@ Maintainability Index uses this metric as its method-size input. See
 
 ## LOC (Lines of Code)
 
+`size.class-loc` counts the own source span of every named class-like declaration:
+classes, interfaces, traits and enums. Anonymous classes stay excluded. It is
+separate from whole-file LOC and namespace aggregate LOC. HTML class-like area
+uses this own value.
+
 **Collector:** `LocCollector`
 **Provides:** `size.loc`, `size.lloc`, `size.cloc`
 **Level:** File (physical project totals) and namespace source spans

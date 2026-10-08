@@ -2435,6 +2435,8 @@ function documentationDisposition(string $path): array
         'docs/adr/0101-class-count-judges-own-namespace.md' => 'Analysis.Evidence.Size',
         'docs/adr/0102-detector-verdicts-and-finding-identity.md' => 'Analysis.Finding',
         'docs/adr/0103-layer-policy-declaration-evidence-and-selection.md' => 'Analysis.Policy.Architecture',
+        'docs/adr/0104-source-bytes-and-prose-publication.md' => 'Reporting',
+        'docs/adr/0105-finding-publication-and-drill-down.md' => 'Reporting',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/ProjectManifest/README.md' => 'Analysis.ProjectManifest',

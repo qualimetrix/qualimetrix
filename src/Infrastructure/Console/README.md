@@ -207,7 +207,7 @@ resolved through observed identities after collection, never an identifier regex
 See [ADR 0103](../../../docs/adr/0103-layer-policy-declaration-evidence-and-selection.md).
 
 The JSON presenter uses Reporting's `PublishedUtf8` contract: invalid UTF-8
-bytes in observed names become U+FFFD, and `invalidUtf8Replaced` counts repaired
+bytes in observed names become `%XX`, and `invalidUtf8Replaced` counts repaired
 strings. Valid UTF-8 output omits that key.
 
 `LayerAssignmentResolver::resolve(RunConfiguration, SymbolPath, bool)` receives the
@@ -243,6 +243,7 @@ state that the policy is disabled instead of claiming an active diagnostic.
 | 2    | Errors present                                          |
 | 3    | Configuration, input or environment refusal             |
 | 4    | Analysis incomplete; policy result is not authoritative |
+| 5    | Internal error                                          |
 
 Missing inferred autoload targets are attributed to `composer.json`, with the
 offending target and a single error prefix. Explicit paths retain their own source. Automatic
@@ -310,7 +311,7 @@ append failures and reports lost records at settle before report publication.
 classifies the primary and cleanup failures. After successful report or graph
 publication, both diagnostics use stderr without another stdout envelope.
 An environment cleanup failure overrides a findings exit code; an internal
-failure keeps exit 1. Failed cleanup can leave an unwritten new target behind,
+failure keeps exit 5. Failed cleanup can leave an unwritten new target behind,
 and names that failure. The publication marker covers completed presenter
 calls, not partially written output or exceptions inside the presenter. The
 existing inner claim cleanup and terminal-presenter fallback retain their own
@@ -331,7 +332,7 @@ are not applied in both the inline and per-rule suppression headings.
 Every valued option and argument is read through `CommandLineSpelling`: argv
 delivers strings, and an embedder's array input may deliver any PHP value, so an
 integer is read as its digits and any other shape is refused (exit 3) instead
-of reaching a string-typed reader as a type error (exit 1) or being dropped.
+of reaching a string-typed reader as a type error (exit 5) or being dropped.
 Flags are read as booleans, and a value-optional option decides its "written
 alone" forms (`null`, or `true` from an array input) before spelling the value.
 `Application::doRun()` reads the long `--format` off the raw tokens, so a
@@ -631,7 +632,7 @@ bin/qmx hook:uninstall
 ## Definition of Done
 
 - `CheckCommand` works with all options
-- Exit codes are correct (0/1/2 policy, 3 input/configuration, 4 incomplete analysis)
+- Exit codes are correct (0/1/2 policy, 3 input/configuration, 4 incomplete analysis, 5 internal error)
 - Progress bar works for large projects
 - Git integration via --report option
 - Baseline management via options
@@ -677,7 +678,7 @@ This README is part of the subject boundary: keep its production code, tests, fi
 The final application and command catch branches use `RefusalPresenter::unhandled()`
 to classify configuration refusals, environment refusals and raw Core environment
 failures. Refusals exit with code 3; unrelated exceptions remain internal errors
-with code 1. Configuration source metadata, including import chains, survives
+with code 5. Configuration source metadata, including import chains, survives
 the shared `RefusalInterface`. A failure after report publication is written to
 stderr so stdout retains one report document. If the Duplication detector
 exhausts PHP memory, its shutdown hint writes a short diagnostic to stderr with
@@ -719,3 +720,12 @@ for their content. ASCII replaces identical table glyphs occurring in source
 names too; choose Unicode to preserve those. Other Unicode characters remain
 unchanged. Other commands' stdout, including rule listings, directive text,
 selected debug output and DOT, is outside this presentation choice.
+
+### Generated hook revision
+
+`PreCommitHook::isCurrent()` recognizes the current generating template's
+SHA-256 revision. `hook:status` names an owned older revision as outdated,
+suggests `qmx hook:install --force` and retains informational exit 0. Ownership
+recognition and third-party hook handling are unchanged. Analysis codes 1/2
+are measured findings; 3/4/5 carry failure reasons without baseline advice.
+A revision marker does not prove arbitrary edited content equivalent.

@@ -9,6 +9,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- JSON `violationGroups` dictionary keys use total percent encoding rather
+  than display spelling, preserving byte-distinct file groups. Decode keys
+  with `rawurldecode`; read each finding's `file` as display text.
+- Removed `--format=text-verbose` and `format: text-verbose`; both now refuse
+  with exit 3. Use `--format=text --detail=all` for the complete detailed list.
+- Malformed source bytes display as `%XX` rather than U+FFFD, with a positive
+  repaired-string count on stderr for every report format. Valid display text
+  is unchanged. Display `file` is ambiguous with a literal percent spelling;
+  use canonical `subject` or the raw-byte-derived SARIF `uri` for identity.
+- Canonical subjects escape literal path `%` as `%25` and declaration-file `#`
+  as `%23`, distinguishing filenames from occurrence suffixes. Subjects,
+  fingerprints and baseline keys for affected paths change once. Review old
+  unmatched entries and migrate only selected entries; do not regenerate a
+  baseline wholesale. Raw non-UTF-8 baseline scope/selectors now refuse;
+  analyse a containing UTF-8 directory instead.
+- GitLab and Checkstyle no longer emit synthetic `publication.invalid-utf8`
+  findings. Read their repair signal from stderr.
+- Fileless namespace findings name their namespace, with `(global)` for an
+  empty namespace; `[project]` is reserved for project findings.
+- Text/summary detail and HTML show the diagnostic and recommendation
+  separately instead of replacing the diagnostic with advice. Accepted-level
+  status is separate in HTML and remains truthful about not-compared records.
+- Circular-dependency recommendations no longer include a JSON debug dump;
+  consume structured evidence instead.
+- Finding caps (`--format-opt=violations|limit`, `--detail=N`) select severity,
+  then impact, before the requested grouping. `--top` still sets the impact
+  list size. Recheck consumers that depended on first-in-identity-order caps.
+- JSON `topIssues` adds `acceptedLevel`. HTML finding records use the same
+  nineteen keys as JSON: replace `ruleName/violationCode/symbolPath` with
+  `rule/code/symbol` and consume channel, edge, namespace, threshold,
+  techDebtMinutes, acceptedLevel and baseline judgement fields.
+- HTML uses published repository bags for every node, including the global
+  namespace. Class-like area uses `size.class-loc`, not `size.loc.sum`.
+  Synthetic health values and `summary.healthScores` are removed; the viewer
+  displays published subtree scores and leaves missing health unknown.
+- Metrics exports include own `size.class-loc` for interfaces, traits and
+  enums; resulting `size.class-loc.*` aggregates change.
+- Health reports print finding counts and outside-scope counts even without
+  health scores. Update consumers of the prose header.
+- `QMX_ASCII` uses case-insensitive `1/true/yes/on` and
+  `0/false/no/off/empty/absent`; other values refuse before every command with
+  exit 3. A closed glyph table applies to all prose reports and diagnostics.
+  Table sequences in source names are also replaced (for example `K✓` →
+  `K+`); other Unicode such as `Café` is preserved. Choose Unicode to preserve
+  those sequences. Other commands' stdout is outside this mode.
+- `suppressed` refuses `--namespace/--class` because it is a whole-run
+  composition. JSON/metrics `outOfScope` shares count names and adds exact
+  channel/subject/occurrence/edge/severity identities; SARIF carries those
+  identities in its notification. `--show-suppressed` remains whole-run and
+  names the selector as unapplied.
+- Internal errors now exit 5 instead of 1 in every command. Typed external
+  refusals remain 3, incomplete analysis 4, baseline conflicts and named scope
+  guards retain their command outcome. Hooks distinguish findings (1/2) from
+  refusal/incomplete/internal outcomes (3/4/5), without baseline advice for
+  unmeasured failures. Reinstall old hooks: `qmx hook:install --force`.
+- Namespace drill-down selects file aggregates by any namespace declared in
+  their physical file, with a global fallback for files without declarations.
+  Class selection never includes file aggregates. Namespace suppression keeps
+  declaration semantics; use `suppress_paths` for a file aggregate.
+- `hook:status` reports `Revision: outdated` and a reinstall command for an
+  owned hook generated from an older template, retaining informational exit 0.
+- `FormatterInterface::format()` returns `FormattedReport` instead of a
+  string, and formatters declare `publicationKind()`. Update direct callers
+  to read `body`; publication owns the repair counter and prose mode.
+
 - `architecture.layer-violation` is now file-scoped: global `suppress_paths`
   follows its physical source dependency site, and `suppress_namespaces` follows
   the source declaration. Git reports keep it only when its source file changed

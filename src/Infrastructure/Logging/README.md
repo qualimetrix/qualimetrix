@@ -24,9 +24,13 @@ Shared trait used by `ConsoleLogger` and `FileLogger` providing:
 - `meetsMinLevel()` — log level threshold filtering. A level outside PSR-3's
   eight, as a message level or as a threshold, throws
   `Psr\Log\InvalidArgumentException` instead of being ranked below everything
-- `encodeJson()` — the context encoding both loggers use: bytes that are not
-  UTF-8 are substituted (U+FFFD); a value substitution cannot save (`INF`,
-  `NAN`) returns `null` and the caller says the context was lost
+- `encodeJson()` — leaves valid native JSON context unchanged. Malformed value
+  bytes become `%XX` only within scalars, arrays and exact `stdClass` with
+  UTF-8 keys. Unsupported objects, malformed keys, recursion and non-finite
+  values lose context with the native encoding cause stated explicitly.
+  Invalid context with `JsonSerializable` may invoke its callback twice while
+  distinguishing recursion; repair adds no third invocation. Valid context
+  invokes the native encoder once.
 
 ### ConsoleLogger
 

@@ -301,7 +301,7 @@ jobs:
       # rebuilds, so this is a separate witness rather than a repeat.
       #
       # The report's shape is what is checked, because neither obvious signal
-      # separates the cases: the fatal prints valid JSON and exits 1, while a
+      # separates the cases: the fatal prints valid JSON and exits 5, while a
       # healthy run over a fixture repository exits 2 for want of a
       # composer.json.
       - name: It resolves a git scope

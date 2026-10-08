@@ -452,3 +452,17 @@ producing rule by its own name: it does not distinguish levels (ADR 0024). Retun
 This is the mirror image of `@qmx-ignore`, which always addresses the channel — the asymmetry is deliberate. `@qmx-threshold` on a disabled rule is valid and silent: enabledness is an execution filter, not a fact about whether the rule name exists.
 
 Numbers are non-negative. The explicit form accepts only `warning` and `error`; a non-empty reason follows `--` or an em dash. Class overrides apply inside the class (including methods), method overrides apply to that method, and the smallest matching source span wins. Prefer this to `@qmx-ignore` when a useful limit remains.
+
+### Byte-named entries
+
+Canonical subject components escape literal `%` as `%25`, invalid bytes as
+`%XX`, and reserved declaration-file `#` as `%23`. These identities remain
+byte-distinct. Old entries for affected paths can become unmatched after an
+upgrade: review and migrate only those entries, without regenerating the
+baseline wholesale.
+
+Scope and exclusion selectors still carry raw input facts. A baseline whose
+scope or selector is not UTF-8 refuses with a native encoding reason; these
+fields cannot be renamed without changing their comparisons. Analyse a
+containing UTF-8 directory to record a byte-named entry. Raw-byte JSON
+selectors remain unsupported.

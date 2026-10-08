@@ -556,3 +556,17 @@ New channel names are validated for form, not current registry membership.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+### Byte-named entries
+
+Canonical subject components escape literal `%` as `%25`, invalid bytes as
+`%XX`, and reserved declaration-file `#` as `%23`. These identities remain
+byte-distinct. Old entries for affected paths can become unmatched after an
+upgrade: review and migrate only those entries, without regenerating the
+baseline wholesale.
+
+Scope and exclusion selectors still carry raw input facts. A baseline whose
+scope or selector is not UTF-8 refuses with a native encoding reason; these
+fields cannot be renamed without changing their comparisons. Analyse a
+containing UTF-8 directory to record a byte-named entry. Raw-byte JSON
+selectors remain unsupported.

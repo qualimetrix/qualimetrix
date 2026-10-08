@@ -65,9 +65,15 @@ Reporting/
 ├── DrillDown/
 │   ├── DrillDownBinding.php             # How many analyzed namespaces/classes a `--namespace` / `--class` value selects; zero is refused instead of emptying the report
 │   ├── FindingFilter.php                # What `--namespace` / `--class` selects from findings and offenders — the one copy of that rule
+│   ├── OutOfScopeIdentity.php           # Exact occurrence-preserving outside-scope identity
 │   └── OutOfScopeFindings.php           # Severity counts of the run's findings a selection left out, and the formats with no place to publish them
 └── Formatter/
     ├── FormatterInterface.php              # Formatter contract
+    ├── FormattedReport.php                 # Published body and repaired-string count
+    ├── PublicationKind.php                 # Prose or native structured document kind
+    ├── FindingRecord.php                   # Nineteen fields shared by JSON and HTML
+    ├── FindingPlace.php                    # Fileless namespace or project presentation
+    ├── Ordering/FindingSorter.php          # Severity/impact selection before grouping
     ├── FormatOptionKeysInterface.php       # Opt-in: the --format-opt keys a formatter reads
     ├── FormatOptionValue.php               # The value grammar of every --format-opt key, and which keys set one value; the CLI refuses by it, formatters read by it
     ├── PublishedFinding.php                # Which composition of a finding's texts each surface publishes, and under which key
@@ -75,7 +81,6 @@ Reporting/
     ├── FormatterRegistryInterface.php      # Registry contract
     ├── FormatterRegistry.php               # Registry implementation
     ├── TextFormatter.php                   # Compact text output (with colors)
-    ├── TextVerboseFormatter.php            # Deprecated alias of `text --detail` (hidden from listings)
     ├── CheckstyleFormatter.php             # Checkstyle XML
     ├── GithubActionsFormatter.php          # GitHub Actions annotation output
     ├── MetricsJsonFormatter.php            # Raw metrics JSON export
@@ -117,7 +122,6 @@ Reporting/
     │   ├── HtmlTreeBuilder.php            # Builds namespace tree from MetricRepository
     │   ├── HtmlTreeNode.php               # Internal VO for tree construction
     │   ├── HtmlDebtCalculator.php         # Completes own debt and bottom-up totals for HTML trees
-    │   ├── HtmlMetricAggregator.php       # Bottom-up metric aggregation for HTML tree
     │   ├── HtmlProjectMetadata.php        # The report's `project` object: analysed project's name, version, docs addresses
     │   └── HtmlFindingPartitioner.php   # Puts every finding on exactly one tree node (root at the latest)
     ├── GitLabCodeQualityFormatter.php      # GitLab Code Climate JSON
@@ -126,6 +130,15 @@ Reporting/
 ```
 
 ## Contracts
+
+### Published finding records
+
+`Formatter\FindingRecord` builds the same nineteen fields for JSON violations,
+ranked topIssues and HTML: file, line, subject, symbol, channel, occurrence,
+edge, namespace, rule, code, severity, message, recommendation, metricValue,
+threshold, techDebtMinutes, acceptedLevel, baselineVerdict and baselineReason.
+Display file/symbol differ from exact canonical identity. HTML uses published
+repository metric bags and never recomputes subtree health.
 
 ### Finding projection
 
@@ -188,9 +201,11 @@ use Qualimetrix\Reporting\Report;
 interface FormatterInterface
 {
     /**
-     * Formats the report into a string for output.
+     * Formats the report body and its structured repair count.
      */
-    public function format(Report $report, FormatterContext $context): string;
+    public function format(Report $report, FormatterContext $context): FormattedReport;
+
+    public function publicationKind(): PublicationKind;
 
     /**
      * Unique formatter name (used in --format=NAME).
@@ -375,23 +390,13 @@ Supports ANSI colors for severity and summary (auto-detected, disabled with `--n
 Under `--namespace`/`--class` the closing summary line counts the selection
 ("… in this scope"), names the findings outside it that decide the exit code,
 and takes its colour from the whole run; `summary` does the same in its
-finding-count line. `--detail=N` puts the whole list in its printed order
-first and cuts second, so the shown findings are the first ones `--detail=all`
-prints — in every grouping and in `summary --detail` alike.
+finding-count line. `--detail=N` selects the worst N by severity, then impact
+ranking, before the requested presentation grouping. Unranked findings fall
+back to place. `--detail=all` retains every finding.
 
-### TextVerboseFormatter
-
-**Name:** `text-verbose` | **Default grouping:** `file`
-
-Deprecated alias of `--format=text --detail`, hidden from the format listings;
-selecting it prints a deprecation warning on stderr. Prefer `text --detail`.
-
-Human-readable verbose output with:
-- Findings grouped by file (default), rule, severity, or flat
-- File headers with finding count
-- ANSI colors for severity tags and summary
-- Compact finding format (2 lines per finding)
-- Metric values highlighted when present
+Detailed text uses `--format=text --detail=all`. `text-verbose` is removed
+and refused; it is no longer an alias. Diagnostic, recommendation and accepted
+baseline level retain separate meanings in the detailed rendering.
 
 ## CLI Options
 
@@ -441,47 +446,34 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 
 ### TextFormatter (`--format=text`)
 
-```
-src/Service/UserService.php:42: error[cyclomatic-complexity]: Cyclomatic complexity of 25 exceeds threshold (UserService::calculateDiscount)
-src/Service/UserService.php:120: warning[cyclomatic-complexity]: Cyclomatic complexity of 12 exceeds threshold (UserService::processOrder)
+This output comes from `finding-gate/cases/drill-down`, with
+`--only-rule=code-smell.eval --workers=0 --no-cache --no-progress --no-ansi`:
 
-1 error(s), 1 warning(s) in 1 file(s)
-```
+```text
+src/Cart.php:14: error[code-smell.eval]: eval() usage detected - security risk (Cart::run)
+src/Outside.php:11: error[code-smell.eval]: eval() usage detected - security risk (Outside::run)
 
-### TextVerboseFormatter (`--format=text-verbose`)
-
-```
-Qualimetrix Report
-──────────────────────────────────────────────────
-
-src/Service/UserService.php (2)
-
-  ERROR :42  App\Service\UserService::calculateDiscount
-    Cyclomatic complexity of 25 exceeds threshold (25) [cyclomatic-complexity]
-
-  WARN :120  App\Service\UserService::processOrder
-    Cyclomatic complexity of 12 exceeds threshold (12) [cyclomatic-complexity]
-
-──────────────────────────────────────────────────
-Files: 1 analyzed, 0 skipped | Errors: 1 | Warnings: 1 | Time: 0.23s
+Qualimetrix dev-main: 2 error(s), 0 warning(s) in 6 file(s)
+Analysis complete: 6 analyzed, 0 generated file(s) excluded.
+Technical debt: 30min
+Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
 ## Implemented Formats
 
-| Format       | Name           | Description                                                   | Integration                |
-| ------------ | -------------- | ------------------------------------------------------------- | -------------------------- |
-| Summary      | `summary`      | **Default.** Health overview + worst offenders                | CLI                        |
-| Text         | `text`         | Compact human-readable text output                            | CLI                        |
-| Text Verbose | `text-verbose` | Deprecated alias of `text --detail` (grouped by file)         | CLI                        |
-| JSON         | `json`         | Summary-oriented JSON (health + findings)                     | AI agents, CI/CD           |
-| Checkstyle   | `checkstyle`   | Checkstyle XML for CI systems                                 | Jenkins, SonarQube         |
-| SARIF        | `sarif`        | SARIF 2.1.0 for static analysis                               | GitHub, VS Code, JetBrains |
-| GitLab       | `gitlab`       | Code Climate JSON for GitLab MR                               | GitLab CI                  |
-| Metrics      | `metrics`      | Raw metric values for all symbols                             | Dashboards, cross-tool     |
-| GitHub       | `github`       | GitHub Actions workflow-command annotations                   | GitHub Actions             |
-| Health       | `health`       | Text table of health dimensions with scores and decomposition | CLI                        |
-| Html         | `html`         | Interactive treemap report with D3.js                         | Browser, CI artifacts      |
-| Suppressed   | `suppressed`   | Machine-readable composition of what was suppressed and why   | Auditing, CI               |
+| Format     | Name         | Description                                                   | Integration                |
+| ---------- | ------------ | ------------------------------------------------------------- | -------------------------- |
+| Summary    | `summary`    | **Default.** Health overview + worst offenders                | CLI                        |
+| Text       | `text`       | Compact human-readable text output                            | CLI                        |
+| JSON       | `json`       | Summary-oriented JSON (health + findings)                     | AI agents, CI/CD           |
+| Checkstyle | `checkstyle` | Checkstyle XML for CI systems                                 | Jenkins, SonarQube         |
+| SARIF      | `sarif`      | SARIF 2.1.0 for static analysis                               | GitHub, VS Code, JetBrains |
+| GitLab     | `gitlab`     | Code Climate JSON for GitLab MR                               | GitLab CI                  |
+| Metrics    | `metrics`    | Raw metric values for all symbols                             | Dashboards, cross-tool     |
+| GitHub     | `github`     | GitHub Actions workflow-command annotations                   | GitHub Actions             |
+| Health     | `health`     | Text table of health dimensions with scores and decomposition | CLI                        |
+| Html       | `html`       | Interactive treemap report with D3.js                         | Browser, CI artifacts      |
+| Suppressed | `suppressed` | Machine-readable composition of what was suppressed and why   | Auditing, CI               |
 
 ## JsonFormatter
 
@@ -506,11 +498,15 @@ spells a documentation address itself. `suppressed` publishes the same block,
 and three commands outside `check` (`directives`,
 `baseline:rename-channels`, `debug:layer-assignment`) open their JSON with it.
 
-**Options:** `--format-opt=violations=all|0|N` (default: all), `--format-opt=top=N` (default: 10 offenders). An unparsable value is refused with exit code 3 before the analysis runs; the grammar of every key is `Formatter\FormatOptionValue`. `limit` sets the same value as `violations` (with `0` meaning no cap), and `FormatOptionValue::spellingsOf()` says so: the command line refuses both together, or `limit` beside `--all`, and `JsonFormatter` treats receiving both as a wiring defect. A capped list is the first N in the identity order below. `--detail` shows findings (default limit: 200, `--detail=all` for unlimited). `--namespace`/`--class` filters findings and worst offenders; the `summary` section keeps its keys under a selection — a selection being a report whose `outOfScope` is set, the one fact the `outOfScope` key publishes too — and counts only the selection, with `debtPer1kLoc: null` (the selection's debt over the whole project's LOC would mix two scopes). `coverage` always states whether the result is complete; policy and health results from an incomplete run are not authoritative.
+**Options:** `--format-opt=violations=all|0|N` (default: all), `--format-opt=top=N` (default: 10 offenders). An unparsable value is refused with exit code 3 before the analysis runs; the grammar of every key is `Formatter\FormatOptionValue`. `limit` sets the same value as `violations` (with `0` meaning no cap), and `FormatOptionValue::spellingsOf()` says so: the command line refuses both together, or `limit` beside `--all`, and `JsonFormatter` treats receiving both as a wiring defect. A capped list selects severity, then impact ranking, before presentation grouping; unranked findings fall back to place. `--detail` shows findings (default limit: 200, `--detail=all` for unlimited). `--namespace`/`--class` filters findings and worst offenders; the `summary` section keeps its keys under a selection — a selection being a report whose `outOfScope` is set, the one fact the `outOfScope` key publishes too — and counts only the selection, with `debtPer1kLoc: null` (the selection's debt over the whole project's LOC would mix two scopes). `coverage` always states whether the result is complete; policy and health results from an incomplete run are not authoritative.
+
+**`violationGroups`:** dictionary keys use total SourceBytes percent encoding,
+including a literal `%` as `%25`, keeping byte-distinct groups separate.
+Decode a key with `rawurldecode`; `file` remains display text.
 
 **`message` / `recommendation`:** the finding's message and its optional recommendation, under the same two keys in `violations` and `topIssues` (see `Formatter\PublishedFinding`).
 
-**`outOfScope`:** always present. `null` without `--namespace`/`--class`; under a selection, `{violationCount, errorCount, warningCount, infoCount}` of the run's findings the selection left out, zeroes when it left none. The exit code is resolved over `summary` and `outOfScope` together. `metrics` publishes the same key in its own vocabulary; `sarif`, `github` and `html` add one diagnostic entry under `drill-down.out-of-scope` only when something lies outside (see `DrillDown\OutOfScopeFindings`). `gitlab` and `checkstyle` have no entry that is not a finding to their consumer, so `OutOfScopeFindings::FORMATS_WITHOUT_A_PLACE` names them and the command line refuses a selection under them. `suppressed` describes the whole run and refuses either selector before analysis.
+**`outOfScope`:** always present. `null` without `--namespace`/`--class`; under a selection, `{violationCount, errorCount, warningCount, infoCount, identities}` of the run's findings the selection left out, zeroes when it left none. The exit code is resolved over `summary` and `outOfScope` together. `metrics` publishes the same count names and identities; `sarif`, `github` and `html` add one diagnostic entry under `drill-down.out-of-scope` only when something lies outside (see `DrillDown\OutOfScopeFindings`). `gitlab` and `checkstyle` have no entry that is not a finding to their consumer, so `OutOfScopeFindings::FORMATS_WITHOUT_A_PLACE` names them and the command line refuses a selection under them. `suppressed` describes the whole run and refuses either selector before analysis.
 
 Namespace drill-down selects a file finding when any namespace declared in its
 physical file matches the selector. Files without declarations use the global
@@ -551,7 +547,16 @@ priority and its policy/health result is not authoritative.
 
 **`configurationDiagnostics`:** always present, `[]` when the configuration drew no warning. Each entry is `{message, source}`: the warning as `check` also prints it on stderr, and `source` every layer it is about, lowest precedence first, each as the refusal envelope's `source` entries are — `{kind, name, imported_by}`. The entries arrive already published (`Infrastructure\Console\ConfigurationInputAdapter::publishedDiagnostics()`), so `Reporting` does not read the configuration document.
 
-**`invalidUtf8Replaced`:** present only when strings from the analysed source were not valid UTF-8; each invalid byte was replaced by U+FFFD and the key counts the strings repaired. `metrics`, `suppressed`, the HTML payload and layer-assignment debug JSON publish the same key; `sarif`, `gitlab` and `checkstyle` publish the repair in their own diagnostic channel (see `Formatter\PublishedUtf8`). SARIF repairs a path before percent-encoding it, because `%FF` is valid ASCII the encoder would never refuse.
+**`invalidUtf8Replaced`:** appears only when source strings required repair
+and counts repaired strings. Invalid bytes display as `%XX`. Structured repairs
+also escape literal percent signs in a malformed string; valid strings stay
+unchanged. Prose preserves literal percentages and counts the whole repaired
+body once. Every format reports a positive count on stderr. JSON, metrics,
+suppressed, HTML and debug JSON retain their native marker; SARIF uses a tool
+notification. GitLab and Checkstyle emit no synthetic repair finding.
+SARIF `uri` encodes the original path bytes, so `%FF` remains an invalid byte
+address and literal percent becomes `%25`. Display `file` is not exact identity;
+use canonical `subject`, whose components also escape reserved separators.
 
 **`acceptedLevel`:** `null` unless a baseline entry accompanies a measured breach or a present incomparable group (see [Accepted level and baseline verdict](#accepted-level-and-baseline-verdict) below), in which case it is `{ "shape": "magnitude" | "occurrence", "describe": "25", "count": 1 }`. The sibling `baselineVerdict` distinguishes `breached` from `not-compared`. For a `magnitude` channel, the current value is the sibling `metricValue` field — not duplicated here.
 

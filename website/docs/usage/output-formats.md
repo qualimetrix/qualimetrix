@@ -106,14 +106,14 @@ A format with no such channel refuses the selection instead:
 
 | Format       | What the selection left out                                                                                     |
 | ------------ | --------------------------------------------------------------------------------------------------------------- |
-| `json`       | Top-level `outOfScope` object: `violationCount`, `errorCount`, `warningCount`, `infoCount`                      |
-| `metrics`    | Top-level `outOfScope` object: `violations`, `errors`, `warnings`, `info`                                       |
+| `json`       | Top-level `outOfScope` object: `violationCount`, `errorCount`, `warningCount`, `infoCount`, `identities`        |
+| `metrics`    | The same `outOfScope` counts and identities as JSON                                                             |
 | `sarif`      | A `note` in `runs[0].invocations[0].toolExecutionNotifications[]` with descriptor `QMX-DRILL-DOWN-OUT-OF-SCOPE` |
 | `gitlab`     | Refused with exit 3 before the analysis: the merge-request widget counts every entry as an issue                |
 | `checkstyle` | Refused with exit 3 before the analysis: a Checkstyle reader counts every entry as an error                     |
 | `github`     | A `::notice title=drill-down.out-of-scope::` line                                                               |
 | `html`       | A banner above the report                                                                                       |
-| `suppressed` | Nothing: its document is the run's suppression composition, which a selection does not narrow                   |
+| `suppressed` | Refuses a selector: the document describes the whole run                                                        |
 
 `json` and `metrics` carry `outOfScope` in every document: `null` without a
 selection, and zero counts when the selection left nothing out. `sarif`,
@@ -121,6 +121,18 @@ selection, and zero counts when the selection left nothing out. `sarif`,
 selection. The
 exit code is resolved over the selection and `outOfScope` together, so a clean
 selection can exit 2.
+
+Namespace selection uses a finding's declared namespace. For a file aggregate
+(`annotation.*`, `duplication.clone`), it matches any namespace declared in
+that file; a file without declarations compares as the global namespace.
+`--class` never selects a file aggregate. `suppress_namespaces` deliberately
+does not take this file step; use `suppress_paths` for a file aggregate.
+Overlapping namespace exclusions keep credit for their first match.
+
+`suppressed --namespace/--class` refuses with exit 3 because the composition
+document describes the whole run. `--show-suppressed` remains allowed and
+labels its stderr list as whole-run with the selector unapplied. The analysis
+and exit verdict always cover the whole run.
 
 **Detail mode with `--detail`:**
 
@@ -135,12 +147,10 @@ bin/qmx check src/ --detail=all
 bin/qmx check src/ --detail=50
 ```
 
-`--detail` switches the violation list on, with an optional cap; it does not
-rank. `--detail=N` lists the first N violations in the order the list is printed
-(by file, unless `--group-by` says otherwise), so they are always the first N
-that `--detail=all` would print. `--detail=0` is the same as `--detail=all`. Any
-other value (`--detail=abc`, `--detail=-1`) is refused with exit code 3 before
-the analysis runs. The ranked `Top issues by impact` section is `--top`'s.
+`--detail` enables the finding list with an optional cap. `--detail=N` selects
+the worst N by severity, then impact, before presentation grouping. Unranked
+findings fall back to place. `--detail=0` equals `--detail=all`; invalid values
+refuse with exit 3 before analysis. `--top` controls the separate impact list.
 
 !!! note
     `--detail` is auto-enabled when using `--namespace` or `--class`. It also works with `--format=text` to append a grouped violation list after the one-line-per-violation output.
@@ -358,8 +368,8 @@ breached and not-compared states.
 `violationsMeta`
 also reports `shown` — the number of violations actually included in this
 payload, which can be lower than `total` when `--format-opt=violations=N`
-truncates the list. A truncated list is the first N in the identity order
-described below.
+truncates the list. A truncated list selects the N worst findings by severity, then impact
+ranking, before presentation grouping. Unranked findings fall back to place.
 
 `message` and `recommendation` mean the same in `violations` and in
 `topIssues`: the finding's message, and its recommendation or `null`. Under
@@ -369,16 +379,44 @@ over the whole project's lines would mix two scopes. The findings the
 selection left out are counted in `outOfScope`, which is `null` without a
 selection, as the drill-down table under `summary` above shows for every format.
 
-When a symbol name from the analysed source is not valid UTF-8 (the parser
-accepts any byte above 0x7F in an identifier), each invalid byte is published
-as U+FFFD and the document gains a top-level `invalidUtf8Replaced` key counting
-the repaired strings. `metrics`, `suppressed` and the `html` payload do the
-same; `sarif` reports it as a `QMX-PUBLICATION-INVALID-UTF8` tool notification,
-`gitlab` as a `publication.invalid-utf8` issue, and `checkstyle` as an error
-under the synthetic file `[publication]`. A file path that is not valid UTF-8
-is repaired and reported the same way; `sarif` repairs it before
-percent-encoding it, so the artifact URI carries `%EF%BF%BD` and never a bare
-`%FF`.
+Invalid source bytes are published as `%XX`; valid UTF-8 remains unchanged.
+Identity components always encode literal `%` as `%25` and reserved separators
+such as declaration-file `#` as `%23`. Display strings are different: a valid
+literal `Pa%FFth.php` and an invalid byte path can display identically. Use
+`subject` for exact identity, not `file`. SARIF `uri` percent-encodes the original
+path bytes, so an invalid byte is `%FF` and a literal percent is `%25`.
+
+Every format reports a positive repair count on stderr. JSON, metrics,
+suppressed and HTML retain the `invalidUtf8Replaced` document marker; SARIF
+also uses a tool notification. GitLab and Checkstyle contain actual findings
+only, with no synthetic `publication.invalid-utf8` record. Prose repairs the
+whole body as one published string and preserves literal percentages; structured
+formats count repaired fields. These counts need not be equal across formats.
+
+
+`json.violations`, `json.topIssues` and HTML use the same finding record keys:
+`file`, `line`, `symbol`, `channel`, `subject`, `occurrence`, `edge`, `namespace`,
+`rule`, `code`, `severity`, `message`, `recommendation`, `metricValue`, `threshold`,
+`techDebtMinutes`, `acceptedLevel`, `baselineVerdict`, `baselineReason`.
+HTML readers must use `rule/code/symbol` instead of
+`ruleName/violationCode/symbolPath`. Diagnostic, advice and baseline status are
+shown separately; a configured cap alone is not a measured breach.
+
+`outOfScope` adds `identities`, an occurrence-preserving multiset of
+`channel`, `subject`, `occurrence`, `edge` and `severity`. JSON and metrics use
+`violationCount/errorCount/warningCount/infoCount`. SARIF carries identities
+in its notification; GitHub retains its `::notice`. Health prints selected
+and outside counts even when no health scores are available.
+
+The HTML viewer uses published repository bags, including the global namespace.
+Class-like area uses `size.class-loc`; namespace/project area uses aggregate
+LOC. Missing health remains unknown. The viewer does not recompute subtree
+health or replace it with MI. Worst Sub-Namespaces shows the published
+fractional score, and Martin coordinates use `coupling.*`.
+
+`violationGroups` dictionary keys use total percent encoding, including
+literal `%` as `%25`, to keep byte-distinct file groups separate. Decode a
+key with `rawurldecode`; the finding's `file` remains display text.
 
 For machine identity, use `channel + subject + optional occurrence + optional
 edge`. `symbol` is the logical display projection; source line, message, and
@@ -1191,6 +1229,7 @@ All formats use the same exit codes:
 | 2         | At least one error-severity violation                                 |
 | 3         | Configuration or input error                                          |
 | 4         | Analysis incomplete; policy result is not authoritative               |
+| `5`       | Internal tool error                                                   |
 
 By default (`--fail-on=error`), warnings no longer cause exit code 1 — only errors trigger a non-zero exit. Use `--fail-on=warning` for the stricter behavior where warnings also fail. Exit 4 takes precedence over warning/error policy codes.
 
