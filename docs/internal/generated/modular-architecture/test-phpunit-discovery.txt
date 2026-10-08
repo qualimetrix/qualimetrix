@@ -180,6 +180,7 @@ Available tests:
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itDoesNotHoldAnIncompleteAnalysisToABaselineFileItCannotWrite
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itHoldsAnAnalysisToItsBaselineFile
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itJudgesNormalizationMeasurementsByTheirCanonicalOutcomeSide
+ - QmxFindingGate\Tests\CaseOutcomeCheckTest::itReadsTheExplicitEnvelopeFromTheRepairingEncoder
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRefusesInvalidCorpusMetadataBeforeEveryCorpusReadingModeWrites
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRequiresACoherentRefusalEnvelope"a different exit"
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRequiresACoherentRefusalEnvelope"a malformed position"
@@ -1134,8 +1135,8 @@ Available tests:
  - Qualimetrix\Governance\ProjectScopeCoverage\AnalysisContextScopeArgumentGuardTest::itFindsNoProductionContextBuiltWithoutAMeasuredScopeAnswer
  - Qualimetrix\Governance\ProjectScopeCoverage\ProjectScopeReadersTest::itAccountsForEveryProductionFileThatNamesThePredicate
  - Qualimetrix\Governance\ProjectScopeCoverage\ProjectScopeReadersTest::itListsExactlyTheChannelsTheReadersWithhold
- - Qualimetrix\Governance\PublishedText\JsonEncodingPopulationTest::everyDirectJsonEncoderHasAnExaminedOwner
- - Qualimetrix\Governance\PublishedText\ProductGlyphVocabularyTest::everyNonAsciiSourceLiteralHasAnExaminedGlyph
+ - Qualimetrix\Governance\PublishedText\JsonEncodingPopulationTest::itRequiresAnExaminedOwnerForEveryDirectJsonEncoder
+ - Qualimetrix\Governance\PublishedText\ProductGlyphVocabularyTest::itRequiresAnExaminedGlyphForEveryNonAsciiSourceLiteral
  - Qualimetrix\Governance\RatchetArtifact\BaselineCountPublicationTest::itPublishesTheDerivedBaselineCountTupleExactlyOnce
  - Qualimetrix\Governance\RatchetArtifact\BaselineCountPublicationTest::itRejectsBaselineOnlyBaselineCountDrift
  - Qualimetrix\Governance\RatchetArtifact\BaselineCountPublicationTest::itRejectsDocumentationOnlyBaselineCountDrift
