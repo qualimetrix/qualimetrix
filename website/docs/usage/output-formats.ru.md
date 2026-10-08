@@ -220,13 +220,22 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
         "debtPer1kLoc": 2.1
     },
     "outOfScope": null,
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": [], "reasons": []},
+    "projectScope": {
+        "state": "covered",
+        "uncoveredAutoloadTargets": [],
+        "unjudgedChannels": [],
+        "unjudgedValues": [],
+        "reasons": []
+    },
     "configurationDiagnostics": [],
     "health": {
         "complexity": {
             "score": 78.0,
             "label": "Excellent",
-            "threshold": {"warning": 50, "error": 25},
+            "threshold": {
+                "warning": 50,
+                "error": 25
+            },
             "coverage": {
                 "state": "measured",
                 "measured": 2263,
@@ -249,14 +258,19 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
                 {
                     "symbolPath": "App\\Service\\UserService",
                     "className": "App\\Service\\UserService",
-                    "metrics": {"complexity.ccn.sum": 96}
+                    "metrics": {
+                        "complexity.ccn.sum": 96
+                    }
                 }
             ]
         },
         "overall": {
             "score": 72.0,
             "label": "Fair",
-            "threshold": {"warning": 50, "error": 25},
+            "threshold": {
+                "warning": 50,
+                "error": 25
+            },
             "coverage": {
                 "state": "not-applicable",
                 "measured": null,
@@ -298,11 +312,23 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
             "rank": 1,
             "file": "src/Service/UserService.php",
             "line": 42,
+            "subject": "declaration:callable:App\\Service\\UserService::calculate@src/Service/UserService.php",
             "symbol": "App\\Service\\UserService::calculate",
+            "channel": "complexity.ccn",
+            "occurrence": null,
+            "edge": null,
+            "namespace": "App\\Service",
             "rule": "complexity.ccn",
+            "code": "complexity.ccn",
             "severity": "error",
             "message": "Cyclomatic complexity: 15 (threshold: 10) — too many code paths",
             "recommendation": null,
+            "metricValue": 15,
+            "threshold": 10,
+            "techDebtMinutes": 30,
+            "acceptedLevel": null,
+            "baselineVerdict": null,
+            "baselineReason": null,
             "impactScore": 3.71,
             "coupling.class-rank": 0.1237,
             "debtMinutes": 30
@@ -433,7 +459,7 @@ optional edge`. `symbol` — логическая проекция для ото
 
 При использовании `--group-by=class` или `--group-by=namespace` нарушения организуются в объект `violationGroups`. Каждая группа — это `{count, violations}`: счётчик нарушений и их массив; собственных `errorCount`, `warningCount` или `violationDensity` у группы нет.
 
-Ключи группы — не всегда FQCN класса или пространство имён. Для `--group-by=class`: ключ — это FQCN класса для находки уровня класса, путь к файлу для находки уровня файла без контекста класса, и пустая строка `""` для находки уровня проекта (у неё нет ни класса, ни файла). Для `--group-by=namespace`: ключ — это пространство имён для класса внутри него, `<global>` для класса без пространства имён, и `(project)` для находки уровня проекта.
+Ключи группы — не всегда FQCN класса или пространство имён. Для `--group-by=class`: ключ — это FQCN класса для находки уровня класса, путь к файлу для находки уровня файла без контекста класса, и пустая строка `""` для находки уровня проекта (у неё нет ни класса, ни файла). Для `--group-by=namespace`: ключ — это пространство имён для класса внутри него, `(global)` для класса без пространства имён, и `(project)` для находки уровня проекта.
 
 <!-- llms:skip-begin -->
 ```json

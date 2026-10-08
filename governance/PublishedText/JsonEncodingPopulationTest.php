@@ -41,7 +41,7 @@ final class JsonEncodingPopulationTest extends TestCase
     ];
 
     #[Test]
-    public function everyDirectJsonEncoderHasAnExaminedOwner(): void
+    public function itRequiresAnExaminedOwnerForEveryDirectJsonEncoder(): void
     {
         $parser = (new ParserFactory())->createForNewestSupportedVersion();
         $finder = new NodeFinder();

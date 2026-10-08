@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Subprocess\ChildProcess;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -16,6 +17,7 @@ use RecursiveIteratorIterator;
 require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
 
 #[CoversClass(SymbolPath::class)]
+#[CoversClass(Application::class)]
 final class SourceByteIdentityProcessTest extends TestCase
 {
     private string $directory;

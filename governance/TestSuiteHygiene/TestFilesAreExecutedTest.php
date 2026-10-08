@@ -113,6 +113,9 @@ final class TestFilesAreExecutedTest extends TestCase
      * than in an attribute nobody reads.
      */
     private const SILENTLY_EXCLUDED = [
+        // Native fixture freshness is checked alongside the generated bundle.
+        'Qualimetrix\Governance\GeneratedArtifactFreshness\HtmlPayloadFixtureFreshnessTest'
+            . '::itMatchesTheNativeCliPayload',
         // This full CLI lifetime probe takes about a minute and runs manually.
         'Qualimetrix\\Tests\\Analysis\\Evidence\\Duplication\\Functional\\DuplicationMemoryLimitProcessTest'
             . '::itCompletesTheDuplicationLifetimePipelineUnder128M',

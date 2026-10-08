@@ -111,7 +111,7 @@ final class OutputFormatSchemaConsistencyTest extends TestCase
                 expectedExit: 2,
                 expectedCoverage: ['complete' => true],
                 contentRequirements: [
-                    'a namespace group key, `<global>` for the class outside every namespace, and `(project)`',
+                    'a namespace group key, `(global)` for the class outside every namespace, and `(project)`',
                 ],
             ),
             new OutputFormatScenario(
@@ -507,7 +507,7 @@ final class OutputFormatSchemaConsistencyTest extends TestCase
             'group-by-class: a class FQCN group key, a file-path group key and the empty project key' => \array_key_exists('', self::violationGroupsOf($byClass))
                 && self::anyGroupKey(self::violationGroupsOf($byClass), static fn(string $k): bool => str_ends_with($k, '.php'))
                 && self::anyGroupKey(self::violationGroupsOf($byClass), static fn(string $k): bool => str_contains($k, '\\')),
-            'group-by-namespace: a namespace group key, `<global>` for the class outside every namespace, and `(project)`' => \array_key_exists('<global>', self::violationGroupsOf($byNamespace))
+            'group-by-namespace: a namespace group key, `(global)` for the class outside every namespace, and `(project)`' => \array_key_exists('(global)', self::violationGroupsOf($byNamespace))
                 && \array_key_exists('(project)', self::violationGroupsOf($byNamespace))
                 && self::anyGroupKey(self::violationGroupsOf($byNamespace), static fn(string $k): bool => str_contains($k, '\\')),
             'broken: one unparsable file, so `coverage.failures[]` is not empty' => $broken['coverage']['failures'] !== [],
@@ -887,6 +887,14 @@ final class OutputFormatSchemaConsistencyTest extends TestCase
                 'worstClasses[]' => [
                     [self::PAGE_EN, 'json', '/The `worstNamespaces` and `worstClasses` entries include a\s+(?<keys>`violationDensity`) field/su'],
                     [self::PAGE_RU, 'json', '/Записи `worstNamespaces` и `worstClasses` включают поле\s+(?<keys>`violationDensity`)/su'],
+                ],
+                'topIssues[].edge' => [
+                    [self::PAGE_EN, 'json', '/a typed edge is\s+`(?<keys>\{[^`]*\})`/su'],
+                    [self::PAGE_RU, 'json', '/типизированное —\s+`(?<keys>\{[^`]*\})`/su'],
+                ],
+                'topIssues[].acceptedLevel' => [
+                    [self::PAGE_EN, 'json', '/carries\s+`(?<keys>\{"shape".*?\})`/su'],
+                    [self::PAGE_RU, 'json', '/несёт `(?<keys>\{"shape".*?\})`/su'],
                 ],
                 'violations[].edge' => [
                     [self::PAGE_EN, 'json', '/a typed edge is\s+`(?<keys>\{[^`]*\})`/su'],

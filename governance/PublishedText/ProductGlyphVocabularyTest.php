@@ -18,7 +18,7 @@ use RecursiveIteratorIterator;
 final class ProductGlyphVocabularyTest extends TestCase
 {
     #[Test]
-    public function everyNonAsciiSourceLiteralHasAnExaminedGlyph(): void
+    public function itRequiresAnExaminedGlyphForEveryNonAsciiSourceLiteral(): void
     {
         $parser = (new ParserFactory())->createForNewestSupportedVersion();
         $finder = new NodeFinder();

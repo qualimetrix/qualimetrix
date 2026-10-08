@@ -221,13 +221,22 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
         "debtPer1kLoc": 2.1
     },
     "outOfScope": null,
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": [], "reasons": []},
+    "projectScope": {
+        "state": "covered",
+        "uncoveredAutoloadTargets": [],
+        "unjudgedChannels": [],
+        "unjudgedValues": [],
+        "reasons": []
+    },
     "configurationDiagnostics": [],
     "health": {
         "complexity": {
             "score": 78.0,
             "label": "Excellent",
-            "threshold": {"warning": 50, "error": 25},
+            "threshold": {
+                "warning": 50,
+                "error": 25
+            },
             "coverage": {
                 "state": "measured",
                 "measured": 2263,
@@ -250,14 +259,19 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
                 {
                     "symbolPath": "App\\Service\\UserService",
                     "className": "App\\Service\\UserService",
-                    "metrics": {"complexity.ccn.sum": 96}
+                    "metrics": {
+                        "complexity.ccn.sum": 96
+                    }
                 }
             ]
         },
         "overall": {
             "score": 72.0,
             "label": "Fair",
-            "threshold": {"warning": 50, "error": 25},
+            "threshold": {
+                "warning": 50,
+                "error": 25
+            },
             "coverage": {
                 "state": "not-applicable",
                 "measured": null,
@@ -299,11 +313,23 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
             "rank": 1,
             "file": "src/Service/UserService.php",
             "line": 42,
+            "subject": "declaration:callable:App\\Service\\UserService::calculate@src/Service/UserService.php",
             "symbol": "App\\Service\\UserService::calculate",
+            "channel": "complexity.ccn",
+            "occurrence": null,
+            "edge": null,
+            "namespace": "App\\Service",
             "rule": "complexity.ccn",
+            "code": "complexity.ccn",
             "severity": "error",
             "message": "Cyclomatic complexity: 15 (threshold: 10) — too many code paths",
             "recommendation": null,
+            "metricValue": 15,
+            "threshold": 10,
+            "techDebtMinutes": 30,
+            "acceptedLevel": null,
+            "baselineVerdict": null,
+            "baselineReason": null,
             "impactScore": 3.71,
             "coupling.class-rank": 0.1237,
             "debtMinutes": 30
@@ -432,7 +458,7 @@ unchanged.
 
 When using `--group-by=class` or `--group-by=namespace`, violations are organized into a `violationGroups` object. Each group is `{count, violations}` — a violation count and the violations array; it does not carry its own `errorCount`, `warningCount`, or `violationDensity`.
 
-The group keys are not always a class FQCN or namespace. For `--group-by=class`: the key is the class FQCN for a class-scoped finding, the file path for a file-level finding with no class context, and an empty string `""` for a project-level finding (which has neither a class nor a file). For `--group-by=namespace`: the key is the namespace for a namespaced class, `<global>` for a class with no namespace, and `(project)` for a project-level finding.
+The group keys are not always a class FQCN or namespace. For `--group-by=class`: the key is the class FQCN for a class-scoped finding, the file path for a file-level finding with no class context, and an empty string `""` for a project-level finding (which has neither a class nor a file). For `--group-by=namespace`: the key is the namespace for a namespaced class, `(global)` for a class with no namespace, and `(project)` for a project-level finding.
 
 <!-- llms:skip-begin -->
 ```json
