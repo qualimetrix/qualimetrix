@@ -42,6 +42,7 @@ use QmxFindingGate\ValueCheck;
 use QmxFindingGate\ValueStage;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use ReflectionClass;
 use ReflectionMethod;
 use Throwable;
 use WeakReference;
@@ -815,7 +816,8 @@ final class CaptureTest extends TestCase
                 try {
                     $corpus = Corpus::load($root);
                     try {
-                        (new TreeRun($root, $temporary, $side, RenameMaps::fromPairs([]), false, CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0]);
+                        $plan = self::outputIdentityPlan(CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), $corpus->cases[0]->id, false);
+                        (new TreeRun($root, $temporary, $side, RenameMaps::fromPairs([]), false, $plan, DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0]);
                         self::fail('A successful output publication with a ' . $defect . ' was accepted for ' . $side . '.');
                     } catch (GateError $error) {
                         self::assertSame('The output publication is missing, empty, or does not name exactly the chosen file for case:alpha|check:output.', $error->getMessage());
@@ -841,7 +843,8 @@ final class CaptureTest extends TestCase
                 $temporary = Fs::temporaryDirectory('whole-ranking-capture-');
                 try {
                     $corpus = Corpus::load($root);
-                    $capture = (new TreeRun($root, $temporary, $side, RenameMaps::fromPairs([]), false, CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0]);
+                    $plan = self::outputIdentityPlan(CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), $corpus->cases[0]->id, true);
+                    $capture = (new TreeRun($root, $temporary, $side, RenameMaps::fromPairs([]), false, $plan, DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0]);
                     self::assertArrayNotHasKey('case:alpha|format:json', $capture->rankings);
                     self::assertArrayNotHasKey('case:alpha|format:json', $capture->baselineEligibility);
                     self::assertSame($refusal, $capture->artifacts['case:alpha|format:json']);
@@ -1000,6 +1003,36 @@ final class CaptureTest extends TestCase
             Fs::removeRecursively($temporary);
         }
     }
+    private static function outputIdentityPlan(CapturePlan $full, string $caseId, bool $refusal): CapturePlan
+    {
+        $surfaces = $refusal
+            ? ['format:json', 'check:baseline-source', 'baseline-file', 'check:output', 'check:baseline', 'baseline:update', 'baseline:cleanup', 'baseline:rename-channels']
+            : ['format:json', 'check:output'];
+        $descriptors = [];
+        $artifacts = [];
+        $changes = [];
+        foreach ($full->invocations() as $descriptor) {
+            if ($descriptor['scope'] !== 'case:' . $caseId || !\in_array($descriptor['surface'], $surfaces, true)) {
+                continue;
+            }
+            $key = $descriptor['scope'] . '|' . $descriptor['surface'];
+            $descriptors[$key] = $descriptor;
+            foreach ($full->artifactsOf($key) as $artifact) {
+                $artifacts[$artifact] = $key;
+            }
+            $change = $full->changeOf($key);
+            if ($change !== null) {
+                $changes[$key] = $change;
+            }
+        }
+        // The private constructor bypasses validation, so retain only bindings from the validated plan.
+        $reflection = new ReflectionClass(CapturePlan::class);
+        $plan = $reflection->newInstanceWithoutConstructor();
+        $reflection->getMethod('__construct')->invoke($plan, $descriptors, $artifacts, $changes);
+
+        return $plan;
+    }
+
     private static function sarifCapturePublication(): string
     {
         $tree = SyntheticTree::clean();
