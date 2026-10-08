@@ -67,20 +67,7 @@ final class HtmlFormatter implements FormatterInterface, FormatOptionKeysInterfa
             '__APP_JS__' => $appJs,
         ]);
 
-        if ($report->coverage !== null && !$report->coverage->isComplete()) {
-            $banner = \sprintf(
-                '<div role="alert" data-qmx-coverage="incomplete" style="padding:12px;background:#7f1d1d;color:#fff">%s</div>',
-                htmlspecialchars(CoverageNarrator::describe($report->coverage), \ENT_QUOTES),
-            );
-            $rendered = str_replace('<body>', '<body>' . $banner, $rendered);
-        }
-
-        if ($report->outOfScope !== null && $report->outOfScope->total() > 0) {
-            $rendered = str_replace('<body>', '<body>' . \sprintf(
-                '<div role="status" data-qmx-drill-down="out-of-scope" style="padding:12px;background:#78350f;color:#fff">%s</div>',
-                htmlspecialchars($report->outOfScope->describe(), \ENT_QUOTES),
-            ), $rendered);
-        }
+        $rendered = $this->withRunBanners($rendered, $report);
 
         if ($projectScope !== null) {
             $rendered = str_replace('<body>', '<body>' . \sprintf(
@@ -98,6 +85,26 @@ final class HtmlFormatter implements FormatterInterface, FormatOptionKeysInterfa
         }
 
         return new FormattedReport($rendered, $repairs);
+    }
+
+    private function withRunBanners(string $rendered, Report $report): string
+    {
+        if ($report->coverage !== null && !$report->coverage->isComplete()) {
+            $banner = \sprintf(
+                '<div role="alert" data-qmx-coverage="incomplete" style="padding:12px;background:#7f1d1d;color:#fff">%s</div>',
+                htmlspecialchars(CoverageNarrator::describe($report->coverage), \ENT_QUOTES),
+            );
+            $rendered = str_replace('<body>', '<body>' . $banner, $rendered);
+        }
+
+        if ($report->outOfScope !== null && $report->outOfScope->total() > 0) {
+            $rendered = str_replace('<body>', '<body>' . \sprintf(
+                '<div role="status" data-qmx-drill-down="out-of-scope" style="padding:12px;background:#78350f;color:#fff">%s</div>',
+                htmlspecialchars($report->outOfScope->describe(), \ENT_QUOTES),
+            ), $rendered);
+        }
+
+        return $rendered;
     }
 
     public function publicationKind(): PublicationKind

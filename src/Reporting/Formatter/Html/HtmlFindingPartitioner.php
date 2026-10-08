@@ -125,11 +125,19 @@ final readonly class HtmlFindingPartitioner
             SymbolType::Method => [SymbolPath::forClass($namespace, $symbolPath->type ?? '')->toString(), $namespaceNode],
             SymbolType::Class_ => [$symbolPath->toString(), $namespaceNode],
             SymbolType::Function_, SymbolType::Namespace_ => [$namespaceNode],
-            SymbolType::File => isset($soleClassByFile[$symbolPath->toString()])
-                ? [$soleClassByFile[$symbolPath->toString()]]
-                : [],
+            SymbolType::File => self::fileCandidatePaths($symbolPath->toString(), $soleClassByFile),
             default => [],
         };
+    }
+
+    /**
+     * @param array<string, string> $soleClassByFile
+     *
+     * @return list<string>
+     */
+    private static function fileCandidatePaths(string $filePath, array $soleClassByFile): array
+    {
+        return isset($soleClassByFile[$filePath]) ? [$soleClassByFile[$filePath]] : [];
     }
 
     /**
