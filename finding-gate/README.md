@@ -356,7 +356,7 @@ judgment and derivation use that same algorithm. An unused intention is stale.
 
 ### Prefix and limit
 
-Each published `topIssues` must equal the raw prefix of its own complete
+Each published JSON `topIssues` must equal the raw prefix of its own complete
 ranking. A shifted or malformed prefix is `ranking-projection-mismatch`.
 
 The limit is known exactly when fewer than all records are shown (`=k`);
@@ -365,12 +365,11 @@ Across sides, these intervals must intersect. A changed limit is declared as
 a field intention `topIssues.limit`, with derived `=k`/`>=n` values for
 the exact invocation. `--top=0` is a valid empty slice.
 
-Summary top-issue rows are checked inside each side against the ordered
-physical records joined from its complete ranking: row count, order, record
-correspondence and score within the printed precision's tolerance. Their
-presentation, including whether a location carries `:line` and which decimal
-precision a score uses, is owned by product `TopIssuesRenderer` tests. Through
-sides, only the surrounding non-record summary text remains byte-compared.
+Summary top-issue rows have no record or ranking authority in this gate.
+The complete summary bytes, including the rows, are compared as a whole
+invocation after declared normalization. An intentional change requires an
+exact surface delta. Product `TopIssuesRenderer` tests establish the
+presentation's correctness, including locations and score precision.
 
 Internal ranking and physical-support publications are evidence inputs, not
 additional cross-side surfaces or structural-diff targets. Their metadata is
@@ -513,6 +512,12 @@ Ranking order is judged separately by the occurrence-preserving rule above.
 `--derive-normalization` over five passes of one unchanged tree.
 Every pass is judged. Failed, empty or semantically different captures refuse
 the write; a narrowed corpus cannot derive the list.
+
+The namespace summary clock row narrows its measured locator to a numeric
+seconds field with one decimal place. The existing normalization self-test
+preserves semantic additions inside the originally measured interval.
+Re-measurement can propose a wider locator; the result must pass that self-test
+before it is accepted.
 
 An exclusion must be exercised in a whole run or it is
 `normalization-stale`. A locator may not reach compared record fields:
@@ -858,10 +863,10 @@ Each limit needs its own product or delivery check:
 - Positions of records with changed ranking values, or introduced/withdrawn
   unpaired records: ranking order judges unchanged paired values only.
 - Ranking order outside both published slices: use product ranking tests.
-- The presentation of summary ranking rows, including `:line` and score
-  decimal precision: use product `TopIssuesRenderer` tests. Changes to the
-  row layout, severity tags or debt notation may require updating the
-  comparator and are not licensed by residual-diff declarations.
+- Correctness of summary top-issue presentation, including `:line` and score
+  decimal precision: use product `TopIssuesRenderer` tests. Whole-invocation
+  comparison detects undeclared changes; an exact surface delta can authorize
+  an intentional layout change but does not prove its correctness.
 - No corpus control proves the combined tie-break mutation and an order
   intention; the comparison algorithm has synthetic coverage.
 - Ranking schema derivation requires the current literal layout and
