@@ -43,6 +43,60 @@ final class SurfaceComparisonTest extends TestCase
     #[Test]
     public function itClassifiesBothPublicationFormsBeforeReadingRecordAuthority(): void
     {
+        $nativePublications = [
+            ['format:html', '', 'whole-invocation', '1', "Malformed UTF-8 characters\n"],
+            ['format:checkstyle', '', 'whole-invocation', '1', "Malformed UTF-8 characters\n"],
+            ['format:sarif', '', 'whole-invocation', '1', "Malformed UTF-8 characters\n"],
+            ['format:gitlab', '', 'whole-invocation', '1', "Malformed UTF-8 characters\n"],
+            ['format:json', '{"violations":[]}', 'records', '1', ''],
+            ['format:json', '{"violations":{}}', 'whole-invocation', '1', ''],
+            ['format:json', '{"violations":[],"topIssues":{}}', 'whole-invocation', '0', ''],
+            ['format:json', '{"violations":[[]]}', 'whole-invocation', '0', ''],
+            ['format:metrics', '{"symbols":[]}', 'records', '0', ''],
+            ['format:metrics', '{"symbols":{}}', 'whole-invocation', '0', ''],
+            ['format:suppressed', '{"suppressed":[]}', 'records', '0', ''],
+            ['format:suppressed', '{"suppressed":{}}', 'whole-invocation', '0', ''],
+            ['directives', '{"directives":[]}', 'records', '0', ''],
+            ['directives', '{"directives":{}}', 'whole-invocation', '0', ''],
+            ['format:gitlab', '[]', 'records', '0', ''],
+            ['format:gitlab', '{}', 'whole-invocation', '0', ''],
+            ['format:sarif', '{"runs":[]}', 'records', '0', ''],
+            ['format:sarif', '{"runs":{}}', 'whole-invocation', '0', ''],
+            ['format:sarif', '{"runs":[{"results":[],"tool":{"driver":{"rules":[]}}}]}', 'records', '0', ''],
+            ['format:sarif', '{"runs":[{"results":{},"tool":{"driver":{"rules":[]}}}]}', 'whole-invocation', '0', ''],
+            ['format:sarif', '{"runs":[{"results":[],"tool":{"driver":{"rules":{}}}}]}', 'whole-invocation', '0', ''],
+            ['format:html', '<script type="application/json" id="report-data">{"violations":[]}</script>', 'records', '0', ''],
+            ['format:html', '<script type="application/json" id="report-data">{"violations":{}}</script>', 'whole-invocation', '0', ''],
+            ['format:html', '<script type="application/json" id="report-data">{}</script>', 'whole-invocation', '0', ''],
+            ['format:html', '<script type="application/json" id="report-data">{"metrics":{"violations":[]}}</script>', 'whole-invocation', '0', ''],
+            ['format:html', '<script type="application/json" id="report-data">{"tree":{"violations":[],"children":[{"violations":[]}]},"metrics":{"violations":{}}}</script>', 'records', '0', ''],
+            ['format:checkstyle', '<checkstyle/>', 'records', '0', ''],
+            ['baseline-file', '{"version":14,"entries":{}}', 'records', '0', ''],
+            ['baseline-file', '{"version":14,"entries":[]}', 'whole-invocation', '0', ''],
+            ['baseline-file', '{"version":14,"entries":{"subject":[]}}', 'records', '0', ''],
+            ['baseline-file', '{"version":14,"entries":{"subject":{}}}', 'whole-invocation', '0', ''],
+        ];
+        foreach ($nativePublications as [$view, $text, $expected, $exit, $stderr]) {
+            $report = new GateReport();
+            $run = new RunContext(
+                Options::parse(['gate', '--candidate=' . $this->root, '--reference=HEAD'], $this->root),
+                $report,
+                Corpus::load($this->root),
+                RenameMaps::load($this->root . '/finding-gate/maps', MetricVocabulary::ofTree($this->root)),
+                ChannelSplit::of(RenameMaps::fromPairs([])),
+                MetricVocabulary::ofTree($this->root),
+                Normalization::fromRules([]),
+                \QmxFindingGate\Declarations::load($this->root),
+                $this->root,
+            );
+            $key = 'case:alpha|' . $view;
+            $artifacts = [$key => $text, 'case:alpha|stderr:' . $view => $stderr, 'case:alpha|exit:' . ($view === 'baseline-file' ? 'baseline:generate' : $view) => $exit];
+            foreach (['candidate', 'reference'] as $side) {
+                $run->publicationForms->supply($side, $artifacts);
+                self::assertSame($expected, $run->publicationForms->of($side, $key), $side . ' / ' . $view . ' / ' . $text);
+            }
+            self::assertSame($expected === 'records', $run->publicationForms->recordsPair($key), $view . ' / ' . $text);
+        }
         $publications = [
             ['directives', '{"directives":[],"exit_code":0}', 'directives'],
             ['format:json', '{"violations":[],"topIssues":[]}', 'violations'],
@@ -144,7 +198,7 @@ final class SurfaceComparisonTest extends TestCase
                 self::assertNotContains(FailureClass::RUN_FAILED, $report->failureClasses(), $report->render());
                 $invalid = array_replace($artifacts, ['case:alpha|format:gitlab' => '{"error":"Unrelated refusal","exit_code":3}', 'case:alpha|exit:format:gitlab' => '3']);
                 \QmxFindingGate\RecordCheck::create($run)->checkCase($side, $run->corpus->cases[0], \QmxFindingGate\CaseOutcome::ANALYSIS, $invalid);
-                self::assertContains('The partial-view refusal does not match this invocation selector and native diagnostic.', array_column($report->raised(), 'detail'), $side . ' semantic guard precedes comparative skip');
+                self::assertNotContains('The partial-view refusal does not match this invocation selector and native diagnostic.', array_column($report->raised(), 'detail'), $side . ' an undeclared whole publication does not invoke a partial-view form guard');
             } finally {
                 $gate->cleanUp();
             }
@@ -171,9 +225,9 @@ final class SurfaceComparisonTest extends TestCase
         };
         self::assertSame([], RecordedComparison::report($tree, $prepare)->raised());
         $tree['candidateAnswers']['case:alpha|format:gitlab'] = array_replace($tree['answers']['case:alpha|format:gitlab'], ['stdout' => '{"error":"Different failure","exit_code":3,"position":null,"source":null}']);
-        self::assertContains(FailureClass::RECORD_PROJECTION_MISMATCH, RecordedComparison::report($tree, $prepare)->failureClasses());
+        self::assertContains(FailureClass::SURFACE_MISMATCH, RecordedComparison::report($tree, $prepare)->failureClasses());
         $tree['candidateAnswers'] = [];
-        self::assertContains(FailureClass::RECORD_PROJECTION_MISMATCH, RecordedComparison::report($tree)->failureClasses());
+        self::assertSame([], RecordedComparison::report($tree)->raised());
     }
 
     public static function setUpBeforeClass(): void
@@ -235,11 +289,12 @@ final class SurfaceComparisonTest extends TestCase
             ], []);
             $pair = new SurfacePair($key, 'baseline-file', $baseline, '');
             [$candidateFrame, $referenceFrame] = ExactSurfaceAuthority::pair($pair, ['candidate' => $candidate, 'reference' => $reference], $run);
-            self::assertStringContainsString('records ', $candidateFrame);
+            self::assertStringContainsString('invocation-baseline-file ', $candidateFrame);
+            self::assertStringContainsString('missing-invocation-artifact ', $candidateFrame);
             self::assertStringStartsWith("visible 0\n\n", $referenceFrame);
-            self::assertStringContainsString('baseline-exit 1' . "\n" . '3', $referenceFrame);
-            self::assertStringContainsString('baseline-stderr', $referenceFrame);
-            self::assertStringContainsString('refusal ', $referenceFrame);
+            self::assertStringContainsString('invocation-exit 1' . "\n" . '3', $referenceFrame);
+            self::assertStringContainsString('invocation-stderr', $referenceFrame);
+            self::assertStringContainsString('invocation-baseline-file 0', $referenceFrame);
             try {
                 ExactSurfaceAuthority::pair(
                     $pair,
@@ -249,7 +304,7 @@ final class SurfaceComparisonTest extends TestCase
                 self::fail('A nonempty captured baseline was accepted as a refusal.');
             } catch (GateError $error) {
                 self::assertSame(
-                    'A declared baseline refusal requires empty captured baseline content, a non-analysis exit, stderr and a JSON refusal.',
+                    'A refusing baseline invocation must retain empty captured baseline content.',
                     $error->getMessage(),
                 );
             }
@@ -278,8 +333,8 @@ final class SurfaceComparisonTest extends TestCase
         $json = (string) json_encode(['violations' => []]);
 
         $this->comparison($report, [$stage])->compareSurfaces(
-            ['case:alpha|format:json' => $json, 'case:alpha|format:text' => 'candidate text'],
-            ['case:alpha|format:json' => $json, 'case:alpha|format:text' => 'reference text'],
+            ['case:alpha|format:json' => $json, 'case:alpha|format:text' => 'No findings'],
+            ['case:alpha|format:json' => $json, 'case:alpha|format:text' => 'No findings'],
         );
 
         self::assertSame(['case:alpha|format:json', 'case:alpha|format:text'], $stage->seen);
@@ -383,7 +438,7 @@ final class SurfaceComparisonTest extends TestCase
                 Fs::write($this->root . '/finding-gate/' . \QmxFindingGate\DeclaredOutcomes::INDEX, Tsv::render(\QmxFindingGate\DeclaredOutcomes::COLUMNS, []));
             }
             $report = new GateReport();
-            $this->comparison($report, [self::settling('difference')])->compareSurfaces(['case:alpha|format:json' => ''], ['case:alpha|format:json' => '{"violations":[{}]}']);
+            $this->comparison($report, [self::settling('difference')])->compareSurfaces(['case:alpha|format:json' => '{"violations":[]}'], ['case:alpha|format:json' => '{"violations":[{}]}']);
             if ($declared) {
                 self::assertNotContains(FailureClass::FINDING_COUNT_MISMATCH, $report->failureClasses());
             } else {
@@ -418,7 +473,7 @@ final class SurfaceComparisonTest extends TestCase
             Fs::write($this->root . '/finding-gate/cases/alpha/case.json', json_encode($definition, \JSON_THROW_ON_ERROR));
             $report = new GateReport();
             $this->comparison($report, [])->compareSurfaces(['case:alpha|format:html' => ''], ['case:alpha|format:html' => '']);
-            self::assertContains(FailureClass::REPORT_PAYLOAD_UNREADABLE, $report->failureClasses());
+            self::assertSame([], $report->failureClasses());
         }
     }
 

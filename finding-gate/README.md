@@ -50,11 +50,37 @@ and must not be `?`. A declaration that nothing consumes is a failure.
 
 The executable and comparator classes live in `scripts/finding-gate/`;
 `PublicationForms` classifies each captured case/view/side from its own bytes
-and process exit before record authority is read. A parsed native record
-population has form `records`; an error envelope or a non-analysis exit without
-that population has form `refusal`. A malformed successful publication fails
-its native decoder instead of acquiring either form.
-negative controls live in `scripts/finding-gate-controls/`. The shared loaders
+before record authority is read. A native decoder proving its own population
+gives `records`; every other supplied publication gives `whole-invocation`.
+Empty stdout, error envelopes, malformed documents and HTML without its own
+finding list remain complete invocations. No process-exit table selects the
+form. Native decoding failures classify the publication; a missing registered
+decoder remains a programmer error. Missing prospective captures remain
+distinct from supplied empty bytes.
+
+JSON decoding preserves native objects and arrays before associative conversion:
+`{}` in a list position is not an empty `[]`. JSON views prove their named lists,
+GitLab proves its root list, and SARIF proves its runs/results/rule-catalog lists.
+HTML reads only native tree-node finding lists and children, including the flat
+native population used by the gate's synthetic stand; a metric named
+`violations` does not prove finding population. Baselines require their supported
+document, an entries object map and an actual entry list per subject. The empty
+entries object is a valid zero-group baseline. Prose proves parsed finding lines
+or a recognized empty-population publication; arbitrary text is not zero records.
+
+If either side is `whole-invocation`, comparison retains normalized stdout,
+stderr, exact exit and planned output-file artifacts, including captured missing
+markers. It does not extract a payload, translate record vocabulary, substitute
+records/values/fingerprints or reorder records. Equal malformed invocations are
+equivalent: this gate proves equivalence, while product tests prove health.
+Differences require an exact complete-surface declaration covering that whole
+invocation. Outcome-transition, partial-view-refusal and record/value forms
+cannot license these differences. Declaration-form guards require an explicit
+applicable declaration and its JSON evidence; they never judge a whole pair.
+Product promises, including empty baseline content after failed generation,
+remain independent of those forms.
+
+Negative controls live in `scripts/finding-gate-controls/`. The shared loaders
 read a fixed set of subject-owned `wiring-*.php` files. Unknown files, unknown
 keys, duplicate registrations and unloaded checks are refused. The retired
 `pending` key is not accepted, even with an empty value. Every failure class
@@ -147,14 +173,15 @@ reading the first binary's AST as its own measurement.
 
 ### Outcomes and diagnostic messages
 
-A refusal is compared as an outcome: stdout, stderr, process exit and any
-file publication remain observable. If a candidate analysis invocation
-refuses before it can supply complete ranking metadata, capture stops with
-`run-failed`. A reference input refusal is retained and named
-`reference-input-untranslated` before any analysis records are read. Other
-undeclared candidate input refusals that reach comparison are named
-`candidate-input-refused`. An explicit
-transition uses the outcome declaration and its exact measured snapshot.
+Every supplied publication is judged by its native decoder before outcome forms
+are read. A whole invocation retains stdout, stderr, process exit and captured
+file bytes for exact comparison. An explicit case outcome or transition can
+invoke its JSON form guard only on an eligible records pair; it cannot settle
+or license a whole invocation. Candidate analysis that cannot supply complete
+ranking metadata still stops capture with `run-failed`. A reference input
+refusal is retained and named `reference-input-untranslated` before analysis
+records are read; candidate input-translation and ownership checks keep their
+existing product promises.
 
 An incomplete case keeps its findings and its incompleteness diagnostics.
 The product requires no baseline file for it; the gate verifies exit 4 and
@@ -164,8 +191,8 @@ are indistinguishable in both incomplete and declared-refusal captures.
 Known run notices and exact analysis diagnostics are kept outside the finding
 projection in GitHub, GitLab and Checkstyle. Their original bytes remain under
 surface comparison. Unknown codes, diagnostic levels or shapes do not inherit
-that treatment. HTML on two refusing sides is compared as complete refusal
-text; analysis and incomplete outcomes require a readable report payload.
+that treatment. HTML is reduced to its payload only for a records pair; any whole
+side retains complete captured HTML bytes independently of the expected outcome.
 
 ## Surfaces and invocation provenance
 
@@ -351,24 +378,22 @@ Refusal envelope keys come from one explicit array literal passed to
 Indirect envelope construction is refused. Changing a refusal while it remains a
 refusal uses an exact surface delta.
 
-An outcome declaration names the transition and its refusal file. Repeated
-refusal outputs are still compared. A withdrawn surface is still invoked on
-the reference and must meet its exact declared candidate refusal. Declaring a
-withdrawal does not suppress a broken reference. The candidate owes the exact
-refusal instead of a finding projection for that withdrawn invocation; the
-reference still owes its complete projection. Introduced and withdrawn
-surface rows never disable neighbouring publications.
+An outcome declaration names the transition and its refusal file. Declaration
+forms require their own applicable JSON view and a records pair. Introduced and
+withdrawn publication forms likewise apply only to JSON, metrics and suppressed
+JSON views; other publications retain ordinary or exact whole comparison.
+A whole invocation does not credit an outcome or publication form, even if
+its bytes look like the declared refusal.
 
 Surface declarations use `cases=*` for every case, or a nonempty JSON list of
-exact case names. A withdrawn format is captured only in those cases. Each
-selected reference must analyze: a refusal cannot witness a report's removal.
-Other formats and the excluded cases retain their ordinary comparisons.
+exact case names. A withdrawn format is captured only in those cases. Selected
+reference ownership and case-input translation retain their checks; other
+formats and excluded cases retain ordinary comparisons.
 
-GitLab and Checkstyle refuse namespace and class selections on both trees.
-A separate product-semantic guard validates their exit 3, selector and native
-partial-view refusal reason. A reference refusal also cannot establish a
-declared publication withdrawal. These guards do not classify either refusal
-as a record population.
+The existing selector/diagnostic predicates do not validate arbitrary
+Checkstyle or GitLab whole publications. They cannot veto exact whole evidence
+or establish a record population. A native records decoder is the sole positive
+classification predicate.
 
 Structural maps translate named paths in configuration documents. Their
 closed document and shape vocabularies live in `DeclaredStructuralMaps`;
@@ -470,7 +495,7 @@ public normalization row.
 JSON is compared as published bytes. `JsonText` edits named spans without
 re-encoding unrelated layout, escaping or number spelling. HTML payload
 extraction likewise retains its JSON bytes while excluding the viewer bundle;
-two refusal sides retain complete refusal text instead.
+any whole side retains the complete invocation instead.
 
 `declared-delta.tsv` has `surface, file, reason` columns and exact unified
 diffs under `declared-delta/`. A row can name one case surface or a surface
@@ -538,8 +563,7 @@ apply only when both sides supply `records`. Every other pair retains the
 complete invocation's normalized stdout, stderr, file bytes and process exit.
 Baseline generation inherits a capture boundary: its main publication stores
 the generated file bytes in place of native stdout. Baseline comparisons retain
-those file bytes, stderr and exit, plus the JSON refusal for a declared outcome
-transition; they do not claim to compare native baseline-generation stdout.
+those file bytes, stderr and exit; they do not claim to compare native baseline-generation stdout.
 An unexplained change uses an exact surface intention for that invocation;
 the measured frame includes all those publications, so a neighbouring stderr
 or exit change cannot hide behind an unchanged stdout. Missing invocation
@@ -571,20 +595,19 @@ prerequisites when those schema changes apply. These validity checks do not
 extend the document's frame or make a finding-source residual select its exact
 route.
 
-Every refusing baseline invocation must retain empty captured baseline content.
-Capture records
-bytes, so a missing file and an existing zero-byte file are indistinguishable
-here. A declared outcome transition additionally requires a non-analysis
-`baseline:generate` exit, nonempty stderr and a validated
-JSON refusal; the exact frame retains the empty publication, exit,
-stderr and refusal. In a mixed pair the analyzing baseline remains an opaque
-canonical document; it does not supply record operations or schema units.
-Before captures are supplied, the footprint describes prospective side-local
-obligations only. Existing field-publication provenance may retain an own-side
-parsed snapshot beside a refusing side; `FieldValuesCheck` does not compare,
-credit, derive or mark that snapshot as schema authority. A supply obligation
-is not a comparative licence. The G8 refusal snapshot still covers only
-`check` invocations.
+Every baseline invocation with a nonzero captured generation exit must retain
+empty captured baseline content. This product promise runs before declaration
+form eligibility. Capture stores bytes, so a missing file and an existing
+zero-byte file are indistinguishable at that capture boundary. A wholly missing
+artifact key stays a capture failure and receives an identity marker in an exact
+frame. Whole baseline pairs retain both sides' complete normalized file bytes,
+stderr and exact exit without a record or JSON-envelope marker. Prospective
+footprints before capture retain side-local obligations; supplied whole pairs
+have no comparative record/schema suppliers. Existing field-publication
+provenance may retain an own-side parsed snapshot beside a whole side;
+`FieldValuesCheck` does not compare, credit, derive or mark it as schema authority.
+A supply obligation is not a comparative licence. Outcome snapshots cover only
+explicit eligible JSON `check` forms.
 
 Declarations belong to a particular reference comparison. Retire consumed maps
 and declarations when the next reference already contains their change;

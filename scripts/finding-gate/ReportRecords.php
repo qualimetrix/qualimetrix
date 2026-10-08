@@ -6,6 +6,7 @@ namespace QmxFindingGate;
 
 use DOMDocument;
 use JsonException;
+use stdClass;
 
 /** Published records, their complete schemas, and edits confined to their byte spans. */
 final class ReportRecords
@@ -27,7 +28,7 @@ final class ReportRecords
      */
     public static function baselineEntries(string $text, array $records): array
     {
-        $document = self::decode($text);
+        $document = self::baselineDocument($text);
         if (!\in_array($document['version'] ?? null, [13, 14], true) || !\is_array($document['entries'] ?? null)) {
             throw new GateError('The baseline publication has no supported entries schema.');
         }
@@ -349,6 +350,15 @@ final class ReportRecords
     /** @return list<string> */
     public static function rawRecords(string $text, string $field): array
     {
+        $native = self::native($text);
+        if (!$native instanceof stdClass || !\is_array($native->{$field} ?? null)) {
+            throw new GateError('A raw record comparison requires its observed list: ' . $field);
+        }
+        foreach ($native->{$field} as $record) {
+            if (!$record instanceof stdClass) {
+                throw new GateError('A published record must be a complete object.');
+            }
+        }
         $document = self::decode($text);
         $records = $document[$field] ?? null;
         if (!\is_array($records) || !array_is_list($records)) {
@@ -437,16 +447,21 @@ final class ReportRecords
     /** @return list<array{path:list<string|int>,fields:array<string,mixed>}> */
     public static function projected(string $surface, string $text): array
     {
+        $native = self::native($text);
         $document = self::decode($text);
         $records = [];
         if ($surface === 'format:html') {
-            self::html($document, [], $records);
+            $tree = $native instanceof stdClass ? ($native->tree ?? $native) : null;
+            if (!self::nativeHtml($tree)) {
+                throw new GateError('An HTML payload requires its observed finding list.');
+            }
+            self::html($document['tree'] ?? $document, isset($document['tree']) ? ['tree'] : [], $records);
         } elseif ($surface === 'format:gitlab') {
-            if (!array_is_list($document)) {
+            if (!\is_array($native)) {
                 throw new GateError('GitLab publishes a result list.');
             }
             foreach ($document as $index => $record) {
-                if (!\is_array($record) || !isset($record['check_name'])) {
+                if (!$native[$index] instanceof stdClass || !\is_array($record) || !isset($record['check_name'])) {
                     throw new GateError('A GitLab result requires a check_name.');
                 }
                 if (\in_array($record['check_name'], self::ANALYSIS_DIAGNOSTICS, true) && ($record['severity'] ?? null) === 'blocker') {
@@ -456,15 +471,22 @@ final class ReportRecords
                 $records[] = ['path' => [$index], 'fields' => $record];
             }
         } elseif ($surface === 'format:sarif') {
-            if (!\is_array($document['runs'] ?? null) || !array_is_list($document['runs'])) {
+            if (!$native instanceof stdClass || !\is_array($native->runs ?? null)) {
                 throw new GateError('SARIF publishes a run list.');
             }
             foreach ($document['runs'] as $runIndex => $run) {
-                if (!\is_array($run) || !\is_array($run['results'] ?? null) || !\is_array($run['tool']['driver']['rules'] ?? null)) {
+                $nativeRun = $native->runs[$runIndex];
+                if (!$nativeRun instanceof stdClass || !\is_array($nativeRun->results ?? null)
+                    || !\is_array($nativeRun->tool->driver->rules ?? null)) {
                     throw new GateError('SARIF requires results and their rule catalog.');
                 }
+                foreach ($nativeRun->tool->driver->rules as $rule) {
+                    if (!$rule instanceof stdClass || !\is_string($rule->id ?? null)) {
+                        throw new GateError('A SARIF rule catalog requires its native rule objects.');
+                    }
+                }
                 foreach ($run['results'] as $index => $record) {
-                    if (!\is_array($record) || !\is_int($record['ruleIndex'] ?? null)
+                    if (!$nativeRun->results[$index] instanceof stdClass || !\is_array($record) || !\is_int($record['ruleIndex'] ?? null)
                         || ($run['tool']['driver']['rules'][$record['ruleIndex']]['id'] ?? null) !== ($record['ruleId'] ?? null)) {
                         throw new GateError('A SARIF ruleIndex disagrees with its own published ruleId catalog.');
                     }
@@ -537,10 +559,91 @@ final class ReportRecords
                     /** @var array<string,mixed> $record */
                     $records[] = ['path' => [...$path, $key, $index], 'fields' => $record];
                 }
-            } elseif (\is_array($child)) {
-                self::html($child, [...$path, $key], $records);
+            } elseif ($key === 'children' && \is_array($child)) {
+                foreach ($child as $index => $node) {
+                    self::html($node, [...$path, $key, $index], $records);
+                }
             }
         }
+    }
+
+    private static function native(string $text): mixed
+    {
+        try {
+            return json_decode($text, false, 512, \JSON_THROW_ON_ERROR);
+        } catch (JsonException $error) {
+            throw new GateError('A published record document is not JSON: ' . $error->getMessage());
+        }
+    }
+
+    /** @return array<string,mixed> */
+    public static function baselineDocument(string $text): array
+    {
+        $native = self::native($text);
+        if (!$native instanceof stdClass || !\in_array($native->version ?? null, [13, 14], true)
+            || !($native->entries ?? null) instanceof stdClass) {
+            throw new GateError('The baseline publication has no supported entries schema.');
+        }
+        foreach (get_object_vars($native->entries) as $subject => $entries) {
+            if (!\is_string($subject) || $subject === '' || !\is_array($entries)) {
+                throw new GateError('A baseline subject requires its observed entry list.');
+            }
+            foreach ($entries as $entry) {
+                if (!$entry instanceof stdClass || !\is_string($entry->channel ?? null) || $entry->channel === ''
+                    || array_diff(array_keys(get_object_vars($entry)), ['channel', 'occurrence', 'edge', 'magnitudes', 'count']) !== []) {
+                    throw new GateError('A baseline entry requires its exact channel and native members.');
+                }
+                if (property_exists($entry, 'occurrence') && $entry->occurrence !== null
+                    && (!\is_string($entry->occurrence) || $entry->occurrence === '')) {
+                    throw new GateError('A baseline occurrence requires its native identity.');
+                }
+                if (property_exists($entry, 'edge') && $entry->edge !== null) {
+                    if (!$entry->edge instanceof stdClass) {
+                        throw new GateError('A baseline edge requires its native object.');
+                    }
+                    self::edge(self::decode(json_encode($entry->edge, \JSON_THROW_ON_ERROR)));
+                }
+                if (property_exists($entry, 'magnitudes')) {
+                    if (property_exists($entry, 'count') || !\is_array($entry->magnitudes)) {
+                        throw new GateError('A magnitude baseline entry must publish only its magnitude list.');
+                    }
+                    foreach ($entry->magnitudes as $magnitude) {
+                        if (!\is_int($magnitude) && !\is_float($magnitude)) {
+                            throw new GateError('A baseline magnitude is not numeric.');
+                        }
+                    }
+                } elseif (!\is_int($entry->count ?? null) || $entry->count < 1) {
+                    throw new GateError('A baseline entry requires its positive count.');
+                }
+            }
+        }
+        return self::object($text);
+    }
+
+    private static function nativeHtml(mixed $value): bool
+    {
+        if (!$value instanceof stdClass || !property_exists($value, 'violations')) {
+            return false;
+        }
+        if (!\is_array($value->violations)) {
+            throw new GateError('An HTML node requires its finding list.');
+        }
+        foreach ($value->violations as $record) {
+            if (!$record instanceof stdClass) {
+                throw new GateError('An HTML finding is an object.');
+            }
+        }
+        if (property_exists($value, 'children')) {
+            if (!\is_array($value->children)) {
+                throw new GateError('An HTML node requires its child list.');
+            }
+            foreach ($value->children as $child) {
+                if (!self::nativeHtml($child)) {
+                    throw new GateError('An HTML child requires its finding population.');
+                }
+            }
+        }
+        return true;
     }
 
     private static function space(string $text, int &$at): void

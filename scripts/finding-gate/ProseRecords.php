@@ -19,7 +19,7 @@ final class ProseRecords
     ];
 
     /** @return list<array{lines:list<int>,fields:array<string,mixed>}> */
-    public static function extract(string $surface, string $text, string $codec = 'legacy'): array
+    public static function extract(string $surface, string $text, string $codec = 'legacy', bool $requirePopulation = false): array
     {
         if (!\in_array($surface, self::SURFACES, true)) {
             throw new GateError('Unknown prose finding surface.');
@@ -86,6 +86,12 @@ final class ProseRecords
                     'ERR' => 'error', 'WRN' => 'warning', default => 'info',
                 }, 'rank' => (int) $head[1], 'debt' => $head[5], 'score' => $head[3]]];
                 $index = $end;
+            }
+        }
+        if ($requirePopulation && $records === []) {
+            $empty = array_intersect(array_map(trim(...), $lines), ['No findings', 'No violations found.', 'No violations in this scope.']);
+            if ($empty === []) {
+                throw new GateError('The prose publication has no observed finding population.');
             }
         }
         return $records;

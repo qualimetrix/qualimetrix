@@ -49,7 +49,9 @@ final class CaptureCheck implements SurfaceStage, RunCheck, Derivation
         } catch (GateError) {
             return;
         }
-        if ($this->plan->changeOf($key) !== null) {
+        $surface = Surfaces::surfaceClass($key);
+        if ($this->plan->changeOf($key) !== null && \in_array($surface, ['format:json', 'format:metrics', 'format:suppressed'], true)
+            && $this->run->publicationForms->recordInvocation($key) !== false) {
             // A declared surface is judged as one complete invocation, not as unrelated byte diffs.
             $pair->settle();
         }
@@ -63,6 +65,7 @@ final class CaptureCheck implements SurfaceStage, RunCheck, Derivation
             $key = Surfaces::key($descriptor['scope'], $descriptor['surface']);
             $change = $this->plan->changeOf($key);
             $case = $this->caseOf($descriptor['scope']);
+            $whole = $this->run->publicationForms->recordInvocation($key) === false;
             foreach (['candidate' => $candidate, 'reference' => $reference] as $side => $artifacts) {
                 if ($side === 'reference' && $change === DeclaredSurfaces::INTRODUCED) {
                     continue;
@@ -74,18 +77,13 @@ final class CaptureCheck implements SurfaceStage, RunCheck, Derivation
                         $this->publicationFailure($side . ' / ' . $artifact, 'A planned invocation omitted this publication.');
                     }
                 }
-                $refused = $this->run->publicationForms->of($side, $key) === PublicationForms::REFUSAL;
-                if (($problem = $this->run->publicationForms->problem($side, $key)) !== null) {
-                    $valid = false;
-                    $this->publicationFailure($side . ' / ' . $key, $problem);
-                }
                 $analyzing = $case === null || CaseOutcome::of($case, $side) === CaseOutcome::ANALYSIS;
                 $file = $descriptor['outputFileKind'];
-                if ($analyzing && $file !== null && ($artifacts[Surfaces::key($descriptor['scope'], $file)] ?? '') === '') {
+                if (!$whole && $analyzing && $file !== null && ($artifacts[Surfaces::key($descriptor['scope'], $file)] ?? '') === '') {
                     $valid = false;
                     $this->publicationFailure($side . ' / ' . $key, 'The planned file publication is missing or empty.');
                 }
-                if ($analyzing && !$refused && !($change === DeclaredSurfaces::WITHDRAWN && $side === 'candidate') && $key !== 'tree|graph:export' && $descriptor['surface'] !== 'check:output' && ($artifacts[$key] ?? '') === '') {
+                if (!$whole && $analyzing && !($change === DeclaredSurfaces::WITHDRAWN && $side === 'candidate') && $key !== 'tree|graph:export' && $descriptor['surface'] !== 'check:output' && ($artifacts[$key] ?? '') === '') {
                     $valid = false;
                     $this->publicationFailure($side . ' / ' . $key, 'The invocation has no populated publication.');
                 }
@@ -96,14 +94,14 @@ final class CaptureCheck implements SurfaceStage, RunCheck, Derivation
                     'directives' => ['0', '2'],
                     default => ['0'],
                 };
-                $populationExit = $side === 'candidate' && !\in_array($rawExit, $allowed, true)
+                $populationExit = !$whole && $side === 'candidate' && !\in_array($rawExit, $allowed, true)
                     ? (ValueCheck::create($this->run)->referenceExitFor($descriptor['commandClass'], $key, $rawExit) ?? $rawExit)
                     : $rawExit;
                 if ($key === 'tree|graph:export' && $populationExit !== '1') {
                     $valid = false;
                     $this->publicationFailure($side . ' / ' . $key, 'The neutral empty-directory graph must end in its explicit exit-1 outcome.');
                 }
-                if ($analyzing && !$refused && !($change === DeclaredSurfaces::WITHDRAWN && $side === 'candidate') && !\in_array($populationExit, $allowed, true)) {
+                if (!$whole && $analyzing && !($change === DeclaredSurfaces::WITHDRAWN && $side === 'candidate') && !\in_array($populationExit, $allowed, true)) {
                     $valid = false;
                     $this->publicationFailure($side . ' / ' . $key, 'The process outcome cannot establish successful population for this command.');
                 }
@@ -118,6 +116,9 @@ final class CaptureCheck implements SurfaceStage, RunCheck, Derivation
                 foreach ($this->plan->artifactsOf($key) as $artifact) {
                     $this->run->report->sourceEvidence($side, $artifact, 'capture', $valid);
                 }
+            }
+            if ($whole || !\in_array($descriptor['surface'], ['format:json', 'format:metrics', 'format:suppressed'], true)) {
+                continue;
             }
             if ($change === DeclaredSurfaces::INTRODUCED) {
                 $exit = $candidate[Surfaces::key($descriptor['scope'], 'exit:' . $descriptor['surface'])] ?? '';

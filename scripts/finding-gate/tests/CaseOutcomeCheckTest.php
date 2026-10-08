@@ -89,11 +89,11 @@ PHP;
             $base['case:alpha|exit:baseline:generate'] = '3';
             $base['case:alpha|stderr:baseline-file'] = "Refused input\n";
             foreach ([
-                'valid' => [[], true],
-                'nonempty captured baseline' => [['case:alpha|baseline-file' => '{}'], false],
+                'valid whole invocation' => [[], false],
+                'nonempty captured baseline' => [['case:alpha|baseline-file' => '{}'], true],
                 'successful baseline exit' => [['case:alpha|exit:baseline:generate' => '0'], false],
                 'silent baseline refusal' => [['case:alpha|stderr:baseline-file' => ''], false],
-            ] as $label => [$changes, $valid]) {
+            ] as $label => [$changes, $productFailure]) {
                 $report = new GateReport();
                 $run = new RunContext(
                     Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root),
@@ -114,11 +114,11 @@ PHP;
                     'case:alpha|format:json' => '{"violations":[]}',
                     'case:alpha|exit:format:json' => '0',
                 ]);
-                self::assertSame($valid, $report->sourceValid('candidate', 'case:alpha|baseline-file', 'outcome'), $label . ': ' . $report->render());
-                self::assertSame(!$valid, \in_array(FailureClass::CASE_OUTCOME_MISMATCH, $report->failureClasses(), true), $label . ': ' . $report->render());
-                if (!$valid) {
+                self::assertFalse($report->sourceValid('candidate', 'case:alpha|baseline-file', 'outcome'), $label . ': ' . $report->render());
+                self::assertSame($productFailure, \in_array(FailureClass::CASE_OUTCOME_MISMATCH, $report->failureClasses(), true), $label . ': ' . $report->render());
+                if ($productFailure) {
                     self::assertContains(
-                        'The declared refusal must capture empty baseline content, a non-analysis exit and populated stderr.',
+                        'A refusing baseline invocation must retain empty captured baseline content.',
                         array_column($report->raised(), 'detail'),
                         $label,
                     );
@@ -218,18 +218,18 @@ PHP;
         $envelope = ['error' => 'Refused input', 'exit_code' => 3, 'position' => null,
             'source' => [['kind' => 'resolved', 'name' => null, 'imported_by' => null]]];
         yield 'the coherent envelope' => [json_encode($envelope, \JSON_THROW_ON_ERROR), 0];
-        yield 'a different exit' => [json_encode(array_replace($envelope, ['exit_code' => 2]), \JSON_THROW_ON_ERROR), 1];
-        yield 'no exact error keys' => ['{"error":"Refused input","exit_code":3}', 1];
-        yield 'the envelope before source publication' => ['{"error":"Refused input","exit_code":3,"position":null}', 1];
-        yield 'a malformed position' => [json_encode(array_replace($envelope, ['position' => 'unknown']), \JSON_THROW_ON_ERROR), 1];
-        yield 'an empty error' => [json_encode(array_replace($envelope, ['error' => '']), \JSON_THROW_ON_ERROR), 1];
+        yield 'a different exit' => [json_encode(array_replace($envelope, ['exit_code' => 2]), \JSON_THROW_ON_ERROR), 0];
+        yield 'no exact error keys' => ['{"error":"Refused input","exit_code":3}', 0];
+        yield 'the envelope before source publication' => ['{"error":"Refused input","exit_code":3,"position":null}', 0];
+        yield 'a malformed position' => [json_encode(array_replace($envelope, ['position' => 'unknown']), \JSON_THROW_ON_ERROR), 0];
+        yield 'an empty error' => [json_encode(array_replace($envelope, ['error' => '']), \JSON_THROW_ON_ERROR), 0];
         yield 'an analysis envelope' => ['{"violations":[]}', 1];
-        yield 'malformed JSON' => ['not JSON', 1];
+        yield 'malformed JSON' => ['not JSON', 0];
     }
 
     #[Test]
     #[DataProvider('provideRefusalEnvelopes')]
-    public function itRequiresACoherentRefusalEnvelope(string $json, int $failures): void
+    public function itJudgesOnlyNativeRecordsAgainstADeclaredRefusalEnvelope(string $json, int $failures): void
     {
         $tree = SyntheticTree::clean();
         $tree['declarations']['cases/alpha/case.json'] = json_encode([

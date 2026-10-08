@@ -523,7 +523,7 @@ final class ReportRecordsTest extends TestCase
                 $artifacts['case:alpha|check:baseline-source'] = $source;
             }
             $this->observeRecords($run, RecordCheck::create($run), 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
-            self::assertSame($source === '{"violations":[]}' ? [] : [FailureClass::RECORD_PROJECTION_MISMATCH], $run->report->failureClasses());
+            self::assertSame($source === null ? [FailureClass::RECORD_PROJECTION_MISMATCH] : [], $run->report->failureClasses());
         }
     }
 
@@ -974,12 +974,8 @@ final class ReportRecordsTest extends TestCase
             $this->observeRecords($run, $records, 'candidate', $run->corpus->cases[0], $outcome, self::artifacts([self::finding()]) + ['case:alpha|baseline-file' => 'No baseline was generated']);
             $pair = new SurfacePair('case:alpha|baseline-file', 'baseline-file', 'No baseline was generated', 'No baseline was generated');
             RecordStage::create($run)->applyStage($pair);
-            if ($outcome === CaseOutcome::INCOMPLETE) {
-                self::assertSame([], $run->report->raised());
-                self::assertFalse($pair->settled);
-            } else {
-                self::assertContains(FailureClass::RECORD_PROJECTION_MISMATCH, $run->report->failureClasses());
-            }
+            self::assertSame([], $run->report->raised());
+            self::assertFalse($pair->settled);
         }
     }
 
@@ -1276,12 +1272,8 @@ final class ReportRecordsTest extends TestCase
             $key = 'case:alpha|' . $surface;
             $artifacts = array_replace(self::artifacts([self::finding()]), [$key => '', 'case:alpha|exit:' . $surface => '3', 'case:alpha|stderr:' . $surface => 'Unsupported format.']);
             $this->observeRecords($run, RecordCheck::create($run), $side, $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
-            if ($side === 'candidate') {
-                self::assertSame([], $run->report->raised());
-                self::assertFalse($run->report->sourceValid($side, $key, 'records'));
-            } else {
-                self::assertContains(FailureClass::RECORD_PROJECTION_MISMATCH, $run->report->failureClasses());
-            }
+            self::assertSame([], $run->report->raised());
+            self::assertFalse($run->report->sourceValid($side, $key, 'records'));
         }
     }
 

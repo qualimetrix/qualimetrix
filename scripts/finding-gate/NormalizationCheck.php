@@ -23,6 +23,9 @@ final class NormalizationCheck implements RunCheck
 
     public function checkRun(array $candidate, array $reference): void
     {
+        $forms = PublicationForms::forReport($this->report);
+        $forms?->supply('candidate', $candidate);
+        $forms?->supply('reference', $reference);
         foreach (['candidate' => $candidate, 'reference' => $reference] as $side => $artifacts) {
             foreach ($artifacts as $key => $content) {
                 $surface = Surfaces::surfaceClass($key);
@@ -31,20 +34,15 @@ final class NormalizationCheck implements RunCheck
                     continue;
                 }
                 if ($surface === 'format:html' && $content !== '') {
+                    if ($forms?->recordInvocation($key) === false) {
+                        continue;
+                    }
                     try {
                         $content = ReportPayload::of($content, $key, $side);
                     } catch (GateError $error) {
-                        $reported = false;
-                        foreach ($this->report->raised() as $failure) {
-                            if ($failure['class'] === FailureClass::REPORT_PAYLOAD_UNREADABLE && $failure['scope'] === $key) {
-                                $reported = true;
-                                break;
-                            }
-                        }
-                        if (!$reported) {
+                        if ($forms !== null) {
                             throw $error;
                         }
-                        $this->report->sourceEvidence($side, $key, 'normalization', false);
                         continue;
                     }
                 }

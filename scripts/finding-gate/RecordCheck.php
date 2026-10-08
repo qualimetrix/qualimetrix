@@ -88,7 +88,7 @@ final class RecordCheck implements CaseCheck, RunCheck
             }
             if (!$this->run->capturePlan->requiredOn($invocation, $side)
                 || ($surface === 'baseline-file' && !CaseOutcome::applies(CaseOutcome::CHECK_BASELINE_FILE, $outcome)
-                    && $this->run->publicationForms->of($side, $key) !== PublicationForms::REFUSAL)) {
+                    && $this->run->publicationForms->of($side, $key) !== PublicationForms::WHOLE_INVOCATION)) {
                 continue;
             }
             $this->publicationGuard($side, $case, $surface, $artifacts);
@@ -287,23 +287,12 @@ final class RecordCheck implements CaseCheck, RunCheck
         if ($this->run->report->sourceRejected($side, $key, 'records')) {
             return false;
         }
-        $problem = $this->run->publicationForms->problem($side, $key);
-        if ($problem !== null) {
-            $this->publicationProblem($side, $key, new GateError($problem));
-            return false;
-        }
-        $refused = $this->run->publicationForms->of($side, $key) === PublicationForms::REFUSAL;
-        if ($refused && $surface === 'baseline-file' && ($artifacts[$key] ?? null) !== '') {
+        $baselineExit = $artifacts['case:' . $case->id . '|exit:baseline:generate'] ?? null;
+        if ($surface === 'baseline-file' && $baselineExit !== null && $baselineExit !== '0' && ($artifacts[$key] ?? '') !== '') {
             $this->publicationProblem($side, $key, new GateError('A refusing baseline invocation must retain empty captured baseline content.'));
         }
-        if ($refused && $side === 'reference'
-            && $this->run->declarations->surfaces->changeFor($surface, $case->id) === DeclaredSurfaces::WITHDRAWN) {
-            $this->publicationProblem($side, $key, new GateError('A reference refusal cannot establish withdrawal of a populated publication.'));
-        }
-        if ($refused && \in_array($surface, ['format:gitlab', 'format:checkstyle'], true)
-            && $this->run->declarations->surfaces->changeFor($surface, $case->id) !== DeclaredSurfaces::WITHDRAWN
-            && !CapturePlan::partialViewRefusal($case, $surface, $artifacts)) {
-            $this->publicationProblem($side, $key, new GateError('The partial-view refusal does not match this invocation selector and native diagnostic.'));
+        if ($this->run->publicationForms->recordsPair($key) === false) {
+            return !$this->run->report->sourceRejected($side, $key, 'records');
         }
         return !$this->run->report->sourceRejected($side, $key, 'records');
     }
@@ -315,7 +304,7 @@ final class RecordCheck implements CaseCheck, RunCheck
             return false;
         }
         $key = 'case:' . $case->id . '|' . $surface;
-        $refused = $this->run->publicationForms->of($side, $key) === PublicationForms::REFUSAL;
+        $refused = $this->run->publicationForms->of($side, $key) === PublicationForms::WHOLE_INVOCATION;
         if (!$refused && $this->run->publicationForms->recordsPair($key) === false) {
             $this->captureSchemaProvenance($side, $case->id, $surface, $artifacts[$key] ?? null);
         }

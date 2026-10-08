@@ -258,21 +258,16 @@ final class CaptureTest extends TestCase
     }
 
     #[Test]
-    public function itRefusesUnreadableHtmlWithoutItsExactReportedPredecessor(): void
+    public function itKeepsUnreadableHtmlAsWholeBytesWithoutAReportedPredecessor(): void
     {
         $key = 'case:alpha|format:html';
-        foreach ([null, [FailureClass::REPORT_PAYLOAD_UNREADABLE, 'case:beta|format:html'], [FailureClass::ENV_MISMATCH, $key]] as $predecessor) {
+        foreach ([null, [FailureClass::SURFACE_MISMATCH, 'case:beta|format:html'], [FailureClass::ENV_MISMATCH, $key]] as $predecessor) {
             $report = new GateReport();
             if ($predecessor !== null) {
                 $report->fail($predecessor[0], $predecessor[1], 'An unrelated recorded refusal.');
             }
             $check = new NormalizationCheck(Options::parse(['gate', '--reference=HEAD'], \dirname(__DIR__, 3)), $report, Normalization::fromRules([]));
-            try {
-                $check->checkRun([$key => '<html>no payload</html>'], []);
-                self::fail('An unreadable HTML surface had no exact reported predecessor.');
-            } catch (GateError $error) {
-                self::assertStringContainsString('carries no `report-data` payload', $error->getMessage());
-            }
+            $check->checkRun([$key => '<html>no payload</html>'], []);
             self::assertCount($predecessor === null ? 0 : 1, $report->raised());
         }
     }
@@ -282,7 +277,7 @@ final class CaptureTest extends TestCase
     {
         $key = 'case:alpha|format:html';
         $report = new GateReport();
-        $report->fail(FailureClass::REPORT_PAYLOAD_UNREADABLE, $key, 'The already reported unreadable publication.');
+        $report->fail(FailureClass::SURFACE_MISMATCH, $key, 'The already reported whole publication difference.');
         $normalization = Normalization::fromRules([new NormalizationRule('format:json', 'violations', NormalizationRule::KIND_JSON_PATH, 'Measured neighboring record deletion.')]);
         $check = new NormalizationCheck(Options::parse(['gate', '--reference=HEAD'], \dirname(__DIR__, 3)), $report, $normalization);
         try {
@@ -292,9 +287,9 @@ final class CaptureTest extends TestCase
         }
         self::assertSame(GateReport::EXIT_RED, $report->exitCode());
         self::assertCount(2, $report->raised());
-        self::assertSame(FailureClass::REPORT_PAYLOAD_UNREADABLE, $report->raised()[0]['class']);
+        self::assertSame(FailureClass::SURFACE_MISMATCH, $report->raised()[0]['class']);
         self::assertSame($key, $report->raised()[0]['scope']);
-        self::assertSame('The already reported unreadable publication.', $report->raised()[0]['detail']);
+        self::assertSame('The already reported whole publication difference.', $report->raised()[0]['detail']);
         self::assertSame(FailureClass::NORMALIZATION_OVERREACH, $report->raised()[1]['class']);
         self::assertSame('candidate / case:beta|format:json', $report->raised()[1]['scope']);
     }

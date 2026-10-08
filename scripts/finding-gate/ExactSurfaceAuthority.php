@@ -155,13 +155,10 @@ final class ExactSurfaceAuthority
         $framed = self::frame('visible', $visible);
         if ($run->publicationForms->recordsPair($pair->key) === false) {
             if ($pair->surface === 'baseline-file') {
-                if (self::declaredBaselineRefusal($pair->key, $side, $run)) {
-                    $framed .= self::baselineRefusalFrame($pair->key, $visible, $capture, $run);
-                } elseif ($run->publicationForms->of($side, $pair->key) === PublicationForms::REFUSAL
-                    && ($visible !== '' || ($capture->artifacts[$pair->key] ?? null) !== '')) {
+                $scope = substr($pair->key, 0, (int) strpos($pair->key, '|'));
+                $exit = $capture->artifacts[$scope . '|exit:baseline:generate'] ?? null;
+                if ($exit !== null && $exit !== '0' && ($visible !== '' || ($capture->artifacts[$pair->key] ?? '') !== '')) {
                     throw new GateError('A refusing baseline invocation must retain empty captured baseline content.');
-                } elseif ($visible !== '') {
-                    $framed .= self::frame('records', self::canonical($visible));
                 }
             }
             return $framed . self::invocationFrame($pair->key, $side, $capture, $run);
@@ -195,6 +192,9 @@ final class ExactSurfaceAuthority
 
     private static function declaredBaselineRefusal(string $key, string $side, RunContext $run): bool
     {
+        if ($run->publicationForms->recordsPair($key) === false) {
+            return false;
+        }
         if (Surfaces::surfaceClass($key) !== 'baseline-file' || !str_starts_with($key, 'case:')) {
             return false;
         }
@@ -729,9 +729,6 @@ final class ExactSurfaceAuthority
             if ($bytes === null) {
                 $frame .= self::frame('missing-invocation-artifact', $artifact);
                 continue;
-            }
-            if ($side === 'reference') {
-                $bytes = $run->maps->forward($bytes, $surface);
             }
             $label = str_starts_with($surface, 'exit:') ? 'invocation-exit' : (str_starts_with($surface, 'stderr:') ? 'invocation-stderr' : 'invocation-' . $surface);
             $frame .= self::frame($label, $run->normalization->normalize($surface, $bytes));

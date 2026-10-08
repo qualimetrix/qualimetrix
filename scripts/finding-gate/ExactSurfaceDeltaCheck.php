@@ -99,11 +99,24 @@ final class ExactSurfaceDeltaCheck implements Derivation
 
     public function selected(string $key): bool
     {
-        return $this->run->isExactSurface($key);
+        if ($this->run->isExactSurface($key)) {
+            return true;
+        }
+        if ($this->run->publicationForms->recordInvocation($key) === false) {
+            foreach ($this->run->publicationForms->invocationArtifacts($key) as $artifact) {
+                if ($this->run->isExactSurface($artifact)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public function checkExact(SurfacePair $pair): void
     {
+        if (!$this->run->isExactSurface($pair->key)) {
+            return;
+        }
         $this->run->declarations->exactSurfaces->claim($pair->key);
         $this->run->report->usedExactSurface();
         $problem = null;
