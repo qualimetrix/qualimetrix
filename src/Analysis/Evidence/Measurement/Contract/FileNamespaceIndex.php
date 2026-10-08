@@ -14,19 +14,17 @@ final readonly class FileNamespaceIndex
 
     public static function fromRepository(?MetricRepositoryInterface $repository): self
     {
+        if ($repository === null) {
+            return new self([]);
+        }
         $map = [];
 
-        foreach ($repository?->allDeclarations() ?? [] as $info) {
-            $namespace = $info->subject?->toSymbolPath()->namespace;
-            if ($namespace !== null && $info->file !== null) {
-                $map[$info->file->value()][$namespace] = $namespace;
-            }
-        }
-
-        foreach ($repository?->allLogicalClasses() ?? [] as $info) {
-            $namespace = $info->subject?->toSymbolPath()->namespace;
-            if ($namespace !== null && $info->file !== null) {
-                $map[$info->file->value()][$namespace] = $namespace;
+        foreach ([$repository->allDeclarations(), $repository->allLogicalClasses()] as $observations) {
+            foreach ($observations as $info) {
+                $namespace = $info->subject?->toSymbolPath()->namespace;
+                if ($namespace !== null && $info->file !== null) {
+                    $map[$info->file->value()][$namespace] = $namespace;
+                }
             }
         }
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
+use Closure;
+use Qualimetrix\Reporting\Formatter\Prose\GlyphMode;
 use Qualimetrix\Reporting\Formatter\Prose\ProseText;
 use Symfony\Component\Console\Formatter\OutputFormatterInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -11,13 +13,18 @@ use Symfony\Component\Console\Output\OutputInterface;
 /** Keeps every diagnostic caller on the owner's publication mode. */
 final readonly class GlyphOutput implements OutputInterface
 {
-    public function __construct(private OutputInterface $output, private ErrorStream $owner) {}
+    /** @param Closure(): GlyphMode $mode */
+    public function __construct(private OutputInterface $output, private Closure $mode) {}
 
-    /** @param string|iterable<mixed> $messages */
+    /**
+     * @param string|iterable<mixed> $messages
+     *
+     * @qmx-ignore code-smell.boolean-argument — Implements Symfony's required OutputInterface signature.
+     */
     public function write(string|iterable $messages, bool $newline = false, int $options = 0): void
     {
         foreach (is_iterable($messages) ? $messages : [$messages] as $message) {
-            $published = \is_string($message) ? ProseText::publish($message, $this->owner->glyphMode())->body : $message;
+            $published = \is_string($message) ? ProseText::publish($message, ($this->mode)())->body : $message;
             $this->output->write([$published], $newline, $options);
         }
     }
@@ -63,6 +70,7 @@ final readonly class GlyphOutput implements OutputInterface
         return $this->output->isDebug();
     }
 
+    /** @qmx-ignore code-smell.boolean-argument — Implements Symfony's required OutputInterface signature. */
     public function setDecorated(bool $decorated): void
     {
         $this->output->setDecorated($decorated);

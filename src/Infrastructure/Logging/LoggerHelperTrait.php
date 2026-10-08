@@ -114,9 +114,9 @@ trait LoggerHelperTrait
 
                 return null;
             }
-            $unsupported = false;
-            $escaped = self::escapeStrings($value, $unsupported);
-            if ($unsupported) {
+            $hasUnsupportedValue = false;
+            $escaped = self::escapeStrings($value, $hasUnsupportedValue);
+            if ($hasUnsupportedValue) {
                 return null;
             }
             $json = json_encode($escaped, $flags);
@@ -126,19 +126,19 @@ trait LoggerHelperTrait
         return $json === false ? null : $json;
     }
 
-    private static function escapeStrings(mixed $value, bool &$unsupported): mixed
+    private static function escapeStrings(mixed $value, bool &$hasUnsupportedValue): mixed
     {
         if (\is_string($value)) {
             return SourceBytes::escapeInvalid($value);
         }
         if (\is_object($value)) {
             if ($value::class !== stdClass::class) {
-                $unsupported = true;
+                $hasUnsupportedValue = true;
 
                 return null;
             }
 
-            return (object) self::escapeStrings((array) $value, $unsupported);
+            return (object) self::escapeStrings((array) $value, $hasUnsupportedValue);
         }
         if (!\is_array($value)) {
             return $value;
@@ -147,12 +147,12 @@ trait LoggerHelperTrait
         $escaped = [];
         foreach ($value as $key => $item) {
             if (\is_string($key) && !SourceBytes::isUtf8($key)) {
-                $unsupported = true;
+                $hasUnsupportedValue = true;
 
                 break;
             }
-            $escaped[$key] = self::escapeStrings($item, $unsupported);
-            if ($unsupported) {
+            $escaped[$key] = self::escapeStrings($item, $hasUnsupportedValue);
+            if ($hasUnsupportedValue) {
                 break;
             }
         }

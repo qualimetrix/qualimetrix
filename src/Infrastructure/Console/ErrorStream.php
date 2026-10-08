@@ -92,7 +92,7 @@ final class ErrorStream
     {
         $this->bind($output);
 
-        return $this->diagnostics instanceof NullOutput ? $this->diagnostics : new GlyphOutput($this->diagnostics, $this);
+        return $this->diagnostics instanceof NullOutput ? $this->diagnostics : new GlyphOutput($this->diagnostics, $this->glyphMode(...));
     }
 
     /**
@@ -113,7 +113,7 @@ final class ErrorStream
      */
     public function boundWriter(OutputInterface $fallback): OutputInterface
     {
-        return new GlyphOutput($this->diagnostics instanceof NullOutput ? $fallback : $this->diagnostics, $this);
+        return new GlyphOutput($this->diagnostics instanceof NullOutput ? $fallback : $this->diagnostics, $this->glyphMode(...));
     }
 
     /** Writes one diagnostic line through this run's writer. */
@@ -195,7 +195,7 @@ final class ErrorStream
             $error->getVerbosity(),
             $error->isDecorated(),
             $error->getFormatter(),
-            $this,
+            $this->glyphMode(...),
         );
     }
 }

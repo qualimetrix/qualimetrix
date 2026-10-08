@@ -11,13 +11,17 @@ final class OutputEncoding
 {
     public static function fromEnvironment(string|false $value): GlyphMode
     {
-        return match (strtolower($value === false ? '' : $value)) {
-            '1', 'true', 'yes', 'on' => GlyphMode::Ascii,
-            '', '0', 'false', 'no', 'off' => GlyphMode::Unicode,
-            default => throw ConfigurationRefusal::aboutCommandLineInput(
+        $modes = [
+            '1' => GlyphMode::Ascii, 'true' => GlyphMode::Ascii,
+            'yes' => GlyphMode::Ascii, 'on' => GlyphMode::Ascii,
+            '' => GlyphMode::Unicode, '0' => GlyphMode::Unicode,
+            'false' => GlyphMode::Unicode, 'no' => GlyphMode::Unicode, 'off' => GlyphMode::Unicode,
+        ];
+
+        return $modes[strtolower($value === false ? '' : $value)]
+            ?? throw ConfigurationRefusal::aboutCommandLineInput(
                 'QMX_ASCII',
                 'QMX_ASCII accepts 1/true/yes/on or 0/false/no/off/empty; received ' . $value . '.',
-            ),
-        };
+            );
     }
 }
