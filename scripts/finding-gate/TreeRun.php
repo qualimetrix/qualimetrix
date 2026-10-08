@@ -42,7 +42,7 @@ final class TreeRun
         $config = $this->inputs->configuration($case);
         $arguments = $this->inputs->arguments($case);
         $check = ['check', ...$case->paths, ...self::CHECK_ARGUMENTS, '-c', $config, ...$arguments];
-        $measured = [...$case->paths, '--no-ansi', '-c', $config, ...$arguments];
+        $measured = [...$case->paths, '--no-ansi', '-c', $config, ...self::withoutReportSelection($arguments)];
         $baseline = $this->scratch('baseline-' . $case->id) . '.json';
         $artifacts = [];
         $rankings = [];
@@ -86,7 +86,7 @@ final class TreeRun
                 $sourceCase = $this->inputs->materialize($originalCase, true);
                 $baselineWorkingDirectory = $sourceCase->directory;
                 $sourceConfig = $this->inputs->configuration($sourceCase);
-                $sourceArguments = $this->inputs->arguments($sourceCase);
+                $sourceArguments = self::withoutReportSelection($this->inputs->arguments($sourceCase));
                 $baselineMeasured = [...$sourceCase->paths, '--no-ansi', '-c', $sourceConfig, ...$sourceArguments];
                 $cwd = $baselineWorkingDirectory;
                 $command = ['check', ...$sourceCase->paths, ...self::CHECK_ARGUMENTS, '-c', $sourceConfig, ...$sourceArguments, '-f', 'json'];
@@ -203,6 +203,17 @@ final class TreeRun
             'ranked' => $this->invoke($key, [...$command, '--top=' . $limit], $cwd, capture: 'ranked'),
             'physical' => $truncated ? $this->invoke($key, [...self::withoutPresentationCaps($command), '--detail=all', '--format-opt=violations=all', '--top=' . $limit], $cwd, capture: 'physical') : null,
         ];
+    }
+
+    /**
+     * @param list<string> $arguments
+     *
+     * @return list<string>
+     */
+    private static function withoutReportSelection(array $arguments): array
+    {
+        return array_values(array_filter($arguments, static fn(string $argument): bool => $argument !== '--show-suppressed'
+            && !str_starts_with($argument, '--namespace=') && !str_starts_with($argument, '--class=')));
     }
 
     /**

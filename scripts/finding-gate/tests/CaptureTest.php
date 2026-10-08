@@ -846,7 +846,11 @@ final class CaptureTest extends TestCase
     public function itUsesOnlyTheSupportedArgumentsOfEachProductCommand(): void
     {
         $tree = SyntheticTree::captureFixture();
-        foreach (['directives', 'graph:export', 'rules', 'debug:layer-assignment:Replay\\Alpha', 'check:parallel', 'check:baseline-source', 'baseline-file'] as $surface) {
+        $measuredArguments = ['--preset=strict', '--disable-rule=code-smell.debug', '--rule-opt=complexity.ccn:callable.warning=3'];
+        $definition = json_decode($tree['declarations']['cases/alpha/case.json'], true, 512, \JSON_THROW_ON_ERROR);
+        $definition['args'] = ['--namespace=subtree:Replay', '--show-suppressed', ...$measuredArguments];
+        $tree['declarations']['cases/alpha/case.json'] = json_encode($definition, \JSON_THROW_ON_ERROR) . "\n";
+        foreach (['directives', 'graph:export', 'rules', 'debug:layer-assignment:Replay\\Alpha', 'check:parallel', 'check:baseline-source', 'baseline-file', 'explain:file:src/Alpha.php', 'check:baseline'] as $surface) {
             $tree['candidateAnswers']['case:alpha|' . $surface] = ['env' => true];
         }
         $root = SyntheticTree::create($tree);
@@ -864,18 +868,24 @@ final class CaptureTest extends TestCase
             self::assertStringStartsWith($temporary . '/inputs-candidate-', $mainDirectory);
             self::assertNotSame($case->directory, $mainDirectory);
             self::assertFileExists($mainDirectory . '/qmx.yaml');
-            self::assertSame(['directives', 'src', '--no-ansi', '-c', 'qmx.yaml', '--format=json'], $read('directives')['argv']);
+            self::assertSame(['directives', 'src', '--no-ansi', '-c', 'qmx.yaml', ...$measuredArguments, '--format=json'], $read('directives')['argv']);
             self::assertSame(['debug:layer-assignment', 'Replay\\Alpha', '-c', 'qmx.yaml', '--format=json', '--no-ansi'], $read('debug:layer-assignment:Replay\\Alpha')['argv']);
             self::assertContains('--workers=2', $read('check:parallel')['argv']);
             self::assertNotContains('--workers=0', $read('check:parallel')['argv']);
             self::assertContains('--no-cache', $read('check:parallel')['argv']);
+            foreach (['--namespace=subtree:Replay', '--show-suppressed', ...$measuredArguments] as $argument) {
+                self::assertContains($argument, $read('check:parallel')['argv']);
+                self::assertContains($argument, $read('check:baseline')['argv']);
+            }
+            self::assertSame(['baseline:explain', 'file:src/Alpha.php', 'src', '--no-ansi', '-c', 'qmx.yaml', ...$measuredArguments], $read('explain:file:src/Alpha.php')['argv']);
             $baseline = $read('baseline-file');
             self::assertSame('baseline:generate', $baseline['argv'][0]);
+            self::assertSame(['src', '--no-ansi', '-c', 'qmx.yaml', ...$measuredArguments], \array_slice($baseline['argv'], 2));
             $source = $read('check:baseline-source');
             self::assertSame($baseline['cwd'], $source['cwd']);
             self::assertStringStartsWith($temporary . '/inputs-candidate-', $source['cwd']);
             self::assertNotSame($mainDirectory, $source['cwd']);
-            self::assertSame(['check', 'src', '--workers=0', '--no-cache', '--no-ansi', '--fail-on=error', '-c', 'qmx.yaml', '-f', 'json'], $source['argv']);
+            self::assertSame(['check', 'src', '--workers=0', '--no-cache', '--no-ansi', '--fail-on=error', '-c', 'qmx.yaml', ...$measuredArguments, '-f', 'json'], $source['argv']);
             self::assertNotSame($case->directory, $baseline['cwd']);
             self::assertFileExists($baseline['cwd'] . '/src/Alpha.php');
             self::assertStringStartsWith($temporary . '/capture-candidate-cache-', $baseline['cache']);
