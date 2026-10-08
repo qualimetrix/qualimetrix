@@ -64,6 +64,7 @@ final class SelfTestRecords extends SelfTestGroup
                 [FailureClass::SURFACE_MISMATCH, 'case:record-residual|format:summary'],
                 [FailureClass::SURFACE_MISMATCH, 'case:record-residual|format:text'],
                 [FailureClass::SURFACE_MISMATCH, 'case:record-residual|format:text-detail'],
+                [FailureClass::SURFACE_MISMATCH, 'case:record-residual|format:text-verbose'],
                 [FailureClass::SURFACE_MISMATCH, 'case:record-residual|show-suppressed'],
                 [FailureClass::CASE_CLAIM_MISMATCH, 'case:record-residual'],
             ]),

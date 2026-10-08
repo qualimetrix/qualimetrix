@@ -391,7 +391,12 @@ final class CheckWitnesses
                     $tree['candidateAnswers']['case:alpha|format:json'] = ['stdout' => '{"violationsMeta":{"total":-1,"truncated":false}}'];
                     return $tree;
                 },
-                [[FailureClass::RUN_FAILED, 'candidate-1', 'Gate::runTree <- GateModes::compare']],
+                [[FailureClass::RUN_FAILED, 'candidate-2 / alpha', 'Gate::captureAuthority <- GateModes::compare']],
+                [
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:json', 'SurfaceComparison::mismatch <- Gate::compare'],
+                    [FailureClass::CANDIDATE_INPUT_REFUSED, 'case:alpha', 'CoverageCheck::inputRefused <- Gate::compare'],
+                    [FailureClass::COVERAGE_SHORTFALL, 'corpus', 'ChannelCoverage::reportShortfall <- CoverageCheck::checkCoverage'],
+                ],
             ),
             self::witness(
                 'declaration-capture-refusal',
@@ -400,7 +405,12 @@ final class CheckWitnesses
                     $tree['candidateAnswers']['case:alpha|format:json'] = ['stdout' => '{"violationsMeta":{"total":-1,"truncated":false}}'];
                     return $tree;
                 },
-                [[FailureClass::RUN_FAILED, 'candidate-1', 'Gate::runTree <- GateModes::deriveDeclarations']],
+                [[FailureClass::RUN_FAILED, 'candidate-2 / alpha', 'Gate::captureAuthority <- GateModes::deriveDeclarations']],
+                [
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:json', 'SurfaceComparison::mismatch <- Gate::compare'],
+                    [FailureClass::CANDIDATE_INPUT_REFUSED, 'case:alpha', 'CoverageCheck::inputRefused <- Gate::compare'],
+                    [FailureClass::COVERAGE_SHORTFALL, 'corpus', 'ChannelCoverage::reportShortfall <- CoverageCheck::checkCoverage'],
+                ],
             ),
             self::witness(
                 'normalization-capture-refusal',
@@ -409,7 +419,7 @@ final class CheckWitnesses
                     $tree['candidateAnswers']['case:alpha|format:json'] = ['stdout' => '{"violationsMeta":{"total":-1,"truncated":false}}'];
                     return $tree;
                 },
-                [[FailureClass::RUN_FAILED, 'derive-1', 'Gate::runTree <- GateModes::deriveNormalization']],
+                [[FailureClass::RUN_FAILED, 'derive-1 / alpha', 'Gate::captureAuthority <- GateModes::deriveNormalization']],
             ),
             self::witness(
                 'normalization-complete-shape',
@@ -444,32 +454,18 @@ final class CheckWitnesses
                 'existing-reference-outcome-refusal',
                 self::WHOLE_RUN,
                 static function (array $tree): array {
-                    $refusal = SelfTestOutcomes::fixture();
-                    $tree['answers'] = $refusal['candidateAnswers'];
-                    // A non-input refusal reaches the outcome check past the earlier exit-3 diagnosis.
-                    foreach ($tree['answers'] as &$answer) {
-                        $answer['exit'] = 5;
-                        if (($answer['stdout'] ?? '') !== '') {
-                            $envelope = json_decode($answer['stdout'], true, 512, \JSON_THROW_ON_ERROR);
-                            $envelope['exit_code'] = 5;
-                            $answer['stdout'] = self::json($envelope);
-                        }
-                    }
-                    unset($answer);
-                    $tree['candidateAnswers'] = SyntheticTree::caseAnswers('alpha', $tree['findings']['alpha'], false, []);
+                    $tree = SelfTestOutcomes::fixture();
+                    $tree['candidateAnswers'] = [];
                     $tree['candidateDeclarations'][DeclaredOutcomes::INDEX] = Tsv::render(DeclaredOutcomes::COLUMNS, [
                         ['alpha', DeclaredOutcomes::REFUSAL_TO_ANALYSIS, 'declared-outcomes/alpha.json', 'Existing reference inputs must be translated.'],
                     ]);
-                    $snapshot = [];
-                    foreach ($tree['answers'] as $key => $answer) {
-                        $snapshot[$key] = ['stdout' => $answer['stdout'] ?? '', 'stderr' => $answer['stderr'] ?? '', 'exit' => (string) ($answer['exit'] ?? 0)];
-                    }
-                    $tree['candidateDeclarations']['declared-outcomes/alpha.json'] = self::json($snapshot);
-
                     return $tree;
                 },
                 [
+                    [FailureClass::CASE_OUTCOME_MISMATCH, 'reference / alpha', 'CaseOutcomeCheck::mismatch <- Gate::checkFindings'],
                     [FailureClass::REFERENCE_INPUT_UNTRANSLATED, 'case:alpha', 'CaseOutcomeCheck::checkRun <- Gate::compare'],
+                    [FailureClass::CASE_OUTCOME_MISMATCH, 'case:alpha / format:json', 'CaseOutcomeCheck::mismatch <- Gate::compare'],
+                    [FailureClass::OUTCOME_DECLARATION_STALE, 'case:alpha', 'StaleDeclarationCheck::checkStaleDeclarations#4 <- Gate::compare'],
                 ],
             ),
             self::witness(
@@ -882,15 +878,15 @@ final class CheckWitnesses
                 'delta-mismatch',
                 self::DECLARATIONS,
                 static function (array $tree): array {
+                    $key = 'case:alpha|format:metrics';
                     $answers = SyntheticTree::caseAnswers('alpha', $tree['candidateFindings']['alpha'] ?? $tree['findings']['alpha'], false, []);
-                    $tree['candidateAnswers']['case:alpha|format:summary'] = $answers['case:alpha|format:summary'];
-                    $tree['candidateAnswers']['case:alpha|format:summary']['stdout'] = "An independent summary heading.\nAnalysis complete\n\nTop issues by impact\n" . implode('', \array_slice(($answers['case:alpha|format:summary']['summaryIssues'] ?? throw new GateError('A summary witness requires generated ranked rows.')), 0, 10));
-                    unset($tree['candidateAnswers']['case:alpha|format:summary']['summaryIssues']);
-                    $tree['declaredDelta']['case:alpha|format:summary'] = self::NO_DIFF;
+                    $baseline = $answers[$key]['stdout'] ?? throw new GateError('A metrics witness requires stdout.');
+                    $tree['candidateAnswers'][$key] = ['stdout' => rtrim($baseline) . " \n"];
+                    $tree['declaredDelta'][$key] = self::NO_DIFF;
 
                     return $tree;
                 },
-                [[FailureClass::DELTA_MISMATCH, 'case:alpha|format:summary', 'DeclaredDeltaCheck::checkAgainstDeclaredDelta#3 <- SurfaceComparison::compareFinalBytes']],
+                [[FailureClass::DELTA_MISMATCH, 'case:alpha|format:metrics', 'DeclaredDeltaCheck::checkAgainstDeclaredDelta#3 <- SurfaceComparison::compareFinalBytes']],
             ),
             self::witness(
                 'exact-surface-mismatch',
@@ -921,21 +917,16 @@ final class CheckWitnesses
                 'delta-too-large',
                 self::DECLARATIONS,
                 static function (array $tree): array {
-                    $lines = '';
-
-                    for ($line = 0; $line <= DeclaredDelta::MAX_CHANGED_LINES; ++$line) {
-                        $lines .= 'line ' . $line . "\n";
-                    }
-
+                    $key = 'case:alpha|format:metrics';
                     $answers = SyntheticTree::caseAnswers('alpha', $tree['candidateFindings']['alpha'] ?? $tree['findings']['alpha'], false, []);
-                    $tree['candidateAnswers']['case:alpha|format:text-detail'] = $answers['case:alpha|format:text-detail'];
-                    $tree['candidateAnswers']['case:alpha|format:text-detail']['stdout'] = ($tree['candidateAnswers']['case:alpha|format:text-detail']['stdout'] ?? throw new GateError('A renderer-backed witness requires stdout.')) . $lines;
-                    $tree['declaredDelta']['case:alpha|format:text-detail'] = self::NO_DIFF;
+                    $baseline = $answers[$key]['stdout'] ?? throw new GateError('A metrics witness requires stdout.');
+                    $tree['candidateAnswers'][$key] = ['stdout' => rtrim($baseline) . "\n" . str_repeat(" \n", DeclaredDelta::MAX_CHANGED_LINES + 2)];
+                    $tree['declaredDelta'][$key] = self::NO_DIFF;
 
                     return $tree;
                 },
-                [[FailureClass::DELTA_TOO_LARGE, 'case:alpha|format:text-detail', 'DeclaredDeltaCheck::checkAgainstDeclaredDelta#1 <- SurfaceComparison::compareFinalBytes']],
-                [[FailureClass::DELTA_MISMATCH, 'case:alpha|format:text-detail']],
+                [[FailureClass::DELTA_TOO_LARGE, 'case:alpha|format:metrics', 'DeclaredDeltaCheck::checkAgainstDeclaredDelta#1 <- SurfaceComparison::compareFinalBytes']],
+                [[FailureClass::DELTA_MISMATCH, 'case:alpha|format:metrics', 'DeclaredDeltaCheck::checkAgainstDeclaredDelta#3 <- SurfaceComparison::compareFinalBytes']],
             ),
             self::witness(
                 'delta-overreach',
@@ -1033,18 +1024,14 @@ final class CheckWitnesses
                 self::DECLARATIONS,
                 static function (array $tree): array {
                     $tree = SelfTestOutcomes::fixture();
-                    $snapshot = [];
-                    foreach ($tree['candidateAnswers'] as $key => $answer) {
-                        $snapshot[$key] = ['stdout' => $answer['stdout'] ?? '', 'stderr' => $answer['stderr'] ?? '', 'exit' => (string) ($answer['exit'] ?? 0)];
-                    }
-                    $snapshot['case:alpha|format:json']['stderr'] = "a refusal nobody printed\n";
-                    $tree['candidateDeclarations']['declared-outcomes/alpha.json'] = self::json($snapshot);
+                    $tree['candidateAnswers'] = [];
 
                     return $tree;
                 },
                 [
+                    [FailureClass::CASE_OUTCOME_MISMATCH, 'candidate / alpha', 'CaseOutcomeCheck::mismatch <- Gate::checkFindings'],
+                    [FailureClass::CASE_OUTCOME_MISMATCH, 'case:alpha / format:json', 'CaseOutcomeCheck::mismatch <- Gate::compare'],
                     [FailureClass::OUTCOME_DECLARATION_STALE, 'case:alpha', 'StaleDeclarationCheck::checkStaleDeclarations#4 <- Gate::compare'],
-                    [FailureClass::CASE_OUTCOME_MISMATCH, 'case:alpha', 'CaseOutcomeCheck::mismatch <- Gate::compare'],
                 ],
             ),
             self::witness(
@@ -1140,10 +1127,11 @@ final class CheckWitnesses
                 'derive-declarations-writes-a-measured-diff',
                 self::DECLARED_DELTA_WRITTEN,
                 static function (array $tree): array {
+                    $key = 'case:alpha|format:metrics';
                     $answers = SyntheticTree::caseAnswers('alpha', $tree['candidateFindings']['alpha'] ?? $tree['findings']['alpha'], false, []);
-                    $tree['candidateAnswers']['case:alpha|format:checkstyle'] = $answers['case:alpha|format:checkstyle'];
-                    $tree['candidateAnswers']['case:alpha|format:checkstyle']['stdout'] = ($tree['candidateAnswers']['case:alpha|format:checkstyle']['stdout'] ?? throw new GateError('A renderer-backed witness requires stdout.')) . "\n<!-- replayed checkstyle difference -->\n";
-                    $tree['declaredDelta']['case:alpha|format:checkstyle'] = self::NO_DIFF;
+                    $baseline = $answers[$key]['stdout'] ?? throw new GateError('A metrics witness requires stdout.');
+                    $tree['candidateAnswers'][$key] = ['stdout' => rtrim($baseline) . " \n"];
+                    $tree['declaredDelta'][$key] = self::NO_DIFF;
 
                     return $tree;
                 },
@@ -1155,16 +1143,16 @@ final class CheckWitnesses
                 static function (array $tree): array {
                     $tree = self::withCase($tree, 'beta', 'replay.beta', declared: true);
                     foreach (['alpha', 'beta'] as $case) {
-                        $key = 'case:' . $case . '|format:checkstyle';
+                        $key = 'case:' . $case . '|format:metrics';
                         $answers = SyntheticTree::caseAnswers($case, $tree['findings'][$case], false, []);
-                        $tree['candidateAnswers'][$key] = $answers[$key];
-                        $tree['candidateAnswers'][$key]['stdout'] = ($tree['candidateAnswers'][$key]['stdout'] ?? throw new GateError('A renderer-backed witness requires stdout.')) . "\n<!-- explicit " . $case . " difference -->\n";
+                        $baseline = $answers[$key]['stdout'] ?? throw new GateError('A metrics witness requires stdout.');
+                        $tree['candidateAnswers'][$key] = ['stdout' => rtrim($baseline) . ($case === 'alpha' ? " \n" : "  \n")];
                     }
-                    $tree['declaredDelta']['format:checkstyle'] = self::NO_DIFF;
+                    $tree['declaredDelta']['format:metrics'] = self::NO_DIFF;
 
                     return $tree;
                 },
-                [[FailureClass::DELTA_MISMATCH, 'case:beta|format:checkstyle', 'DeclaredDeltaCheck::checkDifference <- SurfaceComparison::compareFinalBytes']],
+                [[FailureClass::DELTA_MISMATCH, 'case:beta|format:metrics', 'DeclaredDeltaCheck::checkDifference <- SurfaceComparison::compareFinalBytes']],
             ),
             self::witness(
                 'derive-tuple-writes-the-published-fields',
