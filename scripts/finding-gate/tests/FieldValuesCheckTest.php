@@ -464,6 +464,15 @@ final class FieldValuesCheckTest extends TestCase
     {
         SyntheticTree::remove($this->root);
         $tree = SelfTestOutcomes::fixture();
+        unset($tree['candidateDeclarations'][DeclaredOutcomes::INDEX], $tree['candidateDeclarations']['declared-outcomes/alpha.json']);
+        $definition = json_decode($tree['declarations']['cases/alpha/case.json'], true, 512, \JSON_THROW_ON_ERROR);
+        $definition['outcome'] = ['kind' => \QmxFindingGate\CaseOutcome::REFUSAL, 'exit' => 3];
+        $tree['declarations']['cases/alpha/case.json'] = json_encode($definition, \JSON_THROW_ON_ERROR);
+        foreach ($tree['candidateAnswers'] as $key => $answer) {
+            if (str_starts_with($key, 'case:alpha|')) {
+                $tree['answers'][$key] = $answer;
+            }
+        }
         $tree['candidateDeclarations'][DeclaredFields::INDEX] = Tsv::render(DeclaredFields::COLUMNS, [['added', 'metrics', 'format:metrics', 'probe', 'An independently measured metric field.']]);
         $metric = ['type' => 'method', 'name' => 'Replay\Keeper::run', 'file' => 'src/Keeper.php', 'line' => 1, 'metrics' => ['ccn' => 1], 'probe' => 7];
         $tree['candidateAnswers']['case:keeper|format:metrics'] = ['stdout' => json_encode(['symbols' => [$metric]], \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n"];
@@ -493,13 +502,14 @@ final class FieldValuesCheckTest extends TestCase
         self::assertInstanceOf(Declarations::class, $declarations);
         $measurements = $declarations->fields->measurements('metrics');
         $alphaReference = array_values(array_filter($measurements, static fn(array $row): bool => $row['case'] === 'alpha' && $row['side'] === 'reference'));
-        self::assertCount(1, $alphaReference);
-        self::assertNotSame([], $alphaReference[0]['records']);
+        self::assertSame([], $alphaReference);
         self::assertSame([], array_values(array_filter($measurements, static fn(array $row): bool => $row['case'] === 'alpha' && $row['side'] === 'candidate')));
         $keeperCandidate = array_values(array_filter($measurements, static fn(array $row): bool => $row['case'] === 'keeper' && $row['side'] === 'candidate'));
         self::assertCount(1, $keeperCandidate);
         self::assertSame(7, $keeperCandidate[0]['records'][0]['fields']['probe']);
-        Fs::write($this->root . '/finding-gate/' . DeclaredOutcomes::INDEX, Tsv::render(DeclaredOutcomes::COLUMNS, []));
+        $answers = json_decode(Fs::read($this->root . '/replay/answers.json'), true, 512, \JSON_THROW_ON_ERROR);
+        $answers['case:keeper|format:json'] = ['stdout' => '{"error":"Refused authoritative input","exit_code":1}', 'stderr' => 'input refused', 'exit' => 1];
+        Fs::write($this->root . '/replay/answers.json', json_encode($answers, \JSON_THROW_ON_ERROR));
         $snapshot = function (): array {
             $bytes = [];
             $directory = $this->root . '/finding-gate';
@@ -513,11 +523,7 @@ final class FieldValuesCheckTest extends TestCase
         };
         $before = $snapshot();
         $red = new GateReport();
-        try {
-            self::assertSame([], (new Gate(Options::parse($arguments, $this->root), $red))->deriveDeclarations());
-        } catch (GateError $error) {
-            self::assertStringContainsString('Complete ranking requires nonnegative total and boolean truncation metadata', $error->getMessage());
-        }
+        self::assertSame([], (new Gate(Options::parse($arguments, $this->root), $red))->deriveDeclarations());
         self::assertSame(GateReport::EXIT_RED, $red->exitCode(), $red->render());
         self::assertContains(FailureClass::RUN_FAILED, $red->failureClasses(), $red->render());
         self::assertSame($before, $snapshot());

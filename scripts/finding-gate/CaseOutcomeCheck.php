@@ -91,7 +91,7 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
         $scope = 'case:' . $case->id;
         if ($outcome === CaseOutcome::REFUSAL) {
             $forms = PublicationForms::forReport($this->report);
-            $forms?->supply($side, $artifacts);
+            $forms?->supply($side === 'reference' ? 'reference' : 'candidate', $artifacts);
             if ($forms?->recordsPair($scope . '|format:json') === false
                 || ($case->outcome !== CaseOutcome::REFUSAL && $this->context?->declarations->outcomes->of($case->id) === null)) {
                 return;
@@ -366,12 +366,23 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
      */
     public function checkRunsProduced(string $side, array $artifacts, array $authority): void
     {
+        $forms = PublicationForms::forReport($this->report);
+        $captureSide = $side === 'reference' ? 'reference' : 'candidate';
+        $forms?->supply($captureSide, $artifacts);
         foreach ($this->corpus->cases as $case) {
+            $baselineExit = $artifacts['case:' . $case->id . '|exit:baseline:generate'] ?? null;
+            if ($baselineExit !== null && $baselineExit !== '0' && ($artifacts['case:' . $case->id . '|baseline-file'] ?? '') !== '') {
+                $this->checkBaselineSurface($side, $case, $artifacts);
+            }
             $outcome = CaseOutcome::of($case, $side === 'reference' ? 'reference' : 'candidate');
             if ($outcome !== CaseOutcome::ANALYSIS) {
                 $this->checkCase($side, $case, $outcome, $artifacts);
             }
             if (CaseOutcome::applies(CaseOutcome::CHECK_FINDINGS, $outcome)) {
+                if ($forms?->of($captureSide, 'case:' . $case->id . '|format:json') === PublicationForms::WHOLE_INVOCATION
+                    && ($captureSide === 'reference' || $case->isAuxiliary())) {
+                    continue;
+                }
                 if (!\array_key_exists($case->id, $authority)) {
                     throw new GateError('A produced analysis has no validated physical authority: ' . $case->id);
                 }

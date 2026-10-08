@@ -61,10 +61,10 @@ final class PublicationForms
         if ($text === null || !ReportViews::recordBearingSurface(Surfaces::surfaceClass($key))) {
             return null;
         }
-        return $this->forms[$side][$key] = $this->classify($key, $text);
+        return $this->forms[$side][$key] = self::classify($key, $text);
     }
 
-    private function classify(string $key, string $text): string
+    public static function classify(string $key, string $text): string
     {
         $surface = Surfaces::surfaceClass($key);
         $member = match ($surface) {
@@ -80,6 +80,9 @@ final class PublicationForms
             && !\in_array($surface, ['format:html', 'format:gitlab', 'format:sarif'], true)) {
             throw new GateError('The publication has no native record decoder: ' . $key);
         }
+        if ($member === null && !$baseline) {
+            return self::WHOLE_INVOCATION;
+        }
         try {
             if ($member !== null) {
                 ReportRecords::rawRecords($text, $member);
@@ -88,12 +91,6 @@ final class PublicationForms
                 }
             } elseif ($baseline) {
                 ReportRecords::baselineDocument($text);
-            } elseif ($surface === 'format:checkstyle') {
-                ReportRecords::checkstyle($text);
-            } elseif (\in_array($surface, ProseRecords::SURFACES, true)) {
-                ProseRecords::extract($surface, $text, requirePopulation: true);
-            } else {
-                ReportRecords::projected($surface, $surface === 'format:html' ? ReportPayload::of($text, $key, 'captured') : $text);
             }
             return self::RECORDS;
         } catch (GateError) {

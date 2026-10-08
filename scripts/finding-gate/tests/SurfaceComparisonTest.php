@@ -58,23 +58,37 @@ final class SurfaceComparisonTest extends TestCase
             ['format:suppressed', '{"suppressed":{}}', 'whole-invocation', '0', ''],
             ['directives', '{"directives":[]}', 'records', '0', ''],
             ['directives', '{"directives":{}}', 'whole-invocation', '0', ''],
-            ['format:gitlab', '[]', 'records', '0', ''],
+            ['format:gitlab', '[]', 'whole-invocation', '0', ''],
             ['format:gitlab', '{}', 'whole-invocation', '0', ''],
-            ['format:sarif', '{"runs":[]}', 'records', '0', ''],
+            ['format:sarif', '{"runs":[]}', 'whole-invocation', '0', ''],
             ['format:sarif', '{"runs":{}}', 'whole-invocation', '0', ''],
-            ['format:sarif', '{"runs":[{"results":[],"tool":{"driver":{"rules":[]}}}]}', 'records', '0', ''],
+            ['format:sarif', '{"runs":[{"results":[],"tool":{"driver":{"rules":[]}}}]}', 'whole-invocation', '0', ''],
             ['format:sarif', '{"runs":[{"results":{},"tool":{"driver":{"rules":[]}}}]}', 'whole-invocation', '0', ''],
             ['format:sarif', '{"runs":[{"results":[],"tool":{"driver":{"rules":{}}}}]}', 'whole-invocation', '0', ''],
-            ['format:html', '<script type="application/json" id="report-data">{"violations":[]}</script>', 'records', '0', ''],
+            ['format:html', '<script type="application/json" id="report-data">{"violations":[]}</script>', 'whole-invocation', '0', ''],
             ['format:html', '<script type="application/json" id="report-data">{"violations":{}}</script>', 'whole-invocation', '0', ''],
             ['format:html', '<script type="application/json" id="report-data">{}</script>', 'whole-invocation', '0', ''],
             ['format:html', '<script type="application/json" id="report-data">{"metrics":{"violations":[]}}</script>', 'whole-invocation', '0', ''],
-            ['format:html', '<script type="application/json" id="report-data">{"tree":{"violations":[],"children":[{"violations":[]}]},"metrics":{"violations":{}}}</script>', 'records', '0', ''],
-            ['format:checkstyle', '<checkstyle/>', 'records', '0', ''],
+            ['format:html', '<script type="application/json" id="report-data">{"tree":{"violations":[],"children":[{"violations":[]}]},"metrics":{"violations":{}}}</script>', 'whole-invocation', '0', ''],
+            ['format:checkstyle', '<checkstyle/>', 'whole-invocation', '0', ''],
             ['baseline-file', '{"version":14,"entries":{}}', 'records', '0', ''],
             ['baseline-file', '{"version":14,"entries":[]}', 'whole-invocation', '0', ''],
             ['baseline-file', '{"version":14,"entries":{"subject":[]}}', 'records', '0', ''],
             ['baseline-file', '{"version":14,"entries":{"subject":{}}}', 'whole-invocation', '0', ''],
+            ['format:summary', 'No findings', 'whole-invocation', '0', ''],
+            ['format:text', 'No findings', 'whole-invocation', '0', ''],
+            ['format:text-detail', 'No findings', 'whole-invocation', '0', ''],
+            ['format:text-verbose', 'No findings', 'whole-invocation', '0', ''],
+            ['format:github', 'No findings', 'whole-invocation', '0', ''],
+            ['show-suppressed', 'No findings', 'whole-invocation', '0', ''],
+            ['check:baseline-source', '{"violations":[]}', 'records', '0', ''],
+            ['check:baseline', '{"violations":[]}', 'records', '0', ''],
+            ['check:output:file', '{"violations":[]}', 'records', '0', ''],
+            ['check:parallel', '{"violations":[]}', 'records', '0', ''],
+            ['baseline:cleanup:file', '{"version":14,"entries":{}}', 'records', '0', ''],
+            ['baseline:rename-channels:file', '{"version":14,"entries":{}}', 'records', '0', ''],
+            ['baseline:update:file', '{"version":14,"entries":{}}', 'records', '0', ''],
+            ['format:json', '{"error":"Refused input","exit_code":1}', 'whole-invocation', '1', ''],
         ];
         foreach ($nativePublications as [$view, $text, $expected, $exit, $stderr]) {
             $report = new GateReport();
@@ -333,11 +347,11 @@ final class SurfaceComparisonTest extends TestCase
         $json = (string) json_encode(['violations' => []]);
 
         $this->comparison($report, [$stage])->compareSurfaces(
-            ['case:alpha|format:json' => $json, 'case:alpha|format:text' => 'No findings'],
-            ['case:alpha|format:json' => $json, 'case:alpha|format:text' => 'No findings'],
+            ['case:alpha|format:json' => $json, 'case:alpha|format:metrics' => '{"symbols":[]}'],
+            ['case:alpha|format:json' => $json, 'case:alpha|format:metrics' => '{"symbols":[]}'],
         );
 
-        self::assertSame(['case:alpha|format:json', 'case:alpha|format:text'], $stage->seen);
+        self::assertSame(['case:alpha|format:json', 'case:alpha|format:metrics'], $stage->seen);
         self::assertSame([], $report->raised(), 'a surface the stage settled reaches no later step');
     }
 

@@ -59,7 +59,7 @@ final class RankingCheck implements CaseCheck
         foreach ($this->run->capturePlan->rankingInvocations() as $descriptor) {
             $key = Surfaces::key($descriptor['scope'], $descriptor['surface']);
             if ($descriptor['scope'] === 'case:' . $case->id && $this->run->capturePlan->requiredOn($key, $side)
-                && $this->run->publicationForms->recordsPair($key) !== false) {
+                && $this->run->publicationForms->of($side, $key) !== PublicationForms::WHOLE_INVOCATION) {
                 $this->checkCaptureMetadata($side, $key, $artifacts);
             }
         }
@@ -84,7 +84,10 @@ final class RankingCheck implements CaseCheck
                 if ($descriptor['scope'] !== 'case:' . $case->id || !$this->run->capturePlan->requiredOn($key, 'candidate')) {
                     continue;
                 }
-                if ($this->run->publicationForms->recordsPair($key) === false) {
+                $firstBytes = $first->artifacts[$key] ?? throw new GateError('A repeated candidate ranking source is missing: ' . $key);
+                $secondBytes = $second->artifacts[$key] ?? throw new GateError('A repeated candidate ranking source is missing: ' . $key);
+                if (PublicationForms::classify($key, $firstBytes) !== PublicationForms::RECORDS
+                    || PublicationForms::classify($key, $secondBytes) !== PublicationForms::RECORDS) {
                     continue;
                 }
                 if ($this->run->report->sourceRejected('candidate', $key, 'ranking')) {

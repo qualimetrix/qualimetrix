@@ -422,14 +422,18 @@ final class Gate
                     if ($descriptor['scope'] !== 'case:' . $case->id || !$pass->capturePlan->requiredOn($key, $side)) {
                         continue;
                     }
+                    $form = $pass->publicationForms->of($side, $key);
+                    if ($form === PublicationForms::WHOLE_INVOCATION) {
+                        continue;
+                    }
+                    if ($form === null) {
+                        throw new GateError('The own ranking source capture is missing: ' . $key);
+                    }
                     if (!$ranking->checkCaptureMetadata($side, $key, $capture->artifacts)) {
                         return null;
                     }
                     if (!CaseOutcome::applies(CaseOutcome::CHECK_FINDINGS, $outcome)) {
                         continue;
-                    }
-                    if ($pass->publicationForms->of($side, $key) !== PublicationForms::RECORDS) {
-                        throw new GateError($pass->publicationForms->problem($side, $key) ?? 'The own capture has no native findings population.');
                     }
                     $published = ReportRecords::extract('json', $capture->artifacts[$key], $records->fields('json', $descriptor['surface'], $side));
                     $observed = $ranking->observe($side, $case, $descriptor['surface'], $published, $capture->artifacts, compare: false);
@@ -437,7 +441,9 @@ final class Gate
                         $authority[$case->id] = $observed['rawAuthority'];
                     }
                 }
-                if (CaseOutcome::applies(CaseOutcome::CHECK_FINDINGS, $outcome) && !\array_key_exists($case->id, $authority)) {
+                if (CaseOutcome::applies(CaseOutcome::CHECK_FINDINGS, $outcome) && !\array_key_exists($case->id, $authority)
+                    && ($pass->publicationForms->of($side, 'case:' . $case->id . '|format:json') !== PublicationForms::WHOLE_INVOCATION
+                        || ($side === 'candidate' && !$case->isAuxiliary()))) {
                     throw new GateError('The capture has no validated main physical authority.');
                 }
             } catch (GateError $error) {
@@ -501,6 +507,9 @@ final class Gate
             }
 
             if (CaseOutcome::applies(CaseOutcome::CHECK_FINDINGS, $outcome)) {
+                if ($this->context->publicationForms->of($side, $key) === PublicationForms::WHOLE_INVOCATION) {
+                    continue;
+                }
                 if ($this->context->publicationForms->recordsPair($key) === false) {
                     if ($capture === null) {
                         $this->report->fail(FailureClass::RUN_FAILED, $side . ' / ' . $case->id, 'Independent findings claims require their own complete capture.');

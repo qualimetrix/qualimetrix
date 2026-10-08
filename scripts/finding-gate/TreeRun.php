@@ -107,7 +107,9 @@ final class TreeRun
                 $command = [...$check, '-f', 'json', '--baseline=' . $baseline];
             } elseif (\in_array($surface, ['baseline:update', 'baseline:cleanup', 'baseline:rename-channels'], true)) {
                 $file = $this->scratch($surface . '-' . $case->id) . '.json';
-                Fs::write($file, Fs::read($baseline));
+                if (is_file($baseline)) {
+                    Fs::write($file, Fs::read($baseline));
+                }
                 if ($surface === 'baseline:rename-channels') {
                     $map = $this->inputs->renameChannelsMap($case);
                     if ($map === null) {
@@ -129,38 +131,40 @@ final class TreeRun
                 throw new GateError('No supported command for capture invocation: ' . $key);
             }
             $result = $this->invoke($key, $command, $cwd, $assertCache);
-            $side = $this->label === 'reference' ? 'reference' : 'candidate';
-            if ($descriptor['publicationKind'] === 'finding-json' && $descriptor['rankingSource'] === $key) {
-                $rankings[$key] = $side === 'reference' && $result['exit'] === 3
-                    ? ['ranked' => $result, 'physical' => null]
-                    : $this->captureRanking($case, $side, $key, $command, $cwd, $result['stdout']);
-            }
-            if ($surface === 'check:output' && ((\in_array($result['exit'], [0, 1, 2], true)
-                && CaseOutcome::of($case, $side) === CaseOutcome::ANALYSIS) || is_file((string) $file))) {
+            $publication = $surface === 'baseline-file' ? (is_file((string) $file) ? Fs::read((string) $file) : '') : $result['stdout'];
+            $fileBytes = $descriptor['outputFileKind'] !== null && is_file((string) $file) ? Fs::read((string) $file) : '';
+            $populationKey = Surfaces::key($descriptor['scope'], $descriptor['outputFileKind'] ?? $surface);
+            $form = ReportViews::recordBearingSurface(Surfaces::surfaceClass($populationKey))
+                ? PublicationForms::classify($populationKey, $descriptor['outputFileKind'] === null ? $publication : $fileBytes)
+                : null;
+            if ($surface === 'check:output' && ($form === PublicationForms::RECORDS || $fileBytes !== '')) {
                 preg_match_all('/^Report written to (.+)$/m', $result['stderr'], $destinations);
                 if (!is_file((string) $file) || Fs::read((string) $file) === '' || $destinations[1] !== [$file]) {
                     throw new GateError('The output publication is missing, empty, or does not name exactly the chosen file for ' . $key . '.');
                 }
             }
-            $publication = $surface === 'baseline-file' ? (is_file((string) $file) ? Fs::read((string) $file) : '') : $result['stdout'];
             $artifacts[$key] = $publication;
             $exit = $surface === 'baseline-file' ? 'baseline:generate' : $surface;
             $artifacts[Surfaces::key($descriptor['scope'], 'exit:' . $exit)] = (string) $result['exit'];
             $artifacts[Surfaces::key($descriptor['scope'], 'stderr:' . $surface)] = $result['stderr'];
             if ($descriptor['outputFileKind'] !== null) {
-                $artifacts[Surfaces::key($descriptor['scope'], $descriptor['outputFileKind'])] = is_file((string) $file) ? Fs::read((string) $file) : '';
+                $artifacts[Surfaces::key($descriptor['scope'], $descriptor['outputFileKind'])] = $fileBytes;
             }
             foreach ($plan->artifactsOf($key) as $artifact) {
                 if (!\array_key_exists($artifact, $artifacts)) {
                     throw new GateError('Capture omitted a planned artifact: ' . $artifact);
                 }
             }
+            if ($descriptor['publicationKind'] === 'finding-json' && $descriptor['rankingSource'] === $key
+                && $form === PublicationForms::RECORDS) {
+                $rankings[$key] = $this->captureRanking($key, $command, $cwd, $result['stdout']);
+            }
         }
 
         $view = $originalCase->baselineSource() === null ? 'format:json' : 'check:baseline-source';
         $sourceKey = Surfaces::key('case:' . $case->id, $view);
-        if (CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($originalCase, $this->label === 'reference' ? 'reference' : 'candidate'))
-            && isset($rankings[$sourceKey])) {
+        if (isset($rankings[$sourceKey])
+            && PublicationForms::classify($sourceKey, $artifacts[$sourceKey]) === PublicationForms::RECORDS) {
             $source = $rankings[$sourceKey]['physical'] ?? $rankings[$sourceKey]['ranked'];
             $document = ReportRecords::decode($source['stdout']);
             if (\is_array($document['violations'] ?? null)) {
@@ -180,24 +184,20 @@ final class TreeRun
      *
      * @return RankingCapture
      */
-    private function captureRanking(CaseDefinition $case, string $side, string $key, array $command, string $cwd, string $stdout): array
+    private function captureRanking(string $key, array $command, string $cwd, string $stdout): array
     {
-        $limit = 1;
-        $truncated = false;
-        if (CaseOutcome::of($case, $side) !== CaseOutcome::REFUSAL) {
-            try {
-                $payload = json_decode($stdout, true, 512, \JSON_THROW_ON_ERROR);
-            } catch (JsonException $error) {
-                throw new GateError('Cannot size the complete ranking for ' . $key . ': ' . $error->getMessage());
-            }
-            $metadata = \is_array($payload) ? ($payload['violationsMeta'] ?? null) : null;
-            if (!\is_array($metadata) || !\is_int($metadata['total'] ?? null) || $metadata['total'] < 0
-                || $metadata['total'] === \PHP_INT_MAX || !\is_bool($metadata['truncated'] ?? null)) {
-                throw new GateError('Complete ranking requires nonnegative total and boolean truncation metadata for ' . $key . '.');
-            }
-            $limit = $metadata['total'] + 1;
-            $truncated = $metadata['truncated'];
+        try {
+            $payload = json_decode($stdout, true, 512, \JSON_THROW_ON_ERROR);
+        } catch (JsonException $error) {
+            throw new GateError('Cannot size the complete ranking for ' . $key . ': ' . $error->getMessage());
         }
+        $metadata = \is_array($payload) ? ($payload['violationsMeta'] ?? null) : null;
+        if (!\is_array($metadata) || !\is_int($metadata['total'] ?? null) || $metadata['total'] < 0
+            || $metadata['total'] === \PHP_INT_MAX || !\is_bool($metadata['truncated'] ?? null)) {
+            throw new GateError('Complete ranking requires nonnegative total and boolean truncation metadata for ' . $key . '.');
+        }
+        $limit = $metadata['total'] + 1;
+        $truncated = $metadata['truncated'];
 
         return [
             'ranked' => $this->invoke($key, [...$command, '--top=' . $limit], $cwd, capture: 'ranked'),

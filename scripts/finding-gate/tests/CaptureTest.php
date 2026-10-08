@@ -171,9 +171,10 @@ final class CaptureTest extends TestCase
     #[Group('finding-gate-e2e')]
     public function itDerivesNormalizationOnlyAfterValidatingFullPhysicalAndRefusalCaptures(): void
     {
-        foreach (['healthy', 'physical-count', 'refusal-exit'] as $fault) {
-            if ($fault === 'refusal-exit') {
+        foreach (['healthy', 'physical-count', 'whole-private-slot'] as $fault) {
+            if ($fault === 'whole-private-slot') {
                 $tree = SelfTestOutcomes::fixture();
+                unset($tree['candidateDeclarations'][\QmxFindingGate\DeclaredOutcomes::INDEX], $tree['candidateDeclarations']['declared-outcomes/alpha.json']);
                 $tree['candidateAnswers']['case:alpha|format:json']['ranked'] = ['exit' => 2];
             } else {
                 $tree = SyntheticTree::clean();
@@ -198,7 +199,7 @@ final class CaptureTest extends TestCase
                     $output = ob_get_clean();
                 }
                 self::assertIsString($output);
-                if ($fault === 'healthy') {
+                if ($fault !== 'physical-count') {
                     self::assertSame(GateModes::WROTE, $exit, $output);
                     self::assertSame(GateReport::VERDICT_GREEN, $report->verdict(), $report->render());
                     self::assertNotSame($before, Fs::read($path));
@@ -788,19 +789,35 @@ final class CaptureTest extends TestCase
             SyntheticTree::remove($root);
         }
 
-        $tree = SyntheticTree::clean();
-        $tree['declarations']['cases/alpha/case.json'] = json_encode(['id' => 'alpha', 'description' => 'A refused input.', 'paths' => ['src'], 'config' => 'qmx.yaml', 'channels' => ['replay.alpha@callable'], 'outcome' => ['kind' => 'refusal', 'exit' => 3]], \JSON_THROW_ON_ERROR);
-        $tree['candidateAnswers']['case:alpha|format:json'] = ['stdout' => 'refused', 'stderr' => 'input refused', 'exit' => 3, 'ranked' => ['stdout' => 'refused']];
-        $root = SyntheticTree::create($tree);
-        $temporary = Fs::temporaryDirectory('refusal-ranking-capture-');
-        try {
-            $corpus = Corpus::load($root);
-            $capture = (new TreeRun($root, $temporary, 'candidate', RenameMaps::fromPairs([]), false, CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0]);
-            self::assertSame(['stdout' => 'refused', 'stderr' => 'input refused', 'exit' => 3], $capture->rankings['case:alpha|format:json']['ranked']);
-            self::assertNull($capture->rankings['case:alpha|format:json']['physical']);
-        } finally {
-            Fs::removeRecursively($temporary);
-            SyntheticTree::remove($root);
+        foreach (['candidate', 'reference'] as $side) {
+            $tree = SyntheticTree::captureFixture();
+            $refusal = '{"error":"Refused input","exit_code":1}';
+            $tree['answers']['case:alpha|format:json'] = ['stdout' => $refusal, 'stderr' => 'input refused', 'exit' => 1];
+            $tree['answers']['case:alpha|check:output'] = ['stdout' => '', 'stderr' => 'input refused', 'exit' => 1, 'missingFile' => true];
+            $tree['answers']['case:alpha|baseline-file'] = ['stdout' => '', 'stderr' => 'input refused', 'exit' => 1, 'missingFile' => true];
+            foreach (['baseline:update', 'baseline:cleanup', 'baseline:rename-channels'] as $command) {
+                $tree['answers']['case:alpha|' . $command] = ['stdout' => 'input refused', 'stderr' => 'input refused', 'exit' => 1, 'missingFile' => true];
+            }
+            $root = SyntheticTree::create($tree);
+            $temporary = Fs::temporaryDirectory('whole-ranking-capture-');
+            try {
+                $corpus = Corpus::load($root);
+                $capture = (new TreeRun($root, $temporary, $side, RenameMaps::fromPairs([]), false, CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0]);
+                self::assertArrayNotHasKey('case:alpha|format:json', $capture->rankings);
+                self::assertArrayNotHasKey('case:alpha|format:json', $capture->baselineEligibility);
+                self::assertSame($refusal, $capture->artifacts['case:alpha|format:json']);
+                self::assertSame('1', $capture->artifacts['case:alpha|exit:format:json']);
+                self::assertSame('input refused', $capture->artifacts['case:alpha|stderr:format:json']);
+                self::assertSame('', $capture->artifacts['case:alpha|check:output:file']);
+                self::assertSame('', $capture->artifacts['case:alpha|baseline-file']);
+                foreach (['baseline:update', 'baseline:cleanup', 'baseline:rename-channels'] as $command) {
+                    self::assertSame('1', $capture->artifacts['case:alpha|exit:' . $command]);
+                    self::assertSame('', $capture->artifacts['case:alpha|' . $command . ':file']);
+                }
+            } finally {
+                Fs::removeRecursively($temporary);
+                SyntheticTree::remove($root);
+            }
         }
     }
 

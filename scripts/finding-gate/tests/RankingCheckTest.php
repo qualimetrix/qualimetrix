@@ -198,6 +198,8 @@ final class RankingCheckTest extends TestCase
             ], $run, \QmxFindingGate\RecordCheck::create($run)));
             \QmxFindingGate\RankingCheck::create($run)->checkRepeatedCaptures($captures['candidate'], $slot($candidateRanked, $permutedPhysical));
             self::assertSame([], $run->report->failureClasses(), $run->report->render());
+            $run->publicationForms->supply('reference', [$source => '{"error":"Whole peer","exit_code":1}']);
+            self::assertFalse($run->publicationForms->recordsPair($source));
             $rawDrift = str_replace('"impactScore":20.000000000000000002', '"impactScore":20.000000000000000003', $candidateRanked);
             self::assertNotSame($candidateRanked, $rawDrift);
             self::assertSame(json_decode($candidateRanked, true, 512, \JSON_THROW_ON_ERROR), json_decode($rawDrift, true, 512, \JSON_THROW_ON_ERROR));
@@ -633,8 +635,14 @@ final class RankingCheckTest extends TestCase
                     $referencePhysical,
                     $actualPhysical,
                 );
-                self::assertContains(\QmxFindingGate\DeclaredExactSurfaces::INDEX, $aliasWritten, $surface . ': ' . $aliasReport->render());
-                self::assertNotSame("pending\n", Fs::read($aliasRoot . '/finding-gate/' . Tsv::rows($aliasRoot . '/finding-gate/' . \QmxFindingGate\DeclaredExactSurfaces::INDEX, \QmxFindingGate\DeclaredExactSurfaces::COLUMNS)[0]['file']));
+                if ($surface === 'check:parallel') {
+                    self::assertContains(\QmxFindingGate\DeclaredExactSurfaces::INDEX, $aliasWritten, $aliasReport->render());
+                    self::assertNotSame("pending\n", Fs::read($aliasRoot . '/finding-gate/' . Tsv::rows($aliasRoot . '/finding-gate/' . \QmxFindingGate\DeclaredExactSurfaces::INDEX, \QmxFindingGate\DeclaredExactSurfaces::COLUMNS)[0]['file']));
+                } else {
+                    self::assertNotContains(\QmxFindingGate\DeclaredExactSurfaces::INDEX, $aliasWritten);
+                    self::assertContains(FailureClass::DELTA_STALE, RecordedComparison::reportAt($alias, $aliasRoot)->failureClasses());
+                    self::assertSame("pending\n", Fs::read($aliasRoot . '/finding-gate/declared-exact-surfaces/alias.diff'));
+                }
             } finally {
                 SyntheticTree::remove($aliasRoot);
             }
@@ -853,7 +861,7 @@ final class RankingCheckTest extends TestCase
         self::publish($tree, 'candidateAnswers', $candidate, self::issues($candidate, [20, 10]), 1);
         $tree['declarations'][DeclaredRecords::INDEX] = Tsv::render(DeclaredRecords::COLUMNS, [['withdrawn', 'alpha', 'json', 'format:json', ValueCheck::value(['channel' => 'replay.alpha', 'subject' => $reference[0]['subject']]), 'Withdraw precisely the former first finding.']]);
         $deltaRows = [];
-        foreach (['baseline-file', 'check:output:file', 'format:gitlab', 'format:html', 'format:json', 'format:sarif'] as $surface) {
+        foreach (['baseline-file', 'check:output:file', 'format:json'] as $surface) {
             $file = 'declared-delta/' . str_replace(':', '-', $surface) . '.diff';
             $deltaRows[] = ['case:alpha|' . $surface, $file, 'Measure the remaining aggregate and layout bytes of this exact withdrawal.'];
             $tree['declarations'][$file] = "a difference awaiting measurement\n";
@@ -915,7 +923,7 @@ final class RankingCheckTest extends TestCase
                 default => str_replace('[15min]', '[16min]', $text),
             };
             $bad['candidateAnswers']['case:alpha|format:summary'] = ['stdout' => $text];
-            $this->red($bad, FailureClass::RANKING_PROJECTION_MISMATCH);
+            $this->red($bad, FailureClass::SURFACE_MISMATCH);
         }
     }
 
@@ -999,10 +1007,10 @@ final class RankingCheckTest extends TestCase
             $path = $root . '/src/Reporting/Formatter/Json/JsonFormatter.php';
             Fs::write($path, str_replace("                'rank' => null,", "                'rank' => null,\n                'probe' => null,", Fs::read($path)));
             [$semantic, $semanticWritten] = RecordedComparison::derive($tree, $root);
-            self::assertSame([], $semantic->failureClasses(), $semantic->render());
+            self::assertSame([FailureClass::SURFACE_MISMATCH], $semantic->failureClasses(), $semantic->render());
             self::assertContains(DeclaredFields::DERIVED, $semanticWritten, $semantic->render());
             self::assertContains(DeclaredValues::DERIVED, $semanticWritten, $semantic->render());
-            self::assertSame([], RecordedComparison::reportAt($tree, $root)->failureClasses());
+            self::assertSame([FailureClass::SURFACE_MISMATCH], RecordedComparison::reportAt($tree, $root)->failureClasses());
             Fs::write($root . '/finding-gate/' . \QmxFindingGate\DeclaredExactSurfaces::INDEX, Tsv::render(\QmxFindingGate\DeclaredExactSurfaces::COLUMNS, [
                 ['alpha', 'format:json', 'declared-exact-surfaces/schema-value.diff', 'Measure any remaining complete finding authority.'],
             ]));
@@ -1157,11 +1165,13 @@ final class RankingCheckTest extends TestCase
                     }
                 }
             }
-            foreach ($witness['expect'] as [$failure, $scope, $identity]) {
+            foreach ($witness['expect'] as $pattern) {
+                self::assertArrayHasKey(2, $pattern, $witness['id'] . ': ranking witnesses retain their exact producer');
+                [$failure, $scope, $identity] = $pattern;
                 self::assertNotSame([], array_values(array_filter($observed, static fn(array $row): bool => $row[0] === $failure && fnmatch($scope, $row[1]) && $row[2] === $identity)), $witness['id'] . ': ' . ValueCheck::value($observed));
             }
             foreach ($observed as $row) {
-                $allowed = array_filter($witness['expect'], static fn(array $pattern): bool => $row[0] === $pattern[0] && fnmatch($pattern[1], $row[1]) && $row[2] === $pattern[2]);
+                $allowed = array_filter($witness['expect'], static fn(array $pattern): bool => $row[0] === $pattern[0] && fnmatch($pattern[1], $row[1]) && isset($pattern[2]) && $row[2] === $pattern[2]);
                 $allowed = [...$allowed, ...array_filter($witness['tolerate'], static fn(array $pattern): bool => $row[0] === $pattern[0] && fnmatch($pattern[1], $row[1]))];
                 self::assertNotSame([], $allowed, $witness['id'] . ': ' . ValueCheck::value($row));
             }
@@ -1203,6 +1213,11 @@ final class RankingCheckTest extends TestCase
         $tree['findings']['alpha'] = $records;
         $tree['declarations']['cases/alpha/case.json'] = self::definition();
         self::publish($tree, 'answers', $records, $issues, $slice, $shown);
+        foreach (['format:html', 'format:checkstyle', 'format:sarif', 'format:gitlab', 'format:text', 'format:text-detail', 'format:text-verbose', 'format:github', 'show-suppressed'] as $surface) {
+            $tree['answers']['case:alpha|' . $surface] = ['stdout' => 'Unchanged whole publication for ' . $surface . "\n"];
+            $tree['candidateAnswers']['case:alpha|' . $surface] = $tree['answers']['case:alpha|' . $surface];
+        }
+        $tree['candidateAnswers']['case:alpha|format:summary'] = $tree['answers']['case:alpha|format:summary'];
         return $tree;
     }
 
@@ -1245,7 +1260,9 @@ final class RankingCheckTest extends TestCase
             $baseline = ReportRecords::baselineText($record);
             $text .= $baseline === null ? '' : '         ' . $baseline . "\n";
         }
-        $tree[$side]['case:alpha|format:summary'] = ['stdout' => $text];
+        if ($side === 'answers') {
+            $tree[$side]['case:alpha|format:summary'] = ['stdout' => $text];
+        }
     }
 
     /** @param list<string> $args */
@@ -1307,6 +1324,9 @@ final class RankingCheckTest extends TestCase
         }
         $tree['answers']['case:alpha|show-suppressed'] = ['stdout' => $prose];
         $tree['answers']['case:alpha|format:github'] = ['stdout' => $github];
+        foreach (['format:gitlab', 'format:checkstyle', 'format:text', 'format:text-detail', 'show-suppressed', 'format:github'] as $surface) {
+            $tree['candidateAnswers']['case:alpha|' . $surface] = $tree['answers']['case:alpha|' . $surface];
+        }
     }
 
     /** @param Specification $tree
