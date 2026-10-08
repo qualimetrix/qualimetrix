@@ -27,8 +27,13 @@ final class TupleControls
             self::addedMember()->and(self::unavailableFindingValueMeasurements())->and(self::unavailableRankingFieldMeasurements()),
             [new Expectation(FailureClass::TUPLE_FIELD_DRIFT, EquivalenceTuple::TRACKED_PATH),
                 new Expectation(FailureClass::RUN_FAILED, 'candidate-2 / annotations', exactScope: true),
+                new Expectation(FailureClass::RUN_FAILED, 'candidate-claims / utf8-identifier', exactScope: true),
+                new Expectation(FailureClass::CANDIDATE_INPUT_REFUSED, 'case:utf8-identifier', exactScope: true),
                 ...self::recordExpectations('candidate')],
-            self::invalidCaptureBaselineFailures(),
+            [...self::invalidCaptureBaselineFailures(),
+                ...self::rankingProjectionFailures('reference'),
+                new Expectation(FailureClass::FINDING_COUNT_MISMATCH, 'case:drill-down', exactScope: true),
+                ...self::staleRecordFailures()],
         );
     }
 
@@ -43,6 +48,10 @@ final class TupleControls
                 'the tracked candidate tuple includes the unannounced member',
             ))->and(self::unavailableFindingValueMeasurements())->and(self::unavailableRankingFieldMeasurements()),
             self::recordExpectations('reference'),
+            [...self::rankingProjectionFailures('candidate'),
+                new Expectation(FailureClass::RANKING_PROJECTION_MISMATCH, 'reference / case:drill-down|check:baseline', exactScope: true),
+                new Expectation(FailureClass::FINDING_COUNT_MISMATCH, 'case:drill-down', exactScope: true),
+                ...self::staleRecordFailures()],
         );
     }
 
@@ -148,6 +157,67 @@ final class TupleControls
     }
 
     /** @return list<Expectation> */
+    private static function rankingProjectionFailures(string $side): array
+    {
+        $scopes = array_map(static fn(string $case): string => 'case:' . $case . '|format:json', [
+            'annotations',
+            'applied-threshold',
+            'baseline-cycle',
+            'complexity',
+            'config-precedence',
+            'coupling',
+            'cycle',
+            'design',
+            'detectors',
+            'detectors-security',
+            'detectors-smells',
+            'directive-placement',
+            'disabled-rule',
+            'disabled-rule-duplication',
+            'discovery',
+            'drill-down',
+            'duplicate-declaration',
+            'duplication',
+            'duplication-size',
+            'excluded-path',
+            'external-parent',
+            'health',
+            'incomplete-directory-symlink',
+            'layered-threshold',
+            'layers',
+            'name-case',
+            'only-rules',
+            'parallel-files',
+            'rule-exclusion-ledger',
+            'scoped-layers',
+            'security',
+            'smells',
+            'stderr-warning',
+            'suppression',
+            'threshold-raising',
+        ]);
+        foreach (['baseline-cycle', 'drill-down', 'scoped-layers'] as $case) {
+            $scopes[] = 'case:' . $case . '|check:baseline-source';
+            $scopes[] = 'case:' . $case . '|check:baseline';
+        }
+        return array_map(static fn(string $scope): Expectation => new Expectation(
+            FailureClass::RANKING_PROJECTION_MISMATCH,
+            $side . ' / ' . $scope,
+            exactScope: true,
+        ), $scopes);
+    }
+
+    /** @return list<Expectation> */
+    private static function staleRecordFailures(): array
+    {
+        return [
+            new Expectation(FailureClass::RECORD_STALE, 'case:drill-down|format:json', exactScope: true),
+            new Expectation(FailureClass::RECORD_STALE, 'case:drill-down|check:baseline', exactScope: true),
+            new Expectation(FailureClass::RECORD_STALE, 'declared-records.tsv', exactScope: true),
+        ];
+    }
+
+    /** @return list<Expectation> */
     private static function invalidCaptureBaselineFailures(): array
     {
         $root = \dirname(__DIR__, 2);
@@ -174,7 +244,7 @@ final class TupleControls
     {
         $required = [];
         foreach (Corpus::load(\dirname(__DIR__, 2))->cases as $case) {
-            if ($case->channels === [] || ($side === 'reference' && $case->id === 'utf8-identifier')
+            if ($case->channels === [] || $case->id === 'utf8-identifier'
                 || !CaseOutcome::applies(CaseOutcome::CHECK_TUPLE, CaseOutcome::of($case, $side))) {
                 continue;
             }

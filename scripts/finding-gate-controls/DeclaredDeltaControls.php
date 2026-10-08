@@ -62,7 +62,9 @@ final class DeclaredDeltaControls
             '--derive-declarations',
             $captureFailure->required,
             ['finding-gate/' . DeclaredDelta::INDEX, 'finding-gate/' . DeclaredDelta::DIRECTORY],
-            $captureFailure->tolerated,
+            array_values(array_filter($captureFailure->tolerated, static fn(Expectation $expectation): bool =>
+                $expectation->failureClass !== FailureClass::RECORD_STALE
+                || !\in_array($expectation->scopeContains, ['case:drill-down|format:json', 'case:drill-down|check:baseline'], true))),
         );
     }
 
