@@ -1693,6 +1693,10 @@ Available tests:
  - Qualimetrix\PromiseEffect\Tests\PerSideMagnitudeTest::itRefusesAPerSideLiteralEqualToItsFormsCanonicalWrite
  - Qualimetrix\PromiseEffect\Tests\PerSideMagnitudeTest::itRefusesAPerSideRowNamingAFormThatDoesNotExist
  - Qualimetrix\PromiseEffect\Tests\PerSideMagnitudeTest::itWritesOneMagnitudeInEveryNumericSpelling
+ - Qualimetrix\PromiseEffect\Tests\RefusalFramingWitnessTest::itDistinguishesInternalFailureFromFindingExitCodes#0
+ - Qualimetrix\PromiseEffect\Tests\RefusalFramingWitnessTest::itDistinguishesInternalFailureFromFindingExitCodes#1
+ - Qualimetrix\PromiseEffect\Tests\RefusalFramingWitnessTest::itDistinguishesInternalFailureFromFindingExitCodes#2
+ - Qualimetrix\PromiseEffect\Tests\RefusalFramingWitnessTest::itDistinguishesInternalFailureFromFindingExitCodes#3
  - Qualimetrix\PromiseEffect\Tests\RefusalFramingWitnessTest::itDoesNotCountTheWitnessAsAProductRun
  - Qualimetrix\PromiseEffect\Tests\RefusalFramingWitnessTest::itReadsTheSameEnvelopeWithTheFrameAsAFramedRefusal
  - Qualimetrix\PromiseEffect\Tests\RefusalFramingWitnessTest::itReadsTheWitnessAsAnUnframedRefusalAndTheControlHoldsOnIt
@@ -10537,6 +10541,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itReportsHookNotInstalled
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itReportsInstalledHookAsAFile
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itReportsInstalledHookAsSymlink
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itReportsTheNativeLegacyHookAsOutdatedAndAcceptsTheCurrentRevision
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itSuppressesTheDocsPointerUnderQuiet
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itWarnsAboutNonExecutableHook
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\HookStatusCommandTest::itWarnsAboutThirdPartyHook
@@ -10579,8 +10584,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnalysesTheSameFilesAsCheckUnderTheSameExcludes
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnswersAnImpossiblePairAboutTheLevelRatherThanTheBan"a group that covers it"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnswersAnImpossiblePairAboutTheLevelRatherThanTheBan"the exact name"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnswersExitFiveForAnUnrecognisedExceptionFromTheAudit
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnswersExitFourWhenAScannedDirectoryCannotBeRead
- - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnswersExitOneForAnUnrecognisedExceptionFromTheAudit
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itCallsASuppressionEffectiveWhenItSilencedAFinding
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDefaultsToTheNarrowSweep
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDoesNotCallAProducerDisabledAtALevelItNeverReportsAt
@@ -10898,7 +10903,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itAnswersTheCarrierWithExitThreeInCheck
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itAnswersTheCarrierWithExitThreeInDebugLayerAssignment
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itAnswersTheCarrierWithExitThreeInDirectives
- - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itLeavesConflictingCliAliasAtExitOneAsAnInternalError
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itLeavesConflictingCliAliasAtExitFiveAsAnInternalError
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itLeavesIncompleteAnalysisAtExitFourInTheSharedLadder
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itRefusesAnExplicitNonPhpFileAtEveryMeasuringDoor"baseline cleanup"
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itRefusesAnExplicitNonPhpFileAtEveryMeasuringDoor"baseline explain"
@@ -11209,6 +11214,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDeliversTheBinaryPathVerbatim"dollar"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDeliversTheBinaryPathVerbatim"double quote"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDeliversTheBinaryPathVerbatim"plain"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDeliversTheBinaryPathVerbatim"revision placeholder"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDeliversTheBinaryPathVerbatim"single quote"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDeliversTheBinaryPathVerbatim"space"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itDoesNotClaimAThirdPartyHook
@@ -11224,9 +11230,11 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itPropagatesQmxFailureExitCodes"configuration error"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itPropagatesQmxFailureExitCodes"errors"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itPropagatesQmxFailureExitCodes"incomplete analysis"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itPropagatesQmxFailureExitCodes"internal error"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itPropagatesQmxFailureExitCodes"not executable"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itPropagatesQmxFailureExitCodes"not found"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itPropagatesQmxFailureExitCodes"warnings"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itRecognisesOnlyTheCurrentOwnedTemplateRevision
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Hook\PreCommitHookTest::itSkipsAnalysisWhenNoPhpFilesAreStaged
  - Qualimetrix\Tests\Infrastructure\Console\Unit\MeasuredFindingSetTest::itDefinesTheSetFromConfigurationAloneAndNotFromCheckFlags
  - Qualimetrix\Tests\Infrastructure\Console\Unit\MeasuredFindingSetTest::itLeavesOutWhatTheConfiguredExclusionsRemoved
@@ -11278,7 +11286,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalOnStderrUnderEveryNonJsonFormat#5
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalOnStderrWithCodeThree
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAnInternalErrorAsAnEnvelopeUnderAJsonFormat
- - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAnInternalErrorWithTheInternalHeaderAndCodeOne
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAnInternalErrorWithTheInternalHeaderAndCodeFive
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAppendsTheDocumentationPointerOnAConfigurationRefusal
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAppendsTheDocumentationPointerOnAFallbackRefusal
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAppendsTheDocumentationPointerOnAnInternalError
@@ -12221,6 +12229,9 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itAddsNothingForACoveredRun"sarif"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itAddsNothingForACoveredRun"summary"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itAddsNothingForACoveredRun"text"
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itKeepsMalformedSourceReasonDataInThePublishedDescription
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itKeepsMalformedSourceReasonInTheHtmlBannerAndCountsItsRepair
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itKeepsValidSourceReasonJsonUnchanged
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesANarrowedRunAndTheChannelsItDidNotJudge"github"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesANarrowedRunAndTheChannelsItDidNotJudge"health"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesANarrowedRunAndTheChannelsItDidNotJudge"html"
@@ -12563,6 +12574,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itIncludesShownCountInFindingsMeta
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itIncludesWorstClasses
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itIncludesWorstNamespaces
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itKeepsLiteralPercentAndMalformedByteFileGroupsDistinct
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itKeepsTheSummaryShapeUnderADrillDown
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itLimitsWorstNamespacesWithTopNOption
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itOverridesDefaultWithFormatOptLimit

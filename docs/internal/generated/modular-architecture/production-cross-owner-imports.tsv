@@ -3273,6 +3273,7 @@ Qualimetrix\Reporting\Formatter\Json\JsonFindingSection	Reporting	Qualimetrix\An
 Qualimetrix\Reporting\Formatter\Json\JsonFormatter	Reporting	Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator	Analysis.Evidence.Prioritization	contract
 Qualimetrix\Reporting\Formatter\Json\JsonFormatter	Reporting	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
 Qualimetrix\Reporting\Formatter\Json\JsonFormatter	Reporting	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
+Qualimetrix\Reporting\Formatter\Json\JsonFormatter	Reporting	Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	contract
 Qualimetrix\Reporting\Formatter\Json\JsonHealthSection	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension	Analysis.Evidence.ComputedMetrics	contract
 Qualimetrix\Reporting\Formatter\Json\JsonHealthSection	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem	Analysis.Evidence.ComputedMetrics.Health	contract
 Qualimetrix\Reporting\Formatter\Json\JsonHealthSection	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthContributor	Analysis.Evidence.ComputedMetrics.Health	contract

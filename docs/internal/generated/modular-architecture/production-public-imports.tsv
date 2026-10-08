@@ -2656,6 +2656,7 @@ Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	Qualimetrix\Analysis\Policy
 Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	Qualimetrix\Core\Symbol\DeclarationPath	Core.Symbol	src/Core/Symbol/DeclarationPath.php	ast-name
 Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	src/Core/Symbol/SymbolPath.php	ast-name
 Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	Qualimetrix\Infrastructure\Logging\LoggerHelperTrait	Infrastructure.Logging	src/Infrastructure/Logging/LoggerHelperTrait.php	ast-name
+Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	Qualimetrix\Reporting\Formatter\Json\JsonFormatter	Reporting	src/Reporting/Formatter/Json/JsonFormatter.php	ast-name
 Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	Qualimetrix\Reporting\Formatter\Prose\ProseText	Reporting	src/Reporting/Formatter/Prose/ProseText.php	ast-name
 Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	Qualimetrix\Reporting\Formatter\PublishedUtf8	Reporting	src/Reporting/Formatter/PublishedUtf8.php	ast-name
 Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter	Reporting	src/Reporting/Formatter/Sarif/SarifFormatter.php	ast-name

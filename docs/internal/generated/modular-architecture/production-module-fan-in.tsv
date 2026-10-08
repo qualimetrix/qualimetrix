@@ -349,7 +349,7 @@ Qualimetrix\Core\Pattern\SelectorDefinition	Core.Neutral	11	7
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	8	5
 Qualimetrix\Core\ProductIdentity	Core.Neutral	24	3
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	21	8
-Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	9	6
+Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	10	6
 Qualimetrix\Core\Symbol\CallableKind	Core.Symbol	9	2
 Qualimetrix\Core\Symbol\ClassNameSpelling	Core.Symbol	9	6
 Qualimetrix\Core\Symbol\ClassType	Core.Symbol	7	3
