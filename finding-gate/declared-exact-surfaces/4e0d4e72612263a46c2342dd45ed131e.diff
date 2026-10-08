@@ -1,0 +1,106 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 3317
++visible 2017
+@@ -11,29 +11,19 @@
+-         cohesion.lcom: LCOM (Lack of Cohesion) is 21, exceeds threshold of 5. Class could be split into 21 cohesive parts
+-         Recommendation: LCOM4: 21 (threshold: 5) — class has 21 unrelated method groups
+-  2. [ERR] 2.37  src/sgforms/S.php:6  [1h]
+-         security.sql-injection: Potential SQL injection — use parameterized queries instead of direct superglobal interpolation ($_GET) (S::sql_plain)
+-         Recommendation: Use parameterized queries or prepared statements.
+-  3. [ERR] 2.37  src/sgforms/S.php:7  [1h]
+-         security.command-injection: Potential command injection — use escapeshellarg() before passing user input to shell commands ($_GET) (S::cmd_plain)
+-         Recommendation: Use escapeshellarg() for arguments or avoid shell commands entirely.
+-  4. [ERR] 2.37  src/sgforms/S.php:9  [1h]
+-         security.sql-injection: Potential SQL injection — use parameterized queries instead of direct superglobal interpolation ($_GET) (S::sql_braced_single)
+-         Recommendation: Use parameterized queries or prepared statements.
+-  5. [ERR] 2.37  src/sgforms/S.php:10  [1h]
+-         security.command-injection: Potential command injection — use escapeshellarg() before passing user input to shell commands ($_GET) (S::cmd_braced_single)
+-         Recommendation: Use escapeshellarg() for arguments or avoid shell commands entirely.
+-  6. [ERR] 2.37  src/sgforms/S.php:12  [1h]
+-         security.sql-injection: Potential SQL injection — use parameterized queries instead of direct superglobal interpolation ($_GET) (S::sql_braced_double)
+-         Recommendation: Use parameterized queries or prepared statements.
+-  7. [ERR] 2.37  src/sgforms/S.php:13  [1h]
+-         security.command-injection: Potential command injection — use escapeshellarg() before passing user input to shell commands ($_GET) (S::cmd_braced_double)
+-         Recommendation: Use escapeshellarg() for arguments or avoid shell commands entirely.
+-  8. [ERR] 2.37  src/sgforms/S.php:18  [1h]
+-         security.sql-injection: Potential SQL injection — use parameterized queries instead of direct superglobal interpolation ($_GET) (S::sql_braced_concat)
+-         Recommendation: Use parameterized queries or prepared statements.
+-  9. [ERR] 2.37  src/sgforms/S.php:19  [1h]
+-         security.command-injection: Potential command injection — use escapeshellarg() before passing user input to shell commands ($_GET) (S::cmd_braced_concat)
+-         Recommendation: Use escapeshellarg() for arguments or avoid shell commands entirely.
+-  10. [ERR] 2.37  src/sgforms/S.php:21  [1h]
+-          security.sql-injection: Potential SQL injection — use parameterized queries instead of direct superglobal interpolation ($_GET) (S::sql_globals_key)
+-          Recommendation: Use parameterized queries or prepared statements.
++         cohesion.lcom: LCOM4: 21 (threshold: 5) — class has 21 unrelated method groups
++  2. [ERR] 2.37  src/sgforms/S.php:6  [1h]
++         security.sql-injection: Use parameterized queries or prepared statements. (S::sql_plain)
++  3. [ERR] 2.37  src/sgforms/S.php:7  [1h]
++         security.command-injection: Use escapeshellarg() for arguments or avoid shell commands entirely. (S::cmd_plain)
++  4. [ERR] 2.37  src/sgforms/S.php:9  [1h]
++         security.sql-injection: Use parameterized queries or prepared statements. (S::sql_braced_single)
++  5. [ERR] 2.37  src/sgforms/S.php:10  [1h]
++         security.command-injection: Use escapeshellarg() for arguments or avoid shell commands entirely. (S::cmd_braced_single)
++  6. [ERR] 2.37  src/sgforms/S.php:12  [1h]
++         security.sql-injection: Use parameterized queries or prepared statements. (S::sql_braced_double)
++  7. [ERR] 2.37  src/sgforms/S.php:13  [1h]
++         security.command-injection: Use escapeshellarg() for arguments or avoid shell commands entirely. (S::cmd_braced_double)
++  8. [ERR] 2.37  src/sgforms/S.php:18  [1h]
++         security.sql-injection: Use parameterized queries or prepared statements. (S::sql_braced_concat)
++  9. [ERR] 2.37  src/sgforms/S.php:19  [1h]
++         security.command-injection: Use escapeshellarg() for arguments or avoid shell commands entirely. (S::cmd_braced_concat)
++  10. [ERR] 2.37  src/sgforms/S.php:21  [1h]
++          security.sql-injection: Use parameterized queries or prepared statements. (S::sql_globals_key)
+@@ -45,1 +35,1 @@
+-invocation-format:summary 3317
++invocation-format:summary 2017
+@@ -55,29 +45,19 @@
+-         cohesion.lcom: LCOM (Lack of Cohesion) is 21, exceeds threshold of 5. Class could be split into 21 cohesive parts
+-         Recommendation: LCOM4: 21 (threshold: 5) — class has 21 unrelated method groups
+-  2. [ERR] 2.37  src/sgforms/S.php:6  [1h]
+-         security.sql-injection: Potential SQL injection — use parameterized queries instead of direct superglobal interpolation ($_GET) (S::sql_plain)
+-         Recommendation: Use parameterized queries or prepared statements.
+-  3. [ERR] 2.37  src/sgforms/S.php:7  [1h]
+-         security.command-injection: Potential command injection — use escapeshellarg() before passing user input to shell commands ($_GET) (S::cmd_plain)
+-         Recommendation: Use escapeshellarg() for arguments or avoid shell commands entirely.
+-  4. [ERR] 2.37  src/sgforms/S.php:9  [1h]
+-         security.sql-injection: Potential SQL injection — use parameterized queries instead of direct superglobal interpolation ($_GET) (S::sql_braced_single)
+-         Recommendation: Use parameterized queries or prepared statements.
+-  5. [ERR] 2.37  src/sgforms/S.php:10  [1h]
+-         security.command-injection: Potential command injection — use escapeshellarg() before passing user input to shell commands ($_GET) (S::cmd_braced_single)
+-         Recommendation: Use escapeshellarg() for arguments or avoid shell commands entirely.
+-  6. [ERR] 2.37  src/sgforms/S.php:12  [1h]
+-         security.sql-injection: Potential SQL injection — use parameterized queries instead of direct superglobal interpolation ($_GET) (S::sql_braced_double)
+-         Recommendation: Use parameterized queries or prepared statements.
+-  7. [ERR] 2.37  src/sgforms/S.php:13  [1h]
+-         security.command-injection: Potential command injection — use escapeshellarg() before passing user input to shell commands ($_GET) (S::cmd_braced_double)
+-         Recommendation: Use escapeshellarg() for arguments or avoid shell commands entirely.
+-  8. [ERR] 2.37  src/sgforms/S.php:18  [1h]
+-         security.sql-injection: Potential SQL injection — use parameterized queries instead of direct superglobal interpolation ($_GET) (S::sql_braced_concat)
+-         Recommendation: Use parameterized queries or prepared statements.
+-  9. [ERR] 2.37  src/sgforms/S.php:19  [1h]
+-         security.command-injection: Potential command injection — use escapeshellarg() before passing user input to shell commands ($_GET) (S::cmd_braced_concat)
+-         Recommendation: Use escapeshellarg() for arguments or avoid shell commands entirely.
+-  10. [ERR] 2.37  src/sgforms/S.php:21  [1h]
+-          security.sql-injection: Potential SQL injection — use parameterized queries instead of direct superglobal interpolation ($_GET) (S::sql_globals_key)
+-          Recommendation: Use parameterized queries or prepared statements.
++         cohesion.lcom: LCOM4: 21 (threshold: 5) — class has 21 unrelated method groups
++  2. [ERR] 2.37  src/sgforms/S.php:6  [1h]
++         security.sql-injection: Use parameterized queries or prepared statements. (S::sql_plain)
++  3. [ERR] 2.37  src/sgforms/S.php:7  [1h]
++         security.command-injection: Use escapeshellarg() for arguments or avoid shell commands entirely. (S::cmd_plain)
++  4. [ERR] 2.37  src/sgforms/S.php:9  [1h]
++         security.sql-injection: Use parameterized queries or prepared statements. (S::sql_braced_single)
++  5. [ERR] 2.37  src/sgforms/S.php:10  [1h]
++         security.command-injection: Use escapeshellarg() for arguments or avoid shell commands entirely. (S::cmd_braced_single)
++  6. [ERR] 2.37  src/sgforms/S.php:12  [1h]
++         security.sql-injection: Use parameterized queries or prepared statements. (S::sql_braced_double)
++  7. [ERR] 2.37  src/sgforms/S.php:13  [1h]
++         security.command-injection: Use escapeshellarg() for arguments or avoid shell commands entirely. (S::cmd_braced_double)
++  8. [ERR] 2.37  src/sgforms/S.php:18  [1h]
++         security.sql-injection: Use parameterized queries or prepared statements. (S::sql_braced_concat)
++  9. [ERR] 2.37  src/sgforms/S.php:19  [1h]
++         security.command-injection: Use escapeshellarg() for arguments or avoid shell commands entirely. (S::cmd_braced_concat)
++  10. [ERR] 2.37  src/sgforms/S.php:21  [1h]
++          security.sql-injection: Use parameterized queries or prepared statements. (S::sql_globals_key)

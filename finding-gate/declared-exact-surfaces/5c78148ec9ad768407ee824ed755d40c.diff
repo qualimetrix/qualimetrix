@@ -1,0 +1,261 @@
+--- candidate
++++ reference (mapped)
+@@ -1,11 +1,247 @@
+-visible 0
+-
+-invocation-format:text-verbose 0
+-
+-invocation-stderr 258
+-Configuration error: Output format "text-verbose" is not one of: checkstyle, github, gitlab, health, html, json, metrics, sarif, summary, suppressed, text.
+-Source: option --format.
+-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
+-
+-invocation-exit 1
+-3
++visible 5629
++[project] (1 violation)
++  WARN
++    Check "subtree:NoSuchVendor\Framework" against the names the code really imports. Use exact for one name, subtree for a namespace and all descendants, or regex for an explicit delimiterless PCRE fragment. Drop the entry if the dependency is gone.  [coupling.unmatched-framework-namespace]
++
++src/Contract/CacheInterface.php (2 violations)
++  WARN  CacheInterface
++    CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point  [coupling.cbo]
++
++  WARN  CacheInterface
++    ClassRank: 0.0879 (threshold: 0.0577) — coupling hotspot, 2 classes depend on this  [coupling.class-rank]
++
++src/Contract/MailerInterface.php (1 violation)
++  WARN  MailerInterface
++    ClassRank: 0.0668 (threshold: 0.0577) — coupling hotspot, 1 class depends on this  [coupling.class-rank]
++
++src/Contract/RepositoryInterface.php (2 violations)
++  WARN  RepositoryInterface
++    CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point  [coupling.cbo]
++
++  WARN  RepositoryInterface
++    ClassRank: 0.0879 (threshold: 0.0577) — coupling hotspot, 2 classes depend on this  [coupling.class-rank]
++
++src/Kernel/Clock.php (4 violations)
++  ERROR
++    Distance: 1.00 (threshold: 0.90) — poor balance of abstraction and stability  [coupling.distance]
++
++  WARN
++    CBO: 2 namespaces (threshold: 2) — this namespace is a coupling magnet, consider if it is a healthy abstraction point  [coupling.cbo]
++
++  WARN  Clock
++    CBO: 4 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point  [coupling.cbo]
++
++  WARN  Clock
++    ClassRank: 0.1315 (threshold: 0.0577) — coupling hotspot, 4 classes depend on this  [coupling.class-rank]
++
++src/Kernel/Logger.php (2 violations)
++  WARN  Logger
++    CBO: 3 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point  [coupling.cbo]
++
++  WARN  Logger
++    ClassRank: 0.1090 (threshold: 0.0577) — coupling hotspot, 3 classes depend on this  [coupling.class-rank]
++
++src/Kernel/Uuid.php (2 violations)
++  WARN  Uuid
++    CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point  [coupling.cbo]
++
++  WARN  Uuid
++    ClassRank: 0.0893 (threshold: 0.0577) — coupling hotspot, 2 classes depend on this  [coupling.class-rank]
++
++src/Service/CacheService.php (6 violations)
++  WARN
++    CBO: 3 namespaces (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++  WARN
++    Distance: 0.25 (threshold: 0.05) — poor balance of abstraction and stability  [coupling.distance]
++
++  WARN
++    Instability: 0.75 (threshold: 0.40) — package is highly unstable  [coupling.instability]
++
++  WARN  CacheService
++    Top dependencies: CacheInterface, Clock, Logger. CBO: 4 (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++  WARN  CacheService
++    ClassRank: 0.0745 (threshold: 0.0577) — coupling hotspot, 1 class depends on this  [coupling.class-rank]
++
++  WARN  CacheService
++    Instability: 0.75 (threshold: 0.40) — package is highly unstable  [coupling.instability]
++
++src/Service/ReportService.php (3 violations)
++  WARN  ReportService
++    Top dependencies: RepositoryInterface, Clock, Logger. CBO: 4 (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++  WARN  ReportService
++    ClassRank: 0.0745 (threshold: 0.0577) — coupling hotspot, 1 class depends on this  [coupling.class-rank]
++
++  WARN  ReportService
++    Instability: 0.75 (threshold: 0.40) — package is highly unstable  [coupling.instability]
++
++src/Service/UserService.php (3 violations)
++  ERROR  UserService
++    Top dependencies: RepositoryInterface, MailerInterface, CacheInterface, Clock, Logger. CBO: 8 (threshold: 5) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++  WARN  UserService
++    ClassRank: 0.0970 (threshold: 0.0577) — coupling hotspot, 2 classes depend on this  [coupling.class-rank]
++
++  WARN  UserService
++    Instability: 0.75 (threshold: 0.40) — package is highly unstable  [coupling.instability]
++
++src/Wiring/Bootstrap.php (2 violations)
++  WARN
++    CBO: 2 namespaces (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++  WARN  Bootstrap
++    Top dependencies: Container, Clock. CBO: 2 (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++src/Wiring/Container.php (3 violations)
++  WARN  Container
++    Top dependencies: UserService, ReportService, CacheService. CBO: 4 (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++  WARN  Container
++    ClassRank: 0.0756 (threshold: 0.0577) — coupling hotspot, 1 class depends on this  [coupling.class-rank]
++
++  WARN  Container
++    Instability: 0.75 (threshold: 0.40) — package is highly unstable  [coupling.instability]
++
++src/Wiring/Factory.php (1 violation)
++  WARN  Factory
++    Top dependencies: UserService, Uuid. CBO: 2 (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++Technical debt by rule:
++  coupling.cbo                             ~1d 2h 30min (14 violations)
++  coupling.class-rank                      ~5h       (10 violations)
++  coupling.instability                     ~2h 30min (5 violations)
++  coupling.distance                        ~1h 18min (2 violations)
++  coupling.unmatched-framework-namespace   ~10min    (1 violation)
++
++Qualimetrix dev-main: 2 error(s), 30 warning(s) in 12 file(s)
++Analysis complete: 12 analyzed, 0 generated file(s) excluded.
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-format:text-verbose 5629
++[project] (1 violation)
++  WARN
++    Check "subtree:NoSuchVendor\Framework" against the names the code really imports. Use exact for one name, subtree for a namespace and all descendants, or regex for an explicit delimiterless PCRE fragment. Drop the entry if the dependency is gone.  [coupling.unmatched-framework-namespace]
++
++src/Contract/CacheInterface.php (2 violations)
++  WARN  CacheInterface
++    CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point  [coupling.cbo]
++
++  WARN  CacheInterface
++    ClassRank: 0.0879 (threshold: 0.0577) — coupling hotspot, 2 classes depend on this  [coupling.class-rank]
++
++src/Contract/MailerInterface.php (1 violation)
++  WARN  MailerInterface
++    ClassRank: 0.0668 (threshold: 0.0577) — coupling hotspot, 1 class depends on this  [coupling.class-rank]
++
++src/Contract/RepositoryInterface.php (2 violations)
++  WARN  RepositoryInterface
++    CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point  [coupling.cbo]
++
++  WARN  RepositoryInterface
++    ClassRank: 0.0879 (threshold: 0.0577) — coupling hotspot, 2 classes depend on this  [coupling.class-rank]
++
++src/Kernel/Clock.php (4 violations)
++  ERROR
++    Distance: 1.00 (threshold: 0.90) — poor balance of abstraction and stability  [coupling.distance]
++
++  WARN
++    CBO: 2 namespaces (threshold: 2) — this namespace is a coupling magnet, consider if it is a healthy abstraction point  [coupling.cbo]
++
++  WARN  Clock
++    CBO: 4 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point  [coupling.cbo]
++
++  WARN  Clock
++    ClassRank: 0.1315 (threshold: 0.0577) — coupling hotspot, 4 classes depend on this  [coupling.class-rank]
++
++src/Kernel/Logger.php (2 violations)
++  WARN  Logger
++    CBO: 3 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point  [coupling.cbo]
++
++  WARN  Logger
++    ClassRank: 0.1090 (threshold: 0.0577) — coupling hotspot, 3 classes depend on this  [coupling.class-rank]
++
++src/Kernel/Uuid.php (2 violations)
++  WARN  Uuid
++    CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point  [coupling.cbo]
++
++  WARN  Uuid
++    ClassRank: 0.0893 (threshold: 0.0577) — coupling hotspot, 2 classes depend on this  [coupling.class-rank]
++
++src/Service/CacheService.php (6 violations)
++  WARN
++    CBO: 3 namespaces (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++  WARN
++    Distance: 0.25 (threshold: 0.05) — poor balance of abstraction and stability  [coupling.distance]
++
++  WARN
++    Instability: 0.75 (threshold: 0.40) — package is highly unstable  [coupling.instability]
++
++  WARN  CacheService
++    Top dependencies: CacheInterface, Clock, Logger. CBO: 4 (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++  WARN  CacheService
++    ClassRank: 0.0745 (threshold: 0.0577) — coupling hotspot, 1 class depends on this  [coupling.class-rank]
++
++  WARN  CacheService
++    Instability: 0.75 (threshold: 0.40) — package is highly unstable  [coupling.instability]
++
++src/Service/ReportService.php (3 violations)
++  WARN  ReportService
++    Top dependencies: RepositoryInterface, Clock, Logger. CBO: 4 (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++  WARN  ReportService
++    ClassRank: 0.0745 (threshold: 0.0577) — coupling hotspot, 1 class depends on this  [coupling.class-rank]
++
++  WARN  ReportService
++    Instability: 0.75 (threshold: 0.40) — package is highly unstable  [coupling.instability]
++
++src/Service/UserService.php (3 violations)
++  ERROR  UserService
++    Top dependencies: RepositoryInterface, MailerInterface, CacheInterface, Clock, Logger. CBO: 8 (threshold: 5) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++  WARN  UserService
++    ClassRank: 0.0970 (threshold: 0.0577) — coupling hotspot, 2 classes depend on this  [coupling.class-rank]
++
++  WARN  UserService
++    Instability: 0.75 (threshold: 0.40) — package is highly unstable  [coupling.instability]
++
++src/Wiring/Bootstrap.php (2 violations)
++  WARN
++    CBO: 2 namespaces (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++  WARN  Bootstrap
++    Top dependencies: Container, Clock. CBO: 2 (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++src/Wiring/Container.php (3 violations)
++  WARN  Container
++    Top dependencies: UserService, ReportService, CacheService. CBO: 4 (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++  WARN  Container
++    ClassRank: 0.0756 (threshold: 0.0577) — coupling hotspot, 1 class depends on this  [coupling.class-rank]
++
++  WARN  Container
++    Instability: 0.75 (threshold: 0.40) — package is highly unstable  [coupling.instability]
++
++src/Wiring/Factory.php (1 violation)
++  WARN  Factory
++    Top dependencies: UserService, Uuid. CBO: 2 (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++Technical debt by rule:
++  coupling.cbo                             ~1d 2h 30min (14 violations)
++  coupling.class-rank                      ~5h       (10 violations)
++  coupling.instability                     ~2h 30min (5 violations)
++  coupling.distance                        ~1h 18min (2 violations)
++  coupling.unmatched-framework-namespace   ~10min    (1 violation)
++
++Qualimetrix dev-main: 2 error(s), 30 warning(s) in 12 file(s)
++Analysis complete: 12 analyzed, 0 generated file(s) excluded.
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-stderr 82
++Warning: --format=text-verbose is deprecated. Use --format=text --detail instead.
++
++invocation-exit 1
++2

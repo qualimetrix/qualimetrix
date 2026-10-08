@@ -1,0 +1,22 @@
+--- candidate
++++ reference (mapped)
+@@ -1,5 +1,4 @@
+-visible 649
+-src/Breach.php (1 violation)
+-  WARN  Breach::run
+-    Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions  [complexity.ccn]
+-    Recommendation: Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.
++visible 523
++src/Breach.php (1 violation)
++  WARN  Breach::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
+@@ -14,5 +13,4 @@
+-invocation-format:text-detail 649
+-src/Breach.php (1 violation)
+-  WARN  Breach::run
+-    Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions  [complexity.ccn]
+-    Recommendation: Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.
++invocation-format:text-detail 523
++src/Breach.php (1 violation)
++  WARN  Breach::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]

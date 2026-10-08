@@ -1,0 +1,801 @@
+--- candidate
++++ reference (mapped)
+@@ -1,32 +1,766 @@
+-visible 384
+-{
+-    "error": "Configuration error: Format \"suppressed\" describes the whole run; --namespace cannot narrow its suppression document. Drop --namespace, or use a selected findings format such as json.",
+-    "exit_code": 3,
+-    "position": null,
+-    "source": [
+-        {
+-            "kind": "cli",
+-            "name": "--namespace",
+-            "imported_by": null
+-        }
+-    ]
+-}
+-
+-invocation-format:suppressed 384
+-{
+-    "error": "Configuration error: Format \"suppressed\" describes the whole run; --namespace cannot narrow its suppression document. Drop --namespace, or use a selected findings format such as json.",
+-    "exit_code": 3,
+-    "position": null,
+-    "source": [
+-        {
+-            "kind": "cli",
+-            "name": "--namespace",
+-            "imported_by": null
+-        }
+-    ]
+-}
+-
+-invocation-stderr 0
+-
+-invocation-exit 1
+-3
++visible 14951
++{
++    "meta": {
++        "version": "dev-main",
++        "package": "qmx",
++        "timestamp": "<normalized>",
++        "docs": "https://qualimetrix.dev",
++        "llmsTxt": "https://qualimetrix.dev/llms.txt"
++    },
++    "note": "suppressed is a multiset of mechanism x finding, not a set of findings: one finding can appear under more than one mechanism, so byMechanism counts do not sum to the number of distinct findings suppressed.",
++    "coverage": {
++        "complete": true,
++        "discovered": 6,
++        "analyzed": 6,
++        "generatedExcluded": 0,
++        "failed": 0,
++        "excluded": 0,
++        "failures": []
++    },
++    "projectScope": {
++        "state": "covered",
++        "uncoveredAutoloadTargets": [],
++        "unjudgedChannels": [],
++        "unjudgedValues": [],
++        "reasons": []
++    },
++    "mechanisms": [
++        "suppression",
++        "path-suppression",
++        "namespace-suppression",
++        "baseline",
++        "git-scope",
++        "rule-namespace-suppression",
++        "rule-path-suppression",
++        "selection"
++    ],
++    "byMechanism": {
++        "suppression": 1,
++        "path-suppression": 0,
++        "namespace-suppression": 0,
++        "baseline": 0,
++        "git-scope": 0,
++        "rule-namespace-suppression": 0,
++        "rule-path-suppression": 0,
++        "selection": 0
++    },
++    "suppressed": [
++        {
++            "mechanism": "suppression",
++            "suppressor": "src/Suppressed.php:10",
++            "rule": "code-smell.eval",
++            "channel": "code-smell.eval",
++            "subject": "declaration:callable:Other\\Suppressed::run@src/Suppressed.php",
++            "occurrence": "cb4db382fbd60b86",
++            "edge": null,
++            "file": "src/Suppressed.php",
++            "line": 14,
++            "symbol": "Other\\Suppressed::run",
++            "severity": "error",
++            "message": "eval() usage detected - security risk",
++            "recommendation": "Replace eval() with a safer alternative (closures, reflection, or template engine)."
++        }
++    ],
++    "neverMatched": [],
++    "notRun": [
++        {
++            "producer": "code-smell.boolean-argument",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.constructor-overinjection",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.count-in-loop",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.debug-code",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.empty-catch",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.error-suppression",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.exit",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.goto",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.identical-subexpression",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.long-parameter-list",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.superglobals",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.unreachable-code",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.unused-private",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "cohesion.lcom",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "complexity.cognitive",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "complexity.ccn",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "complexity.npath",
++            "reason": "disabled",
++            "statement": "inactive by default",
++            "layer": "default"
++        },
++        {
++            "producer": "complexity.wmc",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "coupling.cbo",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "coupling.class-rank",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "coupling.distance",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "coupling.instability",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "coupling.unmatched-framework-namespace",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "design.data-class",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "design.god-class",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "design.dit",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "design.noc",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "design.type-coverage.param",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "design.type-coverage.return",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "design.type-coverage.property",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "maintainability.mi",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "security.command-injection",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "security.hardcoded-credentials",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "security.sensitive-parameter",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "security.sql-injection",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "security.xss",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "size.class-count",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "size.method-count",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "size.property-count",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "computed",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "suppression.configuration",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "architecture.layer-violation",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "architecture.unassigned-class",
++            "reason": "disabled",
++            "statement": "inactive by default",
++            "layer": "default"
++        },
++        {
++            "producer": "architecture.circular-dependency",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "baseline.unused-entry",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "discovery.unmatched-exclude",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "health.complexity",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "health.cohesion",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "health.coupling",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "health.typing",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "health.maintainability",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "health.overall",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        }
++    ]
++}
++invocation-format:suppressed 14951
++{
++    "meta": {
++        "version": "dev-main",
++        "package": "qmx",
++        "timestamp": "<normalized>",
++        "docs": "https://qualimetrix.dev",
++        "llmsTxt": "https://qualimetrix.dev/llms.txt"
++    },
++    "note": "suppressed is a multiset of mechanism x finding, not a set of findings: one finding can appear under more than one mechanism, so byMechanism counts do not sum to the number of distinct findings suppressed.",
++    "coverage": {
++        "complete": true,
++        "discovered": 6,
++        "analyzed": 6,
++        "generatedExcluded": 0,
++        "failed": 0,
++        "excluded": 0,
++        "failures": []
++    },
++    "projectScope": {
++        "state": "covered",
++        "uncoveredAutoloadTargets": [],
++        "unjudgedChannels": [],
++        "unjudgedValues": [],
++        "reasons": []
++    },
++    "mechanisms": [
++        "suppression",
++        "path-suppression",
++        "namespace-suppression",
++        "baseline",
++        "git-scope",
++        "rule-namespace-suppression",
++        "rule-path-suppression",
++        "selection"
++    ],
++    "byMechanism": {
++        "suppression": 1,
++        "path-suppression": 0,
++        "namespace-suppression": 0,
++        "baseline": 0,
++        "git-scope": 0,
++        "rule-namespace-suppression": 0,
++        "rule-path-suppression": 0,
++        "selection": 0
++    },
++    "suppressed": [
++        {
++            "mechanism": "suppression",
++            "suppressor": "src/Suppressed.php:10",
++            "rule": "code-smell.eval",
++            "channel": "code-smell.eval",
++            "subject": "declaration:callable:Other\\Suppressed::run@src/Suppressed.php",
++            "occurrence": "cb4db382fbd60b86",
++            "edge": null,
++            "file": "src/Suppressed.php",
++            "line": 14,
++            "symbol": "Other\\Suppressed::run",
++            "severity": "error",
++            "message": "eval() usage detected - security risk",
++            "recommendation": "Replace eval() with a safer alternative (closures, reflection, or template engine)."
++        }
++    ],
++    "neverMatched": [],
++    "notRun": [
++        {
++            "producer": "code-smell.boolean-argument",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.constructor-overinjection",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.count-in-loop",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.debug-code",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.empty-catch",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.error-suppression",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.exit",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.goto",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.identical-subexpression",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.long-parameter-list",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.superglobals",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.unreachable-code",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.unused-private",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "cohesion.lcom",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "complexity.cognitive",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "complexity.ccn",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "complexity.npath",
++            "reason": "disabled",
++            "statement": "inactive by default",
++            "layer": "default"
++        },
++        {
++            "producer": "complexity.wmc",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "coupling.cbo",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "coupling.class-rank",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "coupling.distance",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "coupling.instability",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "coupling.unmatched-framework-namespace",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "design.data-class",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "design.god-class",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "design.dit",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "design.noc",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "design.type-coverage.param",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "design.type-coverage.return",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "design.type-coverage.property",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "maintainability.mi",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "security.command-injection",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "security.hardcoded-credentials",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "security.sensitive-parameter",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "security.sql-injection",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "security.xss",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "size.class-count",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "size.method-count",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "size.property-count",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "computed",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "suppression.configuration",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "architecture.layer-violation",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "architecture.unassigned-class",
++            "reason": "disabled",
++            "statement": "inactive by default",
++            "layer": "default"
++        },
++        {
++            "producer": "architecture.circular-dependency",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "baseline.unused-entry",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "discovery.unmatched-exclude",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "health.complexity",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "health.cohesion",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "health.coupling",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "health.typing",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "health.maintainability",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "health.overall",
++            "reason": "filtered",
++            "statement": "only_rules: [annotation.*, code-smell.eval, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        }
++    ]
++}
++invocation-stderr 187
++
++1 violation(s) suppressed by @qmx-ignore tags:
++  src/Suppressed.php
++    line 14 — Replace eval() with a safer alternative (closures, reflection, or template engine). [code-smell.eval]
++
++invocation-exit 1
++2

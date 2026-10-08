@@ -1,0 +1,26 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 1496
++visible 1234
+@@ -13,5 +13,3 @@
+-         complexity.ccn: Cyclomatic complexity is 3, exceeds threshold of 2. Consider extracting methods or simplifying conditions ({closure#1})
+-         Recommendation: Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (4) suggests mechanical branching (switch/match). Lower refactoring priority.
+-  3. [WRN] 30.0  src/Placed.php  [30min]
+-         complexity.ccn: Cyclomatic complexity is 5, reaches threshold of 5. Consider extracting methods or simplifying conditions (Placed::outsideDocblock)
+-         Recommendation: Cyclomatic complexity: 5 (threshold: 5) — high CCN with low cognitive complexity (4) suggests mechanical branching (switch/match). Lower refactoring priority.
++         complexity.ccn: Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (4) suggests mechanical branching (switch/match). Lower refactoring priority. ({closure#1})
++  3. [WRN] 30.0  src/Placed.php  [30min]
++         complexity.ccn: Cyclomatic complexity: 5 (threshold: 5) — high CCN with low cognitive complexity (4) suggests mechanical branching (switch/match). Lower refactoring priority. (Placed::outsideDocblock)
+@@ -23,1 +21,1 @@
+-invocation-format:summary 1496
++invocation-format:summary 1234
+@@ -35,5 +33,3 @@
+-         complexity.ccn: Cyclomatic complexity is 3, exceeds threshold of 2. Consider extracting methods or simplifying conditions ({closure#1})
+-         Recommendation: Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (4) suggests mechanical branching (switch/match). Lower refactoring priority.
+-  3. [WRN] 30.0  src/Placed.php  [30min]
+-         complexity.ccn: Cyclomatic complexity is 5, reaches threshold of 5. Consider extracting methods or simplifying conditions (Placed::outsideDocblock)
+-         Recommendation: Cyclomatic complexity: 5 (threshold: 5) — high CCN with low cognitive complexity (4) suggests mechanical branching (switch/match). Lower refactoring priority.
++         complexity.ccn: Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (4) suggests mechanical branching (switch/match). Lower refactoring priority. ({closure#1})
++  3. [WRN] 30.0  src/Placed.php  [30min]
++         complexity.ccn: Cyclomatic complexity: 5 (threshold: 5) — high CCN with low cognitive complexity (4) suggests mechanical branching (switch/match). Lower refactoring priority. (Placed::outsideDocblock)

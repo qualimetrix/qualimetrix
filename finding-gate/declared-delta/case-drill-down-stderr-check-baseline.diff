@@ -1,0 +1,5 @@
+--- candidate
++++ reference (mapped)
+@@ -2,1 +2,1 @@
+-1 violation(s) suppressed by @qmx-ignore tags across the whole run (reporting selectors are not applied):
++1 violation(s) suppressed by @qmx-ignore tags:

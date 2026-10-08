@@ -1,0 +1,50 @@
+--- candidate
++++ reference (mapped)
+@@ -1,13 +1,10 @@
+-visible 1457
+-src/Complex.php (3 violations)
+-  ERROR  Complex::score
+-    Cognitive complexity is 7, exceeds threshold of 3. Top: if +1 L10, if +1 L11, if +1 L12. Reduce nesting and break into smaller methods  [complexity.cognitive]
+-    Recommendation: Cognitive complexity: 7 (threshold: 3). Top: if +1 L10, if +1 L11, if +1 L12 — deeply nested, hard to follow
+-
+-  ERROR  Complex::score
+-    Cyclomatic complexity is 8, exceeds threshold of 3. Consider extracting methods or simplifying conditions  [complexity.ccn]
+-    Recommendation: Cyclomatic complexity: 8 (threshold: 3) — high CCN with low cognitive complexity (7) suggests mechanical branching (switch/match). Lower refactoring priority.
+-
+-  WARN  Complex::score
+-    NPath complexity (execution paths) is 128 (moderate), exceeds threshold of 100. Chain: ×2 if L10, ×2 if L11, ×2 if L12. Reduce branching or extract methods  [complexity.npath]
+-    Recommendation: NPath complexity: 128 (threshold: 100). Chain: ×2 if L10, ×2 if L11, ×2 if L12 — explosive number of execution paths
++visible 997
++src/Complex.php (3 violations)
++  ERROR  Complex::score
++    Cognitive complexity: 7 (threshold: 3). Top: if +1 L10, if +1 L11, if +1 L12 — deeply nested, hard to follow  [complexity.cognitive]
++
++  ERROR  Complex::score
++    Cyclomatic complexity: 8 (threshold: 3) — high CCN with low cognitive complexity (7) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++  WARN  Complex::score
++    NPath complexity: 128 (threshold: 100). Chain: ×2 if L10, ×2 if L11, ×2 if L12 — explosive number of execution paths  [complexity.npath]
+@@ -24,13 +21,10 @@
+-invocation-format:text-detail 1457
+-src/Complex.php (3 violations)
+-  ERROR  Complex::score
+-    Cognitive complexity is 7, exceeds threshold of 3. Top: if +1 L10, if +1 L11, if +1 L12. Reduce nesting and break into smaller methods  [complexity.cognitive]
+-    Recommendation: Cognitive complexity: 7 (threshold: 3). Top: if +1 L10, if +1 L11, if +1 L12 — deeply nested, hard to follow
+-
+-  ERROR  Complex::score
+-    Cyclomatic complexity is 8, exceeds threshold of 3. Consider extracting methods or simplifying conditions  [complexity.ccn]
+-    Recommendation: Cyclomatic complexity: 8 (threshold: 3) — high CCN with low cognitive complexity (7) suggests mechanical branching (switch/match). Lower refactoring priority.
+-
+-  WARN  Complex::score
+-    NPath complexity (execution paths) is 128 (moderate), exceeds threshold of 100. Chain: ×2 if L10, ×2 if L11, ×2 if L12. Reduce branching or extract methods  [complexity.npath]
+-    Recommendation: NPath complexity: 128 (threshold: 100). Chain: ×2 if L10, ×2 if L11, ×2 if L12 — explosive number of execution paths
++invocation-format:text-detail 997
++src/Complex.php (3 violations)
++  ERROR  Complex::score
++    Cognitive complexity: 7 (threshold: 3). Top: if +1 L10, if +1 L11, if +1 L12 — deeply nested, hard to follow  [complexity.cognitive]
++
++  ERROR  Complex::score
++    Cyclomatic complexity: 8 (threshold: 3) — high CCN with low cognitive complexity (7) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++  WARN  Complex::score
++    NPath complexity: 128 (threshold: 100). Chain: ×2 if L10, ×2 if L11, ×2 if L12 — explosive number of execution paths  [complexity.npath]

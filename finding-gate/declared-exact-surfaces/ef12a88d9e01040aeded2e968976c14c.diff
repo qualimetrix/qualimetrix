@@ -1,0 +1,16 @@
+--- candidate
++++ reference (mapped)
+@@ -1,4 +1,2 @@
+-visible 394
+-Health Report (Qualimetrix dev-main) — 1 file analyzed
+-
+-Findings: 0 error(s), 1 warning(s), 0 info
++visible 350
++Health Report (Qualimetrix dev-main) — 1 file analyzed
+@@ -13,4 +11,2 @@
+-invocation-format:health 394
+-Health Report (Qualimetrix dev-main) — 1 file analyzed
+-
+-Findings: 0 error(s), 1 warning(s), 0 info
++invocation-format:health 350
++Health Report (Qualimetrix dev-main) — 1 file analyzed

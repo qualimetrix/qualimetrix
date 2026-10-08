@@ -1,0 +1,16 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 3578
++visible 3447
+@@ -39,2 +39,1 @@
+-         complexity.ccn: Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Breach::run)
+-         Recommendation: Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.
++         complexity.ccn: Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority. (Breach::run)
+@@ -46,1 +45,1 @@
+-invocation-format:summary 3578
++invocation-format:summary 3447
+@@ -84,2 +83,1 @@
+-         complexity.ccn: Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Breach::run)
+-         Recommendation: Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.
++         complexity.ccn: Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority. (Breach::run)

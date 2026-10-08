@@ -1,0 +1,36 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 1465
++visible 1001
+@@ -11,8 +11,5 @@
+-         design.god-class: God Class detected (3/4 criteria): high WMC (3 >= 1), high LCOM (3 >= 1), low TCC (0.00 < 0.50)
+-         Recommendation: Apply the Single Responsibility Principle. Extract cohesive method groups into separate classes.
+-  2. [WRN] 6.00  src/Design.php  [30min]
+-         design.data-class: Data Class detected: only 25% of the public interface is behavior (WOC, threshold 50%) and complexity is low (WMC=3, threshold 10). Consider encapsulating behavior or using a DTO pattern
+-         Recommendation: Add behavior methods that operate on the data, or confirm this is intentionally a DTO.
+-  3. [WRN] 6.00  src/Raised.php  [30min]
+-         complexity.ccn: Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Raised::neighbour)
+-         Recommendation: Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.
++         design.god-class: Apply the Single Responsibility Principle. Extract cohesive method groups into separate classes.
++  2. [WRN] 6.00  src/Design.php  [30min]
++         design.data-class: Add behavior methods that operate on the data, or confirm this is intentionally a DTO.
++  3. [WRN] 6.00  src/Raised.php  [30min]
++         complexity.ccn: Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority. (Raised::neighbour)
+@@ -24,1 +21,1 @@
+-invocation-format:summary 1465
++invocation-format:summary 1001
+@@ -34,8 +31,5 @@
+-         design.god-class: God Class detected (3/4 criteria): high WMC (3 >= 1), high LCOM (3 >= 1), low TCC (0.00 < 0.50)
+-         Recommendation: Apply the Single Responsibility Principle. Extract cohesive method groups into separate classes.
+-  2. [WRN] 6.00  src/Design.php  [30min]
+-         design.data-class: Data Class detected: only 25% of the public interface is behavior (WOC, threshold 50%) and complexity is low (WMC=3, threshold 10). Consider encapsulating behavior or using a DTO pattern
+-         Recommendation: Add behavior methods that operate on the data, or confirm this is intentionally a DTO.
+-  3. [WRN] 6.00  src/Raised.php  [30min]
+-         complexity.ccn: Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Raised::neighbour)
+-         Recommendation: Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.
++         design.god-class: Apply the Single Responsibility Principle. Extract cohesive method groups into separate classes.
++  2. [WRN] 6.00  src/Design.php  [30min]
++         design.data-class: Add behavior methods that operate on the data, or confirm this is intentionally a DTO.
++  3. [WRN] 6.00  src/Raised.php  [30min]
++         complexity.ccn: Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority. (Raised::neighbour)

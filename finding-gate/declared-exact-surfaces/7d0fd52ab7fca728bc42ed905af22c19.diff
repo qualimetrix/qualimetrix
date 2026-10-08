@@ -1,0 +1,9 @@
+--- candidate
++++ reference (mapped)
+@@ -5,3 +5,3 @@
+-invocation-stderr 258
+-Configuration error: Output format "text-verbose" is not one of: checkstyle, github, gitlab, health, html, json, metrics, sarif, summary, suppressed, text.
+-Source: option --format.
++invocation-stderr 263
++Configuration error: Rule selector "complexity" does not match any registered producer or channel. Write "complexity.*" to select its descendants.
++Source: configuration file "qmx.yaml".

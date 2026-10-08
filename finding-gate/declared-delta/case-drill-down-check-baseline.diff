@@ -1,0 +1,40 @@
+--- candidate
++++ reference (mapped)
+@@ -13,8 +13,0 @@
+-        "violationCount": 1,
+-        "errorCount": 1,
+-        "warningCount": 0,
+-        "infoCount": 0,
+-        "techDebtMinutes": 15,
+-        "debtPer1kLoc": null
+-    },
+-    "outOfScope": {
+@@ -25,1 +17,8 @@
+-        "identities": []
++        "techDebtMinutes": 0,
++        "debtPer1kLoc": null
++    },
++    "outOfScope": {
++        "violationCount": 1,
++        "errorCount": 1,
++        "warningCount": 0,
++        "infoCount": 0
+@@ -48,11 +47,7 @@
+-    "violations": [
+-        
+-    ],
+-    "violationsMeta": {
+-        "total": 1,
+-        "shown": 1,
+-        "limit": 200,
+-        "truncated": false,
+-        "byRule": {
+-            "annotation.unresolved-directive": 1
+-        }
++    "violations": [],
++    "violationsMeta": {
++        "total": 0,
++        "shown": 0,
++        "limit": 200,
++        "truncated": false,
++        "byRule": []

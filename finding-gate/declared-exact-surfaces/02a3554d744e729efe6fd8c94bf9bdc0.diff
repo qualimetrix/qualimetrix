@@ -1,0 +1,924 @@
+--- candidate
++++ reference (mapped)
+@@ -1,11 +1,910 @@
+-visible 0
+-
+-invocation-format:text-verbose 0
+-
+-invocation-stderr 258
+-Configuration error: Output format "text-verbose" is not one of: checkstyle, github, gitlab, health, html, json, metrics, sarif, summary, suppressed, text.
+-Source: option --format.
+-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
+-
+-invocation-exit 1
+-3
++visible 19643
++src/dbg/D.php (9 violations)
++  ERROR at line 7  D::a
++    Remove debug statements before merging to production.  [code-smell.debug-code]
++
++  ERROR at line 8  D::a
++    Remove debug statements before merging to production.  [code-smell.debug-code]
++
++  ERROR at line 9  D::a
++    Remove debug statements before merging to production.  [code-smell.debug-code]
++
++  ERROR at line 13  D::a
++    Remove debug statements before merging to production.  [code-smell.debug-code]
++
++  ERROR at line 15  D::dump
++    Remove debug statements before merging to production.  [code-smell.debug-code]
++
++  ERROR at line 15  D::dump
++    Remove debug statements before merging to production.  [code-smell.debug-code]
++
++  ERROR at line 16  D::debug
++    Remove debug statements before merging to production.  [code-smell.debug-code]
++
++  ERROR at line 18  dump_helper
++    Remove debug statements before merging to production.  [code-smell.debug-code]
++
++  WARN  D
++    LCOM4: 3 (threshold: 3) — class has 3 unrelated method groups  [cohesion.lcom]
++
++src/dbg/F.php (3 violations)
++  ERROR at line 3  debug
++    Remove debug statements before merging to production.  [code-smell.debug-code]
++
++  ERROR at line 6  Repo::dump
++    Remove debug statements before merging to production.  [code-smell.debug-code]
++
++  ERROR at line 7  {closure#1}
++    Remove debug statements before merging to production.  [code-smell.debug-code]
++
++src/ec03/Guards.php (2 violations)
++  ERROR at line 14  Guards::guardCallContinue
++    Log or rethrow the exception, or handle it explicitly. A comment alone does not clear this finding; suppress an intentional ignore with `@qmx-ignore code-smell.empty-catch` and a reason.  [code-smell.empty-catch]
++
++  ERROR at line 28  Guards::guardCallReturn
++    Log or rethrow the exception, or handle it explicitly. A comment alone does not clear this finding; suppress an intentional ignore with `@qmx-ignore code-smell.empty-catch` and a reason.  [code-smell.empty-catch]
++
++src/ec03/Loop.php (3 violations)
++  ERROR at line 14  Loop::guardThenWork
++    Log or rethrow the exception, or handle it explicitly. A comment alone does not clear this finding; suppress an intentional ignore with `@qmx-ignore code-smell.empty-catch` and a reason.  [code-smell.empty-catch]
++
++  ERROR at line 66  Loop::guardReturn
++    Log or rethrow the exception, or handle it explicitly. A comment alone does not clear this finding; suppress an intentional ignore with `@qmx-ignore code-smell.empty-catch` and a reason.  [code-smell.empty-catch]
++
++  ERROR at line 76  Loop::plain
++    Log or rethrow the exception, or handle it explicitly. A comment alone does not clear this finding; suppress an intentional ignore with `@qmx-ignore code-smell.empty-catch` and a reason.  [code-smell.empty-catch]
++
++src/m45/Big/C1.php (1 violation)
++  ERROR
++    Classes: 30 (threshold: 25) — too many classes in namespace  [size.class-count]
++
++src/m45/Small/C1.php (1 violation)
++  WARN
++    Classes: 16 (threshold: 15) — too many classes in namespace  [size.class-count]
++
++src/sec/Creds.php (5 violations)
++  ERROR at line 7  Creds::values
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++  ERROR at line 8  Creds::values
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++  ERROR at line 10  Creds::values
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++  ERROR at line 13  Creds::values
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++  ERROR at line 15  Creds::values
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++src/sgforms/S.php (38 violations)
++  ERROR  S
++    LCOM4: 21 (threshold: 5) — class has 21 unrelated method groups  [cohesion.lcom]
++
++  ERROR at line 5  S::xss_plain
++    Escape output with htmlspecialchars() or use a template engine with auto-escaping.  [security.xss]
++
++  ERROR at line 6  S::sql_plain
++    Use parameterized queries or prepared statements.  [security.sql-injection]
++
++  ERROR at line 7  S::cmd_plain
++    Use escapeshellarg() for arguments or avoid shell commands entirely.  [security.command-injection]
++
++  ERROR at line 8  S::xss_braced_single
++    Escape output with htmlspecialchars() or use a template engine with auto-escaping.  [security.xss]
++
++  ERROR at line 9  S::sql_braced_single
++    Use parameterized queries or prepared statements.  [security.sql-injection]
++
++  ERROR at line 10  S::cmd_braced_single
++    Use escapeshellarg() for arguments or avoid shell commands entirely.  [security.command-injection]
++
++  ERROR at line 11  S::xss_braced_double
++    Escape output with htmlspecialchars() or use a template engine with auto-escaping.  [security.xss]
++
++  ERROR at line 12  S::sql_braced_double
++    Use parameterized queries or prepared statements.  [security.sql-injection]
++
++  ERROR at line 13  S::cmd_braced_double
++    Use escapeshellarg() for arguments or avoid shell commands entirely.  [security.command-injection]
++
++  ERROR at line 17  S::xss_braced_concat
++    Escape output with htmlspecialchars() or use a template engine with auto-escaping.  [security.xss]
++
++  ERROR at line 18  S::sql_braced_concat
++    Use parameterized queries or prepared statements.  [security.sql-injection]
++
++  ERROR at line 19  S::cmd_braced_concat
++    Use escapeshellarg() for arguments or avoid shell commands entirely.  [security.command-injection]
++
++  ERROR at line 20  S::xss_globals_key
++    Escape output with htmlspecialchars() or use a template engine with auto-escaping.  [security.xss]
++
++  ERROR at line 21  S::sql_globals_key
++    Use parameterized queries or prepared statements.  [security.sql-injection]
++
++  ERROR at line 22  S::cmd_globals_key
++    Use escapeshellarg() for arguments or avoid shell commands entirely.  [security.command-injection]
++
++  ERROR at line 23  S::xss_request_plain
++    Escape output with htmlspecialchars() or use a template engine with auto-escaping.  [security.xss]
++
++  ERROR at line 24  S::sql_request_plain
++    Use parameterized queries or prepared statements.  [security.sql-injection]
++
++  ERROR at line 25  S::cmd_request_plain
++    Use escapeshellarg() for arguments or avoid shell commands entirely.  [security.command-injection]
++
++  WARN  S
++    Methods: 21 (threshold: 20) — too many methods  [size.method-count]
++
++  WARN at line 5  S::xss_plain
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 6  S::sql_plain
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 7  S::cmd_plain
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 8  S::xss_braced_single
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 9  S::sql_braced_single
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 10  S::cmd_braced_single
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 11  S::xss_braced_double
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 12  S::sql_braced_double
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 13  S::cmd_braced_double
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 17  S::xss_braced_concat
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 18  S::sql_braced_concat
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 19  S::cmd_braced_concat
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 20  S::xss_globals_key
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 21  S::sql_globals_key
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 22  S::cmd_globals_key
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 23  S::xss_request_plain
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 24  S::sql_request_plain
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 25  S::cmd_request_plain
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++src/sp/P.php (2 violations)
++  WARN at line 7  P::unq
++    Add #[\SensitiveParameter] attribute to prevent credential leakage in stack traces.  [security.sensitive-parameter]
++
++  WARN at line 10  P::none
++    Add #[\SensitiveParameter] attribute to prevent credential leakage in stack traces.  [security.sensitive-parameter]
++
++src/sp/Q.php (1 violation)
++  WARN at line 6  Q::mis
++    Add #[\SensitiveParameter] attribute to prevent credential leakage in stack traces.  [security.sensitive-parameter]
++
++src/upforms/callable_array_fq/V.php (3 violations)
++  WARN at line 6  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 7  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/callable_array_self/V.php (3 violations)
++  WARN at line 6  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 7  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/callable_array_short/V.php (3 violations)
++  WARN at line 6  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 7  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/callable_array_string_class/V.php (3 violations)
++  WARN at line 6  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 7  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/callable_string_fq/V.php (3 violations)
++  WARN at line 6  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 7  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/callable_string_self/V.php (3 violations)
++  WARN at line 6  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 7  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/closure_fromCallable_self/V.php (3 violations)
++  WARN at line 6  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 7  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/first_class_self/V.php (3 violations)
++  WARN at line 6  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 7  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/first_class_short/V.php (3 violations)
++  WARN at line 6  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 7  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/fq_name/V.php (1 violation)
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/lowercase_short/V.php (1 violation)
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/namespace_relative/V.php (1 violation)
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/new_short_receiver/V.php (3 violations)
++  WARN at line 6  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 7  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 14  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/self/V.php (1 violation)
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/short_name/V.php (1 violation)
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/static/V.php (1 violation)
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/use_alias/V.php (1 violation)
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/x121/consts.php (4 violations)
++  ERROR at line 3
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++  ERROR at line 4
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++  ERROR at line 5
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++  ERROR at line 6  K
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++src/x121/global.php (1 violation)
++  ERROR at line 2
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++src/x70/A/X.php (24 violations)
++  ERROR at line 5  X::m
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++  ERROR at line 7  X::m
++    Replace eval() with a safer alternative (closures, reflection, or template engine).  [code-smell.eval]
++
++  ERROR at line 8  X::m
++    Remove debug statements before merging to production.  [code-smell.debug-code]
++
++  ERROR at line 9  X::m
++    Log or rethrow the exception, or handle it explicitly. A comment alone does not clear this finding; suppress an intentional ignore with `@qmx-ignore code-smell.empty-catch` and a reason.  [code-smell.empty-catch]
++
++  ERROR at line 10  X::m
++    Escape output with htmlspecialchars() or use a template engine with auto-escaping.  [security.xss]
++
++  ERROR at line 12  X::m
++    Replace goto with structured control flow (loops, early returns).  [code-smell.goto]
++
++  ERROR  Y
++    Parameter type coverage: 18.2% (threshold: 50.0%) — missing type declarations  [design.type-coverage.param]
++
++  ERROR  Y::b
++    Parameters: 8 (threshold: 6) — consider introducing a parameter object  [code-smell.long-parameter-list]
++
++  ERROR at line 24  Y::c
++    Use escapeshellarg() for arguments or avoid shell commands entirely.  [security.command-injection]
++
++  ERROR at line 24  Y::c
++    Use parameterized queries or prepared statements.  [security.sql-injection]
++
++  WARN  X
++    Parameter type coverage: 75.0% (threshold: 80.0%) — missing type declarations  [design.type-coverage.param]
++
++  WARN at line 5  X::m
++    Add #[\SensitiveParameter] attribute to prevent credential leakage in stack traces.  [security.sensitive-parameter]
++
++  WARN at line 10  X::m
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 11  X::m
++    Handle the error explicitly with try/catch or conditional checks.  [code-smell.error-suppression]
++
++  WARN at line 14  X::m
++    Throw an exception instead of exit/die to allow proper error handling.  [code-smell.exit]
++
++  WARN at line 17  X::f
++    Replace boolean parameter with two explicit methods or use an enum.  [code-smell.boolean-argument]
++
++  WARN at line 17  X::f
++    Store the count result in a variable before the loop.  [code-smell.count-in-loop]
++
++  WARN at line 17  X::f
++    Add #[\SensitiveParameter] attribute to prevent credential leakage in stack traces.  [security.sensitive-parameter]
++
++  WARN  Y
++    LCOM4: 3 (threshold: 3) — class has 3 unrelated method groups  [cohesion.lcom]
++
++  WARN at line 21  Y
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 22  Y::a
++    This looks like a copy-paste error. Verify the intended logic.  [code-smell.identical-subexpression]
++
++  WARN at line 22  Y::a
++    Remove dead code after the terminal statement.  [code-smell.unreachable-code]
++
++  WARN at line 24  Y::c
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 24  Y::c
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++Technical debt by rule:
++  code-smell.unused-private                ~1d 1h 30min (38 violations)
++  security.command-injection               ~7h       (7 violations)
++  security.sql-injection                   ~7h       (7 violations)
++  security.hardcoded-credentials           ~5h 30min (11 violations)
++  code-smell.superglobals                  ~5h 15min (21 violations)
++  security.xss                             ~5h 15min (7 violations)
++  cohesion.lcom                            ~2h 35min (3 violations)
++  code-smell.debug-code                    ~1h       (12 violations)
++  code-smell.empty-catch                   ~1h       (6 violations)
++  size.class-count                         ~1h       (2 violations)
++  security.sensitive-parameter             ~50min    (5 violations)
++  design.type-coverage.param               ~30min    (2 violations)
++  code-smell.long-parameter-list           ~20min    (1 violation)
++  size.method-count                        ~20min    (1 violation)
++  code-smell.eval                          ~15min    (1 violation)
++  code-smell.goto                          ~15min    (1 violation)
++  code-smell.identical-subexpression       ~15min    (1 violation)
++  code-smell.boolean-argument              ~10min    (1 violation)
++  code-smell.count-in-loop                 ~10min    (1 violation)
++  code-smell.error-suppression             ~10min    (1 violation)
++  code-smell.exit                          ~10min    (1 violation)
++  code-smell.unreachable-code              ~10min    (1 violation)
++
++Qualimetrix dev-main: 56 error(s), 75 warning(s) in 77 file(s)
++Analysis complete: 77 analyzed, 0 generated file(s) excluded.
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-format:text-verbose 19643
++src/dbg/D.php (9 violations)
++  ERROR at line 7  D::a
++    Remove debug statements before merging to production.  [code-smell.debug-code]
++
++  ERROR at line 8  D::a
++    Remove debug statements before merging to production.  [code-smell.debug-code]
++
++  ERROR at line 9  D::a
++    Remove debug statements before merging to production.  [code-smell.debug-code]
++
++  ERROR at line 13  D::a
++    Remove debug statements before merging to production.  [code-smell.debug-code]
++
++  ERROR at line 15  D::dump
++    Remove debug statements before merging to production.  [code-smell.debug-code]
++
++  ERROR at line 15  D::dump
++    Remove debug statements before merging to production.  [code-smell.debug-code]
++
++  ERROR at line 16  D::debug
++    Remove debug statements before merging to production.  [code-smell.debug-code]
++
++  ERROR at line 18  dump_helper
++    Remove debug statements before merging to production.  [code-smell.debug-code]
++
++  WARN  D
++    LCOM4: 3 (threshold: 3) — class has 3 unrelated method groups  [cohesion.lcom]
++
++src/dbg/F.php (3 violations)
++  ERROR at line 3  debug
++    Remove debug statements before merging to production.  [code-smell.debug-code]
++
++  ERROR at line 6  Repo::dump
++    Remove debug statements before merging to production.  [code-smell.debug-code]
++
++  ERROR at line 7  {closure#1}
++    Remove debug statements before merging to production.  [code-smell.debug-code]
++
++src/ec03/Guards.php (2 violations)
++  ERROR at line 14  Guards::guardCallContinue
++    Log or rethrow the exception, or handle it explicitly. A comment alone does not clear this finding; suppress an intentional ignore with `@qmx-ignore code-smell.empty-catch` and a reason.  [code-smell.empty-catch]
++
++  ERROR at line 28  Guards::guardCallReturn
++    Log or rethrow the exception, or handle it explicitly. A comment alone does not clear this finding; suppress an intentional ignore with `@qmx-ignore code-smell.empty-catch` and a reason.  [code-smell.empty-catch]
++
++src/ec03/Loop.php (3 violations)
++  ERROR at line 14  Loop::guardThenWork
++    Log or rethrow the exception, or handle it explicitly. A comment alone does not clear this finding; suppress an intentional ignore with `@qmx-ignore code-smell.empty-catch` and a reason.  [code-smell.empty-catch]
++
++  ERROR at line 66  Loop::guardReturn
++    Log or rethrow the exception, or handle it explicitly. A comment alone does not clear this finding; suppress an intentional ignore with `@qmx-ignore code-smell.empty-catch` and a reason.  [code-smell.empty-catch]
++
++  ERROR at line 76  Loop::plain
++    Log or rethrow the exception, or handle it explicitly. A comment alone does not clear this finding; suppress an intentional ignore with `@qmx-ignore code-smell.empty-catch` and a reason.  [code-smell.empty-catch]
++
++src/m45/Big/C1.php (1 violation)
++  ERROR
++    Classes: 30 (threshold: 25) — too many classes in namespace  [size.class-count]
++
++src/m45/Small/C1.php (1 violation)
++  WARN
++    Classes: 16 (threshold: 15) — too many classes in namespace  [size.class-count]
++
++src/sec/Creds.php (5 violations)
++  ERROR at line 7  Creds::values
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++  ERROR at line 8  Creds::values
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++  ERROR at line 10  Creds::values
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++  ERROR at line 13  Creds::values
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++  ERROR at line 15  Creds::values
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++src/sgforms/S.php (38 violations)
++  ERROR  S
++    LCOM4: 21 (threshold: 5) — class has 21 unrelated method groups  [cohesion.lcom]
++
++  ERROR at line 5  S::xss_plain
++    Escape output with htmlspecialchars() or use a template engine with auto-escaping.  [security.xss]
++
++  ERROR at line 6  S::sql_plain
++    Use parameterized queries or prepared statements.  [security.sql-injection]
++
++  ERROR at line 7  S::cmd_plain
++    Use escapeshellarg() for arguments or avoid shell commands entirely.  [security.command-injection]
++
++  ERROR at line 8  S::xss_braced_single
++    Escape output with htmlspecialchars() or use a template engine with auto-escaping.  [security.xss]
++
++  ERROR at line 9  S::sql_braced_single
++    Use parameterized queries or prepared statements.  [security.sql-injection]
++
++  ERROR at line 10  S::cmd_braced_single
++    Use escapeshellarg() for arguments or avoid shell commands entirely.  [security.command-injection]
++
++  ERROR at line 11  S::xss_braced_double
++    Escape output with htmlspecialchars() or use a template engine with auto-escaping.  [security.xss]
++
++  ERROR at line 12  S::sql_braced_double
++    Use parameterized queries or prepared statements.  [security.sql-injection]
++
++  ERROR at line 13  S::cmd_braced_double
++    Use escapeshellarg() for arguments or avoid shell commands entirely.  [security.command-injection]
++
++  ERROR at line 17  S::xss_braced_concat
++    Escape output with htmlspecialchars() or use a template engine with auto-escaping.  [security.xss]
++
++  ERROR at line 18  S::sql_braced_concat
++    Use parameterized queries or prepared statements.  [security.sql-injection]
++
++  ERROR at line 19  S::cmd_braced_concat
++    Use escapeshellarg() for arguments or avoid shell commands entirely.  [security.command-injection]
++
++  ERROR at line 20  S::xss_globals_key
++    Escape output with htmlspecialchars() or use a template engine with auto-escaping.  [security.xss]
++
++  ERROR at line 21  S::sql_globals_key
++    Use parameterized queries or prepared statements.  [security.sql-injection]
++
++  ERROR at line 22  S::cmd_globals_key
++    Use escapeshellarg() for arguments or avoid shell commands entirely.  [security.command-injection]
++
++  ERROR at line 23  S::xss_request_plain
++    Escape output with htmlspecialchars() or use a template engine with auto-escaping.  [security.xss]
++
++  ERROR at line 24  S::sql_request_plain
++    Use parameterized queries or prepared statements.  [security.sql-injection]
++
++  ERROR at line 25  S::cmd_request_plain
++    Use escapeshellarg() for arguments or avoid shell commands entirely.  [security.command-injection]
++
++  WARN  S
++    Methods: 21 (threshold: 20) — too many methods  [size.method-count]
++
++  WARN at line 5  S::xss_plain
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 6  S::sql_plain
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 7  S::cmd_plain
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 8  S::xss_braced_single
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 9  S::sql_braced_single
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 10  S::cmd_braced_single
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 11  S::xss_braced_double
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 12  S::sql_braced_double
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 13  S::cmd_braced_double
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 17  S::xss_braced_concat
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 18  S::sql_braced_concat
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 19  S::cmd_braced_concat
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 20  S::xss_globals_key
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 21  S::sql_globals_key
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 22  S::cmd_globals_key
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 23  S::xss_request_plain
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 24  S::sql_request_plain
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 25  S::cmd_request_plain
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++src/sp/P.php (2 violations)
++  WARN at line 7  P::unq
++    Add #[\SensitiveParameter] attribute to prevent credential leakage in stack traces.  [security.sensitive-parameter]
++
++  WARN at line 10  P::none
++    Add #[\SensitiveParameter] attribute to prevent credential leakage in stack traces.  [security.sensitive-parameter]
++
++src/sp/Q.php (1 violation)
++  WARN at line 6  Q::mis
++    Add #[\SensitiveParameter] attribute to prevent credential leakage in stack traces.  [security.sensitive-parameter]
++
++src/upforms/callable_array_fq/V.php (3 violations)
++  WARN at line 6  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 7  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/callable_array_self/V.php (3 violations)
++  WARN at line 6  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 7  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/callable_array_short/V.php (3 violations)
++  WARN at line 6  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 7  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/callable_array_string_class/V.php (3 violations)
++  WARN at line 6  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 7  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/callable_string_fq/V.php (3 violations)
++  WARN at line 6  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 7  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/callable_string_self/V.php (3 violations)
++  WARN at line 6  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 7  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/closure_fromCallable_self/V.php (3 violations)
++  WARN at line 6  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 7  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/first_class_self/V.php (3 violations)
++  WARN at line 6  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 7  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/first_class_short/V.php (3 violations)
++  WARN at line 6  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 7  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/fq_name/V.php (1 violation)
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/lowercase_short/V.php (1 violation)
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/namespace_relative/V.php (1 violation)
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/new_short_receiver/V.php (3 violations)
++  WARN at line 6  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 7  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 14  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/self/V.php (1 violation)
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/short_name/V.php (1 violation)
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/static/V.php (1 violation)
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/upforms/use_alias/V.php (1 violation)
++  WARN at line 15  V
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++src/x121/consts.php (4 violations)
++  ERROR at line 3
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++  ERROR at line 4
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++  ERROR at line 5
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++  ERROR at line 6  K
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++src/x121/global.php (1 violation)
++  ERROR at line 2
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++src/x70/A/X.php (24 violations)
++  ERROR at line 5  X::m
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++  ERROR at line 7  X::m
++    Replace eval() with a safer alternative (closures, reflection, or template engine).  [code-smell.eval]
++
++  ERROR at line 8  X::m
++    Remove debug statements before merging to production.  [code-smell.debug-code]
++
++  ERROR at line 9  X::m
++    Log or rethrow the exception, or handle it explicitly. A comment alone does not clear this finding; suppress an intentional ignore with `@qmx-ignore code-smell.empty-catch` and a reason.  [code-smell.empty-catch]
++
++  ERROR at line 10  X::m
++    Escape output with htmlspecialchars() or use a template engine with auto-escaping.  [security.xss]
++
++  ERROR at line 12  X::m
++    Replace goto with structured control flow (loops, early returns).  [code-smell.goto]
++
++  ERROR  Y
++    Parameter type coverage: 18.2% (threshold: 50.0%) — missing type declarations  [design.type-coverage.param]
++
++  ERROR  Y::b
++    Parameters: 8 (threshold: 6) — consider introducing a parameter object  [code-smell.long-parameter-list]
++
++  ERROR at line 24  Y::c
++    Use escapeshellarg() for arguments or avoid shell commands entirely.  [security.command-injection]
++
++  ERROR at line 24  Y::c
++    Use parameterized queries or prepared statements.  [security.sql-injection]
++
++  WARN  X
++    Parameter type coverage: 75.0% (threshold: 80.0%) — missing type declarations  [design.type-coverage.param]
++
++  WARN at line 5  X::m
++    Add #[\SensitiveParameter] attribute to prevent credential leakage in stack traces.  [security.sensitive-parameter]
++
++  WARN at line 10  X::m
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 11  X::m
++    Handle the error explicitly with try/catch or conditional checks.  [code-smell.error-suppression]
++
++  WARN at line 14  X::m
++    Throw an exception instead of exit/die to allow proper error handling.  [code-smell.exit]
++
++  WARN at line 17  X::f
++    Replace boolean parameter with two explicit methods or use an enum.  [code-smell.boolean-argument]
++
++  WARN at line 17  X::f
++    Store the count result in a variable before the loop.  [code-smell.count-in-loop]
++
++  WARN at line 17  X::f
++    Add #[\SensitiveParameter] attribute to prevent credential leakage in stack traces.  [security.sensitive-parameter]
++
++  WARN  Y
++    LCOM4: 3 (threshold: 3) — class has 3 unrelated method groups  [cohesion.lcom]
++
++  WARN at line 21  Y
++    Remove the unused symbol to reduce dead code.  [code-smell.unused-private]
++
++  WARN at line 22  Y::a
++    This looks like a copy-paste error. Verify the intended logic.  [code-smell.identical-subexpression]
++
++  WARN at line 22  Y::a
++    Remove dead code after the terminal statement.  [code-smell.unreachable-code]
++
++  WARN at line 24  Y::c
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 24  Y::c
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++Technical debt by rule:
++  code-smell.unused-private                ~1d 1h 30min (38 violations)
++  security.command-injection               ~7h       (7 violations)
++  security.sql-injection                   ~7h       (7 violations)
++  security.hardcoded-credentials           ~5h 30min (11 violations)
++  code-smell.superglobals                  ~5h 15min (21 violations)
++  security.xss                             ~5h 15min (7 violations)
++  cohesion.lcom                            ~2h 35min (3 violations)
++  code-smell.debug-code                    ~1h       (12 violations)
++  code-smell.empty-catch                   ~1h       (6 violations)
++  size.class-count                         ~1h       (2 violations)
++  security.sensitive-parameter             ~50min    (5 violations)
++  design.type-coverage.param               ~30min    (2 violations)
++  code-smell.long-parameter-list           ~20min    (1 violation)
++  size.method-count                        ~20min    (1 violation)
++  code-smell.eval                          ~15min    (1 violation)
++  code-smell.goto                          ~15min    (1 violation)
++  code-smell.identical-subexpression       ~15min    (1 violation)
++  code-smell.boolean-argument              ~10min    (1 violation)
++  code-smell.count-in-loop                 ~10min    (1 violation)
++  code-smell.error-suppression             ~10min    (1 violation)
++  code-smell.exit                          ~10min    (1 violation)
++  code-smell.unreachable-code              ~10min    (1 violation)
++
++Qualimetrix dev-main: 56 error(s), 75 warning(s) in 77 file(s)
++Analysis complete: 77 analyzed, 0 generated file(s) excluded.
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-stderr 185
++[<normalized>] [WARNING] mixed spelling: SensitiveParameter, sensitiveparameter → SensitiveParameter
++Warning: --format=text-verbose is deprecated. Use --format=text --detail instead.
++
++invocation-exit 1
++2

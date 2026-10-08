@@ -1,0 +1,79 @@
+--- candidate
++++ reference (mapped)
+@@ -1,66 +1,10 @@
+-visible 1262
+-{
+-  "version": 14,
+-  "generated": "<normalized>",
+-  "scope": ["src"],
+-  "exclusions": {"patterns":[],"generated":"excluded"},
+-  "entries": {
+-    "declaration:callable:Corpus\\Utf8\\Public\\K%FE::m%E9@src/Second.php": [
+-      {"channel":"complexity.ccn","magnitudes":[4]}
+-    ],
+-    "declaration:callable:Corpus\\Utf8\\Public\\K%FF::m%E9@src/First.php": [
+-      {"channel":"complexity.ccn","magnitudes":[4]}
+-    ],
+-    "declaration:class:Corpus\\Utf8\\Public\\K%FE@src/Second.php": [
+-      {"channel":"architecture.layer-violation","occurrence":"0f051a936e8edc45","edge":{"target":"class:Corpus\\Utf8\\Private\\W%FFX","type":"new"},"count":1}
+-    ],
+-    "declaration:class:Corpus\\Utf8\\Public\\K%FF@src/First.php": [
+-      {"channel":"architecture.layer-violation","occurrence":"a958228702b2f74d","edge":{"target":"class:Corpus\\Utf8\\Private\\W%FFX","type":"new"},"count":1}
+-    ],
+-    "file:src/First.php": [
+-      {"channel":"duplication.clone","occurrence":"41ed38f6560be1d0","magnitudes":[17]}
+-    ],
+-    "file:src/Second.php": [
+-      {"channel":"duplication.clone","occurrence":"41ed38f6560be1d0","magnitudes":[17]}
+-    ],
+-    "project:": [
+-      {"channel":"architecture.circular-dependency","occurrence":"449e174e1262085b","magnitudes":[2]}
+-    ]
+-  }
+-}
+-
+-invocation-baseline-file 1262
+-{
+-  "version": 14,
+-  "generated": "<normalized>",
+-  "scope": ["src"],
+-  "exclusions": {"patterns":[],"generated":"excluded"},
+-  "entries": {
+-    "declaration:callable:Corpus\\Utf8\\Public\\K%FE::m%E9@src/Second.php": [
+-      {"channel":"complexity.ccn","magnitudes":[4]}
+-    ],
+-    "declaration:callable:Corpus\\Utf8\\Public\\K%FF::m%E9@src/First.php": [
+-      {"channel":"complexity.ccn","magnitudes":[4]}
+-    ],
+-    "declaration:class:Corpus\\Utf8\\Public\\K%FE@src/Second.php": [
+-      {"channel":"architecture.layer-violation","occurrence":"0f051a936e8edc45","edge":{"target":"class:Corpus\\Utf8\\Private\\W%FFX","type":"new"},"count":1}
+-    ],
+-    "declaration:class:Corpus\\Utf8\\Public\\K%FF@src/First.php": [
+-      {"channel":"architecture.layer-violation","occurrence":"a958228702b2f74d","edge":{"target":"class:Corpus\\Utf8\\Private\\W%FFX","type":"new"},"count":1}
+-    ],
+-    "file:src/First.php": [
+-      {"channel":"duplication.clone","occurrence":"41ed38f6560be1d0","magnitudes":[17]}
+-    ],
+-    "file:src/Second.php": [
+-      {"channel":"duplication.clone","occurrence":"41ed38f6560be1d0","magnitudes":[17]}
+-    ],
+-    "project:": [
+-      {"channel":"architecture.circular-dependency","occurrence":"449e174e1262085b","magnitudes":[2]}
+-    ]
+-  }
+-}
+-
+-invocation-stderr 0
+-
+-invocation-exit 1
+-0
++visible 0
++
++invocation-baseline-file 0
++
++invocation-stderr 150
++Internal error: Malformed UTF-8 characters, possibly incorrectly encoded
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-exit 1
++1

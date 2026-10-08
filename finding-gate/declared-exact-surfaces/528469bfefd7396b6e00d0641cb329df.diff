@@ -1,0 +1,110 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 6166
++visible 3553
+@@ -11,29 +11,21 @@
+-         architecture.unassigned-class: 4 of 13 analysed class-like declaration(s) (30.8%) are not assigned to any declared layer.
+-         Recommendation: Unassigned declarations: Corpus\Layers\GraphBase\Marker, Corpus\Layers\GraphBase\MarkerAttribute, Corpus\Layers\GraphBase\MarkerContract, Corpus\Layers\Orphan\Loner. Declare layers covering them, exclude them from analysis, or accept the current count in the baseline and reduce it over time.
+-  2. [ERR] 2.49  [project]  [15min]
+-         architecture.coverage-gap: Architecture coverage-gap: 1 edge(s) with unmatched source layer, 4 edge(s) with unmatched target layer, 4 class(es) outside all declared layers. 3 assigned class(es) rest on a layer the run could not fully decide — for example Corpus\Layers\Doubt\Gateway, Corpus\Outside\Vendorish\Base, Corpus\Outside\Vendorish\Port.
+-         Recommendation: Examples of unclassified classes: Corpus\Layers\GraphBase\Marker, Corpus\Layers\GraphBase\MarkerAttribute, Corpus\Layers\GraphBase\MarkerContract, Corpus\Layers\Orphan\Loner. Declare layers covering these classes or accept the gap by leaving coverage-gap on "ignore". The assignments in doubt are not part of the gap and do not fail the run: each stands and its edges are judged against its layer's allow-list; architecture.doubted-assignment names them and what settles each.
+-  3. [ERR] 2.49  [project]  [15min]
+-         architecture.unreachable-layer: Layer "service" was assigned no symbol during analysis. 1 matching class(es) were taken by earlier layer "extra-by-suffix": Corpus\Layers\Service\OrderService.
+-         Recommendation: Change declaration order if this layer should take those classes before the named earlier layers. Otherwise remove the empty layer or declare "pending: true" when its code has not been written yet.
+-  4. [ERR] 2.49  [project]  [15min]
+-         architecture.pending-layer-matched: Layer "future" is declared "pending: true" — code not written yet — but its criteria (patterns: "Corpus\Layers\Controller\*") matched 1 distinct symbol(s) during analysis (each counted once, whether seen as an analysed declaration or as an end of a dependency edge). A match counts even when a layer declared earlier won the assignment, so the layer may own nothing while the code it describes already exists. Run "qmx debug:layer-assignment <class>" to inspect specific classes.
+-         Recommendation: Remove "pending: true" from layer "future". The code it was reserved for exists, so architecture.unreachable-layer is the safety net that flag is now suppressing.
+-  5. [ERR] 2.49  [project]  [15min]
+-         architecture.potential-shadow: Layer "controller" (pattern "Corpus\Layers\Controller\**") shadows layer "future" (pattern "Corpus\Layers\Controller\*") for 1 class(es) including Corpus\Layers\Controller\UserController. Run "qmx debug:layer-assignment <class>" to inspect specific cases.
+-         Recommendation: If layer "future" should own these classes, declare it BEFORE "controller" (declaration order, first match wins). Otherwise tighten the patterns so the layers no longer overlap.
+-  6. [ERR] 2.49  [project]  [15min]
+-         architecture.empty-template: Template layer "mod-{m}" expanded to zero concrete layers — no class in the analysed codebase matched the template's criteria. Common causes: (1) a typo in the template name or pattern, (2) matching classes were filtered out by file discovery (`suppress_paths` / `suppress_namespaces` at top level or in rule options), (3) the module disappeared in a recent refactor, or (4) a single-segment capture `{var}` is used where the binding spans multiple namespace segments — try `{var:**}` for cross-segment captures.
+-         Recommendation: Verify the template patterns against the project structure, or remove the template if no longer relevant.
+-  7. [WRN] 0.83  [project]  [15min]
+-         architecture.unmatched-type: Layer criterion type "Corpus\Layers\GraphBase\Markre" declared by configuration file "qmx.yaml" at architecture.layers[7].extends[1] was not found in the analysed declarations, dependency graph, PHP built-ins, or the analysed project's Composer install.
+-         Recommendation: Correct the type spelling, install the dependency that declares it, or remove the stale criterion.
+-  8. [WRN] 0.83  [project]  [15min]
+-         architecture.unmatched-exclude: The "exclude" clause of layer "controller" (patterns: "Corpus\Layers\Controller\NoSuch\**") removed no class from it, while the layer's own criteria (patterns: "Corpus\Layers\Controller\**") matched 1 symbol(s). The layer is therefore wider than the declaration asks for, and every verdict about it is drawn from that wider set.
+-         Recommendation: Check the exclude criteria against the classes layer "controller" actually holds — "qmx debug:layer-assignment <class>" shows what a given class matched. Correct the criteria, or drop the "exclude" clause if the classes it was written for are gone.
+-  9. [WRN] 0.83  src/AnonMember/ExtendsHost.php  [15min]
+-         architecture.layer-violation: Layer "anon-member" must not depend on layer "repository" (Corpus\Layers\AnonMember\ExtendsHost → Corpus\Layers\Repository\UserRepository, uses as property type)
+-         Recommendation: Layer "anon-member" is not allowed to depend on any other declared layer.
+-  10. [WRN] 0.83  src/Controller/UserController.php  [15min]
+-          architecture.layer-violation: Layer "controller" must not depend on layer "repository" (Corpus\Layers\Controller\UserController → Corpus\Layers\Repository\UserRepository, uses as property type)
+-          Recommendation: Layer "controller" is not allowed to depend on any other declared layer.
++         architecture.unassigned-class: Unassigned declarations: Corpus\Layers\GraphBase\Marker, Corpus\Layers\GraphBase\MarkerAttribute, Corpus\Layers\GraphBase\MarkerContract, Corpus\Layers\Orphan\Loner. Declare layers covering them, exclude them from analysis, or accept the current count in the baseline and reduce it over time.
++  2. [ERR] 2.49  [project]  [15min]
++         architecture.coverage-gap: Examples of unclassified classes: Corpus\Layers\GraphBase\Marker, Corpus\Layers\GraphBase\MarkerAttribute, Corpus\Layers\GraphBase\MarkerContract, Corpus\Layers\Orphan\Loner. Declare layers covering these classes or accept the gap by leaving coverage-gap on "ignore". The assignments in doubt are not part of the gap and do not fail the run: each stands and its edges are judged against its layer's allow-list; architecture.doubted-assignment names them and what settles each.
++  3. [ERR] 2.49  [project]  [15min]
++         architecture.unreachable-layer: Change declaration order if this layer should take those classes before the named earlier layers. Otherwise remove the empty layer or declare "pending: true" when its code has not been written yet.
++  4. [ERR] 2.49  [project]  [15min]
++         architecture.pending-layer-matched: Remove "pending: true" from layer "future". The code it was reserved for exists, so architecture.unreachable-layer is the safety net that flag is now suppressing.
++  5. [ERR] 2.49  [project]  [15min]
++         architecture.potential-shadow: If layer "future" should own these classes, declare it BEFORE "controller" (declaration order, first match wins). Otherwise tighten the patterns so the layers no longer overlap.
++  6. [ERR] 2.49  [project]  [15min]
++         architecture.empty-template: Verify the template patterns against the project structure, or remove the template if no longer relevant.
++  7. [WRN] 0.83  [project]  [15min]
++         architecture.unmatched-type: Correct the type spelling, install the dependency that declares it, or remove the stale criterion.
++  8. [WRN] 0.83  [project]  [15min]
++         architecture.unmatched-exclude: Check the exclude criteria against the classes layer "controller" actually holds — "qmx debug:layer-assignment <class>" shows what a given class matched. Correct the criteria, or drop the "exclude" clause if the classes it was written for are gone.
++  9. [WRN] 0.83  src/AnonMember/ExtendsHost.php  [15min]
++         architecture.layer-violation: Layer "anon-member" is not allowed to depend on any other declared layer.
++Dep data: {"fromLayer":"anon-member","toLayer":"repository","source":"Corpus\\Layers\\AnonMember\\ExtendsHost","target":"Corpus\\Layers\\Repository\\UserRepository","type":"property_type"}
++  10. [WRN] 0.83  src/Controller/UserController.php  [15min]
++          architecture.layer-violation: Layer "controller" is not allowed to depend on any other declared layer.
++Dep data: {"fromLayer":"controller","toLayer":"repository","source":"Corpus\\Layers\\Controller\\UserController","target":"Corpus\\Layers\\Repository\\UserRepository","type":"property_type"}
+@@ -45,1 +37,1 @@
+-invocation-format:summary 6166
++invocation-format:summary 3553
+@@ -55,29 +47,21 @@
+-         architecture.unassigned-class: 4 of 13 analysed class-like declaration(s) (30.8%) are not assigned to any declared layer.
+-         Recommendation: Unassigned declarations: Corpus\Layers\GraphBase\Marker, Corpus\Layers\GraphBase\MarkerAttribute, Corpus\Layers\GraphBase\MarkerContract, Corpus\Layers\Orphan\Loner. Declare layers covering them, exclude them from analysis, or accept the current count in the baseline and reduce it over time.
+-  2. [ERR] 2.49  [project]  [15min]
+-         architecture.coverage-gap: Architecture coverage-gap: 1 edge(s) with unmatched source layer, 4 edge(s) with unmatched target layer, 4 class(es) outside all declared layers. 3 assigned class(es) rest on a layer the run could not fully decide — for example Corpus\Layers\Doubt\Gateway, Corpus\Outside\Vendorish\Base, Corpus\Outside\Vendorish\Port.
+-         Recommendation: Examples of unclassified classes: Corpus\Layers\GraphBase\Marker, Corpus\Layers\GraphBase\MarkerAttribute, Corpus\Layers\GraphBase\MarkerContract, Corpus\Layers\Orphan\Loner. Declare layers covering these classes or accept the gap by leaving coverage-gap on "ignore". The assignments in doubt are not part of the gap and do not fail the run: each stands and its edges are judged against its layer's allow-list; architecture.doubted-assignment names them and what settles each.
+-  3. [ERR] 2.49  [project]  [15min]
+-         architecture.unreachable-layer: Layer "service" was assigned no symbol during analysis. 1 matching class(es) were taken by earlier layer "extra-by-suffix": Corpus\Layers\Service\OrderService.
+-         Recommendation: Change declaration order if this layer should take those classes before the named earlier layers. Otherwise remove the empty layer or declare "pending: true" when its code has not been written yet.
+-  4. [ERR] 2.49  [project]  [15min]
+-         architecture.pending-layer-matched: Layer "future" is declared "pending: true" — code not written yet — but its criteria (patterns: "Corpus\Layers\Controller\*") matched 1 distinct symbol(s) during analysis (each counted once, whether seen as an analysed declaration or as an end of a dependency edge). A match counts even when a layer declared earlier won the assignment, so the layer may own nothing while the code it describes already exists. Run "qmx debug:layer-assignment <class>" to inspect specific classes.
+-         Recommendation: Remove "pending: true" from layer "future". The code it was reserved for exists, so architecture.unreachable-layer is the safety net that flag is now suppressing.
+-  5. [ERR] 2.49  [project]  [15min]
+-         architecture.potential-shadow: Layer "controller" (pattern "Corpus\Layers\Controller\**") shadows layer "future" (pattern "Corpus\Layers\Controller\*") for 1 class(es) including Corpus\Layers\Controller\UserController. Run "qmx debug:layer-assignment <class>" to inspect specific cases.
+-         Recommendation: If layer "future" should own these classes, declare it BEFORE "controller" (declaration order, first match wins). Otherwise tighten the patterns so the layers no longer overlap.
+-  6. [ERR] 2.49  [project]  [15min]
+-         architecture.empty-template: Template layer "mod-{m}" expanded to zero concrete layers — no class in the analysed codebase matched the template's criteria. Common causes: (1) a typo in the template name or pattern, (2) matching classes were filtered out by file discovery (`suppress_paths` / `suppress_namespaces` at top level or in rule options), (3) the module disappeared in a recent refactor, or (4) a single-segment capture `{var}` is used where the binding spans multiple namespace segments — try `{var:**}` for cross-segment captures.
+-         Recommendation: Verify the template patterns against the project structure, or remove the template if no longer relevant.
+-  7. [WRN] 0.83  [project]  [15min]
+-         architecture.unmatched-type: Layer criterion type "Corpus\Layers\GraphBase\Markre" declared by configuration file "qmx.yaml" at architecture.layers[7].extends[1] was not found in the analysed declarations, dependency graph, PHP built-ins, or the analysed project's Composer install.
+-         Recommendation: Correct the type spelling, install the dependency that declares it, or remove the stale criterion.
+-  8. [WRN] 0.83  [project]  [15min]
+-         architecture.unmatched-exclude: The "exclude" clause of layer "controller" (patterns: "Corpus\Layers\Controller\NoSuch\**") removed no class from it, while the layer's own criteria (patterns: "Corpus\Layers\Controller\**") matched 1 symbol(s). The layer is therefore wider than the declaration asks for, and every verdict about it is drawn from that wider set.
+-         Recommendation: Check the exclude criteria against the classes layer "controller" actually holds — "qmx debug:layer-assignment <class>" shows what a given class matched. Correct the criteria, or drop the "exclude" clause if the classes it was written for are gone.
+-  9. [WRN] 0.83  src/AnonMember/ExtendsHost.php  [15min]
+-         architecture.layer-violation: Layer "anon-member" must not depend on layer "repository" (Corpus\Layers\AnonMember\ExtendsHost → Corpus\Layers\Repository\UserRepository, uses as property type)
+-         Recommendation: Layer "anon-member" is not allowed to depend on any other declared layer.
+-  10. [WRN] 0.83  src/Controller/UserController.php  [15min]
+-          architecture.layer-violation: Layer "controller" must not depend on layer "repository" (Corpus\Layers\Controller\UserController → Corpus\Layers\Repository\UserRepository, uses as property type)
+-          Recommendation: Layer "controller" is not allowed to depend on any other declared layer.
++         architecture.unassigned-class: Unassigned declarations: Corpus\Layers\GraphBase\Marker, Corpus\Layers\GraphBase\MarkerAttribute, Corpus\Layers\GraphBase\MarkerContract, Corpus\Layers\Orphan\Loner. Declare layers covering them, exclude them from analysis, or accept the current count in the baseline and reduce it over time.
++  2. [ERR] 2.49  [project]  [15min]
++         architecture.coverage-gap: Examples of unclassified classes: Corpus\Layers\GraphBase\Marker, Corpus\Layers\GraphBase\MarkerAttribute, Corpus\Layers\GraphBase\MarkerContract, Corpus\Layers\Orphan\Loner. Declare layers covering these classes or accept the gap by leaving coverage-gap on "ignore". The assignments in doubt are not part of the gap and do not fail the run: each stands and its edges are judged against its layer's allow-list; architecture.doubted-assignment names them and what settles each.
++  3. [ERR] 2.49  [project]  [15min]
++         architecture.unreachable-layer: Change declaration order if this layer should take those classes before the named earlier layers. Otherwise remove the empty layer or declare "pending: true" when its code has not been written yet.
++  4. [ERR] 2.49  [project]  [15min]
++         architecture.pending-layer-matched: Remove "pending: true" from layer "future". The code it was reserved for exists, so architecture.unreachable-layer is the safety net that flag is now suppressing.
++  5. [ERR] 2.49  [project]  [15min]
++         architecture.potential-shadow: If layer "future" should own these classes, declare it BEFORE "controller" (declaration order, first match wins). Otherwise tighten the patterns so the layers no longer overlap.
++  6. [ERR] 2.49  [project]  [15min]
++         architecture.empty-template: Verify the template patterns against the project structure, or remove the template if no longer relevant.
++  7. [WRN] 0.83  [project]  [15min]
++         architecture.unmatched-type: Correct the type spelling, install the dependency that declares it, or remove the stale criterion.
++  8. [WRN] 0.83  [project]  [15min]
++         architecture.unmatched-exclude: Check the exclude criteria against the classes layer "controller" actually holds — "qmx debug:layer-assignment <class>" shows what a given class matched. Correct the criteria, or drop the "exclude" clause if the classes it was written for are gone.
++  9. [WRN] 0.83  src/AnonMember/ExtendsHost.php  [15min]
++         architecture.layer-violation: Layer "anon-member" is not allowed to depend on any other declared layer.
++Dep data: {"fromLayer":"anon-member","toLayer":"repository","source":"Corpus\\Layers\\AnonMember\\ExtendsHost","target":"Corpus\\Layers\\Repository\\UserRepository","type":"property_type"}
++  10. [WRN] 0.83  src/Controller/UserController.php  [15min]
++          architecture.layer-violation: Layer "controller" is not allowed to depend on any other declared layer.
++Dep data: {"fromLayer":"controller","toLayer":"repository","source":"Corpus\\Layers\\Controller\\UserController","target":"Corpus\\Layers\\Repository\\UserRepository","type":"property_type"}

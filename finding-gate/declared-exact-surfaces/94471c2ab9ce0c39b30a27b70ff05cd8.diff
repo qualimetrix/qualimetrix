@@ -1,0 +1,22 @@
+--- candidate
++++ reference (mapped)
+@@ -1,5 +1,4 @@
+-visible 524
+-src/Statements.php (1 violation)
+-  ERROR at line 9  Statements::run
+-    eval() usage detected - security risk  [code-smell.eval]
+-    Recommendation: Replace eval() with a safer alternative (closures, reflection, or template engine).
++visible 466
++src/Statements.php (1 violation)
++  ERROR at line 9  Statements::run
++    Replace eval() with a safer alternative (closures, reflection, or template engine).  [code-smell.eval]
+@@ -14,5 +13,4 @@
+-invocation-format:text-detail 524
+-src/Statements.php (1 violation)
+-  ERROR at line 9  Statements::run
+-    eval() usage detected - security risk  [code-smell.eval]
+-    Recommendation: Replace eval() with a safer alternative (closures, reflection, or template engine).
++invocation-format:text-detail 466
++src/Statements.php (1 violation)
++  ERROR at line 9  Statements::run
++    Replace eval() with a safer alternative (closures, reflection, or template engine).  [code-smell.eval]

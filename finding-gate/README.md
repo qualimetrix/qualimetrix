@@ -59,14 +59,17 @@ own positive native typed population. Everything else supplied is
 `whole-invocation`; missing prospective captures remain distinct from supplied
 empty bytes. No exit code, error envelope or outcome selects the form.
 
-These 10 previously record-bearing views are always whole invocations:
+These 12 report and explanation views are always whole invocations:
 `format:html`, `format:checkstyle`, `format:sarif`, `format:gitlab`,
 `format:summary`, `format:text`, `format:text-detail`,
-`format:text-verbose`, `format:github`, and `show-suppressed`. SARIF and GitLab
+`format:text-verbose`, `format:github`, `show-suppressed`, `format:health`, and
+the `explain:<subject>` publications from `baseline:explain`. SARIF and GitLab
 are excluded even though their serialization is JSON. Their standalone
 decoders remain callable, but the gate gives them no record, projection,
-fingerprint or ranking authority. Other command surfaces keep their byte
-contracts.
+fingerprint or ranking authority. Health and baseline explanations retain
+their native process outcomes without exit-value translation. Command
+catalogues, graph exports and debug surfaces retain their own byte and
+successful-population contracts.
 
 The finite capture list retains the historical `text-verbose` CLI address on
 every corpus case, even though the product no longer supports that format.
@@ -319,6 +322,19 @@ as multisets. A repeated join key carrying different ranking values is
 `record-ambiguous`. Published ranks must be 1 through the population, and
 published impact scores must not increase down the ranking. Added or removed
 ranking fields use the `json/ranking` schema view.
+
+The schema belongs to the source tree that produced each side's publication.
+For each own JSON `records/records` pair, declared field changes must reconcile
+those source schemas even when both `topIssues` lists are empty. Comparing a
+version with itself needs no declaration for fields both publishers already
+own. A whole peer or a prospective missing capture retains only the observed
+side's own-shape checks and gives no comparative schema credit. Eligibility is
+checked per publication key; one view cannot license another. Missing source
+trees are refused; a reference schema is never inferred from the candidate
+tree. Field measurement waits until every planned ranking source has a known
+form and each eligible pair has two completed own observations; buffered rows
+from a whole invocation do not enter the measured union. Normalization
+derivation uses only the supplied candidate source tree.
 
 ### Order
 
@@ -709,6 +725,15 @@ at declared scopes and rejects everything else. Tolerations must be exercised;
 idle tolerations fail. Corpus controls require exact full scopes, preventing
 a `text` expectation from absorbing detailed text or another case.
 Green controls are held to all declaration counts, not just exit 0.
+
+There are 28 active controls. The former `fingerprint-declared-rename` and
+`occurrence-declared-rename` green controls are retired: a JSON channel map
+cannot license changed bytes in whole publications. Existing JSON map checks
+prove channel and rule translation, and the security rule's frozen-occurrence
+test proves that a producer rename preserves its discriminator. Both checks
+must reject a planted regression. The historical `fingerprint-no-map` control
+now promises an unmapped channel change and whole-byte mismatches rather than
+native fingerprint decoding.
 
 The config-precedence, threshold-raising and directive-placement controls
 require their finding counts, records and unchanged report surfaces. They do

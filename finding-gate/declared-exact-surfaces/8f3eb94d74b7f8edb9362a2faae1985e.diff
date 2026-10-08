@@ -1,0 +1,843 @@
+--- candidate
++++ reference (mapped)
+@@ -1,11 +1,829 @@
+-visible 0
+-
+-invocation-format:text-verbose 0
+-
+-invocation-stderr 258
+-Configuration error: Output format "text-verbose" is not one of: checkstyle, github, gitlab, health, html, json, metrics, sarif, summary, suppressed, text.
+-Source: option --format.
+-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
+-
+-invocation-exit 1
+-3
++visible 24239
++src/Shard000.php (1 violation)
++  WARN  Shard000::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard001.php (1 violation)
++  WARN  Shard001::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard002.php (1 violation)
++  WARN  Shard002::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard003.php (1 violation)
++  WARN  Shard003::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard004.php (1 violation)
++  WARN  Shard004::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard005.php (1 violation)
++  WARN  Shard005::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard006.php (1 violation)
++  WARN  Shard006::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard007.php (1 violation)
++  WARN  Shard007::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard008.php (1 violation)
++  WARN  Shard008::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard009.php (1 violation)
++  WARN  Shard009::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard010.php (1 violation)
++  WARN  Shard010::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard011.php (1 violation)
++  WARN  Shard011::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard012.php (1 violation)
++  WARN  Shard012::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard013.php (1 violation)
++  WARN  Shard013::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard014.php (1 violation)
++  WARN  Shard014::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard015.php (1 violation)
++  WARN  Shard015::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard016.php (1 violation)
++  WARN  Shard016::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard017.php (1 violation)
++  WARN  Shard017::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard018.php (1 violation)
++  WARN  Shard018::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard019.php (1 violation)
++  WARN  Shard019::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard020.php (1 violation)
++  WARN  Shard020::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard021.php (1 violation)
++  WARN  Shard021::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard022.php (1 violation)
++  WARN  Shard022::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard023.php (1 violation)
++  WARN  Shard023::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard024.php (1 violation)
++  WARN  Shard024::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard025.php (1 violation)
++  WARN  Shard025::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard026.php (1 violation)
++  WARN  Shard026::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard027.php (1 violation)
++  WARN  Shard027::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard028.php (1 violation)
++  WARN  Shard028::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard029.php (1 violation)
++  WARN  Shard029::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard030.php (1 violation)
++  WARN  Shard030::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard031.php (1 violation)
++  WARN  Shard031::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard032.php (1 violation)
++  WARN  Shard032::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard033.php (1 violation)
++  WARN  Shard033::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard034.php (1 violation)
++  WARN  Shard034::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard035.php (1 violation)
++  WARN  Shard035::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard036.php (1 violation)
++  WARN  Shard036::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard037.php (1 violation)
++  WARN  Shard037::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard038.php (1 violation)
++  WARN  Shard038::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard039.php (1 violation)
++  WARN  Shard039::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard040.php (1 violation)
++  WARN  Shard040::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard041.php (1 violation)
++  WARN  Shard041::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard042.php (1 violation)
++  WARN  Shard042::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard043.php (1 violation)
++  WARN  Shard043::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard044.php (1 violation)
++  WARN  Shard044::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard045.php (1 violation)
++  WARN  Shard045::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard046.php (1 violation)
++  WARN  Shard046::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard047.php (1 violation)
++  WARN  Shard047::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard048.php (1 violation)
++  WARN  Shard048::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard049.php (1 violation)
++  WARN  Shard049::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard050.php (1 violation)
++  WARN  Shard050::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard051.php (1 violation)
++  WARN  Shard051::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard052.php (1 violation)
++  WARN  Shard052::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard053.php (1 violation)
++  WARN  Shard053::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard054.php (1 violation)
++  WARN  Shard054::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard055.php (1 violation)
++  WARN  Shard055::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard056.php (1 violation)
++  WARN  Shard056::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard057.php (1 violation)
++  WARN  Shard057::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard058.php (1 violation)
++  WARN  Shard058::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard059.php (1 violation)
++  WARN  Shard059::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard060.php (1 violation)
++  WARN  Shard060::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard061.php (1 violation)
++  WARN  Shard061::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard062.php (1 violation)
++  WARN  Shard062::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard063.php (1 violation)
++  WARN  Shard063::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard064.php (1 violation)
++  WARN  Shard064::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard065.php (1 violation)
++  WARN  Shard065::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard066.php (1 violation)
++  WARN  Shard066::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard067.php (1 violation)
++  WARN  Shard067::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard068.php (1 violation)
++  WARN  Shard068::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard069.php (1 violation)
++  WARN  Shard069::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard070.php (1 violation)
++  WARN  Shard070::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard071.php (1 violation)
++  WARN  Shard071::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard072.php (1 violation)
++  WARN  Shard072::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard073.php (1 violation)
++  WARN  Shard073::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard074.php (1 violation)
++  WARN  Shard074::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard075.php (1 violation)
++  WARN  Shard075::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard076.php (1 violation)
++  WARN  Shard076::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard077.php (1 violation)
++  WARN  Shard077::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard078.php (1 violation)
++  WARN  Shard078::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard079.php (1 violation)
++  WARN  Shard079::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard080.php (1 violation)
++  WARN  Shard080::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard081.php (1 violation)
++  WARN  Shard081::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard082.php (1 violation)
++  WARN  Shard082::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard083.php (1 violation)
++  WARN  Shard083::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard084.php (1 violation)
++  WARN  Shard084::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard085.php (1 violation)
++  WARN  Shard085::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard086.php (1 violation)
++  WARN  Shard086::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard087.php (1 violation)
++  WARN  Shard087::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard088.php (1 violation)
++  WARN  Shard088::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard089.php (1 violation)
++  WARN  Shard089::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard090.php (1 violation)
++  WARN  Shard090::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard091.php (1 violation)
++  WARN  Shard091::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard092.php (1 violation)
++  WARN  Shard092::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard093.php (1 violation)
++  WARN  Shard093::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard094.php (1 violation)
++  WARN  Shard094::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard095.php (1 violation)
++  WARN  Shard095::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard096.php (1 violation)
++  WARN  Shard096::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard097.php (1 violation)
++  WARN  Shard097::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard098.php (1 violation)
++  WARN  Shard098::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard099.php (1 violation)
++  WARN  Shard099::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard100.php (1 violation)
++  WARN  Shard100::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++Technical debt by rule:
++  complexity.ccn                           ~6d 2h 30min (101 violations)
++
++Qualimetrix dev-main: 0 error(s), 101 warning(s) in 101 file(s)
++Analysis complete: 101 analyzed, 0 generated file(s) excluded.
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-format:text-verbose 24239
++src/Shard000.php (1 violation)
++  WARN  Shard000::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard001.php (1 violation)
++  WARN  Shard001::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard002.php (1 violation)
++  WARN  Shard002::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard003.php (1 violation)
++  WARN  Shard003::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard004.php (1 violation)
++  WARN  Shard004::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard005.php (1 violation)
++  WARN  Shard005::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard006.php (1 violation)
++  WARN  Shard006::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard007.php (1 violation)
++  WARN  Shard007::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard008.php (1 violation)
++  WARN  Shard008::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard009.php (1 violation)
++  WARN  Shard009::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard010.php (1 violation)
++  WARN  Shard010::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard011.php (1 violation)
++  WARN  Shard011::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard012.php (1 violation)
++  WARN  Shard012::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard013.php (1 violation)
++  WARN  Shard013::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard014.php (1 violation)
++  WARN  Shard014::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard015.php (1 violation)
++  WARN  Shard015::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard016.php (1 violation)
++  WARN  Shard016::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard017.php (1 violation)
++  WARN  Shard017::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard018.php (1 violation)
++  WARN  Shard018::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard019.php (1 violation)
++  WARN  Shard019::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard020.php (1 violation)
++  WARN  Shard020::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard021.php (1 violation)
++  WARN  Shard021::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard022.php (1 violation)
++  WARN  Shard022::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard023.php (1 violation)
++  WARN  Shard023::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard024.php (1 violation)
++  WARN  Shard024::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard025.php (1 violation)
++  WARN  Shard025::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard026.php (1 violation)
++  WARN  Shard026::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard027.php (1 violation)
++  WARN  Shard027::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard028.php (1 violation)
++  WARN  Shard028::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard029.php (1 violation)
++  WARN  Shard029::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard030.php (1 violation)
++  WARN  Shard030::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard031.php (1 violation)
++  WARN  Shard031::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard032.php (1 violation)
++  WARN  Shard032::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard033.php (1 violation)
++  WARN  Shard033::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard034.php (1 violation)
++  WARN  Shard034::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard035.php (1 violation)
++  WARN  Shard035::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard036.php (1 violation)
++  WARN  Shard036::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard037.php (1 violation)
++  WARN  Shard037::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard038.php (1 violation)
++  WARN  Shard038::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard039.php (1 violation)
++  WARN  Shard039::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard040.php (1 violation)
++  WARN  Shard040::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard041.php (1 violation)
++  WARN  Shard041::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard042.php (1 violation)
++  WARN  Shard042::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard043.php (1 violation)
++  WARN  Shard043::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard044.php (1 violation)
++  WARN  Shard044::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard045.php (1 violation)
++  WARN  Shard045::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard046.php (1 violation)
++  WARN  Shard046::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard047.php (1 violation)
++  WARN  Shard047::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard048.php (1 violation)
++  WARN  Shard048::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard049.php (1 violation)
++  WARN  Shard049::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard050.php (1 violation)
++  WARN  Shard050::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard051.php (1 violation)
++  WARN  Shard051::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard052.php (1 violation)
++  WARN  Shard052::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard053.php (1 violation)
++  WARN  Shard053::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard054.php (1 violation)
++  WARN  Shard054::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard055.php (1 violation)
++  WARN  Shard055::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard056.php (1 violation)
++  WARN  Shard056::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard057.php (1 violation)
++  WARN  Shard057::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard058.php (1 violation)
++  WARN  Shard058::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard059.php (1 violation)
++  WARN  Shard059::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard060.php (1 violation)
++  WARN  Shard060::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard061.php (1 violation)
++  WARN  Shard061::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard062.php (1 violation)
++  WARN  Shard062::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard063.php (1 violation)
++  WARN  Shard063::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard064.php (1 violation)
++  WARN  Shard064::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard065.php (1 violation)
++  WARN  Shard065::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard066.php (1 violation)
++  WARN  Shard066::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard067.php (1 violation)
++  WARN  Shard067::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard068.php (1 violation)
++  WARN  Shard068::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard069.php (1 violation)
++  WARN  Shard069::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard070.php (1 violation)
++  WARN  Shard070::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard071.php (1 violation)
++  WARN  Shard071::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard072.php (1 violation)
++  WARN  Shard072::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard073.php (1 violation)
++  WARN  Shard073::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard074.php (1 violation)
++  WARN  Shard074::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard075.php (1 violation)
++  WARN  Shard075::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard076.php (1 violation)
++  WARN  Shard076::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard077.php (1 violation)
++  WARN  Shard077::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard078.php (1 violation)
++  WARN  Shard078::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard079.php (1 violation)
++  WARN  Shard079::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard080.php (1 violation)
++  WARN  Shard080::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard081.php (1 violation)
++  WARN  Shard081::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard082.php (1 violation)
++  WARN  Shard082::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard083.php (1 violation)
++  WARN  Shard083::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard084.php (1 violation)
++  WARN  Shard084::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard085.php (1 violation)
++  WARN  Shard085::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard086.php (1 violation)
++  WARN  Shard086::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard087.php (1 violation)
++  WARN  Shard087::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard088.php (1 violation)
++  WARN  Shard088::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard089.php (1 violation)
++  WARN  Shard089::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard090.php (1 violation)
++  WARN  Shard090::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard091.php (1 violation)
++  WARN  Shard091::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard092.php (1 violation)
++  WARN  Shard092::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard093.php (1 violation)
++  WARN  Shard093::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard094.php (1 violation)
++  WARN  Shard094::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard095.php (1 violation)
++  WARN  Shard095::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard096.php (1 violation)
++  WARN  Shard096::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard097.php (1 violation)
++  WARN  Shard097::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard098.php (1 violation)
++  WARN  Shard098::run
++    Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard099.php (1 violation)
++  WARN  Shard099::run
++    Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++src/Shard100.php (1 violation)
++  WARN  Shard100::run
++    Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.  [complexity.ccn]
++
++Technical debt by rule:
++  complexity.ccn                           ~6d 2h 30min (101 violations)
++
++Qualimetrix dev-main: 0 error(s), 101 warning(s) in 101 file(s)
++Analysis complete: 101 analyzed, 0 generated file(s) excluded.
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-stderr 82
++Warning: --format=text-verbose is deprecated. Use --format=text --detail instead.
++
++invocation-exit 1
++0

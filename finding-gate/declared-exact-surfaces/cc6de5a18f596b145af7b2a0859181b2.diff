@@ -1,0 +1,137 @@
+--- candidate
++++ reference (mapped)
+@@ -1,11 +1,123 @@
+-visible 0
+-
+-invocation-format:text-verbose 0
+-
+-invocation-stderr 258
+-Configuration error: Output format "text-verbose" is not one of: checkstyle, github, gitlab, health, html, json, metrics, sarif, summary, suppressed, text.
+-Source: option --format.
+-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
+-
+-invocation-exit 1
+-3
++visible 4839
++[project] (10 violations)
++  ERROR
++    Unassigned declarations: Corpus\Layers\GraphBase\Marker, Corpus\Layers\GraphBase\MarkerAttribute, Corpus\Layers\GraphBase\MarkerContract, Corpus\Layers\Orphan\Loner. Declare layers covering them, exclude them from analysis, or accept the current count in the baseline and reduce it over time.  [architecture.unassigned-class]
++
++  ERROR
++    Examples of unclassified classes: Corpus\Layers\GraphBase\Marker, Corpus\Layers\GraphBase\MarkerAttribute, Corpus\Layers\GraphBase\MarkerContract, Corpus\Layers\Orphan\Loner. Declare layers covering these classes or accept the gap by leaving coverage-gap on "ignore". The assignments in doubt are not part of the gap and do not fail the run: each stands and its edges are judged against its layer's allow-list; architecture.doubted-assignment names them and what settles each.  [architecture.coverage-gap]
++
++  ERROR
++    Change declaration order if this layer should take those classes before the named earlier layers. Otherwise remove the empty layer or declare "pending: true" when its code has not been written yet.  [architecture.unreachable-layer]
++
++  ERROR
++    Remove "pending: true" from layer "future". The code it was reserved for exists, so architecture.unreachable-layer is the safety net that flag is now suppressing.  [architecture.pending-layer-matched]
++
++  ERROR
++    If layer "future" should own these classes, declare it BEFORE "controller" (declaration order, first match wins). Otherwise tighten the patterns so the layers no longer overlap.  [architecture.potential-shadow]
++
++  ERROR
++    Verify the template patterns against the project structure, or remove the template if no longer relevant.  [architecture.empty-template]
++
++  WARN
++    Correct the type spelling, install the dependency that declares it, or remove the stale criterion.  [architecture.unmatched-type]
++
++  WARN
++    Check the exclude criteria against the classes layer "controller" actually holds — "qmx debug:layer-assignment <class>" shows what a given class matched. Correct the criteria, or drop the "exclude" clause if the classes it was written for are gone.  [architecture.unmatched-exclude]
++
++  INFO
++    If "extra-by-suffix" should own these classes, declare it before "extra-broad"; otherwise keep this precedence or narrow its criteria.  [architecture.layer-overlap]
++
++  INFO
++    For an analysed class, "qmx debug:layer-assignment <class>" names the unanswered layer and where its inheritance chain stops; the source may be unavailable in the project runtime or dependencies, or outside the analysed paths. Include an available declaration to settle the chain. For a symbol outside the analysed paths, what settles it depends on whose code it is: your own code is settled by analysing it — widening paths to include it, or running over the whole project rather than part of it; a dependency's class by a patterns layer for its namespace declared before the layer that could not answer. If the criterion names a runtime or dependency type, check whether that type is available; otherwise include its source in the analysed paths.  [architecture.doubted-assignment]
++
++src/AnonMember/ExtendsHost.php (1 violation)
++  WARN  ExtendsHost
++    Layer "anon-member" is not allowed to depend on any other declared layer.
++Dep data: {"fromLayer":"anon-member","toLayer":"repository","source":"Corpus\\Layers\\AnonMember\\ExtendsHost","target":"Corpus\\Layers\\Repository\\UserRepository","type":"property_type"}  [architecture.layer-violation]
++
++src/Controller/UserController.php (1 violation)
++  WARN  UserController
++    Layer "controller" is not allowed to depend on any other declared layer.
++Dep data: {"fromLayer":"controller","toLayer":"repository","source":"Corpus\\Layers\\Controller\\UserController","target":"Corpus\\Layers\\Repository\\UserRepository","type":"property_type"}  [architecture.layer-violation]
++
++Technical debt by rule:
++  architecture.layer-violation             ~30min    (2 violations)
++  architecture.layer-overlap               ~15min    (1 violation)
++  architecture.unmatched-type              ~15min    (1 violation)
++  architecture.unmatched-exclude           ~15min    (1 violation)
++  architecture.doubted-assignment          ~15min    (1 violation)
++  architecture.unassigned-class            ~15min    (1 violation)
++  architecture.coverage-gap                ~15min    (1 violation)
++  architecture.unreachable-layer           ~15min    (1 violation)
++  architecture.pending-layer-matched       ~15min    (1 violation)
++  architecture.potential-shadow            ~15min    (1 violation)
++  architecture.empty-template              ~15min    (1 violation)
++
++Qualimetrix dev-main: 6 error(s), 4 warning(s), 2 info in 13 file(s)
++Analysis complete: 13 analyzed, 0 generated file(s) excluded.
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-format:text-verbose 4839
++[project] (10 violations)
++  ERROR
++    Unassigned declarations: Corpus\Layers\GraphBase\Marker, Corpus\Layers\GraphBase\MarkerAttribute, Corpus\Layers\GraphBase\MarkerContract, Corpus\Layers\Orphan\Loner. Declare layers covering them, exclude them from analysis, or accept the current count in the baseline and reduce it over time.  [architecture.unassigned-class]
++
++  ERROR
++    Examples of unclassified classes: Corpus\Layers\GraphBase\Marker, Corpus\Layers\GraphBase\MarkerAttribute, Corpus\Layers\GraphBase\MarkerContract, Corpus\Layers\Orphan\Loner. Declare layers covering these classes or accept the gap by leaving coverage-gap on "ignore". The assignments in doubt are not part of the gap and do not fail the run: each stands and its edges are judged against its layer's allow-list; architecture.doubted-assignment names them and what settles each.  [architecture.coverage-gap]
++
++  ERROR
++    Change declaration order if this layer should take those classes before the named earlier layers. Otherwise remove the empty layer or declare "pending: true" when its code has not been written yet.  [architecture.unreachable-layer]
++
++  ERROR
++    Remove "pending: true" from layer "future". The code it was reserved for exists, so architecture.unreachable-layer is the safety net that flag is now suppressing.  [architecture.pending-layer-matched]
++
++  ERROR
++    If layer "future" should own these classes, declare it BEFORE "controller" (declaration order, first match wins). Otherwise tighten the patterns so the layers no longer overlap.  [architecture.potential-shadow]
++
++  ERROR
++    Verify the template patterns against the project structure, or remove the template if no longer relevant.  [architecture.empty-template]
++
++  WARN
++    Correct the type spelling, install the dependency that declares it, or remove the stale criterion.  [architecture.unmatched-type]
++
++  WARN
++    Check the exclude criteria against the classes layer "controller" actually holds — "qmx debug:layer-assignment <class>" shows what a given class matched. Correct the criteria, or drop the "exclude" clause if the classes it was written for are gone.  [architecture.unmatched-exclude]
++
++  INFO
++    If "extra-by-suffix" should own these classes, declare it before "extra-broad"; otherwise keep this precedence or narrow its criteria.  [architecture.layer-overlap]
++
++  INFO
++    For an analysed class, "qmx debug:layer-assignment <class>" names the unanswered layer and where its inheritance chain stops; the source may be unavailable in the project runtime or dependencies, or outside the analysed paths. Include an available declaration to settle the chain. For a symbol outside the analysed paths, what settles it depends on whose code it is: your own code is settled by analysing it — widening paths to include it, or running over the whole project rather than part of it; a dependency's class by a patterns layer for its namespace declared before the layer that could not answer. If the criterion names a runtime or dependency type, check whether that type is available; otherwise include its source in the analysed paths.  [architecture.doubted-assignment]
++
++src/AnonMember/ExtendsHost.php (1 violation)
++  WARN  ExtendsHost
++    Layer "anon-member" is not allowed to depend on any other declared layer.
++Dep data: {"fromLayer":"anon-member","toLayer":"repository","source":"Corpus\\Layers\\AnonMember\\ExtendsHost","target":"Corpus\\Layers\\Repository\\UserRepository","type":"property_type"}  [architecture.layer-violation]
++
++src/Controller/UserController.php (1 violation)
++  WARN  UserController
++    Layer "controller" is not allowed to depend on any other declared layer.
++Dep data: {"fromLayer":"controller","toLayer":"repository","source":"Corpus\\Layers\\Controller\\UserController","target":"Corpus\\Layers\\Repository\\UserRepository","type":"property_type"}  [architecture.layer-violation]
++
++Technical debt by rule:
++  architecture.layer-violation             ~30min    (2 violations)
++  architecture.layer-overlap               ~15min    (1 violation)
++  architecture.unmatched-type              ~15min    (1 violation)
++  architecture.unmatched-exclude           ~15min    (1 violation)
++  architecture.doubted-assignment          ~15min    (1 violation)
++  architecture.unassigned-class            ~15min    (1 violation)
++  architecture.coverage-gap                ~15min    (1 violation)
++  architecture.unreachable-layer           ~15min    (1 violation)
++  architecture.pending-layer-matched       ~15min    (1 violation)
++  architecture.potential-shadow            ~15min    (1 violation)
++  architecture.empty-template              ~15min    (1 violation)
++
++Qualimetrix dev-main: 6 error(s), 4 warning(s), 2 info in 13 file(s)
++Analysis complete: 13 analyzed, 0 generated file(s) excluded.
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-stderr 82
++Warning: --format=text-verbose is deprecated. Use --format=text --detail instead.
++
++invocation-exit 1
++2

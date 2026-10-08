@@ -1,0 +1,18 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 693
++visible 745
+@@ -11,2 +11,2 @@
+-         architecture.circular-dependency: Circular dependency (3 classes): A → B → C → A
+-         Recommendation: Cycle path: A → B → C → A (3 classes). Break by introducing an interface to invert one dependency.
++         architecture.circular-dependency: Cycle path: A → B → C → A (3 classes). Break by introducing an interface to invert one dependency.
++Cycle data: {"cycle":["Corpus\\Cycle\\A","Corpus\\Cycle\\B","Corpus\\Cycle\\C","Corpus\\Cycle\\A"],"length":3,"category":"small"}
+@@ -18,1 +18,1 @@
+-invocation-format:summary 693
++invocation-format:summary 745
+@@ -28,2 +28,2 @@
+-         architecture.circular-dependency: Circular dependency (3 classes): A → B → C → A
+-         Recommendation: Cycle path: A → B → C → A (3 classes). Break by introducing an interface to invert one dependency.
++         architecture.circular-dependency: Cycle path: A → B → C → A (3 classes). Break by introducing an interface to invert one dependency.
++Cycle data: {"cycle":["Corpus\\Cycle\\A","Corpus\\Cycle\\B","Corpus\\Cycle\\C","Corpus\\Cycle\\A"],"length":3,"category":"small"}

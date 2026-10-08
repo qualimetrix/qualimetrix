@@ -1,43 +1,5 @@
 --- candidate
 +++ reference (mapped)
-@@ -14,5 +14,5 @@
--        "errorCount": 1,
--        "warningCount": 9,
--        "infoCount": 0,
--        "techDebtMinutes": 497,
--        "debtPer1kLoc": 7000
-+        "errorCount": 0,
-+        "warningCount": 10,
-+        "infoCount": 0,
-+        "techDebtMinutes": 403,
-+        "debtPer1kLoc": 5676.1
-@@ -43,1 +43,0 @@
--        
-@@ -57,1 +56,1 @@
--            "recommendation": "Top dependencies: foo, FOO. CBO: 3 (threshold: 1) — reduce both inbound and outbound coupling",
-+            "recommendation": "Top dependencies: foo, FOO. CBO: 3 (threshold: 1) \u2014 reduce both inbound and outbound coupling",
-@@ -65,1 +64,0 @@
--        
-@@ -79,1 +77,1 @@
--            "recommendation": "Top dependencies: base. CBO: 2 (threshold: 1) — reduce both inbound and outbound coupling",
-+            "recommendation": "Top dependencies: base. CBO: 2 (threshold: 1) \u2014 reduce both inbound and outbound coupling",
-@@ -100,1 +98,1 @@
--            "recommendation": "Top dependencies: B, b. CBO: 2 (threshold: 1) — extract dependencies to reduce outbound coupling",
-+            "recommendation": "Top dependencies: B, b. CBO: 2 (threshold: 1) \u2014 extract dependencies to reduce outbound coupling",
-@@ -121,1 +119,1 @@
--            "recommendation": "Top dependencies: fOO. CBO: 1 (threshold: 1) — extract dependencies to reduce outbound coupling",
-+            "recommendation": "Top dependencies: fOO. CBO: 1 (threshold: 1) \u2014 extract dependencies to reduce outbound coupling",
-@@ -129,0 +127,1 @@
-+        
-@@ -163,1 +162,1 @@
--            "recommendation": "DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy",
-+            "recommendation": "DIT: 1 (threshold: 1) \u2014 deep inheritance, fragile hierarchy",
-@@ -205,1 +204,1 @@
--            "recommendation": "Classes: 1 (threshold: 1) — too many classes in namespace",
-+            "recommendation": "Classes: 1 (threshold: 1) \u2014 too many classes in namespace",
-@@ -221,3 +220,2 @@
--            "design.dit": 2,
--            "size.class-count": 2,
--            "architecture.circular-dependency": 1
-+            "size.class-count": 3,
-+            "design.dit": 2
+@@ -56,1 +56,1 @@
+-            "recommendation": "Cycle path: B → FOO → B (2 classes). Break by introducing an interface to invert one dependency.\nCycle data: {\"cycle\":[\"Corpus\\\\NameCase\\\\B\",\"Corpus\\\\NameCase\\\\FOO\",\"Corpus\\\\NameCase\\\\B\"],\"length\":2,\"category\":\"small\"}",
++            "recommendation": "Cycle path: B \u2192 FOO \u2192 B (2 classes). Break by introducing an interface to invert one dependency.\nCycle data: {\"cycle\":[\"Corpus\\\\NameCase\\\\B\",\"Corpus\\\\NameCase\\\\FOO\",\"Corpus\\\\NameCase\\\\B\"],\"length\":2,\"category\":\"small\"}",

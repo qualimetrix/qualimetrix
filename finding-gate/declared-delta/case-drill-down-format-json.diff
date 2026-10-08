@@ -1,0 +1,58 @@
+--- candidate
++++ reference (mapped)
+@@ -13,28 +13,12 @@
+-        "violationCount": 10,
+-        "errorCount": 2,
+-        "warningCount": 8,
+-        "infoCount": 0,
+-        "techDebtMinutes": 150,
+-        "debtPer1kLoc": null
+-    },
+-    "outOfScope": {
+-        "violationCount": 2,
+-        "errorCount": 1,
+-        "warningCount": 1,
+-        "infoCount": 0,
+-        "identities": [
+-            {
+-                "channel": "code-smell.eval",
+-                "subject": "declaration:callable:Other\\Outside::run@src/Outside.php",
+-                "occurrence": "cb4db382fbd60b86",
+-                "edge": null,
+-                "severity": "error"
+-            },
+-            {
+-                "channel": "duplication.clone",
+-                "subject": "file:src/NoDeclarations.php",
+-                "occurrence": "67a5bf2ce9e4b7fa",
+-                "edge": null,
+-                "severity": "warning"
+-            }
+-        ]
++        "violationCount": 1,
++        "errorCount": 1,
++        "warningCount": 0,
++        "infoCount": 0,
++        "techDebtMinutes": 15,
++        "debtPer1kLoc": null
++    },
++    "outOfScope": {
++        "violationCount": 11,
++        "errorCount": 2,
++        "warningCount": 9,
++        "infoCount": 0
+@@ -64,1 +48,0 @@
+-        
+@@ -88,7 +71,5 @@
+-        "total": 10,
+-        "shown": 10,
+-        "limit": 200,
+-        "truncated": false,
+-        "byRule": {
+-            "duplication.clone": 8,
+-            "annotation.unresolved-directive": 1,
++        "total": 1,
++        "shown": 1,
++        "limit": 200,
++        "truncated": false,
++        "byRule": {

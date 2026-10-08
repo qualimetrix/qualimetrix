@@ -1,0 +1,106 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 3150
++visible 2059
+@@ -11,29 +11,19 @@
+-         security.sql-injection: Potential SQL injection — use parameterized queries instead of direct superglobal interpolation ($_GET) (Queries::byId)
+-         Recommendation: Use parameterized queries or prepared statements.
+-  2. [ERR] 36.0  src/Queries.php:14  [1h]
+-         security.sql-injection: Potential SQL injection — use parameterized queries instead of direct superglobal interpolation ($_POST) (Queries::byName)
+-         Recommendation: Use parameterized queries or prepared statements.
+-  3. [ERR] 36.0  src/Shell.php:9  [1h]
+-         security.command-injection: Potential command injection — use escapeshellarg() before passing user input to shell commands ($_GET) (Shell::listDir)
+-         Recommendation: Use escapeshellarg() for arguments or avoid shell commands entirely.
+-  4. [ERR] 27.0  src/Output.php:9  [45min]
+-         security.xss: Potential XSS — use htmlspecialchars() or equivalent before outputting user input ($_GET) (Output::greet)
+-         Recommendation: Escape output with htmlspecialchars() or use a template engine with auto-escaping.
+-  5. [ERR] 18.0  src/Credentials.php:7  [30min]
+-         security.hardcoded-credentials: Hardcoded credential in property default — use environment variables or a secrets manager
+-         Recommendation: Move secrets to environment variables or a secrets manager.
+-  6. [ERR] 18.0  src/Credentials.php:10  [30min]
+-         security.hardcoded-credentials: Hardcoded credential in class constant — use environment variables or a secrets manager
+-         Recommendation: Move secrets to environment variables or a secrets manager.
+-  7. [WRN] 3.00  src/Output.php:9  [15min]
+-         code-smell.superglobals: Direct superglobal access detected - use dependency injection (Output::greet)
+-         Recommendation: Use dependency injection or a request object instead of direct superglobal access.
+-  8. [WRN] 3.00  src/Queries.php:9  [15min]
+-         code-smell.superglobals: Direct superglobal access detected - use dependency injection (Queries::byId)
+-         Recommendation: Use dependency injection or a request object instead of direct superglobal access.
+-  9. [WRN] 3.00  src/Queries.php:14  [15min]
+-         code-smell.superglobals: Direct superglobal access detected - use dependency injection (Queries::byName)
+-         Recommendation: Use dependency injection or a request object instead of direct superglobal access.
+-  10. [WRN] 3.00  src/Queries.php:18  [15min]
+-          code-smell.superglobals: Direct superglobal access detected - use dependency injection
+-          Recommendation: Use dependency injection or a request object instead of direct superglobal access.
++         security.sql-injection: Use parameterized queries or prepared statements. (Queries::byId)
++  2. [ERR] 36.0  src/Queries.php:14  [1h]
++         security.sql-injection: Use parameterized queries or prepared statements. (Queries::byName)
++  3. [ERR] 36.0  src/Shell.php:9  [1h]
++         security.command-injection: Use escapeshellarg() for arguments or avoid shell commands entirely. (Shell::listDir)
++  4. [ERR] 27.0  src/Output.php:9  [45min]
++         security.xss: Escape output with htmlspecialchars() or use a template engine with auto-escaping. (Output::greet)
++  5. [ERR] 18.0  src/Credentials.php:7  [30min]
++         security.hardcoded-credentials: Move secrets to environment variables or a secrets manager.
++  6. [ERR] 18.0  src/Credentials.php:10  [30min]
++         security.hardcoded-credentials: Move secrets to environment variables or a secrets manager.
++  7. [WRN] 3.00  src/Output.php:9  [15min]
++         code-smell.superglobals: Use dependency injection or a request object instead of direct superglobal access. (Output::greet)
++  8. [WRN] 3.00  src/Queries.php:9  [15min]
++         code-smell.superglobals: Use dependency injection or a request object instead of direct superglobal access. (Queries::byId)
++  9. [WRN] 3.00  src/Queries.php:14  [15min]
++         code-smell.superglobals: Use dependency injection or a request object instead of direct superglobal access. (Queries::byName)
++  10. [WRN] 3.00  src/Queries.php:18  [15min]
++          code-smell.superglobals: Use dependency injection or a request object instead of direct superglobal access.
+@@ -45,1 +35,1 @@
+-invocation-format:summary 3150
++invocation-format:summary 2059
+@@ -55,29 +45,19 @@
+-         security.sql-injection: Potential SQL injection — use parameterized queries instead of direct superglobal interpolation ($_GET) (Queries::byId)
+-         Recommendation: Use parameterized queries or prepared statements.
+-  2. [ERR] 36.0  src/Queries.php:14  [1h]
+-         security.sql-injection: Potential SQL injection — use parameterized queries instead of direct superglobal interpolation ($_POST) (Queries::byName)
+-         Recommendation: Use parameterized queries or prepared statements.
+-  3. [ERR] 36.0  src/Shell.php:9  [1h]
+-         security.command-injection: Potential command injection — use escapeshellarg() before passing user input to shell commands ($_GET) (Shell::listDir)
+-         Recommendation: Use escapeshellarg() for arguments or avoid shell commands entirely.
+-  4. [ERR] 27.0  src/Output.php:9  [45min]
+-         security.xss: Potential XSS — use htmlspecialchars() or equivalent before outputting user input ($_GET) (Output::greet)
+-         Recommendation: Escape output with htmlspecialchars() or use a template engine with auto-escaping.
+-  5. [ERR] 18.0  src/Credentials.php:7  [30min]
+-         security.hardcoded-credentials: Hardcoded credential in property default — use environment variables or a secrets manager
+-         Recommendation: Move secrets to environment variables or a secrets manager.
+-  6. [ERR] 18.0  src/Credentials.php:10  [30min]
+-         security.hardcoded-credentials: Hardcoded credential in class constant — use environment variables or a secrets manager
+-         Recommendation: Move secrets to environment variables or a secrets manager.
+-  7. [WRN] 3.00  src/Output.php:9  [15min]
+-         code-smell.superglobals: Direct superglobal access detected - use dependency injection (Output::greet)
+-         Recommendation: Use dependency injection or a request object instead of direct superglobal access.
+-  8. [WRN] 3.00  src/Queries.php:9  [15min]
+-         code-smell.superglobals: Direct superglobal access detected - use dependency injection (Queries::byId)
+-         Recommendation: Use dependency injection or a request object instead of direct superglobal access.
+-  9. [WRN] 3.00  src/Queries.php:14  [15min]
+-         code-smell.superglobals: Direct superglobal access detected - use dependency injection (Queries::byName)
+-         Recommendation: Use dependency injection or a request object instead of direct superglobal access.
+-  10. [WRN] 3.00  src/Queries.php:18  [15min]
+-          code-smell.superglobals: Direct superglobal access detected - use dependency injection
+-          Recommendation: Use dependency injection or a request object instead of direct superglobal access.
++         security.sql-injection: Use parameterized queries or prepared statements. (Queries::byId)
++  2. [ERR] 36.0  src/Queries.php:14  [1h]
++         security.sql-injection: Use parameterized queries or prepared statements. (Queries::byName)
++  3. [ERR] 36.0  src/Shell.php:9  [1h]
++         security.command-injection: Use escapeshellarg() for arguments or avoid shell commands entirely. (Shell::listDir)
++  4. [ERR] 27.0  src/Output.php:9  [45min]
++         security.xss: Escape output with htmlspecialchars() or use a template engine with auto-escaping. (Output::greet)
++  5. [ERR] 18.0  src/Credentials.php:7  [30min]
++         security.hardcoded-credentials: Move secrets to environment variables or a secrets manager.
++  6. [ERR] 18.0  src/Credentials.php:10  [30min]
++         security.hardcoded-credentials: Move secrets to environment variables or a secrets manager.
++  7. [WRN] 3.00  src/Output.php:9  [15min]
++         code-smell.superglobals: Use dependency injection or a request object instead of direct superglobal access. (Output::greet)
++  8. [WRN] 3.00  src/Queries.php:9  [15min]
++         code-smell.superglobals: Use dependency injection or a request object instead of direct superglobal access. (Queries::byId)
++  9. [WRN] 3.00  src/Queries.php:14  [15min]
++         code-smell.superglobals: Use dependency injection or a request object instead of direct superglobal access. (Queries::byName)
++  10. [WRN] 3.00  src/Queries.php:18  [15min]
++          code-smell.superglobals: Use dependency injection or a request object instead of direct superglobal access.

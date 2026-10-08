@@ -1,0 +1,59 @@
+--- candidate
++++ reference (mapped)
+@@ -1,11 +1,45 @@
+-visible 0
+-
+-invocation-format:text-verbose 0
+-
+-invocation-stderr 258
+-Configuration error: Output format "text-verbose" is not one of: checkstyle, github, gitlab, health, html, json, metrics, sarif, summary, suppressed, text.
+-Source: option --format.
+-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
+-
+-invocation-exit 1
+-3
++visible 1100
++[project] (3 violations)
++  WARN
++    Check "subtree:src/NoSuchDir" against the tree. The "subtree" selector also includes descendants across "/" boundaries. Drop the entry if the code it names is gone, or correct its spelling.  [suppression.unmatched-path]
++
++  WARN
++    Check "subtree:Corpus\Suppression\Gone" against the code. The "subtree" selector also includes descendants across "\" boundaries. Drop the entry if the namespace is gone, or correct its spelling.  [suppression.unmatched-namespace]
++
++  WARN
++    Check "subtree:src/AlsoGone" under rules.complexity.ccn.suppress_paths against the tree, and drop it if what it names is gone.  [suppression.unmatched-rule-ledger]
++
++Technical debt by rule:
++  suppression.unmatched-path               ~10min    (1 violation)
++  suppression.unmatched-namespace          ~10min    (1 violation)
++  suppression.unmatched-rule-ledger        ~10min    (1 violation)
++
++Qualimetrix dev-main: 0 error(s), 3 warning(s) in 1 file(s)
++Analysis complete: 1 analyzed, 0 generated file(s) excluded.
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-format:text-verbose 1100
++[project] (3 violations)
++  WARN
++    Check "subtree:src/NoSuchDir" against the tree. The "subtree" selector also includes descendants across "/" boundaries. Drop the entry if the code it names is gone, or correct its spelling.  [suppression.unmatched-path]
++
++  WARN
++    Check "subtree:Corpus\Suppression\Gone" against the code. The "subtree" selector also includes descendants across "\" boundaries. Drop the entry if the namespace is gone, or correct its spelling.  [suppression.unmatched-namespace]
++
++  WARN
++    Check "subtree:src/AlsoGone" under rules.complexity.ccn.suppress_paths against the tree, and drop it if what it names is gone.  [suppression.unmatched-rule-ledger]
++
++Technical debt by rule:
++  suppression.unmatched-path               ~10min    (1 violation)
++  suppression.unmatched-namespace          ~10min    (1 violation)
++  suppression.unmatched-rule-ledger        ~10min    (1 violation)
++
++Qualimetrix dev-main: 0 error(s), 3 warning(s) in 1 file(s)
++Analysis complete: 1 analyzed, 0 generated file(s) excluded.
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-stderr 82
++Warning: --format=text-verbose is deprecated. Use --format=text --detail instead.
++
++invocation-exit 1
++0
