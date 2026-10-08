@@ -208,23 +208,14 @@ final class HarnessSelfTest
                 require getcwd() . '/scripts/finding-gate/classes.php';
                 require getcwd() . '/scripts/finding-gate-controls/classes.php';
                 $controls = \QmxFindingGateControls\Controls::all();
-                $map = null;
                 $restoration = null;
                 foreach ($controls as $control) {
-                    if ($control->id === 'fingerprint-declared-rename') {
-                        foreach ((new ReflectionProperty(\QmxFindingGateControls\Mutation::class, 'actions'))->getValue($control->mutation) as $action) {
-                            if ($action['path'] === 'finding-gate/maps/channels.tsv') {
-                                $map = $action['contents'];
-                            }
-                        }
-                    }
                     if ($control->id === 'derive-writes-green-run') {
                         $restoration = [$control->restoredAfterRun, $control->restoredContent];
                     }
                 }
                 echo json_encode([
                     'ids' => array_map(static fn($control): string => $control->id, $controls),
-                    'map' => $map,
                     'restoration' => $restoration,
                 ], JSON_THROW_ON_ERROR);
                 PHP;
@@ -233,15 +224,9 @@ final class HarnessSelfTest
             if ($factory['exit'] === 0) {
                 $metadata = json_decode($factory['stdout'], true, 512, \JSON_THROW_ON_ERROR);
                 $ids = $metadata['ids'];
-                $this->same(30, \count($ids), 'the prepared tree retains all 30 controls');
+                $this->same(28, \count($ids), 'the prepared tree retains all 28 controls');
                 $this->same('positive', $ids[0] ?? null, 'the first control keeps its place');
-                $this->same('report-value-no-row', $ids[20] ?? null, 'the fixed factories keep their order');
-                $this->same(
-                    Tsv::render(['old', 'new', 'reason'], [])
-                        . "code-smell.unused-private\tcode-smell.unused-privat2\tthe control renames the channel's code\n",
-                    $metadata['map'],
-                    'the own map carries one control row and no inherited transition',
-                );
+                $this->same('report-value-no-row', $ids[18] ?? null, 'the fixed factories keep their order');
                 $this->same(
                     ['finding-gate/declared-delta.tsv', 'finding-gate/declared-delta'],
                     $metadata['restoration'][0],
@@ -255,14 +240,10 @@ final class HarnessSelfTest
             }
 
             $unused = ChannelRenamePlants::unusedPrivateRenameDeclarations();
-            $sensitive = (new ReflectionMethod(FingerprintControls::class, 'sensitiveParameterRenameDeclarations'))->invoke(null);
             $claims = [
                 ['smells', 'code-smell.unused-private@class', 'code-smell.unused-privat2@class', $unused],
                 ['detectors-smells', 'code-smell.unused-private@class', 'code-smell.unused-privat2@class', $unused],
                 ['detectors', 'code-smell.unused-private@class', 'code-smell.unused-privat2@class', $unused],
-                ['security', 'security.sensitive-parameter@callable', 'security.sensitive-paramete2@callable', $sensitive],
-                ['detectors-security', 'security.sensitive-parameter@callable', 'security.sensitive-paramete2@callable', $sensitive],
-                ['detectors', 'security.sensitive-parameter@callable', 'security.sensitive-paramete2@callable', $sensitive],
             ];
             foreach ($claims as [$case, $oldClaim, $newClaim, $mutation]) {
                 $relative = 'finding-gate/cases/' . $case . '/case.json';
