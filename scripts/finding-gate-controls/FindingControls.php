@@ -106,9 +106,9 @@ final class FindingControls
      * The magnitude is published, not only recorded, so the `smells` case's
      * finding surfaces carry it as well as its baseline file. The step also
      * declares exact baseline surfaces for other cases carrying this finding.
-     * Those declaration comparisons are accounted for separately. The one
-     * ordinary toleration stays pinned to the `smells` case; any other case
-     * would mean this mutation reached further than it claims.
+     * Those declaration comparisons are accounted for separately. The
+     * detectors cases also publish the affected channel; their measured record,
+     * value, and surface effects are pinned below.
      *
      * Rejected alternative, measured 2026-08-23: perturbing the Maintainability
      * Index coefficient (5.2 -> 5.3) did move the ceiling, but it also *added*
@@ -125,7 +125,18 @@ final class FindingControls
             self::ceilingMutation(),
             [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells|baseline-file'),
                 new Expectation(FailureClass::RECORD_UNDECLARED, 'case:smells|format:json', exactScope: true)],
-            [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells')],
+            [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells'),
+                new Expectation(FailureClass::VALUE_MISMATCH, 'case:detectors|format:json|record:'),
+                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:detectors|format:json', exactScope: true),
+                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:detectors-smells|format:json', exactScope: true),
+                new Expectation(FailureClass::FIELD_VALUES_MISMATCH, 'declared-fields.derived.tsv', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:detectors-smells|baseline-file', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:detectors-smells|check:output:file', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:detectors-smells|explain:declaration:class:Corpus\\Smells\\Injection@src/Injection.php', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:detectors-smells|format:json', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:detectors|baseline-file', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:detectors|check:output:file', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:detectors|format:json', exactScope: true)],
         );
     }
 
@@ -144,7 +155,8 @@ final class FindingControls
             self::droppedFindingMutation(),
             [new Expectation(FailureClass::FINDING_COUNT_MISMATCH, 'case:design'),
                 new Expectation(FailureClass::RECORD_UNDECLARED, 'case:design|format:json', exactScope: true)],
-            [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:design')],
+            [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:design'),
+                new Expectation(FailureClass::FIELD_VALUES_MISMATCH, 'declared-fields.derived.tsv', exactScope: true)],
         );
     }
 

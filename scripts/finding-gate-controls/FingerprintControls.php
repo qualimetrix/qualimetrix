@@ -43,6 +43,22 @@ final class FingerprintControls
             ],
             [
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells'),
+                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:detectors|format:json', exactScope: true),
+                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:detectors-smells|format:json', exactScope: true),
+                new Expectation(FailureClass::FIELD_VALUES_MISMATCH, 'declared-fields.derived.tsv', exactScope: true),
+                ...array_map(static fn(string $scope): Expectation => new Expectation(FailureClass::SURFACE_MISMATCH, $scope, exactScope: true), [
+                    'case:detectors-smells|baseline-file', 'case:detectors-smells|check:output:file',
+                    'case:detectors-smells|explain:declaration:class:Corpus\\Smells\\Injection@src/Injection.php',
+                    'case:detectors-smells|format:checkstyle', 'case:detectors-smells|format:github',
+                    'case:detectors-smells|format:gitlab', 'case:detectors-smells|format:json',
+                    'case:detectors-smells|format:sarif', 'case:detectors-smells|format:text',
+                    'case:detectors-smells|show-suppressed',
+                    'case:detectors|baseline-file', 'case:detectors|check:output:file',
+                    'case:detectors|format:checkstyle', 'case:detectors|format:github',
+                    'case:detectors|format:gitlab', 'case:detectors|format:json',
+                    'case:detectors|format:sarif', 'case:detectors|format:text',
+                    'case:detectors|show-suppressed',
+                ]),
                 ...ChannelRenamePlants::unusedPrivateClaimFailures(),
                 new Expectation(
                     FailureClass::WITNESS_DISAGREEMENT,

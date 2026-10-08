@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace QmxFindingGateControls;
 
+use QmxFindingGate\DeclaredFields;
 use QmxFindingGate\DeclaredRecords;
 use QmxFindingGate\GateReport;
 use QmxFindingGate\Tsv;
@@ -164,6 +165,25 @@ final class HarnessSelfTest
             $this->same(true, $hasPermissions->invoke($harness), 'the inherited transition is present before preparation');
             $sourcePath = 'src/Reporting/Formatter/FindingRecord.php';
             $originalSource = Shell::read($repository . '/' . $sourcePath);
+            $fieldIndex = 'finding-gate/' . DeclaredFields::INDEX;
+            $fieldDerived = 'finding-gate/' . DeclaredFields::DERIVED;
+            $originalFieldIndex = Shell::read($repository . '/' . $fieldIndex);
+            $originalFieldDerived = Shell::read($repository . '/' . $fieldDerived);
+            $intentRows = Tsv::rows($repository . '/' . $fieldIndex, DeclaredFields::COLUMNS);
+            $derivedRows = Tsv::rows($repository . '/' . $fieldDerived, DeclaredFields::DERIVED_COLUMNS);
+            $retainedIntents = array_values(array_filter(
+                $intentRows,
+                static fn(array $row): bool => $row['report'] !== 'json' || $row['view'] !== 'ranking',
+            ));
+            $retainedDerived = array_values(array_filter(
+                $derivedRows,
+                static fn(array $row): bool => $row['report'] !== 'json' || $row['view'] !== 'ranking',
+            ));
+            $this->same(
+                \count($retainedIntents) < \count($intentRows),
+                \count($retainedDerived) < \count($derivedRows),
+                'ranking field intentions and measurements are paired, including an empty pair',
+            );
             $originalTuple = \QmxFindingGate\EquivalenceTuple::derive($repository);
             $this->same(19, \count($originalTuple->fields), 'the existing finding record publishes nineteen fields');
             TupleControls::publisherDrift()->mutation->apply($scratch, $repository);
@@ -171,6 +191,23 @@ final class HarnessSelfTest
             $this->same([...$originalTuple->fields, 'probe'], $mutatedTuple->fields, 'the shared added-member mutation reaches the actual finding record');
             $this->same([...$originalTuple->sources, \QmxFindingGate\EquivalenceTuple::source()], $mutatedTuple->sources, 'the added member retains the finding record producer');
             $this->same($originalSource, Shell::read($repository . '/' . $sourcePath), 'the shared mutation leaves the original publisher intact');
+            $this->same(
+                Tsv::render(DeclaredFields::COLUMNS, array_map(static fn(array $row): array => array_values($row), $retainedIntents)),
+                Shell::read($scratch->path($fieldIndex)),
+                'the private tuple plant removes only unavailable ranking field intentions',
+            );
+            $this->same(
+                Tsv::render(DeclaredFields::DERIVED_COLUMNS, array_map(static fn(array $row): array => array_values($row), $retainedDerived)),
+                Shell::read($scratch->path($fieldDerived)),
+                'the private tuple plant removes only unavailable ranking field measurements',
+            );
+            $this->same(
+                [],
+                DeclaredFields::load($scratch->path('finding-gate'))->changes('json', 'ranking'),
+                'the private tuple plant leaves no unmeasurable ranking field obligations',
+            );
+            $this->same($originalFieldIndex, Shell::read($repository . '/' . $fieldIndex), 'the original field intentions retain their bytes');
+            $this->same($originalFieldDerived, Shell::read($repository . '/' . $fieldDerived), 'the original field measurements retain their bytes');
 
             $recordIndex = 'finding-gate/' . DeclaredRecords::INDEX;
             $recordDerived = 'finding-gate/' . DeclaredRecords::DERIVED;

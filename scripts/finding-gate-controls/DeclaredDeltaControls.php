@@ -134,7 +134,18 @@ final class DeclaredDeltaControls
             )),
             [new Expectation(FailureClass::DELTA_MISMATCH, 'case:smells|baseline-file'),
                 new Expectation(FailureClass::RECORD_UNDECLARED, 'case:smells|format:json', exactScope: true)],
-            [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells')],
+            [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells'),
+                new Expectation(FailureClass::VALUE_MISMATCH, 'case:detectors|format:json|record:'),
+                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:detectors|format:json', exactScope: true),
+                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:detectors-smells|format:json', exactScope: true),
+                new Expectation(FailureClass::FIELD_VALUES_MISMATCH, 'declared-fields.derived.tsv', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:detectors-smells|baseline-file', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:detectors-smells|check:output:file', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:detectors-smells|explain:declaration:class:Corpus\\Smells\\Injection@src/Injection.php', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:detectors-smells|format:json', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:detectors|baseline-file', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:detectors|check:output:file', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:detectors|format:json', exactScope: true)],
         );
     }
 

@@ -25,6 +25,11 @@ final class CorpusCaseControls
                 FailureClass::RECORD_UNDECLARED => [
                     'case:config-precedence|format:json',
                 ],
+                FailureClass::DELTA_MISMATCH => [
+                    'case:config-precedence|format:html',
+                    'case:config-precedence|format:summary',
+                    'case:config-precedence|format:text-detail',
+                ],
                 FailureClass::SURFACE_MISMATCH => [
                     'case:config-precedence|baseline-file',
                     'case:config-precedence|check:output:file',
@@ -32,16 +37,14 @@ final class CorpusCaseControls
                     'case:config-precedence|format:checkstyle',
                     'case:config-precedence|format:github',
                     'case:config-precedence|format:gitlab',
-                    'case:config-precedence|format:html',
                     'case:config-precedence|format:json',
                     'case:config-precedence|format:metrics',
                     'case:config-precedence|format:sarif',
-                    'case:config-precedence|format:summary',
                     'case:config-precedence|format:text',
-                    'case:config-precedence|format:text-detail',
                     'case:config-precedence|show-suppressed',
                 ],
             ],
+            tolerated: [new Expectation(FailureClass::FIELD_VALUES_MISMATCH, 'declared-fields.derived.tsv', exactScope: true)],
         );
     }
 
@@ -59,6 +62,11 @@ final class CorpusCaseControls
                 FailureClass::RECORD_UNDECLARED => [
                     'case:threshold-raising|format:json',
                 ],
+                FailureClass::DELTA_MISMATCH => [
+                    'case:threshold-raising|format:html',
+                    'case:threshold-raising|format:summary',
+                    'case:threshold-raising|format:text-detail',
+                ],
                 FailureClass::SURFACE_MISMATCH => [
                     'case:threshold-raising|baseline-file',
                     'case:threshold-raising|check:output:file',
@@ -66,19 +74,17 @@ final class CorpusCaseControls
                     'case:threshold-raising|format:checkstyle',
                     'case:threshold-raising|format:github',
                     'case:threshold-raising|format:gitlab',
-                    'case:threshold-raising|format:html',
                     'case:threshold-raising|format:json',
                     'case:threshold-raising|format:metrics',
                     'case:threshold-raising|format:sarif',
-                    'case:threshold-raising|format:summary',
                     'case:threshold-raising|format:text',
-                    'case:threshold-raising|format:text-detail',
                     'case:threshold-raising|show-suppressed',
                 ],
                 FailureClass::VALUE_MISMATCH => [
                     'case:threshold-raising|directives|record:{"file":"src/Design.php","line":5,"form":"threshold","target":"design.god-class"}',
                 ],
             ],
+            tolerated: [new Expectation(FailureClass::FIELD_VALUES_MISMATCH, 'declared-fields.derived.tsv', exactScope: true)],
         );
     }
 
@@ -97,6 +103,11 @@ final class CorpusCaseControls
                     'case:directive-placement|format:json',
                     'case:directive-placement|format:suppressed',
                 ],
+                FailureClass::DELTA_MISMATCH => [
+                    'case:directive-placement|format:html',
+                    'case:directive-placement|format:summary',
+                    'case:directive-placement|format:text-detail',
+                ],
                 FailureClass::SURFACE_MISMATCH => [
                     'case:directive-placement|baseline-file',
                     'case:directive-placement|check:output:file',
@@ -104,14 +115,11 @@ final class CorpusCaseControls
                     'case:directive-placement|format:checkstyle',
                     'case:directive-placement|format:github',
                     'case:directive-placement|format:gitlab',
-                    'case:directive-placement|format:html',
                     'case:directive-placement|format:json',
                     'case:directive-placement|format:metrics',
                     'case:directive-placement|format:sarif',
-                    'case:directive-placement|format:summary',
                     'case:directive-placement|format:suppressed',
                     'case:directive-placement|format:text',
-                    'case:directive-placement|format:text-detail',
                     'case:directive-placement|show-suppressed',
                     'case:directive-placement|stderr:show-suppressed',
                 ],
@@ -120,6 +128,7 @@ final class CorpusCaseControls
                 ],
             ],
             scratchDeclarations: self::withdrawnDirectiveMessageDeclaration(),
+            tolerated: [new Expectation(FailureClass::FIELD_VALUES_MISMATCH, 'declared-fields.derived.tsv', exactScope: true)],
         );
     }
 
@@ -148,24 +157,92 @@ final class CorpusCaseControls
                     'case:stderr-warning|stderr:format:text-detail',
                     'case:stderr-warning|stderr:show-suppressed',
                 ],
+                FailureClass::DELTA_MISMATCH => [
+                    'case:stderr-warning|format:health',
+                    'case:stderr-warning|format:html',
+                    'case:stderr-warning|format:summary',
+                    'case:stderr-warning|format:text-detail',
+                ],
                 FailureClass::SURFACE_MISMATCH => [
                     'case:stderr-warning|stderr:baseline-file',
                     'case:stderr-warning|stderr:directives',
                     'case:stderr-warning|stderr:format:checkstyle',
                     'case:stderr-warning|stderr:format:github',
                     'case:stderr-warning|stderr:format:gitlab',
-                    'case:stderr-warning|stderr:format:health',
-                    'case:stderr-warning|stderr:format:html',
                     'case:stderr-warning|stderr:format:json',
                     'case:stderr-warning|stderr:format:metrics',
                     'case:stderr-warning|stderr:format:sarif',
-                    'case:stderr-warning|stderr:format:summary',
                     'case:stderr-warning|stderr:format:suppressed',
                     'case:stderr-warning|stderr:format:text',
-                    'case:stderr-warning|stderr:format:text-detail',
                     'case:stderr-warning|stderr:show-suppressed',
                 ],
             ]),
+            [
+                ...array_map(static fn(string $scope): Expectation => new Expectation(FailureClass::NONDETERMINISM_UNDECLARED, $scope, exactScope: true), [
+                    'case:detectors|stderr:format:summary',
+                    'case:detectors|stderr:format:text',
+                    'case:detectors|stderr:format:text-detail',
+                    'case:detectors|stderr:format:json',
+                    'case:detectors|stderr:format:checkstyle',
+                    'case:detectors|stderr:format:sarif',
+                    'case:detectors|stderr:format:gitlab',
+                    'case:detectors|stderr:format:github',
+                    'case:detectors|stderr:format:metrics',
+                    'case:detectors|stderr:format:health',
+                    'case:detectors|stderr:format:html',
+                    'case:detectors|stderr:format:suppressed',
+                    'case:detectors|stderr:show-suppressed',
+                    'case:detectors|stderr:directives',
+                    'case:detectors|stderr:graph:export',
+                    'case:detectors|stderr:baseline-file',
+                    'case:name-case|stderr:format:summary',
+                    'case:name-case|stderr:format:text',
+                    'case:name-case|stderr:format:text-detail',
+                    'case:name-case|stderr:format:json',
+                    'case:name-case|stderr:format:checkstyle',
+                    'case:name-case|stderr:format:sarif',
+                    'case:name-case|stderr:format:gitlab',
+                    'case:name-case|stderr:format:github',
+                    'case:name-case|stderr:format:metrics',
+                    'case:name-case|stderr:format:health',
+                    'case:name-case|stderr:format:html',
+                    'case:name-case|stderr:format:suppressed',
+                    'case:name-case|stderr:show-suppressed',
+                    'case:name-case|stderr:directives',
+                    'case:name-case|stderr:graph:export',
+                    'case:name-case|stderr:baseline-file',
+                    'case:name-case|stderr:explain:declaration:class:Corpus\\NameCase\\Foo@src/FooFirst.php',
+                    'case:name-case|stderr:explain:declaration:class:Corpus\\NameCase\\FOO@src/FooSecond.php',
+                ]),
+                ...array_map(static fn(string $scope): Expectation => new Expectation(FailureClass::SURFACE_MISMATCH, $scope, exactScope: true), [
+                    'case:detectors|stderr:baseline-file',
+                    'case:detectors|stderr:directives',
+                    'case:detectors|stderr:format:checkstyle',
+                    'case:detectors|stderr:format:github',
+                    'case:detectors|stderr:format:gitlab',
+                    'case:detectors|stderr:format:json',
+                    'case:detectors|stderr:format:metrics',
+                    'case:detectors|stderr:format:sarif',
+                    'case:detectors|stderr:format:suppressed',
+                    'case:detectors|stderr:format:text',
+                    'case:detectors|stderr:graph:export',
+                    'case:detectors|stderr:show-suppressed',
+                    'case:name-case|stderr:baseline-file',
+                    'case:name-case|stderr:directives',
+                    'case:name-case|stderr:explain:declaration:class:Corpus\\NameCase\\FOO@src/FooSecond.php',
+                    'case:name-case|stderr:explain:declaration:class:Corpus\\NameCase\\Foo@src/FooFirst.php',
+                    'case:name-case|stderr:format:checkstyle',
+                    'case:name-case|stderr:format:github',
+                    'case:name-case|stderr:format:gitlab',
+                    'case:name-case|stderr:format:json',
+                    'case:name-case|stderr:format:metrics',
+                    'case:name-case|stderr:format:sarif',
+                    'case:name-case|stderr:format:suppressed',
+                    'case:name-case|stderr:format:text',
+                    'case:name-case|stderr:graph:export',
+                    'case:name-case|stderr:show-suppressed',
+                ]),
+            ],
         );
     }
 
@@ -241,8 +318,11 @@ final class CorpusCaseControls
         return $expectations;
     }
 
-    /** @param array<string,list<string>> $failures */
-    private static function product(string $case, string $path, string $old, string $replacement, array $failures, ?string $id = null, ?Mutation $scratchDeclarations = null): Control
+    /**
+     * @param array<string,list<string>> $failures
+     * @param list<Expectation> $tolerated
+     */
+    private static function product(string $case, string $path, string $old, string $replacement, array $failures, ?string $id = null, ?Mutation $scratchDeclarations = null, array $tolerated = []): Control
     {
         $mutation = Mutation::edit($path, [$old => $replacement], 'perturb the product behaviour exercised by ' . $case);
 
@@ -251,6 +331,7 @@ final class CorpusCaseControls
             'the product changes only the ' . $case . ' case',
             $scratchDeclarations === null ? $mutation : $mutation->and($scratchDeclarations),
             self::expectations($failures),
+            $tolerated,
         );
     }
 }

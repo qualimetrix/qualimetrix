@@ -15,8 +15,9 @@ use QmxFindingGate\Wiring;
  * splits, aggregate spellings, licensed field moves, derivation failures and
  * undeclared report-value renames. Green controls prove the environment works
  * and that declared renames are absorbed only by their declarations. They also
- * cover root configuration keys, report-value translations and
- * published-order permutations ({@see FindingControls::publishedOrderPermuted()}).
+ * cover root configuration keys and published-order permutations
+ * ({@see FindingControls::publishedOrderPermuted()}). The declared report-value translation remains effective
+ * for JSON record pairs; its whole UTF-8 suppressed publication is a typed RED, not a global GREEN.
  * Each subject's controls live in its own class; this one fixes their order,
  * which is the order of the harness's table.
  *

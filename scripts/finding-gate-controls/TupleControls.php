@@ -7,11 +7,13 @@ namespace QmxFindingGateControls;
 use QmxFindingGate\CaseOutcome;
 use QmxFindingGate\Corpus;
 use QmxFindingGate\Declarations;
+use QmxFindingGate\DeclaredFields;
 use QmxFindingGate\DeclaredValues;
 use QmxFindingGate\EquivalenceTuple;
 use QmxFindingGate\FailureClass;
 use QmxFindingGate\ReportViews;
 use QmxFindingGate\Surfaces;
+use QmxFindingGate\Tsv;
 use RuntimeException;
 
 /** Unannounced published members cannot disappear behind the tracked tuple. */
@@ -22,7 +24,7 @@ final class TupleControls
         return Control::red(
             'tuple-publisher-drift',
             'the JSON publisher adds a member absent from the tracked equivalence tuple',
-            self::addedMember()->and(self::unavailableFindingValueMeasurements()),
+            self::addedMember()->and(self::unavailableFindingValueMeasurements())->and(self::unavailableRankingFieldMeasurements()),
             [new Expectation(FailureClass::TUPLE_FIELD_DRIFT, EquivalenceTuple::TRACKED_PATH),
                 new Expectation(FailureClass::RUN_FAILED, 'candidate-2 / annotations', exactScope: true),
                 ...self::recordExpectations('candidate')],
@@ -39,7 +41,7 @@ final class TupleControls
                 EquivalenceTuple::TRACKED_PATH,
                 'probe' . "\t" . EquivalenceTuple::source() . "\n",
                 'the tracked candidate tuple includes the unannounced member',
-            ))->and(self::unavailableFindingValueMeasurements()),
+            ))->and(self::unavailableFindingValueMeasurements())->and(self::unavailableRankingFieldMeasurements()),
             self::recordExpectations('reference'),
         );
     }
@@ -109,6 +111,42 @@ final class TupleControls
             ));
     }
 
+    /** The broken publication cannot supply the declared ranking field measurements. */
+    private static function unavailableRankingFieldMeasurements(): Mutation
+    {
+        $root = \dirname(__DIR__, 2) . '/finding-gate';
+        $fields = DeclaredFields::load($root);
+        $changes = $fields->changes('json', 'ranking');
+        $intents = Tsv::rows($root . '/' . DeclaredFields::INDEX, DeclaredFields::COLUMNS);
+        $derived = Tsv::rows($root . '/' . DeclaredFields::DERIVED, DeclaredFields::DERIVED_COLUMNS);
+        $retainedIntents = array_values(array_filter($intents, static fn(array $row): bool =>
+            $row['report'] !== 'json' || $row['view'] !== 'ranking' || !isset($changes[$row['field']])));
+        $retainedDerived = array_values(array_filter($derived, static fn(array $row): bool =>
+            $row['report'] !== 'json' || $row['view'] !== 'ranking'));
+
+        if ($retainedIntents === $intents && $retainedDerived === $derived) {
+            return Mutation::none();
+        }
+
+        $mutation = $retainedIntents === $intents ? Mutation::none()
+            : Mutation::replace(
+                ['finding-gate/' . DeclaredFields::INDEX => Tsv::render(
+                    DeclaredFields::COLUMNS,
+                    array_map(static fn(array $row): array => array_values($row), $retainedIntents),
+                )],
+                'the broken publication cannot measure ranking field intentions in this private tree',
+            );
+
+        return $retainedDerived === $derived ? $mutation
+            : $mutation->and(Mutation::replace(
+                ['finding-gate/' . DeclaredFields::DERIVED => Tsv::render(
+                    DeclaredFields::DERIVED_COLUMNS,
+                    array_map(static fn(array $row): array => array_values($row), $retainedDerived),
+                )],
+                'the unavailable ranking field measurements leave the private tree',
+            ));
+    }
+
     /** @return list<Expectation> */
     private static function invalidCaptureBaselineFailures(): array
     {
@@ -136,7 +174,8 @@ final class TupleControls
     {
         $required = [];
         foreach (Corpus::load(\dirname(__DIR__, 2))->cases as $case) {
-            if ($case->channels === [] || !CaseOutcome::applies(CaseOutcome::CHECK_TUPLE, CaseOutcome::of($case, $side))) {
+            if ($case->channels === [] || ($side === 'reference' && $case->id === 'utf8-identifier')
+                || !CaseOutcome::applies(CaseOutcome::CHECK_TUPLE, CaseOutcome::of($case, $side))) {
                 continue;
             }
             $required[] = new Expectation(FailureClass::FINDING_TUPLE_MISMATCH, $side . ' / ' . $case->id . ' / finding');
