@@ -1286,7 +1286,6 @@ final class RankingCheckTest extends TestCase
         $gitlab = [];
         $checkstyle = '<checkstyle>';
         $prose = '';
-        $suppressedProse = '';
         $github = '';
         foreach ($records as $index => $record) {
             $gitlab[] = ReportRecords::projection('format:gitlab', $record, 'current') + ['fingerprint' => md5($fingerprints[$index])];
@@ -1294,7 +1293,6 @@ final class RankingCheckTest extends TestCase
             $checkstyle .= '<file name="' . htmlspecialchars($projection['file'], \ENT_XML1) . '"><error line="' . $projection['line'] . '" severity="' . $projection['severity'] . '" source="' . $projection['code'] . '" message="' . htmlspecialchars($projection['message'], \ENT_XML1) . '"/></file>';
             $file = $record['file'] ?? '[project]';
             $brief = $record['symbol'] === '' ? '' : substr($record['symbol'], (int) strrpos('\\' . $record['symbol'], '\\'));
-            $suppressedProse .= $file . " (1 violation)\n  ERROR" . ($record['line'] === null ? '' : ' at line ' . $record['line']) . ($brief === '' ? '' : '  ' . $brief) . "\n    " . ReportRecords::message($record, true) . '  [' . $record['code'] . "]\n\n";
             $prose .= $file . " (1 violation)\n  ERROR" . ($record['line'] === null ? '' : ' at line ' . $record['line']) . ($brief === '' ? '' : '  ' . $brief) . "\n    " . $record['message'] . '  [' . $record['code'] . "]\n";
             $prose .= $record['recommendation'] === null ? '' : '    Recommendation: ' . $record['recommendation'] . "\n";
             $baseline = ReportRecords::baselineText($record);
@@ -1307,7 +1305,7 @@ final class RankingCheckTest extends TestCase
         foreach (['format:text', 'format:text-detail'] as $surface) {
             $tree['answers']['case:alpha|' . $surface] = ['stdout' => $prose];
         }
-        $tree['answers']['case:alpha|show-suppressed'] = ['stdout' => $suppressedProse];
+        $tree['answers']['case:alpha|show-suppressed'] = ['stdout' => $prose];
         $tree['answers']['case:alpha|format:github'] = ['stdout' => $github];
     }
 
