@@ -1,0 +1,17 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 9915
++visible 9867
+@@ -236,6 +236,5 @@
+-            "file": "src/Child.php",
+-            "metrics": {
+-                "size.method-count": 0,
+-                "size.property-count": 0,
+-                "coupling.cbo": 1,
+-                "complexity.wmc": 0
++            "file": null,
++            "metrics": {
++                "size.method-count": 0,
++                "size.property-count": 0,
++                "coupling.cbo": 1

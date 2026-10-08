@@ -1,0 +1,22 @@
+--- candidate
++++ reference (mapped)
+@@ -1,4 +1,3 @@
+-visible 1489
+-[project]: error[architecture.circular-dependency]: Circular dependency (2 classes): B → FOO → B
+-Corpus\NameCase: warning[size.class-count]: Class count is 6, exceeds threshold of 1. Consider splitting into sub-namespaces (namespace: Corpus\NameCase)
+-Corpus\NameCase\Web: warning[size.class-count]: Class count is 2, exceeds threshold of 1. Consider splitting into sub-namespaces (namespace: Corpus\NameCase\Web)
++visible 1480
++[project]: error[architecture.circular-dependency]: Circular dependency (2 classes): B → FOO → B
++src/B.php: warning[size.class-count]: Class count is 6, exceeds threshold of 1. Consider splitting into sub-namespaces (namespace: Corpus\NameCase)
+@@ -12,0 +11,1 @@
++src/WebFirst.php: warning[size.class-count]: Class count is 2, exceeds threshold of 1. Consider splitting into sub-namespaces (namespace: Corpus\NameCase\Web)
+@@ -18,4 +18,3 @@
+-invocation-format:text 1489
+-[project]: error[architecture.circular-dependency]: Circular dependency (2 classes): B → FOO → B
+-Corpus\NameCase: warning[size.class-count]: Class count is 6, exceeds threshold of 1. Consider splitting into sub-namespaces (namespace: Corpus\NameCase)
+-Corpus\NameCase\Web: warning[size.class-count]: Class count is 2, exceeds threshold of 1. Consider splitting into sub-namespaces (namespace: Corpus\NameCase\Web)
++invocation-format:text 1480
++[project]: error[architecture.circular-dependency]: Circular dependency (2 classes): B → FOO → B
++src/B.php: warning[size.class-count]: Class count is 6, exceeds threshold of 1. Consider splitting into sub-namespaces (namespace: Corpus\NameCase)
+@@ -29,0 +28,1 @@
++src/WebFirst.php: warning[size.class-count]: Class count is 2, exceeds threshold of 1. Consider splitting into sub-namespaces (namespace: Corpus\NameCase\Web)

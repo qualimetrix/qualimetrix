@@ -1,0 +1,158 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 25135
++visible 26836
+@@ -390,5 +390,19 @@
+-                        "text": "Corpus\\Design\\Anonymous: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "size.class-count:ns:Corpus\\Design\\Anonymous"
+-                    }
++                        "text": "Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "size.class-count:ns:Corpus\\Design\\Anonymous"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/Anonymous/AnonTrait.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 1,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]
+@@ -401,5 +415,19 @@
+-                        "text": "Corpus\\Design\\Hierarchy: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "size.class-count:ns:Corpus\\Design\\Hierarchy"
+-                    }
++                        "text": "Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "size.class-count:ns:Corpus\\Design\\Hierarchy"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/Hierarchy/Base.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 1,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]
+@@ -412,5 +440,19 @@
+-                        "text": "Corpus\\Design\\Model: Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "size.class-count:ns:Corpus\\Design\\Model"
+-                    }
++                        "text": "Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "size.class-count:ns:Corpus\\Design\\Model"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/Model/Order.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 1,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]
+@@ -533,1 +575,1 @@
+-invocation-format:sarif 25135
++invocation-format:sarif 26836
+@@ -922,5 +964,19 @@
+-                        "text": "Corpus\\Design\\Anonymous: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "size.class-count:ns:Corpus\\Design\\Anonymous"
+-                    }
++                        "text": "Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "size.class-count:ns:Corpus\\Design\\Anonymous"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/Anonymous/AnonTrait.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 1,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]
+@@ -933,5 +989,19 @@
+-                        "text": "Corpus\\Design\\Hierarchy: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "size.class-count:ns:Corpus\\Design\\Hierarchy"
+-                    }
++                        "text": "Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "size.class-count:ns:Corpus\\Design\\Hierarchy"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/Hierarchy/Base.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 1,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]
+@@ -944,5 +1014,19 @@
+-                        "text": "Corpus\\Design\\Model: Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "size.class-count:ns:Corpus\\Design\\Model"
+-                    }
++                        "text": "Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "size.class-count:ns:Corpus\\Design\\Model"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/Model/Order.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 1,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]

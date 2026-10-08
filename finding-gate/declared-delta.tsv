@@ -1,17 +1,1 @@
 surface	file	reason
-case:coupling|format:metrics	declared-delta/case-coupling-format-metrics.diff	Retain the native metrics layout after the declared class-like LOC population change.
-case:cycle|check:output:file	declared-delta/case-cycle-check-output-file.diff	Preserve native JSON string spelling after the declared cycle recommendation rewrite.
-case:cycle|format:json	declared-delta/case-cycle-format-json.diff	Preserve native JSON string spelling after the declared cycle recommendation rewrite.
-case:design|format:metrics	declared-delta/case-design-format-metrics.diff	Retain the native metrics layout after the declared class-like LOC population change.
-case:drill-down|check:baseline	declared-delta/case-drill-down-check-baseline.diff	Publish selected physical-file findings and complete out-of-scope identities and counts in this own native JSON view after its declared introduction.
-case:drill-down|check:output:file	declared-delta/case-drill-down-check-output-file.diff	Publish the selected physical-file findings and complete out-of-scope identities and counts after the declared record introductions.
-case:drill-down|format:json	declared-delta/case-drill-down-format-json.diff	Publish the selected physical-file findings and complete out-of-scope identities and counts after the declared record introductions.
-case:drill-down|format:metrics	declared-delta/case-drill-down-format-metrics.diff	Publish the selected physical-file findings and complete out-of-scope identities and counts after the declared record introductions.
-case:drill-down|stderr:check:baseline	declared-delta/case-drill-down-stderr-check-baseline.diff	Identify baseline-check suppression diagnostics as the whole-run composition when a namespace selects the report.
-case:drill-down|stderr:check:output	declared-delta/case-drill-down-stderr-check-output.diff	Identify suppression diagnostics as the whole-run composition even when the report selects a namespace.
-case:drill-down|stderr:format:json	declared-delta/case-drill-down-stderr-format-json.diff	Identify suppression diagnostics as the whole-run composition even when the report selects a namespace.
-case:drill-down|stderr:format:metrics	declared-delta/case-drill-down-stderr-format-metrics.diff	Identify suppression diagnostics as the whole-run composition even when the report selects a namespace.
-case:layers|format:metrics	declared-delta/case-layers-format-metrics.diff	Retain the native metrics layout after the declared class-like LOC population change.
-case:name-case|check:output:file	declared-delta/case-name-case-check-output-file.diff	Preserve native JSON string spelling after the declared cycle recommendation rewrite.
-case:name-case|format:json	declared-delta/case-name-case-format-json.diff	Preserve native JSON string spelling after the declared cycle recommendation rewrite.
-case:utf8-identifier|graph:export	declared-delta/case-utf8-identifier-graph-export.diff	Publish reversible percent-escaped graph node identities instead of replacing distinct source bytes by U+FFFD.

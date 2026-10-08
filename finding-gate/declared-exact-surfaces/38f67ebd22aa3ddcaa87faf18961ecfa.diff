@@ -1,0 +1,26 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 6723
++visible 6720
+@@ -117,1 +117,1 @@
+-            "path": "Corpus\\Design\\Anonymous",
++            "path": "src/Anonymous/AnonTrait.php",
+@@ -129,1 +129,1 @@
+-            "path": "Corpus\\Design\\Hierarchy",
++            "path": "src/Hierarchy/Base.php",
+@@ -141,1 +141,1 @@
+-            "path": "Corpus\\Design\\Model",
++            "path": "src/Model/Order.php",
+@@ -196,1 +196,1 @@
+-invocation-format:gitlab 6723
++invocation-format:gitlab 6720
+@@ -312,1 +312,1 @@
+-            "path": "Corpus\\Design\\Anonymous",
++            "path": "src/Anonymous/AnonTrait.php",
+@@ -324,1 +324,1 @@
+-            "path": "Corpus\\Design\\Hierarchy",
++            "path": "src/Hierarchy/Base.php",
+@@ -336,1 +336,1 @@
+-            "path": "Corpus\\Design\\Model",
++            "path": "src/Model/Order.php",

@@ -1,256 +1,58 @@
 --- candidate
 +++ reference (mapped)
-@@ -1,71 +1,55 @@
--visible 4932
--src/Anonymous/AnonTrait.php (1 violation)
--  ERROR
--    Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces  [size.class-count]
--    Recommendation: Classes: 7 (threshold: 6) — too many classes in namespace
--
--src/Hierarchy/Base.php (2 violations)
--  ERROR
--    Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces  [size.class-count]
--    Recommendation: Classes: 7 (threshold: 6) — too many classes in namespace
--
--  WARN  Base
--    NOC (Number of Children) is 3, exceeds threshold of 2. Consider using interfaces instead of inheritance  [design.noc]
--    Recommendation: NOC: 3 (threshold: 2) — too many direct subclasses
--
--src/Hierarchy/GreatGrandchild.php (1 violation)
--  WARN  GreatGrandchild
--    DIT (Depth of Inheritance) is 3, reaches threshold of 3. Prefer composition over deep inheritance  [design.dit]
--    Recommendation: DIT: 3 (threshold: 3) — deep inheritance, fragile hierarchy
--
--src/Hierarchy/GreatGreatGrandchild.php (1 violation)
--  WARN  GreatGreatGrandchild
--    DIT (Depth of Inheritance) is 4, exceeds threshold of 3. Prefer composition over deep inheritance  [design.dit]
--    Recommendation: DIT: 4 (threshold: 3) — deep inheritance, fragile hierarchy
--
--src/Model/Order.php (4 violations)
--  ERROR  Order
--    God Class detected (4/4 criteria): high WMC (4 >= 4), high LCOM (2 >= 1), low TCC (0.33 < 0.90), large size (27 >= 10 LOC)  [design.god-class]
--    Recommendation: Apply the Single Responsibility Principle. Extract cohesive method groups into separate classes.
--
+@@ -1,2 +1,2 @@
+-visible 4999
+-Corpus\Design\Anonymous (1 violation)
++visible 4932
++src/Anonymous/AnonTrait.php (1 violation)
+@@ -7,1 +7,1 @@
+-Corpus\Design\Hierarchy (1 violation)
++src/Hierarchy/Base.php (2 violations)
+@@ -12,6 +12,0 @@
+-Corpus\Design\Model (1 violation)
 -  WARN
 -    Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces  [size.class-count]
 -    Recommendation: Classes: 3 (threshold: 2) — too many classes in namespace
 -
--  WARN  Order
--    Method count is 4, reaches threshold of 4. Consider splitting into smaller focused classes  [size.method-count]
--    Recommendation: Methods: 4 (threshold: 4) — too many methods
--
--  WARN  Order
--    Property count is 3, exceeds threshold of 2. Consider splitting the class or using composition  [size.property-count]
--    Recommendation: Properties: 3 (threshold: 2) — too many properties
--
--src/Model/Product.php (2 violations)
--  ERROR  Product
--    Property count is 4, reaches threshold of 4. Consider splitting the class or using composition  [size.property-count]
--    Recommendation: Properties: 4 (threshold: 4) — too many properties
--
--  WARN  Product
--    Data Class detected: only 0% of the public interface is behavior (WOC, threshold 50%) and complexity is low (WMC=8, threshold 10). Consider encapsulating behavior or using a DTO pattern  [design.data-class]
--    Recommendation: Add behavior methods that operate on the data, or confirm this is intentionally a DTO.
--
--src/Model/Untyped.php (5 violations)
--  ERROR  Untyped
--    Parameter type coverage is 0.0% (minimum: 50.0%). Add type declarations to method parameters  [design.type-coverage.param]
--    Recommendation: Parameter type coverage: 0.0% (threshold: 50.0%) — missing type declarations
--
--  ERROR  Untyped
--    Return type coverage is 0.0% (minimum: 50.0%). Add return type declarations to methods  [design.type-coverage.return]
--    Recommendation: Return type coverage: 0.0% (threshold: 50.0%) — missing type declarations
--
--  ERROR  Untyped
--    Property type coverage is 0.0% (minimum: 50.0%). Add type declarations to properties  [design.type-coverage.property]
--    Recommendation: Property type coverage: 0.0% (threshold: 50.0%) — missing type declarations
--
--  WARN  Untyped
--    Data Class detected: only 50% of the public interface is behavior (WOC, threshold 50%) and complexity is low (WMC=2, threshold 10). Consider encapsulating behavior or using a DTO pattern  [design.data-class]
--    Recommendation: Add behavior methods that operate on the data, or confirm this is intentionally a DTO.
--
--  WARN  Untyped
--    Property count is 3, exceeds threshold of 2. Consider splitting the class or using composition  [size.property-count]
--    Recommendation: Properties: 3 (threshold: 2) — too many properties
-+visible 2932
-+src/Anonymous/AnonTrait.php (1 violation)
-+  ERROR
-+    Classes: 7 (threshold: 6) — too many classes in namespace  [size.class-count]
-+
-+src/Hierarchy/Base.php (2 violations)
-+  ERROR
-+    Classes: 7 (threshold: 6) — too many classes in namespace  [size.class-count]
-+
-+  WARN  Base
-+    NOC: 3 (threshold: 2) — too many direct subclasses  [design.noc]
-+
-+src/Hierarchy/GreatGrandchild.php (1 violation)
-+  WARN  GreatGrandchild
-+    DIT: 3 (threshold: 3) — deep inheritance, fragile hierarchy  [design.dit]
-+
-+src/Hierarchy/GreatGreatGrandchild.php (1 violation)
-+  WARN  GreatGreatGrandchild
-+    DIT: 4 (threshold: 3) — deep inheritance, fragile hierarchy  [design.dit]
-+
-+src/Model/Order.php (4 violations)
-+  ERROR  Order
-+    Apply the Single Responsibility Principle. Extract cohesive method groups into separate classes.  [design.god-class]
-+
-+  WARN
-+    Classes: 3 (threshold: 2) — too many classes in namespace  [size.class-count]
-+
-+  WARN  Order
-+    Methods: 4 (threshold: 4) — too many methods  [size.method-count]
-+
-+  WARN  Order
-+    Properties: 3 (threshold: 2) — too many properties  [size.property-count]
-+
-+src/Model/Product.php (2 violations)
-+  ERROR  Product
-+    Properties: 4 (threshold: 4) — too many properties  [size.property-count]
-+
-+  WARN  Product
-+    Add behavior methods that operate on the data, or confirm this is intentionally a DTO.  [design.data-class]
-+
-+src/Model/Untyped.php (5 violations)
-+  ERROR  Untyped
-+    Parameter type coverage: 0.0% (threshold: 50.0%) — missing type declarations  [design.type-coverage.param]
-+
-+  ERROR  Untyped
-+    Return type coverage: 0.0% (threshold: 50.0%) — missing type declarations  [design.type-coverage.return]
-+
-+  ERROR  Untyped
-+    Property type coverage: 0.0% (threshold: 50.0%) — missing type declarations  [design.type-coverage.property]
-+
-+  WARN  Untyped
-+    Add behavior methods that operate on the data, or confirm this is intentionally a DTO.  [design.data-class]
-+
-+  WARN  Untyped
-+    Properties: 3 (threshold: 2) — too many properties  [size.property-count]
-@@ -89,71 +73,55 @@
--invocation-format:text-detail 4932
--src/Anonymous/AnonTrait.php (1 violation)
--  ERROR
--    Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces  [size.class-count]
--    Recommendation: Classes: 7 (threshold: 6) — too many classes in namespace
--
--src/Hierarchy/Base.php (2 violations)
--  ERROR
--    Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces  [size.class-count]
--    Recommendation: Classes: 7 (threshold: 6) — too many classes in namespace
--
--  WARN  Base
--    NOC (Number of Children) is 3, exceeds threshold of 2. Consider using interfaces instead of inheritance  [design.noc]
--    Recommendation: NOC: 3 (threshold: 2) — too many direct subclasses
--
--src/Hierarchy/GreatGrandchild.php (1 violation)
--  WARN  GreatGrandchild
--    DIT (Depth of Inheritance) is 3, reaches threshold of 3. Prefer composition over deep inheritance  [design.dit]
--    Recommendation: DIT: 3 (threshold: 3) — deep inheritance, fragile hierarchy
--
--src/Hierarchy/GreatGreatGrandchild.php (1 violation)
--  WARN  GreatGreatGrandchild
--    DIT (Depth of Inheritance) is 4, exceeds threshold of 3. Prefer composition over deep inheritance  [design.dit]
--    Recommendation: DIT: 4 (threshold: 3) — deep inheritance, fragile hierarchy
--
--src/Model/Order.php (4 violations)
+-src/Hierarchy/Base.php (1 violation)
+@@ -32,4 +26,8 @@
+-src/Model/Order.php (3 violations)
 -  ERROR  Order
 -    God Class detected (4/4 criteria): high WMC (4 >= 4), high LCOM (2 >= 1), low TCC (0.33 < 0.90), large size (27 >= 10 LOC)  [design.god-class]
 -    Recommendation: Apply the Single Responsibility Principle. Extract cohesive method groups into separate classes.
--
++src/Model/Order.php (4 violations)
++  ERROR  Order
++    God Class detected (4/4 criteria): high WMC (4 >= 4), high LCOM (2 >= 1), low TCC (0.33 < 0.90), large size (27 >= 10 LOC)  [design.god-class]
++    Recommendation: Apply the Single Responsibility Principle. Extract cohesive method groups into separate classes.
++
++  WARN
++    Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces  [size.class-count]
++    Recommendation: Classes: 3 (threshold: 2) — too many classes in namespace
+@@ -91,2 +89,2 @@
+-invocation-format:text-detail 4999
+-Corpus\Design\Anonymous (1 violation)
++invocation-format:text-detail 4932
++src/Anonymous/AnonTrait.php (1 violation)
+@@ -97,1 +95,1 @@
+-Corpus\Design\Hierarchy (1 violation)
++src/Hierarchy/Base.php (2 violations)
+@@ -102,6 +100,0 @@
+-Corpus\Design\Model (1 violation)
 -  WARN
 -    Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces  [size.class-count]
 -    Recommendation: Classes: 3 (threshold: 2) — too many classes in namespace
 -
--  WARN  Order
--    Method count is 4, reaches threshold of 4. Consider splitting into smaller focused classes  [size.method-count]
--    Recommendation: Methods: 4 (threshold: 4) — too many methods
--
--  WARN  Order
--    Property count is 3, exceeds threshold of 2. Consider splitting the class or using composition  [size.property-count]
--    Recommendation: Properties: 3 (threshold: 2) — too many properties
--
--src/Model/Product.php (2 violations)
--  ERROR  Product
--    Property count is 4, reaches threshold of 4. Consider splitting the class or using composition  [size.property-count]
--    Recommendation: Properties: 4 (threshold: 4) — too many properties
--
--  WARN  Product
--    Data Class detected: only 0% of the public interface is behavior (WOC, threshold 50%) and complexity is low (WMC=8, threshold 10). Consider encapsulating behavior or using a DTO pattern  [design.data-class]
--    Recommendation: Add behavior methods that operate on the data, or confirm this is intentionally a DTO.
--
--src/Model/Untyped.php (5 violations)
--  ERROR  Untyped
--    Parameter type coverage is 0.0% (minimum: 50.0%). Add type declarations to method parameters  [design.type-coverage.param]
--    Recommendation: Parameter type coverage: 0.0% (threshold: 50.0%) — missing type declarations
--
--  ERROR  Untyped
--    Return type coverage is 0.0% (minimum: 50.0%). Add return type declarations to methods  [design.type-coverage.return]
--    Recommendation: Return type coverage: 0.0% (threshold: 50.0%) — missing type declarations
--
--  ERROR  Untyped
--    Property type coverage is 0.0% (minimum: 50.0%). Add type declarations to properties  [design.type-coverage.property]
--    Recommendation: Property type coverage: 0.0% (threshold: 50.0%) — missing type declarations
--
--  WARN  Untyped
--    Data Class detected: only 50% of the public interface is behavior (WOC, threshold 50%) and complexity is low (WMC=2, threshold 10). Consider encapsulating behavior or using a DTO pattern  [design.data-class]
--    Recommendation: Add behavior methods that operate on the data, or confirm this is intentionally a DTO.
--
--  WARN  Untyped
--    Property count is 3, exceeds threshold of 2. Consider splitting the class or using composition  [size.property-count]
--    Recommendation: Properties: 3 (threshold: 2) — too many properties
-+invocation-format:text-detail 2932
-+src/Anonymous/AnonTrait.php (1 violation)
-+  ERROR
-+    Classes: 7 (threshold: 6) — too many classes in namespace  [size.class-count]
-+
-+src/Hierarchy/Base.php (2 violations)
-+  ERROR
-+    Classes: 7 (threshold: 6) — too many classes in namespace  [size.class-count]
-+
-+  WARN  Base
-+    NOC: 3 (threshold: 2) — too many direct subclasses  [design.noc]
-+
-+src/Hierarchy/GreatGrandchild.php (1 violation)
-+  WARN  GreatGrandchild
-+    DIT: 3 (threshold: 3) — deep inheritance, fragile hierarchy  [design.dit]
-+
-+src/Hierarchy/GreatGreatGrandchild.php (1 violation)
-+  WARN  GreatGreatGrandchild
-+    DIT: 4 (threshold: 3) — deep inheritance, fragile hierarchy  [design.dit]
-+
+-src/Hierarchy/Base.php (1 violation)
+@@ -122,4 +114,8 @@
+-src/Model/Order.php (3 violations)
+-  ERROR  Order
+-    God Class detected (4/4 criteria): high WMC (4 >= 4), high LCOM (2 >= 1), low TCC (0.33 < 0.90), large size (27 >= 10 LOC)  [design.god-class]
+-    Recommendation: Apply the Single Responsibility Principle. Extract cohesive method groups into separate classes.
 +src/Model/Order.php (4 violations)
 +  ERROR  Order
-+    Apply the Single Responsibility Principle. Extract cohesive method groups into separate classes.  [design.god-class]
++    God Class detected (4/4 criteria): high WMC (4 >= 4), high LCOM (2 >= 1), low TCC (0.33 < 0.90), large size (27 >= 10 LOC)  [design.god-class]
++    Recommendation: Apply the Single Responsibility Principle. Extract cohesive method groups into separate classes.
 +
 +  WARN
-+    Classes: 3 (threshold: 2) — too many classes in namespace  [size.class-count]
-+
-+  WARN  Order
-+    Methods: 4 (threshold: 4) — too many methods  [size.method-count]
-+
-+  WARN  Order
-+    Properties: 3 (threshold: 2) — too many properties  [size.property-count]
-+
-+src/Model/Product.php (2 violations)
-+  ERROR  Product
-+    Properties: 4 (threshold: 4) — too many properties  [size.property-count]
-+
-+  WARN  Product
-+    Add behavior methods that operate on the data, or confirm this is intentionally a DTO.  [design.data-class]
-+
-+src/Model/Untyped.php (5 violations)
-+  ERROR  Untyped
-+    Parameter type coverage: 0.0% (threshold: 50.0%) — missing type declarations  [design.type-coverage.param]
-+
-+  ERROR  Untyped
-+    Return type coverage: 0.0% (threshold: 50.0%) — missing type declarations  [design.type-coverage.return]
-+
-+  ERROR  Untyped
-+    Property type coverage: 0.0% (threshold: 50.0%) — missing type declarations  [design.type-coverage.property]
-+
-+  WARN  Untyped
-+    Add behavior methods that operate on the data, or confirm this is intentionally a DTO.  [design.data-class]
-+
-+  WARN  Untyped
-+    Properties: 3 (threshold: 2) — too many properties  [size.property-count]
++    Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces  [size.class-count]
++    Recommendation: Classes: 3 (threshold: 2) — too many classes in namespace

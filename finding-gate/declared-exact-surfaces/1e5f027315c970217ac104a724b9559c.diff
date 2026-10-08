@@ -1,0 +1,108 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 164602
++visible 165758
+@@ -3533,5 +3533,19 @@
+-                        "text": "App\\Big: Class count is 30, exceeds threshold of 25. Consider splitting into sub-namespaces"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "size.class-count:ns:App\\Big"
+-                    }
++                        "text": "Class count is 30, exceeds threshold of 25. Consider splitting into sub-namespaces"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "size.class-count:ns:App\\Big"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/m45/Big/C1.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 1,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]
+@@ -3544,5 +3558,19 @@
+-                        "text": "App\\Small: Class count is 16, exceeds threshold of 15. Consider splitting into sub-namespaces"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "size.class-count:ns:App\\Small"
+-                    }
++                        "text": "Class count is 16, exceeds threshold of 15. Consider splitting into sub-namespaces"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "size.class-count:ns:App\\Small"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/m45/Small/C1.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 1,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]
+@@ -3590,1 +3618,1 @@
+-invocation-format:sarif 164602
++invocation-format:sarif 165758
+@@ -7122,5 +7150,19 @@
+-                        "text": "App\\Big: Class count is 30, exceeds threshold of 25. Consider splitting into sub-namespaces"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "size.class-count:ns:App\\Big"
+-                    }
++                        "text": "Class count is 30, exceeds threshold of 25. Consider splitting into sub-namespaces"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "size.class-count:ns:App\\Big"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/m45/Big/C1.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 1,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]
+@@ -7133,5 +7175,19 @@
+-                        "text": "App\\Small: Class count is 16, exceeds threshold of 15. Consider splitting into sub-namespaces"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "size.class-count:ns:App\\Small"
+-                    }
++                        "text": "Class count is 16, exceeds threshold of 15. Consider splitting into sub-namespaces"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "size.class-count:ns:App\\Small"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/m45/Small/C1.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 1,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]

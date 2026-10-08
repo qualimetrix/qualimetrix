@@ -1,108 +1,52 @@
 --- candidate
 +++ reference (mapped)
 @@ -1,1 +1,1 @@
--visible 2969
-+visible 2090
-@@ -11,29 +11,20 @@
+-visible 2978
++visible 2969
+@@ -10,4 +10,4 @@
+-  1. [ERR] 49.4  [project]  [2h]
 -         architecture.circular-dependency: Circular dependency (2 classes): B → FOO → B
 -         Recommendation: Cycle path: B → FOO → B (2 classes). Break by introducing an interface to invert one dependency.
--  2. [WRN] 16.5  src/B.php  [54min]
--         size.class-count: Class count is 6, exceeds threshold of 1. Consider splitting into sub-namespaces (namespace: Corpus\NameCase)
--         Recommendation: Classes: 6 (threshold: 1) — too many classes in namespace
--  3. [WRN] 15.0  src/FooFirst.php  [49min]
--         coupling.cbo: Coupling too high: 2 inbound + 2 outbound (CBO: 3, threshold: 1)
--         Recommendation: CBO: 3 (threshold: 1) — reduce both inbound and outbound coupling
--  4. [WRN] 15.0  src/FooSecond.php  [49min]
--         coupling.cbo: Coupling too high: 2 inbound + 2 outbound (CBO: 3, threshold: 1)
--         Recommendation: Top dependencies: B, Base. CBO: 3 (threshold: 1) — reduce both inbound and outbound coupling
--  5. [WRN] 9.18  src/FooSecond.php  [30min]
--         design.dit: DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance
--         Recommendation: DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy
--  6. [WRN] 9.11  src/B.php  [45min]
--         coupling.cbo: Coupling too high: 1 inbound + 1 outbound (CBO: 1, threshold: 1)
--         Recommendation: Top dependencies: FOO. CBO: 1 (threshold: 1) — reduce both inbound and outbound coupling
--  7. [WRN] 9.11  src/Base.php  [45min]
--         coupling.cbo: Afferent coupling too high: 1 classes depend on this (CBO: 1, threshold: 1)
--         Recommendation: CBO: 1 (threshold: 1) — this class is a coupling magnet, consider if it is a healthy abstraction point
--  8. [WRN] 3.26  src/Leaf.php  [45min]
--         coupling.cbo: Efferent coupling too high: depends on 1 classes (CBO: 1, threshold: 1)
--         Recommendation: Top dependencies: FOO. CBO: 1 (threshold: 1) — extract dependencies to reduce outbound coupling
--  9. [WRN] 2.17  src/Leaf.php  [30min]
--         design.dit: DIT (Depth of Inheritance) is 2, exceeds threshold of 1. Prefer composition over deep inheritance
--         Recommendation: DIT: 2 (threshold: 1) — deep inheritance, fragile hierarchy
--  10. [WRN] 2.17  src/WebFirst.php  [30min]
--          size.class-count: Class count is 2, exceeds threshold of 1. Consider splitting into sub-namespaces (namespace: Corpus\NameCase\Web)
--          Recommendation: Classes: 2 (threshold: 1) — too many classes in namespace
-+         architecture.circular-dependency: Cycle path: B → FOO → B (2 classes). Break by introducing an interface to invert one dependency.
-+Cycle data: {"cycle":["Corpus\\NameCase\\B","Corpus\\NameCase\\FOO","Corpus\\NameCase\\B"],"length":2,"category":"small"}
+-  2. [WRN] 16.5  Corpus\NameCase  [54min]
++  1. [ERR] 26.0  [project]  [2h]
++         architecture.circular-dependency: Circular dependency (2 classes): B → FOO → B
++         Recommendation: Cycle path: B → FOO → B (2 classes). Break by introducing an interface to invert one dependency.
 +  2. [WRN] 16.5  src/B.php  [54min]
-+         size.class-count: Classes: 6 (threshold: 1) — too many classes in namespace (namespace: Corpus\NameCase)
-+  3. [WRN] 15.0  src/FooFirst.php  [49min]
-+         coupling.cbo: CBO: 3 (threshold: 1) — reduce both inbound and outbound coupling
-+  4. [WRN] 15.0  src/FooSecond.php  [49min]
-+         coupling.cbo: Top dependencies: B, Base. CBO: 3 (threshold: 1) — reduce both inbound and outbound coupling
-+  5. [WRN] 9.18  src/FooSecond.php  [30min]
-+         design.dit: DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy
-+  6. [WRN] 9.11  src/B.php  [45min]
-+         coupling.cbo: Top dependencies: FOO. CBO: 1 (threshold: 1) — reduce both inbound and outbound coupling
-+  7. [WRN] 9.11  src/Base.php  [45min]
-+         coupling.cbo: CBO: 1 (threshold: 1) — this class is a coupling magnet, consider if it is a healthy abstraction point
-+  8. [WRN] 3.26  src/Leaf.php  [45min]
-+         coupling.cbo: Top dependencies: FOO. CBO: 1 (threshold: 1) — extract dependencies to reduce outbound coupling
+@@ -34,6 +34,6 @@
+-  9. [WRN] 2.17  Corpus\NameCase\Web  [30min]
+-         size.class-count: Class count is 2, exceeds threshold of 1. Consider splitting into sub-namespaces (namespace: Corpus\NameCase\Web)
+-         Recommendation: Classes: 2 (threshold: 1) — too many classes in namespace
+-  10. [WRN] 2.17  src/Leaf.php  [30min]
+-          design.dit: DIT (Depth of Inheritance) is 2, exceeds threshold of 1. Prefer composition over deep inheritance
+-          Recommendation: DIT: 2 (threshold: 1) — deep inheritance, fragile hierarchy
 +  9. [WRN] 2.17  src/Leaf.php  [30min]
-+         design.dit: DIT: 2 (threshold: 1) — deep inheritance, fragile hierarchy
++         design.dit: DIT (Depth of Inheritance) is 2, exceeds threshold of 1. Prefer composition over deep inheritance
++         Recommendation: DIT: 2 (threshold: 1) — deep inheritance, fragile hierarchy
 +  10. [WRN] 2.17  src/WebFirst.php  [30min]
-+          size.class-count: Classes: 2 (threshold: 1) — too many classes in namespace (namespace: Corpus\NameCase\Web)
-@@ -45,1 +36,1 @@
--invocation-format:summary 2969
-+invocation-format:summary 2090
-@@ -55,29 +46,20 @@
++          size.class-count: Class count is 2, exceeds threshold of 1. Consider splitting into sub-namespaces (namespace: Corpus\NameCase\Web)
++          Recommendation: Classes: 2 (threshold: 1) — too many classes in namespace
+@@ -45,1 +45,1 @@
+-invocation-format:summary 2978
++invocation-format:summary 2969
+@@ -54,4 +54,4 @@
+-  1. [ERR] 49.4  [project]  [2h]
 -         architecture.circular-dependency: Circular dependency (2 classes): B → FOO → B
 -         Recommendation: Cycle path: B → FOO → B (2 classes). Break by introducing an interface to invert one dependency.
--  2. [WRN] 16.5  src/B.php  [54min]
--         size.class-count: Class count is 6, exceeds threshold of 1. Consider splitting into sub-namespaces (namespace: Corpus\NameCase)
--         Recommendation: Classes: 6 (threshold: 1) — too many classes in namespace
--  3. [WRN] 15.0  src/FooFirst.php  [49min]
--         coupling.cbo: Coupling too high: 2 inbound + 2 outbound (CBO: 3, threshold: 1)
--         Recommendation: CBO: 3 (threshold: 1) — reduce both inbound and outbound coupling
--  4. [WRN] 15.0  src/FooSecond.php  [49min]
--         coupling.cbo: Coupling too high: 2 inbound + 2 outbound (CBO: 3, threshold: 1)
--         Recommendation: Top dependencies: B, Base. CBO: 3 (threshold: 1) — reduce both inbound and outbound coupling
--  5. [WRN] 9.18  src/FooSecond.php  [30min]
--         design.dit: DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance
--         Recommendation: DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy
--  6. [WRN] 9.11  src/B.php  [45min]
--         coupling.cbo: Coupling too high: 1 inbound + 1 outbound (CBO: 1, threshold: 1)
--         Recommendation: Top dependencies: FOO. CBO: 1 (threshold: 1) — reduce both inbound and outbound coupling
--  7. [WRN] 9.11  src/Base.php  [45min]
--         coupling.cbo: Afferent coupling too high: 1 classes depend on this (CBO: 1, threshold: 1)
--         Recommendation: CBO: 1 (threshold: 1) — this class is a coupling magnet, consider if it is a healthy abstraction point
--  8. [WRN] 3.26  src/Leaf.php  [45min]
--         coupling.cbo: Efferent coupling too high: depends on 1 classes (CBO: 1, threshold: 1)
--         Recommendation: Top dependencies: FOO. CBO: 1 (threshold: 1) — extract dependencies to reduce outbound coupling
--  9. [WRN] 2.17  src/Leaf.php  [30min]
--         design.dit: DIT (Depth of Inheritance) is 2, exceeds threshold of 1. Prefer composition over deep inheritance
--         Recommendation: DIT: 2 (threshold: 1) — deep inheritance, fragile hierarchy
--  10. [WRN] 2.17  src/WebFirst.php  [30min]
--          size.class-count: Class count is 2, exceeds threshold of 1. Consider splitting into sub-namespaces (namespace: Corpus\NameCase\Web)
--          Recommendation: Classes: 2 (threshold: 1) — too many classes in namespace
-+         architecture.circular-dependency: Cycle path: B → FOO → B (2 classes). Break by introducing an interface to invert one dependency.
-+Cycle data: {"cycle":["Corpus\\NameCase\\B","Corpus\\NameCase\\FOO","Corpus\\NameCase\\B"],"length":2,"category":"small"}
+-  2. [WRN] 16.5  Corpus\NameCase  [54min]
++  1. [ERR] 26.0  [project]  [2h]
++         architecture.circular-dependency: Circular dependency (2 classes): B → FOO → B
++         Recommendation: Cycle path: B → FOO → B (2 classes). Break by introducing an interface to invert one dependency.
 +  2. [WRN] 16.5  src/B.php  [54min]
-+         size.class-count: Classes: 6 (threshold: 1) — too many classes in namespace (namespace: Corpus\NameCase)
-+  3. [WRN] 15.0  src/FooFirst.php  [49min]
-+         coupling.cbo: CBO: 3 (threshold: 1) — reduce both inbound and outbound coupling
-+  4. [WRN] 15.0  src/FooSecond.php  [49min]
-+         coupling.cbo: Top dependencies: B, Base. CBO: 3 (threshold: 1) — reduce both inbound and outbound coupling
-+  5. [WRN] 9.18  src/FooSecond.php  [30min]
-+         design.dit: DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy
-+  6. [WRN] 9.11  src/B.php  [45min]
-+         coupling.cbo: Top dependencies: FOO. CBO: 1 (threshold: 1) — reduce both inbound and outbound coupling
-+  7. [WRN] 9.11  src/Base.php  [45min]
-+         coupling.cbo: CBO: 1 (threshold: 1) — this class is a coupling magnet, consider if it is a healthy abstraction point
-+  8. [WRN] 3.26  src/Leaf.php  [45min]
-+         coupling.cbo: Top dependencies: FOO. CBO: 1 (threshold: 1) — extract dependencies to reduce outbound coupling
+@@ -78,6 +78,6 @@
+-  9. [WRN] 2.17  Corpus\NameCase\Web  [30min]
+-         size.class-count: Class count is 2, exceeds threshold of 1. Consider splitting into sub-namespaces (namespace: Corpus\NameCase\Web)
+-         Recommendation: Classes: 2 (threshold: 1) — too many classes in namespace
+-  10. [WRN] 2.17  src/Leaf.php  [30min]
+-          design.dit: DIT (Depth of Inheritance) is 2, exceeds threshold of 1. Prefer composition over deep inheritance
+-          Recommendation: DIT: 2 (threshold: 1) — deep inheritance, fragile hierarchy
 +  9. [WRN] 2.17  src/Leaf.php  [30min]
-+         design.dit: DIT: 2 (threshold: 1) — deep inheritance, fragile hierarchy
++         design.dit: DIT (Depth of Inheritance) is 2, exceeds threshold of 1. Prefer composition over deep inheritance
++         Recommendation: DIT: 2 (threshold: 1) — deep inheritance, fragile hierarchy
 +  10. [WRN] 2.17  src/WebFirst.php  [30min]
-+          size.class-count: Classes: 2 (threshold: 1) — too many classes in namespace (namespace: Corpus\NameCase\Web)
++          size.class-count: Class count is 2, exceeds threshold of 1. Consider splitting into sub-namespaces (namespace: Corpus\NameCase\Web)
++          Recommendation: Classes: 2 (threshold: 1) — too many classes in namespace
