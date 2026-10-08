@@ -39,6 +39,25 @@ final class CaseOutcomeCheckTest extends TestCase
     }
 
     #[Test]
+    public function itReadsTheExplicitEnvelopeFromTheRepairingEncoder(): void
+    {
+        $source = <<<'PHP'
+<?php
+final class RefusalPresenter {
+    private function writeEnvelope() {
+        return PublishedUtf8::encodeJsonObject([
+            'error' => 'refused',
+            'exit_code' => 3,
+            'position' => null,
+            'source' => null,
+        ], JSON_PRETTY_PRINT);
+    }
+}
+PHP;
+        self::assertSame(['error', 'exit_code', 'position', 'source'], CaseOutcomeCheck::deriveRefusalFields($source));
+    }
+
+    #[Test]
     public function itCreditsOnlyTheDeclaredEmptyCapturedBaselineRefusal(): void
     {
         $tree = SelfTestOutcomes::fixture();

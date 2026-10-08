@@ -4,6 +4,17 @@ declare(strict_types=1);
 
 namespace QmxFindingGate;
 
+use PhpParser\Error;
+use PhpParser\Node\Arg;
+use PhpParser\Node\Expr\Array_;
+use PhpParser\Node\Expr\FuncCall;
+use PhpParser\Node\Expr\StaticCall;
+use PhpParser\Node\Identifier;
+use PhpParser\Node\Name;
+use PhpParser\Node\Scalar\String_;
+use PhpParser\Node\Stmt\ClassMethod;
+use PhpParser\NodeFinder;
+use PhpParser\ParserFactory;
 use WeakMap;
 use WeakReference;
 
@@ -266,42 +277,42 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
         return $this->envelopeFields[$side] = self::deriveRefusalFields($source);
     }
 
-    /** @return list<string> */
+    /**
+     * Reads one explicit array passed to the native or repairing JSON encoder.
+     * Dynamic envelope construction is refused. PHP syntax belongs to php-parser.
+     *
+     * @return list<string>
+     */
     public static function deriveRefusalFields(string $source): array
     {
-        $tokens = token_get_all($source);
-        $method = false;
-        $encoding = false;
-        $depth = 0;
+        if (!class_exists(ParserFactory::class)) {
+            require_once \dirname(__DIR__, 2) . '/vendor/autoload.php';
+        }
+        try {
+            $nodes = (new ParserFactory())->createForNewestSupportedVersion()->parse($source) ?? [];
+        } catch (Error $error) {
+            throw new GateError('Cannot parse the refusal publisher: ' . $error->getMessage(), 0, $error);
+        }
+        $finder = new NodeFinder();
+        $methods = $finder->find($nodes, static fn($node): bool => $node instanceof ClassMethod && $node->name->toString() === 'writeEnvelope');
+        if (\count($methods) !== 1) {
+            throw new GateError('The refusal publisher must declare one writeEnvelope method.');
+        }
+        $calls = $finder->find($methods[0], static fn($node): bool => ($node instanceof FuncCall
+            && $node->name instanceof Name && $node->name->toLowerString() === 'json_encode')
+            || ($node instanceof StaticCall && $node->class instanceof Name
+                && \in_array($node->class->toString(), ['PublishedUtf8', 'Qualimetrix\\Reporting\\Formatter\\PublishedUtf8'], true)
+                && $node->name instanceof Identifier && $node->name->toString() === 'encodeJsonObject'));
+        if (\count($calls) !== 1 || !(($encoder = $calls[0]) instanceof FuncCall || $encoder instanceof StaticCall)
+            || !($argument = $encoder->getArgs()[0] ?? null) instanceof Arg || !$argument->value instanceof Array_) {
+            throw new GateError('The refusal envelope must encode one explicit array literal; dynamic construction is not supported.');
+        }
         $fields = [];
-        foreach ($tokens as $index => $token) {
-            if (\is_array($token) && $token[0] === \T_STRING && $token[1] === 'writeEnvelope') {
-                $method = true;
+        foreach ($argument->value->items as $item) {
+            if ($item === null || $item->unpack || !$item->key instanceof String_) {
+                throw new GateError('The refusal envelope must publish explicit string keys.');
             }
-            if ($method && \is_array($token) && $token[0] === \T_STRING && $token[1] === 'json_encode') {
-                $encoding = true;
-            }
-            if (!$encoding) {
-                continue;
-            }
-            if ($token === '[' || $token === '(') {
-                ++$depth;
-            } elseif ($token === ']' || $token === ')') {
-                --$depth;
-                if ($depth === 0) {
-                    break;
-                }
-            }
-            if ($depth !== 2 || !\is_array($token) || $token[0] !== \T_CONSTANT_ENCAPSED_STRING) {
-                continue;
-            }
-            $next = $index + 1;
-            while (isset($tokens[$next]) && \is_array($tokens[$next]) && $tokens[$next][0] === \T_WHITESPACE) {
-                ++$next;
-            }
-            if (isset($tokens[$next]) && \is_array($tokens[$next]) && $tokens[$next][0] === \T_DOUBLE_ARROW) {
-                $fields[] = substr($token[1], 1, -1);
-            }
+            $fields[] = $item->key->value;
         }
         if ($fields === [] || \count($fields) !== \count(array_unique($fields))) {
             throw new GateError('The refusal envelope must publish a nonempty unique key set.');
