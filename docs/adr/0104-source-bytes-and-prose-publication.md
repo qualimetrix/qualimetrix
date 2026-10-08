@@ -19,8 +19,11 @@ bytes, while presentation must preserve normal text and explain repairs.
 Core's SourceBytes owns the byte primitive. Total identity encoding preserves
 valid UTF-8, escapes literal percent as %25, escapes invalid bytes as %XX, and
 escapes separators reserved by the enclosing canonical grammar. Canonical
-declaration file components reserve @ and #, keeping an occurrence suffix
-distinct from a literal filename suffix. rawurldecode restores a component.
+declaration file components reserve #, keeping an occurrence suffix
+distinct from a literal filename suffix. The first @ separates the logical
+and file components; a literal @ inside the file component remains valid.
+After that split and removal of any terminal occurrence suffix, rawurldecode
+restores the file component.
 Occurrence and token hashes keep valid inputs unchanged; invalid strings use
 an explicit percent-encoded frame, distinct from a literal percent spelling.
 

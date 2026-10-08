@@ -37,7 +37,7 @@ final readonly class SubjectRegion
     public static function subjectFile(BaselineIdentity $identity): ?RelativePath
     {
         if (str_starts_with($identity->subjectKey, 'file:')) {
-            return RelativePath::fromString(substr($identity->subjectKey, 5));
+            return RelativePath::fromString(rawurldecode(substr($identity->subjectKey, 5)));
         }
 
         return str_starts_with($identity->subjectKey, 'declaration:')
@@ -54,7 +54,7 @@ final readonly class SubjectRegion
         $path = substr($subject, $separator + 1);
         $path = preg_replace('/#[1-9][0-9]*$/D', '', $path) ?? $path;
 
-        return RelativePath::fromString($path);
+        return RelativePath::fromString(rawurldecode($path));
     }
 
     /**

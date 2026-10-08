@@ -115,6 +115,11 @@ JSON file -> BaselineLoader -> Baseline -> BaselineCeilingStage -> Findings
                                                                     breaches promoted)
 ```
 
+For file and declaration identities, `SubjectRegion` restores the canonical file
+component to its raw path bytes before comparing it with analyzed-file coverage.
+For declarations it removes the terminal occurrence ordinal before decoding,
+so a literal filename ending in `#2` remains distinct from an ordinal suffix.
+
 The stage runs **fourth** in Reporting's finding-projection sequence, after `@qmx-ignore` and the
 `suppress_paths` / `suppress_namespaces` filters; `UnusedEntryAudit` follows ceiling judgement, then optional annotation
 rejoin and Git scope. That

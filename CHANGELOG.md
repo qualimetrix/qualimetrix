@@ -1594,6 +1594,9 @@ What changes for a configuration you already have:
 
 ### Fixed
 
+- Baseline checks now restore raw file paths from canonical file and declaration
+  subjects before comparing analyzed-file coverage. A newly generated baseline
+  for a filename containing `%` or `#` now compares against an unchanged run.
 - `directives` no longer fails with "Malformed UTF-8" when analysed source
   contains an invalid byte in an identifier; its audit publishes the repaired
   display spelling while finding identities retain the source bytes.
