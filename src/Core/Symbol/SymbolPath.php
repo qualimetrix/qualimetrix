@@ -125,14 +125,8 @@ final readonly class SymbolPath
             return SymbolType::Project;
         }
 
-        // Function: has member but no type (class)
-        if ($this->member !== null && $this->type === null) {
-            return SymbolType::Function_;
-        }
-
-        // Method: has member and type (class)
-        if ($this->member !== null && $this->type !== null) {
-            return SymbolType::Method;
+        if ($this->member !== null) {
+            return $this->type === null ? SymbolType::Function_ : SymbolType::Method;
         }
 
         // Class: has type but no member
@@ -166,8 +160,8 @@ final readonly class SymbolPath
             SymbolType::File => $type->canonicalPrefix() . SourceBytes::escape($this->filePath?->value() ?? ''),
             SymbolType::Project => $type->canonicalPrefix(),
             SymbolType::Function_ => $this->buildFunctionCanonical(),
-            SymbolType::Method => $this->buildMethodCanonical(),
-            SymbolType::Class_ => $this->buildClassCanonical(),
+            SymbolType::Method => $type->canonicalPrefix() . $this->buildTypeCanonical() . '::' . SourceBytes::escape($this->member ?? ''),
+            SymbolType::Class_ => $type->canonicalPrefix() . $this->buildTypeCanonical(),
             SymbolType::Namespace_ => $type->canonicalPrefix() . SourceBytes::escape($this->namespace ?? ''),
         };
     }
@@ -213,9 +207,7 @@ final readonly class SymbolPath
         $type = $this->getType();
 
         return match ($type) {
-            SymbolType::Method => $this->type !== null
-                ? $this->type . '::' . $this->member
-                : $this->member,
+            SymbolType::Method => $this->type . '::' . $this->member,
             SymbolType::Class_ => $this->type,
             SymbolType::Function_ => $this->member,
             SymbolType::File, SymbolType::Namespace_, SymbolType::Project => null,
@@ -232,32 +224,17 @@ final readonly class SymbolPath
 
     private function buildFunctionCanonical(): string
     {
+        $member = SourceBytes::escape($this->member ?? '');
         if ($this->hasNamespace()) {
-            return SymbolType::Function_->canonicalPrefix() . SourceBytes::escape($this->namespace ?? '') . '::' . SourceBytes::escape($this->member ?? '');
+            return SymbolType::Function_->canonicalPrefix() . SourceBytes::escape($this->namespace ?? '') . '::' . $member;
         }
 
-        return SymbolType::Function_->canonicalPrefix() . ':' . SourceBytes::escape($this->member ?? '');
+        return SymbolType::Function_->canonicalPrefix() . ':' . $member;
     }
 
-    private function buildMethodCanonical(): string
+    private function buildTypeCanonical(): string
     {
-        $parts = [SymbolType::Method->canonicalPrefix()];
-
-        if ($this->hasNamespace()) {
-            $parts[] = SourceBytes::escape($this->namespace ?? '');
-            $parts[] = '\\';
-        }
-
-        $parts[] = SourceBytes::escape($this->type ?? '');
-        $parts[] = '::';
-        $parts[] = SourceBytes::escape($this->member ?? '');
-
-        return implode('', $parts);
-    }
-
-    private function buildClassCanonical(): string
-    {
-        $parts = [SymbolType::Class_->canonicalPrefix()];
+        $parts = [];
 
         if ($this->hasNamespace()) {
             $parts[] = SourceBytes::escape($this->namespace ?? '');
@@ -280,18 +257,7 @@ final readonly class SymbolPath
 
     private function buildMethodString(): string
     {
-        $parts = [];
-
-        if ($this->hasNamespace()) {
-            $parts[] = $this->namespace;
-            $parts[] = '\\';
-        }
-
-        $parts[] = $this->type;
-        $parts[] = '::';
-        $parts[] = $this->member;
-
-        return implode('', $parts);
+        return $this->buildClassString() . '::' . $this->member;
     }
 
     private function buildClassString(): string
