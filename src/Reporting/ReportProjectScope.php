@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting;
 
+use JsonException;
 use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
@@ -194,7 +195,21 @@ final readonly class ReportProjectScope
             return $description;
         }
 
-        return ($description ?? 'Project scope covered.') . ' Source reasons: ' . implode('; ', array_map(static fn(ProjectScopeReason $reason): string => (string) json_encode($reason->toArray(), \JSON_UNESCAPED_SLASHES), $this->reasons)) . '.';
+        return ($description ?? 'Project scope covered.') . ' Source reasons: ' . implode('; ', array_map(self::describeReason(...), $this->reasons)) . '.';
+    }
+
+    private static function describeReason(ProjectScopeReason $reason): string
+    {
+        try {
+            return json_encode($reason->toArray(), \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
+        } catch (JsonException $exception) {
+            if ($exception->getCode() !== \JSON_ERROR_UTF8) {
+                throw $exception;
+            }
+
+            // Keep source bytes until the format's publication boundary counts and escapes them.
+            return var_export($reason->toArray(), true);
+        }
     }
 
     private function describeState(): ?string

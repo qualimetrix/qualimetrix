@@ -35,9 +35,18 @@ final class HtmlFormatter implements FormatterInterface, FormatOptionKeysInterfa
         $data['coverage'] = $report->coverage?->toArray();
 
         $repairs = 0;
-        $json = PublishedUtf8::encodeJsonObject(
+        $projectScope = $report->projectScope?->describe();
+        if ($projectScope !== null) {
+            $projectScope = PublishedUtf8::repair($projectScope, $repairs);
+        }
+        $json = PublishedUtf8::encodeJson(
             $data,
             \JSON_HEX_TAG | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES,
+            static function (array $repaired, int $count) use (&$repairs): array {
+                $repairs = $count;
+
+                return $repaired + [PublishedUtf8::REPAIR_KEY => $count];
+            },
             $repairs,
         );
 
@@ -73,7 +82,6 @@ final class HtmlFormatter implements FormatterInterface, FormatOptionKeysInterfa
             ), $rendered);
         }
 
-        $projectScope = $report->projectScope?->describe();
         if ($projectScope !== null) {
             $rendered = str_replace('<body>', '<body>' . \sprintf(
                 '<div role="status" data-qmx-project-scope="%s" style="padding:12px;background:#78350f;color:#fff">%s</div>',

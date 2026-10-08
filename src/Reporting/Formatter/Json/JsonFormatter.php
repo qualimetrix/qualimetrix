@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Core\SourceText\SourceBytes;
 use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
 use Qualimetrix\Reporting\Formatter\FormatOptionValue;
@@ -230,7 +231,7 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
         $result = [];
 
         foreach ($groups as $key => $groupFindings) {
-            $result[$key] = [
+            $result[SourceBytes::escape($key)] = [
                 'count' => \count($groupFindings),
                 'violations' => $this->findingSection->format($groupFindings, $context),
             ];

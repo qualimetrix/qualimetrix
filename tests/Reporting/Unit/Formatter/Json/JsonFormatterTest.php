@@ -102,6 +102,40 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
+    public function itKeepsLiteralPercentAndMalformedByteFileGroupsDistinct(): void
+    {
+        $findings = [];
+        foreach (['src/%FF.php', "src/\xFF.php"] as $path) {
+            $file = RelativePath::fromString($path);
+            $findings[] = self::finding(
+                new Location($file, 1),
+                SymbolPath::forFile($file),
+                'duplication.clone',
+                'duplication.clone',
+                'Physical copy',
+                Severity::Warning,
+            );
+        }
+        $report = ReportBuilder::create()->addFindings($findings)->filesAnalyzed(2)->build();
+        $data = json_decode($this->formatter->format($report, new FormatterContext(groupBy: GroupBy::File))->body, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertCount(2, $data['violationGroups']);
+        self::assertSame(['src/%25FF.php', 'src/%FF.php'], array_keys($data['violationGroups']));
+        self::assertSame([1, 1], array_column(array_values($data['violationGroups']), 'count'));
+        $groupSubjects = [];
+        foreach ($data['violationGroups'] as $group) {
+            foreach ($group['violations'] as $finding) {
+                $groupSubjects[] = $finding['subject'];
+            }
+        }
+        $subjects = array_column($data['violations'], 'subject');
+        sort($subjects);
+        sort($groupSubjects);
+        self::assertSame($subjects, $groupSubjects);
+        self::assertCount(2, array_unique($groupSubjects));
+    }
+
+    #[Test]
     public function itReturnsJsonName(): void
     {
         self::assertSame('json', $this->formatter->getName());
