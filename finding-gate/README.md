@@ -84,8 +84,12 @@ Negative controls live in `scripts/finding-gate-controls/`. The shared loaders
 read a fixed set of subject-owned `wiring-*.php` files. Unknown files, unknown
 keys, duplicate registrations and unloaded checks are refused. The retired
 `pending` key is not accepted, even with an empty value. Every failure class
-requires a producer and every raise site and caller recognized by the source
-scanner requires an observed self-test witness.
+requires a source producer and an observed whole-run witness. Every recognized
+raise site and caller requires an exact observed witness except `run-failed`:
+its self-test claim is the failure class, side and scope. A scope-only witness
+does not credit any exact source site or caller. This narrower claim retains
+defensive helper branches that native publication routing cannot reach in a
+whole run.
 
 ## Case definition and coverage
 
@@ -735,9 +739,11 @@ alone does not determine whether `rules` publishes a catalogue.
 
 `composer gate:self-test` runs the gate's observed witnesses and the
 controls harness's mechanics. Recognized raise sites are enumerated with their
-nearest callers and observed through a whole synthetic run. An unexplained source
-occurrence or stale source exception fails. Controls add corpus evidence;
-they do not replace those observed self-test witnesses.
+nearest callers. The witness registry requires exact whole-run observations for
+every class except `run-failed`; for that class it requires an actual
+class/side/scope observation without claiming site or caller coverage.
+An unexplained source occurrence or stale source exception still fails.
+Controls add corpus evidence; they do not replace observed self-test witnesses.
 
 ### Source scanner limits
 

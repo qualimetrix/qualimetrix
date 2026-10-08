@@ -24,8 +24,8 @@ use Throwable;
  * witnesses must hold unchanged while the checks move between files.
  *
  * Each witness names the failures its plant must raise (`expect`: class, scope
- * glob and the {@see RaiseSites} identity — site and caller — it must come
- * from) and the side effects it may raise (`tolerate`: class and scope glob). A
+ * glob and, when claimed, the {@see RaiseSites} identity — site and caller)
+ * and the side effects it may raise (`tolerate`: class and scope glob). A
  * run is held to both directions: an expected failure missing, a failure
  * nothing names, a toleration nothing used and a failure raised from a place
  * the scan of the source does not enumerate are each red. A scenario that runs
@@ -35,7 +35,7 @@ use Throwable;
  *
  * @phpstan-import-type Specification from SyntheticTree
  *
- * @phpstan-type Expected array{0: string, 1: string, 2: string}
+ * @phpstan-type Expected array{0: string, 1: string, 2?: string}
  * @phpstan-type Tolerated array{0: string, 1: string}
  * @phpstan-type Witness array{
  *     id: string,
@@ -133,18 +133,20 @@ final class CheckWitnesses
     private const string NO_DIFF = "a diff nobody measured\n";
 
     /**
-     * `observed` holds only the identities an expectation actually matched.
+     * `observed` holds only exact identities an expectation matched. `scoped`
+     * holds classes matched without an exact identity.
      *
-     * @return array{failures: list<string>, observed: list<string>}
+     * @return array{failures: list<string>, observed: list<string>, scoped: list<string>}
      */
     public static function observe(RaiseSites $sites): array
     {
         $failures = self::unwitnessedModes();
         $observed = [];
+        $scoped = [];
 
         foreach (self::witnesses() as $witness) {
             foreach ($witness['expect'] as $pattern) {
-                if (!isset($sites->sites[$pattern[2]])) {
+                if (isset($pattern[2]) && !isset($sites->sites[$pattern[2]])) {
                     $failures[] = \sprintf(
                         'check witness %s: expects %s from %s, which is no raise site in the gate\'s source.',
                         $witness['id'],
@@ -180,13 +182,18 @@ final class CheckWitnesses
             $judged = self::judge($scenario, [$witness], $run['failures']);
             $failures = [...$failures, ...$judged['failures'], ...self::unenumerated($scenario, $run['failures'], $sites)];
             $observed = [...$observed, ...$judged['observed']];
+            $scoped = [...$scoped, ...$judged['scoped']];
 
             if ($mode !== null) {
                 $failures = [...$failures, ...self::judgeMode($scenario, $mode, $run)];
             }
         }
 
-        return ['failures' => $failures, 'observed' => array_values(array_unique($observed))];
+        return [
+            'failures' => $failures,
+            'observed' => array_values(array_unique($observed)),
+            'scoped' => array_values(array_unique($scoped)),
+        ];
     }
 
     /**
@@ -674,34 +681,18 @@ final class CheckWitnesses
                 [[FailureClass::LEVEL_VOCABULARY_DRIFT, 'scripts/finding-gate/SubjectLevel.php', 'ChannelWitness::checkLevelVocabulary <- CoverageCheck::checkChannelWitnesses']],
             ),
             self::witness(
-                'report-payload-unreadable',
+                'malformed-whole-invocations',
                 self::WHOLE_RUN,
                 static function (array $tree): array {
-                    $tree['answers']['case:alpha|format:html'] = ['stdout' => "<html>no payload</html>\n"];
+                    $tree['candidateAnswers']['case:alpha|format:html'] = ['stdout' => "<html>no payload</html>\n"];
+                    $tree['candidateAnswers']['case:alpha|format:sarif'] = ['stdout' => "not json\n"];
 
                     return $tree;
                 },
                 [
-                    [FailureClass::REPORT_PAYLOAD_UNREADABLE, 'case:alpha|format:html', 'SurfaceComparison::extractPayload <- Gate::compare'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:html', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|format:html', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:html', 'SurfaceComparison::mismatch <- Gate::compare'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:sarif', 'SurfaceComparison::mismatch <- Gate::compare'],
                 ],
-            ),
-            self::witness(
-                'run-failed',
-                self::WHOLE_RUN,
-                static function (array $tree): array {
-                    $tree['answers']['case:alpha|format:sarif'] = ['stdout' => "not json\n"];
-
-                    return $tree;
-                },
-                [
-                    [FailureClass::RUN_FAILED, 'candidate / alpha / format:sarif', 'FingerprintCheck::decodeFingerprintSurface <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:sarif', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|format:sarif', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:sarif', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                ],
-                [[FailureClass::RUN_FAILED, 'reference / alpha / format:sarif']],
             ),
             self::witness(
                 'no-findings-section',
@@ -714,19 +705,8 @@ final class CheckWitnesses
                 },
                 [
                     [FailureClass::RUN_FAILED, 'candidate-2 / omega', 'Gate::captureAuthority <- GateModes::compare'],
-                    [FailureClass::RUN_FAILED, '* / omega', 'CaseOutcomeCheck::findingsOf#1 <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:omega|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:checkstyle', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:github', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:gitlab', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:html', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:json', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:sarif', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:summary', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:text', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:text-detail', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|show-suppressed', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RUN_FAILED, 'candidate-claims / omega'],
+                    [FailureClass::RUN_FAILED, 'reference-claims / omega'],
                     [FailureClass::CANDIDATE_INPUT_REFUSED, 'case:omega', 'CoverageCheck::inputRefused <- Gate::compare'],
                 ],
                 [
@@ -774,9 +754,8 @@ final class CheckWitnesses
                     [FailureClass::RUN_FAILED, '* / alpha / baseline:generate', 'CaseOutcomeCheck::checkBaselineSurface#1 <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|baseline-file', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|baseline-file', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|baseline-file', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::SURFACE_MISMATCH, 'candidate / case:alpha|baseline-file', 'CaptureCheck::publicationFailure <- Gate::compare'],
-                    [FailureClass::SURFACE_MISMATCH, 'reference / case:alpha|baseline-file', 'CaptureCheck::publicationFailure <- Gate::compare'],
+                    [FailureClass::CASE_OUTCOME_MISMATCH, 'candidate / alpha / baseline:generate', 'CaseOutcomeCheck::mismatch <- Gate::compare'],
+                    [FailureClass::CASE_OUTCOME_MISMATCH, 'reference / alpha / baseline:generate', 'CaseOutcomeCheck::mismatch <- Gate::compare'],
                 ],
             ),
             self::witness(
@@ -790,11 +769,6 @@ final class CheckWitnesses
                 },
                 [
                     [FailureClass::RUN_FAILED, '* / eta / baseline-file', 'CaseOutcomeCheck::checkBaselineSurface#2 <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:eta|baseline-file', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:eta|baseline-file', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:eta|baseline-file', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::SURFACE_MISMATCH, 'candidate / case:eta|baseline-file', 'CaptureCheck::publicationFailure <- Gate::compare'],
-                    [FailureClass::SURFACE_MISMATCH, 'reference / case:eta|baseline-file', 'CaptureCheck::publicationFailure <- Gate::compare'],
                 ],
             ),
             self::witness(
@@ -1435,12 +1409,13 @@ final class CheckWitnesses
      * @param list<Witness> $witnesses
      * @param list<Failure> $failures
      *
-     * @return array{failures: list<string>, observed: list<string>}
+     * @return array{failures: list<string>, observed: list<string>, scoped: list<string>}
      */
     private static function judge(string $scenario, array $witnesses, array $failures): array
     {
         $problems = [];
         $observed = [];
+        $scoped = [];
         $accounted = [];
 
         foreach ($witnesses as $witness) {
@@ -1454,14 +1429,18 @@ final class CheckWitnesses
                         $scenario,
                         $pattern[0],
                         $pattern[1],
-                        $pattern[2],
+                        $pattern[2] ?? 'any raise site',
                         self::describe($failures),
                     );
 
                     continue;
                 }
 
-                $observed[] = $pattern[2];
+                if (isset($pattern[2])) {
+                    $observed[] = $pattern[2];
+                } else {
+                    $scoped[] = $pattern[0];
+                }
                 $accounted = [...$accounted, ...$matched];
             }
 
@@ -1496,7 +1475,7 @@ final class CheckWitnesses
             }
         }
 
-        return ['failures' => $problems, 'observed' => $observed];
+        return ['failures' => $problems, 'observed' => $observed, 'scoped' => $scoped];
     }
 
     /**

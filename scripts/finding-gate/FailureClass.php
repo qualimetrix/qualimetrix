@@ -46,9 +46,6 @@ final class FailureClass
      */
     public const FINGERPRINT_OPAQUE = 'fingerprint-opaque';
 
-    /** The HTML report carries no payload the gate can read, so its surface would compare as nothing. */
-    public const REPORT_PAYLOAD_UNREADABLE = 'report-payload-unreadable';
-
     /** A declared channel that no case observes: a lost fixture, or a channel that stopped firing. */
     public const COVERAGE_SHORTFALL = 'coverage-shortfall';
 
@@ -174,7 +171,6 @@ final class FailureClass
         self::TUPLE_FIELD_DRIFT,
         self::FINGERPRINT_MISMATCH,
         self::FINGERPRINT_OPAQUE,
-        self::REPORT_PAYLOAD_UNREADABLE,
         self::COVERAGE_SHORTFALL,
         self::COVERAGE_SURPLUS,
         self::COVERAGE_MULTIPLICITY,
