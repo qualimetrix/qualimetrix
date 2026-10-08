@@ -256,8 +256,8 @@ final class Gate
             if (\in_array(FailureClass::REFERENCE_INPUT_UNTRANSLATED, $this->report->failureClasses(), true)) {
                 return;
             }
-            $this->checkFindings('candidate', $first, trackObserved: true);
-            $this->checkFindings('reference', $referenceArtifacts, trackObserved: false);
+            $this->checkFindings('candidate', $first, trackObserved: true, capture: $firstCapture);
+            $this->checkFindings('reference', $referenceArtifacts, trackObserved: false, capture: $referenceCapture);
             $this->exactSurfaceDeltaCheck->plan(['candidate' => $firstCapture, 'reference' => $referenceCapture], $this->records, $this->fingerprintCheck);
             $this->renameMapCheck->checkSplitExplanation($first, $referenceArtifacts);
             $this->surfaceComparison->compareSurfaces($first, $referenceArtifacts);
@@ -391,28 +391,48 @@ final class Gate
     }
 
     /** @return array<string,list<array<string,mixed>>>|null */
-    private function captureAuthority(string $label, CaptureResult $capture): ?array
+    private function captureAuthority(string $label, CaptureResult $capture, string $side = 'candidate', ?string $caseId = null): ?array
     {
-        $pass = $this->context->withCandidateCapture($capture);
+        $pass = new RunContext(
+            $this->options,
+            $this->report,
+            $this->corpus,
+            $this->maps,
+            $this->split,
+            $this->vocabulary,
+            $this->context->normalization,
+            $this->declarations,
+            $this->temporaryDirectory,
+        );
+        $this->context->copyPublicationsTo($pass);
+        $pass->publicationForms->supply($side, $capture->artifacts);
+        $pass->rankings->supply($side, $capture->rankings);
+        $pass->baselineEligibility->supply($side, $capture->baselineEligibility);
         $ranking = RankingCheck::create($pass);
         $records = RecordCheck::create($pass);
         $authority = [];
         foreach ($this->corpus->cases as $case) {
-            $outcome = CaseOutcome::of($case, 'candidate');
+            if ($caseId !== null && $case->id !== $caseId) {
+                continue;
+            }
+            $outcome = CaseOutcome::of($case, $side);
             try {
                 foreach ($pass->capturePlan->rankingInvocations() as $descriptor) {
                     $key = Surfaces::key($descriptor['scope'], $descriptor['surface']);
-                    if ($descriptor['scope'] !== 'case:' . $case->id || !$pass->capturePlan->requiredOn($key, 'candidate')) {
+                    if ($descriptor['scope'] !== 'case:' . $case->id || !$pass->capturePlan->requiredOn($key, $side)) {
                         continue;
                     }
-                    if (!$ranking->checkCaptureMetadata('candidate', $key, $capture->artifacts)) {
+                    if (!$ranking->checkCaptureMetadata($side, $key, $capture->artifacts)) {
                         return null;
                     }
                     if (!CaseOutcome::applies(CaseOutcome::CHECK_FINDINGS, $outcome)) {
                         continue;
                     }
-                    $published = ReportRecords::extract('json', $capture->artifacts[$key], $records->fields('json', $descriptor['surface'], 'candidate'));
-                    $observed = $ranking->observe('candidate', $case, $descriptor['surface'], $published, $capture->artifacts);
+                    if ($pass->publicationForms->of($side, $key) !== PublicationForms::RECORDS) {
+                        throw new GateError($pass->publicationForms->problem($side, $key) ?? 'The own capture has no native findings population.');
+                    }
+                    $published = ReportRecords::extract('json', $capture->artifacts[$key], $records->fields('json', $descriptor['surface'], $side));
+                    $observed = $ranking->observe($side, $case, $descriptor['surface'], $published, $capture->artifacts, compare: false);
                     if ($descriptor['surface'] === 'format:json') {
                         $authority[$case->id] = $observed['rawAuthority'];
                     }
@@ -466,7 +486,7 @@ final class Gate
      *
      * @param array<string, string> $artifacts
      */
-    private function checkFindings(string $side, array $artifacts, bool $trackObserved): void
+    private function checkFindings(string $side, array $artifacts, bool $trackObserved, ?CaptureResult $capture = null): void
     {
         $tuple = EquivalenceTuple::load($this->options->candidateRoot);
 
@@ -481,11 +501,23 @@ final class Gate
             }
 
             if (CaseOutcome::applies(CaseOutcome::CHECK_FINDINGS, $outcome)) {
-                try {
-                    $complete = $this->records->rawAuthority($case->id, 'format:json', $side);
-                } catch (GateError) {
-                    // The record producer already reported why its authority is unavailable.
-                    $complete = null;
+                if ($this->context->publicationForms->recordsPair($key) === false) {
+                    if ($capture === null) {
+                        $this->report->fail(FailureClass::RUN_FAILED, $side . ' / ' . $case->id, 'Independent findings claims require their own complete capture.');
+                        continue;
+                    }
+                    $own = $this->captureAuthority($side . '-claims', $capture, $side, $case->id);
+                    if ($own === null) {
+                        continue;
+                    }
+                    $complete = $own[$case->id] ?? throw new GateError('The own findings claims have no validated complete population.');
+                } else {
+                    try {
+                        $complete = $this->records->rawAuthority($case->id, 'format:json', $side);
+                    } catch (GateError) {
+                        // The record producer already reported why its authority is unavailable.
+                        $complete = null;
+                    }
                 }
                 $findings = $this->caseOutcomeCheck->findingsOf($side, $case, $artifacts, $complete);
 

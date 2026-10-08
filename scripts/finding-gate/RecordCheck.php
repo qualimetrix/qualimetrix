@@ -76,6 +76,23 @@ final class RecordCheck implements CaseCheck, RunCheck
     public function checkCase(string $side, CaseDefinition $case, string $outcome, array $artifacts): void
     {
         $this->run->publicationForms->supply($side, $artifacts);
+        foreach (array_keys($artifacts) as $key) {
+            $surface = Surfaces::surfaceClass($key);
+            if (!str_starts_with($key, 'case:' . $case->id . '|') || !ReportViews::recordBearingSurface($surface)) {
+                continue;
+            }
+            try {
+                $invocation = $this->run->capturePlan->invocationOf($key);
+            } catch (GateError) {
+                continue;
+            }
+            if (!$this->run->capturePlan->requiredOn($invocation, $side)
+                || ($surface === 'baseline-file' && !CaseOutcome::applies(CaseOutcome::CHECK_BASELINE_FILE, $outcome)
+                    && $this->run->publicationForms->of($side, $key) !== PublicationForms::REFUSAL)) {
+                continue;
+            }
+            $this->publicationGuard($side, $case, $surface, $artifacts);
+        }
         if (!CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, $outcome)) {
             return;
         }
@@ -264,9 +281,12 @@ final class RecordCheck implements CaseCheck, RunCheck
     }
 
     /** @param array<string,string> $artifacts */
-    private function recordPublication(string $side, CaseDefinition $case, string $surface, array $artifacts): bool
+    private function publicationGuard(string $side, CaseDefinition $case, string $surface, array $artifacts): bool
     {
         $key = 'case:' . $case->id . '|' . $surface;
+        if ($this->run->report->sourceRejected($side, $key, 'records')) {
+            return false;
+        }
         $problem = $this->run->publicationForms->problem($side, $key);
         if ($problem !== null) {
             $this->publicationProblem($side, $key, new GateError($problem));
@@ -285,6 +305,17 @@ final class RecordCheck implements CaseCheck, RunCheck
             && !CapturePlan::partialViewRefusal($case, $surface, $artifacts)) {
             $this->publicationProblem($side, $key, new GateError('The partial-view refusal does not match this invocation selector and native diagnostic.'));
         }
+        return !$this->run->report->sourceRejected($side, $key, 'records');
+    }
+
+    /** @param array<string,string> $artifacts */
+    private function recordPublication(string $side, CaseDefinition $case, string $surface, array $artifacts): bool
+    {
+        if (!$this->publicationGuard($side, $case, $surface, $artifacts)) {
+            return false;
+        }
+        $key = 'case:' . $case->id . '|' . $surface;
+        $refused = $this->run->publicationForms->of($side, $key) === PublicationForms::REFUSAL;
         if (!$refused && $this->run->publicationForms->recordsPair($key) === false) {
             $this->captureSchemaProvenance($side, $case->id, $surface, $artifacts[$key] ?? null);
         }

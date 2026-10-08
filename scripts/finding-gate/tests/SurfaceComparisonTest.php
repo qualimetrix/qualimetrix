@@ -29,6 +29,8 @@ use QmxFindingGate\SurfacePair;
 use QmxFindingGate\SurfaceStage;
 use QmxFindingGate\SyntheticTree;
 use QmxFindingGate\Tsv;
+use ReflectionMethod;
+use ReflectionProperty;
 
 /**
  * A form's registered stage takes part in every surface's comparison, at the
@@ -106,6 +108,45 @@ final class SurfaceComparisonTest extends TestCase
                         self::assertNotSame($reference, ExactSurfaceAuthority::pair($pair, ['candidate' => $captures['candidate'], 'reference' => $changedCapture], $run)[1], $label . ' / ' . $changed);
                     }
                 }
+            }
+        }
+        foreach ([['candidate', 'records'], ['reference', 'records'], ['candidate', 'refusal'], ['reference', 'refusal']] as [$side, $summaryForm]) {
+            $report = new GateReport();
+            $gate = new \QmxFindingGate\Gate(Options::parse(['gate', '--candidate=' . $this->root, '--reference=HEAD'], $this->root), $report);
+            try {
+                $run = (new ReflectionProperty($gate, 'context'))->getValue($gate);
+                $capture = (new ReflectionMethod(RecordedComparison::class, 'capture'))->invoke(null, $this->root, $run);
+                $key = 'case:alpha|format:json';
+                $complete = json_decode($capture->artifacts[$key], true, 512, \JSON_THROW_ON_ERROR);
+                $truncated = $complete;
+                $truncated['violations'] = [];
+                $truncated['violationsMeta']['shown'] = 0;
+                $truncated['violationsMeta']['limit'] = 0;
+                $truncated['violationsMeta']['truncated'] = true;
+                $publication = \QmxFindingGate\ValueCheck::value($truncated);
+                $artifacts = array_replace($capture->artifacts, [$key => $publication, 'case:alpha|check:output:file' => $publication]);
+                if ($summaryForm === 'refusal') {
+                    $artifacts['case:alpha|format:summary'] = '{"error":"Refused summary","exit_code":3}';
+                    $artifacts['case:alpha|exit:format:summary'] = '3';
+                    $artifacts['case:alpha|stderr:format:summary'] = "Refused summary\n";
+                }
+                $rankings = $capture->rankings;
+                $rankings[$key]['ranked']['stdout'] = $publication;
+                $rankings[$key]['physical'] = ['stdout' => \QmxFindingGate\ValueCheck::value($complete), 'stderr' => $artifacts['case:alpha|stderr:format:json'], 'exit' => (int) $artifacts['case:alpha|exit:format:json']];
+                $ownCapture = new \QmxFindingGate\CaptureResult($artifacts, $rankings, $capture->baselineEligibility);
+                $run->publicationForms->supply($side, $artifacts);
+                $run->publicationForms->supply($side === 'candidate' ? 'reference' : 'candidate', array_replace($capture->artifacts, [$key => '{"error":"Refused input","exit_code":3}']));
+                $run->rankings->supply($side, $rankings);
+                $run->baselineEligibility->supply($side, $capture->baselineEligibility);
+                (new ReflectionMethod($gate, 'checkFindings'))->invoke($gate, $side, $artifacts, true, $ownCapture);
+                self::assertSame($complete['violations'], (new ReflectionProperty($gate, 'findingsByCase'))->getValue($gate)['alpha'] ?? null, $side . ' / summary ' . $summaryForm . ' / independent complete claims: ' . $report->render());
+                self::assertFalse($report->sourceValid($side, $key, 'ranking'), $side . ' mixed claims are not comparative ranking authority');
+                self::assertNotContains(FailureClass::RUN_FAILED, $report->failureClasses(), $report->render());
+                $invalid = array_replace($artifacts, ['case:alpha|format:gitlab' => '{"error":"Unrelated refusal","exit_code":3}', 'case:alpha|exit:format:gitlab' => '3']);
+                \QmxFindingGate\RecordCheck::create($run)->checkCase($side, $run->corpus->cases[0], \QmxFindingGate\CaseOutcome::ANALYSIS, $invalid);
+                self::assertContains('The partial-view refusal does not match this invocation selector and native diagnostic.', array_column($report->raised(), 'detail'), $side . ' semantic guard precedes comparative skip');
+            } finally {
+                $gate->cleanUp();
             }
         }
     }
