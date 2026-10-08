@@ -68,6 +68,12 @@ decoders remain callable, but the gate gives them no record, projection,
 fingerprint or ranking authority. Other command surfaces keep their byte
 contracts.
 
+The finite capture list retains the historical `text-verbose` CLI address on
+every corpus case, even though the product no longer supports that format.
+Its unsupported-format response is compared against the reference invocation
+as complete bytes and an exact process outcome. No withdrawal-form declaration
+is needed to keep that historical address captured.
+
 Eligible JSON decoding preserves native objects and arrays before associative
 conversion: `{}` in a list position is not an empty `[]`. A JSON view must
 prove its own named list. Baselines require their supported document, an
@@ -390,12 +396,15 @@ refusal uses an exact surface delta.
 An outcome declaration names the transition and its refusal file. Declaration
 forms require their own applicable JSON view and a records pair. Introduced and
 withdrawn publication forms likewise apply only to JSON, metrics and suppressed
-JSON views; other publications retain ordinary or exact whole comparison.
+JSON views. A differing whole publication requires an exact complete-invocation
+declaration.
 A whole invocation does not credit an outcome or publication form, even if
 its bytes look like the declared refusal.
 
 Surface declarations use `cases=*` for every case, or a nonempty JSON list of
-exact case names. A withdrawn format is captured only in those cases. Selected
+exact case names. An eligible withdrawn format is captured in those cases;
+historical addresses already in the finite capture list remain captured in all
+cases. Selected
 reference ownership and case-input translation retain their checks; other
 formats and excluded cases retain ordinary comparisons.
 

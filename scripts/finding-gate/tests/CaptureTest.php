@@ -58,6 +58,7 @@ final class CaptureTest extends TestCase
     {
         $tree = SyntheticTree::clean();
         $tree['candidateAnswers']['case:alpha|format:text-detail'] = ['env' => true];
+        $tree['candidateAnswers']['case:alpha|format:text-verbose'] = ['env' => true];
         $root = SyntheticTree::create($tree);
         $temporary = Fs::temporaryDirectory('detailed-text-capture-test-');
         try {
@@ -67,6 +68,13 @@ final class CaptureTest extends TestCase
             $document = json_decode($capture->artifacts['case:alpha|format:text-detail'], true, 512, \JSON_THROW_ON_ERROR);
             self::assertIsArray($document);
             self::assertSame(['-f', 'text', '--detail=all'], \array_slice($document['argv'], -3));
+            self::assertSame(0, DeclaredSurfaces::load($root . '/finding-gate')->count());
+            self::assertArrayHasKey('case:alpha|format:text-verbose', $capture->artifacts);
+            $historical = json_decode($capture->artifacts['case:alpha|format:text-verbose'], true, 512, \JSON_THROW_ON_ERROR);
+            self::assertIsArray($historical);
+            self::assertSame(['-f', 'text-verbose'], \array_slice($historical['argv'], -2));
+            self::assertArrayHasKey('case:alpha|exit:format:text-verbose', $capture->artifacts);
+            self::assertArrayHasKey('case:alpha|stderr:format:text-verbose', $capture->artifacts);
         } finally {
             SyntheticTree::remove($root);
             Fs::removeRecursively($temporary);
