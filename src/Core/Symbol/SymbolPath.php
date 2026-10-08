@@ -157,12 +157,12 @@ final readonly class SymbolPath
         $type = $this->getType();
 
         return match ($type) {
-            SymbolType::File => $type->canonicalPrefix() . SourceBytes::escape($this->filePath?->value() ?? ''),
+            SymbolType::File => $type->canonicalPrefix() . self::canonicalComponent($this->filePath?->value()),
             SymbolType::Project => $type->canonicalPrefix(),
             SymbolType::Function_ => $this->buildFunctionCanonical(),
-            SymbolType::Method => $type->canonicalPrefix() . $this->buildTypeCanonical() . '::' . SourceBytes::escape($this->member ?? ''),
+            SymbolType::Method => $type->canonicalPrefix() . $this->buildTypeCanonical() . '::' . self::canonicalComponent($this->member),
             SymbolType::Class_ => $type->canonicalPrefix() . $this->buildTypeCanonical(),
-            SymbolType::Namespace_ => $type->canonicalPrefix() . SourceBytes::escape($this->namespace ?? ''),
+            SymbolType::Namespace_ => $type->canonicalPrefix() . self::canonicalComponent($this->namespace),
         };
     }
 
@@ -222,11 +222,16 @@ final readonly class SymbolPath
         return $this->namespace !== null && $this->namespace !== '';
     }
 
+    private static function canonicalComponent(?string $component): string
+    {
+        return SourceBytes::escape($component ?? '');
+    }
+
     private function buildFunctionCanonical(): string
     {
-        $member = SourceBytes::escape($this->member ?? '');
+        $member = self::canonicalComponent($this->member);
         if ($this->hasNamespace()) {
-            return SymbolType::Function_->canonicalPrefix() . SourceBytes::escape($this->namespace ?? '') . '::' . $member;
+            return SymbolType::Function_->canonicalPrefix() . self::canonicalComponent($this->namespace) . '::' . $member;
         }
 
         return SymbolType::Function_->canonicalPrefix() . ':' . $member;
@@ -237,11 +242,11 @@ final readonly class SymbolPath
         $parts = [];
 
         if ($this->hasNamespace()) {
-            $parts[] = SourceBytes::escape($this->namespace ?? '');
+            $parts[] = self::canonicalComponent($this->namespace);
             $parts[] = '\\';
         }
 
-        $parts[] = SourceBytes::escape($this->type ?? '');
+        $parts[] = self::canonicalComponent($this->type);
 
         return implode('', $parts);
     }
