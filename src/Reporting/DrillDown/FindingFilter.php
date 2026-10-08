@@ -45,36 +45,41 @@ final class FindingFilter
         }
 
         return array_values(array_filter($findings, function (Finding $v) use ($context, $fileNamespaces): bool {
-            $ns = FindingNamespace::declared($v);
-            $class = $v->symbolPath->type;
-
             if ($context->namespace !== null) {
-                if ($v->symbolPath->getType() === SymbolType::Project) {
-                    return false;
-                }
-
-                if ($ns !== null) {
-                    return $context->namespace->matches($ns);
-                }
-                if ($v->subject->toSymbolPath()->getType() !== SymbolType::File) {
-                    return false;
-                }
-
-                foreach ($this->fileNamespaces($v, $fileNamespaces) as $namespace) {
-                    if ($context->namespace->matches($namespace)) {
-                        return true;
-                    }
-                }
-
-                return false;
+                return $this->matchesNamespace($v, $context, $fileNamespaces);
             }
 
+            $class = $v->symbolPath->type;
             if ($context->class !== null && $class !== null) {
-                return $this->qualifiedClassName($ns, $class) === $context->class;
+                return $this->qualifiedClassName(FindingNamespace::declared($v), $class) === $context->class;
             }
 
             return false;
         }));
+    }
+
+    private function matchesNamespace(Finding $finding, FormatterContext $context, ?FileNamespaceIndex $fileNamespaces): bool
+    {
+        $selector = $context->namespace;
+        if ($selector === null || $finding->symbolPath->getType() === SymbolType::Project) {
+            return false;
+        }
+
+        $namespace = FindingNamespace::declared($finding);
+        if ($namespace !== null) {
+            return $selector->matches($namespace);
+        }
+        if ($finding->subject->toSymbolPath()->getType() !== SymbolType::File) {
+            return false;
+        }
+
+        foreach ($this->fileNamespaces($finding, $fileNamespaces) as $fileNamespace) {
+            if ($selector->matches($fileNamespace)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function qualifiedClassName(?string $namespace, string $class): string
