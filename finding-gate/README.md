@@ -340,9 +340,10 @@ declared member and its own line are removed from comparison.
 Derivation must obtain every required supplier;
 a missing supplier cannot produce an empty successful table.
 
-Refusal envelope keys come from each tree's direct `json_encode` array
-literal in `RefusalPresenter::writeEnvelope`; indirect envelope construction
-is outside this scanner's promise. Changing a refusal while it remains a
+Refusal envelope keys come from one explicit array literal passed to
+`json_encode` or `PublishedUtf8::encodeJsonObject` in
+`RefusalPresenter::writeEnvelope`, parsed by `php-parser`.
+Indirect envelope construction is refused. Changing a refusal while it remains a
 refusal uses an exact surface delta.
 
 An outcome declaration names the transition and its refusal file. Repeated
