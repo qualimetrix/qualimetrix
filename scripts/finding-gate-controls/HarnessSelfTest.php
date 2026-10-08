@@ -103,27 +103,36 @@ final class HarnessSelfTest
             $harness = (new ReflectionClass(Harness::class))->newInstanceWithoutConstructor();
             (new ReflectionProperty(Harness::class, 'repository'))->setValue($harness, $directory);
             $runHarness = new ReflectionMethod(Harness::class, 'run');
-            foreach (['case:alpha|baseline-file' => false, 'case:ordinary|rules' => true] as $surface => $ordinary) {
-                $pinned = Control::red(
+            foreach ([
+                ['case:alpha|baseline-file', \QmxFindingGate\FailureClass::SURFACE_MISMATCH, true, true,
+                    'an exact intention admits an equality expectation past preflight'],
+                ['case:ordinary|rules', \QmxFindingGate\FailureClass::SURFACE_MISMATCH, true, false,
+                    'an ordinary structural delta still blocks an equality expectation before cloning'],
+                ['case:ordinary|rules', \QmxFindingGate\FailureClass::RECORD_STALE, false, true,
+                    'an ordinary structural delta admits a required stale record past preflight'],
+                ['case:ordinary|rules', \QmxFindingGate\FailureClass::RECORD_STALE, true, true,
+                    'an ordinary structural delta admits a tolerated stale record past preflight'],
+            ] as [$surface, $failureClass, $tolerated, $admitted, $description]) {
+                $record = new Expectation(\QmxFindingGate\FailureClass::RECORD_UNDECLARED, 'case:alpha|format:json', exactScope: true);
+                $pinned = new Expectation($failureClass, $surface, exactScope: true);
+                $control = Control::red(
                     'preflight-probe',
                     'a surface expectation before cloning',
                     Mutation::none(),
-                    [new Expectation(\QmxFindingGate\FailureClass::RECORD_UNDECLARED, 'case:alpha|format:json', exactScope: true)],
-                    [new Expectation(\QmxFindingGate\FailureClass::SURFACE_MISMATCH, $surface, exactScope: true)],
+                    $tolerated ? [$record] : [$record, $pinned],
+                    $tolerated ? [$pinned] : [],
                 );
                 $failure = '';
                 try {
                     // The temporary repository has no Git metadata, so an admitted control stops before cloning.
-                    $runHarness->invoke($harness, [$pinned], [], 1);
+                    $runHarness->invoke($harness, [$control], [], 1);
                 } catch (RuntimeException $error) {
                     $failure = $error->getMessage();
                 }
                 $this->same(
                     true,
-                    str_starts_with($failure, $ordinary ? 'Control "preflight-probe" expects' : 'git status --porcelain failed'),
-                    $ordinary
-                        ? 'an ordinary structural delta still blocks an equality expectation before cloning'
-                        : 'an exact intention admits an equality expectation past preflight',
+                    str_starts_with($failure, $admitted ? 'git status --porcelain failed' : 'Control "preflight-probe" expects'),
+                    $description,
                 );
             }
         } finally {

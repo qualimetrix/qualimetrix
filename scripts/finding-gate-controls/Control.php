@@ -238,6 +238,7 @@ final class Control
         FailureClass::DELTA_OVERREACH,
         FailureClass::DELTA_TOO_LARGE,
         FailureClass::FIELD_MOVE_STALE,
+        FailureClass::RECORD_STALE,
     ];
 
     /**
