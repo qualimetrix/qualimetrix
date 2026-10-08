@@ -1,8 +1,8 @@
 --- candidate
 +++ reference (mapped)
 @@ -1,1 +1,1 @@
--visible 6613
-+visible 863
+-visible 6622
++visible 872
 @@ -10,30 +10,3 @@
 -  1. [ERR] 7.50  src/Cart.php:8  [15min]
 -         annotation.unresolved-directive: Suppression "no.such.rule" addresses no channel. No declared name is close to it. Prose belongs after "--".
@@ -85,7 +85,7 @@
 -  code-smell.eval                          ~15min    (1 violation)
 -  annotation.unresolved-directive          ~15min    (1 violation)
 -
--invocation-format:summary 6613
+-invocation-format:summary 6622
 +src/Cart.php (1 violation)
 +  ERROR at line 14  Cart::run
 +    Replace eval() with a safer alternative (closures, reflection, or template engine).  [code-smell.eval]
@@ -93,7 +93,7 @@
 +Technical debt by rule:
 +  code-smell.eval                          ~15min    (1 violation)
 +
-+invocation-format:summary 863
++invocation-format:summary 872
 @@ -101,30 +34,3 @@
 -  1. [ERR] 7.50  src/Cart.php:8  [15min]
 -         annotation.unresolved-directive: Suppression "no.such.rule" addresses no channel. No declared name is close to it. Prose belongs after "--".
