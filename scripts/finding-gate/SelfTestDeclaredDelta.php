@@ -225,7 +225,7 @@ final class SelfTestDeclaredDelta extends SelfTestGroup
         // after the shared head and tail are trimmed, so a change at one end
         // alone leaves nothing to spend a budget on.
         $wide = static fn(string $first, string $last): string => $first . "\n"
-            . implode("\n", array_map(static fn(int $i): string => 'line ' . $i, range(1, 12100)))
+            . implode("\n", array_map(static fn(int $i): string => 'line ' . $i, range(1, 16100)))
             . "\n" . $last . "\n";
         $refused = false;
 
