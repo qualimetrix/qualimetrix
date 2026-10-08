@@ -996,6 +996,7 @@ final class Probes
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itExitsCleanWhenEveryDirectiveStillDoesSomething',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itExitsCleanWhenTheOnlyFindingIsAnAppliedBoundaryThatMovedNothingElse',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itExitsTwoOnAnInertDirective',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itExplainsAnUnmeasuredNocDirectiveOnASelectedParent',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff with data set "every level of it"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff with data set "the level the directive sits on"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff with data set "the whole rule"',
