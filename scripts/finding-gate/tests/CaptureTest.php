@@ -431,19 +431,26 @@ final class CaptureTest extends TestCase
                 $reference[$surface] = '';
                 $reference[$exitKey] = '1';
             }
+            $recordTransitions = array_values(array_filter($transitions, static fn(array $transition): bool => $transition[0] !== 'baseline:explain'));
             self::declareCaptureExits($root, array_map(
                 static fn(array $transition): array => ['exit', $transition[0], $transition[1], '1', '0'],
-                $transitions,
-            ), array_column($transitions, 0));
+                $recordTransitions,
+            ), array_column($recordTransitions, 0));
             $run = self::captureContext($root, $temporary);
+            $explanation = 'case:alpha|explain:file:src/Alpha.php';
+            $run->publicationForms->supply('candidate', [$explanation => $candidate[$explanation]]);
+            $run->publicationForms->supply('reference', [$explanation => $reference[$explanation]]);
+            self::assertSame('whole-invocation', $run->publicationForms->of('candidate', $explanation));
+            self::assertSame('whole-invocation', $run->publicationForms->of('reference', $explanation));
+            self::assertFalse($run->publicationForms->recordInvocation($explanation));
             $values = ValueCheck::create($run);
             foreach ($transitions as [$command, $surface, $exitKey]) {
                 $pair = new SurfacePair($exitKey, \QmxFindingGate\Surfaces::surfaceClass($exitKey), '0', '1');
                 ValueStage::create($run)->applyStage($pair);
-                self::assertSame('1', $pair->candidate);
+                self::assertSame($command === 'baseline:explain' ? '0' : '1', $pair->candidate, $command);
             }
             foreach ($transitions as [$command, $surface]) {
-                self::assertSame('1', $values->referenceExitFor($command, $surface, '0'));
+                self::assertSame($command === 'baseline:explain' ? null : '1', $values->referenceExitFor($command, $surface, '0'), $command);
             }
             CaptureCheck::create($run)->checkRun($candidate, $reference);
             $values->checkRun($candidate, $reference);

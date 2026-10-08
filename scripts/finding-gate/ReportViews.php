@@ -7,13 +7,13 @@ namespace QmxFindingGate;
 /** A report publication has exact invocation provenance, even when its records are identical. */
 final class ReportViews
 {
-    /** Surfaces with record populations or complete baseline entries in the capture plan. */
+    /** Captured finding reports, baseline entries and baseline explanations. */
     private const array RECORD_BEARING_SURFACES = [
         'baseline-file', 'baseline:cleanup:file', 'baseline:rename-channels:file', 'baseline:update:file',
         'check:baseline', 'check:baseline-source', 'check:output:file', 'check:parallel', 'directives',
         'format:checkstyle', 'format:github', 'format:gitlab', 'format:html', 'format:json',
         'format:metrics', 'format:sarif', 'format:summary', 'format:suppressed', 'format:text',
-        'format:text-detail', 'format:text-verbose', 'show-suppressed',
+        'format:text-detail', 'format:text-verbose', 'show-suppressed', 'format:health', 'explain',
     ];
 
     public static function recordBearingSurface(string $surface): bool

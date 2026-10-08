@@ -77,7 +77,7 @@ final class PublicationForms
         $baseline = \in_array($surface, ['baseline-file', 'baseline:cleanup:file', 'baseline:rename-channels:file', 'baseline:update:file'], true);
         if ($member === null && !$baseline && $surface !== 'format:checkstyle'
             && !\in_array($surface, ProseRecords::SURFACES, true)
-            && !\in_array($surface, ['format:html', 'format:gitlab', 'format:sarif'], true)) {
+            && !\in_array($surface, ['format:html', 'format:gitlab', 'format:sarif', 'format:health', 'explain'], true)) {
             throw new GateError('The publication has no native record decoder: ' . $key);
         }
         if ($member === null && !$baseline) {

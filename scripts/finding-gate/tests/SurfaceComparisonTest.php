@@ -43,7 +43,18 @@ final class SurfaceComparisonTest extends TestCase
     #[Test]
     public function itClassifiesBothPublicationFormsBeforeReadingRecordAuthority(): void
     {
+        $caseFile = $this->root . '/finding-gate/cases/alpha/case.json';
+        $caseBytes = Fs::read($caseFile);
+        $definition = json_decode($caseBytes, true, 512, \JSON_THROW_ON_ERROR);
+        $definition['explainSubjects'] = ['file:src/Alpha.php'];
+        Fs::write($caseFile, \QmxFindingGate\ValueCheck::value($definition));
         $nativePublications = [
+            ['format:health', '', 'whole-invocation', '1', "Malformed UTF-8 characters\n"],
+            ['format:health', "Health scores\n", 'whole-invocation', '0', ''],
+            ['format:health', '{"violations":[]}', 'whole-invocation', '0', ''],
+            ['explain:file:src/Alpha.php', '', 'whole-invocation', '1', "Malformed UTF-8 characters\n"],
+            ['explain:file:src/Alpha.php', "Subject: file:src/Alpha.php\n", 'whole-invocation', '0', ''],
+            ['explain:file:src/Alpha.php', '{"violations":[]}', 'whole-invocation', '0', ''],
             ['format:html', '', 'whole-invocation', '1', "Malformed UTF-8 characters\n"],
             ['format:checkstyle', '', 'whole-invocation', '1', "Malformed UTF-8 characters\n"],
             ['format:sarif', '', 'whole-invocation', '1', "Malformed UTF-8 characters\n"],
@@ -111,6 +122,58 @@ final class SurfaceComparisonTest extends TestCase
             }
             self::assertSame($expected === 'records', $run->publicationForms->recordsPair($key), $view . ' / ' . $text);
         }
+        try {
+            \QmxFindingGate\PublicationForms::classify('case:alpha|format:unregistered-decoder', '');
+            self::fail('An unregistered decoder was accepted.');
+        } catch (GateError $error) {
+            self::assertSame('The publication has no native record decoder: case:alpha|format:unregistered-decoder', $error->getMessage());
+        }
+        foreach (['format:health', 'explain:file:src/Alpha.php'] as $view) {
+            $run = new RunContext(
+                Options::parse(['gate', '--candidate=' . $this->root, '--reference=HEAD'], $this->root),
+                new GateReport(),
+                Corpus::load($this->root),
+                RenameMaps::load($this->root . '/finding-gate/maps', MetricVocabulary::ofTree($this->root)),
+                ChannelSplit::of(RenameMaps::fromPairs([])),
+                MetricVocabulary::ofTree($this->root),
+                Normalization::fromRules([]),
+                \QmxFindingGate\Declarations::load($this->root),
+                $this->root,
+            );
+            $key = 'case:alpha|' . $view;
+            self::assertNull($run->publicationForms->of('candidate', $key), $view . ' / absent');
+            $artifacts = [$key => '', 'case:alpha|stderr:' . $view => "Refused input\n", 'case:alpha|exit:' . $view => '1'];
+            $captures = [];
+            foreach (['candidate', 'reference'] as $side) {
+                $captures[$side] = new \QmxFindingGate\CaptureResult($artifacts, []);
+                $run->publicationForms->supply($side, $artifacts);
+                self::assertSame('whole-invocation', $run->publicationForms->of($side, $key), $view . ' / supplied empty');
+            }
+            self::assertFalse($run->publicationForms->recordInvocation($key), $view);
+            $pair = new SurfacePair($key, \QmxFindingGate\Surfaces::surfaceClass($key), '', '');
+            [$candidate, $reference] = ExactSurfaceAuthority::pair($pair, $captures, $run);
+            self::assertSame($candidate, $reference, $view);
+            self::assertSame([], ExactSurfaceAuthority::footprint($key, $run)['rawSources'], $view);
+            self::assertSame([], ExactSurfaceAuthority::footprint($key, $run)['schemas'], $view);
+            foreach ([$key, 'case:alpha|stderr:' . $view, 'case:alpha|exit:' . $view] as $changedKey) {
+                $changed = $artifacts;
+                self::assertArrayHasKey($changedKey, $changed);
+                $changed[$changedKey] .= '0';
+                $changedCaptures = ['candidate' => new \QmxFindingGate\CaptureResult($changed, []), 'reference' => $captures['reference']];
+                self::assertNotSame($reference, ExactSurfaceAuthority::pair($pair, $changedCaptures, $run)[0], $changedKey);
+                $exitKey = 'case:alpha|exit:' . $view;
+                self::assertArrayHasKey($exitKey, $changed);
+                self::assertArrayHasKey($exitKey, $artifacts);
+                $exit = new SurfacePair($exitKey, \QmxFindingGate\Surfaces::surfaceClass($exitKey), $changed[$exitKey], $artifacts[$exitKey]);
+                \QmxFindingGate\ValueStage::create($run)->applyStage($exit);
+                self::assertSame($changed[$exitKey], $exit->candidate, $changedKey . ' / native exit');
+                $raisedBefore = \count($run->report->raised());
+                $this->comparison($run->report, [\QmxFindingGate\RecordStage::create($run), \QmxFindingGate\ValueStage::create($run)])->compareSurfaces($changed, $artifacts);
+                self::assertCount($raisedBefore + 1, $run->report->raised(), $changedKey);
+                self::assertSame([FailureClass::SURFACE_MISMATCH], $run->report->failureClasses(), $changedKey);
+            }
+        }
+        Fs::write($caseFile, $caseBytes);
         $publications = [
             ['directives', '{"directives":[],"exit_code":0}', 'directives'],
             ['format:json', '{"violations":[],"topIssues":[]}', 'violations'],
@@ -649,7 +712,7 @@ final class SurfaceComparisonTest extends TestCase
                 self::assertCount(1, $report->raised());
                 self::assertSame(FailureClass::SURFACE_MISMATCH, $report->raised()[0]['class']);
                 self::assertSame($key, $report->raised()[0]['scope']);
-                self::assertStringContainsString('outside every declared structural intention', $report->raised()[0]['detail']);
+                self::assertSame('The whole invocation differs and requires an exact complete-surface delta.', $report->raised()[0]['detail']);
             }
         }
     }
