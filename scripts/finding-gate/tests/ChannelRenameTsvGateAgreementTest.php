@@ -233,6 +233,12 @@ final class ChannelRenameTsvGateAgreementTest extends TestCase
         self::assertSame('App\\Old', $maps->reverseSymbol('App\\New'));
         self::assertSame('App\\NewNeighbour', $maps->reverseSymbol('App\\NewNeighbour'));
         self::assertSame("old\tnew\treason\n# a.new stays\na.old\tb.old\ta.new\n", $maps->reverseChannelMap("old\tnew\treason\n# a.new stays\na.new\tb.old\ta.new\n"));
+        $reference = ['channel' => 'a.old', 'rule' => 'a.old', 'occurrence' => '0123456789abcdef', 'neighbour' => 'a.oldNeighbour'];
+        $translated = $maps->forward(json_encode($reference, \JSON_THROW_ON_ERROR), 'format:json');
+        self::assertSame(
+            ['channel' => 'a.new', 'rule' => 'a.new', 'occurrence' => '0123456789abcdef', 'neighbour' => 'a.oldNeighbour'],
+            json_decode($translated, true, 512, \JSON_THROW_ON_ERROR),
+        );
         self::assertSame([], $maps->staleRows());
         $collapse = RenameMaps::fromPairs([
             ['old' => 'a.old', 'new' => 'same.new', 'source' => RenameMaps::CHANNELS],
@@ -662,6 +668,11 @@ PHP;
             $output['violationsMeta']['byRule'] = ['health.complexity' => 2];
             $specification['candidateAnswers']['case:alpha|check:output'] = ['file' => json_encode($output, \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES) . "\n"];
         }
+        $referenceAnswers = SyntheticTree::caseAnswers('alpha', $specification['findings']['alpha'], isset($specification['truncated']), []);
+        self::assertArrayHasKey('stdout', $referenceAnswers['case:alpha|format:html']);
+        $specification['answers']['case:alpha|format:html'] = $referenceAnswers['case:alpha|format:html'];
+        $specification['candidateAnswers']['case:alpha|format:html'] = $referenceAnswers['case:alpha|format:html'];
+        self::assertSame(\QmxFindingGate\PublicationForms::WHOLE_INVOCATION, \QmxFindingGate\PublicationForms::classify('case:alpha|format:html', $referenceAnswers['case:alpha|format:html']['stdout']));
         $root = $public ? SyntheticTree::create($specification) : SyntheticTree::fixture($specification);
         try {
             $before = self::declarationBytes($root);
@@ -671,6 +682,14 @@ PHP;
                 (new Gate($options, $report))->compare();
             }
             self::assertSame(\in_array($mode, ['exact', 'exact-truncated'], true) ? GateReport::EXIT_GREEN : GateReport::EXIT_RED, $report->exitCode(), $report->render());
+            if (\in_array($mode, ['exact', 'exact-truncated'], true)) {
+                $wholeChange = $specification;
+                $candidateAnswers = SyntheticTree::caseAnswers('alpha', $specification['candidateFindings']['alpha'], isset($specification['truncated']), []);
+                $wholeChange['candidateAnswers']['case:alpha|format:html'] = $candidateAnswers['case:alpha|format:html'];
+                $wholeReport = RecordedComparison::report($wholeChange);
+                self::assertSame([FailureClass::SURFACE_MISMATCH], $wholeReport->failureClasses(), $wholeReport->render());
+                self::assertSame('case:alpha|format:html', $wholeReport->raised()[0]['scope']);
+            }
             if (!\in_array($mode, ['exact', 'exact-truncated'], true)) {
                 self::assertContains($mode === 'wrong-counts' ? FailureClass::RECORD_PROJECTION_MISMATCH : FailureClass::MAP_STALE, $report->failureClasses(), $report->render());
                 if (\in_array($mode, ['no-matches-truncated', 'unmatched', 'unmatched-truncated', 'foreign-channel', 'foreign-channel-truncated'], true)) {

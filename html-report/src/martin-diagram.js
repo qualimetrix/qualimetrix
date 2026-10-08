@@ -38,8 +38,8 @@ export function collectNamespacesWithMetrics(node) {
   for (const child of node.children) {
     if (child.type !== 'namespace') continue;
 
-    const instability = child.metrics?.instability;
-    const abstractness = child.metrics?.abstractness;
+    const instability = child.metrics?.['coupling.instability'];
+    const abstractness = child.metrics?.['coupling.abstractness'];
 
     if (instability == null || abstractness == null) continue;
     if (!Number.isFinite(instability) || !Number.isFinite(abstractness)) continue;
@@ -48,7 +48,7 @@ export function collectNamespacesWithMetrics(node) {
       node: child,
       instability,
       abstractness,
-      distance: child.metrics?.distance ?? Math.abs(abstractness + instability - 1),
+      distance: child.metrics?.['coupling.distance'] ?? Math.abs(abstractness + instability - 1),
       loc: child.metrics?.['size.loc.sum'] ?? 0,
     });
   }
@@ -328,14 +328,14 @@ function renderAxes(g, xScale, yScale, innerWidth, innerHeight) {
     .attr('class', 'md-axis-label')
     .attr('x', innerWidth / 2)
     .attr('y', xLabelY)
-    .text('Instability \u2014 likelihood of being affected by changes (0 = stable, 1 = unstable)');
+    .text('Instability (namespace subtree) \u2014 likelihood of being affected by changes (0 = stable, 1 = unstable)');
 
   g.append('text')
     .attr('class', 'md-axis-label')
     .attr('transform', 'rotate(-90)')
     .attr('x', -innerHeight / 2)
     .attr('y', -40)
-    .text('Abstractness \u2014 ratio of interfaces to total types (0 = concrete, 1 = abstract)');
+    .text('Abstractness (namespace subtree) \u2014 ratio of interfaces to total types (0 = concrete, 1 = abstract)');
 }
 
 function ensureTooltip() {
@@ -383,9 +383,9 @@ function renderDots(g, data, xScale, yScale, radiusScale, colorScale, drillMap, 
       const tooltip = ensureTooltip();
       const verdict = getVerdict(d.instability, d.abstractness, d.distance);
       tooltip.innerHTML = `<strong>${escapeHtml(d.node.name)}</strong><br>` +
-        `Instability: ${fmt2(d.instability)} <span style="color:#aaa">(how easy to affect)</span><br>` +
-        `Abstractness: ${fmt2(d.abstractness)} <span style="color:#aaa">(interfaces ratio)</span><br>` +
-        `Distance: ${fmt2(d.distance)} <span style="color:#aaa">(from ideal)</span><br>` +
+        `Instability (namespace subtree): ${fmt2(d.instability)} <span style="color:#aaa">(how easy to affect)</span><br>` +
+        `Abstractness (namespace subtree): ${fmt2(d.abstractness)} <span style="color:#aaa">(interfaces ratio)</span><br>` +
+        `Distance (namespace subtree): ${fmt2(d.distance)} <span style="color:#aaa">(from ideal)</span><br>` +
         `LOC: ${d.loc.toLocaleString()}<br>` +
         `<span style="margin-top:4px;display:inline-block;color:${verdict.color}">${verdict.text}</span>`;
       tooltip.style.display = 'block';

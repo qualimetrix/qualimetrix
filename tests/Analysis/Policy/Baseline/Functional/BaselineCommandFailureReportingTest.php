@@ -61,7 +61,6 @@ use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use ReflectionClass;
 use RuntimeException;
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -89,23 +88,26 @@ use Throwable;
 final class BaselineCommandFailureReportingTest extends TestCase
 {
     /**
-     * @return iterable<string, array{Throwable, string}>
+     * @return iterable<string, array{Throwable, string, int}>
      */
     public static function provideFailures(): iterable
     {
         yield 'an unreadable baseline envelope' => [
             new RuntimeException('Baseline file not found: b.json'),
             'Baseline file not found: b.json',
+            5,
         ];
 
         yield 'a file somebody else rewrote' => [
             new BaselineConflictException('Baseline file b.json changed since it was read'),
             'changed since it was read',
+            1,
         ];
 
         yield 'a defect in the tool itself' => [
             new LogicException('the invariant nobody expected to break'),
             'Internal error: the invariant nobody expected to break',
+            5,
         ];
     }
 
@@ -114,11 +116,11 @@ final class BaselineCommandFailureReportingTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideFailures')]
-    public function itReportsAFailureAsOneSentence(Throwable $thrown, string $expected): void
+    public function itReportsAFailureAsOneSentence(Throwable $thrown, string $expected, int $expectedExit): void
     {
         $tester = self::execute($thrown, verbose: false);
 
-        self::assertSame(Command::FAILURE, $tester->getStatusCode());
+        self::assertSame($expectedExit, $tester->getStatusCode());
         $reported = $tester->getDisplay() . $tester->getErrorOutput();
         self::assertStringContainsString($expected, $reported);
         self::assertStringNotContainsString('Stack trace:', $reported);
@@ -129,11 +131,11 @@ final class BaselineCommandFailureReportingTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideFailures')]
-    public function itAddsTheTraceWhenTheUserAsksForVerbosity(Throwable $thrown, string $expected): void
+    public function itAddsTheTraceWhenTheUserAsksForVerbosity(Throwable $thrown, string $expected, int $expectedExit): void
     {
         $tester = self::execute($thrown, verbose: true);
 
-        self::assertSame(Command::FAILURE, $tester->getStatusCode());
+        self::assertSame($expectedExit, $tester->getStatusCode());
         $reported = $tester->getDisplay() . $tester->getErrorOutput();
         self::assertStringContainsString($expected, $reported);
         self::assertStringContainsString('Stack trace:', $reported);

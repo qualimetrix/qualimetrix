@@ -450,6 +450,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedMetricExtractorInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag'
@@ -567,6 +568,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage'
         - 'Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStageInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStageResult'
+        - 'Qualimetrix\Analysis\Finding\Contract\Filter\FindingNamespace'
         - 'Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter'
         - 'Qualimetrix\Analysis\Finding\Contract\Filter\PathExclusionFilter'
         - 'Qualimetrix\Analysis\Finding\Contract\Filter\PredicateFilterStage'
@@ -1094,6 +1096,7 @@ architecture:
         - 'Qualimetrix\Core\Pattern\SelectorKind'
         - 'Qualimetrix\Core\Pattern\SelectorMatchFailure'
         - 'Qualimetrix\Core\ProductIdentity'
+        - 'Qualimetrix\Core\SourceText\SourceBytes'
         - 'Qualimetrix\Core\Time\ClockInterface'
         - 'Qualimetrix\Core\Time\SystemClock'
         - 'Qualimetrix\Core\Version'
@@ -1221,6 +1224,8 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator'
         - 'Qualimetrix\Infrastructure\Console\FormatOptionPairs'
         - 'Qualimetrix\Infrastructure\Console\FormatterContextFactory'
+        - 'Qualimetrix\Infrastructure\Console\GlyphConsoleSection'
+        - 'Qualimetrix\Infrastructure\Console\GlyphOutput'
         - 'Qualimetrix\Infrastructure\Console\Hook\HookBackupTransaction'
         - 'Qualimetrix\Infrastructure\Console\Hook\HookEntryAccess'
         - 'Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction'
@@ -1230,6 +1235,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\MeasuredFindingSet'
         - 'Qualimetrix\Infrastructure\Console\MemoryLimitSection'
         - 'Qualimetrix\Infrastructure\Console\ObservedProjectScopeReasons'
+        - 'Qualimetrix\Infrastructure\Console\OutputEncoding'
         - 'Qualimetrix\Infrastructure\Console\OutputHelper'
         - 'Qualimetrix\Infrastructure\Console\PreparedAnalysisInput'
         - 'Qualimetrix\Infrastructure\Console\PreparedAnalysisRuntimeConfiguration'
@@ -1393,6 +1399,7 @@ architecture:
         - 'Qualimetrix\Reporting\DrillDown\DrillDownBinding'
         - 'Qualimetrix\Reporting\DrillDown\FindingFilter'
         - 'Qualimetrix\Reporting\DrillDown\OutOfScopeFindings'
+        - 'Qualimetrix\Reporting\DrillDown\OutOfScopeIdentity'
         - 'Qualimetrix\Reporting\FindingProjection\BaselineFindingProjection'
         - 'Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclusionsResolver'
         - 'Qualimetrix\Reporting\FindingProjection\ConfiguredExclusionProjection'
@@ -1419,8 +1426,11 @@ architecture:
         - 'Qualimetrix\Reporting\Formatter\Detail\DebtBreakdownRenderer'
         - 'Qualimetrix\Reporting\Formatter\Detail\DetailedFindingRenderer'
         - 'Qualimetrix\Reporting\Formatter\Detail\FindingDetailRenderer'
+        - 'Qualimetrix\Reporting\Formatter\FindingPlace'
+        - 'Qualimetrix\Reporting\Formatter\FindingRecord'
         - 'Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface'
         - 'Qualimetrix\Reporting\Formatter\FormatOptionValue'
+        - 'Qualimetrix\Reporting\Formatter\FormattedReport'
         - 'Qualimetrix\Reporting\Formatter\FormatterInterface'
         - 'Qualimetrix\Reporting\Formatter\FormatterRegistry'
         - 'Qualimetrix\Reporting\Formatter\FormatterRegistryInterface'
@@ -1431,7 +1441,6 @@ architecture:
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlDebtCalculator'
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlFindingPartitioner'
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlFormatter'
-        - 'Qualimetrix\Reporting\Formatter\Html\HtmlMetricAggregator'
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlProjectMetadata'
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder'
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlTreeNode'
@@ -1442,6 +1451,10 @@ architecture:
         - 'Qualimetrix\Reporting\Formatter\Json\JsonSanitizer'
         - 'Qualimetrix\Reporting\Formatter\MetricsJsonFormatter'
         - 'Qualimetrix\Reporting\Formatter\Ordering\FindingSorter'
+        - 'Qualimetrix\Reporting\Formatter\Prose\AsciiGlyphs'
+        - 'Qualimetrix\Reporting\Formatter\Prose\GlyphMode'
+        - 'Qualimetrix\Reporting\Formatter\Prose\ProseText'
+        - 'Qualimetrix\Reporting\Formatter\PublicationKind'
         - 'Qualimetrix\Reporting\Formatter\PublishedFinding'
         - 'Qualimetrix\Reporting\Formatter\PublishedUtf8'
         - 'Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter'
@@ -1454,7 +1467,6 @@ architecture:
         - 'Qualimetrix\Reporting\Formatter\Summary\TopIssuesRenderer'
         - 'Qualimetrix\Reporting\Formatter\Suppressed\SuppressedFormatter'
         - 'Qualimetrix\Reporting\Formatter\TextFormatter'
-        - 'Qualimetrix\Reporting\Formatter\TextVerboseFormatter'
         - 'Qualimetrix\Reporting\GroupBy'
         - 'Qualimetrix\Reporting\Health\HealthHintProjector'
         - 'Qualimetrix\Reporting\Health\HealthScoreResolver'
@@ -1657,6 +1669,7 @@ architecture:
     core-profiler:
       - external
     core-symbol:
+      - core-neutral
       - core-path
       - external
     infrastructure-ast:
@@ -1744,6 +1757,7 @@ architecture:
       - external
     infrastructure-logging:
       - core-filetarget
+      - core-neutral
       - external
     infrastructure-parallel:
       - analysis-configuration
@@ -1851,6 +1865,8 @@ rules:
       - subtree: Qualimetrix\Core\Path
     suppress_namespace_channels:
       coupling.cbo:namespace:
+        # Publishing byte-distinct JSON group keys adds the required neutral SourceBytes boundary; own union 16.
+        - exact: 'Qualimetrix\Reporting\Formatter\Json'
         # These exact contract namespaces grow with their intended named readers.
         # Own namespace unions are 32 and 19; declaration-level quality remains measured.
         - exact: 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract'
@@ -1981,6 +1997,10 @@ rules:
         # their own point threshold.
         - exact: 'Qualimetrix\Analysis\Evidence\Measurement\Contract'
     suppress_paths:
+      # Shared repository read port: 42 inbound classes, total CBO 48, at its explicit bound.
+      - exact: src/Analysis/Evidence/Measurement/Contract/MetricRepositoryInterface.php
+      # Shared formatter publication port: 15 inbound classes, total CBO 20, at its explicit bound.
+      - exact: src/Reporting/Formatter/FormatterInterface.php
       # The dependency-kind vocabulary has 21 incoming readers and no outgoing types.
       - exact: src/Analysis/Evidence/DependencyModel/Contract/DependencyType.php
       # The metric-value contract has 67 incoming readers and one outgoing type.
@@ -2062,6 +2082,8 @@ rules:
   # Core contracts and value objects are coupling hubs by design.
   coupling.class-rank:
     suppress_paths:
+      # The neutral source-byte primitive is shared by ten identity/publication readers; ClassRank 0.00759223.
+      - exact: src/Core/SourceText/SourceBytes.php
       # The shared configuration-source value has rank 0.005870 from its named readers.
       - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationSource.php
       # The shared refusal carrier has intentional ClassRank 0.005666 from its consumers.
@@ -2558,6 +2580,8 @@ rules:
   # Health debt is ratcheted in qmx-baseline.json; new regressions fail selfcheck.
   health.cohesion:
     suppress_paths:
+      # A stateless XML formatter's metadata and document-writing methods share no fields by design (40).
+      - exact: src/Reporting/Formatter/CheckstyleFormatter.php
       # Immutable spelling and namespace-prefix projections share one binding, while field cohesion measures their separate lookup maps (40).
       - exact: src/Analysis/Policy/Architecture/Layer/ClassContext/NameSpellingIndex.php
       # Early input refusal and post-run projection are separate phases of one Console adapter (40).

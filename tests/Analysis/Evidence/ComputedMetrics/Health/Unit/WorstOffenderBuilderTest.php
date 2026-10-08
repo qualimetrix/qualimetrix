@@ -8,13 +8,45 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderBuilder;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(WorstOffenderBuilder::class)]
 final class WorstOffenderBuilderTest extends TestCase
 {
+    #[Test]
+    public function itRetainsTheFindingCountAndDensityOfByteClassNames(): void
+    {
+        $symbol = SymbolPath::forMethod('App\\Service', "K\xFF", 'run');
+        $finding = new Finding(
+            Location::none(),
+            MetricSubject::declaration(DeclarationPath::of($symbol, RelativePath::fromString('src/K.php'), DeclarationOrdinal::fromRank(0))),
+            $symbol,
+            'complexity.ccn',
+            'complexity.ccn',
+            'Too complex',
+            Severity::Warning,
+        );
+        $offenders = (new WorstOffenderBuilder())->buildWorstClasses(
+            [$this->snapshot('App\\Service', "K\xFF")],
+            \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'),
+            [$finding, $finding],
+            60.0,
+            40.0,
+        );
+
+        self::assertCount(1, $offenders);
+        self::assertSame(2, $offenders[0]->violationCount);
+        self::assertSame(2.0, $offenders[0]->violationDensity);
+    }
+
     #[Test]
     public function itSelectsClassesByNamespaceBoundary(): void
     {

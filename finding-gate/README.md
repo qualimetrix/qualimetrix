@@ -49,12 +49,65 @@ must have their model's exact header. Every authored reason must be nonempty
 and must not be `?`. A declaration that nothing consumes is a failure.
 
 The executable and comparator classes live in `scripts/finding-gate/`;
-negative controls live in `scripts/finding-gate-controls/`. The shared loaders
+`PublicationForms` classifies each captured case/view/side from its own bytes
+before record authority is read. Only these 12 owned JSON views can be
+`records`: `format:json`, `check:baseline-source`, `check:baseline`,
+`check:output:file`, `check:parallel`, `format:metrics`, `format:suppressed`,
+`directives`, `baseline-file`, `baseline:cleanup:file`,
+`baseline:rename-channels:file`, and `baseline:update:file`. Each requires its
+own positive native typed population. Everything else supplied is
+`whole-invocation`; missing prospective captures remain distinct from supplied
+empty bytes. No exit code, error envelope or outcome selects the form.
+
+These 12 report and explanation views are always whole invocations:
+`format:html`, `format:checkstyle`, `format:sarif`, `format:gitlab`,
+`format:summary`, `format:text`, `format:text-detail`,
+`format:text-verbose`, `format:github`, `show-suppressed`, `format:health`, and
+the `explain:<subject>` publications from `baseline:explain`. SARIF and GitLab
+are excluded even though their serialization is JSON. Their standalone
+decoders remain callable, but the gate gives them no record, projection,
+fingerprint or ranking authority. Health and baseline explanations retain
+their native process outcomes without exit-value translation. Command
+catalogues, graph exports and debug surfaces retain their own byte and
+successful-population contracts.
+
+The finite capture list retains the historical `text-verbose` CLI address on
+every corpus case, even though the product no longer supports that format.
+Its unsupported-format response is compared against the reference invocation
+as complete bytes and an exact process outcome. No withdrawal-form declaration
+is needed to keep that historical address captured.
+
+Eligible JSON decoding preserves native objects and arrays before associative
+conversion: `{}` in a list position is not an empty `[]`. A JSON view must
+prove its own named list. Baselines require their supported document, an
+entries object map and an actual entry list per subject. The empty entries
+object is a valid zero-group baseline. A malformed or missing own population
+is a whole invocation, not an empty record population.
+
+If either side is `whole-invocation`, comparison retains normalized stdout,
+stderr, exact exit and planned output-file artifacts, including captured missing
+markers. It does not extract a payload, translate record vocabulary, substitute
+records/values/fingerprints or reorder records. Equal malformed invocations are
+equivalent: this gate proves equivalence, while product tests prove health.
+Differences require an exact complete-surface declaration covering that whole
+invocation. Outcome-transition, partial-view-refusal and record/value forms
+cannot license these differences. Declaration-form guards require an explicit
+applicable declaration and its JSON evidence; they never judge a whole pair.
+Product promises, including empty baseline content after failed generation,
+remain independent of those forms.
+
+Negative controls live in `scripts/finding-gate-controls/`. The shared loaders
 read a fixed set of subject-owned `wiring-*.php` files. Unknown files, unknown
 keys, duplicate registrations and unloaded checks are refused. The retired
 `pending` key is not accepted, even with an empty value. Every failure class
-requires a producer and every raise site and caller recognized by the source
-scanner requires an observed self-test witness.
+retains a source producer. Every active class requires an observed whole-run
+witness, and every active raise site and caller requires an exact observation
+except `run-failed`:
+its self-test claim is the failure class, side and scope. A scope-only witness
+does not credit any exact source site or caller. `fingerprint-mismatch` and
+`fingerprint-opaque` remain valid helper failure classes but have retired native
+whole-run witness obligations: their SARIF/GitLab sources are excluded from
+record authority. An unexpected native occurrence of either class is RED.
 
 ## Case definition and coverage
 
@@ -142,25 +195,23 @@ reading the first binary's AST as its own measurement.
 
 ### Outcomes and diagnostic messages
 
-A refusal is compared as an outcome: stdout, stderr, process exit and any
-file publication remain observable. If a candidate analysis invocation
-refuses before it can supply complete ranking metadata, capture stops with
-`run-failed`. A reference input refusal is retained and named
-`reference-input-untranslated` before any analysis records are read. Other
-undeclared candidate input refusals that reach comparison are named
-`candidate-input-refused`. An explicit
-transition uses the outcome declaration and its exact measured snapshot.
+Every supplied publication is judged by its native decoder before outcome forms
+are read. A whole invocation retains stdout, stderr, process exit and captured
+file bytes for exact comparison. An explicit case outcome or transition can
+invoke its JSON form guard only on an eligible records pair; it cannot settle
+or license a whole invocation. Candidate analysis that cannot supply complete
+ranking metadata still stops capture with `run-failed`. A reference input
+refusal is retained and named `reference-input-untranslated` before analysis
+records are read; candidate input-translation and ownership checks keep their
+existing product promises.
 
 An incomplete case keeps its findings and its incompleteness diagnostics.
 The product requires no baseline file for it; the gate verifies exit 4 and
 empty captured baseline bytes. Physical absence and an existing zero-byte file
 are indistinguishable in both incomplete and declared-refusal captures.
 
-Known run notices and exact analysis diagnostics are kept outside the finding
-projection in GitHub, GitLab and Checkstyle. Their original bytes remain under
-surface comparison. Unknown codes, diagnostic levels or shapes do not inherit
-that treatment. HTML on two refusing sides is compared as complete refusal
-text; analysis and incomplete outcomes require a readable report payload.
+GitHub, GitLab, Checkstyle and HTML retain their complete captured bytes under
+whole-invocation comparison, including diagnostics and HTML viewer content.
 
 ## Surfaces and invocation provenance
 
@@ -168,8 +219,8 @@ text; analysis and incomplete outcomes require a readable report payload.
 and output-file keys, their command class and any ranking source. An absent
 required key, an unknown key or an invalid source is refused.
 
-Per case, the table captures the twelve `check` formats:
-`summary`, `text`, `text-verbose`, `json`, `checkstyle`, `sarif`,
+Per case, the table captures the eleven `check` formats and detailed text:
+`summary`, `text`, `text --detail=all` (capture key `format:text-detail`), `json`, `checkstyle`, `sarif`,
 `gitlab`, `github`, `metrics`, `health`, `html` and `suppressed`.
 It also captures `--show-suppressed`, `directives`, `rules`,
 `graph:export`, baseline generation and named baseline explanations,
@@ -222,8 +273,8 @@ this complete authority.
 A comparative JSON record is the physical record plus
 `ranking.impactScore` and `ranking.coupling.class-rank`, joined from that
 side's validated complete ranking. Record correspondence and value declarations
-use the comparative form. Tuple supply, fingerprints, cross-format projections
-and edits of published text use the physical form. Virtual fields are never
+use the comparative form. Tuple supply and owned JSON publication checks use
+the physical form. Virtual fields are never
 searched for as fields in a physical formatter's output.
 
 `RecordCheck::pair` groups by report identity. A group with exactly one record
@@ -242,9 +293,8 @@ require exact `type` and `name`. Overlapping selectors are refused.
 equal rows are a multiset. A neighbouring record is never licensed by another
 record's declaration.
 
-Each format's records are checked against its physical authority before a
-declared record is removed or substituted. Checkstyle projections retain
-multiplicity. SARIF catalogues and result indices are canonicalized together.
+Each eligible JSON view's records are checked against its own physical
+authority before a declared record is removed or substituted.
 Baseline entries are joined to their complete source groups; counts and
 magnitude lists must agree. Each tree supplies eligibility by running its own baseline generator on
 the complete raw source groups under the captured configuration, before
@@ -273,6 +323,19 @@ as multisets. A repeated join key carrying different ranking values is
 published impact scores must not increase down the ranking. Added or removed
 ranking fields use the `json/ranking` schema view.
 
+The schema belongs to the source tree that produced each side's publication.
+For each own JSON `records/records` pair, declared field changes must reconcile
+those source schemas even when both `topIssues` lists are empty. Comparing a
+version with itself needs no declaration for fields both publishers already
+own. A whole peer or a prospective missing capture retains only the observed
+side's own-shape checks and gives no comparative schema credit. Eligibility is
+checked per publication key; one view cannot license another. Missing source
+trees are refused; a reference schema is never inferred from the candidate
+tree. Field measurement waits until every planned ranking source has a known
+form and each eligible pair has two completed own observations; buffered rows
+from a whole invocation do not enter the measured union. Normalization
+derivation uses only the supplied candidate source tree.
+
 ### Order
 
 A paired record has its reference comparative record as its label on both
@@ -293,7 +356,7 @@ judgment and derivation use that same algorithm. An unused intention is stale.
 
 ### Prefix and limit
 
-Each published `topIssues` must equal the raw prefix of its own complete
+Each published JSON `topIssues` must equal the raw prefix of its own complete
 ranking. A shifted or malformed prefix is `ranking-projection-mismatch`.
 
 The limit is known exactly when fewer than all records are shown (`=k`);
@@ -302,12 +365,11 @@ Across sides, these intervals must intersect. A changed limit is declared as
 a field intention `topIssues.limit`, with derived `=k`/`>=n` values for
 the exact invocation. `--top=0` is a valid empty slice.
 
-Summary top-issue rows are checked inside each side against the ordered
-physical records joined from its complete ranking: row count, order, record
-correspondence and score within the printed precision's tolerance. Their
-presentation, including whether a location carries `:line` and which decimal
-precision a score uses, is owned by product `TopIssuesRenderer` tests. Through
-sides, only the surrounding non-record summary text remains byte-compared.
+Summary top-issue rows have no record or ranking authority in this gate.
+The complete summary bytes, including the rows, are compared as a whole
+invocation after declared normalization. An intentional change requires an
+exact surface delta. Product `TopIssuesRenderer` tests establish the
+presentation's correctness, including locations and score precision.
 
 Internal ranking and physical-support publications are evidence inputs, not
 additional cross-side surfaces or structural-diff targets. Their metadata is
@@ -317,13 +379,13 @@ health values and support formatting are not claimed as cross-side publications.
 
 ## Value, schema, outcome and surface declarations
 
-| Table                          | Authored columns                      | What the run measures                                                          |
-| ------------------------------ | ------------------------------------- | ------------------------------------------------------------------------------ |
-| `declared-values.tsv`          | `kind, key, level, reason`            | Exact values, exits or moved occurrences in `declared-values.derived.tsv`      |
-| `declared-fields.tsv`          | `change, report, view, field, reason` | Added values per case and record in `declared-fields.derived.tsv`              |
-| `declared-outcomes.tsv`        | `case, transition, file, reason`      | Exact normalized refusal snapshot under `declared-outcomes/`                   |
-| `declared-surfaces.tsv`        | `change, surface, file, reason`       | Exact withdrawal refusal under `declared-surfaces/`, or introduced publication |
-| `declared-structural-maps.tsv` | `document, from, to, shape, reason`   | Exact translated document paths, retaining the declared value shape            |
+| Table                          | Authored columns                       | What the run measures                                                          |
+| ------------------------------ | -------------------------------------- | ------------------------------------------------------------------------------ |
+| `declared-values.tsv`          | `kind, key, level, reason`             | Exact values, exits or moved occurrences in `declared-values.derived.tsv`      |
+| `declared-fields.tsv`          | `change, report, view, field, reason`  | Added values per case and record in `declared-fields.derived.tsv`              |
+| `declared-outcomes.tsv`        | `case, transition, file, reason`       | Exact normalized refusal snapshot under `declared-outcomes/`                   |
+| `declared-surfaces.tsv`        | `change, surface, file, cases, reason` | Exact withdrawal refusal under `declared-surfaces/`, or introduced publication |
+| `declared-structural-maps.tsv` | `document, from, to, shape, reason`    | Exact translated document paths, retaining the declared value shape            |
 
 Value kinds are `field`, `metric`, `exit` and `order`. Field and metric
 intentions use an exact subject level or `*`. Exit intentions name a command
@@ -340,16 +402,31 @@ declared member and its own line are removed from comparison.
 Derivation must obtain every required supplier;
 a missing supplier cannot produce an empty successful table.
 
-Refusal envelope keys come from each tree's direct `json_encode` array
-literal in `RefusalPresenter::writeEnvelope`; indirect envelope construction
-is outside this scanner's promise. Changing a refusal while it remains a
+Refusal envelope keys come from one explicit array literal passed to
+`json_encode` or `PublishedUtf8::encodeJsonObject` in
+`RefusalPresenter::writeEnvelope`, parsed by `php-parser`.
+Indirect envelope construction is refused. Changing a refusal while it remains a
 refusal uses an exact surface delta.
 
-An outcome declaration names the transition and its refusal file. Repeated
-refusal outputs are still compared. A withdrawn surface is still invoked on
-the reference and must meet its exact declared candidate refusal. Declaring a
-withdrawal does not suppress a broken reference. Introduced and withdrawn
-surface rows never disable neighbouring publications.
+An outcome declaration names the transition and its refusal file. Declaration
+forms require their own applicable JSON view and a records pair. Introduced and
+withdrawn publication forms likewise apply only to JSON, metrics and suppressed
+JSON views. A differing whole publication requires an exact complete-invocation
+declaration.
+A whole invocation does not credit an outcome or publication form, even if
+its bytes look like the declared refusal.
+
+Surface declarations use `cases=*` for every case, or a nonempty JSON list of
+exact case names. An eligible withdrawn format is captured in those cases;
+historical addresses already in the finite capture list remain captured in all
+cases. Selected
+reference ownership and case-input translation retain their checks; other
+formats and excluded cases retain ordinary comparisons.
+
+The existing selector/diagnostic predicates do not validate arbitrary
+Checkstyle or GitLab whole publications. They cannot veto exact whole evidence
+or establish a record population. An eligible view's native JSON decoder is
+the sole positive classification predicate.
 
 Structural maps translate named paths in configuration documents. Their
 closed document and shape vocabularies live in `DeclaredStructuralMaps`;
@@ -413,12 +490,12 @@ name can also move alignment, which requires a residual structural diff.
 
 ## What a fingerprint is compared by
 
-GitLab and SARIF hashes are recomputed from each side's own published identity
-before comparison. A channel rename legitimately changes its hash, so the
-gate then substitutes a comparable identity in that publication. A hash that
-cannot be recomputed is `fingerprint-opaque`, and a wrongly recomputed one is
-`fingerprint-mismatch`. Occurrence and edge discriminators stay part of the
-identity; equal records do not lose multiplicity.
+The native gate compares GitLab and SARIF as complete invocations. It no longer
+recomputes or substitutes their fingerprints as record authority. The retained
+standalone helpers can report `fingerprint-opaque` or
+`fingerprint-mismatch`; these names remain in the failure vocabulary but are
+retired from native whole-run witness coverage. An unexpected native occurrence
+is still a self-test failure.
 
 ## What publication order is compared by
 
@@ -436,6 +513,12 @@ Ranking order is judged separately by the occurrence-preserving rule above.
 Every pass is judged. Failed, empty or semantically different captures refuse
 the write; a narrowed corpus cannot derive the list.
 
+The namespace summary clock row narrows its measured locator to a numeric
+seconds field with one decimal place. The existing normalization self-test
+preserves semantic additions inside the originally measured interval.
+Re-measurement can propose a wider locator; the result must pass that self-test
+before it is accepted.
+
 An exclusion must be exercised in a whole run or it is
 `normalization-stale`. A locator may not reach compared record fields:
 both its spelling and its effect on physical records are checked.
@@ -449,9 +532,8 @@ support metadata uses its own exact clock handling and does not credit a
 public normalization row.
 
 JSON is compared as published bytes. `JsonText` edits named spans without
-re-encoding unrelated layout, escaping or number spelling. HTML payload
-extraction likewise retains its JSON bytes while excluding the viewer bundle;
-two refusal sides retain complete refusal text instead.
+re-encoding unrelated layout, escaping or number spelling. HTML retains its
+complete invocation, including the viewer bundle.
 
 `declared-delta.tsv` has `surface, file, reason` columns and exact unified
 diffs under `declared-delta/`. A row can name one case surface or a surface
@@ -511,9 +593,19 @@ physical finding and ranking identity/value multisets, including hidden
 occurrences and their multiplicity. These raw sets preserve JSON scalar tokens
 through measurement without attributing occurrences through decoded floats.
 Metrics, directives and suppressed findings retain their complete raw population;
-baseline surfaces retain their complete canonical documents. Projections and
+baseline surfaces retain their complete canonical documents. Eligible JSON projections and
 invocation aliases use their actual complete finding source when judging a
 hidden semantic residual, even when their own visible bytes are unchanged.
+Record operations, erasure, comparative schema suppliers and owned JSON
+projections apply only when both sides supply `records`. Every other pair retains the
+complete invocation's normalized stdout, stderr, file bytes and process exit.
+Baseline generation inherits a capture boundary: its main publication stores
+the generated file bytes in place of native stdout. Baseline comparisons retain
+those file bytes, stderr and exit; they do not claim to compare native baseline-generation stdout.
+An unexplained change uses an exact surface intention for that invocation;
+the measured frame includes all those publications, so a neighbouring stderr
+or exit change cannot hide behind an unchanged stdout. Missing invocation
+artifacts are explicitly framed and cannot pass capture validity for derivation.
 Filtered JSON views use their own source. A finding source used to validate a
 baseline document is not part of that document's frame and cannot select its
 exact route by itself. Same-side source,
@@ -541,14 +633,19 @@ prerequisites when those schema changes apply. These validity checks do not
 extend the document's frame or make a finding-source residual select its exact
 route.
 
-Only a selected exact `baseline-file` with a declared outcome transition may
-frame a refusing side with empty captured baseline content. Capture records
-bytes, so a missing file and an existing zero-byte file are indistinguishable
-here. A non-analysis `baseline:generate` exit, nonempty stderr and a validated
-JSON refusal are required; the exact frame retains the empty publication, exit,
-stderr and refusal. The analyzing side retains its complete document, finding
-authority and schema prerequisites. The G8 refusal snapshot still covers only
-`check` invocations.
+Every baseline invocation with a nonzero captured generation exit must retain
+empty captured baseline content. This product promise runs before declaration
+form eligibility. Capture stores bytes, so a missing file and an existing
+zero-byte file are indistinguishable at that capture boundary. A wholly missing
+artifact key stays a capture failure and receives an identity marker in an exact
+frame. Whole baseline pairs retain both sides' complete normalized file bytes,
+stderr and exact exit without a record or JSON-envelope marker. Prospective
+footprints before capture retain side-local obligations; supplied whole pairs
+have no comparative record/schema suppliers. Existing field-publication
+provenance may retain an own-side parsed snapshot beside a whole side;
+`FieldValuesCheck` does not compare, credit, derive or mark it as schema authority.
+A supply obligation is not a comparative licence. Outcome snapshots cover only
+explicit eligible JSON `check` forms.
 
 Declarations belong to a particular reference comparison. Retire consumed maps
 and declarations when the next reference already contains their change;
@@ -592,6 +689,10 @@ changing those constructors also updates the channel probe.
 
 ## Execution, controls and independent checks
 
+The Composer gate and each gate child launched by the controls harness use an
+explicit 1G PHP memory limit. The controls harness passes this limit to the
+child PHP process before the gate script.
+
 The reference tree uses the candidate's installed dependencies. Before artifact
 comparison, the gate compares both `composer.lock` documents through PHP's native
 JSON decoder. Only the top-level `content-hash`, which tracks root
@@ -631,8 +732,17 @@ with its own repository. It resolves the reference before cloning and leaves
 the developer's tree unchanged. A red control requires its declared failures
 at declared scopes and rejects everything else. Tolerations must be exercised;
 idle tolerations fail. Corpus controls require exact full scopes, preventing
-a `text` expectation from absorbing `text-verbose` or another case.
+a `text` expectation from absorbing detailed text or another case.
 Green controls are held to all declaration counts, not just exit 0.
+
+There are 28 active controls. The former `fingerprint-declared-rename` and
+`occurrence-declared-rename` green controls are retired: a JSON channel map
+cannot license changed bytes in whole publications. Existing JSON map checks
+prove channel and rule translation, and the security rule's frozen-occurrence
+test proves that a producer rename preserves its discriminator. Both checks
+must reject a planted regression. The historical `fingerprint-no-map` control
+now promises an unmapped channel change and whole-byte mismatches rather than
+native fingerprint decoding.
 
 The config-precedence, threshold-raising and directive-placement controls
 require their finding counts, records and unchanged report surfaces. They do
@@ -676,9 +786,27 @@ alone does not determine whether `rules` publishes a catalogue.
 
 `composer gate:self-test` runs the gate's observed witnesses and the
 controls harness's mechanics. Recognized raise sites are enumerated with their
-nearest callers and observed through a whole synthetic run. An unexplained source
-occurrence or stale source exception fails. Controls add corpus evidence;
-they do not replace those observed self-test witnesses.
+nearest callers. The witness registry requires exact whole-run observations for
+every active class except `run-failed`; for that class it requires an actual
+class/side/scope observation without claiming site or caller coverage. The two
+retired fingerprint classes keep source producer and vocabulary checks without
+native exact-site credit.
+An unexplained source occurrence or stale source exception still fails.
+Controls add corpus evidence; they do not replace observed self-test witnesses.
+
+Control expectations describe their mutation's measured failure classes and
+scopes. A whole invocation whose exact declaration changes produces a
+`delta-mismatch` at the invocation scope, including when only its stderr changed.
+It is not a record or projection witness. The report-value control holds mapped
+JSON record pairs to their comparison and requires that same mutation to remain
+visible on the UTF-8 whole invocation. It no longer promises a GREEN result for
+the entire corpus or the declaration-count guarantees of a GREEN control.
+
+The tuple-member controls remove unavailable ranked-field intentions together
+with their derived rows inside their private trees. An invalid tuple cannot
+provide those measurements. The ordinary gate retains its required-publication
+guard, and a control crash without a diagnostic report does not satisfy a
+semantic failure expectation.
 
 ### Source scanner limits
 
@@ -714,6 +842,11 @@ executed history. Its three output inventories are excluded from occurrence
 counts: otherwise a new metric counts its own newly written row on the next
 run. All three inventories still have freshness consumers.
 
+The optional JSON diagnostic report replaces unrepresentable source bytes with
+U+FFFD through PHP's native JSON encoder. This is display-only: captured bytes,
+comparison verdicts, declaration measurements and the raw text diagnostic retain
+the original bytes. The JSON diagnostic is not a reversible source identity.
+
 ## What GREEN does not prove
 
 Each limit needs its own product or delivery check:
@@ -730,10 +863,10 @@ Each limit needs its own product or delivery check:
 - Positions of records with changed ranking values, or introduced/withdrawn
   unpaired records: ranking order judges unchanged paired values only.
 - Ranking order outside both published slices: use product ranking tests.
-- The presentation of summary ranking rows, including `:line` and score
-  decimal precision: use product `TopIssuesRenderer` tests. Changes to the
-  row layout, severity tags or debt notation may require updating the
-  comparator and are not licensed by residual-diff declarations.
+- Correctness of summary top-issue presentation, including `:line` and score
+  decimal precision: use product `TopIssuesRenderer` tests. Whole-invocation
+  comparison detects undeclared changes; an exact surface delta can authorize
+  an intentional layout change but does not prove its correctness.
 - No corpus control proves the combined tie-break mutation and an order
   intention; the comparison algorithm has synthetic coverage.
 - Ranking schema derivation requires the current literal layout and
@@ -778,3 +911,8 @@ Each limit needs its own product or delivery check:
 A GREEN run against identical product code proves the corpus, capture and
 normalization are consistent. To claim a product change, compare with the
 commit before that change and also supply the independent checks above.
+
+Child invocations receive an explicit reproducible environment from ProcessHandle,
+not the parent's complete environment. In particular, a parent's `QMX_ASCII`
+does not reach captured commands, so the normal Unicode publication is compared.
+This does not change the product's own environment judgement.

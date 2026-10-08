@@ -12,6 +12,7 @@ use QmxFindingGate\DeclaredSurfaces;
 use QmxFindingGate\Fs;
 use QmxFindingGate\GateError;
 use QmxFindingGate\SyntheticTree;
+use QmxFindingGate\Tsv;
 
 final class CapturePlanTest extends TestCase
 {
@@ -116,11 +117,62 @@ final class CapturePlanTest extends TestCase
     #[Test]
     public function itRequestsAnIntroducedSurfaceOnlyFromTheCandidate(): void
     {
-        Fs::write($this->root . '/finding-gate/' . DeclaredSurfaces::INDEX, "change\tsurface\tfile\treason\nintroduced\tformat:json\t-\tnew report\n");
+        Fs::write($this->root . '/finding-gate/' . DeclaredSurfaces::INDEX, "change\tsurface\tfile\tcases\treason\nintroduced\tformat:json\t-\t*\tnew report\n");
         $plan = $this->plan();
         self::assertTrue($plan->requiredOn('case:alpha|format:json', 'candidate'));
         self::assertFalse($plan->requiredOn('case:alpha|format:json', 'reference'));
         self::assertTrue($plan->requiredOn('case:alpha|format:metrics', 'reference'));
+    }
+
+    #[Test]
+    public function itRefusesAWithdrawalWitnessWithoutAReferenceAnalysis(): void
+    {
+        $path = $this->root . '/finding-gate/cases/alpha/case.json';
+        $case = json_decode(Fs::read($path), true, 512, \JSON_THROW_ON_ERROR);
+        $case['outcome'] = ['kind' => 'refusal', 'exit' => 3];
+        Fs::write($path, json_encode($case, \JSON_THROW_ON_ERROR));
+        Fs::write($this->root . '/finding-gate/' . DeclaredSurfaces::INDEX, Tsv::render(
+            DeclaredSurfaces::COLUMNS,
+            [['withdrawn', 'format:retired', 'declared-surfaces/retired.json', '*', 'Remove a report.']],
+        ));
+        Fs::write($this->root . '/finding-gate/declared-surfaces/retired.json', "Refused\n");
+
+        $this->expectException(GateError::class);
+        $this->expectExceptionMessage('cannot establish a withdrawal');
+        $this->plan();
+    }
+
+    #[Test]
+    public function itPlansWithdrawalsOnlyForTheirNamedCases(): void
+    {
+        $alpha = $this->root . '/finding-gate/cases/alpha';
+        $beta = $this->root . '/finding-gate/cases/beta';
+        $case = json_decode(Fs::read($alpha . '/case.json'), true, 512, \JSON_THROW_ON_ERROR);
+        $case['id'] = 'beta';
+        $case['outcome'] = ['kind' => 'refusal', 'exit' => 3];
+        unset($case['layerAssignmentSubjects'], $case['renameChannelsMap']);
+        Fs::write($beta . '/case.json', json_encode($case, \JSON_THROW_ON_ERROR));
+        Fs::write($beta . '/composer.json', '{}');
+        Fs::write($beta . '/qmx.yaml', Fs::read($alpha . '/qmx.yaml'));
+        Fs::write($beta . '/src/A.php', "<?php\n");
+        Fs::write($this->root . '/finding-gate/' . DeclaredSurfaces::INDEX, Tsv::render(
+            DeclaredSurfaces::COLUMNS,
+            [
+                ['withdrawn', 'format:retired', 'declared-surfaces/retired.json', '["alpha"]', 'Remove a report.'],
+                ['introduced', 'format:json', '-', '["alpha"]', 'Add a report.'],
+            ],
+        ));
+        Fs::write($this->root . '/finding-gate/declared-surfaces/retired.json', "Refused\n");
+
+        $plan = $this->plan();
+        $invocations = array_map(static fn(array $row): string => $row['scope'] . '|' . $row['surface'], $plan->invocations());
+        self::assertContains('case:alpha|format:retired', $invocations);
+        self::assertNotContains('case:beta|format:retired', $invocations);
+        self::assertContains('case:beta|format:json', $invocations);
+        self::assertSame('withdrawn', $plan->changeOf('case:alpha|format:retired'));
+        self::assertNull($plan->changeOf('case:beta|format:json'));
+        self::assertFalse($plan->requiredOn('case:alpha|format:json', 'reference'));
+        self::assertTrue($plan->requiredOn('case:beta|format:json', 'reference'));
     }
 
     #[Test]

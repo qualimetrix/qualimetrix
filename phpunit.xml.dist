@@ -115,6 +115,7 @@
             <directory>governance/MeasurementVocabulary</directory>
             <directory>governance/MeasurementIdentity</directory>
             <directory>governance/GeneratedArtifactFreshness</directory>
+            <directory>governance/PublishedText</directory>
             <directory>governance/FormatOptionKeys</directory>
             <directory>governance/DirectiveVocabulary</directory>
             <directory>governance/ControlRigLedger</directory>

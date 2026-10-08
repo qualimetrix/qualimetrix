@@ -1,0 +1,8 @@
+{
+  "name": "corpus/utf8-identifier",
+  "autoload": {
+    "psr-4": {
+      "Corpus\\Utf8\\": "src/"
+    }
+  }
+}

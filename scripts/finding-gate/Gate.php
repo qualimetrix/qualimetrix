@@ -96,13 +96,6 @@ final class Gate
         $this->normalizationCheck = new NormalizationCheck($this->options, $this->report, $normalization);
         $this->fingerprintCheck = new FingerprintCheck($this->report);
         $this->renameMapCheck = new RenameMapCheck($this->report, $this->corpus, $this->maps, $this->split);
-        $this->declaredDeltaCheck = new DeclaredDeltaCheck(
-            $this->options,
-            $this->report,
-            $this->declaredDelta,
-            $this->declaredFieldMoves,
-            $this->split,
-        );
         $this->coverageCheck = new CoverageCheck($this->options, $this->report, $this->corpus, $witness);
         $this->staleDeclarationCheck = new StaleDeclarationCheck($this->report, $this->declarations);
 
@@ -116,6 +109,14 @@ final class Gate
             $normalization,
             $this->declarations,
             $this->temporaryDirectory,
+        );
+        $this->declaredDeltaCheck = new DeclaredDeltaCheck(
+            $this->options,
+            $this->report,
+            $this->declaredDelta,
+            $this->declaredFieldMoves,
+            $this->split,
+            $run,
         );
         $this->rankings = $run->rankings;
         $this->context = $run;
@@ -244,6 +245,8 @@ final class Gate
                 return;
             }
             $referenceArtifacts = $referenceCapture->artifacts;
+            $this->context->publicationForms->supply('candidate', $first);
+            $this->context->publicationForms->supply('reference', $referenceArtifacts);
             $this->rankings->supply('candidate', $firstCapture->rankings);
             $this->rankings->supply('reference', $referenceCapture->rankings);
             $this->context->baselineEligibility->supply('candidate', $firstCapture->baselineEligibility);
@@ -253,8 +256,8 @@ final class Gate
             if (\in_array(FailureClass::REFERENCE_INPUT_UNTRANSLATED, $this->report->failureClasses(), true)) {
                 return;
             }
-            $this->checkFindings('candidate', $first, trackObserved: true);
-            $this->checkFindings('reference', $referenceArtifacts, trackObserved: false);
+            $this->checkFindings('candidate', $first, trackObserved: true, capture: $firstCapture);
+            $this->checkFindings('reference', $referenceArtifacts, trackObserved: false, capture: $referenceCapture);
             $this->exactSurfaceDeltaCheck->plan(['candidate' => $firstCapture, 'reference' => $referenceCapture], $this->records, $this->fingerprintCheck);
             $this->renameMapCheck->checkSplitExplanation($first, $referenceArtifacts);
             $this->surfaceComparison->compareSurfaces($first, $referenceArtifacts);
@@ -388,33 +391,59 @@ final class Gate
     }
 
     /** @return array<string,list<array<string,mixed>>>|null */
-    private function captureAuthority(string $label, CaptureResult $capture): ?array
+    private function captureAuthority(string $label, CaptureResult $capture, string $side = 'candidate', ?string $caseId = null): ?array
     {
-        $pass = $this->context->withCandidateCapture($capture);
+        $pass = new RunContext(
+            $this->options,
+            $this->report,
+            $this->corpus,
+            $this->maps,
+            $this->split,
+            $this->vocabulary,
+            $this->context->normalization,
+            $this->declarations,
+            $this->temporaryDirectory,
+        );
+        $this->context->copyPublicationsTo($pass);
+        $pass->publicationForms->supply($side, $capture->artifacts);
+        $pass->rankings->supply($side, $capture->rankings);
+        $pass->baselineEligibility->supply($side, $capture->baselineEligibility);
         $ranking = RankingCheck::create($pass);
         $records = RecordCheck::create($pass);
         $authority = [];
         foreach ($this->corpus->cases as $case) {
-            $outcome = CaseOutcome::of($case, 'candidate');
+            if ($caseId !== null && $case->id !== $caseId) {
+                continue;
+            }
+            $outcome = CaseOutcome::of($case, $side);
             try {
                 foreach ($pass->capturePlan->rankingInvocations() as $descriptor) {
                     $key = Surfaces::key($descriptor['scope'], $descriptor['surface']);
-                    if ($descriptor['scope'] !== 'case:' . $case->id || !$pass->capturePlan->requiredOn($key, 'candidate')) {
+                    if ($descriptor['scope'] !== 'case:' . $case->id || !$pass->capturePlan->requiredOn($key, $side)) {
                         continue;
                     }
-                    if (!$ranking->checkCaptureMetadata('candidate', $key, $capture->artifacts)) {
+                    $form = $pass->publicationForms->of($side, $key);
+                    if ($form === PublicationForms::WHOLE_INVOCATION) {
+                        continue;
+                    }
+                    if ($form === null) {
+                        throw new GateError('The own ranking source capture is missing: ' . $key);
+                    }
+                    if (!$ranking->checkCaptureMetadata($side, $key, $capture->artifacts)) {
                         return null;
                     }
                     if (!CaseOutcome::applies(CaseOutcome::CHECK_FINDINGS, $outcome)) {
                         continue;
                     }
-                    $published = ReportRecords::extract('json', $capture->artifacts[$key], $records->fields('json', $descriptor['surface'], 'candidate'));
-                    $observed = $ranking->observe('candidate', $case, $descriptor['surface'], $published, $capture->artifacts);
+                    $published = ReportRecords::extract('json', $capture->artifacts[$key], $records->fields('json', $descriptor['surface'], $side));
+                    $observed = $ranking->observe($side, $case, $descriptor['surface'], $published, $capture->artifacts, compare: false);
                     if ($descriptor['surface'] === 'format:json') {
                         $authority[$case->id] = $observed['rawAuthority'];
                     }
                 }
-                if (CaseOutcome::applies(CaseOutcome::CHECK_FINDINGS, $outcome) && !\array_key_exists($case->id, $authority)) {
+                if (CaseOutcome::applies(CaseOutcome::CHECK_FINDINGS, $outcome) && !\array_key_exists($case->id, $authority)
+                    && ($pass->publicationForms->of($side, 'case:' . $case->id . '|format:json') !== PublicationForms::WHOLE_INVOCATION
+                        || ($side === 'candidate' && !$case->isAuxiliary()))) {
                     throw new GateError('The capture has no validated main physical authority.');
                 }
             } catch (GateError $error) {
@@ -428,6 +457,7 @@ final class Gate
     private function runTree(string $treeRoot, string $label, bool $reverseInput): CaptureResult
     {
         try {
+            $this->context->supplyPublicationTree(str_starts_with($label, 'reference') ? 'reference' : 'candidate', $treeRoot);
             $run = new TreeRun(
                 $treeRoot,
                 $this->temporaryDirectory,
@@ -462,7 +492,7 @@ final class Gate
      *
      * @param array<string, string> $artifacts
      */
-    private function checkFindings(string $side, array $artifacts, bool $trackObserved): void
+    private function checkFindings(string $side, array $artifacts, bool $trackObserved, ?CaptureResult $capture = null): void
     {
         $tuple = EquivalenceTuple::load($this->options->candidateRoot);
 
@@ -477,11 +507,26 @@ final class Gate
             }
 
             if (CaseOutcome::applies(CaseOutcome::CHECK_FINDINGS, $outcome)) {
-                try {
-                    $complete = $this->records->rawAuthority($case->id, 'format:json', $side);
-                } catch (GateError) {
-                    // The record producer already reported why its authority is unavailable.
-                    $complete = null;
+                if ($this->context->publicationForms->of($side, $key) === PublicationForms::WHOLE_INVOCATION) {
+                    continue;
+                }
+                if ($this->context->publicationForms->recordsPair($key) === false) {
+                    if ($capture === null) {
+                        $this->report->fail(FailureClass::RUN_FAILED, $side . ' / ' . $case->id, 'Independent findings claims require their own complete capture.');
+                        continue;
+                    }
+                    $own = $this->captureAuthority($side . '-claims', $capture, $side, $case->id);
+                    if ($own === null) {
+                        continue;
+                    }
+                    $complete = $own[$case->id] ?? throw new GateError('The own findings claims have no validated complete population.');
+                } else {
+                    try {
+                        $complete = $this->records->rawAuthority($case->id, 'format:json', $side);
+                    } catch (GateError) {
+                        // The record producer already reported why its authority is unavailable.
+                        $complete = null;
+                    }
                 }
                 $findings = $this->caseOutcomeCheck->findingsOf($side, $case, $artifacts, $complete);
 

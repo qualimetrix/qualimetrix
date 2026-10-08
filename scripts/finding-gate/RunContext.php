@@ -10,6 +10,9 @@ final class RunContext
     /** @var array<string,true> */
     private array $exactSurfaces = [];
 
+    /** @var array<string,string> */
+    private array $publicationTrees = [];
+
     public function selectExactSurface(string $key): void
     {
         $this->exactSurfaces[$key] = true;
@@ -24,7 +27,9 @@ final class RunContext
     public readonly BaselineEligibility $baselineEligibility;
 
     public readonly CapturePlan $capturePlan;
+    public readonly PublicationForms $publicationForms;
 
+    /** @param array<string,string> $publicationCodecs */
     public function __construct(
         public readonly Options $options,
         public readonly GateReport $report,
@@ -35,10 +40,36 @@ final class RunContext
         public readonly Normalization $normalization,
         public readonly Declarations $declarations,
         public readonly string $temporaryDirectory,
+        private array $publicationCodecs = [],
     ) {
         $this->rankings = new RankingCaptures();
         $this->baselineEligibility = new BaselineEligibility();
         $this->capturePlan = CapturePlan::forCorpus($corpus, $declarations->surfaces);
+        $this->publicationForms = new PublicationForms($this->capturePlan, $report);
+    }
+
+    public function supplyPublicationTree(string $side, string $treeRoot): void
+    {
+        $codec = ReportRecords::codecOf($treeRoot);
+        $this->publicationTrees[$side] = $treeRoot;
+        $this->publicationCodecs[$side] ??= $codec;
+    }
+
+    public function publicationTree(string $side): string
+    {
+        return $this->publicationTrees[$side] ?? throw new GateError('The ranking publication source tree is missing for ' . $side . '.');
+    }
+
+    /** Unsupplied sides belong to the single-root fixture; real comparisons supply both trees. */
+    public function publicationCodec(string $side): string
+    {
+        return $this->publicationCodecs[$side] ??= ReportRecords::codecOf($this->options->candidateRoot);
+    }
+
+    public function copyPublicationsTo(self $target): void
+    {
+        $target->publicationTrees = $this->publicationTrees;
+        $target->publicationCodecs = $this->publicationCodecs;
     }
 
     public function withCandidateCapture(CaptureResult $capture): self
@@ -54,6 +85,7 @@ final class RunContext
             $this->declarations,
             $this->temporaryDirectory,
         );
+        $this->copyPublicationsTo($pass);
         $pass->rankings->supply('candidate', $capture->rankings);
         $pass->baselineEligibility->supply('candidate', $capture->baselineEligibility);
         return $pass;

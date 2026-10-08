@@ -47,6 +47,41 @@ final class LocCollectorTest extends TestCase
     }
 
     #[Test]
+    public function itMeasuresTheOwnSpanOfEveryNamedClassLike(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+class Pair
+{
+    public function run(): void {}
+}
+interface Greeter
+{
+    public function greet(): void;
+}
+trait Greeting
+{
+    public function greet(): void {}
+}
+enum Status
+{
+    case Active;
+}
+$anonymous = new class {};
+PHP;
+        $bag = $this->collectMetrics($code);
+        $classes = $this->collector->getClassesWithMetrics(\Qualimetrix\Core\Path\RelativePath::fromString('Kinds.php'));
+
+        self::assertCount(4, $classes);
+        self::assertSame(['Pair', 'Greeter', 'Greeting', 'Status'], array_map(static fn($class): ?string => $class->declarationPath->logical->type, $classes));
+        foreach ($classes as $class) {
+            self::assertSame(4, $class->metrics->get('size.class-loc'));
+            self::assertSame(4, $bag->get('size.class-loc:App\\' . $class->declarationPath->logical->type));
+        }
+    }
+
+    #[Test]
     public function itGetsName(): void
     {
         self::assertSame('loc', $this->collector->getName());

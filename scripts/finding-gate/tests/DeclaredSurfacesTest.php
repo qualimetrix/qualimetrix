@@ -38,8 +38,8 @@ final class DeclaredSurfacesTest extends TestCase
     public function itDerivesTheReferenceSurfacesFromTheCandidates(): void
     {
         $this->write(DeclaredSurfaces::INDEX, DeclaredSurfaces::COLUMNS, [
-            [DeclaredSurfaces::INTRODUCED, 'graph:export', DeclaredSurfaces::NO_FILE, 'new'],
-            [DeclaredSurfaces::WITHDRAWN, 'format:text-verbose', DeclaredSurfaces::DIRECTORY . '/text-verbose.txt', 'removed'],
+            [DeclaredSurfaces::INTRODUCED, 'graph:export', DeclaredSurfaces::NO_FILE, '*', 'new'],
+            [DeclaredSurfaces::WITHDRAWN, 'format:text-verbose', DeclaredSurfaces::DIRECTORY . '/text-verbose.txt', '*', 'removed'],
         ]);
         Fs::write($this->root . '/' . DeclaredSurfaces::DIRECTORY . '/text-verbose.txt', "Unknown format\n");
         $surfaces = DeclaredSurfaces::load($this->root);
@@ -54,7 +54,7 @@ final class DeclaredSurfacesTest extends TestCase
     #[Test]
     public function itRefusesASurfaceOfOneScope(): void
     {
-        $this->write(DeclaredSurfaces::INDEX, DeclaredSurfaces::COLUMNS, [[DeclaredSurfaces::WITHDRAWN, 'case:smells|format:text', 'declared-surfaces/x.txt', 'why']]);
+        $this->write(DeclaredSurfaces::INDEX, DeclaredSurfaces::COLUMNS, [[DeclaredSurfaces::WITHDRAWN, 'case:smells|format:text', 'declared-surfaces/x.txt', '*', 'why']]);
 
         $this->assertRefused(static fn(string $root): mixed => DeclaredSurfaces::load($root), 'an artifact of one scope');
     }
@@ -63,13 +63,13 @@ final class DeclaredSurfacesTest extends TestCase
     public function itRefusesAWithdrawnSurfaceWithoutItsMeasuredRefusal(): void
     {
         $this->write(DeclaredSurfaces::INDEX, DeclaredSurfaces::COLUMNS, [
-            [DeclaredSurfaces::WITHDRAWN, 'format:text-verbose', DeclaredSurfaces::DIRECTORY . '/text-verbose.txt', 'removed'],
+            [DeclaredSurfaces::WITHDRAWN, 'format:text-verbose', DeclaredSurfaces::DIRECTORY . '/text-verbose.txt', '*', 'removed'],
         ]);
 
         $this->assertRefused(static fn(string $root): mixed => DeclaredSurfaces::load($root), 'missing or empty');
 
         $this->write(DeclaredSurfaces::INDEX, DeclaredSurfaces::COLUMNS, [
-            [DeclaredSurfaces::INTRODUCED, 'graph:export', DeclaredSurfaces::DIRECTORY . '/graph.txt', 'new'],
+            [DeclaredSurfaces::INTRODUCED, 'graph:export', DeclaredSurfaces::DIRECTORY . '/graph.txt', '*', 'new'],
         ]);
 
         $this->assertRefused(static fn(string $root): mixed => DeclaredSurfaces::load($root), 'is refused by nothing');

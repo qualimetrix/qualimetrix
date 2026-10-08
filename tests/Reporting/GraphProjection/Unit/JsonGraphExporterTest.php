@@ -383,7 +383,7 @@ final class JsonGraphExporterTest extends TestCase
         $data = $this->decode($json);
         self::assertGreaterThanOrEqual(1, $data['invalidUtf8Replaced'] ?? 0);
         self::assertStringContainsString(
-            "Bad\u{FFFD}Class",
+            "Bad%FFClass",
             (string) json_encode($data, \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR),
         );
     }

@@ -107,7 +107,7 @@ final class SuppressedFormatterTest extends TestCase
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('suppression composition');
 
-        $formatter->format($report, new FormatterContext());
+        $formatter->format($report, new FormatterContext())->body;
     }
 
     /**
@@ -157,7 +157,7 @@ final class SuppressedFormatterTest extends TestCase
             suppressionComposition: new SuppressionComposition([]),
         );
 
-        $coverage = $this->decode((new SuppressedFormatter())->format($report, new FormatterContext()))['coverage'];
+        $coverage = $this->decode((new SuppressedFormatter())->format($report, new FormatterContext())->body)['coverage'];
 
         self::assertFalse($coverage['complete']);
         self::assertSame(1, $coverage['failed']);
@@ -176,7 +176,7 @@ final class SuppressedFormatterTest extends TestCase
             suppressionComposition: $composition,
         );
 
-        return (new SuppressedFormatter())->format($report, new FormatterContext());
+        return (new SuppressedFormatter())->format($report, new FormatterContext())->body;
     }
 
     /**

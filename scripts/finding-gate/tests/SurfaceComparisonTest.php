@@ -29,6 +29,8 @@ use QmxFindingGate\SurfacePair;
 use QmxFindingGate\SurfaceStage;
 use QmxFindingGate\SyntheticTree;
 use QmxFindingGate\Tsv;
+use ReflectionMethod;
+use ReflectionProperty;
 
 /**
  * A form's registered stage takes part in every surface's comparison, at the
@@ -37,6 +39,275 @@ use QmxFindingGate\Tsv;
 final class SurfaceComparisonTest extends TestCase
 {
     private string $root;
+
+    #[Test]
+    public function itClassifiesBothPublicationFormsBeforeReadingRecordAuthority(): void
+    {
+        $caseFile = $this->root . '/finding-gate/cases/alpha/case.json';
+        $caseBytes = Fs::read($caseFile);
+        $definition = json_decode($caseBytes, true, 512, \JSON_THROW_ON_ERROR);
+        $definition['explainSubjects'] = ['file:src/Alpha.php'];
+        Fs::write($caseFile, \QmxFindingGate\ValueCheck::value($definition));
+        $nativePublications = [
+            ['format:health', '', 'whole-invocation', '1', "Malformed UTF-8 characters\n"],
+            ['format:health', "Health scores\n", 'whole-invocation', '0', ''],
+            ['format:health', '{"violations":[]}', 'whole-invocation', '0', ''],
+            ['explain:file:src/Alpha.php', '', 'whole-invocation', '1', "Malformed UTF-8 characters\n"],
+            ['explain:file:src/Alpha.php', "Subject: file:src/Alpha.php\n", 'whole-invocation', '0', ''],
+            ['explain:file:src/Alpha.php', '{"violations":[]}', 'whole-invocation', '0', ''],
+            ['format:html', '', 'whole-invocation', '1', "Malformed UTF-8 characters\n"],
+            ['format:checkstyle', '', 'whole-invocation', '1', "Malformed UTF-8 characters\n"],
+            ['format:sarif', '', 'whole-invocation', '1', "Malformed UTF-8 characters\n"],
+            ['format:gitlab', '', 'whole-invocation', '1', "Malformed UTF-8 characters\n"],
+            ['format:json', '{"violations":[]}', 'records', '1', ''],
+            ['format:json', '{"violations":{}}', 'whole-invocation', '1', ''],
+            ['format:json', '{"violations":[],"topIssues":{}}', 'whole-invocation', '0', ''],
+            ['format:json', '{"violations":[[]]}', 'whole-invocation', '0', ''],
+            ['format:metrics', '{"symbols":[]}', 'records', '0', ''],
+            ['format:metrics', '{"symbols":{}}', 'whole-invocation', '0', ''],
+            ['format:suppressed', '{"suppressed":[]}', 'records', '0', ''],
+            ['format:suppressed', '{"suppressed":{}}', 'whole-invocation', '0', ''],
+            ['directives', '{"directives":[]}', 'records', '0', ''],
+            ['directives', '{"directives":{}}', 'whole-invocation', '0', ''],
+            ['format:gitlab', '[]', 'whole-invocation', '0', ''],
+            ['format:gitlab', '{}', 'whole-invocation', '0', ''],
+            ['format:sarif', '{"runs":[]}', 'whole-invocation', '0', ''],
+            ['format:sarif', '{"runs":{}}', 'whole-invocation', '0', ''],
+            ['format:sarif', '{"runs":[{"results":[],"tool":{"driver":{"rules":[]}}}]}', 'whole-invocation', '0', ''],
+            ['format:sarif', '{"runs":[{"results":{},"tool":{"driver":{"rules":[]}}}]}', 'whole-invocation', '0', ''],
+            ['format:sarif', '{"runs":[{"results":[],"tool":{"driver":{"rules":{}}}}]}', 'whole-invocation', '0', ''],
+            ['format:html', '<script type="application/json" id="report-data">{"violations":[]}</script>', 'whole-invocation', '0', ''],
+            ['format:html', '<script type="application/json" id="report-data">{"violations":{}}</script>', 'whole-invocation', '0', ''],
+            ['format:html', '<script type="application/json" id="report-data">{}</script>', 'whole-invocation', '0', ''],
+            ['format:html', '<script type="application/json" id="report-data">{"metrics":{"violations":[]}}</script>', 'whole-invocation', '0', ''],
+            ['format:html', '<script type="application/json" id="report-data">{"tree":{"violations":[],"children":[{"violations":[]}]},"metrics":{"violations":{}}}</script>', 'whole-invocation', '0', ''],
+            ['format:checkstyle', '<checkstyle/>', 'whole-invocation', '0', ''],
+            ['baseline-file', '{"version":14,"entries":{}}', 'records', '0', ''],
+            ['baseline-file', '{"version":14,"entries":[]}', 'whole-invocation', '0', ''],
+            ['baseline-file', '{"version":14,"entries":{"subject":[]}}', 'records', '0', ''],
+            ['baseline-file', '{"version":14,"entries":{"subject":{}}}', 'whole-invocation', '0', ''],
+            ['format:summary', 'No findings', 'whole-invocation', '0', ''],
+            ['format:text', 'No findings', 'whole-invocation', '0', ''],
+            ['format:text-detail', 'No findings', 'whole-invocation', '0', ''],
+            ['format:text-verbose', 'No findings', 'whole-invocation', '0', ''],
+            ['format:github', 'No findings', 'whole-invocation', '0', ''],
+            ['show-suppressed', 'No findings', 'whole-invocation', '0', ''],
+            ['check:baseline-source', '{"violations":[]}', 'records', '0', ''],
+            ['check:baseline', '{"violations":[]}', 'records', '0', ''],
+            ['check:output:file', '{"violations":[]}', 'records', '0', ''],
+            ['check:parallel', '{"violations":[]}', 'records', '0', ''],
+            ['baseline:cleanup:file', '{"version":14,"entries":{}}', 'records', '0', ''],
+            ['baseline:rename-channels:file', '{"version":14,"entries":{}}', 'records', '0', ''],
+            ['baseline:update:file', '{"version":14,"entries":{}}', 'records', '0', ''],
+            ['format:json', '{"error":"Refused input","exit_code":1}', 'whole-invocation', '1', ''],
+        ];
+        foreach ($nativePublications as [$view, $text, $expected, $exit, $stderr]) {
+            $report = new GateReport();
+            $run = new RunContext(
+                Options::parse(['gate', '--candidate=' . $this->root, '--reference=HEAD'], $this->root),
+                $report,
+                Corpus::load($this->root),
+                RenameMaps::load($this->root . '/finding-gate/maps', MetricVocabulary::ofTree($this->root)),
+                ChannelSplit::of(RenameMaps::fromPairs([])),
+                MetricVocabulary::ofTree($this->root),
+                Normalization::fromRules([]),
+                \QmxFindingGate\Declarations::load($this->root),
+                $this->root,
+            );
+            $key = 'case:alpha|' . $view;
+            $artifacts = [$key => $text, 'case:alpha|stderr:' . $view => $stderr, 'case:alpha|exit:' . ($view === 'baseline-file' ? 'baseline:generate' : $view) => $exit];
+            foreach (['candidate', 'reference'] as $side) {
+                $run->publicationForms->supply($side, $artifacts);
+                self::assertSame($expected, $run->publicationForms->of($side, $key), $side . ' / ' . $view . ' / ' . $text);
+            }
+            self::assertSame($expected === 'records', $run->publicationForms->recordsPair($key), $view . ' / ' . $text);
+        }
+        try {
+            \QmxFindingGate\PublicationForms::classify('case:alpha|format:unregistered-decoder', '');
+            self::fail('An unregistered decoder was accepted.');
+        } catch (GateError $error) {
+            self::assertSame('The publication has no native record decoder: case:alpha|format:unregistered-decoder', $error->getMessage());
+        }
+        foreach (['format:health', 'explain:file:src/Alpha.php'] as $view) {
+            $run = new RunContext(
+                Options::parse(['gate', '--candidate=' . $this->root, '--reference=HEAD'], $this->root),
+                new GateReport(),
+                Corpus::load($this->root),
+                RenameMaps::load($this->root . '/finding-gate/maps', MetricVocabulary::ofTree($this->root)),
+                ChannelSplit::of(RenameMaps::fromPairs([])),
+                MetricVocabulary::ofTree($this->root),
+                Normalization::fromRules([]),
+                \QmxFindingGate\Declarations::load($this->root),
+                $this->root,
+            );
+            $key = 'case:alpha|' . $view;
+            self::assertNull($run->publicationForms->of('candidate', $key), $view . ' / absent');
+            $artifacts = [$key => '', 'case:alpha|stderr:' . $view => "Refused input\n", 'case:alpha|exit:' . $view => '1'];
+            $captures = [];
+            foreach (['candidate', 'reference'] as $side) {
+                $captures[$side] = new \QmxFindingGate\CaptureResult($artifacts, []);
+                $run->publicationForms->supply($side, $artifacts);
+                self::assertSame('whole-invocation', $run->publicationForms->of($side, $key), $view . ' / supplied empty');
+            }
+            self::assertFalse($run->publicationForms->recordInvocation($key), $view);
+            $pair = new SurfacePair($key, \QmxFindingGate\Surfaces::surfaceClass($key), '', '');
+            [$candidate, $reference] = ExactSurfaceAuthority::pair($pair, $captures, $run);
+            self::assertSame($candidate, $reference, $view);
+            self::assertSame([], ExactSurfaceAuthority::footprint($key, $run)['rawSources'], $view);
+            self::assertSame([], ExactSurfaceAuthority::footprint($key, $run)['schemas'], $view);
+            foreach ([$key, 'case:alpha|stderr:' . $view, 'case:alpha|exit:' . $view] as $changedKey) {
+                $changed = $artifacts;
+                self::assertArrayHasKey($changedKey, $changed);
+                $changed[$changedKey] .= '0';
+                $changedCaptures = ['candidate' => new \QmxFindingGate\CaptureResult($changed, []), 'reference' => $captures['reference']];
+                self::assertNotSame($reference, ExactSurfaceAuthority::pair($pair, $changedCaptures, $run)[0], $changedKey);
+                $exitKey = 'case:alpha|exit:' . $view;
+                self::assertArrayHasKey($exitKey, $changed);
+                self::assertArrayHasKey($exitKey, $artifacts);
+                $exit = new SurfacePair($exitKey, \QmxFindingGate\Surfaces::surfaceClass($exitKey), $changed[$exitKey], $artifacts[$exitKey]);
+                \QmxFindingGate\ValueStage::create($run)->applyStage($exit);
+                self::assertSame($changed[$exitKey], $exit->candidate, $changedKey . ' / native exit');
+                $raisedBefore = \count($run->report->raised());
+                $this->comparison($run->report, [\QmxFindingGate\RecordStage::create($run), \QmxFindingGate\ValueStage::create($run)])->compareSurfaces($changed, $artifacts);
+                self::assertCount($raisedBefore + 1, $run->report->raised(), $changedKey);
+                self::assertSame([FailureClass::SURFACE_MISMATCH], $run->report->failureClasses(), $changedKey);
+            }
+        }
+        Fs::write($caseFile, $caseBytes);
+        $publications = [
+            ['directives', '{"directives":[],"exit_code":0}', 'directives'],
+            ['format:json', '{"violations":[],"topIssues":[]}', 'violations'],
+            ['format:json', '{"violations":[],"topIssues":[]}', 'topIssues'],
+            ['format:metrics', '{"symbols":[]}', 'symbols'],
+            ['format:suppressed', '{"suppressed":[]}', 'suppressed'],
+            ['baseline-file', '{"version":14,"entries":{}}', 'entries'],
+        ];
+        $maps = RenameMaps::load($this->root . '/finding-gate/maps', MetricVocabulary::ofTree($this->root));
+        foreach ($publications as [$view, $publication, $member]) {
+            foreach ([['records', 'refusal'], ['refusal', 'records'], ['refusal', 'refusal'], ['records', 'records']] as [$candidateForm, $referenceForm]) {
+                $run = new RunContext(
+                    Options::parse(['gate', '--candidate=' . $this->root, '--reference=HEAD'], $this->root),
+                    new GateReport(),
+                    Corpus::load($this->root),
+                    $maps,
+                    ChannelSplit::of($maps),
+                    MetricVocabulary::ofTree($this->root),
+                    Normalization::fromRules([]),
+                    \QmxFindingGate\Declarations::load($this->root),
+                    $this->root,
+                );
+                $key = 'case:alpha|' . $view;
+                $captures = [];
+                foreach (['candidate' => $candidateForm, 'reference' => $referenceForm] as $side => $form) {
+                    $text = $form === 'records' ? $publication : ($view === 'baseline-file' ? '' : '{"error":"Malformed UTF-8","exit_code":3}');
+                    $exit = $form === 'records' ? '0' : '3';
+                    $artifacts = [$key => $text, 'case:alpha|stderr:' . $view => $form === 'records' ? '' : "Refused input\n", 'case:alpha|exit:' . ($view === 'baseline-file' ? 'baseline:generate' : $view) => $exit];
+                    $slot = ['ranked' => ['stdout' => $text, 'stderr' => '', 'exit' => (int) $exit], 'physical' => null];
+                    $captures[$side] = new \QmxFindingGate\CaptureResult($artifacts, [$key => $slot]);
+                }
+                $label = $view . ' / ' . $member . ' / ' . $candidateForm . ' / ' . $referenceForm;
+                self::assertSame($candidateForm !== $referenceForm, ExactSurfaceAuthority::rawResidual($key, $captures, $run, \QmxFindingGate\RecordCheck::create($run)), $label);
+                if ($candidateForm === 'records' && $referenceForm === 'records') {
+                    continue;
+                }
+                $pair = new SurfacePair($key, $view, $captures['candidate']->artifacts[$key], $captures['reference']->artifacts[$key]);
+                [$candidate, $reference] = ExactSurfaceAuthority::pair($pair, $captures, $run);
+                $this->comparison($run->report, [\QmxFindingGate\RecordStage::create($run), \QmxFindingGate\ValueStage::create($run)])->compareSurfaces($captures['candidate']->artifacts, $captures['reference']->artifacts);
+                self::assertSame($candidateForm === $referenceForm ? [] : [FailureClass::SURFACE_MISMATCH], $run->report->failureClasses(), $label);
+                self::assertSame($candidateForm === $referenceForm, $candidate === $reference, $label);
+                self::assertStringContainsString('invocation-exit ', $candidate, $label);
+                self::assertStringContainsString('invocation-stderr ', $reference, $label);
+                self::assertSame([], ExactSurfaceAuthority::footprint($key, $run)['rawSources'], $label);
+                self::assertSame([], ExactSurfaceAuthority::footprint($key, $run)['schemas'], $label);
+                foreach (['stdout', 'stderr', 'exit'] as $changed) {
+                    $artifacts = $captures['reference']->artifacts;
+                    $changedKey = match ($changed) {
+                        'stdout' => $key,
+                        'stderr' => 'case:alpha|stderr:' . $view,
+                        default => 'case:alpha|exit:' . ($view === 'baseline-file' ? 'baseline:generate' : $view),
+                    };
+                    $artifacts[$changedKey] .= $changed === 'exit' ? '1' : " \n";
+                    $changedCapture = new \QmxFindingGate\CaptureResult($artifacts, []);
+                    if ($view === 'baseline-file' && (($changed === 'stdout' && $referenceForm === 'refusal') || ($changed === 'exit' && $referenceForm === 'records'))) {
+                        try {
+                            ExactSurfaceAuthority::pair($pair, ['candidate' => $captures['candidate'], 'reference' => $changedCapture], $run);
+                            self::fail('A nonempty refusing baseline publication was accepted.');
+                        } catch (GateError $error) {
+                            self::assertSame('A refusing baseline invocation must retain empty captured baseline content.', $error->getMessage(), $label);
+                        }
+                    } else {
+                        self::assertNotSame($reference, ExactSurfaceAuthority::pair($pair, ['candidate' => $captures['candidate'], 'reference' => $changedCapture], $run)[1], $label . ' / ' . $changed);
+                    }
+                }
+            }
+        }
+        foreach ([['candidate', 'records'], ['reference', 'records'], ['candidate', 'refusal'], ['reference', 'refusal']] as [$side, $summaryForm]) {
+            $report = new GateReport();
+            $gate = new \QmxFindingGate\Gate(Options::parse(['gate', '--candidate=' . $this->root, '--reference=HEAD'], $this->root), $report);
+            try {
+                $run = (new ReflectionProperty($gate, 'context'))->getValue($gate);
+                $run->supplyPublicationTree('candidate', $this->root);
+                $run->supplyPublicationTree('reference', $this->root);
+                $capture = (new ReflectionMethod(RecordedComparison::class, 'capture'))->invoke(null, $this->root, $run);
+                $key = 'case:alpha|format:json';
+                $complete = json_decode($capture->artifacts[$key], true, 512, \JSON_THROW_ON_ERROR);
+                $truncated = $complete;
+                $truncated['violations'] = [];
+                $truncated['violationsMeta']['shown'] = 0;
+                $truncated['violationsMeta']['limit'] = 0;
+                $truncated['violationsMeta']['truncated'] = true;
+                $publication = \QmxFindingGate\ValueCheck::value($truncated);
+                $artifacts = array_replace($capture->artifacts, [$key => $publication, 'case:alpha|check:output:file' => $publication]);
+                if ($summaryForm === 'refusal') {
+                    $artifacts['case:alpha|format:summary'] = '{"error":"Refused summary","exit_code":3}';
+                    $artifacts['case:alpha|exit:format:summary'] = '3';
+                    $artifacts['case:alpha|stderr:format:summary'] = "Refused summary\n";
+                }
+                $rankings = $capture->rankings;
+                $rankings[$key]['ranked']['stdout'] = $publication;
+                $rankings[$key]['physical'] = ['stdout' => \QmxFindingGate\ValueCheck::value($complete), 'stderr' => $artifacts['case:alpha|stderr:format:json'], 'exit' => (int) $artifacts['case:alpha|exit:format:json']];
+                $ownCapture = new \QmxFindingGate\CaptureResult($artifacts, $rankings, $capture->baselineEligibility);
+                $run->publicationForms->supply($side, $artifacts);
+                $run->publicationForms->supply($side === 'candidate' ? 'reference' : 'candidate', array_replace($capture->artifacts, [$key => '{"error":"Refused input","exit_code":3}']));
+                $run->rankings->supply($side, $rankings);
+                $run->baselineEligibility->supply($side, $capture->baselineEligibility);
+                (new ReflectionMethod($gate, 'checkFindings'))->invoke($gate, $side, $artifacts, true, $ownCapture);
+                self::assertSame($complete['violations'], (new ReflectionProperty($gate, 'findingsByCase'))->getValue($gate)['alpha'] ?? null, $side . ' / summary ' . $summaryForm . ' / independent complete claims: ' . $report->render());
+                self::assertFalse($report->sourceValid($side, $key, 'ranking'), $side . ' mixed claims are not comparative ranking authority');
+                self::assertNotContains(FailureClass::RUN_FAILED, $report->failureClasses(), $report->render());
+                $invalid = array_replace($artifacts, ['case:alpha|format:gitlab' => '{"error":"Unrelated refusal","exit_code":3}', 'case:alpha|exit:format:gitlab' => '3']);
+                \QmxFindingGate\RecordCheck::create($run)->checkCase($side, $run->corpus->cases[0], \QmxFindingGate\CaseOutcome::ANALYSIS, $invalid);
+                self::assertNotContains('The partial-view refusal does not match this invocation selector and native diagnostic.', array_column($report->raised(), 'detail'), $side . ' an undeclared whole publication does not invoke a partial-view form guard');
+            } finally {
+                $gate->cleanUp();
+            }
+        }
+    }
+
+    #[Test]
+    public function itComparesUnchangedPartialViewRefusalsWithoutInventingFindingPublications(): void
+    {
+        $tree = SyntheticTree::clean();
+        foreach (['gitlab', 'checkstyle'] as $format) {
+            $message = 'Configuration error: Format "' . $format . '" has no place to say the report is a partial view: its consumer reads every entry as a finding. Drop --namespace, or use a format that says what the selection left out, such as json, sarif or github.';
+            $tree['answers']['case:alpha|format:' . $format] = [
+                'stdout' => $format === 'gitlab' ? json_encode(['error' => $message, 'exit_code' => 3, 'position' => null, 'source' => [['kind' => 'cli', 'name' => '--namespace', 'imported_by' => null]]], \JSON_THROW_ON_ERROR) : '',
+                'stderr' => $format === 'checkstyle' ? $message . "\nSource: option --namespace.\nDocs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt\n" : '',
+                'exit' => 3,
+            ];
+        }
+        $prepare = static function (string $root): void {
+            $path = $root . '/finding-gate/cases/alpha/case.json';
+            $case = json_decode(Fs::read($path), true, 512, \JSON_THROW_ON_ERROR);
+            $case['args'] = ['--namespace=subtree:App'];
+            Fs::write($path, json_encode($case, \JSON_THROW_ON_ERROR));
+        };
+        self::assertSame([], RecordedComparison::report($tree, $prepare)->raised());
+        $tree['candidateAnswers']['case:alpha|format:gitlab'] = array_replace($tree['answers']['case:alpha|format:gitlab'], ['stdout' => '{"error":"Different failure","exit_code":3,"position":null,"source":null}']);
+        self::assertContains(FailureClass::SURFACE_MISMATCH, RecordedComparison::report($tree, $prepare)->failureClasses());
+        $tree['candidateAnswers'] = [];
+        self::assertSame([], RecordedComparison::report($tree)->raised());
+    }
 
     public static function setUpBeforeClass(): void
     {
@@ -97,11 +368,12 @@ final class SurfaceComparisonTest extends TestCase
             ], []);
             $pair = new SurfacePair($key, 'baseline-file', $baseline, '');
             [$candidateFrame, $referenceFrame] = ExactSurfaceAuthority::pair($pair, ['candidate' => $candidate, 'reference' => $reference], $run);
-            self::assertStringContainsString('records ', $candidateFrame);
+            self::assertStringContainsString('invocation-baseline-file ', $candidateFrame);
+            self::assertStringContainsString('missing-invocation-artifact ', $candidateFrame);
             self::assertStringStartsWith("visible 0\n\n", $referenceFrame);
-            self::assertStringContainsString('baseline-exit 1' . "\n" . '3', $referenceFrame);
-            self::assertStringContainsString('baseline-stderr', $referenceFrame);
-            self::assertStringContainsString('refusal ', $referenceFrame);
+            self::assertStringContainsString('invocation-exit 1' . "\n" . '3', $referenceFrame);
+            self::assertStringContainsString('invocation-stderr', $referenceFrame);
+            self::assertStringContainsString('invocation-baseline-file 0', $referenceFrame);
             try {
                 ExactSurfaceAuthority::pair(
                     $pair,
@@ -111,7 +383,7 @@ final class SurfaceComparisonTest extends TestCase
                 self::fail('A nonempty captured baseline was accepted as a refusal.');
             } catch (GateError $error) {
                 self::assertSame(
-                    'A declared baseline refusal requires empty captured baseline content, a non-analysis exit, stderr and a JSON refusal.',
+                    'A refusing baseline invocation must retain empty captured baseline content.',
                     $error->getMessage(),
                 );
             }
@@ -140,11 +412,11 @@ final class SurfaceComparisonTest extends TestCase
         $json = (string) json_encode(['violations' => []]);
 
         $this->comparison($report, [$stage])->compareSurfaces(
-            ['case:alpha|format:json' => $json, 'case:alpha|format:text' => 'candidate text'],
-            ['case:alpha|format:json' => $json, 'case:alpha|format:text' => 'reference text'],
+            ['case:alpha|format:json' => $json, 'case:alpha|format:metrics' => '{"symbols":[]}'],
+            ['case:alpha|format:json' => $json, 'case:alpha|format:metrics' => '{"symbols":[]}'],
         );
 
-        self::assertSame(['case:alpha|format:json', 'case:alpha|format:text'], $stage->seen);
+        self::assertSame(['case:alpha|format:json', 'case:alpha|format:metrics'], $stage->seen);
         self::assertSame([], $report->raised(), 'a surface the stage settled reaches no later step');
     }
 
@@ -245,7 +517,7 @@ final class SurfaceComparisonTest extends TestCase
                 Fs::write($this->root . '/finding-gate/' . \QmxFindingGate\DeclaredOutcomes::INDEX, Tsv::render(\QmxFindingGate\DeclaredOutcomes::COLUMNS, []));
             }
             $report = new GateReport();
-            $this->comparison($report, [self::settling('difference')])->compareSurfaces(['case:alpha|format:json' => ''], ['case:alpha|format:json' => '{"violations":[{}]}']);
+            $this->comparison($report, [self::settling('difference')])->compareSurfaces(['case:alpha|format:json' => '{"violations":[]}'], ['case:alpha|format:json' => '{"violations":[{}]}']);
             if ($declared) {
                 self::assertNotContains(FailureClass::FINDING_COUNT_MISMATCH, $report->failureClasses());
             } else {
@@ -280,7 +552,7 @@ final class SurfaceComparisonTest extends TestCase
             Fs::write($this->root . '/finding-gate/cases/alpha/case.json', json_encode($definition, \JSON_THROW_ON_ERROR));
             $report = new GateReport();
             $this->comparison($report, [])->compareSurfaces(['case:alpha|format:html' => ''], ['case:alpha|format:html' => '']);
-            self::assertContains(FailureClass::REPORT_PAYLOAD_UNREADABLE, $report->failureClasses());
+            self::assertSame([], $report->failureClasses());
         }
     }
 
@@ -442,7 +714,7 @@ final class SurfaceComparisonTest extends TestCase
                 self::assertCount(1, $report->raised());
                 self::assertSame(FailureClass::SURFACE_MISMATCH, $report->raised()[0]['class']);
                 self::assertSame($key, $report->raised()[0]['scope']);
-                self::assertStringContainsString('outside every declared structural intention', $report->raised()[0]['detail']);
+                self::assertSame('The whole invocation differs and requires an exact complete-surface delta.', $report->raised()[0]['detail']);
             }
         }
     }

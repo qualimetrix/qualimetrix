@@ -59,7 +59,7 @@ final class MetricsJsonFormatter implements FormatterInterface
         SymbolType::Function_,
     ];
 
-    public function format(Report $report, FormatterContext $context): string
+    public function format(Report $report, FormatterContext $context): FormattedReport
     {
         $symbols = [];
 
@@ -122,25 +122,28 @@ final class MetricsJsonFormatter implements FormatterInterface
             'outOfScope' => self::outOfScope($report),
         ];
 
-        return PublishedUtf8::encodeJsonObject($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES);
+        $repairs = 0;
+        $body = PublishedUtf8::encodeJsonObject($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES, $repairs);
+
+        return new FormattedReport($body, $repairs);
     }
 
     /**
      * What a `--namespace`/`--class` selection left out of `summary`, which
      * counts only the selection; the key stays, as null, without one.
      *
-     * @return array{violations: int, errors: int, warnings: int, info: int}|null
+     * @return array<string, mixed>|null
      */
     private static function outOfScope(Report $report): ?array
     {
         $outOfScope = $report->outOfScope;
 
-        return $outOfScope === null ? null : [
-            'violations' => $outOfScope->total(),
-            'errors' => $outOfScope->errorCount,
-            'warnings' => $outOfScope->warningCount,
-            'info' => $outOfScope->infoCount,
-        ];
+        return $outOfScope?->published();
+    }
+
+    public function publicationKind(): PublicationKind
+    {
+        return PublicationKind::JsonDocument;
     }
 
     public function getName(): string

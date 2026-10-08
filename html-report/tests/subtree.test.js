@@ -1,135 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeSubtreeMetrics, getWorstSubNamespaces } from '../src/subtree.js';
-
-describe('computeSubtreeMetrics', () => {
-  it('sets _subtree for a single leaf node', () => {
-    const node = {
-      name: 'Foo',
-      type: 'class',
-      metrics: { 'health.overall': 75, 'size.loc.sum': 100 },
-      violationCountTotal: 3,
-    };
-
-    computeSubtreeMetrics(node);
-
-    expect(node._subtree.loc).toBe(100);
-    expect(node._subtree.violationCount).toBe(3);
-    expect(node._subtree.metrics['health.overall']).toBe(75);
-  });
-
-  it('computes LOC-weighted average for flat namespace', () => {
-    const node = {
-      name: 'App',
-      type: 'namespace',
-      metrics: {},
-      children: [
-        { name: 'A', type: 'class', metrics: { 'health.overall': 80, 'size.loc.sum': 200 }, violationCountTotal: 1 },
-        { name: 'B', type: 'class', metrics: { 'health.overall': 40, 'size.loc.sum': 800 }, violationCountTotal: 4 },
-      ],
-    };
-
-    computeSubtreeMetrics(node);
-
-    expect(node._subtree.loc).toBe(1000);
-    expect(node._subtree.violationCount).toBe(5);
-    // Weighted: (80*200 + 40*800) / 1000 = (16000 + 32000) / 1000 = 48
-    expect(node._subtree.metrics['health.overall']).toBe(48);
-  });
-
-  it('computes nested hierarchy correctly', () => {
-    const tree = {
-      name: '<project>',
-      type: 'project',
-      metrics: {},
-      children: [
-        {
-          name: 'App',
-          type: 'namespace',
-          metrics: {},
-          children: [
-            { name: 'Foo', type: 'class', metrics: { 'health.overall': 100, 'size.loc.sum': 500 }, violationCountTotal: 0 },
-            {
-              name: 'Sub',
-              type: 'namespace',
-              metrics: {},
-              children: [
-                { name: 'Bar', type: 'class', metrics: { 'health.overall': 20, 'size.loc.sum': 500 }, violationCountTotal: 10 },
-              ],
-            },
-          ],
-        },
-      ],
-    };
-
-    computeSubtreeMetrics(tree);
-
-    // Sub namespace: only Bar → health=20, loc=500
-    const sub = tree.children[0].children[1];
-    expect(sub._subtree.metrics['health.overall']).toBe(20);
-    expect(sub._subtree.loc).toBe(500);
-
-    // App namespace: Foo(100*500) + Sub(20*500) = 60000 / 1000 = 60
-    const app = tree.children[0];
-    expect(app._subtree.metrics['health.overall']).toBe(60);
-    expect(app._subtree.loc).toBe(1000);
-    expect(app._subtree.violationCount).toBe(10);
-
-    // Project: same as App (single child)
-    expect(tree._subtree.metrics['health.overall']).toBe(60);
-  });
-
-  it('handles missing health scores gracefully', () => {
-    const node = {
-      name: 'App',
-      type: 'namespace',
-      metrics: {},
-      children: [
-        { name: 'A', type: 'class', metrics: { 'size.loc.sum': 100 }, violationCountTotal: 0 },
-        { name: 'B', type: 'class', metrics: { 'health.overall': 50, 'size.loc.sum': 100 }, violationCountTotal: 0 },
-      ],
-    };
-
-    computeSubtreeMetrics(node);
-
-    // Only B contributes to health.overall → 50
-    expect(node._subtree.metrics['health.overall']).toBe(50);
-    expect(node._subtree.loc).toBe(200);
-  });
-
-  it('handles zero LOC children', () => {
-    const node = {
-      name: 'App',
-      type: 'namespace',
-      metrics: {},
-      children: [
-        { name: 'A', type: 'class', metrics: { 'health.overall': 30, 'size.loc.sum': 0 }, violationCountTotal: 0 },
-        { name: 'B', type: 'class', metrics: { 'health.overall': 70, 'size.loc.sum': 100 }, violationCountTotal: 0 },
-      ],
-    };
-
-    computeSubtreeMetrics(node);
-
-    // A has 0 LOC so doesn't contribute to weighted average
-    expect(node._subtree.metrics['health.overall']).toBe(70);
-  });
-
-  it('weighted average: 100 LOC health=30 + 900 LOC health=90 ≈ 84', () => {
-    const node = {
-      name: 'Root',
-      type: 'namespace',
-      metrics: {},
-      children: [
-        { name: 'Small', type: 'class', metrics: { 'health.overall': 30, 'size.loc.sum': 100 }, violationCountTotal: 0 },
-        { name: 'Large', type: 'class', metrics: { 'health.overall': 90, 'size.loc.sum': 900 }, violationCountTotal: 0 },
-      ],
-    };
-
-    computeSubtreeMetrics(node);
-
-    // (30*100 + 90*900) / 1000 = (3000 + 81000) / 1000 = 84
-    expect(node._subtree.metrics['health.overall']).toBe(84);
-  });
-});
+import { getWorstSubNamespaces } from '../src/subtree.js';
 
 describe('getWorstSubNamespaces', () => {
   it('returns child namespaces sorted by subtree health ASC', () => {
@@ -137,9 +7,9 @@ describe('getWorstSubNamespaces', () => {
       name: 'Root',
       type: 'project',
       children: [
-        { name: 'Good', type: 'namespace', _subtree: { metrics: { 'health.overall': 90 }, loc: 500, violationCount: 0 } },
-        { name: 'Bad', type: 'namespace', _subtree: { metrics: { 'health.overall': 20 }, loc: 300, violationCount: 5 } },
-        { name: 'Ok', type: 'namespace', _subtree: { metrics: { 'health.overall': 60 }, loc: 200, violationCount: 2 } },
+        { name: 'Good', type: 'namespace', metrics: { 'health.overall': 90 } },
+        { name: 'Bad', type: 'namespace', metrics: { 'health.overall': 20 } },
+        { name: 'Ok', type: 'namespace', metrics: { 'health.overall': 60 } },
       ],
     };
 
@@ -155,9 +25,9 @@ describe('getWorstSubNamespaces', () => {
       name: 'Root',
       type: 'project',
       children: [
-        { name: 'A', type: 'namespace', _subtree: { metrics: { 'health.overall': 10 }, loc: 100, violationCount: 0 } },
-        { name: 'B', type: 'namespace', _subtree: { metrics: { 'health.overall': 20 }, loc: 100, violationCount: 0 } },
-        { name: 'C', type: 'namespace', _subtree: { metrics: { 'health.overall': 30 }, loc: 100, violationCount: 0 } },
+        { name: 'A', type: 'namespace', metrics: { 'health.overall': 10 } },
+        { name: 'B', type: 'namespace', metrics: { 'health.overall': 20 } },
+        { name: 'C', type: 'namespace', metrics: { 'health.overall': 30 } },
       ],
     };
 
@@ -177,8 +47,8 @@ describe('getWorstSubNamespaces', () => {
       name: 'Root',
       type: 'namespace',
       children: [
-        { name: 'ClassA', type: 'class', _subtree: { metrics: { 'health.overall': 10 }, loc: 100, violationCount: 0 } },
-        { name: 'Sub', type: 'namespace', _subtree: { metrics: { 'health.overall': 50 }, loc: 200, violationCount: 1 } },
+        { name: 'ClassA', type: 'class', metrics: { 'health.overall': 10 } },
+        { name: 'Sub', type: 'namespace', metrics: { 'health.overall': 50 } },
       ],
     };
 
@@ -192,8 +62,8 @@ describe('getWorstSubNamespaces', () => {
       name: 'Root',
       type: 'project',
       children: [
-        { name: 'A', type: 'namespace', _subtree: { metrics: {}, loc: 100, violationCount: 0 } },
-        { name: 'B', type: 'namespace', _subtree: { metrics: { 'health.overall': 50 }, loc: 100, violationCount: 0 } },
+        { name: 'A', type: 'namespace', metrics: {} },
+        { name: 'B', type: 'namespace', metrics: { 'health.overall': 50 } },
       ],
     };
 
@@ -201,4 +71,16 @@ describe('getWorstSubNamespaces', () => {
     expect(worst).toHaveLength(1);
     expect(worst[0].name).toBe('B');
   });
+});
+
+
+it('keeps the published fractional namespace score despite differently weighted children', () => {
+  const namespace = { name: 'Cx', type: 'namespace', metrics: { 'health.overall': 42.07, 'size.loc.sum': 1000 }, violationCountTotal: 5, children: [
+    { type: 'class', metrics: { 'health.overall': 80, 'size.class-loc': 200 } },
+    { type: 'class', metrics: { 'health.overall': 40, 'size.class-loc': 800 } },
+  ] };
+  expect(getWorstSubNamespaces({ children: [namespace] })).toEqual([namespace]);
+  expect(namespace.metrics['health.overall']).toBe(42.07);
+  expect(namespace.metrics['size.loc.sum']).toBe(1000);
+  expect(namespace.violationCountTotal).toBe(5);
 });

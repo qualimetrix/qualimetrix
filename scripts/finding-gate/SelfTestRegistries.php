@@ -46,9 +46,10 @@ final class SelfTestRegistries extends SelfTestGroup
     }
 
     /**
-     * Every place a failure class is raised, per caller, is seen raising it in
-     * a whole run, every mode is seen deciding what it writes, and a class
-     * raised nowhere is refused.
+     * Every non-narrowed raise site and caller is seen in a whole run;
+     * run-failed is witnessed by class, side and scope. Every mode is seen
+     * deciding what it writes. Retired native fingerprint classes retain
+     * helper source sites without claiming whole-run witness coverage.
      */
     public function witnessedFailureClasses(): void
     {
@@ -62,6 +63,8 @@ final class SelfTestRegistries extends SelfTestGroup
                 FailureClass::ALL,
                 array_map(static fn(array $site): string => $site['class'], $sites->sites),
                 $witnesses['observed'],
+                $witnesses['scoped'],
+                array_keys(FailureClass::NATIVE_WITNESS_RETIREMENTS),
             ),
         ];
 

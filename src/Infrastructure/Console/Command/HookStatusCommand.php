@@ -94,6 +94,9 @@ final class HookStatusCommand extends AbstractHookCommand
     {
         if (PreCommitHook::isOurs($contents)) {
             $output->writeln('Owner: <info>Qualimetrix</info>');
+            if (!PreCommitHook::isCurrent($contents)) {
+                $output->writeln('Revision: <comment>outdated</comment>');
+            }
 
             return;
         }
@@ -135,6 +138,9 @@ final class HookStatusCommand extends AbstractHookCommand
     private function reportSuggestions(string $contents, OutputInterface $output): void
     {
         if (PreCommitHook::isOurs($contents)) {
+            if (!PreCommitHook::isCurrent($contents)) {
+                $output->writeln(\sprintf('Reinstall it: %s hook:install --force', $this->runningBinaryLocator->hint()));
+            }
             $output->writeln('The hook will run Qualimetrix on staged PHP files before each commit.');
             $output->writeln('To bypass the hook, use: git commit --no-verify');
 

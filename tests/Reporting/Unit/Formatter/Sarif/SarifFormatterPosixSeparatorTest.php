@@ -45,7 +45,7 @@ final class SarifFormatterPosixSeparatorTest extends TestCase
             ->addFindings([$finding])
             ->build();
 
-        $output = $formatter->format($report, new FormatterContext());
+        $output = $formatter->format($report, new FormatterContext())->body;
 
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
         $uri = $data['runs'][0]['results'][0]['locations'][0]['physicalLocation']['artifactLocation']['uri'];
@@ -74,7 +74,7 @@ final class SarifFormatterPosixSeparatorTest extends TestCase
             ->addFindings([$finding])
             ->build();
 
-        $output = $formatter->format($report, new FormatterContext());
+        $output = $formatter->format($report, new FormatterContext())->body;
 
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
         $mainUri = $data['runs'][0]['results'][0]['locations'][0]['physicalLocation']['artifactLocation']['uri'];

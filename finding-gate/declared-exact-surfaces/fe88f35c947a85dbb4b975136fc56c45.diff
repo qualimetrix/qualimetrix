@@ -1,0 +1,9 @@
+--- candidate
++++ reference (mapped)
+@@ -5,3 +5,3 @@
+-invocation-stderr 258
+-Configuration error: Output format "text-verbose" is not one of: checkstyle, github, gitlab, health, html, json, metrics, sarif, summary, suppressed, text.
+-Source: option --format.
++invocation-stderr 400
++Configuration error: Computed metric "computed.project-load" reads "computed.class-load" at level "project", where it is not published (published at: class). Guard the read with "?? <fallback>", or declare level "project" on the metric it reads. Formula: m["computed.class-load"] + 1
++Source: configuration file "qmx.yaml".

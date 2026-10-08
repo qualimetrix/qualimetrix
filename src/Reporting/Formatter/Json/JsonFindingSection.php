@@ -6,15 +6,20 @@ namespace Qualimetrix\Reporting\Formatter\Json;
 
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Reporting\Formatter\FindingRecord;
 use Qualimetrix\Reporting\Formatter\PublishedFinding;
 use Qualimetrix\Reporting\FormatterContext;
 
 final class JsonFindingSection
 {
+    private readonly FindingRecord $record;
+
     public function __construct(
-        private readonly RemediationTimeRegistry $remediationTimeRegistry,
-        private readonly JsonSanitizer $sanitizer,
-    ) {}
+        RemediationTimeRegistry $remediationTimeRegistry,
+        JsonSanitizer $sanitizer,
+    ) {
+        $this->record = new FindingRecord($remediationTimeRegistry, $sanitizer);
+    }
 
     /**
      * Formats an array of findings for JSON output.
@@ -69,35 +74,9 @@ final class JsonFindingSection
     /**
      * @return array<string, mixed>
      */
-    private function formatFinding(Finding $finding, FormatterContext $context): array
+    public function formatFinding(Finding $finding, FormatterContext $context): array
     {
-        $ns = $finding->symbolPath->namespace ?? '';
-        $file = $finding->location->file === null
-            ? null
-            : $context->relativizePath($finding->location->file);
-        $baseline = PublishedFinding::baselineFields($finding);
-
-        return [
-            'file' => $file,
-            'line' => $finding->location->line,
-            'subject' => $finding->subject->toCanonical(),
-            'symbol' => $finding->symbolPath->toString(),
-            'channel' => $finding->channel()->code,
-            'occurrence' => $finding->occurrenceKey?->value,
-            'edge' => PublishedFinding::edge($finding),
-            'namespace' => $ns !== '' ? $ns : null,
-            'rule' => $finding->ruleName,
-            'code' => $finding->code,
-            'severity' => $finding->severity->value,
-            'message' => $finding->message,
-            'recommendation' => $finding->recommendation,
-            'metricValue' => $this->sanitizer->sanitizeNumeric($finding->metricValue),
-            'threshold' => $this->sanitizer->sanitizeNumeric($finding->threshold),
-            'techDebtMinutes' => $this->remediationTimeRegistry->getMinutesForFinding($finding),
-            'acceptedLevel' => $baseline['acceptedLevel'],
-            'baselineVerdict' => $baseline['baselineVerdict'],
-            'baselineReason' => $baseline['baselineReason'],
-        ];
+        return $this->record->of($finding, $context);
     }
 
     /**

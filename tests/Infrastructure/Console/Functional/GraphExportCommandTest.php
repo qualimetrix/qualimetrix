@@ -603,7 +603,7 @@ final class GraphExportCommandTest extends TestCase
         $tester = $this->createCommandTesterWithAnalyzer($analyzer);
         $tester->execute(['paths' => [$this->tempDir . '/Source.php'], '--format' => 'json', '--output' => $destination]);
 
-        self::assertSame(1, $tester->getStatusCode());
+        self::assertSame(5, $tester->getStatusCode());
         self::assertIsArray($observed);
         self::assertCount(1, $observed, 'Graph output must hold a private sibling while analysis runs.');
         self::assertSame('OLD GRAPH', file_get_contents($destination));

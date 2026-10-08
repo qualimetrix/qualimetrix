@@ -129,7 +129,7 @@ final class CheckCommandDefinition
                 'fail-on',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Minimum severity to trigger non-zero exit code (none, warning, error). Default: error. Exit codes: 0 = clean, 1 = warnings, 2 = errors, 3 = input/configuration/environment refusal',
+                'Minimum severity to trigger non-zero exit code (none, warning, error). Default: error. Exit codes: 0 = clean, 1 = warnings, 2 = errors, 3 = input/configuration/environment refusal, 4 = incomplete analysis, 5 = internal error',
             )
             ->addOption(
                 'namespace',

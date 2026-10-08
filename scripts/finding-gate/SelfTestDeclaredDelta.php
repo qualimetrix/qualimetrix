@@ -83,7 +83,7 @@ final class SelfTestDeclaredDelta extends SelfTestGroup
     private function publicationVocabulary(): void
     {
         $formatters = [
-            'format:html' => 'src/Reporting/Formatter/Html/HtmlFindingPartitioner.php',
+            'format:html' => 'src/Reporting/Formatter/FindingRecord.php',
             'format:sarif' => 'src/Reporting/Formatter/Sarif/SarifFormatter.php',
             'format:gitlab' => 'src/Reporting/Formatter/GitLabCodeQualityFormatter.php',
             'format:checkstyle' => 'src/Reporting/Formatter/CheckstyleFormatter.php',
@@ -93,7 +93,7 @@ final class SelfTestDeclaredDelta extends SelfTestGroup
 
         foreach ($formatters as $surface => $relative) {
             $source = Fs::read($this->candidateRoot . '/' . $relative);
-            $keys = PublishedVocabulary::keysOf($surface);
+            $keys = PublishedVocabulary::keysOf($surface, ReportRecords::codecOf($this->candidateRoot));
 
             $this->assert($keys !== [], $surface . ' declares which compared fields it publishes');
 
@@ -103,17 +103,6 @@ final class SelfTestDeclaredDelta extends SelfTestGroup
                     $surface . ' still publishes ' . $field . ' as ' . $key,
                 );
             }
-        }
-
-        // The HTML payload's own point: it does not use the tuple's spelling at
-        // all, so reading the tuple spelling there read nothing.
-        $partitioner = Fs::read($this->candidateRoot . '/src/Reporting/Formatter/Html/HtmlFindingPartitioner.php');
-
-        foreach (array_keys(PublishedVocabulary::keysOf('format:html')) as $field) {
-            $this->assert(
-                !str_contains($partitioner, "'" . $field . "' =>"),
-                'and the HTML payload still does not publish it under the tuple spelling ' . $field,
-            );
         }
 
         $classified = PublishedVocabulary::readableSurfaces();

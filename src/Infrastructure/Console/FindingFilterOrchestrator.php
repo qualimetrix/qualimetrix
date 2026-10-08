@@ -238,11 +238,23 @@ final readonly class FindingFilterOrchestrator
 
         $output->writeln('');
         $output->writeln(\sprintf(
-            '<info>%d violation(s) suppressed by @qmx-ignore tags:</info>',
+            '<info>%d violation(s) suppressed by @qmx-ignore tags%s:</info>',
             \count($suppressed),
+            self::suppressionScopeSuffix($input),
         ));
 
         self::listByFile($suppressed, $output);
+    }
+
+    private static function suppressionScopeSuffix(InputInterface $input): string
+    {
+        foreach (['namespace', 'class'] as $selector) {
+            if ($input->hasOption($selector) && $input->getOption($selector) !== null) {
+                return ' across the whole run (reporting selectors are not applied)';
+            }
+        }
+
+        return '';
     }
 
     private function reportExclusionCounts(FindingProjectionResult $filterResult, OutputInterface $output): void
@@ -282,8 +294,9 @@ final readonly class FindingFilterOrchestrator
         if ($input->getOption('show-suppressed') === true && $stats->excludedFindings !== []) {
             $output->writeln('');
             $output->writeln(\sprintf(
-                '<info>%d violation(s) suppressed by per-rule suppress_namespaces/suppress_namespace_channels/suppress_paths:</info>',
+                '<info>%d violation(s) suppressed by per-rule suppress_namespaces/suppress_namespace_channels/suppress_paths%s:</info>',
                 \count($stats->excludedFindings),
+                self::suppressionScopeSuffix($input),
             ));
 
             self::listByFile($stats->excludedFindings, $output);

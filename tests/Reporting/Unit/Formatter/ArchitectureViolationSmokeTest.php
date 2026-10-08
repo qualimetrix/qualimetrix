@@ -49,7 +49,6 @@ use Qualimetrix\Reporting\Formatter\Summary\OffenderListRenderer;
 use Qualimetrix\Reporting\Formatter\Summary\SummaryFormatter;
 use Qualimetrix\Reporting\Formatter\Summary\TopIssuesRenderer;
 use Qualimetrix\Reporting\Formatter\TextFormatter;
-use Qualimetrix\Reporting\Formatter\TextVerboseFormatter;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Health\HealthHintProjector;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
@@ -89,7 +88,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
         $formatter = $this->createTextFormatter();
         $report = $this->buildArchitectureReport();
 
-        $output = $formatter->format($report, new FormatterContext(useColor: false));
+        $output = $formatter->format($report, new FormatterContext(useColor: false))->body;
 
         self::assertNonEmptyOutput($output);
         self::assertStringContainsString(LayerViolationRule::NAME, $output);
@@ -105,20 +104,19 @@ final class ArchitectureViolationSmokeTest extends TestCase
     }
 
     #[Test]
-    public function itRendersArchitectureViolationsViaTextVerboseFormatter(): void
+    public function itRendersArchitectureViolationsViaDetailedTextFormatter(): void
     {
         $debtCalculator = new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()));
         $detailedRenderer = new DetailedFindingRenderer($debtCalculator);
-        $textFormatter = new TextFormatter($debtCalculator, $detailedRenderer);
-        $formatter = new TextVerboseFormatter($textFormatter);
+        $formatter = new TextFormatter($debtCalculator, $detailedRenderer);
 
         $report = $this->buildArchitectureReport();
-        $output = $formatter->format($report, new FormatterContext(useColor: false));
+        $output = $formatter->format($report, new FormatterContext(useColor: false, detailLimit: 0))->body;
 
         self::assertNonEmptyOutput($output);
         self::assertStringContainsString(LayerViolationRule::NAME, $output);
         self::assertStringContainsString(CircularDependencyRule::NAME, $output);
-        // text-verbose enables --detail, so recommendation text must surface.
+        // Detailed text includes the recommendation.
         // DetailedFindingRenderer inlines the recommendation without a
         // 'Recommendation:' label, so we assert on a stable substring from
         // the layer-violation recommendation copy itself.
@@ -145,7 +143,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
         );
 
         $report = $this->buildArchitectureReport();
-        $output = $formatter->format($report, new FormatterContext());
+        $output = $formatter->format($report, new FormatterContext())->body;
 
         self::assertJson($output);
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
@@ -173,7 +171,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
         $formatter = new MetricsJsonFormatter();
         $report = $this->buildArchitectureReport();
 
-        $output = $formatter->format($report, new FormatterContext());
+        $output = $formatter->format($report, new FormatterContext())->body;
 
         self::assertJson($output);
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
@@ -196,12 +194,13 @@ final class ArchitectureViolationSmokeTest extends TestCase
                 new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues())),
                 self::createStub(ComputedMetricDefinitionCatalogInterface::class),
                 new \Qualimetrix\Reporting\Formatter\Html\HtmlProjectMetadata(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()),
+                new \Qualimetrix\Reporting\Formatter\FindingRecord(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()), new \Qualimetrix\Reporting\Formatter\Json\JsonSanitizer()),
             ),
             new HealthHintProjector(new HealthMetricCatalog()),
         );
 
         $report = $this->buildArchitectureReport();
-        $output = $formatter->format($report, new FormatterContext());
+        $output = $formatter->format($report, new FormatterContext())->body;
 
         // The HTML formatter attaches findings to tree nodes built from
         // the metric repository (see HtmlFindingPartitioner): project-level
@@ -223,7 +222,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
         $formatter = new CheckstyleFormatter();
         $report = $this->buildArchitectureReport();
 
-        $output = $formatter->format($report, new FormatterContext());
+        $output = $formatter->format($report, new FormatterContext())->body;
 
         // Output must parse as XML
         $previousErrors = libxml_use_internal_errors(true);
@@ -261,7 +260,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
         $formatter = new SarifFormatter(new SarifRuleCollector(new StubChannelPresentation()));
         $report = $this->buildArchitectureReport();
 
-        $output = $formatter->format($report, new FormatterContext());
+        $output = $formatter->format($report, new FormatterContext())->body;
 
         self::assertJson($output);
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
@@ -294,7 +293,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
         $formatter = new GitLabCodeQualityFormatter();
         $report = $this->buildArchitectureReport();
 
-        $output = $formatter->format($report, new FormatterContext());
+        $output = $formatter->format($report, new FormatterContext())->body;
 
         self::assertJson($output);
         $issues = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
@@ -328,7 +327,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
         $formatter = new HealthTextFormatter($resolver);
 
         $report = $this->buildArchitectureReport();
-        $output = $formatter->format($report, new FormatterContext(useColor: false, terminalWidth: 120));
+        $output = $formatter->format($report, new FormatterContext(useColor: false, terminalWidth: 120))->body;
 
         // The architecture rule emits no health score; the formatter must
         // still produce a non-empty rendering (header / "no data" notice) and
@@ -356,7 +355,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
         );
 
         $report = $this->buildArchitectureReport();
-        $output = $formatter->format($report, new FormatterContext(useColor: false, terminalWidth: 120));
+        $output = $formatter->format($report, new FormatterContext(useColor: false, terminalWidth: 120))->body;
 
         self::assertNonEmptyOutput($output);
         // Summary aggregates by severity. The fixture has 1 error, 2 warnings,
@@ -373,7 +372,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
         $formatter = new GithubActionsFormatter();
         $report = $this->buildArchitectureReport();
 
-        $output = $formatter->format($report, new FormatterContext());
+        $output = $formatter->format($report, new FormatterContext())->body;
 
         self::assertNonEmptyOutput($output);
 

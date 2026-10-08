@@ -1,0 +1,543 @@
+--- candidate
++++ reference (mapped)
+@@ -1,11 +1,529 @@
+-visible 0
+-
+-invocation-format:text-verbose 0
+-
+-invocation-stderr 258
+-Configuration error: Output format "text-verbose" is not one of: checkstyle, github, gitlab, health, html, json, metrics, sarif, summary, suppressed, text.
+-Source: option --format.
+-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
+-
+-invocation-exit 1
+-3
++visible 16556
++[project] (44 violations)
++  ERROR
++    Complexity health: 63.2 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.  [health.complexity]
++
++  ERROR
++    Complexity health: 66.8 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.  [health.complexity]
++
++  ERROR
++    Complexity health: 63.2 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.  [health.complexity]
++
++  ERROR
++    Complexity health: 49.6 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.  [health.complexity]
++
++  ERROR
++    Complexity health: 87.8 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.  [health.complexity]
++
++  ERROR
++    Complexity health: 66.0 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.  [health.complexity]
++
++  ERROR
++    Cohesion health: 96.6 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.  [health.cohesion]
++
++  ERROR
++    Cohesion health: 96.6 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.  [health.cohesion]
++
++  ERROR
++    Cohesion health: 95.6 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.  [health.cohesion]
++
++  ERROR
++    Cohesion health: 97.1 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.  [health.cohesion]
++
++  ERROR
++    Cohesion health: 97.6 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.  [health.cohesion]
++
++  ERROR
++    Coupling health: 75.0 (threshold: 100.0) — Reduce coupling by applying dependency inversion, introducing interfaces, and limiting the number of direct dependencies.  [health.coupling]
++
++  ERROR
++    Coupling health: 75.0 (threshold: 100.0) — Reduce coupling by applying dependency inversion, introducing interfaces, and limiting the number of direct dependencies.  [health.coupling]
++
++  ERROR
++    Coupling health: 59.1 (threshold: 100.0) — Reduce coupling by applying dependency inversion, introducing interfaces, and limiting the number of direct dependencies.  [health.coupling]
++
++  ERROR
++    Coupling health: 75.0 (threshold: 100.0) — Reduce coupling by applying dependency inversion, introducing interfaces, and limiting the number of direct dependencies.  [health.coupling]
++
++  ERROR
++    Coupling health: 80.0 (threshold: 100.0) — Reduce coupling by applying dependency inversion, introducing interfaces, and limiting the number of direct dependencies.  [health.coupling]
++
++  ERROR
++    Typing health: 57.4 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR
++    Typing health: 50.0 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR
++    Typing health: 50.0 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR
++    Typing health: 57.4 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR
++    Typing health: 64.1 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR
++    Typing health: 45.5 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR
++    Typing health: 56.2 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR
++    Maintainability health: 71.9 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR
++    Maintainability health: 72.4 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR
++    Maintainability health: 92.8 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR
++    Maintainability health: 71.9 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR
++    Maintainability health: 70.2 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR
++    Maintainability health: 82.1 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR
++    Maintainability health: 71.5 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR
++    Overall health: 78.4 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  ERROR
++    Overall health: 74.5 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  ERROR
++    Overall health: 88.6 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  ERROR
++    Overall health: 78.4 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  ERROR
++    Overall health: 66.3 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  ERROR
++    Overall health: 81.7 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  ERROR
++    Overall health: 75.2 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  WARN
++    Branch load health: 32.9 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++  WARN
++    Branch load health: 45.0 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++  WARN
++    Branch load health: 15.0 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++  WARN
++    Branch load health: 32.9 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++  WARN
++    Branch load health: 41.4 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++  WARN
++    Branch load health: 24.3 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++  WARN
++    Branch load health: 32.2 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++lib/http/Client.php (5 violations)
++  ERROR  Client
++    Complexity health: 89.0 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.  [health.complexity]
++
++  ERROR  Client
++    Typing health: 50.0 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR  Client
++    Maintainability health: 81.6 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR  Client
++    Overall health: 88.7 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  WARN  Client
++    Branch load health: 45.0 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++lib/store/FileStore.php (4 violations)
++  ERROR  FileStore
++    Typing health: 50.0 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR  FileStore
++    Maintainability health: 95.7 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR  FileStore
++    Overall health: 92.5 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  WARN  FileStore
++    Branch load health: 15.0 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++src/Engine/Dispatcher.php (6 violations)
++  ERROR  Dispatcher
++    Complexity health: 69.5 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.  [health.complexity]
++
++  ERROR  Dispatcher
++    Coupling health: 87.6 (threshold: 100.0) — Reduce coupling by applying dependency inversion, introducing interfaces, and limiting the number of direct dependencies.  [health.coupling]
++
++  ERROR  Dispatcher
++    Typing health: 57.9 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR  Dispatcher
++    Maintainability health: 77.4 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR  Dispatcher
++    Overall health: 79.9 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  WARN  Dispatcher
++    Branch load health: 50.0 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++src/Engine/Pipeline.php (7 violations)
++  ERROR  Pipeline
++    Complexity health: 87.0 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.  [health.complexity]
++
++  ERROR  Pipeline
++    Cohesion health: 90.8 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.  [health.cohesion]
++
++  ERROR  Pipeline
++    Coupling health: 87.6 (threshold: 100.0) — Reduce coupling by applying dependency inversion, introducing interfaces, and limiting the number of direct dependencies.  [health.coupling]
++
++  ERROR  Pipeline
++    Typing health: 70.0 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR  Pipeline
++    Maintainability health: 83.8 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR  Pipeline
++    Overall health: 85.6 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  WARN  Pipeline
++    Branch load health: 35.0 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++src/Support/Formatter.php (5 violations)
++  ERROR  Formatter
++    Complexity health: 89.0 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.  [health.complexity]
++
++  ERROR  Formatter
++    Typing health: 42.9 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR  Formatter
++    Maintainability health: 80.2 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR  Formatter
++    Overall health: 87.6 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  WARN  Formatter
++    Branch load health: 35.0 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++src/Support/Registry.php (5 violations)
++  ERROR  Registry
++    Cohesion health: 90.8 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.  [health.cohesion]
++
++  ERROR  Registry
++    Typing health: 44.4 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR  Registry
++    Maintainability health: 94.2 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR  Registry
++    Overall health: 89.4 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  WARN  Registry
++    Branch load health: 20.0 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++src/Support/Translator.php (4 violations)
++  ERROR  Translator
++    Typing health: 50.0 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR  Translator
++    Maintainability health: 98.5 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR  Translator
++    Overall health: 92.5 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  WARN  Translator
++    Branch load health: 20.0 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++Technical debt by rule:
++  health.typing                            ~3h 30min (14 violations)
++  health.maintainability                   ~3h 30min (14 violations)
++  health.overall                           ~3h 30min (14 violations)
++  computed                                 ~3h 30min (14 violations)
++  health.complexity                        ~2h 30min (10 violations)
++  health.cohesion                          ~1h 45min (7 violations)
++  health.coupling                          ~1h 45min (7 violations)
++
++Qualimetrix dev-main: 66 error(s), 14 warning(s) in 7 file(s)
++Analysis complete: 7 analyzed, 0 generated file(s) excluded.
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-format:text-verbose 16556
++[project] (44 violations)
++  ERROR
++    Complexity health: 63.2 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.  [health.complexity]
++
++  ERROR
++    Complexity health: 66.8 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.  [health.complexity]
++
++  ERROR
++    Complexity health: 63.2 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.  [health.complexity]
++
++  ERROR
++    Complexity health: 49.6 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.  [health.complexity]
++
++  ERROR
++    Complexity health: 87.8 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.  [health.complexity]
++
++  ERROR
++    Complexity health: 66.0 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.  [health.complexity]
++
++  ERROR
++    Cohesion health: 96.6 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.  [health.cohesion]
++
++  ERROR
++    Cohesion health: 96.6 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.  [health.cohesion]
++
++  ERROR
++    Cohesion health: 95.6 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.  [health.cohesion]
++
++  ERROR
++    Cohesion health: 97.1 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.  [health.cohesion]
++
++  ERROR
++    Cohesion health: 97.6 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.  [health.cohesion]
++
++  ERROR
++    Coupling health: 75.0 (threshold: 100.0) — Reduce coupling by applying dependency inversion, introducing interfaces, and limiting the number of direct dependencies.  [health.coupling]
++
++  ERROR
++    Coupling health: 75.0 (threshold: 100.0) — Reduce coupling by applying dependency inversion, introducing interfaces, and limiting the number of direct dependencies.  [health.coupling]
++
++  ERROR
++    Coupling health: 59.1 (threshold: 100.0) — Reduce coupling by applying dependency inversion, introducing interfaces, and limiting the number of direct dependencies.  [health.coupling]
++
++  ERROR
++    Coupling health: 75.0 (threshold: 100.0) — Reduce coupling by applying dependency inversion, introducing interfaces, and limiting the number of direct dependencies.  [health.coupling]
++
++  ERROR
++    Coupling health: 80.0 (threshold: 100.0) — Reduce coupling by applying dependency inversion, introducing interfaces, and limiting the number of direct dependencies.  [health.coupling]
++
++  ERROR
++    Typing health: 57.4 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR
++    Typing health: 50.0 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR
++    Typing health: 50.0 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR
++    Typing health: 57.4 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR
++    Typing health: 64.1 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR
++    Typing health: 45.5 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR
++    Typing health: 56.2 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR
++    Maintainability health: 71.9 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR
++    Maintainability health: 72.4 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR
++    Maintainability health: 92.8 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR
++    Maintainability health: 71.9 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR
++    Maintainability health: 70.2 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR
++    Maintainability health: 82.1 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR
++    Maintainability health: 71.5 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR
++    Overall health: 78.4 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  ERROR
++    Overall health: 74.5 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  ERROR
++    Overall health: 88.6 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  ERROR
++    Overall health: 78.4 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  ERROR
++    Overall health: 66.3 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  ERROR
++    Overall health: 81.7 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  ERROR
++    Overall health: 75.2 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  WARN
++    Branch load health: 32.9 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++  WARN
++    Branch load health: 45.0 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++  WARN
++    Branch load health: 15.0 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++  WARN
++    Branch load health: 32.9 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++  WARN
++    Branch load health: 41.4 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++  WARN
++    Branch load health: 24.3 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++  WARN
++    Branch load health: 32.2 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++lib/http/Client.php (5 violations)
++  ERROR  Client
++    Complexity health: 89.0 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.  [health.complexity]
++
++  ERROR  Client
++    Typing health: 50.0 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR  Client
++    Maintainability health: 81.6 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR  Client
++    Overall health: 88.7 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  WARN  Client
++    Branch load health: 45.0 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++lib/store/FileStore.php (4 violations)
++  ERROR  FileStore
++    Typing health: 50.0 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR  FileStore
++    Maintainability health: 95.7 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR  FileStore
++    Overall health: 92.5 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  WARN  FileStore
++    Branch load health: 15.0 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++src/Engine/Dispatcher.php (6 violations)
++  ERROR  Dispatcher
++    Complexity health: 69.5 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.  [health.complexity]
++
++  ERROR  Dispatcher
++    Coupling health: 87.6 (threshold: 100.0) — Reduce coupling by applying dependency inversion, introducing interfaces, and limiting the number of direct dependencies.  [health.coupling]
++
++  ERROR  Dispatcher
++    Typing health: 57.9 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR  Dispatcher
++    Maintainability health: 77.4 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR  Dispatcher
++    Overall health: 79.9 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  WARN  Dispatcher
++    Branch load health: 50.0 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++src/Engine/Pipeline.php (7 violations)
++  ERROR  Pipeline
++    Complexity health: 87.0 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.  [health.complexity]
++
++  ERROR  Pipeline
++    Cohesion health: 90.8 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.  [health.cohesion]
++
++  ERROR  Pipeline
++    Coupling health: 87.6 (threshold: 100.0) — Reduce coupling by applying dependency inversion, introducing interfaces, and limiting the number of direct dependencies.  [health.coupling]
++
++  ERROR  Pipeline
++    Typing health: 70.0 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR  Pipeline
++    Maintainability health: 83.8 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR  Pipeline
++    Overall health: 85.6 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  WARN  Pipeline
++    Branch load health: 35.0 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++src/Support/Formatter.php (5 violations)
++  ERROR  Formatter
++    Complexity health: 89.0 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.  [health.complexity]
++
++  ERROR  Formatter
++    Typing health: 42.9 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR  Formatter
++    Maintainability health: 80.2 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR  Formatter
++    Overall health: 87.6 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  WARN  Formatter
++    Branch load health: 35.0 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++src/Support/Registry.php (5 violations)
++  ERROR  Registry
++    Cohesion health: 90.8 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.  [health.cohesion]
++
++  ERROR  Registry
++    Typing health: 44.4 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR  Registry
++    Maintainability health: 94.2 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR  Registry
++    Overall health: 89.4 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  WARN  Registry
++    Branch load health: 20.0 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++src/Support/Translator.php (4 violations)
++  ERROR  Translator
++    Typing health: 50.0 (threshold: 100.0) — Add type declarations to parameters, return types, and properties to improve type safety and IDE support.  [health.typing]
++
++  ERROR  Translator
++    Maintainability health: 98.5 (threshold: 100.0) — Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.  [health.maintainability]
++
++  ERROR  Translator
++    Overall health: 92.5 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [health.overall]
++
++  WARN  Translator
++    Branch load health: 20.0 (threshold: 0.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.  [computed.branch-load]
++
++Technical debt by rule:
++  health.typing                            ~3h 30min (14 violations)
++  health.maintainability                   ~3h 30min (14 violations)
++  health.overall                           ~3h 30min (14 violations)
++  computed                                 ~3h 30min (14 violations)
++  health.complexity                        ~2h 30min (10 violations)
++  health.cohesion                          ~1h 45min (7 violations)
++  health.coupling                          ~1h 45min (7 violations)
++
++Qualimetrix dev-main: 66 error(s), 14 warning(s) in 7 file(s)
++Analysis complete: 7 analyzed, 0 generated file(s) excluded.
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-stderr 82
++Warning: --format=text-verbose is deprecated. Use --format=text --detail instead.
++
++invocation-exit 1
++2

@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Core\SourceText\SourceBytes;
 
 /**
  * Builds a {@see BoundaryExplanation} for `bin/qmx baseline:explain`, as
@@ -47,7 +48,8 @@ final readonly class BoundaryExplanationService
     ): BoundaryExplanation {
         $measuredFindings = $run->measuredFindings;
         $identities = ExplainedSubject::identities($subjectKey, $channelFilter, $baseline, $measuredFindings);
-        $repositoryRecord = ExplainedSubject::recordFor($subjectKey, ExplainedSubject::index($run->symbolLocations));
+        $subjects = ExplainedSubject::index($run->symbolLocations);
+        $repositoryRecord = ExplainedSubject::recordFor($subjectKey, $subjects);
         $groups = self::groupsByIdentity($measuredFindings);
         $evidence = (new CurrentBoundaryMeasurement($this->ruleCoverage))->measure($baseline, $identities, $groups, $measuredFindings, $this->declarations, $run->coverage);
         $identityExplanation = new IdentityBoundaryExplanation($this->channels);
@@ -66,11 +68,27 @@ final readonly class BoundaryExplanationService
             );
         }
 
+        $status = self::statusFor($subjectKey, $baseline, $measuredFindings, $repositoryRecord);
+        $canonicalSpelling = null;
+        $separator = strpos($subjectKey, ':');
+        if ($status === BoundaryExplanationStatus::Unknown && $separator !== false) {
+            $candidate = substr($subjectKey, 0, $separator + 1) . SourceBytes::escape(substr($subjectKey, $separator + 1));
+            if ($candidate !== $subjectKey && self::statusFor(
+                $candidate,
+                $baseline,
+                $measuredFindings,
+                ExplainedSubject::recordFor($candidate, $subjects),
+            ) !== BoundaryExplanationStatus::Unknown) {
+                $canonicalSpelling = $candidate;
+            }
+        }
+
         return new BoundaryExplanation(
             $subjectKey,
             $boundaries,
-            self::statusFor($subjectKey, $baseline, $measuredFindings, $repositoryRecord),
+            $status,
             ExplainedSubject::unidentifiedEntries($subjectKey, $channelFilter, $baseline),
+            $canonicalSpelling,
         );
     }
 

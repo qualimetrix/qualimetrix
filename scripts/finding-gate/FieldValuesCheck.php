@@ -48,6 +48,8 @@ final class FieldValuesCheck implements RunCheck, Derivation
 
     public function checkRun(array $candidate, array $reference): void
     {
+        $this->run->publicationForms->supply('candidate', $candidate);
+        $this->run->publicationForms->supply('reference', $reference);
         $fields = $this->run->declarations->fields;
         $this->rows = [];
         $problems = [];
@@ -60,7 +62,7 @@ final class FieldValuesCheck implements RunCheck, Derivation
                         break;
                     }
                 }
-                if ($invocation === null) {
+                if ($invocation === null || $this->run->publicationForms->recordInvocation($invocation) === false) {
                     continue;
                 }
                 foreach (['candidate' => $candidate, 'reference' => $reference] as $side => $artifacts) {
@@ -78,8 +80,11 @@ final class FieldValuesCheck implements RunCheck, Derivation
             }
         }
         foreach (DeclaredFields::REPORTS as $report) {
-            foreach ($fields->measurements($report) as $publication) {
+            foreach ($fields->measurements($report, $this->run->publicationForms) as $publication) {
                 $view = $publication['view'];
+                if ($this->run->publicationForms->schemaPair($publication['case'], $view) === false) {
+                    continue;
+                }
                 $valid = true;
                 foreach ($fields->changes($report, $view) as $field => $change) {
                     $present = ($change === DeclaredFields::ADDED) === ($publication['side'] === 'candidate');

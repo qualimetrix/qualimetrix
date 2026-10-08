@@ -38,6 +38,22 @@ use Symfony\Component\Console\Output\StreamOutput;
 final class RefusalPresenterTest extends TestCase
 {
     #[Test]
+    public function itKeepsDistinctInputBytesInTheJsonRefusalEnvelope(): void
+    {
+        $output = self::terminalOutput();
+        $refusal = ConfigurationRefusal::aboutInput(
+            ConfigurationOrigin::of(ConfigurationSource::CommandLine, "--name\xFF"),
+            "unknown value K\xFE and literal 50%",
+        );
+        self::assertSame(3, $this->presenter()->refusal($output, 'json', $refusal));
+        self::assertSame('', $output->errorOutputContent());
+        $envelope = json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame('Configuration error: unknown value K%FE and literal 50%25', $envelope['error']);
+        self::assertSame('--name%FF', $envelope['source'][0]['name']);
+        self::assertSame(2, $envelope['invalidUtf8Replaced']);
+    }
+
+    #[Test]
     public function itAnswersAConfigurationRefusalOnStderrWithCodeThree(): void
     {
         $output = self::terminalOutput();
@@ -126,7 +142,6 @@ final class RefusalPresenterTest extends TestCase
      */
     #[Test]
     #[TestWith(['text'])]
-    #[TestWith(['text-verbose'])]
     #[TestWith(['summary'])]
     #[TestWith(['health'])]
     #[TestWith(['checkstyle'])]
@@ -211,13 +226,13 @@ final class RefusalPresenterTest extends TestCase
     }
 
     #[Test]
-    public function itAnswersAnInternalErrorWithTheInternalHeaderAndCodeOne(): void
+    public function itAnswersAnInternalErrorWithTheInternalHeaderAndCodeFive(): void
     {
         $output = self::terminalOutput();
 
         $exit = $this->presenter()->unhandled($output, null, new RuntimeException('boom'));
 
-        self::assertSame(1, $exit);
+        self::assertSame(5, $exit);
         self::assertStringContainsString('Internal error: boom', $output->errorOutputContent());
     }
 
@@ -228,9 +243,9 @@ final class RefusalPresenterTest extends TestCase
 
         $exit = $this->presenter()->unhandled($output, 'json', new RuntimeException('boom'));
 
-        self::assertSame(1, $exit);
+        self::assertSame(5, $exit);
         self::assertSame(
-            ['error' => 'Internal error: boom', 'exit_code' => 1, 'position' => null, 'source' => null],
+            ['error' => 'Internal error: boom', 'exit_code' => 5, 'position' => null, 'source' => null],
             json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR),
         );
     }
@@ -549,7 +564,7 @@ final class RefusalPresenterTest extends TestCase
         self::assertSame(3, $refusalExit);
         self::assertSame('', $refused->standardOutputContent());
         self::assertStringContainsString('Configuration error: Failed to write the export', $refused->errorOutputContent());
-        self::assertSame(1, $failureExit);
+        self::assertSame(5, $failureExit);
         self::assertSame('', $failed->standardOutputContent());
         self::assertStringContainsString('Internal error: boom', $failed->errorOutputContent());
     }

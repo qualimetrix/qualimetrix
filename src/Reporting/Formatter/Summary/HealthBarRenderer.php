@@ -37,7 +37,6 @@ final class HealthBarRenderer
         FormatterContext $context,
         AnsiColor $color,
         int $terminalWidth,
-        bool $ascii,
         array &$lines,
     ): void {
         $healthScores = $this->healthScoreResolver->resolve($report, $context);
@@ -56,7 +55,7 @@ final class HealthBarRenderer
             static fn(HealthScore $hs): bool => $hs->name !== 'overall',
         );
 
-        $overallLine = $this->renderOverallLine($report, $context, $overall, $terminalWidth, $ascii, $color);
+        $overallLine = $this->renderOverallLine($report, $context, $overall, $terminalWidth, $color);
 
         // One statement per score, unless they all make the same one and there
         // is an overall line to carry it once — a namespace drill-down gives
@@ -72,7 +71,7 @@ final class HealthBarRenderer
             $lines[] = '';
         }
 
-        $this->renderDimensionLines($dimensions, $terminalWidth, $ascii, $color, $lines, $shared);
+        $this->renderDimensionLines($dimensions, $terminalWidth, $color, $lines, $shared);
 
         // H8: Explain that dimensions have independent scales when labels might seem contradictory
         $scaleNote = $this->buildScaleNote($dimensions, $color);
@@ -92,7 +91,6 @@ final class HealthBarRenderer
         FormatterContext $context,
         ?HealthScore $overall,
         int $terminalWidth,
-        bool $ascii,
         AnsiColor $color,
     ): ?string {
         if ($overall === null || $overall->score === null) {
@@ -102,7 +100,7 @@ final class HealthBarRenderer
         $headerSuffix = $this->buildHeaderSuffix($context, $color);
 
         $healthLine = $color->bold('Health') . $headerSuffix . ' '
-            . $this->renderHealthBar($overall->score, $overall->warningThreshold, $overall->errorThreshold, $terminalWidth, $ascii, $color)
+            . $this->renderHealthBar($overall->score, $overall->warningThreshold, $overall->errorThreshold, $terminalWidth, $color)
             . ' ' . $this->formatScore($overall->score, $color, $overall->warningThreshold, $overall->errorThreshold)
             . ' ' . $color->dim($overall->label);
 
@@ -165,14 +163,14 @@ final class HealthBarRenderer
      * @param list<string> $lines
      * @param ?string $shared the statement already said once above, when every score makes the same one
      */
-    private function renderDimensionLines(array $dimensions, int $terminalWidth, bool $ascii, AnsiColor $color, array &$lines, ?string $shared): void
+    private function renderDimensionLines(array $dimensions, int $terminalWidth, AnsiColor $color, array &$lines, ?string $shared): void
     {
         // Dynamic padding based on longest dimension name
         $padWidth = $this->calculatePadWidth($dimensions);
         $decompositionIndent = str_repeat(' ', $padWidth + 4); // 2 indent + padWidth + 2 space
 
         foreach ($dimensions as $hs) {
-            $lines[] = $this->renderScoreLine($hs, $padWidth, $terminalWidth, $ascii, $color);
+            $lines[] = $this->renderScoreLine($hs, $padWidth, $terminalWidth, $color);
 
             if ($shared === null) {
                 $lines[] = $decompositionIndent . $color->dim(HealthCoverageNarrator::summarize($hs->coverage));
@@ -203,7 +201,6 @@ final class HealthBarRenderer
         HealthScore $hs,
         int $padWidth,
         int $terminalWidth,
-        bool $ascii,
         AnsiColor $color,
     ): string {
         $label = str_pad(ucfirst($hs->name), $padWidth);
@@ -220,7 +217,7 @@ final class HealthBarRenderer
             return \sprintf('  %s %s %s', $label, $scoreStr, $color->dim($hs->label));
         }
 
-        $bar = $this->renderHealthBar($hs->score, $hs->warningThreshold, $hs->errorThreshold, $terminalWidth, $ascii, $color);
+        $bar = $this->renderHealthBar($hs->score, $hs->warningThreshold, $hs->errorThreshold, $terminalWidth, $color);
 
         return \sprintf('  %s %s %s %s', $label, $bar, $scoreStr, $color->dim($hs->label));
     }
@@ -251,7 +248,6 @@ final class HealthBarRenderer
         float $warnThreshold,
         float $errThreshold,
         int $terminalWidth,
-        bool $ascii,
         AnsiColor $color,
     ): string {
         $barWidth = max(self::MIN_BAR_WIDTH, min(30, $terminalWidth - 50));
@@ -259,12 +255,6 @@ final class HealthBarRenderer
         $filled = (int) round($normalizedScore / 100 * $barWidth);
         $filled = max(0, min($barWidth, $filled));
         $empty = $barWidth - $filled;
-
-        if ($ascii) {
-            $bar = str_repeat('#', $filled) . str_repeat('.', $empty);
-
-            return $this->colorizeScore('[' . $bar . ']', $score, $warnThreshold, $errThreshold, $color);
-        }
 
         $bar = str_repeat('█', $filled) . str_repeat('░', $empty);
 

@@ -45,7 +45,66 @@ final class HtmlTreeBuilderTest extends TestCase
             new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues())),
             $this->catalog(),
             new \Qualimetrix\Reporting\Formatter\Html\HtmlProjectMetadata(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()),
+            new \Qualimetrix\Reporting\Formatter\FindingRecord(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()), new \Qualimetrix\Reporting\Formatter\Json\JsonSanitizer()),
         );
+    }
+
+    #[Test]
+    public function itPublishesTheGlobalNamespaceBagWithoutClasses(): void
+    {
+        $metrics = new InMemoryMetricRepository();
+        $bag = ['size.loc.sum' => 9, 'health.overall' => 92.07, 'coupling.instability' => 0.5];
+        $metrics->add(SymbolPath::forNamespace(''), MetricBag::fromArray($bag), null, null);
+
+        $report = ReportBuilder::create()->metrics($metrics)->build();
+        $tree = $this->builder->build($report, new FormatterContext())['tree'];
+        self::assertArrayHasKey('children', $tree);
+        $node = $tree['children'][0];
+
+        self::assertSame('(no namespace)', $node['name']);
+        self::assertSame($bag, (array) $node['metrics']);
+        self::assertArrayNotHasKey('children', $node);
+    }
+
+    #[Test]
+    public function itPreservesRepositoryMetricsWithoutInventingLocOrHealth(): void
+    {
+        $metrics = new InMemoryMetricRepository();
+        $metrics->add(SymbolPath::forFile(RelativePath::fromString('Pair.php')), MetricBag::fromArray(['size.loc' => 100]), RelativePath::fromString('Pair.php'), 1);
+        $metrics->add(SymbolPath::forClass('', 'Pair'), MetricBag::fromArray(['size.class-loc' => 10, 'health.complexity' => 80.0]), RelativePath::fromString('Pair.php'), 2);
+        $metrics->add(SymbolPath::forNamespace(''), MetricBag::fromArray(['size.loc.sum' => 100]), null, null);
+
+        $report = ReportBuilder::create()->metrics($metrics)->build();
+        $result = $this->builder->build($report, new FormatterContext());
+        $namespace = $result['tree']['children'][0];
+        $class = $namespace['children'][0];
+
+        self::assertSame(['size.class-loc' => 10, 'health.complexity' => 80.0], (array) $class['metrics']);
+        self::assertSame(['size.loc.sum' => 100], (array) $namespace['metrics']);
+        self::assertSame([], (array) $result['tree']['metrics']);
+        self::assertSame([], (array) $result['summary']['healthScores']);
+    }
+
+    #[Test]
+    public function itPublishesEveryBagInAClasslessNamespaceChain(): void
+    {
+        $metrics = new InMemoryMetricRepository();
+        $bags = [
+            'App' => ['size.loc.sum' => 13, 'health.overall' => 72.0],
+            'App\\Nested' => ['size.loc.sum' => 7, 'health.complexity' => 88.0],
+            'App\\Nested\\Leaf' => ['size.loc.sum' => 3, 'coupling.instability' => 0.75],
+        ];
+        foreach ($bags as $namespace => $bag) {
+            $metrics->add(SymbolPath::forNamespace($namespace), MetricBag::fromArray($bag), null, null);
+        }
+
+        $report = ReportBuilder::create()->metrics($metrics)->build();
+        $node = $this->builder->build($report, new FormatterContext())['tree'];
+        foreach ($bags as $namespace => $bag) {
+            $node = $node['children'][0];
+            self::assertSame($namespace, $node['path']);
+            self::assertSame($bag, (array) $node['metrics']);
+        }
     }
 
     #[Test]
@@ -112,13 +171,13 @@ final class HtmlTreeBuilderTest extends TestCase
         // Add classes
         $metrics->add(
             SymbolPath::forClass('App\\Service', 'UserService'),
-            MetricBag::fromArray(['complexity.ccn.sum' => 5, 'size.loc.sum' => 120]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 5, 'size.class-loc' => 120]),
             RelativePath::fromString('src/Service/UserService.php'),
             10,
         );
         $metrics->add(
             SymbolPath::forClass('App\\Service', 'OrderService'),
-            MetricBag::fromArray(['complexity.ccn.sum' => 3, 'size.loc.sum' => 80]),
+            MetricBag::fromArray(['complexity.ccn.sum' => 3, 'size.class-loc' => 80]),
             RelativePath::fromString('src/Service/OrderService.php'),
             5,
         );
@@ -319,12 +378,12 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertCount(1, $classNode['violations']);
 
         $v = $classNode['violations'][0];
-        self::assertSame('complexity.ccn', $v['ruleName']);
-        self::assertSame('complexity.ccn', $v['violationCode']);
+        self::assertSame('complexity.ccn', $v['rule']);
+        self::assertSame('complexity.ccn', $v['code']);
         self::assertSame('Cyclomatic complexity is 15', $v['message']);
         self::assertSame('warning', $v['severity']);
         self::assertSame(15, $v['metricValue']);
-        self::assertSame('App\\Service\\UserService::calculate', $v['symbolPath']);
+        self::assertSame('App\\Service\\UserService::calculate', $v['symbol']);
         self::assertSame('src/Service/UserService.php', $v['file']);
         self::assertSame(25, $v['line']);
     }
@@ -794,20 +853,19 @@ final class HtmlTreeBuilderTest extends TestCase
     }
 
     #[Test]
-    public function itAggregatesLocSumBottomUpDuringBuild(): void
+    public function itLeavesMissingNamespaceAndProjectBagsEmpty(): void
     {
         $metrics = new InMemoryMetricRepository();
 
-        // Classes have loc.sum but the namespace does not
         $metrics->add(
             SymbolPath::forClass('App\\Service', 'UserService'),
-            MetricBag::fromArray(['size.loc.sum' => 100]),
+            MetricBag::fromArray(['size.class-loc' => 100]),
             RelativePath::fromString('src/Service/UserService.php'),
             1,
         );
         $metrics->add(
             SymbolPath::forClass('App\\Service', 'OrderService'),
-            MetricBag::fromArray(['size.loc.sum' => 150]),
+            MetricBag::fromArray(['size.class-loc' => 150]),
             RelativePath::fromString('src/Service/OrderService.php'),
             1,
         );
@@ -827,11 +885,10 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertSame('Service', $serviceNode['name']);
 
         $serviceMetrics = (array) $serviceNode['metrics'];
-        self::assertSame(250, $serviceMetrics['size.loc.sum']);
+        self::assertSame([], $serviceMetrics);
 
-        // Root should also aggregate
         $rootMetrics = (array) $tree['metrics'];
-        self::assertSame(250, $rootMetrics['size.loc.sum']);
+        self::assertSame([], $rootMetrics);
     }
 
     #[Test]

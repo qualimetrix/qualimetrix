@@ -1,0 +1,504 @@
+--- candidate
++++ reference (mapped)
+@@ -1,141 +1,109 @@
+-visible 9628
+-[project] (1 violation)
+-  WARN
+-    The framework namespace selector "subtree:NoSuchVendor\Framework" matched no class the run analysed or depends on. Nothing was moved out of the application scope for it, so "coupling.cbo-app" still counts every class it was written to exclude and "coupling.ce-framework" counts none of them.  [coupling.unmatched-framework-namespace]
+-    Recommendation: Check "subtree:NoSuchVendor\Framework" against the names the code really imports. Use exact for one name, subtree for a namespace and all descendants, or regex for an explicit delimiterless PCRE fragment. Drop the entry if the dependency is gone.
+-
+-src/Contract/CacheInterface.php (2 violations)
+-  WARN  CacheInterface
+-    Afferent coupling too high: 2 classes depend on this (CBO: 2, threshold: 2)  [coupling.cbo]
+-    Recommendation: CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
+-
+-  WARN  CacheInterface
+-    ClassRank is 0.0879, exceeds threshold of 0.0577 (scaled for 12 classes). This class is a critical hub — changes have wide impact  [coupling.class-rank]
+-    Recommendation: ClassRank: 0.0879 (threshold: 0.0577) — coupling hotspot, 2 classes depend on this
+-
+-src/Contract/MailerInterface.php (1 violation)
+-  WARN  MailerInterface
+-    ClassRank is 0.0668, exceeds threshold of 0.0577 (scaled for 12 classes). This class is a critical hub — changes have wide impact  [coupling.class-rank]
+-    Recommendation: ClassRank: 0.0668 (threshold: 0.0577) — coupling hotspot, 1 class depends on this
+-
+-src/Contract/RepositoryInterface.php (2 violations)
+-  WARN  RepositoryInterface
+-    Afferent coupling too high: 2 classes depend on this (CBO: 2, threshold: 2)  [coupling.cbo]
+-    Recommendation: CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
+-
+-  WARN  RepositoryInterface
+-    ClassRank is 0.0879, exceeds threshold of 0.0577 (scaled for 12 classes). This class is a critical hub — changes have wide impact  [coupling.class-rank]
+-    Recommendation: ClassRank: 0.0879 (threshold: 0.0577) — coupling hotspot, 2 classes depend on this
+-
+-src/Kernel/Clock.php (4 violations)
+-  ERROR
+-    Distance from main sequence is 1.00 (A=0.00, I=0.00), exceeds threshold of 0.90. Balance abstractness and stability  [coupling.distance]
+-    Recommendation: Distance: 1.00 (threshold: 0.90) — poor balance of abstraction and stability
+-
+-  WARN
+-    Afferent coupling too high: 5 classes depend on this (CBO: 2 namespaces, threshold: 2)  [coupling.cbo]
+-    Recommendation: CBO: 2 namespaces (threshold: 2) — this namespace is a coupling magnet, consider if it is a healthy abstraction point
+-
+-  WARN  Clock
+-    Afferent coupling too high: 4 classes depend on this (CBO: 4, threshold: 2)  [coupling.cbo]
+-    Recommendation: CBO: 4 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
+-
+-  WARN  Clock
+-    ClassRank is 0.1315, exceeds threshold of 0.0577 (scaled for 12 classes). This class is a critical hub — changes have wide impact  [coupling.class-rank]
+-    Recommendation: ClassRank: 0.1315 (threshold: 0.0577) — coupling hotspot, 4 classes depend on this
+-
+-src/Kernel/Logger.php (2 violations)
+-  WARN  Logger
+-    Afferent coupling too high: 3 classes depend on this (CBO: 3, threshold: 2)  [coupling.cbo]
+-    Recommendation: CBO: 3 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
+-
+-  WARN  Logger
+-    ClassRank is 0.1090, exceeds threshold of 0.0577 (scaled for 12 classes). This class is a critical hub — changes have wide impact  [coupling.class-rank]
+-    Recommendation: ClassRank: 0.1090 (threshold: 0.0577) — coupling hotspot, 3 classes depend on this
+-
+-src/Kernel/Uuid.php (2 violations)
+-  WARN  Uuid
+-    Afferent coupling too high: 2 classes depend on this (CBO: 2, threshold: 2)  [coupling.cbo]
+-    Recommendation: CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
+-
+-  WARN  Uuid
+-    ClassRank is 0.0893, exceeds threshold of 0.0577 (scaled for 12 classes). This class is a critical hub — changes have wide impact  [coupling.class-rank]
+-    Recommendation: ClassRank: 0.0893 (threshold: 0.0577) — coupling hotspot, 2 classes depend on this
+-
+-src/Service/CacheService.php (6 violations)
+-  WARN
+-    Efferent coupling too high: depends on 6 classes (CBO: 3 namespaces, threshold: 2)  [coupling.cbo]
+-    Recommendation: CBO: 3 namespaces (threshold: 2) — extract dependencies to reduce outbound coupling
+-
+-  WARN
+-    Distance from main sequence is 0.25 (A=0.00, I=0.75), exceeds threshold of 0.05. Balance abstractness and stability  [coupling.distance]
+-    Recommendation: Distance: 0.25 (threshold: 0.05) — poor balance of abstraction and stability
+-
+-  WARN
+-    Instability is 0.75 (Ca=2, Ce=6), exceeds threshold of 0.40. Reduce outgoing dependencies  [coupling.instability]
+-    Recommendation: Instability: 0.75 (threshold: 0.40) — package is highly unstable
+-
+-  WARN  CacheService
+-    Efferent coupling too high: depends on 3 classes (CBO: 4, threshold: 2)  [coupling.cbo]
+-    Recommendation: Top dependencies: CacheInterface, Clock, Logger. CBO: 4 (threshold: 2) — extract dependencies to reduce outbound coupling
+-
+-  WARN  CacheService
+-    ClassRank is 0.0745, exceeds threshold of 0.0577 (scaled for 12 classes). This class is a critical hub — changes have wide impact  [coupling.class-rank]
+-    Recommendation: ClassRank: 0.0745 (threshold: 0.0577) — coupling hotspot, 1 class depends on this
+-
+-  WARN  CacheService
+-    Instability is 0.75 (Ca=1, Ce=3), exceeds threshold of 0.40. Reduce outgoing dependencies  [coupling.instability]
+-    Recommendation: Instability: 0.75 (threshold: 0.40) — package is highly unstable
+-
+-src/Service/ReportService.php (3 violations)
+-  WARN  ReportService
+-    Efferent coupling too high: depends on 3 classes (CBO: 4, threshold: 2)  [coupling.cbo]
+-    Recommendation: Top dependencies: RepositoryInterface, Clock, Logger. CBO: 4 (threshold: 2) — extract dependencies to reduce outbound coupling
+-
+-  WARN  ReportService
+-    ClassRank is 0.0745, exceeds threshold of 0.0577 (scaled for 12 classes). This class is a critical hub — changes have wide impact  [coupling.class-rank]
+-    Recommendation: ClassRank: 0.0745 (threshold: 0.0577) — coupling hotspot, 1 class depends on this
+-
+-  WARN  ReportService
+-    Instability is 0.75 (Ca=1, Ce=3), exceeds threshold of 0.40. Reduce outgoing dependencies  [coupling.instability]
+-    Recommendation: Instability: 0.75 (threshold: 0.40) — package is highly unstable
+-
+-src/Service/UserService.php (3 violations)
+-  ERROR  UserService
+-    Efferent coupling too high: depends on 6 classes (CBO: 8, threshold: 5)  [coupling.cbo]
+-    Recommendation: Top dependencies: RepositoryInterface, MailerInterface, CacheInterface, Clock, Logger. CBO: 8 (threshold: 5) — extract dependencies to reduce outbound coupling
+-
+-  WARN  UserService
+-    ClassRank is 0.0970, exceeds threshold of 0.0577 (scaled for 12 classes). This class is a critical hub — changes have wide impact  [coupling.class-rank]
+-    Recommendation: ClassRank: 0.0970 (threshold: 0.0577) — coupling hotspot, 2 classes depend on this
+-
+-  WARN  UserService
+-    Instability is 0.75 (Ca=2, Ce=6), exceeds threshold of 0.40. Reduce outgoing dependencies  [coupling.instability]
+-    Recommendation: Instability: 0.75 (threshold: 0.40) — package is highly unstable
+-
+-src/Wiring/Bootstrap.php (2 violations)
+-  WARN
+-    Efferent coupling too high: depends on 5 classes (CBO: 2 namespaces, threshold: 2)  [coupling.cbo]
+-    Recommendation: CBO: 2 namespaces (threshold: 2) — extract dependencies to reduce outbound coupling
+-
+-  WARN  Bootstrap
+-    Efferent coupling too high: depends on 2 classes (CBO: 2, threshold: 2)  [coupling.cbo]
+-    Recommendation: Top dependencies: Container, Clock. CBO: 2 (threshold: 2) — extract dependencies to reduce outbound coupling
+-
+-src/Wiring/Container.php (3 violations)
+-  WARN  Container
+-    Efferent coupling too high: depends on 3 classes (CBO: 4, threshold: 2)  [coupling.cbo]
+-    Recommendation: Top dependencies: UserService, ReportService, CacheService. CBO: 4 (threshold: 2) — extract dependencies to reduce outbound coupling
+-
+-  WARN  Container
+-    ClassRank is 0.0756, exceeds threshold of 0.0577 (scaled for 12 classes). This class is a critical hub — changes have wide impact  [coupling.class-rank]
+-    Recommendation: ClassRank: 0.0756 (threshold: 0.0577) — coupling hotspot, 1 class depends on this
+-
+-  WARN  Container
+-    Instability is 0.75 (Ca=1, Ce=3), exceeds threshold of 0.40. Reduce outgoing dependencies  [coupling.instability]
+-    Recommendation: Instability: 0.75 (threshold: 0.40) — package is highly unstable
+-
+-src/Wiring/Factory.php (1 violation)
+-  WARN  Factory
+-    Efferent coupling too high: depends on 2 classes (CBO: 2, threshold: 2)  [coupling.cbo]
+-    Recommendation: Top dependencies: UserService, Uuid. CBO: 2 (threshold: 2) — extract dependencies to reduce outbound coupling
++visible 5629
++[project] (1 violation)
++  WARN
++    Check "subtree:NoSuchVendor\Framework" against the names the code really imports. Use exact for one name, subtree for a namespace and all descendants, or regex for an explicit delimiterless PCRE fragment. Drop the entry if the dependency is gone.  [coupling.unmatched-framework-namespace]
++
++src/Contract/CacheInterface.php (2 violations)
++  WARN  CacheInterface
++    CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point  [coupling.cbo]
++
++  WARN  CacheInterface
++    ClassRank: 0.0879 (threshold: 0.0577) — coupling hotspot, 2 classes depend on this  [coupling.class-rank]
++
++src/Contract/MailerInterface.php (1 violation)
++  WARN  MailerInterface
++    ClassRank: 0.0668 (threshold: 0.0577) — coupling hotspot, 1 class depends on this  [coupling.class-rank]
++
++src/Contract/RepositoryInterface.php (2 violations)
++  WARN  RepositoryInterface
++    CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point  [coupling.cbo]
++
++  WARN  RepositoryInterface
++    ClassRank: 0.0879 (threshold: 0.0577) — coupling hotspot, 2 classes depend on this  [coupling.class-rank]
++
++src/Kernel/Clock.php (4 violations)
++  ERROR
++    Distance: 1.00 (threshold: 0.90) — poor balance of abstraction and stability  [coupling.distance]
++
++  WARN
++    CBO: 2 namespaces (threshold: 2) — this namespace is a coupling magnet, consider if it is a healthy abstraction point  [coupling.cbo]
++
++  WARN  Clock
++    CBO: 4 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point  [coupling.cbo]
++
++  WARN  Clock
++    ClassRank: 0.1315 (threshold: 0.0577) — coupling hotspot, 4 classes depend on this  [coupling.class-rank]
++
++src/Kernel/Logger.php (2 violations)
++  WARN  Logger
++    CBO: 3 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point  [coupling.cbo]
++
++  WARN  Logger
++    ClassRank: 0.1090 (threshold: 0.0577) — coupling hotspot, 3 classes depend on this  [coupling.class-rank]
++
++src/Kernel/Uuid.php (2 violations)
++  WARN  Uuid
++    CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point  [coupling.cbo]
++
++  WARN  Uuid
++    ClassRank: 0.0893 (threshold: 0.0577) — coupling hotspot, 2 classes depend on this  [coupling.class-rank]
++
++src/Service/CacheService.php (6 violations)
++  WARN
++    CBO: 3 namespaces (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++  WARN
++    Distance: 0.25 (threshold: 0.05) — poor balance of abstraction and stability  [coupling.distance]
++
++  WARN
++    Instability: 0.75 (threshold: 0.40) — package is highly unstable  [coupling.instability]
++
++  WARN  CacheService
++    Top dependencies: CacheInterface, Clock, Logger. CBO: 4 (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++  WARN  CacheService
++    ClassRank: 0.0745 (threshold: 0.0577) — coupling hotspot, 1 class depends on this  [coupling.class-rank]
++
++  WARN  CacheService
++    Instability: 0.75 (threshold: 0.40) — package is highly unstable  [coupling.instability]
++
++src/Service/ReportService.php (3 violations)
++  WARN  ReportService
++    Top dependencies: RepositoryInterface, Clock, Logger. CBO: 4 (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++  WARN  ReportService
++    ClassRank: 0.0745 (threshold: 0.0577) — coupling hotspot, 1 class depends on this  [coupling.class-rank]
++
++  WARN  ReportService
++    Instability: 0.75 (threshold: 0.40) — package is highly unstable  [coupling.instability]
++
++src/Service/UserService.php (3 violations)
++  ERROR  UserService
++    Top dependencies: RepositoryInterface, MailerInterface, CacheInterface, Clock, Logger. CBO: 8 (threshold: 5) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++  WARN  UserService
++    ClassRank: 0.0970 (threshold: 0.0577) — coupling hotspot, 2 classes depend on this  [coupling.class-rank]
++
++  WARN  UserService
++    Instability: 0.75 (threshold: 0.40) — package is highly unstable  [coupling.instability]
++
++src/Wiring/Bootstrap.php (2 violations)
++  WARN
++    CBO: 2 namespaces (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++  WARN  Bootstrap
++    Top dependencies: Container, Clock. CBO: 2 (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++src/Wiring/Container.php (3 violations)
++  WARN  Container
++    Top dependencies: UserService, ReportService, CacheService. CBO: 4 (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++  WARN  Container
++    ClassRank: 0.0756 (threshold: 0.0577) — coupling hotspot, 1 class depends on this  [coupling.class-rank]
++
++  WARN  Container
++    Instability: 0.75 (threshold: 0.40) — package is highly unstable  [coupling.instability]
++
++src/Wiring/Factory.php (1 violation)
++  WARN  Factory
++    Top dependencies: UserService, Uuid. CBO: 2 (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
+@@ -154,141 +122,109 @@
+-invocation-format:text-detail 9628
+-[project] (1 violation)
+-  WARN
+-    The framework namespace selector "subtree:NoSuchVendor\Framework" matched no class the run analysed or depends on. Nothing was moved out of the application scope for it, so "coupling.cbo-app" still counts every class it was written to exclude and "coupling.ce-framework" counts none of them.  [coupling.unmatched-framework-namespace]
+-    Recommendation: Check "subtree:NoSuchVendor\Framework" against the names the code really imports. Use exact for one name, subtree for a namespace and all descendants, or regex for an explicit delimiterless PCRE fragment. Drop the entry if the dependency is gone.
+-
+-src/Contract/CacheInterface.php (2 violations)
+-  WARN  CacheInterface
+-    Afferent coupling too high: 2 classes depend on this (CBO: 2, threshold: 2)  [coupling.cbo]
+-    Recommendation: CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
+-
+-  WARN  CacheInterface
+-    ClassRank is 0.0879, exceeds threshold of 0.0577 (scaled for 12 classes). This class is a critical hub — changes have wide impact  [coupling.class-rank]
+-    Recommendation: ClassRank: 0.0879 (threshold: 0.0577) — coupling hotspot, 2 classes depend on this
+-
+-src/Contract/MailerInterface.php (1 violation)
+-  WARN  MailerInterface
+-    ClassRank is 0.0668, exceeds threshold of 0.0577 (scaled for 12 classes). This class is a critical hub — changes have wide impact  [coupling.class-rank]
+-    Recommendation: ClassRank: 0.0668 (threshold: 0.0577) — coupling hotspot, 1 class depends on this
+-
+-src/Contract/RepositoryInterface.php (2 violations)
+-  WARN  RepositoryInterface
+-    Afferent coupling too high: 2 classes depend on this (CBO: 2, threshold: 2)  [coupling.cbo]
+-    Recommendation: CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
+-
+-  WARN  RepositoryInterface
+-    ClassRank is 0.0879, exceeds threshold of 0.0577 (scaled for 12 classes). This class is a critical hub — changes have wide impact  [coupling.class-rank]
+-    Recommendation: ClassRank: 0.0879 (threshold: 0.0577) — coupling hotspot, 2 classes depend on this
+-
+-src/Kernel/Clock.php (4 violations)
+-  ERROR
+-    Distance from main sequence is 1.00 (A=0.00, I=0.00), exceeds threshold of 0.90. Balance abstractness and stability  [coupling.distance]
+-    Recommendation: Distance: 1.00 (threshold: 0.90) — poor balance of abstraction and stability
+-
+-  WARN
+-    Afferent coupling too high: 5 classes depend on this (CBO: 2 namespaces, threshold: 2)  [coupling.cbo]
+-    Recommendation: CBO: 2 namespaces (threshold: 2) — this namespace is a coupling magnet, consider if it is a healthy abstraction point
+-
+-  WARN  Clock
+-    Afferent coupling too high: 4 classes depend on this (CBO: 4, threshold: 2)  [coupling.cbo]
+-    Recommendation: CBO: 4 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
+-
+-  WARN  Clock
+-    ClassRank is 0.1315, exceeds threshold of 0.0577 (scaled for 12 classes). This class is a critical hub — changes have wide impact  [coupling.class-rank]
+-    Recommendation: ClassRank: 0.1315 (threshold: 0.0577) — coupling hotspot, 4 classes depend on this
+-
+-src/Kernel/Logger.php (2 violations)
+-  WARN  Logger
+-    Afferent coupling too high: 3 classes depend on this (CBO: 3, threshold: 2)  [coupling.cbo]
+-    Recommendation: CBO: 3 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
+-
+-  WARN  Logger
+-    ClassRank is 0.1090, exceeds threshold of 0.0577 (scaled for 12 classes). This class is a critical hub — changes have wide impact  [coupling.class-rank]
+-    Recommendation: ClassRank: 0.1090 (threshold: 0.0577) — coupling hotspot, 3 classes depend on this
+-
+-src/Kernel/Uuid.php (2 violations)
+-  WARN  Uuid
+-    Afferent coupling too high: 2 classes depend on this (CBO: 2, threshold: 2)  [coupling.cbo]
+-    Recommendation: CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point
+-
+-  WARN  Uuid
+-    ClassRank is 0.0893, exceeds threshold of 0.0577 (scaled for 12 classes). This class is a critical hub — changes have wide impact  [coupling.class-rank]
+-    Recommendation: ClassRank: 0.0893 (threshold: 0.0577) — coupling hotspot, 2 classes depend on this
+-
+-src/Service/CacheService.php (6 violations)
+-  WARN
+-    Efferent coupling too high: depends on 6 classes (CBO: 3 namespaces, threshold: 2)  [coupling.cbo]
+-    Recommendation: CBO: 3 namespaces (threshold: 2) — extract dependencies to reduce outbound coupling
+-
+-  WARN
+-    Distance from main sequence is 0.25 (A=0.00, I=0.75), exceeds threshold of 0.05. Balance abstractness and stability  [coupling.distance]
+-    Recommendation: Distance: 0.25 (threshold: 0.05) — poor balance of abstraction and stability
+-
+-  WARN
+-    Instability is 0.75 (Ca=2, Ce=6), exceeds threshold of 0.40. Reduce outgoing dependencies  [coupling.instability]
+-    Recommendation: Instability: 0.75 (threshold: 0.40) — package is highly unstable
+-
+-  WARN  CacheService
+-    Efferent coupling too high: depends on 3 classes (CBO: 4, threshold: 2)  [coupling.cbo]
+-    Recommendation: Top dependencies: CacheInterface, Clock, Logger. CBO: 4 (threshold: 2) — extract dependencies to reduce outbound coupling
+-
+-  WARN  CacheService
+-    ClassRank is 0.0745, exceeds threshold of 0.0577 (scaled for 12 classes). This class is a critical hub — changes have wide impact  [coupling.class-rank]
+-    Recommendation: ClassRank: 0.0745 (threshold: 0.0577) — coupling hotspot, 1 class depends on this
+-
+-  WARN  CacheService
+-    Instability is 0.75 (Ca=1, Ce=3), exceeds threshold of 0.40. Reduce outgoing dependencies  [coupling.instability]
+-    Recommendation: Instability: 0.75 (threshold: 0.40) — package is highly unstable
+-
+-src/Service/ReportService.php (3 violations)
+-  WARN  ReportService
+-    Efferent coupling too high: depends on 3 classes (CBO: 4, threshold: 2)  [coupling.cbo]
+-    Recommendation: Top dependencies: RepositoryInterface, Clock, Logger. CBO: 4 (threshold: 2) — extract dependencies to reduce outbound coupling
+-
+-  WARN  ReportService
+-    ClassRank is 0.0745, exceeds threshold of 0.0577 (scaled for 12 classes). This class is a critical hub — changes have wide impact  [coupling.class-rank]
+-    Recommendation: ClassRank: 0.0745 (threshold: 0.0577) — coupling hotspot, 1 class depends on this
+-
+-  WARN  ReportService
+-    Instability is 0.75 (Ca=1, Ce=3), exceeds threshold of 0.40. Reduce outgoing dependencies  [coupling.instability]
+-    Recommendation: Instability: 0.75 (threshold: 0.40) — package is highly unstable
+-
+-src/Service/UserService.php (3 violations)
+-  ERROR  UserService
+-    Efferent coupling too high: depends on 6 classes (CBO: 8, threshold: 5)  [coupling.cbo]
+-    Recommendation: Top dependencies: RepositoryInterface, MailerInterface, CacheInterface, Clock, Logger. CBO: 8 (threshold: 5) — extract dependencies to reduce outbound coupling
+-
+-  WARN  UserService
+-    ClassRank is 0.0970, exceeds threshold of 0.0577 (scaled for 12 classes). This class is a critical hub — changes have wide impact  [coupling.class-rank]
+-    Recommendation: ClassRank: 0.0970 (threshold: 0.0577) — coupling hotspot, 2 classes depend on this
+-
+-  WARN  UserService
+-    Instability is 0.75 (Ca=2, Ce=6), exceeds threshold of 0.40. Reduce outgoing dependencies  [coupling.instability]
+-    Recommendation: Instability: 0.75 (threshold: 0.40) — package is highly unstable
+-
+-src/Wiring/Bootstrap.php (2 violations)
+-  WARN
+-    Efferent coupling too high: depends on 5 classes (CBO: 2 namespaces, threshold: 2)  [coupling.cbo]
+-    Recommendation: CBO: 2 namespaces (threshold: 2) — extract dependencies to reduce outbound coupling
+-
+-  WARN  Bootstrap
+-    Efferent coupling too high: depends on 2 classes (CBO: 2, threshold: 2)  [coupling.cbo]
+-    Recommendation: Top dependencies: Container, Clock. CBO: 2 (threshold: 2) — extract dependencies to reduce outbound coupling
+-
+-src/Wiring/Container.php (3 violations)
+-  WARN  Container
+-    Efferent coupling too high: depends on 3 classes (CBO: 4, threshold: 2)  [coupling.cbo]
+-    Recommendation: Top dependencies: UserService, ReportService, CacheService. CBO: 4 (threshold: 2) — extract dependencies to reduce outbound coupling
+-
+-  WARN  Container
+-    ClassRank is 0.0756, exceeds threshold of 0.0577 (scaled for 12 classes). This class is a critical hub — changes have wide impact  [coupling.class-rank]
+-    Recommendation: ClassRank: 0.0756 (threshold: 0.0577) — coupling hotspot, 1 class depends on this
+-
+-  WARN  Container
+-    Instability is 0.75 (Ca=1, Ce=3), exceeds threshold of 0.40. Reduce outgoing dependencies  [coupling.instability]
+-    Recommendation: Instability: 0.75 (threshold: 0.40) — package is highly unstable
+-
+-src/Wiring/Factory.php (1 violation)
+-  WARN  Factory
+-    Efferent coupling too high: depends on 2 classes (CBO: 2, threshold: 2)  [coupling.cbo]
+-    Recommendation: Top dependencies: UserService, Uuid. CBO: 2 (threshold: 2) — extract dependencies to reduce outbound coupling
++invocation-format:text-detail 5629
++[project] (1 violation)
++  WARN
++    Check "subtree:NoSuchVendor\Framework" against the names the code really imports. Use exact for one name, subtree for a namespace and all descendants, or regex for an explicit delimiterless PCRE fragment. Drop the entry if the dependency is gone.  [coupling.unmatched-framework-namespace]
++
++src/Contract/CacheInterface.php (2 violations)
++  WARN  CacheInterface
++    CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point  [coupling.cbo]
++
++  WARN  CacheInterface
++    ClassRank: 0.0879 (threshold: 0.0577) — coupling hotspot, 2 classes depend on this  [coupling.class-rank]
++
++src/Contract/MailerInterface.php (1 violation)
++  WARN  MailerInterface
++    ClassRank: 0.0668 (threshold: 0.0577) — coupling hotspot, 1 class depends on this  [coupling.class-rank]
++
++src/Contract/RepositoryInterface.php (2 violations)
++  WARN  RepositoryInterface
++    CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point  [coupling.cbo]
++
++  WARN  RepositoryInterface
++    ClassRank: 0.0879 (threshold: 0.0577) — coupling hotspot, 2 classes depend on this  [coupling.class-rank]
++
++src/Kernel/Clock.php (4 violations)
++  ERROR
++    Distance: 1.00 (threshold: 0.90) — poor balance of abstraction and stability  [coupling.distance]
++
++  WARN
++    CBO: 2 namespaces (threshold: 2) — this namespace is a coupling magnet, consider if it is a healthy abstraction point  [coupling.cbo]
++
++  WARN  Clock
++    CBO: 4 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point  [coupling.cbo]
++
++  WARN  Clock
++    ClassRank: 0.1315 (threshold: 0.0577) — coupling hotspot, 4 classes depend on this  [coupling.class-rank]
++
++src/Kernel/Logger.php (2 violations)
++  WARN  Logger
++    CBO: 3 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point  [coupling.cbo]
++
++  WARN  Logger
++    ClassRank: 0.1090 (threshold: 0.0577) — coupling hotspot, 3 classes depend on this  [coupling.class-rank]
++
++src/Kernel/Uuid.php (2 violations)
++  WARN  Uuid
++    CBO: 2 (threshold: 2) — this class is a coupling magnet, consider if it is a healthy abstraction point  [coupling.cbo]
++
++  WARN  Uuid
++    ClassRank: 0.0893 (threshold: 0.0577) — coupling hotspot, 2 classes depend on this  [coupling.class-rank]
++
++src/Service/CacheService.php (6 violations)
++  WARN
++    CBO: 3 namespaces (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++  WARN
++    Distance: 0.25 (threshold: 0.05) — poor balance of abstraction and stability  [coupling.distance]
++
++  WARN
++    Instability: 0.75 (threshold: 0.40) — package is highly unstable  [coupling.instability]
++
++  WARN  CacheService
++    Top dependencies: CacheInterface, Clock, Logger. CBO: 4 (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++  WARN  CacheService
++    ClassRank: 0.0745 (threshold: 0.0577) — coupling hotspot, 1 class depends on this  [coupling.class-rank]
++
++  WARN  CacheService
++    Instability: 0.75 (threshold: 0.40) — package is highly unstable  [coupling.instability]
++
++src/Service/ReportService.php (3 violations)
++  WARN  ReportService
++    Top dependencies: RepositoryInterface, Clock, Logger. CBO: 4 (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++  WARN  ReportService
++    ClassRank: 0.0745 (threshold: 0.0577) — coupling hotspot, 1 class depends on this  [coupling.class-rank]
++
++  WARN  ReportService
++    Instability: 0.75 (threshold: 0.40) — package is highly unstable  [coupling.instability]
++
++src/Service/UserService.php (3 violations)
++  ERROR  UserService
++    Top dependencies: RepositoryInterface, MailerInterface, CacheInterface, Clock, Logger. CBO: 8 (threshold: 5) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++  WARN  UserService
++    ClassRank: 0.0970 (threshold: 0.0577) — coupling hotspot, 2 classes depend on this  [coupling.class-rank]
++
++  WARN  UserService
++    Instability: 0.75 (threshold: 0.40) — package is highly unstable  [coupling.instability]
++
++src/Wiring/Bootstrap.php (2 violations)
++  WARN
++    CBO: 2 namespaces (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++  WARN  Bootstrap
++    Top dependencies: Container, Clock. CBO: 2 (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++src/Wiring/Container.php (3 violations)
++  WARN  Container
++    Top dependencies: UserService, ReportService, CacheService. CBO: 4 (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]
++
++  WARN  Container
++    ClassRank: 0.0756 (threshold: 0.0577) — coupling hotspot, 1 class depends on this  [coupling.class-rank]
++
++  WARN  Container
++    Instability: 0.75 (threshold: 0.40) — package is highly unstable  [coupling.instability]
++
++src/Wiring/Factory.php (1 violation)
++  WARN  Factory
++    Top dependencies: UserService, Uuid. CBO: 2 (threshold: 2) — extract dependencies to reduce outbound coupling  [coupling.cbo]

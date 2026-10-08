@@ -9,6 +9,8 @@ namespace Qualimetrix\Reporting\Formatter\Html;
  *
  * Used as a builder during tree construction, then serialized to array via toArray().
  *
+ * @phpstan-import-type PublishedRecord from \Qualimetrix\Reporting\Formatter\FindingRecord
+ *
  * @internal
  */
 final class HtmlTreeNode
@@ -24,7 +26,7 @@ final class HtmlTreeNode
     /** @var array<string, int|float|null> */
     public array $metrics = [];
 
-    /** @var list<array{subject: string, ruleName: string, violationCode: string, message: string, recommendation: ?string, severity: string, metricValue: int|float|null, symbolPath: string, occurrence: ?string, file: ?string, line: int|null, acceptedLevel: ?array{shape: string, describe: string, count: int}, baselineVerdict: ?string, baselineReason: ?string}> */
+    /** @var list<PublishedRecord> */
     public array $findings = [];
 
     public int $violationCountTotal = 0;

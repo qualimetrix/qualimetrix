@@ -76,6 +76,8 @@ final class RecordedComparison
                 $declarations,
                 $root,
             );
+            $run->supplyPublicationTree('candidate', $root);
+            $run->supplyPublicationTree('reference', $reference);
             $captures = [
                 'candidate' => self::capture($root, $run),
                 'reference' => self::capture($reference, $run),
@@ -144,7 +146,7 @@ final class RecordedComparison
                 $class = 'QmxFindingGate\\' . $name;
                 $stages[] = $class::create($run);
             }
-            $delta = new \QmxFindingGate\DeclaredDeltaCheck($run->options, $report, $declarations->delta, $declarations->fieldMoves, $run->split);
+            $delta = new \QmxFindingGate\DeclaredDeltaCheck($run->options, $report, $declarations->delta, $declarations->fieldMoves, $run->split, $run);
             if ($derive) {
                 $delta->startDeriving();
             }

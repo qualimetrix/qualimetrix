@@ -11,6 +11,7 @@ use Qualimetrix\Infrastructure\Console\Refusal\MachineReadableFormats;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
+use Qualimetrix\Reporting\Formatter\PublicationKind;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\ReportBuilder;
 
@@ -66,16 +67,11 @@ final class MachineReadableFormatsRegistryTest extends TestCase
     #[Test]
     public function itAccountsForEveryVisibleFormatExactlyOnce(): void
     {
-        // `text-verbose` is the one registered formatter FormatterRegistry
-        // hides from `getAvailableNames()` (deprecated, still selectable);
-        // it is still classified in `knownFormats()`, so the closed set is
-        // "visible names" + that one named hidden exception, not a free
-        // superset.
         $visible = self::registry()->getAvailableNames();
         $known = MachineReadableFormats::knownFormats();
 
         /** @var list<string> $expectedKnown */
-        $expectedKnown = [...$visible, 'text-verbose'];
+        $expectedKnown = [...$visible];
         sort($expectedKnown);
         sort($known);
 
@@ -91,7 +87,15 @@ final class MachineReadableFormatsRegistryTest extends TestCase
         $report = ReportBuilder::create()->suppressionComposition(new SuppressionComposition([]))->build();
 
         foreach (MachineReadableFormats::knownFormats() as $format) {
-            $printed = $registry->get($format)->format($report, new FormatterContext(useColor: false));
+            $formatter = $registry->get($format);
+            $formatted = $formatter->format($report, new FormatterContext(useColor: false));
+            $printed = $formatted->body;
+            self::assertSame(0, $formatted->escapedStrings);
+
+            self::assertSame(
+                MachineReadableFormats::carriesJson($format),
+                $formatter->publicationKind() === PublicationKind::JsonDocument,
+            );
 
             self::assertSame(
                 MachineReadableFormats::carriesJson($format),

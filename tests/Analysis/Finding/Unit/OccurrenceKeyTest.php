@@ -14,6 +14,19 @@ use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 final class OccurrenceKeyTest extends TestCase
 {
     #[Test]
+    public function itHashesInvalidSourceBytesWithoutCollapsingThemIntoLiterals(): void
+    {
+        $first = OccurrenceKey::semantic('identifier', ['name' => "K\xFF"]);
+        $second = OccurrenceKey::semantic('identifier', ['name' => "K\xFE"]);
+        $literal = OccurrenceKey::semantic('identifier', ['name' => 'K%FF']);
+        self::assertNotSame($first->value, $second->value);
+        self::assertNotSame($first->value, $literal->value);
+        self::assertNotSame(OccurrenceKey::semantic("kind\xFF", ['name' => 'a'])->value, OccurrenceKey::semantic("kind\xFE", ['name' => 'a'])->value);
+        self::assertNotSame(OccurrenceKey::semantic('kind', ["name\xFF" => 'a'])->value, OccurrenceKey::semantic('kind', ["name\xFE" => 'a'])->value);
+        self::assertNotSame(OccurrenceKey::semantic('kind', ["name\xFF" => 'a', 'name%FF' => 'b'])->value, OccurrenceKey::semantic('kind', ["name\xFF" => 'b', 'name%FF' => 'a'])->value);
+    }
+
+    #[Test]
     public function itCanonicalizesNamedScalarEvidenceIndependentlyOfInputOrder(): void
     {
         $first = OccurrenceKey::semantic('security-pattern', ['type' => 'superglobal', 'name' => '_GET']);
@@ -109,6 +122,8 @@ final class OccurrenceKeyTest extends TestCase
             'detail' => '... / ...',
         ]);
 
+        self::assertSame('8bc022ce5d20b740', OccurrenceKey::semantic('numeric', [7 => 'x'])->value);
+        self::assertSame('494d22c29227b075', OccurrenceKey::semantic('percent', ['name' => '50%'])->value);
         self::assertSame('dbbe0e35ed4a985b', $ordinary->value);
         self::assertSame('30e2c440d8e96d81', $unsortedInput->value);
         self::assertSame('e4e9e77c9057a83b', $scalarDiversity->value);

@@ -275,15 +275,7 @@ final class LayerViolationRuleTest extends TestCase
         $recommendation = $finding->recommendation;
         self::assertNotNull($recommendation);
         self::assertStringContainsString('Allowed targets for layer "controller": service', $recommendation);
-        self::assertStringContainsString('Dep data: {', $recommendation);
-
-        $jsonStart = strpos($recommendation, 'Dep data: ');
-        self::assertIsInt($jsonStart);
-        $payload = substr($recommendation, $jsonStart + \strlen('Dep data: '));
-        $decoded = json_decode($payload, true);
-        self::assertIsArray($decoded);
-        self::assertSame('controller', $decoded['fromLayer']);
-        self::assertSame('repository', $decoded['toLayer']);
+        self::assertStringNotContainsString('Dep data:', $recommendation);
     }
 
     #[Test]

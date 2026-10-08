@@ -61,7 +61,7 @@ final class HealthTextFormatterTest extends TestCase
             ->build();
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('Health Report', $output);
         self::assertStringContainsString('No health data available', $output);
@@ -79,7 +79,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
         $report = ReportBuilder::create()->filesAnalyzed(1)->filesSkipped(3)->coverage($coverage)->build();
 
-        $output = $this->formatter->format($report, new FormatterContext(useColor: false));
+        $output = $this->formatter->format($report, new FormatterContext(useColor: false))->body;
 
         self::assertStringContainsString(
             'Analysis incomplete: 3 of 4 discovered entries failed (1 directory-symlink, 1 not-regular-file, 1 unreadable-directory); policy results are not authoritative.',
@@ -96,7 +96,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString(ProductIdentity::pointerText(), $output);
     }
@@ -115,7 +115,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('Health Report', $output);
         self::assertStringContainsString('Dimension', $output);
@@ -154,7 +154,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('Complexity decomposition:', $output);
         self::assertStringContainsString('Cyclomatic (avg)', $output);
@@ -173,7 +173,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('Typing', $output);
         self::assertStringContainsString('N/A', $output);
@@ -190,7 +190,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: true, terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         // Green for good score (complexity > warn threshold 60)
         self::assertStringContainsString("\e[32m", $output);
@@ -207,7 +207,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         // No ANSI escape codes
         self::assertStringNotContainsString("\e[", $output);
@@ -224,7 +224,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 50);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         // Should still show scores
         self::assertStringContainsString('Complexity', $output);
@@ -246,7 +246,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Core'), terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('[namespace: subtree:App\\Core]', $output);
     }
@@ -260,7 +260,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, class: 'App\\Service\\UserService', terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('[class: App\\Service\\UserService]', $output);
     }
@@ -274,7 +274,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: true, terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         // Red for error score (below err threshold)
         self::assertStringContainsString("\e[31m", $output);
@@ -289,7 +289,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringNotContainsString('decomposition:', $output);
     }
@@ -305,7 +305,7 @@ final class HealthTextFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         // Singular "file" for 1 file
         self::assertStringContainsString('1 file analyzed', $output);
@@ -332,7 +332,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('Worst contributors:', $output);
 
@@ -363,7 +363,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120, options: ['contributors' => '0']);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringNotContainsString('Worst contributors:', $output);
         self::assertStringNotContainsString('SomeClass', $output);
@@ -384,7 +384,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120, options: ['contributors' => '1']);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('ClassA', $output);
         self::assertStringNotContainsString('ClassB', $output);
@@ -404,7 +404,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 50);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringNotContainsString('Worst contributors:', $output);
     }
@@ -420,7 +420,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringNotContainsString('Worst contributors:', $output);
     }
@@ -440,7 +440,7 @@ final class HealthTextFormatterTest extends TestCase
             'overall' => new HealthScore('overall', 75.3, 'Acceptable', 50.0, 30.0, HealthCoverage::notApplicable('composes the other dimensions')),
         ]);
 
-        $output = $this->formatter->format($report, new FormatterContext(useColor: false, terminalWidth: $terminalWidth));
+        $output = $this->formatter->format($report, new FormatterContext(useColor: false, terminalWidth: $terminalWidth))->body;
 
         self::assertStringContainsString('25%', $output);
         self::assertStringContainsString('n/a', $output);
@@ -455,9 +455,17 @@ final class HealthTextFormatterTest extends TestCase
         yield 'narrow' => [50];
     }
 
-    /**
-     * @param array<string, HealthScore> $healthScores
-     */
+    #[Test]
+    public function itNamesFindingsAndTheWholeRunOutsideACleanScopeEvenWithoutScores(): void
+    {
+        $report = ReportBuilder::create()->filesAnalyzed(1)
+            ->outOfScope(new \Qualimetrix\Reporting\DrillDown\OutOfScopeFindings(1, 2, 3))->build();
+        $output = $this->formatter->format($report, new FormatterContext(useColor: false))->body;
+        self::assertStringContainsString('Findings: 0 error(s), 0 warning(s), 0 info', $output);
+        self::assertStringContainsString('Outside this scope: 1 error(s), 2 warning(s), 3 info', $output);
+    }
+
+    /** @param array<string, HealthScore> $healthScores */
     private function createReportWithHealthScores(
         array $healthScores,
         int $filesAnalyzed = 10,

@@ -75,11 +75,32 @@ final class RecordCheck implements CaseCheck, RunCheck
     /** @param array<string,string> $artifacts */
     public function checkCase(string $side, CaseDefinition $case, string $outcome, array $artifacts): void
     {
+        $this->run->publicationForms->supply($side, $artifacts);
+        foreach (array_keys($artifacts) as $key) {
+            $surface = Surfaces::surfaceClass($key);
+            if (!str_starts_with($key, 'case:' . $case->id . '|') || !ReportViews::recordBearingSurface($surface)) {
+                continue;
+            }
+            try {
+                $invocation = $this->run->capturePlan->invocationOf($key);
+            } catch (GateError) {
+                continue;
+            }
+            if (!$this->run->capturePlan->requiredOn($invocation, $side)
+                || ($surface === 'baseline-file' && !CaseOutcome::applies(CaseOutcome::CHECK_BASELINE_FILE, $outcome)
+                    && $this->run->publicationForms->of($side, $key) !== PublicationForms::WHOLE_INVOCATION)) {
+                continue;
+            }
+            $this->publicationGuard($side, $case, $surface, $artifacts);
+        }
         if (!CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, $outcome)) {
             return;
         }
         $scope = 'case:' . $case->id;
         foreach (ReportViews::forCase($case) as $surface => $report) {
+            if (!$this->recordPublication($side, $case, $surface, $artifacts)) {
+                continue;
+            }
             $key = $scope . '|' . $surface;
             try {
                 if (!isset($artifacts[$key])) {
@@ -131,6 +152,9 @@ final class RecordCheck implements CaseCheck, RunCheck
         }
         $findings = $this->physical[$case->id]['format:json'][$side];
         foreach (['format:html', 'format:gitlab', 'format:sarif'] as $surface) {
+            if (!$this->recordPublication($side, $case, $surface, $artifacts)) {
+                continue;
+            }
             $key = $scope . '|' . $surface;
             try {
                 if (!isset($artifacts[$key])) {
@@ -142,7 +166,7 @@ final class RecordCheck implements CaseCheck, RunCheck
                     ReportRecords::projected($surface, $text);
                 }
                 $projected = ReportRecords::projected($surface, $this->mapped($side, $surface, $text));
-                $expected = array_map(static fn(array $record): array => ReportRecords::projection($surface, $record), $findings);
+                $expected = array_map(fn(array $record): array => ReportRecords::projection($surface, $record, $this->run->publicationCodec($side)), $findings);
                 $actual = array_column($projected, 'fields');
                 if ($surface === 'format:html') {
                     $buckets = [];
@@ -178,10 +202,10 @@ final class RecordCheck implements CaseCheck, RunCheck
             }
         }
         $key = $scope . '|format:checkstyle';
-        if (isset($artifacts[$key])) {
+        if (isset($artifacts[$key]) && $this->recordPublication($side, $case, 'format:checkstyle', $artifacts)) {
             try {
                 $actual = ReportRecords::checkstyle($this->mapped($side, 'format:checkstyle', $artifacts[$key]));
-                $expected = array_map(static fn(array $record): array => ReportRecords::projection('format:checkstyle', $record), $findings);
+                $expected = array_map(fn(array $record): array => ReportRecords::projection('format:checkstyle', $record, $this->run->publicationCodec($side)), $findings);
                 if (!self::sameMultiset($actual, $expected)) {
                     throw new GateError('The complete checkstyle projection multiset differs from authoritative records.');
                 }
@@ -191,12 +215,15 @@ final class RecordCheck implements CaseCheck, RunCheck
             }
         }
         foreach (ProseRecords::SURFACES as $surface) {
+            if (!$this->recordPublication($side, $case, $surface, $artifacts)) {
+                continue;
+            }
             $key = $scope . '|' . $surface;
             if (!isset($artifacts[$key])) {
                 continue;
             }
             try {
-                $entries = ProseRecords::extract($surface, $this->mapped($side, $surface, $artifacts[$key]));
+                $entries = ProseRecords::extract($surface, $this->mapped($side, $surface, $artifacts[$key]), $this->run->publicationCodec($side));
                 $budget = $findings;
                 foreach ($entries as $entry) {
                     if ($surface === 'format:summary' && isset($entry['fields']['rank'])) {
@@ -204,7 +231,7 @@ final class RecordCheck implements CaseCheck, RunCheck
                     }
                     $found = false;
                     foreach ($budget as $index => $record) {
-                        if (ProseRecords::matches($surface, $entry['fields'], $record)) {
+                        if (ProseRecords::matches($surface, $entry['fields'], $record, $this->run->publicationCodec($side))) {
                             unset($budget[$index]);
                             $found = true;
                             break;
@@ -224,7 +251,7 @@ final class RecordCheck implements CaseCheck, RunCheck
         }
         $source = $case->baselineSource() === null ? 'format:json' : 'check:baseline-source';
         $key = $scope . '|baseline-file';
-        if (CaseOutcome::applies(CaseOutcome::CHECK_BASELINE_FILE, $outcome) && isset($artifacts[$key])) {
+        if (CaseOutcome::applies(CaseOutcome::CHECK_BASELINE_FILE, $outcome) && isset($artifacts[$key]) && $this->recordPublication($side, $case, 'baseline-file', $artifacts)) {
             try {
                 $sourceRecords = $this->physical[$case->id][$source][$side] ?? throw new GateError('The baseline source publication is unavailable.');
                 ReportRecords::baselineEntries($this->mapped($side, 'baseline-file', $artifacts[$key]), $sourceRecords);
@@ -238,6 +265,9 @@ final class RecordCheck implements CaseCheck, RunCheck
             if (!isset($artifacts[$key])) {
                 continue;
             }
+            if (!$this->recordPublication($side, $case, $surface, $artifacts)) {
+                continue;
+            }
             try {
                 $projected = ReportRecords::extract('json', $this->mapped($side, 'format:json', $artifacts[$key]), $this->fields('json', 'format:json', $side));
                 if ($projected !== $this->publications[$case->id]['format:json'][$side]) {
@@ -247,6 +277,54 @@ final class RecordCheck implements CaseCheck, RunCheck
             } catch (GateError $error) {
                 $this->publicationProblem($side, $key, $error);
             }
+        }
+    }
+
+    /** @param array<string,string> $artifacts */
+    private function publicationGuard(string $side, CaseDefinition $case, string $surface, array $artifacts): bool
+    {
+        $key = 'case:' . $case->id . '|' . $surface;
+        if ($this->run->report->sourceRejected($side, $key, 'records')) {
+            return false;
+        }
+        $baselineExit = $artifacts['case:' . $case->id . '|exit:baseline:generate'] ?? null;
+        if ($surface === 'baseline-file' && $baselineExit !== null && $baselineExit !== '0' && ($artifacts[$key] ?? '') !== '') {
+            $this->publicationProblem($side, $key, new GateError('A refusing baseline invocation must retain empty captured baseline content.'));
+        }
+        if ($this->run->publicationForms->recordsPair($key) === false) {
+            return !$this->run->report->sourceRejected($side, $key, 'records');
+        }
+        return !$this->run->report->sourceRejected($side, $key, 'records');
+    }
+
+    /** @param array<string,string> $artifacts */
+    private function recordPublication(string $side, CaseDefinition $case, string $surface, array $artifacts): bool
+    {
+        if (!$this->publicationGuard($side, $case, $surface, $artifacts)) {
+            return false;
+        }
+        $key = 'case:' . $case->id . '|' . $surface;
+        $refused = $this->run->publicationForms->of($side, $key) === PublicationForms::WHOLE_INVOCATION;
+        if (!$refused && $this->run->publicationForms->recordsPair($key) === false) {
+            $this->captureSchemaProvenance($side, $case->id, $surface, $artifacts[$key] ?? null);
+        }
+        return !$refused && $this->run->publicationForms->recordsPair($key) !== false;
+    }
+
+    private function captureSchemaProvenance(string $side, string $case, string $view, ?string $text): void
+    {
+        if ($text === null) {
+            return;
+        }
+        foreach ($this->run->declarations->fields->requiredPublications($case) as $obligation) {
+            $report = $obligation['report'];
+            if ($obligation['view'] !== $view || $obligation['side'] !== $side || $obligation['supplied']
+                || !isset(ReportViews::REPORTS[$report])) {
+                continue;
+            }
+            $snapshot = ReportRecords::extract($report, $text, $this->fields($report, $view, $side), $this->optionalSubject($report, $view));
+            $rows = array_map(static fn(array $record): array => ['record' => DeclaredRecords::canonical($record), 'fields' => $record], $snapshot);
+            $this->run->declarations->fields->supply($report, $case, $view, $side, $rows);
         }
     }
 
@@ -305,6 +383,9 @@ final class RecordCheck implements CaseCheck, RunCheck
         }
         $this->ranking->supplyFields($case);
         foreach (ReportViews::forCase($definition) as $view => $report) {
+            if ($this->run->publicationForms->recordsPair('case:' . $case . '|' . $view) === false) {
+                continue;
+            }
             $candidate = $this->records[$case][$view]['candidate'] ?? null;
             $reference = $this->records[$case][$view]['reference'] ?? null;
             $left = $this->base($report, $view, $candidate ?? []);

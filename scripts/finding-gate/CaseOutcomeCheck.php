@@ -4,6 +4,17 @@ declare(strict_types=1);
 
 namespace QmxFindingGate;
 
+use PhpParser\Error;
+use PhpParser\Node\Arg;
+use PhpParser\Node\Expr\Array_;
+use PhpParser\Node\Expr\FuncCall;
+use PhpParser\Node\Expr\StaticCall;
+use PhpParser\Node\Identifier;
+use PhpParser\Node\Name;
+use PhpParser\Node\Scalar\String_;
+use PhpParser\Node\Stmt\ClassMethod;
+use PhpParser\NodeFinder;
+use PhpParser\ParserFactory;
 use WeakMap;
 use WeakReference;
 
@@ -29,7 +40,11 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
     public function __construct(
         private readonly GateReport $report,
         private readonly Corpus $corpus,
-    ) {}
+    ) {
+        if (PublicationForms::forReport($report) === null) {
+            new PublicationForms(CapturePlan::forCorpus($corpus, DeclaredSurfaces::load(\dirname($corpus->cases[0]->directory, 2))), $report);
+        }
+    }
 
     public static function create(RunContext $run): static
     {
@@ -64,6 +79,8 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
         }
         $descriptor = $plan->descriptorOf($invocation);
         if ($descriptor['commandClass'] === 'check' && str_starts_with($descriptor['scope'], 'case:')
+            && $run->publicationForms->recordInvocation($pair->key) !== false
+            && \in_array($descriptor['surface'], ['format:json', 'format:metrics', 'format:suppressed', 'check:baseline', 'check:baseline-source', 'check:parallel', 'check:output'], true)
             && $run->declarations->outcomes->of(substr($descriptor['scope'], 5)) !== null) {
             $pair->settle();
         }
@@ -72,6 +89,14 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
     public function checkCase(string $side, CaseDefinition $case, string $outcome, array $artifacts): void
     {
         $scope = 'case:' . $case->id;
+        if ($outcome === CaseOutcome::REFUSAL) {
+            $forms = PublicationForms::forReport($this->report);
+            $forms?->supply($side === 'reference' ? 'reference' : 'candidate', $artifacts);
+            if ($forms?->recordsPair($scope . '|format:json') === false
+                || ($case->outcome !== CaseOutcome::REFUSAL && $this->context?->declarations->outcomes->of($case->id) === null)) {
+                return;
+            }
+        }
         $exit = $artifacts[Surfaces::key($scope, 'exit:format:json')] ?? null;
         $stdout = $artifacts[Surfaces::key($scope, 'format:json')] ?? null;
         $stderr = $artifacts[Surfaces::key($scope, 'stderr:format:json')] ?? null;
@@ -107,7 +132,16 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
     public function checkRun(array $candidate, array $reference): void
     {
         $run = $this->run();
+        $run->publicationForms->supply('candidate', $candidate);
+        $run->publicationForms->supply('reference', $reference);
         foreach ($this->corpus->cases as $case) {
+            foreach (['candidate' => $candidate, 'reference' => $reference] as $side => $artifacts) {
+                $scope = 'case:' . $case->id;
+                $exit = $artifacts[$scope . '|exit:baseline:generate'] ?? null;
+                if ($exit !== null && $exit !== '0' && ($artifacts[$scope . '|baseline-file'] ?? '') !== '') {
+                    $this->mismatch($side . ' / ' . $case->id . ' / baseline:generate', 'A refusing baseline invocation must retain empty captured baseline content.');
+                }
+            }
             $row = $run->declarations->outcomes->of($case->id);
             if ($row === null) {
                 continue;
@@ -121,6 +155,9 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
             $refusalSide = $row['transition'] === DeclaredOutcomes::ANALYSIS_TO_REFUSAL ? 'candidate' : 'reference';
             if ($refusalSide === 'candidate' && !$case->isAuxiliary()) {
                 $this->mismatch('case:' . $case->id, 'A refused authoritative case must transfer channel ownership before declaring its refusal.');
+            }
+            if ($run->publicationForms->recordsPair('case:' . $case->id . '|format:json') === false) {
+                continue;
             }
             $refused = $refusalSide === 'candidate' ? $candidate : $reference;
             $analysed = $refusalSide === 'candidate' ? $reference : $candidate;
@@ -204,6 +241,10 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
                 continue;
             }
             $key = Surfaces::key($descriptor['scope'], $descriptor['surface']);
+            if (!\in_array($descriptor['surface'], ['format:json', 'format:metrics', 'format:suppressed', 'check:baseline', 'check:baseline-source', 'check:parallel', 'check:output'], true)
+                || $run->publicationForms->recordInvocation($key) === false) {
+                continue;
+            }
             if (!$plan->requiredOn($key, CaseOutcome::of($case, 'candidate') === CaseOutcome::REFUSAL ? 'candidate' : 'reference')) {
                 continue;
             }
@@ -266,42 +307,42 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
         return $this->envelopeFields[$side] = self::deriveRefusalFields($source);
     }
 
-    /** @return list<string> */
+    /**
+     * Reads one explicit array passed to the native or repairing JSON encoder.
+     * Dynamic envelope construction is refused. PHP syntax belongs to php-parser.
+     *
+     * @return list<string>
+     */
     public static function deriveRefusalFields(string $source): array
     {
-        $tokens = token_get_all($source);
-        $method = false;
-        $encoding = false;
-        $depth = 0;
+        if (!class_exists(ParserFactory::class)) {
+            require_once \dirname(__DIR__, 2) . '/vendor/autoload.php';
+        }
+        try {
+            $nodes = (new ParserFactory())->createForNewestSupportedVersion()->parse($source) ?? [];
+        } catch (Error $error) {
+            throw new GateError('Cannot parse the refusal publisher: ' . $error->getMessage(), 0, $error);
+        }
+        $finder = new NodeFinder();
+        $methods = $finder->find($nodes, static fn($node): bool => $node instanceof ClassMethod && $node->name->toString() === 'writeEnvelope');
+        if (\count($methods) !== 1) {
+            throw new GateError('The refusal publisher must declare one writeEnvelope method.');
+        }
+        $calls = $finder->find($methods[0], static fn($node): bool => ($node instanceof FuncCall
+            && $node->name instanceof Name && $node->name->toLowerString() === 'json_encode')
+            || ($node instanceof StaticCall && $node->class instanceof Name
+                && \in_array($node->class->toString(), ['PublishedUtf8', 'Qualimetrix\\Reporting\\Formatter\\PublishedUtf8'], true)
+                && $node->name instanceof Identifier && $node->name->toString() === 'encodeJsonObject'));
+        if (\count($calls) !== 1 || !(($encoder = $calls[0]) instanceof FuncCall || $encoder instanceof StaticCall)
+            || !($argument = $encoder->getArgs()[0] ?? null) instanceof Arg || !$argument->value instanceof Array_) {
+            throw new GateError('The refusal envelope must encode one explicit array literal; dynamic construction is not supported.');
+        }
         $fields = [];
-        foreach ($tokens as $index => $token) {
-            if (\is_array($token) && $token[0] === \T_STRING && $token[1] === 'writeEnvelope') {
-                $method = true;
+        foreach ($argument->value->items as $item) {
+            if ($item === null || $item->unpack || !$item->key instanceof String_) {
+                throw new GateError('The refusal envelope must publish explicit string keys.');
             }
-            if ($method && \is_array($token) && $token[0] === \T_STRING && $token[1] === 'json_encode') {
-                $encoding = true;
-            }
-            if (!$encoding) {
-                continue;
-            }
-            if ($token === '[' || $token === '(') {
-                ++$depth;
-            } elseif ($token === ']' || $token === ')') {
-                --$depth;
-                if ($depth === 0) {
-                    break;
-                }
-            }
-            if ($depth !== 2 || !\is_array($token) || $token[0] !== \T_CONSTANT_ENCAPSED_STRING) {
-                continue;
-            }
-            $next = $index + 1;
-            while (isset($tokens[$next]) && \is_array($tokens[$next]) && $tokens[$next][0] === \T_WHITESPACE) {
-                ++$next;
-            }
-            if (isset($tokens[$next]) && \is_array($tokens[$next]) && $tokens[$next][0] === \T_DOUBLE_ARROW) {
-                $fields[] = substr($token[1], 1, -1);
-            }
+            $fields[] = $item->key->value;
         }
         if ($fields === [] || \count($fields) !== \count(array_unique($fields))) {
             throw new GateError('The refusal envelope must publish a nonempty unique key set.');
@@ -325,12 +366,23 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
      */
     public function checkRunsProduced(string $side, array $artifacts, array $authority): void
     {
+        $forms = PublicationForms::forReport($this->report);
+        $captureSide = $side === 'reference' ? 'reference' : 'candidate';
+        $forms?->supply($captureSide, $artifacts);
         foreach ($this->corpus->cases as $case) {
+            $baselineExit = $artifacts['case:' . $case->id . '|exit:baseline:generate'] ?? null;
+            if ($baselineExit !== null && $baselineExit !== '0' && ($artifacts['case:' . $case->id . '|baseline-file'] ?? '') !== '') {
+                $this->checkBaselineSurface($side, $case, $artifacts);
+            }
             $outcome = CaseOutcome::of($case, $side === 'reference' ? 'reference' : 'candidate');
             if ($outcome !== CaseOutcome::ANALYSIS) {
                 $this->checkCase($side, $case, $outcome, $artifacts);
             }
             if (CaseOutcome::applies(CaseOutcome::CHECK_FINDINGS, $outcome)) {
+                if ($forms?->of($captureSide, 'case:' . $case->id . '|format:json') === PublicationForms::WHOLE_INVOCATION
+                    && ($captureSide === 'reference' || $case->isAuxiliary())) {
+                    continue;
+                }
                 if (!\array_key_exists($case->id, $authority)) {
                     throw new GateError('A produced analysis has no validated physical authority: ' . $case->id);
                 }

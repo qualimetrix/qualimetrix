@@ -32,7 +32,8 @@ use SplFileInfo;
  *   unterminated last line: a file's final line break does not open a line
  * - lloc:{path} — Logical lines (lines with at least one code token)
  * - cloc:{path} — Pure comment lines (no code tokens on the same line)
- * - classLoc — Physical LOC per class (endLine - startLine + 1)
+ * - classLoc — Physical LOC per named class, interface, trait, or enum
+ *   (endLine - startLine + 1)
  *
  * A line with both code and an inline comment (e.g., `$a = 1; // note`)
  * counts as LLOC but NOT as CLOC. Only lines where ALL tokens are

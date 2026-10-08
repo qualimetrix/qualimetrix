@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Measurement\Aggregation;
 
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
@@ -51,7 +52,7 @@ final class TreeAwareNamespaceAggregator implements AggregationPhaseInterface
         usort($parentNamespaces, static fn(string $a, string $b): int => substr_count($b, '\\') <=> substr_count($a, '\\'));
 
         // Build maps once before the loop
-        $fileToNamespace = NamespaceMetricContributions::mapFilesToNamespaces($repository);
+        $fileToNamespace = FileNamespaceIndex::fromRepository($repository);
         $fileSymbolsMap = NamespaceMetricContributions::mapNamespacesToFileSymbols($repository, $fileToNamespace);
 
         foreach ($parentNamespaces as $parentNs) {

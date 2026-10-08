@@ -12,7 +12,6 @@ import { createColorScale, getHealthColor } from './color.js';
 import { parseHash, generateHash, initHashNavigation } from './hash.js';
 import { createSearchHandler } from './search.js';
 import { renderDetail, setNavigateTo } from './detail.js';
-import { computeSubtreeMetrics } from './subtree.js';
 import { initHints } from './hints.js';
 import { renderMartinDiagram, cleanupTooltip as cleanupMartinTooltip } from './martin-diagram.js';
 
@@ -74,9 +73,6 @@ export function init() {
 
   // Build tree data for D3
   const treeData = buildTreeData(DATA.tree);
-
-  // Compute subtree metrics for hierarchical roll-up (worst sub-namespaces)
-  computeSubtreeMetrics(treeData);
 
   // Auto-drill into single-child namespaces to skip unhelpful single-rectangle views
   // e.g., <project> → Qualimetrix (single root ns) → show Qualimetrix's children directly
@@ -544,7 +540,7 @@ function showTooltip(event, node) {
   if (shown.length > 0) {
     html += '<br><span style="color:#aaa">Issues:</span>';
     for (const v of shown) {
-      const label = v.violationCode || v.ruleName;
+      const label = v.code || v.rule;
       const sevColor = v.severity === 'error' ? '#ff6b6b' : '#ffc107';
       html += `<br><span style="color:${sevColor}">●</span> ${escapeHtml(label)}`;
     }

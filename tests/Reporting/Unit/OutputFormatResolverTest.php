@@ -129,9 +129,9 @@ final class OutputFormatResolverTest extends TestCase
         }
 
         $document = LayeredDocument::of([
-            ['source' => 'qmx.yaml', 'values' => ['format' => 'text-verbose']],
+            ['source' => 'qmx.yaml', 'values' => ['format' => 'text']],
         ], AbsolutePath::fromString('/project'), $plainStringSection);
-        self::assertSame('text-verbose', $resolver->resolve($document)->value);
+        self::assertSame('text', $resolver->resolve($document)->value);
     }
 
     private function formatters(): FormatterRegistryInterface
@@ -144,7 +144,7 @@ final class OutputFormatResolverTest extends TestCase
 
             public function has(string $name): bool
             {
-                return \in_array($name, [...$this->getAvailableNames(), 'text-verbose'], true);
+                return \in_array($name, $this->getAvailableNames(), true);
             }
 
             public function getAvailableNames(): array

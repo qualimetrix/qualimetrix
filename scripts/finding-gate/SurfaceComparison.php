@@ -67,6 +67,9 @@ final class SurfaceComparison
         }
 
         $this->registered = $registered;
+        if (PublicationForms::forReport($report) === null) {
+            new PublicationForms(CapturePlan::forCorpus($corpus, DeclaredSurfaces::load(\dirname($corpus->cases[0]->directory, 2))), $report);
+        }
     }
 
     /**
@@ -75,6 +78,9 @@ final class SurfaceComparison
      */
     public function compareSurfaces(array $candidate, array $reference): void
     {
+        $forms = PublicationForms::forReport($this->report);
+        $forms?->supply('candidate', $candidate);
+        $forms?->supply('reference', $reference);
         $countCandidate = $candidate;
         $countReference = $reference;
         foreach ($this->registered['difference'] ?? [] as $stage) {
@@ -121,6 +127,8 @@ final class SurfaceComparison
     public function trialSurface(string $key, string $candidate, string $reference, array $residualViews): array
     {
         Interruption::raiseIfRequested();
+        PublicationForms::forReport($this->report)?->supply('candidate', [$key => $candidate]);
+        PublicationForms::forReport($this->report)?->supply('reference', [$key => $reference]);
         foreach ($this->registered['difference'] ?? [] as $stage) {
             if ($stage instanceof RecordStage) {
                 $stage->countInputs([$key => $candidate], [$key => $reference]);
@@ -142,6 +150,9 @@ final class SurfaceComparison
     private function applyRegisteredStages(string $step, SurfacePair $pair): bool
     {
         foreach ($this->registered[$step] ?? [] as $stage) {
+            if (PublicationForms::forReport($this->report)?->recordInvocation($pair->key) === false) {
+                continue;
+            }
             $stage->applyStage($pair);
             if ($pair->settled) {
                 return true;
@@ -155,6 +166,10 @@ final class SurfaceComparison
      */
     private function trialStep(string $step, SurfacePair $pair, array $residualViews): ?array
     {
+        if (PublicationForms::forReport($this->report)?->recordInvocation($pair->key) === false
+            && \in_array($step, ['payload', 'published-order', 'fingerprints', 'translation', 'reorder'], true)) {
+            return null;
+        }
         if ($step === 'difference') {
             $authorityResidual = false;
             foreach ($residualViews as $view) {
@@ -166,7 +181,7 @@ final class SurfaceComparison
             return null;
         }
         if ($step === 'payload') {
-            if ($pair->surface === 'format:html' && !$this->bothRefusals($pair->key)) {
+            if ($pair->surface === 'format:html') {
                 try {
                     $pair->candidate = ReportPayload::of((string) $pair->candidate, $pair->key, 'candidate');
                     $pair->reference = ReportPayload::of((string) $pair->reference, $pair->key, 'reference');
@@ -200,19 +215,12 @@ final class SurfaceComparison
         return $pair->settled ? ['valid' => false, 'visibleResidual' => false, 'authorityResidual' => false] : null;
     }
 
-    private function bothRefusals(string $key): bool
-    {
-        foreach ($this->corpus->cases as $case) {
-            if ($key === 'case:' . $case->id . '|format:html') {
-                return CaseOutcome::of($case, 'candidate') === CaseOutcome::REFUSAL
-                    && CaseOutcome::of($case, 'reference') === CaseOutcome::REFUSAL;
-            }
-        }
-        return false;
-    }
-
     private function step(string $step, SurfacePair $pair): void
     {
+        if (PublicationForms::forReport($this->report)?->recordInvocation($pair->key) === false
+            && \in_array($step, ['payload', 'published-order', 'fingerprints', 'translation', 'reorder'], true)) {
+            return;
+        }
         match ($step) {
             'presence' => $this->checkPresence($pair),
             'payload' => $this->extractPayload($pair),
@@ -248,24 +256,8 @@ final class SurfaceComparison
         if ($pair->surface !== 'format:html') {
             return;
         }
-        foreach ($this->corpus->cases as $case) {
-            if ($pair->key === 'case:' . $case->id . '|format:html'
-                && CaseOutcome::of($case, 'candidate') === CaseOutcome::REFUSAL
-                && CaseOutcome::of($case, 'reference') === CaseOutcome::REFUSAL) {
-                return;
-            }
-        }
-
-        try {
-            $pair->candidate = ReportPayload::of((string) $pair->candidate, $pair->key, 'candidate');
-            $pair->reference = ReportPayload::of((string) $pair->reference, $pair->key, 'reference');
-        } catch (GateError $error) {
-            $this->report->sourceEvidence('candidate', $pair->key, 'surface', false);
-            $this->report->sourceEvidence('reference', $pair->key, 'surface', false);
-            $this->report->fail(FailureClass::REPORT_PAYLOAD_UNREADABLE, $pair->key, $error->getMessage());
-
-            $pair->settle();
-        }
+        $pair->candidate = ReportPayload::of((string) $pair->candidate, $pair->key, 'candidate');
+        $pair->reference = ReportPayload::of((string) $pair->reference, $pair->key, 'reference');
     }
 
     /**
@@ -329,7 +321,9 @@ final class SurfaceComparison
     private function compareFinalBytes(SurfacePair $pair): void
     {
         if ($pair->candidate !== $pair->reference) {
-            if ($this->declaredDeltaCheck->hasIntention($pair->key)) {
+            if (PublicationForms::forReport($this->report)?->recordInvocation($pair->key) === false) {
+                $this->mismatch($pair->key, 'The whole invocation differs and requires an exact complete-surface delta.', Diff::between((string) $pair->candidate, (string) $pair->reference, 'candidate', 'reference'));
+            } elseif ($this->declaredDeltaCheck->hasIntention($pair->key)) {
                 $this->declaredDeltaCheck->checkDifference($pair->key, (string) $pair->candidate, (string) $pair->reference);
             } else {
                 $this->mismatch(
@@ -403,6 +397,9 @@ final class SurfaceComparison
                 continue;
             }
             $key = Surfaces::key('case:' . $case->id, 'format:json');
+            if (PublicationForms::forReport($this->report)?->recordsPair($key) === false) {
+                continue;
+            }
             if ($this->exact?->selected($key) === true) {
                 continue;
             }

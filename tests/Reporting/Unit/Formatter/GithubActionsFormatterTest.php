@@ -41,7 +41,7 @@ final class GithubActionsFormatterTest extends TestCase
             metricValue: 31,
             recommendation: 'Recommended repair',
         )->reportedUncompared(new \Qualimetrix\Analysis\Finding\Contract\AcceptedLevel([25.0], 1), 'analysis-incomplete');
-        $output = $this->formatter->format(ReportBuilder::create()->addFinding($finding)->filesAnalyzed(1)->build(), new FormatterContext());
+        $output = $this->formatter->format(ReportBuilder::create()->addFinding($finding)->filesAnalyzed(1)->build(), new FormatterContext())->body;
         self::assertStringContainsString('accepted at 25; not compared: analysis-incomplete', $output);
         self::assertStringNotContainsString('now 31', $output);
     }
@@ -67,7 +67,7 @@ final class GithubActionsFormatterTest extends TestCase
             ->duration(0.5)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         self::assertSame('', $output);
     }
@@ -90,7 +90,7 @@ final class GithubActionsFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         self::assertSame(
             "::warning file=src/Service/UserService.php,line=42,title=complexity.ccn::Cyclomatic complexity 15 exceeds warning threshold 10\n",
@@ -116,7 +116,7 @@ final class GithubActionsFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         self::assertSame(
             "::error file=src/Service/UserService.php,line=42,title=complexity.ccn::Cyclomatic complexity 25 exceeds error threshold 20\n",
@@ -141,7 +141,7 @@ final class GithubActionsFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         self::assertStringStartsWith('::notice ', $output);
     }
@@ -171,7 +171,7 @@ final class GithubActionsFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         $lines = explode("\n", trim($output));
         self::assertCount(2, $lines);
@@ -196,7 +196,7 @@ final class GithubActionsFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         self::assertStringContainsString('100%25 coverage%0Dis%0Anot enough', $output);
         self::assertStringNotContainsString("\n" . 'not enough', $output);
@@ -219,7 +219,7 @@ final class GithubActionsFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         self::assertStringContainsString('file=src/Service/OrderService.php', $output);
     }
@@ -241,7 +241,7 @@ final class GithubActionsFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         self::assertStringContainsString('line=99', $output);
     }
@@ -263,7 +263,7 @@ final class GithubActionsFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         self::assertStringContainsString('title=complexity.method', $output);
     }
@@ -285,7 +285,7 @@ final class GithubActionsFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         self::assertStringContainsString('file=src/Service/UserService.php', $output);
         self::assertStringNotContainsString('line=', $output);
@@ -308,7 +308,7 @@ final class GithubActionsFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         self::assertStringContainsString('file=src/path%3Awith%2Cspecial/File.php', $output);
         self::assertStringContainsString('title=test%3Arule%2Cname', $output);
@@ -332,7 +332,7 @@ final class GithubActionsFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         self::assertSame(
             "::error file=src/Service/UserService.php,line=42,title=complexity.ccn::Cyclomatic complexity 31 exceeds threshold 25 (accepted at 25, now 31)\n",
@@ -357,9 +357,9 @@ final class GithubActionsFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
-        self::assertStringContainsString('::error title=architecture.circular::Circular dependency detected', $output);
+        self::assertStringContainsString('::error title=architecture.circular::App\\Service: Circular dependency detected', $output);
         self::assertStringNotContainsString('file=', $output);
     }
 

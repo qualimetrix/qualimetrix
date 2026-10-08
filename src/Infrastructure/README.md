@@ -508,6 +508,15 @@ Rules remain lazy executable services. Their Options are already immutable
 prepared values, not lazy raw readers. No generic contribution adapter or second
 constructor-reflected option catalogue participates in runtime execution.
 
+## Report publication
+
+Formatters return Reporting's `FormattedReport` (`body`, `escapedStrings`) and
+state `PublicationKind`. `ResultPresenter` applies the invocation's prose mode
+or preserves a structured body, and reports a positive repair count on the
+single ErrorStream. Internal terminal failures use `ConsoleExitCode::InternalError`
+(exit 5); typed input/environment refusals remain 3. Generated hooks distinguish
+measured findings at 1/2 from refusal/incomplete/internal outcomes at 3/4/5.
+
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.

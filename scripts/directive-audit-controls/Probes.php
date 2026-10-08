@@ -996,6 +996,7 @@ final class Probes
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itExitsCleanWhenEveryDirectiveStillDoesSomething',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itExitsCleanWhenTheOnlyFindingIsAnAppliedBoundaryThatMovedNothingElse',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itExitsTwoOnAnInertDirective',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itExplainsAnUnmeasuredNocDirectiveOnASelectedParent',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff with data set "every level of it"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff with data set "the level the directive sits on"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff with data set "the whole rule"',
@@ -1022,13 +1023,13 @@ final class Probes
                     // regression case beside these nine does not call
                     // `audit()` and stays green.
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, a group that covers it"',
-                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, the exact name at project level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, the exact name at file level"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, the exact name"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "next-line, a group that covers it"',
-                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "next-line, the exact name at project level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "next-line, the exact name at file level"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "next-line, the exact name"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "symbol, a group that covers it"',
-                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "symbol, the exact name at project level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "symbol, the exact name at file level"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "symbol, the exact name"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesOneDirectiveWithoutTouchingAnotherStaleOneBesideIt',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itSaysTheSameThingInBothFormats',
@@ -1639,7 +1640,7 @@ final class Probes
                     'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itRefusesToJudgeADirectiveTheExtractorRefused',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "symbol, that group at file level"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "symbol, the exact name at file level"',
-                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "symbol, the exact name at project level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "symbol, the exact name at file level"',
                 ],
             )->alsoReddens(
                 'the unreadable-tag case expects the extractor refusal to remain the sole refused verdict before it reads the authored form',
@@ -1743,10 +1744,10 @@ final class Probes
                     // cases below went red; the extractor-refused symbol row
                     // is owned by `usage-judges-a-refused-directive`.
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, the exact name"',
-                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, the exact name at project level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, the exact name at file level"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, a group that covers it"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "next-line, the exact name"',
-                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "next-line, the exact name at project level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "next-line, the exact name at file level"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "next-line, a group that covers it"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "symbol, the exact name"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "symbol, a group that covers it"',
@@ -1841,7 +1842,7 @@ final class Probes
                     // both keep missing on `matches()`/subject equality with
                     // or without this branch — measured, not assumed.
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, the exact name"',
-                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, the exact name at project level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, the exact name at file level"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, a group that covers it"',
                 ],
             ),
@@ -1935,7 +1936,7 @@ final class Probes
                 ],
                 ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itReportsAnUnreadableConfigAsAConfigurationError'],
             )->alsoReddens(
-                'the JSON envelope case reaches the same throw site this breakage rewrites — a plain RuntimeException is not the carrier, so it falls past the first catch clause to the generic one, which answers 1 and "Unexpected error" instead of 3 and "Configuration error"',
+                'the JSON envelope case reaches the same throw site this breakage rewrites — a plain RuntimeException is not the carrier, so it falls past the first catch clause to the generic one, which answers 5 and "Internal error" instead of 3 and "Configuration error"',
                 [
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itPrintsTheErrorEnvelopeInJson',
                 ],
@@ -2007,7 +2008,7 @@ final class Probes
                 self::COMMAND,
                 ['            return $this->refusalPresenter->unhandled($output, $format, $failure);'
                     => '            return $this->refusalPresenter->fallbackRefusal($output, $format, $failure);'],
-                ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itAnswersExitOneForAnUnrecognisedExceptionFromTheAudit'],
+                ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itAnswersExitFiveForAnUnrecognisedExceptionFromTheAudit'],
             ),
             Probe::breaking(
                 'docs-pointer-dropped-from-text',
@@ -2057,13 +2058,13 @@ final class Probes
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "symbol, the exact name at file level"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "symbol, the exact name"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, a group that covers it"',
-                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, the exact name at project level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, the exact name at file level"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "file, the exact name"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "next-line, a group that covers it"',
-                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "next-line, the exact name at project level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "next-line, the exact name at file level"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "next-line, the exact name"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "symbol, a group that covers it"',
-                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "symbol, the exact name at project level"',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "symbol, the exact name at file level"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan with data set "symbol, the exact name"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesOneDirectiveWithoutTouchingAnotherStaleOneBesideIt',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itSaysTheSameThingInBothFormats',

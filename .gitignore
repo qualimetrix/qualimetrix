@@ -140,3 +140,6 @@ node_modules/
 # carry the evidence behind it. scripts/check-review-disposition.sh cross-checks
 # the two and skips cleanly when they are absent, as on a fresh clone.
 review-*/
+
+# Native report payload consumed by the HTML viewer contract tests.
+!/html-report/tests/fixtures/payload.json

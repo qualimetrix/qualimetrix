@@ -52,12 +52,14 @@ final class RankingCheck implements CaseCheck
 
     public function checkCase(string $side, CaseDefinition $case, string $outcome, array $artifacts): void
     {
+        $this->run->publicationForms->supply($side, $artifacts);
         if (!CaseOutcome::applies($this->name(), $outcome)) {
             return;
         }
         foreach ($this->run->capturePlan->rankingInvocations() as $descriptor) {
             $key = Surfaces::key($descriptor['scope'], $descriptor['surface']);
-            if ($descriptor['scope'] === 'case:' . $case->id && $this->run->capturePlan->requiredOn($key, $side)) {
+            if ($descriptor['scope'] === 'case:' . $case->id && $this->run->capturePlan->requiredOn($key, $side)
+                && $this->run->publicationForms->of($side, $key) !== PublicationForms::WHOLE_INVOCATION) {
                 $this->checkCaptureMetadata($side, $key, $artifacts);
             }
         }
@@ -72,7 +74,6 @@ final class RankingCheck implements CaseCheck
             $this->run->report->fail(FailureClass::NONDETERMINISM_UNDECLARED, 'baseline eligibility', 'The same candidate inputs produced different product baseline eligibility decisions.');
         }
         $records = RecordCheck::create($this->run);
-        $fields = null;
         foreach ($this->run->corpus->cases as $case) {
             if (!CaseOutcome::applies(CaseOutcome::CHECK_FINDINGS, CaseOutcome::of($case, 'candidate'))) {
                 continue;
@@ -82,11 +83,19 @@ final class RankingCheck implements CaseCheck
                 if ($descriptor['scope'] !== 'case:' . $case->id || !$this->run->capturePlan->requiredOn($key, 'candidate')) {
                     continue;
                 }
+                $firstBytes = $first->artifacts[$key] ?? throw new GateError('A repeated candidate ranking source is missing: ' . $key);
+                $secondBytes = $second->artifacts[$key] ?? throw new GateError('A repeated candidate ranking source is missing: ' . $key);
+                if (PublicationForms::classify($key, $firstBytes) !== PublicationForms::RECORDS
+                    || PublicationForms::classify($key, $secondBytes) !== PublicationForms::RECORDS) {
+                    continue;
+                }
                 if ($this->run->report->sourceRejected('candidate', $key, 'ranking')) {
                     $this->run->report->sourceEvidence('candidate', $key, 'repeatable', false);
                     continue;
                 }
-                $fields ??= $this->fields('candidate');
+                $fields = $this->run->report->sourceRejected('reference', $key, 'ranking')
+                    ? RankingSchema::derive($this->run->publicationTree('candidate'))->fields
+                    : $this->fields('candidate', $key);
                 $bags = [];
                 foreach ([$first, $second] as $capture) {
                     $slot = $capture->rankings[$key] ?? throw new GateError('A repeated capture has no validated own ranking: ' . $key);
@@ -162,7 +171,7 @@ final class RankingCheck implements CaseCheck
      *
      * @return array{published:list<array<string,mixed>>,authority:list<array<string,mixed>>,comparative:list<array<string,mixed>>,rawAuthority:list<array<string,mixed>>}
      */
-    public function observe(string $side, CaseDefinition $case, string $view, array $published, array $artifacts): array
+    public function observe(string $side, CaseDefinition $case, string $view, array $published, array $artifacts, bool $compare = true): array
     {
         $key = 'case:' . $case->id . '|' . $view;
         if (!$this->checkCaptureMetadata($side, $key, $artifacts)) {
@@ -170,8 +179,10 @@ final class RankingCheck implements CaseCheck
         }
         $before = $this->ambiguities;
         try {
-            $observed = $this->anatomy($side, $case, $view, $published, $artifacts);
-            $this->run->report->sourceEvidence($side, $key, 'ranking', true);
+            $observed = $this->anatomy($side, $case, $view, $published, $artifacts, $compare);
+            if ($compare) {
+                $this->run->report->sourceEvidence($side, $key, 'ranking', true);
+            }
             return $observed;
         } catch (GateError $error) {
             $this->run->report->sourceEvidence($side, $key, 'ranking', false);
@@ -189,25 +200,24 @@ final class RankingCheck implements CaseCheck
     }
 
     /** @return list<string> */
-    private function fields(string $side): array
+    private function fields(string $side, string $key): array
     {
-        $fields = RankingSchema::derive($this->run->options->candidateRoot)->fields;
-        $changes = $this->run->declarations->fields->changes('json', 'ranking');
-        $expected = RankingSchema::FIELDS;
-        foreach ($changes as $field => $change) {
-            if ($change === DeclaredFields::ADDED && !\in_array($field, $expected, true)) {
-                $expected[] = $field;
-            } elseif ($change === DeclaredFields::REMOVED) {
-                $expected = array_values(array_diff($expected, [$field]));
-            }
+        $fields = RankingSchema::derive($this->run->publicationTree($side))->fields;
+        if ($this->run->options->mode === Options::MODE_DERIVE_NORMALIZATION
+            || $this->run->publicationForms->recordsPair($key) !== true) {
+            return $fields;
         }
-        $actual = $fields;
-        sort($actual);
+        $other = $side === 'candidate' ? 'reference' : 'candidate';
+        $otherFields = RankingSchema::derive($this->run->publicationTree($other))->fields;
+        $candidate = $side === 'candidate' ? $fields : $otherFields;
+        $reference = $side === 'reference' ? $fields : $otherFields;
+        $expected = $this->run->declarations->fields->referenceFields('json', 'ranking', $candidate);
+        sort($reference);
         sort($expected);
-        if ($actual !== $expected) {
+        if ($reference !== $expected) {
             throw new GateError('The complete ranked publisher classification has an undeclared field change.');
         }
-        return $side === 'reference' ? $this->run->declarations->fields->referenceFields('json', 'ranking', $fields) : $fields;
+        return $fields;
     }
 
     /** @param list<array<string,mixed>> $published
@@ -215,7 +225,7 @@ final class RankingCheck implements CaseCheck
      *
      * @return array{published:list<array<string,mixed>>,authority:list<array<string,mixed>>,comparative:list<array<string,mixed>>,rawAuthority:list<array<string,mixed>>}
      */
-    private function anatomy(string $side, CaseDefinition $case, string $view, array $published, array $artifacts): array
+    private function anatomy(string $side, CaseDefinition $case, string $view, array $published, array $artifacts, bool $compare): array
     {
         $key = 'case:' . $case->id . '|' . $view;
         $originalText = $artifacts[$key] ?? throw new GateError('The original ranking source publication is missing.');
@@ -224,7 +234,7 @@ final class RankingCheck implements CaseCheck
         $slot = $this->run->rankings->of($side, $key);
         $fullText = $slot['ranked']['stdout'];
         $full = ReportRecords::decode($fullText);
-        $fields = $this->fields($side);
+        $fields = $this->fields($side, $key);
         $issues = RankingSchema::records($full, $fields);
         $slice = RankingSchema::records($original, $fields);
         if (\count($issues) !== $meta['total'] || ReportRecords::rawRecords($originalText, 'topIssues') !== \array_slice(ReportRecords::rawRecords($fullText, 'topIssues'), 0, \count($slice))) {
@@ -291,7 +301,7 @@ final class RankingCheck implements CaseCheck
         $comparative = $authority;
         $order = [];
         $values = [];
-        if ($this->run->declarations->fields->changes('json', 'ranking') !== []) {
+        if ($compare && $this->run->declarations->fields->changes('json', 'ranking') !== []) {
             $this->fieldMeasurements[$case->id][$side] ??= [];
         }
         foreach ($issues as $issue) {
@@ -315,10 +325,12 @@ final class RankingCheck implements CaseCheck
             }
             unset($budget[$found]);
             $order[] = $found;
-            foreach (RankingSchema::values($issue) as $field => $value) {
-                $comparative[$found]['ranking.' . $field] = $value;
+            if ($compare) {
+                foreach (RankingSchema::values($issue) as $field => $value) {
+                    $comparative[$found]['ranking.' . $field] = $value;
+                }
             }
-            if ($this->run->declarations->fields->changes('json', 'ranking') !== []) {
+            if ($compare && $this->run->declarations->fields->changes('json', 'ranking') !== []) {
                 $mappedIssue = $this->mapped($side, $view, $issue);
                 $this->fieldMeasurements[$case->id][$side][] = ['record' => 'source:' . $view . '|join:' . RankingSchema::joinKey($mappedIssue, true, array_values(array_diff($fields, array_keys($this->run->declarations->fields->changes('json', 'ranking'))))), 'fields' => $mappedIssue];
             }
@@ -329,6 +341,9 @@ final class RankingCheck implements CaseCheck
         $publications = [$view];
         foreach (['check:output:file', 'check:parallel'] as $alias) {
             $aliasKey = 'case:' . $case->id . '|' . $alias;
+            if ($compare ? $this->run->publicationForms->recordsPair($aliasKey) === false : $this->run->publicationForms->of($side, $aliasKey) !== PublicationForms::RECORDS) {
+                continue;
+            }
             if ($view === 'format:json' && isset($artifacts[$aliasKey]) && ReportRecords::rawRecords($artifacts[$aliasKey], 'topIssues') !== ReportRecords::rawRecords($originalText, 'topIssues')) {
                 throw new GateError('A same-input alias changed its original ranked slice.');
             }
@@ -336,8 +351,13 @@ final class RankingCheck implements CaseCheck
                 $publications[] = $alias;
             }
         }
-        if ($view === 'format:json') {
-            $this->summary($artifacts['case:' . $case->id . '|format:summary'] ?? throw new GateError('The ranked summary projection is missing.'), $issues, $authority, $order, \count($slice));
+        if ($view === 'format:json' && ($compare
+            ? $this->run->publicationForms->recordsPair('case:' . $case->id . '|format:summary') !== false
+            : $this->run->publicationForms->of($side, 'case:' . $case->id . '|format:summary') === PublicationForms::RECORDS)) {
+            $this->summary($artifacts['case:' . $case->id . '|format:summary'] ?? throw new GateError('The ranked summary projection is missing.'), $issues, $authority, $order, \count($slice), $side);
+        }
+        if (!$compare) {
+            return ['rawAuthority' => $authority, 'published' => $published, 'authority' => $authority, 'comparative' => []];
         }
         $mapped = array_map(fn(array $record): array => $this->mapped($side, $view, $record), $comparative);
         $this->observed[$case->id][$view][$side] = ['comparative' => $mapped, 'order' => $order, 'slice' => \count($slice), 'total' => \count($issues), 'publications' => $publications];
@@ -378,16 +398,16 @@ final class RankingCheck implements CaseCheck
      * @param list<array<string,mixed>> $authority
      * @param list<int> $order
      */
-    private function summary(string $text, array $issues, array $authority, array $order, int $size): void
+    private function summary(string $text, array $issues, array $authority, array $order, int $size, string $side): void
     {
-        $entries = array_values(array_filter(ProseRecords::extract('format:summary', $text), static fn(array $entry): bool => isset($entry['fields']['rank'])));
+        $entries = array_values(array_filter(ProseRecords::extract('format:summary', $text, $this->run->publicationCodec($side)), static fn(array $entry): bool => isset($entry['fields']['rank'])));
         if (\count($entries) !== $size) {
             throw new GateError('The ranked summary row count differs from its original JSON slice.');
         }
         foreach ($entries as $index => $entry) {
             $row = $entry['fields'];
             $issue = $issues[$index];
-            if (!ProseRecords::matches('format:summary', $row, $authority[$order[$index]]) || $row['rank'] !== $index + 1
+            if (!ProseRecords::matches('format:summary', $row, $authority[$order[$index]], $this->run->publicationCodec($side)) || $row['rank'] !== $index + 1
                 || (isset($issue['debtMinutes']) && $row['debt'] !== self::debt((int) $issue['debtMinutes']))) {
                 throw new GateError('A ranked summary row changed its physical projection, ordinal, tag or debt.');
             }
@@ -422,15 +442,41 @@ final class RankingCheck implements CaseCheck
         if ($this->run->declarations->fields->changes('json', 'ranking') === []) {
             return;
         }
+        $eligible = [];
+        foreach ($this->run->capturePlan->rankingInvocations() as $source) {
+            if ($source['scope'] !== 'case:' . $case) {
+                continue;
+            }
+            $key = Surfaces::key($source['scope'], $source['surface']);
+            $pair = $this->run->publicationForms->recordsPair($key);
+            if ($pair === null) {
+                return;
+            }
+            if ($pair === false) {
+                continue;
+            }
+            if (!isset($this->observed[$case][$source['surface']]['candidate'], $this->observed[$case][$source['surface']]['reference'])) {
+                return;
+            }
+            $eligible[$source['surface']] = true;
+        }
+        if ($eligible === []) {
+            return;
+        }
         foreach (['candidate', 'reference'] as $side) {
             $key = $case . '|' . $side;
-            if (isset($this->supplied[$key])) {
+            if (isset($this->supplied[$key]) || !isset($this->fieldMeasurements[$case][$side])) {
                 continue;
             }
-            if (!isset($this->fieldMeasurements[$case][$side])) {
-                continue;
-            }
-            $this->run->declarations->fields->supply('json', $case, 'ranking', $side, $this->fieldMeasurements[$case][$side]);
+            $records = array_values(array_filter($this->fieldMeasurements[$case][$side], static function (array $row) use ($eligible): bool {
+                foreach ($eligible as $view => $_) {
+                    if (str_starts_with($row['record'], 'source:' . $view . '|join:')) {
+                        return true;
+                    }
+                }
+                return false;
+            }));
+            $this->run->declarations->fields->supply('json', $case, 'ranking', $side, $records);
             $this->supplied[$key] = true;
         }
     }

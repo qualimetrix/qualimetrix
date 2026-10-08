@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace QmxFindingGateControls;
 
+use QmxFindingGate\DeclaredFields;
+use QmxFindingGate\DeclaredRecords;
 use QmxFindingGate\GateReport;
 use QmxFindingGate\Tsv;
 use ReflectionClass;
@@ -43,7 +45,7 @@ final class HarnessSelfTest
         $scope = 'case:alpha|format:text';
         $expectation = new Expectation($class, $scope, exactScope: true);
         $this->same(true, $expectation->matches($class, $scope), 'an exact expectation matches its complete scope');
-        foreach (['case:alpha|format:text-verbose', 'candidate / ' . $scope, $scope . '|record:{}', 'case:alpha-neighbour|format:text'] as $neighbour) {
+        foreach (['case:alpha|format:text-detail', 'candidate / ' . $scope, $scope . '|record:{}', 'case:alpha-neighbour|format:text'] as $neighbour) {
             $this->same(false, $expectation->matches($class, $neighbour), 'an exact expectation rejects ' . $neighbour);
         }
         $this->same(false, $expectation->matches(\QmxFindingGate\FailureClass::VALUE_MISMATCH, $scope), 'the exact scope does not license another failure class');
@@ -101,27 +103,36 @@ final class HarnessSelfTest
             $harness = (new ReflectionClass(Harness::class))->newInstanceWithoutConstructor();
             (new ReflectionProperty(Harness::class, 'repository'))->setValue($harness, $directory);
             $runHarness = new ReflectionMethod(Harness::class, 'run');
-            foreach (['case:alpha|baseline-file' => false, 'case:ordinary|rules' => true] as $surface => $ordinary) {
-                $pinned = Control::red(
+            foreach ([
+                ['case:alpha|baseline-file', \QmxFindingGate\FailureClass::SURFACE_MISMATCH, true, true,
+                    'an exact intention admits an equality expectation past preflight'],
+                ['case:ordinary|rules', \QmxFindingGate\FailureClass::SURFACE_MISMATCH, true, false,
+                    'an ordinary structural delta still blocks an equality expectation before cloning'],
+                ['case:ordinary|rules', \QmxFindingGate\FailureClass::RECORD_STALE, false, true,
+                    'an ordinary structural delta admits a required stale record past preflight'],
+                ['case:ordinary|rules', \QmxFindingGate\FailureClass::RECORD_STALE, true, true,
+                    'an ordinary structural delta admits a tolerated stale record past preflight'],
+            ] as [$surface, $failureClass, $tolerated, $admitted, $description]) {
+                $record = new Expectation(\QmxFindingGate\FailureClass::RECORD_UNDECLARED, 'case:alpha|format:json', exactScope: true);
+                $pinned = new Expectation($failureClass, $surface, exactScope: true);
+                $control = Control::red(
                     'preflight-probe',
                     'a surface expectation before cloning',
                     Mutation::none(),
-                    [new Expectation(\QmxFindingGate\FailureClass::RECORD_UNDECLARED, 'case:alpha|format:json', exactScope: true)],
-                    [new Expectation(\QmxFindingGate\FailureClass::SURFACE_MISMATCH, $surface, exactScope: true)],
+                    $tolerated ? [$record] : [$record, $pinned],
+                    $tolerated ? [$pinned] : [],
                 );
                 $failure = '';
                 try {
                     // The temporary repository has no Git metadata, so an admitted control stops before cloning.
-                    $runHarness->invoke($harness, [$pinned], [], 1);
+                    $runHarness->invoke($harness, [$control], [], 1);
                 } catch (RuntimeException $error) {
                     $failure = $error->getMessage();
                 }
                 $this->same(
                     true,
-                    str_starts_with($failure, $ordinary ? 'Control "preflight-probe" expects' : 'git status --porcelain failed'),
-                    $ordinary
-                        ? 'an ordinary structural delta still blocks an equality expectation before cloning'
-                        : 'an exact intention admits an equality expectation past preflight',
+                    str_starts_with($failure, $admitted ? 'git status --porcelain failed' : 'Control "preflight-probe" expects'),
+                    $description,
                 );
             }
         } finally {
@@ -161,6 +172,82 @@ final class HarnessSelfTest
             $dirtyProduct = $originalProduct . "\n// A private working-tree variation.\n";
             Shell::replace($scratch->path($productPath), $dirtyProduct);
             $this->same(true, $hasPermissions->invoke($harness), 'the inherited transition is present before preparation');
+            $sourcePath = 'src/Reporting/Formatter/FindingRecord.php';
+            $originalSource = Shell::read($repository . '/' . $sourcePath);
+            $fieldIndex = 'finding-gate/' . DeclaredFields::INDEX;
+            $fieldDerived = 'finding-gate/' . DeclaredFields::DERIVED;
+            $originalFieldIndex = Shell::read($repository . '/' . $fieldIndex);
+            $originalFieldDerived = Shell::read($repository . '/' . $fieldDerived);
+            $intentRows = Tsv::rows($repository . '/' . $fieldIndex, DeclaredFields::COLUMNS);
+            $derivedRows = Tsv::rows($repository . '/' . $fieldDerived, DeclaredFields::DERIVED_COLUMNS);
+            $retainedIntents = array_values(array_filter(
+                $intentRows,
+                static fn(array $row): bool => $row['report'] !== 'json' || $row['view'] !== 'ranking',
+            ));
+            $retainedDerived = array_values(array_filter(
+                $derivedRows,
+                static fn(array $row): bool => $row['report'] !== 'json' || $row['view'] !== 'ranking',
+            ));
+            $this->same(
+                \count($retainedIntents) < \count($intentRows),
+                \count($retainedDerived) < \count($derivedRows),
+                'ranking field intentions and measurements are paired, including an empty pair',
+            );
+            $originalTuple = \QmxFindingGate\EquivalenceTuple::derive($repository);
+            $this->same(19, \count($originalTuple->fields), 'the existing finding record publishes nineteen fields');
+            TupleControls::publisherDrift()->mutation->apply($scratch, $repository);
+            $mutatedTuple = \QmxFindingGate\EquivalenceTuple::derive($scratch->tree);
+            $this->same([...$originalTuple->fields, 'probe'], $mutatedTuple->fields, 'the shared added-member mutation reaches the actual finding record');
+            $this->same([...$originalTuple->sources, \QmxFindingGate\EquivalenceTuple::source()], $mutatedTuple->sources, 'the added member retains the finding record producer');
+            $this->same($originalSource, Shell::read($repository . '/' . $sourcePath), 'the shared mutation leaves the original publisher intact');
+            $this->same(
+                Tsv::render(DeclaredFields::COLUMNS, array_map(static fn(array $row): array => array_values($row), $retainedIntents)),
+                Shell::read($scratch->path($fieldIndex)),
+                'the private tuple plant removes only unavailable ranking field intentions',
+            );
+            $this->same(
+                Tsv::render(DeclaredFields::DERIVED_COLUMNS, array_map(static fn(array $row): array => array_values($row), $retainedDerived)),
+                Shell::read($scratch->path($fieldDerived)),
+                'the private tuple plant removes only unavailable ranking field measurements',
+            );
+            $this->same(
+                [],
+                DeclaredFields::load($scratch->path('finding-gate'))->changes('json', 'ranking'),
+                'the private tuple plant leaves no unmeasurable ranking field obligations',
+            );
+            $this->same($originalFieldIndex, Shell::read($repository . '/' . $fieldIndex), 'the original field intentions retain their bytes');
+            $this->same($originalFieldDerived, Shell::read($repository . '/' . $fieldDerived), 'the original field measurements retain their bytes');
+
+            $recordIndex = 'finding-gate/' . DeclaredRecords::INDEX;
+            $recordDerived = 'finding-gate/' . DeclaredRecords::DERIVED;
+            $originalRecordIndex = Shell::read($repository . '/' . $recordIndex);
+            $pairedRecord = '{"channel":"self-test.paired"}';
+            $pairedIntent = ['introduced', 'self-test-case', 'json', 'format:json', $pairedRecord, 'A private measured record.'];
+            $pairedIntentText = Tsv::render(DeclaredRecords::COLUMNS, [$pairedIntent]);
+            $pairedDerivedText = Tsv::render(DeclaredRecords::DERIVED_COLUMNS, [
+                ['introduced', 'self-test-case', 'json', 'format:json', $pairedRecord],
+            ]);
+            Shell::replace($scratch->path($recordIndex), $pairedIntentText);
+            Shell::replace($scratch->path($recordDerived), $pairedDerivedText);
+            $idleMutation = RecordControls::idleSelector()->mutation;
+            $idleMutation->apply($scratch, $repository);
+            $records = DeclaredRecords::load($scratch->path('finding-gate'));
+            $this->same(2, $records->count(), 'the idle selector keeps the measured intent and adds only one new intent');
+            $this->same($pairedIntent, array_values($records->intents('json', 'format:json')[0]), 'the measured record retains its original intent');
+            $this->same($pairedDerivedText, $records->derivedText(), 'the existing derived measurement keeps its bytes');
+            $this->same($pairedIntentText, substr(Shell::read($scratch->path($recordIndex)), 0, \strlen($pairedIntentText)), 'the original intent rows keep their bytes');
+            $this->same(true, $records->claim('introduced', 'self-test-case', 'json', 'format:json', $pairedRecord), 'the existing measured record is still claimable');
+            $stale = $records->staleIntents();
+            $this->same(1, \count($stale), 'only the newly added selector remains stale');
+            $this->same(DeclaredRecords::INDEX, $stale[0]['scope'] ?? null, 'the idle selector is stale in the record index');
+            $this->same(true, str_contains($stale[0]['detail'] ?? '', 'nothing.published'), 'the stale selector is the planted one');
+
+            Shell::replace($scratch->path($recordIndex), Tsv::render(DeclaredRecords::COLUMNS, []));
+            Shell::replace($scratch->path($recordDerived), Tsv::render(DeclaredRecords::DERIVED_COLUMNS, []));
+            $idleMutation->apply($scratch, $repository);
+            $this->same(1, DeclaredRecords::load($scratch->path('finding-gate'))->count(), 'the header-only index gains exactly one idle selector');
+            $this->same($originalRecordIndex, Shell::read($repository . '/' . $recordIndex), 'the original record index retains its bytes');
+
             $orphan = $scratch->path('finding-gate/declared-outcomes');
             if (!is_dir($orphan)) {
                 mkdir($orphan);
@@ -208,23 +295,14 @@ final class HarnessSelfTest
                 require getcwd() . '/scripts/finding-gate/classes.php';
                 require getcwd() . '/scripts/finding-gate-controls/classes.php';
                 $controls = \QmxFindingGateControls\Controls::all();
-                $map = null;
                 $restoration = null;
                 foreach ($controls as $control) {
-                    if ($control->id === 'fingerprint-declared-rename') {
-                        foreach ((new ReflectionProperty(\QmxFindingGateControls\Mutation::class, 'actions'))->getValue($control->mutation) as $action) {
-                            if ($action['path'] === 'finding-gate/maps/channels.tsv') {
-                                $map = $action['contents'];
-                            }
-                        }
-                    }
                     if ($control->id === 'derive-writes-green-run') {
                         $restoration = [$control->restoredAfterRun, $control->restoredContent];
                     }
                 }
                 echo json_encode([
                     'ids' => array_map(static fn($control): string => $control->id, $controls),
-                    'map' => $map,
                     'restoration' => $restoration,
                 ], JSON_THROW_ON_ERROR);
                 PHP;
@@ -233,15 +311,9 @@ final class HarnessSelfTest
             if ($factory['exit'] === 0) {
                 $metadata = json_decode($factory['stdout'], true, 512, \JSON_THROW_ON_ERROR);
                 $ids = $metadata['ids'];
-                $this->same(30, \count($ids), 'the prepared tree retains all 30 controls');
+                $this->same(28, \count($ids), 'the prepared tree retains all 28 controls');
                 $this->same('positive', $ids[0] ?? null, 'the first control keeps its place');
-                $this->same('report-value-no-row', $ids[20] ?? null, 'the fixed factories keep their order');
-                $this->same(
-                    Tsv::render(['old', 'new', 'reason'], [])
-                        . "code-smell.unused-private\tcode-smell.unused-privat2\tthe control renames the channel's code\n",
-                    $metadata['map'],
-                    'the own map carries one control row and no inherited transition',
-                );
+                $this->same('report-value-no-row', $ids[18] ?? null, 'the fixed factories keep their order');
                 $this->same(
                     ['finding-gate/declared-delta.tsv', 'finding-gate/declared-delta'],
                     $metadata['restoration'][0],
@@ -255,14 +327,10 @@ final class HarnessSelfTest
             }
 
             $unused = ChannelRenamePlants::unusedPrivateRenameDeclarations();
-            $sensitive = (new ReflectionMethod(FingerprintControls::class, 'sensitiveParameterRenameDeclarations'))->invoke(null);
             $claims = [
                 ['smells', 'code-smell.unused-private@class', 'code-smell.unused-privat2@class', $unused],
                 ['detectors-smells', 'code-smell.unused-private@class', 'code-smell.unused-privat2@class', $unused],
                 ['detectors', 'code-smell.unused-private@class', 'code-smell.unused-privat2@class', $unused],
-                ['security', 'security.sensitive-parameter@callable', 'security.sensitive-paramete2@callable', $sensitive],
-                ['detectors-security', 'security.sensitive-parameter@callable', 'security.sensitive-paramete2@callable', $sensitive],
-                ['detectors', 'security.sensitive-parameter@callable', 'security.sensitive-paramete2@callable', $sensitive],
             ];
             foreach ($claims as [$case, $oldClaim, $newClaim, $mutation]) {
                 $relative = 'finding-gate/cases/' . $case . '/case.json';
@@ -345,6 +413,37 @@ final class HarnessSelfTest
         $this->same('first' . "\n", $result['stdout'], 'streamed stdout remains buffered once');
         $this->same('second' . "\n", $result['stderr'], 'streamed stderr remains buffered once');
         $this->same(7, $result['exit'], 'the child exit code survives streaming');
+
+        $repository = null;
+        $launched = null;
+        try {
+            $repository = self::throwawayRepository();
+            mkdir($repository . '/scripts');
+            Shell::replace($repository . '/scripts/finding-gate.php', "<?php echo ini_get('memory_limit'), \"\\n\";\n");
+            $harness = (new ReflectionClass(Harness::class))->newInstanceWithoutConstructor();
+            (new ReflectionProperty(Harness::class, 'repository'))->setValue($harness, $repository);
+            (new ReflectionProperty(Harness::class, 'reference'))->setValue($harness, 'HEAD');
+            $launched = (new ReflectionMethod(Harness::class, 'launch'))->invoke($harness, Control::green('budget-probe', 'child PHP budget'));
+            while (!$launched['child']->settled()) {
+                Shell::poll();
+            }
+            $budgetRun = $launched['child']->result();
+            $this->same(0, $budgetRun['exit'], 'the real gate child exits successfully');
+            $this->same("1G\n", $budgetRun['stdout'], 'the real gate child receives a 1G memory budget');
+            $this->same('', $budgetRun['stderr'], 'the real gate child has no diagnostic');
+        } catch (Throwable $error) {
+            $this->failures[] = 'the gate child memory budget (' . $error->getMessage() . ')';
+        } finally {
+            if ($launched !== null) {
+                if (!$launched['child']->settled()) {
+                    Shell::terminateAll();
+                }
+                $launched['scratch']->remove();
+            }
+            if ($repository !== null) {
+                Shell::removeRecursively($repository);
+            }
+        }
 
         $interruption = <<<'PHP'
             require $argv[1] . '/scripts/finding-gate-controls/Shell.php';

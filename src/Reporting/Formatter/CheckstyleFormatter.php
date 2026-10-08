@@ -21,7 +21,7 @@ final class CheckstyleFormatter implements FormatterInterface
 {
     private const VERSION = '3.0';
 
-    public function format(Report $report, FormatterContext $context): string
+    public function format(Report $report, FormatterContext $context): FormattedReport
     {
         $xml = new XMLWriter();
         $xml->openMemory();
@@ -49,22 +49,15 @@ final class CheckstyleFormatter implements FormatterInterface
             $xml->endElement();
         }
 
-        if ($repairs > 0) {
-            $xml->startElement('file');
-            $xml->writeAttribute('name', '[publication]');
-            $xml->startElement('error');
-            $xml->writeAttribute('line', '1');
-            $xml->writeAttribute('severity', 'info');
-            $xml->writeAttribute('message', PublishedUtf8::describe($repairs));
-            $xml->writeAttribute('source', 'qmx.' . PublishedUtf8::REPAIR_CHECK);
-            $xml->endElement();
-            $xml->endElement();
-        }
-
         $xml->endElement(); // checkstyle
         $xml->endDocument();
 
-        return $xml->outputMemory();
+        return new FormattedReport($xml->outputMemory(), $repairs);
+    }
+
+    public function publicationKind(): PublicationKind
+    {
+        return PublicationKind::XmlDocument;
     }
 
     public function getName(): string
@@ -89,7 +82,7 @@ final class CheckstyleFormatter implements FormatterInterface
 
         foreach ($findings as $finding) {
             $file = $finding->location->file === null
-                ? '[project]'
+                ? PublishedFinding::place($finding)->name
                 : $context->relativizePath($finding->location->file);
             $grouped[$file] ??= [];
             $grouped[$file][] = $finding;

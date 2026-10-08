@@ -45,7 +45,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * Exits 0 for any informational result about an observed class name (including
  * "no layer matches"), 3 for empty input, an FQN absent from declarations and
  * graph ends, or a configuration-load error recognised as the user's to fix
- * (`ConsoleExitCode::Refusal`), and 1 (`Command::FAILURE`) for anything else
+ * (`ConsoleExitCode::Refusal`), and `ConsoleExitCode::InternalError` for anything else
  * the configuration step throws.
  *
  * "No observed class", "observed, every layer answered no" and "observed, and
@@ -173,7 +173,7 @@ final class LayerAssignmentCommand extends Command
             // Named secondary signal for code 3: an
             // `InvalidArgumentException` that never became a
             // carrier, caught here rather than falling through to the
-            // `Exception` branch below and answering with 1.
+            // `Exception` branch below and answering with 5.
             return $this->refusalPresenter->fallbackRefusal($output, $format, $e);
         } catch (Exception $e) {
             // Core failures can arrive from collection or inspection without

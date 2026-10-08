@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
+
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdictRefusal;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Reporting\Formatter\CoverageNarrator;
+use Qualimetrix\Reporting\Formatter\PublishedUtf8;
 use Qualimetrix\Reporting\ReportCoverage;
 use Qualimetrix\Reporting\ReportProjectScope;
 
@@ -158,6 +160,6 @@ final readonly class DirectiveAuditPresenter
     /** @param array<string, mixed> $payload */
     private static function encode(array $payload): string
     {
-        return json_encode($payload, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n";
+        return PublishedUtf8::encodeJsonObject($payload, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES) . "\n";
     }
 }

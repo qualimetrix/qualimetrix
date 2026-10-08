@@ -50,15 +50,6 @@ final readonly class ProcessObservation
         public string $cacheNote,
     ) {}
 
-    /**
-     * The RAW reading of one run: what the process did, before anything is
-     * judged. Exit 2 lands in the unframed branch here and is turned into the
-     * accepted observation it actually is by
-     * {@see Observation::ofMeasured()} — the one place an exit code becomes a
-     * verdict input, so that the frozen half and a fresh run cannot be judged
-     * by two rules. Deciding it here instead would leave the frozen half,
-     * which stores this raw wording, on the old rule.
-     */
     public function outcome(): string
     {
         if ($this->exit === 3 && str_contains($this->stderrHead . $this->stdoutHead, 'Configuration error:')) {
@@ -69,19 +60,23 @@ final readonly class ProcessObservation
             return Observation::REFUSED_UNFRAMED;
         }
 
-        if ($this->exit !== 0 && $this->exit !== 1) {
-            return Observation::REFUSED_UNFRAMED;
-        }
-
-        if ($this->exit === 1) {
+        if ($this->exit === 5) {
             return Observation::CRASHED;
         }
 
-        return Observation::ACCEPTED;
+        return \in_array($this->exit, [0, 1, 2], true)
+            ? Observation::ACCEPTED
+            : Observation::REFUSED_UNFRAMED;
     }
 
     public function text(): string
     {
+        // The finding policy observes the code alone; report heads carry
+        // timestamps, and the frozen exit-2 observations use this same form.
+        if ($this->exit === 1 || $this->exit === 2) {
+            return 'exit=' . $this->exit;
+        }
+
         return $this->outcome() === Observation::ACCEPTED
             ? $this->digest
             : 'exit=' . $this->exit . ' ' . trim($this->stderrHead . ' ' . $this->stdoutHead);

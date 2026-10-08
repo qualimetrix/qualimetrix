@@ -1146,6 +1146,9 @@ function classifyKind(string $path, array $discoveredClasses): string
     if (str_contains($path, '/Support/') || (str_ends_with($path, '.php') && !str_ends_with($path, 'Test.php'))) {
         return 'support';
     }
+    if ($path === 'governance/PublishedText/README.md') {
+        return 'documentation';
+    }
     if (str_ends_with($path, 'package.json') || str_ends_with($path, 'vite.config.js')) {
         return 'non-php-test-config';
     }
@@ -1251,6 +1254,7 @@ function testSuitePrefixTable(): array
         ['prefix' => 'governance/MeasurementVocabulary/', 'suite' => 'Governance'],
         ['prefix' => 'governance/MeasurementIdentity/', 'suite' => 'Governance'],
         ['prefix' => 'governance/GeneratedArtifactFreshness/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/PublishedText/', 'suite' => 'Governance'],
         ['prefix' => 'governance/FormatOptionKeys/', 'suite' => 'Governance'],
         ['prefix' => 'governance/DirectiveVocabulary/', 'suite' => 'Governance'],
         ['prefix' => 'governance/ControlRigLedger/', 'suite' => 'Governance'],

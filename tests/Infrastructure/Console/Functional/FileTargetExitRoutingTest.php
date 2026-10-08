@@ -116,7 +116,7 @@ final class FileTargetExitRoutingTest extends TestCase
             $option => $target,
         ], ['capture_stderr_separately' => true]);
 
-        self::assertSame(1, $tester->getStatusCode());
+        self::assertSame(5, $tester->getStatusCode());
         $observed = $observer->warnings;
         self::assertIsString($observed);
         self::assertStringContainsString('Warning:', $observed);
@@ -504,7 +504,7 @@ final class FileTargetExitRoutingTest extends TestCase
             $sourceRoot . '/vendor/autoload.php',
         ], $this->directory);
 
-        self::assertSame(1, $run['exitCode'], $run['stdout'] . $run['stderr']);
+        self::assertSame(5, $run['exitCode'], $run['stdout'] . $run['stderr']);
         self::assertJson($run['stdout'], 'A second JSON refusal followed the completed graph.');
         /** @var array<string, mixed> $graph */
         $graph = json_decode($run['stdout'], true, flags: \JSON_THROW_ON_ERROR);

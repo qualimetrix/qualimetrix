@@ -1,0 +1,18 @@
+{
+  "id": "utf8-identifier",
+  "description": "Auxiliary: distinct PHP byte identifiers, invalid token bytes, a cycle and forbidden layer edges survive identity and publication.",
+  "coverage": "auxiliary",
+  "paths": [
+    "src"
+  ],
+  "config": "qmx.yaml",
+  "channels": [
+    "complexity.ccn@callable",
+    "architecture.circular-dependency@project",
+    "architecture.layer-violation@class",
+    "duplication.clone@file"
+  ],
+  "explainSubjects": [
+    "declaration:class:Corpus\\Utf8\\Public\\K%FF@src/First.php"
+  ]
+}

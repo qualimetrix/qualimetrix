@@ -54,6 +54,34 @@ final class CaptureTest extends TestCase
     }
 
     #[Test]
+    public function itCapturesDetailedTextThroughTheExistingTextFormat(): void
+    {
+        $tree = SyntheticTree::clean();
+        $tree['candidateAnswers']['case:alpha|format:text-detail'] = ['env' => true];
+        $tree['candidateAnswers']['case:alpha|format:text-verbose'] = ['env' => true];
+        $root = SyntheticTree::create($tree);
+        $temporary = Fs::temporaryDirectory('detailed-text-capture-test-');
+        try {
+            $corpus = Corpus::load($root);
+            $plan = CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate'));
+            $capture = (new TreeRun($root, $temporary, 'candidate', RenameMaps::fromPairs([]), false, $plan, DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0]);
+            $document = json_decode($capture->artifacts['case:alpha|format:text-detail'], true, 512, \JSON_THROW_ON_ERROR);
+            self::assertIsArray($document);
+            self::assertSame(['-f', 'text', '--detail=all'], \array_slice($document['argv'], -3));
+            self::assertSame(0, DeclaredSurfaces::load($root . '/finding-gate')->count());
+            self::assertArrayHasKey('case:alpha|format:text-verbose', $capture->artifacts);
+            $historical = json_decode($capture->artifacts['case:alpha|format:text-verbose'], true, 512, \JSON_THROW_ON_ERROR);
+            self::assertIsArray($historical);
+            self::assertSame(['-f', 'text-verbose'], \array_slice($historical['argv'], -2));
+            self::assertArrayHasKey('case:alpha|exit:format:text-verbose', $capture->artifacts);
+            self::assertArrayHasKey('case:alpha|stderr:format:text-verbose', $capture->artifacts);
+        } finally {
+            SyntheticTree::remove($root);
+            Fs::removeRecursively($temporary);
+        }
+    }
+
+    #[Test]
     public function itSharesLiveCaptureRolesAndReleasesTheirRun(): void
     {
         $root = SyntheticTree::create(SyntheticTree::clean());
@@ -151,9 +179,10 @@ final class CaptureTest extends TestCase
     #[Group('finding-gate-e2e')]
     public function itDerivesNormalizationOnlyAfterValidatingFullPhysicalAndRefusalCaptures(): void
     {
-        foreach (['healthy', 'physical-count', 'refusal-exit'] as $fault) {
-            if ($fault === 'refusal-exit') {
+        foreach (['healthy', 'physical-count', 'whole-private-slot'] as $fault) {
+            if ($fault === 'whole-private-slot') {
                 $tree = SelfTestOutcomes::fixture();
+                unset($tree['candidateDeclarations'][\QmxFindingGate\DeclaredOutcomes::INDEX], $tree['candidateDeclarations']['declared-outcomes/alpha.json']);
                 $tree['candidateAnswers']['case:alpha|format:json']['ranked'] = ['exit' => 2];
             } else {
                 $tree = SyntheticTree::clean();
@@ -178,7 +207,7 @@ final class CaptureTest extends TestCase
                     $output = ob_get_clean();
                 }
                 self::assertIsString($output);
-                if ($fault === 'healthy') {
+                if ($fault !== 'physical-count') {
                     self::assertSame(GateModes::WROTE, $exit, $output);
                     self::assertSame(GateReport::VERDICT_GREEN, $report->verdict(), $report->render());
                     self::assertNotSame($before, Fs::read($path));
@@ -238,21 +267,16 @@ final class CaptureTest extends TestCase
     }
 
     #[Test]
-    public function itRefusesUnreadableHtmlWithoutItsExactReportedPredecessor(): void
+    public function itKeepsUnreadableHtmlAsWholeBytesWithoutAReportedPredecessor(): void
     {
         $key = 'case:alpha|format:html';
-        foreach ([null, [FailureClass::REPORT_PAYLOAD_UNREADABLE, 'case:beta|format:html'], [FailureClass::ENV_MISMATCH, $key]] as $predecessor) {
+        foreach ([null, [FailureClass::SURFACE_MISMATCH, 'case:beta|format:html'], [FailureClass::ENV_MISMATCH, $key]] as $predecessor) {
             $report = new GateReport();
             if ($predecessor !== null) {
                 $report->fail($predecessor[0], $predecessor[1], 'An unrelated recorded refusal.');
             }
             $check = new NormalizationCheck(Options::parse(['gate', '--reference=HEAD'], \dirname(__DIR__, 3)), $report, Normalization::fromRules([]));
-            try {
-                $check->checkRun([$key => '<html>no payload</html>'], []);
-                self::fail('An unreadable HTML surface had no exact reported predecessor.');
-            } catch (GateError $error) {
-                self::assertStringContainsString('carries no `report-data` payload', $error->getMessage());
-            }
+            $check->checkRun([$key => '<html>no payload</html>'], []);
             self::assertCount($predecessor === null ? 0 : 1, $report->raised());
         }
     }
@@ -262,7 +286,7 @@ final class CaptureTest extends TestCase
     {
         $key = 'case:alpha|format:html';
         $report = new GateReport();
-        $report->fail(FailureClass::REPORT_PAYLOAD_UNREADABLE, $key, 'The already reported unreadable publication.');
+        $report->fail(FailureClass::SURFACE_MISMATCH, $key, 'The already reported whole publication difference.');
         $normalization = Normalization::fromRules([new NormalizationRule('format:json', 'violations', NormalizationRule::KIND_JSON_PATH, 'Measured neighboring record deletion.')]);
         $check = new NormalizationCheck(Options::parse(['gate', '--reference=HEAD'], \dirname(__DIR__, 3)), $report, $normalization);
         try {
@@ -272,9 +296,9 @@ final class CaptureTest extends TestCase
         }
         self::assertSame(GateReport::EXIT_RED, $report->exitCode());
         self::assertCount(2, $report->raised());
-        self::assertSame(FailureClass::REPORT_PAYLOAD_UNREADABLE, $report->raised()[0]['class']);
+        self::assertSame(FailureClass::SURFACE_MISMATCH, $report->raised()[0]['class']);
         self::assertSame($key, $report->raised()[0]['scope']);
-        self::assertSame('The already reported unreadable publication.', $report->raised()[0]['detail']);
+        self::assertSame('The already reported whole publication difference.', $report->raised()[0]['detail']);
         self::assertSame(FailureClass::NORMALIZATION_OVERREACH, $report->raised()[1]['class']);
         self::assertSame('candidate / case:beta|format:json', $report->raised()[1]['scope']);
     }
@@ -407,19 +431,26 @@ final class CaptureTest extends TestCase
                 $reference[$surface] = '';
                 $reference[$exitKey] = '1';
             }
+            $recordTransitions = array_values(array_filter($transitions, static fn(array $transition): bool => $transition[0] !== 'baseline:explain'));
             self::declareCaptureExits($root, array_map(
                 static fn(array $transition): array => ['exit', $transition[0], $transition[1], '1', '0'],
-                $transitions,
-            ), array_column($transitions, 0));
+                $recordTransitions,
+            ), array_column($recordTransitions, 0));
             $run = self::captureContext($root, $temporary);
+            $explanation = 'case:alpha|explain:file:src/Alpha.php';
+            $run->publicationForms->supply('candidate', [$explanation => $candidate[$explanation]]);
+            $run->publicationForms->supply('reference', [$explanation => $reference[$explanation]]);
+            self::assertSame('whole-invocation', $run->publicationForms->of('candidate', $explanation));
+            self::assertSame('whole-invocation', $run->publicationForms->of('reference', $explanation));
+            self::assertFalse($run->publicationForms->recordInvocation($explanation));
             $values = ValueCheck::create($run);
             foreach ($transitions as [$command, $surface, $exitKey]) {
                 $pair = new SurfacePair($exitKey, \QmxFindingGate\Surfaces::surfaceClass($exitKey), '0', '1');
                 ValueStage::create($run)->applyStage($pair);
-                self::assertSame('1', $pair->candidate);
+                self::assertSame($command === 'baseline:explain' ? '0' : '1', $pair->candidate, $command);
             }
             foreach ($transitions as [$command, $surface]) {
-                self::assertSame('1', $values->referenceExitFor($command, $surface, '0'));
+                self::assertSame($command === 'baseline:explain' ? null : '1', $values->referenceExitFor($command, $surface, '0'), $command);
             }
             CaptureCheck::create($run)->checkRun($candidate, $reference);
             $values->checkRun($candidate, $reference);
@@ -773,19 +804,63 @@ final class CaptureTest extends TestCase
             SyntheticTree::remove($root);
         }
 
-        $tree = SyntheticTree::clean();
-        $tree['declarations']['cases/alpha/case.json'] = json_encode(['id' => 'alpha', 'description' => 'A refused input.', 'paths' => ['src'], 'config' => 'qmx.yaml', 'channels' => ['replay.alpha@callable'], 'outcome' => ['kind' => 'refusal', 'exit' => 3]], \JSON_THROW_ON_ERROR);
-        $tree['candidateAnswers']['case:alpha|format:json'] = ['stdout' => 'refused', 'stderr' => 'input refused', 'exit' => 3, 'ranked' => ['stdout' => 'refused']];
-        $root = SyntheticTree::create($tree);
-        $temporary = Fs::temporaryDirectory('refusal-ranking-capture-');
-        try {
-            $corpus = Corpus::load($root);
-            $capture = (new TreeRun($root, $temporary, 'candidate', RenameMaps::fromPairs([]), false, CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0]);
-            self::assertSame(['stdout' => 'refused', 'stderr' => 'input refused', 'exit' => 3], $capture->rankings['case:alpha|format:json']['ranked']);
-            self::assertNull($capture->rankings['case:alpha|format:json']['physical']);
-        } finally {
-            Fs::removeRecursively($temporary);
-            SyntheticTree::remove($root);
+        foreach (['candidate', 'reference'] as $side) {
+            foreach (['missing file', 'empty file'] as $defect) {
+                $tree = SyntheticTree::captureFixture();
+                $tree['answers']['case:alpha|check:output'] = $defect === 'missing file'
+                    ? ['stdout' => '', 'missingFile' => true]
+                    : ['stdout' => '', 'file' => ''];
+                $root = SyntheticTree::create($tree);
+                $temporary = Fs::temporaryDirectory('successful-output-destination-');
+                try {
+                    $corpus = Corpus::load($root);
+                    try {
+                        (new TreeRun($root, $temporary, $side, RenameMaps::fromPairs([]), false, CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0]);
+                        self::fail('A successful output publication with a ' . $defect . ' was accepted for ' . $side . '.');
+                    } catch (GateError $error) {
+                        self::assertSame('The output publication is missing, empty, or does not name exactly the chosen file for case:alpha|check:output.', $error->getMessage());
+                    }
+                } finally {
+                    Fs::removeRecursively($temporary);
+                    SyntheticTree::remove($root);
+                }
+            }
+
+            foreach (['missing file', 'empty file'] as $defect) {
+                $tree = SyntheticTree::captureFixture();
+                $refusal = '{"error":"Refused input","exit_code":1}';
+                $tree['answers']['case:alpha|format:json'] = ['stdout' => $refusal, 'stderr' => 'input refused', 'exit' => 1];
+                $tree['answers']['case:alpha|check:output'] = $defect === 'missing file'
+                    ? ['stdout' => '', 'stderr' => 'input refused', 'exit' => 1, 'missingFile' => true]
+                    : ['stdout' => '', 'stderr' => 'input refused', 'exit' => 1, 'file' => ''];
+                $tree['answers']['case:alpha|baseline-file'] = ['stdout' => '', 'stderr' => 'input refused', 'exit' => 1, 'missingFile' => true];
+                foreach (['baseline:update', 'baseline:cleanup', 'baseline:rename-channels'] as $command) {
+                    $tree['answers']['case:alpha|' . $command] = ['stdout' => 'input refused', 'stderr' => 'input refused', 'exit' => 1, 'missingFile' => true];
+                }
+                $root = SyntheticTree::create($tree);
+                $temporary = Fs::temporaryDirectory('whole-ranking-capture-');
+                try {
+                    $corpus = Corpus::load($root);
+                    $capture = (new TreeRun($root, $temporary, $side, RenameMaps::fromPairs([]), false, CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0]);
+                    self::assertArrayNotHasKey('case:alpha|format:json', $capture->rankings);
+                    self::assertArrayNotHasKey('case:alpha|format:json', $capture->baselineEligibility);
+                    self::assertSame($refusal, $capture->artifacts['case:alpha|format:json']);
+                    self::assertSame('1', $capture->artifacts['case:alpha|exit:format:json']);
+                    self::assertSame('input refused', $capture->artifacts['case:alpha|stderr:format:json']);
+                    self::assertSame('', $capture->artifacts['case:alpha|check:output']);
+                    self::assertSame('1', $capture->artifacts['case:alpha|exit:check:output']);
+                    self::assertSame('input refused', $capture->artifacts['case:alpha|stderr:check:output']);
+                    self::assertSame('', $capture->artifacts['case:alpha|check:output:file']);
+                    self::assertSame('', $capture->artifacts['case:alpha|baseline-file']);
+                    foreach (['baseline:update', 'baseline:cleanup', 'baseline:rename-channels'] as $command) {
+                        self::assertSame('1', $capture->artifacts['case:alpha|exit:' . $command]);
+                        self::assertSame('', $capture->artifacts['case:alpha|' . $command . ':file']);
+                    }
+                } finally {
+                    Fs::removeRecursively($temporary);
+                    SyntheticTree::remove($root);
+                }
+            }
         }
     }
 
@@ -826,7 +901,11 @@ final class CaptureTest extends TestCase
     public function itUsesOnlyTheSupportedArgumentsOfEachProductCommand(): void
     {
         $tree = SyntheticTree::captureFixture();
-        foreach (['directives', 'graph:export', 'rules', 'debug:layer-assignment:Replay\\Alpha', 'check:parallel', 'check:baseline-source', 'baseline-file'] as $surface) {
+        $measuredArguments = ['--preset=strict', '--disable-rule=code-smell.debug', '--rule-opt=complexity.ccn:callable.warning=3'];
+        $definition = json_decode($tree['declarations']['cases/alpha/case.json'], true, 512, \JSON_THROW_ON_ERROR);
+        $definition['args'] = ['--namespace=subtree:Replay', '--show-suppressed', ...$measuredArguments];
+        $tree['declarations']['cases/alpha/case.json'] = json_encode($definition, \JSON_THROW_ON_ERROR) . "\n";
+        foreach (['directives', 'graph:export', 'rules', 'debug:layer-assignment:Replay\\Alpha', 'check:parallel', 'check:baseline-source', 'baseline-file', 'explain:file:src/Alpha.php', 'check:baseline'] as $surface) {
             $tree['candidateAnswers']['case:alpha|' . $surface] = ['env' => true];
         }
         $root = SyntheticTree::create($tree);
@@ -844,18 +923,24 @@ final class CaptureTest extends TestCase
             self::assertStringStartsWith($temporary . '/inputs-candidate-', $mainDirectory);
             self::assertNotSame($case->directory, $mainDirectory);
             self::assertFileExists($mainDirectory . '/qmx.yaml');
-            self::assertSame(['directives', 'src', '--no-ansi', '-c', 'qmx.yaml', '--format=json'], $read('directives')['argv']);
+            self::assertSame(['directives', 'src', '--no-ansi', '-c', 'qmx.yaml', ...$measuredArguments, '--format=json'], $read('directives')['argv']);
             self::assertSame(['debug:layer-assignment', 'Replay\\Alpha', '-c', 'qmx.yaml', '--format=json', '--no-ansi'], $read('debug:layer-assignment:Replay\\Alpha')['argv']);
             self::assertContains('--workers=2', $read('check:parallel')['argv']);
             self::assertNotContains('--workers=0', $read('check:parallel')['argv']);
             self::assertContains('--no-cache', $read('check:parallel')['argv']);
+            foreach (['--namespace=subtree:Replay', '--show-suppressed', ...$measuredArguments] as $argument) {
+                self::assertContains($argument, $read('check:parallel')['argv']);
+                self::assertContains($argument, $read('check:baseline')['argv']);
+            }
+            self::assertSame(['baseline:explain', 'file:src/Alpha.php', 'src', '--no-ansi', '-c', 'qmx.yaml', ...$measuredArguments], $read('explain:file:src/Alpha.php')['argv']);
             $baseline = $read('baseline-file');
             self::assertSame('baseline:generate', $baseline['argv'][0]);
+            self::assertSame(['src', '--no-ansi', '-c', 'qmx.yaml', ...$measuredArguments], \array_slice($baseline['argv'], 2));
             $source = $read('check:baseline-source');
             self::assertSame($baseline['cwd'], $source['cwd']);
             self::assertStringStartsWith($temporary . '/inputs-candidate-', $source['cwd']);
             self::assertNotSame($mainDirectory, $source['cwd']);
-            self::assertSame(['check', 'src', '--workers=0', '--no-cache', '--no-ansi', '--fail-on=error', '-c', 'qmx.yaml', '-f', 'json'], $source['argv']);
+            self::assertSame(['check', 'src', '--workers=0', '--no-cache', '--no-ansi', '--fail-on=error', '-c', 'qmx.yaml', ...$measuredArguments, '-f', 'json'], $source['argv']);
             self::assertNotSame($case->directory, $baseline['cwd']);
             self::assertFileExists($baseline['cwd'] . '/src/Alpha.php');
             self::assertStringStartsWith($temporary . '/capture-candidate-cache-', $baseline['cache']);
@@ -871,7 +956,7 @@ final class CaptureTest extends TestCase
     public function itSkipsIntroducedInvocationsOnTheReferenceSide(): void
     {
         $tree = SyntheticTree::clean();
-        $tree['candidateDeclarations'][DeclaredSurfaces::INDEX] = "change\tsurface\tfile\treason\nintroduced\tformat:health\t-\tnew publication\n";
+        $tree['candidateDeclarations'][DeclaredSurfaces::INDEX] = "change\tsurface\tfile\tcases\treason\nintroduced\tformat:health\t-\t*\tnew publication\n";
         $root = SyntheticTree::create($tree);
         $temporary = Fs::temporaryDirectory('capture-sides-');
         try {

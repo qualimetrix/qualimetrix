@@ -11,14 +11,13 @@ use QmxFindingGate\Wiring;
  * The controls, as a list.
  *
  * The suite combines negative controls for declared deltas, reference
- * vocabulary, excessive deltas, lost multi-level coverage, fingerprints,
+ * vocabulary, excessive deltas, lost multi-level coverage, unmapped channels,
  * splits, aggregate spellings, licensed field moves, derivation failures and
  * undeclared report-value renames. Green controls prove the environment works
  * and that declared renames are absorbed only by their declarations. They also
- * cover root configuration keys, report-value translations, occurrence hashes
- * that must remain stable
- * ({@see FingerprintControls::occurrenceFrozenUnderDeclaredRename()}), and
- * published-order permutations ({@see FindingControls::publishedOrderPermuted()}).
+ * cover root configuration keys and published-order permutations
+ * ({@see FindingControls::publishedOrderPermuted()}). The declared report-value translation remains effective
+ * for JSON record pairs; its whole UTF-8 suppressed publication is a typed RED, not a global GREEN.
  * Each subject's controls live in its own class; this one fixes their order,
  * which is the order of the harness's table.
  *
@@ -65,8 +64,6 @@ final class Controls
             DeclaredDeltaControls::deltaTooLarge(),
             RenameControls::referenceInputUntranslated(),
             FingerprintControls::fingerprintUnexplained(),
-            FingerprintControls::fingerprintDeclaredRename(),
-            FingerprintControls::occurrenceFrozenUnderDeclaredRename(),
             FindingControls::publishedOrderPermuted(),
             RenameControls::splitRowIdle(),
             RenameControls::movedAggregatedSpelling(),

@@ -42,7 +42,7 @@ vendor/bin/qmx check src/ --preset=strict              # built-in preset (also: 
 vendor/bin/qmx check src/ --fail-on=warning            # exit code threshold for CI (none|warning|error, default: error)
 ```
 
-Output formats: `summary` (default), `text`, `json`, `checkstyle`, `sarif`, `gitlab`, `github`, `metrics`, `health` (text table), `html` (interactive treemap), `suppressed` (machine-readable composition of what was suppressed and why), `text-verbose` (deprecated, use `text --detail`).
+Output formats: `summary` (default), `text`, `json`, `checkstyle`, `sarif`, `gitlab`, `github`, `metrics`, `health` (text table), `html` (interactive treemap), `suppressed` (machine-readable composition of what was suppressed and why).
 
 Presets: `strict` (greenfield, tight thresholds), `legacy` (relaxed thresholds), `ci`. Composable: `--preset=strict,ci`.
 
@@ -80,3 +80,13 @@ Suppression: Tags start a physical comment line after decoration: `@qmx-ignore` 
 - [Remediation Time](https://qualimetrix.dev/reference/remediation-time/): Estimated fix time per rule
 - [Other CI Systems](https://qualimetrix.dev/ci-cd/other-ci/): GitLab CI, Jenkins, Bitbucket Pipelines
 - [Usage Scenarios](https://qualimetrix.dev/usage/usage-scenarios/): Common workflows and use cases
+
+Analysis exit codes: 0 clean, 1 warnings under fail-on=warning, 2 errors,
+3 input/environment refusal, 4 incomplete analysis, 5 internal error.
+Text details: use `--format=text --detail=all`; text-verbose is removed.
+Namespace drill-down selects physical-file findings if any declared namespace
+matches; class selection excludes file aggregates. Suppression documents stay
+whole-run and refuse drill-down selectors. Reinstall old generated hooks with
+`qmx hook:install --force` after upgrading the exit-code contract.
+Malformed source bytes display as `%XX`, with a repair count on stderr.
+Canonical subjects preserve exact bytes; display file names are not identities.

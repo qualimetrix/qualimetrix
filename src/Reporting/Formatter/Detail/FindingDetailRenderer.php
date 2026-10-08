@@ -104,7 +104,7 @@ final class FindingDetailRenderer
             GroupBy::Rule => \sprintf('%s (%d)', $color->bold($this->nonEmptyKey($key, '<unknown>')), $count),
             GroupBy::Severity => \sprintf('%s (%d)', $this->formatSeverityLabel($key, $color), $count),
             GroupBy::ClassName => $this->formatCountedGroupHeader($key, '<unknown>', $count, $color),
-            GroupBy::NamespaceName => $this->formatCountedGroupHeader($key, '<global>', $count, $color),
+            GroupBy::NamespaceName => $this->formatCountedGroupHeader($key, '(global)', $count, $color),
             GroupBy::None => throw new LogicException('GroupBy::None is handled by renderFlat()'),
         };
     }
@@ -147,9 +147,16 @@ final class FindingDetailRenderer
         }
         $lines[] = $line;
 
-        $message = PublishedFinding::advice($finding);
+        $message = $finding->message;
         $ruleCode = $color->dim('[' . $finding->code . ']');
         $lines[] = \sprintf('    %s  %s', $message, $ruleCode);
+        if ($finding->recommendation !== null) {
+            $lines[] = '    Recommendation: ' . $finding->recommendation;
+        }
+        $baseline = \Qualimetrix\Reporting\Formatter\AcceptedLevelNarrator::describe($finding);
+        if ($baseline !== null) {
+            $lines[] = '    ' . $baseline;
+        }
         $lines[] = '';
     }
 
@@ -175,7 +182,7 @@ final class FindingDetailRenderer
     private function formatFullLocation(Finding $finding, FormatterContext $context): string
     {
         if ($finding->location->file === null) {
-            return '[project]';
+            return PublishedFinding::place($finding)->name;
         }
 
         $file = $context->relativizePath($finding->location->file);

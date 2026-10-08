@@ -21,9 +21,9 @@ final class CoverageControls
      * the authoritative owner of `code-smell.unreachable-code`. The auxiliary
      * `smells` and `detectors` cases may also fire it, but cannot satisfy
      * coverage after the authoritative evidence is removed.
-     * Nothing is tolerated: both sides
-     * run the candidate's corpus, so a fixture missing from it is missing from
-     * both, and no surface or count can differ.
+     * Both sides run the candidate's corpus, so a fixture missing from it is
+     * missing from both. The complete measured field table changes with that
+     * corpus input and is the sole tolerated declaration effect.
      *
      * A `map-stale` toleration comes and goes with the step's own map, and it is
      * gone again. It sits here only while some declared row is translated by
@@ -53,6 +53,7 @@ final class CoverageControls
                 new Expectation(FailureClass::COVERAGE_SHORTFALL, 'corpus'),
                 new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:detectors-smells'),
             ],
+            [new Expectation(FailureClass::FIELD_VALUES_MISMATCH, 'declared-fields.derived.tsv', exactScope: true)],
         );
     }
 
@@ -82,8 +83,9 @@ final class CoverageControls
      * that fires them, and this drops one level of one channel and nothing else —
      * measured, the channel set is identical before and after.
      *
-     * Nothing is tolerated, and the absence of `coverage-shortfall` from the
-     * expectations is the assertion. Coverage now counts declared
+     * The complete measured field table is the sole tolerated declaration
+     * effect. The absence of `coverage-shortfall` from the expectations is the
+     * assertion. Coverage now counts declared
      * channel-and-level pairs, and for the run-time family the declaration *is*
      * the case's own resolved configuration — the very thing this mutation edits
      * — so the declared pair and its evidence leave together and no shortfall can
@@ -105,6 +107,7 @@ final class CoverageControls
                 'the corpus\' user-defined computed metric stops being computed per class, and keeps firing per namespace and project',
             ),
             [new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:health')],
+            [new Expectation(FailureClass::FIELD_VALUES_MISMATCH, 'declared-fields.derived.tsv', exactScope: true)],
         );
     }
 }

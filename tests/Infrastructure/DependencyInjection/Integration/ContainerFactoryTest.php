@@ -777,8 +777,7 @@ PHP;
             );
         }
 
-        // text-verbose is registered but hidden from getAvailableNames() (deprecated)
-        self::assertTrue($registry->has('text-verbose'), 'Deprecated text-verbose formatter should still be registered');
+        self::assertFalse($registry->has('text-verbose'));
 
         // Verify we have exactly the expected number of public formatters
         self::assertCount(

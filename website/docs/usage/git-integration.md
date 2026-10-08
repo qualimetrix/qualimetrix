@@ -75,6 +75,13 @@ policy as file output, and writable exposure is reported once per target.
 
 ---
 
+The generated hook keeps the analysis exit code. Codes 1/2 mean measured
+findings and can recommend reviewing a baseline; 3/4/5 mean refusal, incomplete
+analysis or internal failure and give no baseline advice. An older owned hook
+is reported by `hook:status` as `Revision: outdated` with informational exit 0.
+After upgrading, run `qmx hook:install --force`. A template revision marker
+identifies the generating template, not arbitrary edits retaining that marker.
+
 ## PR workflow with --report
 
 The `--report` option limits publication relative to a Git reference, retaining the namespace/project results and configuration diagnostics described below:

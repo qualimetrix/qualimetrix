@@ -1,0 +1,206 @@
+--- candidate
++++ reference (mapped)
+@@ -1,57 +1,44 @@
+-visible 3991
+-src/Credentials.php (2 violations)
+-  ERROR at line 7  Credentials
+-    Hardcoded credential in property default — use environment variables or a secrets manager  [security.hardcoded-credentials]
+-    Recommendation: Move secrets to environment variables or a secrets manager.
+-
+-  ERROR at line 10  Credentials
+-    Hardcoded credential in class constant — use environment variables or a secrets manager  [security.hardcoded-credentials]
+-    Recommendation: Move secrets to environment variables or a secrets manager.
+-
+-src/Login.php (2 violations)
+-  WARN at line 7  Login::authenticate
+-    Sensitive parameter missing #[\SensitiveParameter] attribute — add it to prevent credential leakage in stack traces  [security.sensitive-parameter]
+-    Recommendation: Add #[\SensitiveParameter] attribute to prevent credential leakage in stack traces.
+-
+-  WARN at line 7  Login::authenticate
+-    Sensitive parameter missing #[\SensitiveParameter] attribute — add it to prevent credential leakage in stack traces  [security.sensitive-parameter]
+-    Recommendation: Add #[\SensitiveParameter] attribute to prevent credential leakage in stack traces.
+-
+-src/Output.php (2 violations)
+-  ERROR at line 9  Output::greet
+-    Potential XSS — use htmlspecialchars() or equivalent before outputting user input ($_GET)  [security.xss]
+-    Recommendation: Escape output with htmlspecialchars() or use a template engine with auto-escaping.
+-
+-  WARN at line 9  Output::greet
+-    Direct superglobal access detected - use dependency injection  [code-smell.superglobals]
+-    Recommendation: Use dependency injection or a request object instead of direct superglobal access.
+-
+-src/Queries.php (5 violations)
+-  ERROR at line 9  Queries::byId
+-    Potential SQL injection — use parameterized queries instead of direct superglobal interpolation ($_GET)  [security.sql-injection]
+-    Recommendation: Use parameterized queries or prepared statements.
+-
+-  ERROR at line 14  Queries::byName
+-    Potential SQL injection — use parameterized queries instead of direct superglobal interpolation ($_POST)  [security.sql-injection]
+-    Recommendation: Use parameterized queries or prepared statements.
+-
+-  WARN at line 9  Queries::byId
+-    Direct superglobal access detected - use dependency injection  [code-smell.superglobals]
+-    Recommendation: Use dependency injection or a request object instead of direct superglobal access.
+-
+-  WARN at line 14  Queries::byName
+-    Direct superglobal access detected - use dependency injection  [code-smell.superglobals]
+-    Recommendation: Use dependency injection or a request object instead of direct superglobal access.
+-
+-  WARN at line 18
+-    Direct superglobal access detected - use dependency injection  [code-smell.superglobals]
+-    Recommendation: Use dependency injection or a request object instead of direct superglobal access.
+-
+-src/Shell.php (2 violations)
+-  ERROR at line 9  Shell::listDir
+-    Potential command injection — use escapeshellarg() before passing user input to shell commands ($_GET)  [security.command-injection]
+-    Recommendation: Use escapeshellarg() for arguments or avoid shell commands entirely.
+-
+-  WARN at line 9  Shell::listDir
+-    Direct superglobal access detected - use dependency injection  [code-smell.superglobals]
+-    Recommendation: Use dependency injection or a request object instead of direct superglobal access.
++visible 2593
++src/Credentials.php (2 violations)
++  ERROR at line 7  Credentials
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++  ERROR at line 10  Credentials
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++src/Login.php (2 violations)
++  WARN at line 7  Login::authenticate
++    Add #[\SensitiveParameter] attribute to prevent credential leakage in stack traces.  [security.sensitive-parameter]
++
++  WARN at line 7  Login::authenticate
++    Add #[\SensitiveParameter] attribute to prevent credential leakage in stack traces.  [security.sensitive-parameter]
++
++src/Output.php (2 violations)
++  ERROR at line 9  Output::greet
++    Escape output with htmlspecialchars() or use a template engine with auto-escaping.  [security.xss]
++
++  WARN at line 9  Output::greet
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++src/Queries.php (5 violations)
++  ERROR at line 9  Queries::byId
++    Use parameterized queries or prepared statements.  [security.sql-injection]
++
++  ERROR at line 14  Queries::byName
++    Use parameterized queries or prepared statements.  [security.sql-injection]
++
++  WARN at line 9  Queries::byId
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 14  Queries::byName
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 18
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++src/Shell.php (2 violations)
++  ERROR at line 9  Shell::listDir
++    Use escapeshellarg() for arguments or avoid shell commands entirely.  [security.command-injection]
++
++  WARN at line 9  Shell::listDir
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
+@@ -71,57 +58,44 @@
+-invocation-format:text-detail 3991
+-src/Credentials.php (2 violations)
+-  ERROR at line 7  Credentials
+-    Hardcoded credential in property default — use environment variables or a secrets manager  [security.hardcoded-credentials]
+-    Recommendation: Move secrets to environment variables or a secrets manager.
+-
+-  ERROR at line 10  Credentials
+-    Hardcoded credential in class constant — use environment variables or a secrets manager  [security.hardcoded-credentials]
+-    Recommendation: Move secrets to environment variables or a secrets manager.
+-
+-src/Login.php (2 violations)
+-  WARN at line 7  Login::authenticate
+-    Sensitive parameter missing #[\SensitiveParameter] attribute — add it to prevent credential leakage in stack traces  [security.sensitive-parameter]
+-    Recommendation: Add #[\SensitiveParameter] attribute to prevent credential leakage in stack traces.
+-
+-  WARN at line 7  Login::authenticate
+-    Sensitive parameter missing #[\SensitiveParameter] attribute — add it to prevent credential leakage in stack traces  [security.sensitive-parameter]
+-    Recommendation: Add #[\SensitiveParameter] attribute to prevent credential leakage in stack traces.
+-
+-src/Output.php (2 violations)
+-  ERROR at line 9  Output::greet
+-    Potential XSS — use htmlspecialchars() or equivalent before outputting user input ($_GET)  [security.xss]
+-    Recommendation: Escape output with htmlspecialchars() or use a template engine with auto-escaping.
+-
+-  WARN at line 9  Output::greet
+-    Direct superglobal access detected - use dependency injection  [code-smell.superglobals]
+-    Recommendation: Use dependency injection or a request object instead of direct superglobal access.
+-
+-src/Queries.php (5 violations)
+-  ERROR at line 9  Queries::byId
+-    Potential SQL injection — use parameterized queries instead of direct superglobal interpolation ($_GET)  [security.sql-injection]
+-    Recommendation: Use parameterized queries or prepared statements.
+-
+-  ERROR at line 14  Queries::byName
+-    Potential SQL injection — use parameterized queries instead of direct superglobal interpolation ($_POST)  [security.sql-injection]
+-    Recommendation: Use parameterized queries or prepared statements.
+-
+-  WARN at line 9  Queries::byId
+-    Direct superglobal access detected - use dependency injection  [code-smell.superglobals]
+-    Recommendation: Use dependency injection or a request object instead of direct superglobal access.
+-
+-  WARN at line 14  Queries::byName
+-    Direct superglobal access detected - use dependency injection  [code-smell.superglobals]
+-    Recommendation: Use dependency injection or a request object instead of direct superglobal access.
+-
+-  WARN at line 18
+-    Direct superglobal access detected - use dependency injection  [code-smell.superglobals]
+-    Recommendation: Use dependency injection or a request object instead of direct superglobal access.
+-
+-src/Shell.php (2 violations)
+-  ERROR at line 9  Shell::listDir
+-    Potential command injection — use escapeshellarg() before passing user input to shell commands ($_GET)  [security.command-injection]
+-    Recommendation: Use escapeshellarg() for arguments or avoid shell commands entirely.
+-
+-  WARN at line 9  Shell::listDir
+-    Direct superglobal access detected - use dependency injection  [code-smell.superglobals]
+-    Recommendation: Use dependency injection or a request object instead of direct superglobal access.
++invocation-format:text-detail 2593
++src/Credentials.php (2 violations)
++  ERROR at line 7  Credentials
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++  ERROR at line 10  Credentials
++    Move secrets to environment variables or a secrets manager.  [security.hardcoded-credentials]
++
++src/Login.php (2 violations)
++  WARN at line 7  Login::authenticate
++    Add #[\SensitiveParameter] attribute to prevent credential leakage in stack traces.  [security.sensitive-parameter]
++
++  WARN at line 7  Login::authenticate
++    Add #[\SensitiveParameter] attribute to prevent credential leakage in stack traces.  [security.sensitive-parameter]
++
++src/Output.php (2 violations)
++  ERROR at line 9  Output::greet
++    Escape output with htmlspecialchars() or use a template engine with auto-escaping.  [security.xss]
++
++  WARN at line 9  Output::greet
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++src/Queries.php (5 violations)
++  ERROR at line 9  Queries::byId
++    Use parameterized queries or prepared statements.  [security.sql-injection]
++
++  ERROR at line 14  Queries::byName
++    Use parameterized queries or prepared statements.  [security.sql-injection]
++
++  WARN at line 9  Queries::byId
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 14  Queries::byName
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++  WARN at line 18
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]
++
++src/Shell.php (2 violations)
++  ERROR at line 9  Shell::listDir
++    Use escapeshellarg() for arguments or avoid shell commands entirely.  [security.command-injection]
++
++  WARN at line 9  Shell::listDir
++    Use dependency injection or a request object instead of direct superglobal access.  [code-smell.superglobals]

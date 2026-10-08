@@ -1,0 +1,16 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 847
++visible 723
+@@ -11,2 +11,1 @@
+-         discovery.unmatched-exclude: The exclude pattern "subtree:NoSuchDir" matched no entry in the project, so it leaves nothing out.
+-         Recommendation: Check "subtree:NoSuchDir" against project-relative entry paths. Exact selectors name one entry, subtree selectors include descendants, and regex selectors match the full path. Drop the entry if its target is gone.
++         discovery.unmatched-exclude: Check "subtree:NoSuchDir" against project-relative entry paths. Exact selectors name one entry, subtree selectors include descendants, and regex selectors match the full path. Drop the entry if its target is gone.
+@@ -18,1 +17,1 @@
+-invocation-format:summary 847
++invocation-format:summary 723
+@@ -28,2 +27,1 @@
+-         discovery.unmatched-exclude: The exclude pattern "subtree:NoSuchDir" matched no entry in the project, so it leaves nothing out.
+-         Recommendation: Check "subtree:NoSuchDir" against project-relative entry paths. Exact selectors name one entry, subtree selectors include descendants, and regex selectors match the full path. Drop the entry if its target is gone.
++         discovery.unmatched-exclude: Check "subtree:NoSuchDir" against project-relative entry paths. Exact selectors name one entry, subtree selectors include descendants, and regex selectors match the full path. Drop the entry if its target is gone.

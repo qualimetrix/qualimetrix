@@ -27,6 +27,7 @@ final class DeclaredDeltaCheck implements Derivation
         private readonly DeclaredDelta $declaredDelta,
         private readonly DeclaredFieldMoves $declaredFieldMoves,
         private readonly ChannelSplit $split,
+        private readonly ?RunContext $run = null,
     ) {}
 
     public function startDeriving(): void
@@ -152,8 +153,8 @@ final class DeclaredDeltaCheck implements Derivation
     {
         $fields = EquivalenceTuple::load($this->options->candidateRoot)->fields;
         $surface = Surfaces::surfaceClass($key);
-        $candidate = $this->comparedPublications($surface, $left);
-        $reference = $this->comparedPublications($surface, $right);
+        $candidate = $this->comparedPublications($surface, $left, $this->run?->publicationCodec('candidate') ?? ReportRecords::codecOf($this->options->candidateRoot));
+        $reference = $this->comparedPublications($surface, $right, $this->run?->publicationCodec('reference') ?? ReportRecords::codecOf($this->options->candidateRoot));
         $problems = [];
         foreach ($fields as $field) {
             $a = [];
@@ -192,7 +193,7 @@ final class DeclaredDeltaCheck implements Derivation
     }
 
     /** @return list<array<string,mixed>> */
-    private function comparedPublications(string $surface, string $text): array
+    private function comparedPublications(string $surface, string $text, string $codec): array
     {
         if (\in_array($surface, ['format:json', 'format:suppressed', 'format:sarif', 'format:gitlab'], true)) {
             $document = ReportRecords::decode($text);
@@ -222,7 +223,7 @@ final class DeclaredDeltaCheck implements Derivation
         if (\in_array($surface, ['format:html', 'format:sarif', 'format:gitlab'], true)) {
             $records = [];
             $aliases = match ($surface) {
-                'format:html' => ['ruleName' => 'rule', 'violationCode' => 'code', 'symbolPath' => 'symbol'],
+                'format:html' => $codec === 'current' ? [] : ['ruleName' => 'rule', 'violationCode' => 'code', 'symbolPath' => 'symbol'],
                 'format:sarif' => ['ruleId' => 'code', 'level' => 'severity'],
                 default => ['description' => 'message', 'check_name' => 'code'],
             };
@@ -248,7 +249,7 @@ final class DeclaredDeltaCheck implements Derivation
             return ReportRecords::checkstyle($text);
         }
         if (\in_array($surface, ProseRecords::SURFACES, true)) {
-            return array_column(ProseRecords::extract($surface, $text), 'fields');
+            return array_column(ProseRecords::extract($surface, $text, $codec), 'fields');
         }
         if ($surface === 'baseline-file') {
             $document = ReportRecords::decode($text);

@@ -39,7 +39,7 @@ final class MetricsJsonFormatterTest extends TestCase
     public function itPublishesTheDocumentationAddressesWithoutDisplacingEitherVersion(): void
     {
         $data = json_decode(
-            $this->formatter->format(new Report([], 0, 0, 0.0, 0, 0), new FormatterContext()),
+            $this->formatter->format(new Report([], 0, 0, 0.0, 0, 0), new FormatterContext())->body,
             true,
             512,
             \JSON_THROW_ON_ERROR,
@@ -80,7 +80,7 @@ final class MetricsJsonFormatterTest extends TestCase
             metrics: null,
         );
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame('1.0.0', $data['version']);
@@ -133,7 +133,7 @@ final class MetricsJsonFormatterTest extends TestCase
             metrics: $repository,
         );
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(2, $data['symbols']);
@@ -212,7 +212,7 @@ final class MetricsJsonFormatterTest extends TestCase
             metrics: $repository,
         );
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame(
@@ -251,7 +251,7 @@ final class MetricsJsonFormatterTest extends TestCase
             metrics: $repository,
         );
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame([], $data['symbols']);
@@ -291,7 +291,7 @@ final class MetricsJsonFormatterTest extends TestCase
             metrics: $repository,
         );
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(1, $data['symbols']);
@@ -340,7 +340,7 @@ final class MetricsJsonFormatterTest extends TestCase
             metrics: $repository,
         );
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(1, $data['symbols']);
@@ -369,7 +369,7 @@ final class MetricsJsonFormatterTest extends TestCase
             warningCount: 0,
         );
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         // Should not throw
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);

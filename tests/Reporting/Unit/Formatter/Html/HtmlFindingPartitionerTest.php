@@ -30,16 +30,42 @@ final class HtmlFindingPartitionerTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->partitioner = new HtmlFindingPartitioner();
+        $this->partitioner = new HtmlFindingPartitioner(new \Qualimetrix\Reporting\Formatter\FindingRecord(new \Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry(\Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry::alwaysHigherMagnitude(), \Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes::withRealValues()), new \Qualimetrix\Reporting\Formatter\Json\JsonSanitizer()));
     }
 
     // --- partition() tests ---
 
     #[Test]
+    public function itPlacesGlobalNamespaceAndFunctionFindingsOnTheGlobalNode(): void
+    {
+        $root = new HtmlTreeNode('Project', HtmlFindingPartitioner::ROOT, 'project');
+        $global = new HtmlTreeNode('(no namespace)', '(no namespace)', 'namespace');
+        $namespace = self::finding(Location::none(), SymbolPath::forNamespace(''), 'size.class-count', 'size.class-count', 'Global count', Severity::Warning);
+        $function = self::finding(Location::none(), SymbolPath::forGlobalFunction('', 'work'), 'complexity.ccn', 'complexity.ccn', 'Global function', Severity::Warning);
+        $result = $this->partitioner->partition([$namespace, $function], ['' => $root, '(no namespace)' => $global]);
+
+        self::assertSame(['(no namespace)' => [$namespace, $function]], $result);
+    }
+
+    #[Test]
+    public function itPublishesTheSameFindingRecordAsJson(): void
+    {
+        $node = new HtmlTreeNode('Shop', 'Shop', 'namespace');
+        $finding = self::finding(Location::none(), SymbolPath::forNamespace('Shop'), 'computed', 'health.cohesion', 'Low cohesion', Severity::Warning, 20, recommendation: 'Split the namespace.', threshold: 30);
+        $finding = $finding->reportedAsBreach(new \Qualimetrix\Analysis\Finding\Contract\AcceptedLevel([25], 1));
+        $this->partitioner->attach(['Shop' => $node], ['Shop' => [$finding]], new FormatterContext());
+        $registry = new \Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry(\Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry::alwaysHigherMagnitude(), \Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes::withRealValues());
+        $json = new \Qualimetrix\Reporting\Formatter\Json\JsonFindingSection($registry, new \Qualimetrix\Reporting\Formatter\Json\JsonSanitizer());
+        $expected = $json->format([$finding], new FormatterContext())[0];
+
+        self::assertSame($expected, $node->findings[0]);
+    }
+
+    #[Test]
     public function itPreservesBaselineStatusInTheHtmlPayload(): void
     {
         $node = new HtmlTreeNode('(project)', '(project)', 'project');
-        $base = self::finding(location: Location::none(), symbolPath: SymbolPath::forProject(), ruleName: 'health.overall', code: 'health.overall', message: 'low health', severity: Severity::Warning, metricValue: 20);
+        $base = self::finding(location: Location::none(), symbolPath: SymbolPath::forProject(), ruleName: 'computed', code: 'health.overall', message: 'low health', severity: Severity::Warning, metricValue: 20);
         $accepted = new \Qualimetrix\Analysis\Finding\Contract\AcceptedLevel([30], 1);
         $this->partitioner->attach(['(project)' => $node], ['(project)' => [$base, $base->reportedAsBreach($accepted), $base->reportedUncompared($accepted, 'exclusions-differ')]], new FormatterContext());
         self::assertNull($node->findings[0]['acceptedLevel']);
@@ -244,7 +270,7 @@ final class HtmlFindingPartitionerTest extends TestCase
         $v1 = self::finding(
             location: new Location(RelativePath::fromString('src/A/ClassA.php'), 10),
             symbolPath: SymbolPath::forClass('App\\A', 'ClassA'),
-            ruleName: 'r1',
+            ruleName: 'complexity.ccn',
             code: 'r1',
             message: 'm1',
             severity: Severity::Error,
@@ -252,7 +278,7 @@ final class HtmlFindingPartitionerTest extends TestCase
         $v2 = self::finding(
             location: new Location(RelativePath::fromString('src/A/ClassA.php'), 20),
             symbolPath: SymbolPath::forMethod('App\\A', 'ClassA', 'foo'),
-            ruleName: 'r2',
+            ruleName: 'complexity.ccn',
             code: 'r2',
             message: 'm2',
             severity: Severity::Warning,
@@ -321,13 +347,13 @@ final class HtmlFindingPartitionerTest extends TestCase
 
         self::assertCount(1, $node->findings);
         $v = $node->findings[0];
-        self::assertSame('complexity.ccn', $v['ruleName']);
-        self::assertSame('complexity.ccn', $v['violationCode']);
+        self::assertSame('complexity.ccn', $v['rule']);
+        self::assertSame('complexity.ccn', $v['code']);
         self::assertSame('Too complex', $v['message']);
         self::assertSame('Split the method', $v['recommendation']);
         self::assertSame('warning', $v['severity']);
         self::assertSame(15, $v['metricValue']);
-        self::assertSame('App\\Service', $v['symbolPath']);
+        self::assertSame('App\\Service', $v['symbol']);
         self::assertSame('src/Service.php', $v['file']);
         self::assertSame(10, $v['line']);
     }
@@ -345,7 +371,7 @@ final class HtmlFindingPartitionerTest extends TestCase
 
         self::assertSame($subject->toCanonical(), $node->findings[0]['subject']);
         self::assertSame($occurrence->value, $node->findings[0]['occurrence']);
-        self::assertSame($logical->toString(), $node->findings[0]['symbolPath']);
+        self::assertSame($logical->toString(), $node->findings[0]['symbol']);
     }
 
     #[Test]
@@ -390,7 +416,7 @@ final class HtmlFindingPartitionerTest extends TestCase
             [$firstSubject->toCanonical(), $secondSubject->toCanonical()],
             array_column($node->findings, 'subject'),
         );
-        self::assertSame([$logical->toString(), $logical->toString()], array_column($node->findings, 'symbolPath'));
+        self::assertSame([$logical->toString(), $logical->toString()], array_column($node->findings, 'symbol'));
     }
 
     #[Test]
@@ -401,7 +427,7 @@ final class HtmlFindingPartitionerTest extends TestCase
         $nanFinding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
-            ruleName: 'r1',
+            ruleName: 'complexity.ccn',
             code: 'r1',
             message: 'm1',
             severity: Severity::Warning,
@@ -411,7 +437,7 @@ final class HtmlFindingPartitionerTest extends TestCase
         $infFinding = self::finding(
             location: new Location(RelativePath::fromString('src/Service.php'), 20),
             symbolPath: SymbolPath::forClass('App', 'Service'),
-            ruleName: 'r2',
+            ruleName: 'complexity.ccn',
             code: 'r2',
             message: 'm2',
             severity: Severity::Warning,
@@ -437,7 +463,7 @@ final class HtmlFindingPartitionerTest extends TestCase
         $finding = self::finding(
             location: new Location(RelativePath::fromString('src/Other.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Other'),
-            ruleName: 'r1',
+            ruleName: 'complexity.ccn',
             code: 'r1',
             message: 'm1',
             severity: Severity::Warning,
@@ -460,7 +486,7 @@ final class HtmlFindingPartitionerTest extends TestCase
         $finding = self::finding(
             location: Location::none(),
             symbolPath: SymbolPath::forNamespace('App'),
-            ruleName: 'arch.circular',
+            ruleName: 'architecture.circular-dependency',
             code: 'arch.circular',
             message: 'Circular dependency',
             severity: Severity::Error,

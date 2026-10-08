@@ -75,9 +75,6 @@ abstract class BaselineCommand extends Command
 
             return $exitCode;
         } catch (RefusalInterface $refusal) {
-            // First clause: the carrier is a RuntimeException, and the split
-            // pair below would otherwise catch it and answer with code 1
-            // instead of 3.
             return $this->refusalPresenter->refusal($output, $format, $refusal);
         } catch (IncompleteAnalysisException $e) {
             return $this->fail($output, $e->getMessage(), $e, self::EXIT_ANALYSIS_INCOMPLETE);

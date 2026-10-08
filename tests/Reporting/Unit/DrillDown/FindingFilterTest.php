@@ -9,6 +9,9 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -163,6 +166,91 @@ final class FindingFilterTest extends TestCase
         $result = $this->filter->filterFindings($findings, $context);
 
         self::assertCount(1, $result);
+    }
+
+    #[Test]
+    public function itSelectsFileFindingsByEveryNamespaceDeclaredInTheirSource(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $file = RelativePath::fromString('src/Multi.php');
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('Shop\\Inner', 'First'), $file, DeclarationOrdinal::fromRank(0))),
+            new MetricBag(),
+            $file,
+            1,
+        );
+        $repository->add(SymbolPath::forClass('Other', 'Second'), new MetricBag(), $file, 10);
+        $finding = new Finding(
+            location: new Location($file, 3),
+            subject: MetricSubject::aggregate(SymbolPath::forFile($file)),
+            symbolPath: SymbolPath::forFile($file),
+            ruleName: 'duplication.clone',
+            code: 'duplication.clone',
+            message: 'Physical copy',
+            severity: Severity::Warning,
+        );
+        $index = FileNamespaceIndex::fromRepository($repository);
+
+        foreach ([
+            \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('Shop'),
+            \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact('Other'),
+        ] as $namespace) {
+            self::assertSame([$finding], $this->filter->filterFindings([$finding], new FormatterContext(namespace: $namespace), $index));
+        }
+        self::assertSame([], $this->filter->filterFindings([$finding], new FormatterContext(class: 'Shop\\Inner\\First'), $index));
+    }
+
+    #[Test]
+    public function itSelectsUndeclaredFileFindingsAsGlobalWithoutChangingTheirIdentity(): void
+    {
+        $file = RelativePath::fromString('src/Script.php');
+        $finding = new Finding(
+            location: new Location($file, 7),
+            subject: MetricSubject::aggregate(SymbolPath::forFile($file)),
+            symbolPath: SymbolPath::forFile($file),
+            ruleName: 'duplication.clone',
+            code: 'duplication.clone',
+            message: 'Physical copy',
+            severity: Severity::Warning,
+        );
+        $global = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::regex('.*'));
+        $shop = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('Shop'));
+
+        foreach ([null, FileNamespaceIndex::fromRepository(null)] as $index) {
+            self::assertSame([$finding], $this->filter->filterFindings([$finding], $global, $index));
+            self::assertSame([], $this->filter->filterFindings([$finding], $shop, $index));
+            self::assertSame([], $this->filter->filterFindings([$finding], new FormatterContext(class: 'Shop\\Cart'), $index));
+        }
+    }
+
+    #[Test]
+    public function itUsesADeclaredSubjectBeforeTheOtherNamespacesOfItsFile(): void
+    {
+        $file = RelativePath::fromString('src/Multi.php');
+        $subject = MetricSubject::declaration(DeclarationPath::of(
+            SymbolPath::forMethod('Shop', 'Cart', 'run'),
+            $file,
+            DeclarationOrdinal::fromRank(0),
+        ));
+        $finding = new Finding(
+            location: new Location($file, 7),
+            subject: $subject,
+            symbolPath: SymbolPath::forFile($file),
+            ruleName: 'code-smell.eval',
+            code: 'code-smell.eval',
+            message: 'Declared site',
+            severity: Severity::Warning,
+        );
+        $repository = new InMemoryMetricRepository();
+        $repository->add(SymbolPath::forClass('Other', 'Marker'), new MetricBag(), $file, 20);
+        $index = FileNamespaceIndex::fromRepository($repository);
+
+        self::assertSame([$finding], $this->filter->filterFindings([$finding], new FormatterContext(
+            namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact('Shop'),
+        ), $index));
+        self::assertSame([], $this->filter->filterFindings([$finding], new FormatterContext(
+            namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact('Other'),
+        ), $index));
     }
 
     // --- filterWorstOffenders ---

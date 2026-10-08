@@ -118,7 +118,7 @@ final class DirectivesCommand extends Command
                 'Exit codes: <info>0</info> no publishable refusal or observable inert directive,',
                 '<info>2</info> at least one publishable refusal or observable inert directive,',
                 '<info>3</info> input, configuration, or environment refusal, <info>4</info> incomplete run takes precedence',
-                'over those findings, and <info>1</info> if the command itself failed unexpectedly.',
+                'over those findings, and <info>5</info> if the command itself failed unexpectedly.',
                 '',
                 'Examples:',
                 '  <info>bin/qmx directives src/</info>',

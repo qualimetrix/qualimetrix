@@ -31,6 +31,21 @@ final class TopIssuesRendererTest extends TestCase
     }
 
     #[Test]
+    public function itKeepsTheNamespaceMessageAndRecommendationInTopIssues(): void
+    {
+        $finding = self::finding(Location::none(), SymbolPath::forNamespace('Shop'), 'computed', 'health.cohesion', 'Measured cohesion is low.', Severity::Warning, recommendation: 'Split the namespace.');
+        $report = new Report([$finding], 1, 0, 0, 0, 1, topIssues: [new RankedIssue($finding, 10, null, 5, 1)]);
+        $lines = [];
+        $this->renderer->render($report, new FormatterContext(useColor: false), $this->color, $lines);
+        $output = implode("\n", $lines);
+
+        self::assertStringContainsString('Shop', $output);
+        self::assertStringContainsString('Measured cohesion is low.', $output);
+        self::assertStringContainsString('Split the namespace.', $output);
+        self::assertStringNotContainsString('[project]', $output);
+    }
+
+    #[Test]
     public function itRendersTopIssues(): void
     {
         $report = new Report(
@@ -408,7 +423,7 @@ final class TopIssuesRendererTest extends TestCase
     }
 
     #[Test]
-    public function itPrefersRecommendationOverMessage(): void
+    public function itPublishesBothMessageAndRecommendation(): void
     {
         $finding = self::finding(
             location: new Location(RelativePath::fromString('project/src/Service.php'), 5),
@@ -441,7 +456,7 @@ final class TopIssuesRendererTest extends TestCase
 
         // Should show recommendation, not technical message
         self::assertStringContainsString('Class could be split into 3 cohesive parts', $output);
-        self::assertStringNotContainsString('LCOM4 value 3 exceeds threshold', $output);
+        self::assertStringContainsString('LCOM4 value 3 exceeds threshold', $output);
     }
 
     /**

@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\ValueReach;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
@@ -17,6 +18,7 @@ use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\EntryComparability;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\IncomparabilityReason;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\Region;
+use Qualimetrix\Analysis\Policy\Baseline\Ceiling\SubjectRegion;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
@@ -28,7 +30,11 @@ use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeSnapshot;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
 #[CoversClass(EntryComparability::class)]
@@ -86,13 +92,47 @@ final class EntryComparabilityTest extends TestCase
     #[Test]
     public function itComparesAnExactAnalyzedPresentFileWithoutComposerOrSnapshot(): void
     {
-        $file = RelativePath::fromString('src/Legacy.php');
         $baseline = self::baseline([], ['src']);
-        $tree = self::tree([$file], false);
-        $coverage = self::coverage([$file], ['src'], $baseline->exclusions, $tree);
+        $neighbor = RelativePath::fromString('src/Neighbor.php');
 
-        self::assertTrue(EntryComparability::judge(Region::file($file), $baseline, $coverage)->canCompare());
-        self::assertSame(0, $tree->snapshots);
+        foreach ([
+            'plain' => 'src/Plain.php',
+            'percent' => 'src/One%Two.php',
+            'hash' => 'src/One#Two.php',
+            'at' => 'src/One@Two.php',
+            'literal percent FF' => 'src/One%FF.php',
+            'raw FF byte' => "src/One\xFF.php",
+            'terminal hash ordinal spelling' => 'src/One.php#2',
+            'literal percent 23' => 'src/One%23.php',
+        ] as $spelling => $rawPath) {
+            $file = RelativePath::fromString($rawPath);
+            foreach ([
+                'file' => MetricSubject::aggregate(SymbolPath::forFile($file)),
+                'declaration first' => MetricSubject::declaration(DeclarationPath::of(
+                    SymbolPath::forClass('App', 'Example'),
+                    $file,
+                    DeclarationOrdinal::fromRank(0),
+                )),
+                'declaration ordinal 2' => MetricSubject::declaration(DeclarationPath::of(
+                    SymbolPath::forClass('App', 'Example'),
+                    $file,
+                    DeclarationOrdinal::fromRank(2),
+                )),
+            ] as $form => $subject) {
+                $identity = new BaselineIdentity($subject->toCanonical(), new FindingChannel('code-smell.goto'));
+                $region = SubjectRegion::forIdentity($identity, ValueReach::Members, []);
+                $tree = self::tree([$file, $neighbor], false);
+                $coverage = self::coverage([$file], ['src'], $baseline->exclusions, $tree);
+                $case = $spelling . ' / ' . $form;
+
+                self::assertSame('file', $region->kind, $case);
+                self::assertTrue($region->contains($file), $case);
+                self::assertSame($rawPath, $region->file?->value(), $case);
+                self::assertFalse($region->contains($neighbor), $case);
+                self::assertTrue(EntryComparability::judge($region, $baseline, $coverage)->canCompare(), $case);
+                self::assertSame(0, $tree->snapshots, $case);
+            }
+        }
     }
 
     #[Test]

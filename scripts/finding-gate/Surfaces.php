@@ -11,6 +11,7 @@ final class Surfaces
     public const FORMATS = [
         'summary',
         'text',
+        'text-detail',
         'text-verbose',
         'json',
         'checkstyle',

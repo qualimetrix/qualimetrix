@@ -17,7 +17,6 @@ formatter	Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter	src/Reporting/For
 formatter	Qualimetrix\Reporting\Formatter\Summary\SummaryFormatter	src/Reporting/Formatter/Summary/SummaryFormatter.php	qmx.formatter	"OutputConfigurator -> FormatterCompilerPass -> FormatterRegistry"
 formatter	Qualimetrix\Reporting\Formatter\Suppressed\SuppressedFormatter	src/Reporting/Formatter/Suppressed/SuppressedFormatter.php	qmx.formatter	"OutputConfigurator -> FormatterCompilerPass -> FormatterRegistry"
 formatter	Qualimetrix\Reporting\Formatter\TextFormatter	src/Reporting/Formatter/TextFormatter.php	qmx.formatter	"OutputConfigurator -> FormatterCompilerPass -> FormatterRegistry"
-formatter	Qualimetrix\Reporting\Formatter\TextVerboseFormatter	src/Reporting/Formatter/TextVerboseFormatter.php	qmx.formatter	"OutputConfigurator -> FormatterCompilerPass -> FormatterRegistry"
 global_collector	Qualimetrix\Analysis\Evidence\Coupling\AbstractnessCollector	src/Analysis/Evidence/Coupling/AbstractnessCollector.php	qmx.global_collector	"CouplingConfigurator -> GlobalCollectorCompilerPass -> GlobalCollectorRunner"
 global_collector	Qualimetrix\Analysis\Evidence\Coupling\ClassRankCollector	src/Analysis/Evidence/Coupling/ClassRankCollector.php	qmx.global_collector	"CouplingConfigurator -> GlobalCollectorCompilerPass -> GlobalCollectorRunner"
 global_collector	Qualimetrix\Analysis\Evidence\Coupling\CouplingCollector	src/Analysis/Evidence/Coupling/CouplingCollector.php	qmx.global_collector	"CouplingConfigurator -> GlobalCollectorCompilerPass -> GlobalCollectorRunner"

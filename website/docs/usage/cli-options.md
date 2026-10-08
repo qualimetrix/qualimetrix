@@ -190,7 +190,7 @@ bin/qmx check src/ --format=json
 bin/qmx check src/ --format=sarif
 ```
 
-Available formats: `summary`, `text`, `text-verbose`, `json`, `metrics`, `checkstyle`, `sarif`, `gitlab`, `github`, `health`, `html`, `suppressed`.
+Available formats: `summary`, `text`, `json`, `metrics`, `checkstyle`, `sarif`, `gitlab`, `github`, `health`, `html`, `suppressed`.
 
 See [Output Formats](output-formats.md) for details on each format.
 
@@ -258,7 +258,7 @@ unwritable stdout sends its refusal to stderr.
 Group violations in the output. Default depends on the formatter.
 
 ```bash
-bin/qmx check src/ --format=text-verbose --group-by=rule
+bin/qmx check src/ --format=text --detail=all --group-by=rule
 ```
 
 Available values: `none`, `file`, `rule`, `severity`, `class`, `namespace`.
@@ -826,7 +826,7 @@ goes to stderr and stdout keeps the report as its only document, even under
 `--format=json`.
 
 If cleanup also fails after that completed report, both causes are printed on
-stderr and stdout retains one report. An internal failure keeps exit 1; an
+stderr and stdout retains one report. An internal failure keeps exit 5; an
 environment cleanup failure takes exit 3 over the findings exit code.
 
 ### `--profile-format`
@@ -1142,7 +1142,7 @@ Exit codes: `0` no publishable refusal or observable inert directive, including
 a complete intentionally empty excluded set; `2` at least one publishable
 refusal or inert directive whose boundary is observable; `3` bad
 input/configuration, including truly undiscovered empty input; `4` incomplete
-input; `1` unexpected command failure. Incompleteness takes priority.
+input; `5` unexpected internal command failure. Incompleteness takes priority.
 Text and JSON retain all sites, including refusals whose channels the final
 selection does not publish. A measured scope note appears in text and JSON
 `scope.note`. JSON also publishes the measured project scope at
@@ -1380,3 +1380,31 @@ not merge. Listing judges the document and stated selection, not effective-band
 build/conclude or runtime state. Directive text/JSON preserve all decisive disabling
 texts and omit ones canceled by later enable; JSON selection.disabled stays a string
 list. For values and layer forms see [Configuration](../getting-started/configuration.md).
+
+
+## Prose environment
+
+`QMX_ASCII` is judged before any command runs. Case-insensitive
+`1/true/yes/on` enables ASCII; `0/false/no/off`, empty and absence select
+Unicode. Other values refuse with exit 3 and name the accepted values.
+
+The mode affects the four prose analysis formats and every ErrorStream
+diagnostic, including progress, stdout reports and `--output` report files.
+It replaces the closed product glyph table; other Unicode such as `Café`
+remains unchanged. A table glyph inside a source name is replaced too:
+`K✓` becomes `K+` in ASCII prose. Use Unicode to preserve it. Structured
+identities are unchanged. Other commands' stdout, such as rules, directive
+text, selected debug output and DOT, is outside this mode.
+
+
+Namespace selection uses a finding's declared namespace. For a file aggregate
+(`annotation.*`, `duplication.clone`), it matches any namespace declared in
+that file; a file without declarations compares as the global namespace.
+`--class` never selects a file aggregate. `suppress_namespaces` deliberately
+does not take this file step; use `suppress_paths` for a file aggregate.
+Overlapping namespace exclusions keep credit for their first match.
+
+`suppressed --namespace/--class` refuses with exit 3 because the composition
+document describes the whole run. `--show-suppressed` remains allowed and
+labels its stderr list as whole-run with the selector unapplied. The analysis
+and exit verdict always cover the whole run.

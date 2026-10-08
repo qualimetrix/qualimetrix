@@ -1,0 +1,43 @@
+--- candidate
++++ reference (mapped)
+@@ -1,11 +1,29 @@
+-visible 0
+-
+-invocation-format:text-verbose 0
+-
+-invocation-stderr 258
+-Configuration error: Output format "text-verbose" is not one of: checkstyle, github, gitlab, health, html, json, metrics, sarif, summary, suppressed, text.
+-Source: option --format.
+-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
+-
+-invocation-exit 1
+-3
++visible 462
++src/Reported.php (1 violation)
++  ERROR at line 9  Reported::run
++    Replace eval() with a safer alternative (closures, reflection, or template engine).  [code-smell.eval]
++
++Technical debt by rule:
++  code-smell.eval                          ~15min    (1 violation)
++
++Qualimetrix dev-main: 1 error(s), 0 warning(s) in 2 file(s)
++Analysis complete: 2 analyzed, 0 generated file(s) excluded.
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-format:text-verbose 462
++src/Reported.php (1 violation)
++  ERROR at line 9  Reported::run
++    Replace eval() with a safer alternative (closures, reflection, or template engine).  [code-smell.eval]
++
++Technical debt by rule:
++  code-smell.eval                          ~15min    (1 violation)
++
++Qualimetrix dev-main: 1 error(s), 0 warning(s) in 2 file(s)
++Analysis complete: 2 analyzed, 0 generated file(s) excluded.
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-stderr 82
++Warning: --format=text-verbose is deprecated. Use --format=text --detail instead.
++
++invocation-exit 1
++2

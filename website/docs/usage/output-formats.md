@@ -1,7 +1,6 @@
 # Output Formats
 
-Qualimetrix supports 12 output formats (including the deprecated
-`text-verbose`). Choose the one that fits your workflow.
+Qualimetrix supports 11 output formats. Choose the one that fits your workflow.
 
 ```bash
 bin/qmx check src/ --format=<format>
@@ -107,14 +106,14 @@ A format with no such channel refuses the selection instead:
 
 | Format       | What the selection left out                                                                                     |
 | ------------ | --------------------------------------------------------------------------------------------------------------- |
-| `json`       | Top-level `outOfScope` object: `violationCount`, `errorCount`, `warningCount`, `infoCount`                      |
-| `metrics`    | Top-level `outOfScope` object: `violations`, `errors`, `warnings`, `info`                                       |
+| `json`       | Top-level `outOfScope` object: `violationCount`, `errorCount`, `warningCount`, `infoCount`, `identities`        |
+| `metrics`    | The same `outOfScope` counts and identities as JSON                                                             |
 | `sarif`      | A `note` in `runs[0].invocations[0].toolExecutionNotifications[]` with descriptor `QMX-DRILL-DOWN-OUT-OF-SCOPE` |
 | `gitlab`     | Refused with exit 3 before the analysis: the merge-request widget counts every entry as an issue                |
 | `checkstyle` | Refused with exit 3 before the analysis: a Checkstyle reader counts every entry as an error                     |
 | `github`     | A `::notice title=drill-down.out-of-scope::` line                                                               |
 | `html`       | A banner above the report                                                                                       |
-| `suppressed` | Nothing: its document is the run's suppression composition, which a selection does not narrow                   |
+| `suppressed` | Refuses a selector: the document describes the whole run                                                        |
 
 `json` and `metrics` carry `outOfScope` in every document: `null` without a
 selection, and zero counts when the selection left nothing out. `sarif`,
@@ -122,6 +121,18 @@ selection, and zero counts when the selection left nothing out. `sarif`,
 selection. The
 exit code is resolved over the selection and `outOfScope` together, so a clean
 selection can exit 2.
+
+Namespace selection uses a finding's declared namespace. For a file aggregate
+(`annotation.*`, `duplication.clone`), it matches any namespace declared in
+that file; a file without declarations compares as the global namespace.
+`--class` never selects a file aggregate. `suppress_namespaces` deliberately
+does not take this file step; use `suppress_paths` for a file aggregate.
+Overlapping namespace exclusions keep credit for their first match.
+
+`suppressed --namespace/--class` refuses with exit 3 because the composition
+document describes the whole run. `--show-suppressed` remains allowed and
+labels its stderr list as whole-run with the selector unapplied. The analysis
+and exit verdict always cover the whole run.
 
 **Detail mode with `--detail`:**
 
@@ -136,12 +147,10 @@ bin/qmx check src/ --detail=all
 bin/qmx check src/ --detail=50
 ```
 
-`--detail` switches the violation list on, with an optional cap; it does not
-rank. `--detail=N` lists the first N violations in the order the list is printed
-(by file, unless `--group-by` says otherwise), so they are always the first N
-that `--detail=all` would print. `--detail=0` is the same as `--detail=all`. Any
-other value (`--detail=abc`, `--detail=-1`) is refused with exit code 3 before
-the analysis runs. The ranked `Top issues by impact` section is `--top`'s.
+`--detail` enables the finding list with an optional cap. `--detail=N` selects
+the worst N by severity, then impact, before presentation grouping. Unranked
+findings fall back to place. `--detail=0` equals `--detail=all`; invalid values
+refuse with exit 3 before analysis. `--top` controls the separate impact list.
 
 !!! note
     `--detail` is auto-enabled when using `--namespace` or `--class`. It also works with `--format=text` to append a grouped violation list after the one-line-per-violation output.
@@ -173,23 +182,6 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 - A violation pinned to a specific statement carries a line number: `file:line: severity[violationCode]: message (symbol)`.
 - A class- or method-level finding whose rule judges the whole declaration rather than one statement — for example `complexity.ccn`, `complexity.wmc`, `coupling.class-rank` — omits the line segment instead: `file: severity[violationCode]: message (symbol)`, even though the same finding carries a `line` in `--format=json`.
 - A project-level finding (no owning file at all — e.g. an `architecture.unreachable-layer` finding) drops the file segment too: `[project]: severity[violationCode]: message`, with no trailing `(symbol)`. On this project's own self-analysis this third form is common, not an edge case: `bin/qmx check src/Analysis/Evidence/Complexity --format=text` prints project-level lines for a majority of the output.
-
----
-
-## text-verbose
-
-<!-- llms:skip-begin -->
-!!! warning "Deprecated"
-    `text-verbose` is deprecated. Use `--format=text --detail` instead, which provides the same grouped, multi-line violation output alongside the compact one-line format.
-
-    ```bash
-    # Replaces: bin/qmx check src/ --format=text-verbose
-    bin/qmx check src/ --format=text --detail
-    ```
-<!-- llms:skip-end -->
-<!-- llms-only
-Deprecated. Use `--format=text --detail` instead.
--->
 
 ---
 
@@ -229,13 +221,22 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
         "debtPer1kLoc": 2.1
     },
     "outOfScope": null,
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": [], "reasons": []},
+    "projectScope": {
+        "state": "covered",
+        "uncoveredAutoloadTargets": [],
+        "unjudgedChannels": [],
+        "unjudgedValues": [],
+        "reasons": []
+    },
     "configurationDiagnostics": [],
     "health": {
         "complexity": {
             "score": 78.0,
             "label": "Excellent",
-            "threshold": {"warning": 50, "error": 25},
+            "threshold": {
+                "warning": 50,
+                "error": 25
+            },
             "coverage": {
                 "state": "measured",
                 "measured": 2263,
@@ -258,14 +259,19 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
                 {
                     "symbolPath": "App\\Service\\UserService",
                     "className": "App\\Service\\UserService",
-                    "metrics": {"complexity.ccn.sum": 96}
+                    "metrics": {
+                        "complexity.ccn.sum": 96
+                    }
                 }
             ]
         },
         "overall": {
             "score": 72.0,
             "label": "Fair",
-            "threshold": {"warning": 50, "error": 25},
+            "threshold": {
+                "warning": 50,
+                "error": 25
+            },
             "coverage": {
                 "state": "not-applicable",
                 "measured": null,
@@ -307,11 +313,23 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
             "rank": 1,
             "file": "src/Service/UserService.php",
             "line": 42,
+            "subject": "declaration:callable:App\\Service\\UserService::calculate@src/Service/UserService.php",
             "symbol": "App\\Service\\UserService::calculate",
+            "channel": "complexity.ccn",
+            "occurrence": null,
+            "edge": null,
+            "namespace": "App\\Service",
             "rule": "complexity.ccn",
+            "code": "complexity.ccn",
             "severity": "error",
             "message": "Cyclomatic complexity: 15 (threshold: 10) — too many code paths",
             "recommendation": null,
+            "metricValue": 15,
+            "threshold": 10,
+            "techDebtMinutes": 30,
+            "acceptedLevel": null,
+            "baselineVerdict": null,
+            "baselineReason": null,
             "impactScore": 3.71,
             "coupling.class-rank": 0.1237,
             "debtMinutes": 30
@@ -376,8 +394,8 @@ breached and not-compared states.
 `violationsMeta`
 also reports `shown` — the number of violations actually included in this
 payload, which can be lower than `total` when `--format-opt=violations=N`
-truncates the list. A truncated list is the first N in the identity order
-described below.
+truncates the list. A truncated list selects the N worst findings by severity, then impact
+ranking, before presentation grouping. Unranked findings fall back to place.
 
 `message` and `recommendation` mean the same in `violations` and in
 `topIssues`: the finding's message, and its recommendation or `null`. Under
@@ -387,16 +405,44 @@ over the whole project's lines would mix two scopes. The findings the
 selection left out are counted in `outOfScope`, which is `null` without a
 selection, as the drill-down table under `summary` above shows for every format.
 
-When a symbol name from the analysed source is not valid UTF-8 (the parser
-accepts any byte above 0x7F in an identifier), each invalid byte is published
-as U+FFFD and the document gains a top-level `invalidUtf8Replaced` key counting
-the repaired strings. `metrics`, `suppressed` and the `html` payload do the
-same; `sarif` reports it as a `QMX-PUBLICATION-INVALID-UTF8` tool notification,
-`gitlab` as a `publication.invalid-utf8` issue, and `checkstyle` as an error
-under the synthetic file `[publication]`. A file path that is not valid UTF-8
-is repaired and reported the same way; `sarif` repairs it before
-percent-encoding it, so the artifact URI carries `%EF%BF%BD` and never a bare
-`%FF`.
+Invalid source bytes are published as `%XX`; valid UTF-8 remains unchanged.
+Identity components always encode literal `%` as `%25` and reserved separators
+such as declaration-file `#` as `%23`. Display strings are different: a valid
+literal `Pa%FFth.php` and an invalid byte path can display identically. Use
+`subject` for exact identity, not `file`. SARIF `uri` percent-encodes the original
+path bytes, so an invalid byte is `%FF` and a literal percent is `%25`.
+
+Every format reports a positive repair count on stderr. JSON, metrics,
+suppressed and HTML retain the `invalidUtf8Replaced` document marker; SARIF
+also uses a tool notification. GitLab and Checkstyle contain actual findings
+only, with no synthetic `publication.invalid-utf8` record. Prose repairs the
+whole body as one published string and preserves literal percentages; structured
+formats count repaired fields. These counts need not be equal across formats.
+
+
+`json.violations`, `json.topIssues` and HTML use the same finding record keys:
+`file`, `line`, `symbol`, `channel`, `subject`, `occurrence`, `edge`, `namespace`,
+`rule`, `code`, `severity`, `message`, `recommendation`, `metricValue`, `threshold`,
+`techDebtMinutes`, `acceptedLevel`, `baselineVerdict`, `baselineReason`.
+HTML readers must use `rule/code/symbol` instead of
+`ruleName/violationCode/symbolPath`. Diagnostic, advice and baseline status are
+shown separately; a configured cap alone is not a measured breach.
+
+`outOfScope` adds `identities`, an occurrence-preserving multiset of
+`channel`, `subject`, `occurrence`, `edge` and `severity`. JSON and metrics use
+`violationCount/errorCount/warningCount/infoCount`. SARIF carries identities
+in its notification; GitHub retains its `::notice`. Health prints selected
+and outside counts even when no health scores are available.
+
+The HTML viewer uses published repository bags, including the global namespace.
+Class-like area uses `size.class-loc`; namespace/project area uses aggregate
+LOC. Missing health remains unknown. The viewer does not recompute subtree
+health or replace it with MI. Worst Sub-Namespaces shows the published
+fractional score, and Martin coordinates use `coupling.*`.
+
+`violationGroups` dictionary keys use total percent encoding, including
+literal `%` as `%25`, to keep byte-distinct file groups separate. Decode a
+key with `rawurldecode`; the finding's `file` remains display text.
 
 For machine identity, use `channel + subject + optional occurrence + optional
 edge`. `symbol` is the logical display projection; source line, message, and
@@ -412,7 +458,7 @@ unchanged.
 
 When using `--group-by=class` or `--group-by=namespace`, violations are organized into a `violationGroups` object. Each group is `{count, violations}` — a violation count and the violations array; it does not carry its own `errorCount`, `warningCount`, or `violationDensity`.
 
-The group keys are not always a class FQCN or namespace. For `--group-by=class`: the key is the class FQCN for a class-scoped finding, the file path for a file-level finding with no class context, and an empty string `""` for a project-level finding (which has neither a class nor a file). For `--group-by=namespace`: the key is the namespace for a namespaced class, `<global>` for a class with no namespace, and `(project)` for a project-level finding.
+The group keys are not always a class FQCN or namespace. For `--group-by=class`: the key is the class FQCN for a class-scoped finding, the file path for a file-level finding with no class context, and an empty string `""` for a project-level finding (which has neither a class nor a file). For `--group-by=namespace`: the key is the namespace for a namespaced class, `(global)` for a class with no namespace, and `(project)` for a project-level finding.
 
 <!-- llms:skip-begin -->
 ```json
@@ -1086,20 +1132,19 @@ closes it. A complete intentionally empty set (`analyzed=0`, `failed=0`,
 Incomplete exit 4 takes priority over success and policy findings. `check`
 retains the selected diagnostic report, whose policy result is not authoritative.
 
-| Format         | Coverage representation                                                                                                    |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `summary`      | Human coverage sentence after the header                                                                                   |
-| `text`         | Human coverage sentence after the violation summary                                                                        |
-| `text-verbose` | Same projection as `text --detail`                                                                                         |
-| `health`       | Human coverage sentence after the header                                                                                   |
-| `json`         | Top-level `coverage` object: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `excluded`, `failed`, `failures[]` |
-| `metrics`      | The same top-level `coverage` object as `json`                                                                             |
-| `sarif`        | `runs[0].invocations[0].executionSuccessful`; failures in `toolExecutionNotifications[]`                                   |
-| `gitlab`       | One blocker issue per failed file with `check_name: analysis.<kind>`; a complete empty run is `[]`                         |
-| `checkstyle`   | Failed files are errors under synthetic file `[analysis]`, with source `qmx.analysis.<kind>`                               |
-| `github`       | One `::error` annotation per failed file; complete zero-finding runs emit no annotation                                    |
-| `html`         | Embedded `coverage` data; incomplete runs also show a visible warning banner                                               |
-| `suppressed`   | Top-level `coverage` object: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `excluded`, `failed`, `failures[]` |
+| Format       | Coverage representation                                                                                                    |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| `summary`    | Human coverage sentence after the header                                                                                   |
+| `text`       | Human coverage sentence after the violation summary                                                                        |
+| `health`     | Human coverage sentence after the header                                                                                   |
+| `json`       | Top-level `coverage` object: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `excluded`, `failed`, `failures[]` |
+| `metrics`    | The same top-level `coverage` object as `json`                                                                             |
+| `sarif`      | `runs[0].invocations[0].executionSuccessful`; failures in `toolExecutionNotifications[]`                                   |
+| `gitlab`     | One blocker issue per failed file with `check_name: analysis.<kind>`; a complete empty run is `[]`                         |
+| `checkstyle` | Failed files are errors under synthetic file `[analysis]`, with source `qmx.analysis.<kind>`                               |
+| `github`     | One `::error` annotation per failed file; complete zero-finding runs emit no annotation                                    |
+| `html`       | Embedded `coverage` data; incomplete runs also show a visible warning banner                                               |
+| `suppressed` | Top-level `coverage` object: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `excluded`, `failed`, `failures[]` |
 
 For `json` and `metrics`, each `failures[]` item has `path`, `kind`
 and `message`. Human formats report measured counts without claiming every named
@@ -1156,14 +1201,14 @@ An `omitted-composer-root` reason retains `cause` and `visitedLevels`. Its
 inside the project, relative to its root. An absent main manifest contributes
 no omitted-root reason.
 
-| Format                                      | Project scope representation                                    |
-| ------------------------------------------- | --------------------------------------------------------------- |
-| `json`, `metrics`, `suppressed`             | Top-level `projectScope` object in every document               |
-| `sarif`                                     | Invocation notification with descriptor `QMX-RUN-PROJECT-SCOPE` |
-| `github`                                    | `::notice title=run.project-scope::` line                       |
-| `html`                                      | Banner above the report                                         |
-| `summary`, `text`, `text-verbose`, `health` | A `Project scope …` line                                        |
-| `gitlab`, `checkstyle`                      | No scope entry: every entry is a finding to their consumers     |
+| Format                          | Project scope representation                                    |
+| ------------------------------- | --------------------------------------------------------------- |
+| `json`, `metrics`, `suppressed` | Top-level `projectScope` object in every document               |
+| `sarif`                         | Invocation notification with descriptor `QMX-RUN-PROJECT-SCOPE` |
+| `github`                        | `::notice title=run.project-scope::` line                       |
+| `html`                          | Banner above the report                                         |
+| `summary`, `text`, `health`     | A `Project scope …` line                                        |
+| `gitlab`, `checkstyle`          | No scope entry: every entry is a finding to their consumers     |
 
 The object retains five fields: `state`, `uncoveredAutoloadTargets[]`,
 `unjudgedChannels[]`, `unjudgedValues[]`, `reasons[]`. Each skipped value has
@@ -1185,20 +1230,19 @@ Unavailable search metadata inside an actual removed run entry also withholds
 only declaration absence, with the actual `unlistable` evidence retained.
 ## Comparison table
 
-| Format         | Readable    | Machine   | Grouping                     | CI Integration             |
-| -------------- | ----------- | --------- | ---------------------------- | -------------------------- |
-| `summary`      | Best        | No        | Health scores, drill-down    | Any (exit code)            |
-| `text`         | Good        | Parseable | `--group-by`                 | Any (exit code)            |
-| `text-verbose` | Good        | No        | `--group-by` (default: file) | Any (exit code)            |
-| `json`         | No          | Yes       | Built-in (by file)           | Custom scripts             |
-| `metrics`      | No          | Yes       | Built-in (by symbol)         | Custom scripts, dashboards |
-| `checkstyle`   | No          | Yes       | Built-in (by file)           | Jenkins, SonarQube         |
-| `sarif`        | No          | Yes       | Built-in                     | GitHub, VS Code, JetBrains |
-| `gitlab`       | No          | Yes       | Flat list                    | GitLab MR widget           |
-| `github`       | No          | No        | Flat list                    | GitHub Actions annotations |
-| `health`       | Good        | No        | Health dimensions            | Quick checks, CI           |
-| `html`         | Interactive | No        | Treemap hierarchy            | Reports, reviews           |
-| `suppressed`   | No          | Yes       | Flat multiset by mechanism   | Suppression auditing       |
+| Format       | Readable    | Machine   | Grouping                   | CI Integration             |
+| ------------ | ----------- | --------- | -------------------------- | -------------------------- |
+| `summary`    | Best        | No        | Health scores, drill-down  | Any (exit code)            |
+| `text`       | Good        | Parseable | `--group-by`               | Any (exit code)            |
+| `json`       | No          | Yes       | Built-in (by file)         | Custom scripts             |
+| `metrics`    | No          | Yes       | Built-in (by symbol)       | Custom scripts, dashboards |
+| `checkstyle` | No          | Yes       | Built-in (by file)         | Jenkins, SonarQube         |
+| `sarif`      | No          | Yes       | Built-in                   | GitHub, VS Code, JetBrains |
+| `gitlab`     | No          | Yes       | Flat list                  | GitLab MR widget           |
+| `github`     | No          | No        | Flat list                  | GitHub Actions annotations |
+| `health`     | Good        | No        | Health dimensions          | Quick checks, CI           |
+| `html`       | Interactive | No        | Treemap hierarchy          | Reports, reviews           |
+| `suppressed` | No          | Yes       | Flat multiset by mechanism | Suppression auditing       |
 
 ### Exit codes
 
@@ -1211,6 +1255,7 @@ All formats use the same exit codes:
 | 2         | At least one error-severity violation                                 |
 | 3         | Configuration or input error                                          |
 | 4         | Analysis incomplete; policy result is not authoritative               |
+| `5`       | Internal tool error                                                   |
 
 By default (`--fail-on=error`), warnings no longer cause exit code 1 — only errors trigger a non-zero exit. Use `--fail-on=warning` for the stricter behavior where warnings also fail. Exit 4 takes precedence over warning/error policy codes.
 

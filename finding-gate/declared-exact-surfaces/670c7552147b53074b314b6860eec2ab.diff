@@ -1,0 +1,46 @@
+--- candidate
++++ reference (mapped)
+@@ -1,33 +1,10 @@
+-visible 1436
+-[project]: error[architecture.circular-dependency]: Circular dependency (2 classes): K%FE → K%FF → K%FE
+-src/First.php:6: warning[duplication.clone]: Duplicated code block (17 code lines, 2 occurrences): "public function m%E9(array $rows): array $out = []; foreach ($rows as $key =>..." — also at src/Second.php:6-23
+-src/First.php: warning[complexity.ccn]: Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions (K%FF::m%E9)
+-src/First.php: warning[architecture.layer-violation]: Layer "public" must not depend on layer "private" (Corpus\Utf8\Public\K%FF → Corpus\Utf8\Private\W%FFX, instantiates) (K%FF)
+-src/Second.php:6: warning[duplication.clone]: Duplicated code block (17 code lines, 2 occurrences): "public function m%E9(array $rows): array $out = []; foreach ($rows as $key =>..." — also at src/First.php:6-23
+-src/Second.php: warning[complexity.ccn]: Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions (K%FE::m%E9)
+-src/Second.php: warning[architecture.layer-violation]: Layer "public" must not depend on layer "private" (Corpus\Utf8\Public\K%FE → Corpus\Utf8\Private\W%FFX, instantiates) (K%FE)
+-
+-Qualimetrix dev-main: 1 error(s), 6 warning(s) in 3 file(s)
+-Analysis complete: 3 analyzed, 0 generated file(s) excluded.
+-Technical debt: 4h
+-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
+-
+-invocation-format:text 1436
+-[project]: error[architecture.circular-dependency]: Circular dependency (2 classes): K%FE → K%FF → K%FE
+-src/First.php:6: warning[duplication.clone]: Duplicated code block (17 code lines, 2 occurrences): "public function m%E9(array $rows): array $out = []; foreach ($rows as $key =>..." — also at src/Second.php:6-23
+-src/First.php: warning[complexity.ccn]: Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions (K%FF::m%E9)
+-src/First.php: warning[architecture.layer-violation]: Layer "public" must not depend on layer "private" (Corpus\Utf8\Public\K%FF → Corpus\Utf8\Private\W%FFX, instantiates) (K%FF)
+-src/Second.php:6: warning[duplication.clone]: Duplicated code block (17 code lines, 2 occurrences): "public function m%E9(array $rows): array $out = []; foreach ($rows as $key =>..." — also at src/First.php:6-23
+-src/Second.php: warning[complexity.ccn]: Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions (K%FE::m%E9)
+-src/Second.php: warning[architecture.layer-violation]: Layer "public" must not depend on layer "private" (Corpus\Utf8\Public\K%FE → Corpus\Utf8\Private\W%FFX, instantiates) (K%FE)
+-
+-Qualimetrix dev-main: 1 error(s), 6 warning(s) in 3 file(s)
+-Analysis complete: 3 analyzed, 0 generated file(s) excluded.
+-Technical debt: 4h
+-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
+-
+-invocation-stderr 115
+-1 published string(s) contained invalid UTF-8 from the analysed source; invalid bytes were percent-escaped as %XX.
+-
+-invocation-exit 1
+-2
++visible 0
++
++invocation-format:text 0
++
++invocation-stderr 150
++Internal error: Malformed UTF-8 characters, possibly incorrectly encoded
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-exit 1
++1

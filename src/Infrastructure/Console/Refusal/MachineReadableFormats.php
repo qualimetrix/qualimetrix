@@ -8,7 +8,7 @@ namespace Qualimetrix\Infrastructure\Console\Refusal;
  * One question: does this format's stdout carry a JSON document?
  *
  * The set is closed: `json`, `sarif`, `gitlab`, `metrics`, `suppressed`.
- * `text`, `text-verbose`, `summary`, `health`, `checkstyle`, `github` and
+ * `text`, `summary`, `health`, `checkstyle`, `github` and
  * `html` are excluded — their stdout contract is human-readable, XML, or
  * workflow-command text, and a JSON envelope in that stream would be worse
  * than leaving stdout empty and the failure available only on stderr.
@@ -38,7 +38,6 @@ final class MachineReadableFormats
     /** Every registered format whose stdout is deliberately not a JSON document. */
     private const array NON_JSON_FORMATS = [
         'text',
-        'text-verbose',
         'summary',
         'health',
         'checkstyle',

@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Logging\Unit;
 
+use DateTimeImmutable;
+use JsonSerializable;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\FileTarget\HeldTarget;
 use Qualimetrix\Core\FileTarget\TargetPath;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
@@ -20,6 +24,109 @@ require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
 #[CoversClass(FileLogger::class)]
 final class FileLoggerTest extends TestCase
 {
+    #[Test]
+    #[DataProvider('nonContainerObjects')]
+    public function itRefusesNativeObjectsWhenTheContextNeedsUtf8Repair(object $object): void
+    {
+        $path = $this->tempDir . '/test.log';
+        $logger = new FileLogger($path);
+        $this->attach($logger, $path);
+        $logger->warning('native object', ['path' => "K\xFF", 'object' => $object]);
+
+        $records = self::records($path);
+        self::assertNull($records[0]['context']);
+        self::assertSame('Malformed UTF-8 characters, possibly incorrectly encoded', $records[0]['context_error']);
+    }
+
+    /** @return iterable<string, array{object}> */
+    public static function nonContainerObjects(): iterable
+    {
+        yield 'backed enum' => [Severity::Warning];
+        yield 'native date' => [new DateTimeImmutable('2020-01-01T00:00:00+00:00')];
+    }
+
+    #[Test]
+    public function itKeepsNativeObjectEncodingWhenNoUtf8RepairIsNeeded(): void
+    {
+        $path = $this->tempDir . '/test.log';
+        $logger = new FileLogger($path);
+        $this->attach($logger, $path);
+        $logger->warning('native objects', ['enum' => Severity::Warning, 'date' => new DateTimeImmutable('2020-01-01T00:00:00+00:00')]);
+
+        $records = self::records($path);
+        self::assertSame(['enum' => 'warning', 'date' => ['date' => '2020-01-01 00:00:00.000000', 'timezone_type' => 1, 'timezone' => '+00:00']], $records[0]['context']);
+        self::assertArrayNotHasKey('context_error', $records[0]);
+    }
+
+    /** @param array<string, mixed> $context */
+    #[Test]
+    #[DataProvider('invalidContextKeys')]
+    public function itRefusesInvalidContextKeysWithoutCollapsingTheLiteralKey(array $context): void
+    {
+        $path = $this->tempDir . '/test.log';
+        $logger = new FileLogger($path);
+        $this->attach($logger, $path);
+        $logger->warning('keys', $context);
+
+        $records = self::records($path);
+        self::assertNull($records[0]['context']);
+        self::assertSame('Malformed UTF-8 characters, possibly incorrectly encoded', $records[0]['context_error']);
+    }
+
+    /** @return iterable<string, array{array<string, mixed>}> */
+    public static function invalidContextKeys(): iterable
+    {
+        $values = ['%FF' => 'literal', "\xFF" => 'byte'];
+        yield 'array' => [$values];
+        yield 'property container' => [['object' => (object) $values]];
+    }
+
+    #[Test]
+    public function itRefusesMalformedCustomJsonWithoutAThirdCallback(): void
+    {
+        $path = $this->tempDir . '/test.log';
+        $logger = new FileLogger($path);
+        $this->attach($logger, $path);
+        $object = new class implements JsonSerializable {
+            public int $calls = 0;
+
+            public function jsonSerialize(): mixed
+            {
+                ++$this->calls;
+
+                return ['path' => "src/K\xFF.php"];
+            }
+        };
+        $logger->warning('custom', ['object' => $object]);
+        self::assertSame(2, $object->calls);
+        $records = self::records($path);
+        self::assertCount(1, $records);
+        self::assertNull($records[0]['context']);
+        self::assertSame('Malformed UTF-8 characters, possibly incorrectly encoded', $records[0]['context_error']);
+    }
+
+    #[Test]
+    public function itEncodesValidCustomJsonOnlyOnce(): void
+    {
+        $path = $this->tempDir . '/test.log';
+        $logger = new FileLogger($path);
+        $this->attach($logger, $path);
+        $object = new class implements JsonSerializable {
+            public int $calls = 0;
+
+            public function jsonSerialize(): mixed
+            {
+                ++$this->calls;
+
+                return ['literal' => '50%'];
+            }
+        };
+        $logger->info('custom', ['object' => $object]);
+
+        self::assertSame(1, $object->calls);
+        self::assertSame(['object' => ['literal' => '50%']], self::records($path)[0]['context']);
+    }
+
     private string $tempDir;
 
     /** @var list<HeldTarget> */
@@ -302,7 +409,7 @@ final class FileLoggerTest extends TestCase
         $records = self::records($path);
         self::assertCount(3, $records);
         self::assertSame('Failed to parse file', $records[1]['message']);
-        self::assertSame(['file' => "src/\u{FFFD}1.php"], $records[1]['context']);
+        self::assertSame(['file' => "src/%B11.php"], $records[1]['context']);
     }
 
     /**
@@ -323,6 +430,59 @@ final class FileLoggerTest extends TestCase
         self::assertSame('Measured ratio', $records[0]['message']);
         self::assertNull($records[0]['context']);
         self::assertSame('Inf and NaN cannot be JSON encoded', $records[0]['context_error']);
+    }
+
+    #[Test]
+    public function itRefusesUserObjectsWhenEscapingSourceBytes(): void
+    {
+        $path = $this->tempDir . '/test.log';
+        $logger = new FileLogger($path);
+        $this->attach($logger, $path);
+        $object = new class {
+            public string $path = "src/K\xFF.php";
+            private string $secret = 'hidden';
+
+            public function secret(): string
+            {
+                return $this->secret;
+            }
+        };
+        $logger->warning('object', ['object' => $object]);
+
+        $records = self::records($path);
+        self::assertNull($records[0]['context']);
+        self::assertSame('Malformed UTF-8 characters, possibly incorrectly encoded', $records[0]['context_error']);
+    }
+
+    #[Test]
+    public function itRepairsStdClassValuesAndPreservesValidPropertyKeys(): void
+    {
+        $path = $this->tempDir . '/test.log';
+        $logger = new FileLogger($path);
+        $this->attach($logger, $path);
+        $object = (object) ['%FF' => 'literal', 'path' => "src/K\xFF.php", 'nested' => (object) ['percent' => '50%']];
+        $logger->warning('container', ['object' => $object]);
+
+        $records = self::records($path);
+        self::assertSame(['object' => ['%FF' => 'literal', 'path' => 'src/K%FF.php', 'nested' => ['percent' => '50%']]], $records[0]['context']);
+        self::assertArrayNotHasKey('context_error', $records[0]);
+    }
+
+    #[Test]
+    public function itRefusesRecursiveContextsEvenWhenInvalidUtf8MasksTheRecursion(): void
+    {
+        $path = $this->tempDir . '/test.log';
+        $logger = new FileLogger($path);
+        $this->attach($logger, $path);
+        $context = ['path' => "src/K\xFF.php"];
+        $context['cycle'] = &$context;
+        $logger->warning('recursive', $context);
+
+        $records = self::records($path);
+        self::assertCount(1, $records);
+        self::assertSame('recursive', $records[0]['message']);
+        self::assertNull($records[0]['context']);
+        self::assertSame('Recursion detected', $records[0]['context_error']);
     }
 
     /** A short native append is latched; later log calls count loss without throwing into collection. */

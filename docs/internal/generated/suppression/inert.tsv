@@ -1,5 +1,6 @@
 mechanism	suppressor
 rule-namespace-suppression	coupling.class-rank: subtree:Qualimetrix\Analysis\Finding\Rule
+rule-namespace-suppression	coupling.distance: exact:Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender
 rule-namespace-suppression	coupling.distance: subtree:Qualimetrix\Analysis\Policy\Architecture\Layer
 rule-namespace-suppression	coupling.instability: coupling.instability:namespace exact:Qualimetrix\Analysis\Run\ExcludeBinding
 rule-namespace-suppression	health.cohesion: health.cohesion exact:Qualimetrix\Analysis\Run\ExcludeBinding
@@ -18,3 +19,4 @@ rule-path-suppression	coupling.instability: exact:src/Analysis/Evidence/Cohesion
 rule-path-suppression	coupling.instability: exact:src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php
 rule-path-suppression	duplication.clone: exact:src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php
 rule-path-suppression	duplication.clone: regex:src/Analysis/Run/ExcludeBinding/.*Options\.php
+rule-path-suppression	health.cohesion: exact:src/Infrastructure/Console/Application.php

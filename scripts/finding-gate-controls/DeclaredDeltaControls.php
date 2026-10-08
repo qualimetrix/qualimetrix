@@ -62,7 +62,9 @@ final class DeclaredDeltaControls
             '--derive-declarations',
             $captureFailure->required,
             ['finding-gate/' . DeclaredDelta::INDEX, 'finding-gate/' . DeclaredDelta::DIRECTORY],
-            $captureFailure->tolerated,
+            array_values(array_filter($captureFailure->tolerated, static fn(Expectation $expectation): bool =>
+                $expectation->failureClass !== FailureClass::RECORD_STALE
+                || !\in_array($expectation->scopeContains, ['case:drill-down|format:json', 'case:drill-down|check:baseline'], true))),
         );
     }
 
@@ -134,7 +136,18 @@ final class DeclaredDeltaControls
             )),
             [new Expectation(FailureClass::DELTA_MISMATCH, 'case:smells|baseline-file'),
                 new Expectation(FailureClass::RECORD_UNDECLARED, 'case:smells|format:json', exactScope: true)],
-            [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells')],
+            [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells'),
+                new Expectation(FailureClass::VALUE_MISMATCH, 'case:detectors|format:json|record:'),
+                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:detectors|format:json', exactScope: true),
+                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:detectors-smells|format:json', exactScope: true),
+                new Expectation(FailureClass::FIELD_VALUES_MISMATCH, 'declared-fields.derived.tsv', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:detectors-smells|baseline-file', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:detectors-smells|check:output:file', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:detectors-smells|explain:declaration:class:Corpus\\Smells\\Injection@src/Injection.php', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:detectors-smells|format:json', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:detectors|baseline-file', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:detectors|check:output:file', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:detectors|format:json', exactScope: true)],
         );
     }
 

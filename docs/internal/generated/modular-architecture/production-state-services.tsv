@@ -119,7 +119,7 @@ src/Infrastructure/Composer/ComposerManifestReader.php	Qualimetrix\Infrastructur
 src/Infrastructure/Composer/DeclaredParentReader.php	Qualimetrix\Infrastructure\Composer\DeclaredParentReader	Infrastructure.Composer	"adapter session or cache"	-	answers	-
 src/Infrastructure/Console/Command/BaselineCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	"adapter session or cache"	-	refusalPresenter	execute,setRefusalPresenter
 src/Infrastructure/Console/Command/CheckCommand.php	Qualimetrix\Infrastructure\Console\Command\CheckCommand	Infrastructure.Console	"adapter session or cache"	-	hiddenOptionNames	configure,execute
-src/Infrastructure/Console/ErrorStream.php	Qualimetrix\Infrastructure\Console\ErrorStream	Infrastructure.Console	"adapter session or cache"	-	boundTo,diagnostics,progress,sectionable,sections	bind,reset
+src/Infrastructure/Console/ErrorStream.php	Qualimetrix\Infrastructure\Console\ErrorStream	Infrastructure.Console	"adapter session or cache"	-	boundTo,diagnostics,mode,progress,sectionable,sections	bind,reset
 src/Infrastructure/Console/FilteredInputDefinition.php	Qualimetrix\Infrastructure\Console\FilteredInputDefinition	Infrastructure.Console	"adapter session or cache"	-	hiddenOptionNames	setHiddenOptionNames
 src/Infrastructure/Console/Hook/HookEntryAccess.php	Qualimetrix\Infrastructure\Console\Hook\HookEntryAccess	Infrastructure.Console	"adapter session or cache"	-	reportedExposure	-
 src/Infrastructure/Console/Progress/ConsoleProgressBar.php	Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar	Infrastructure.Console	"adapter session or cache"	-	progressBar	setMessage

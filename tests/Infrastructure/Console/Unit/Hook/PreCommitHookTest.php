@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Hook\PreCommitHook;
 use Qualimetrix\Subprocess\ChildProcess;
+use ReflectionClass;
 
 require_once \dirname(__DIR__, 5) . '/scripts/subprocess/ChildProcess.php';
 
@@ -29,6 +30,25 @@ final class PreCommitHookTest extends TestCase
     public function itDoesNotClaimAThirdPartyHook(): void
     {
         self::assertFalse(PreCommitHook::isOurs("#!/bin/bash\necho 'someone else'\n"));
+    }
+
+    #[Test]
+    public function itRecognisesOnlyTheCurrentOwnedTemplateRevision(): void
+    {
+        $script = PreCommitHook::script('/usr/local/bin/qmx');
+        $template = (new ReflectionClass(PreCommitHook::class))->getConstant('TEMPLATE');
+        self::assertIsString($template);
+        $revision = '# template sha256:' . hash('sha256', $template);
+
+        self::assertStringContainsString($revision . "\n", $script);
+        self::assertStringContainsString($revision . "\n", PreCommitHook::script('/other/bin/qmx'));
+        self::assertTrue(PreCommitHook::isCurrent($script));
+        self::assertFalse(PreCommitHook::isCurrent(str_replace($revision, '# template sha256:old', $script)));
+        self::assertFalse(PreCommitHook::isCurrent(str_replace(PreCommitHook::MARKER, 'Foreign hook', $script)));
+        $legacy = file_get_contents(\dirname(__DIR__, 2) . '/Fixtures/pre_commit_hook_before_exit_classification.sh');
+        self::assertIsString($legacy);
+        self::assertTrue(PreCommitHook::isOurs($legacy));
+        self::assertFalse(PreCommitHook::isCurrent($legacy));
     }
 
     #[Test]
@@ -89,6 +109,7 @@ final class PreCommitHookTest extends TestCase
         yield 'command substitution' => ['/opt/$(id -u)/qmx'];
         yield 'backtick' => ['/opt/`id -u`/qmx'];
         yield 'backslash' => ['/opt/back\\slash/qmx'];
+        yield 'revision placeholder' => ['/opt/@QMX_REVISION@/qmx'];
     }
 
     #[Test]
@@ -184,7 +205,7 @@ final class PreCommitHookTest extends TestCase
 
     #[Test]
     #[DataProvider('provideQmxFailureExitCodes')]
-    public function itPropagatesQmxFailureExitCodes(int $exitCode, string $expectedDiagnostic): void
+    public function itPropagatesQmxFailureExitCodes(int $exitCode, string $expectedDiagnostic, bool $baselineAdvice): void
     {
         [$result, , $qmxInvocation] = $this->executeGeneratedHook(
             ['src/staged.php'],
@@ -194,17 +215,19 @@ final class PreCommitHookTest extends TestCase
         self::assertSame($exitCode, $result['exitCode']);
         self::assertFileExists($qmxInvocation);
         self::assertStringContainsString($expectedDiagnostic, $result['stdout']);
+        self::assertSame($baselineAdvice, str_contains($result['stdout'], 'baseline:generate'));
     }
 
-    /** @return iterable<string, array{int, string}> */
+    /** @return iterable<string, array{int, string, bool}> */
     public static function provideQmxFailureExitCodes(): iterable
     {
-        yield 'warnings' => [1, '❌ Qualimetrix found issues.'];
-        yield 'errors' => [2, '❌ Qualimetrix found issues.'];
-        yield 'configuration error' => [3, '❌ Qualimetrix found issues.'];
-        yield 'incomplete analysis' => [4, '❌ Qualimetrix found issues.'];
-        yield 'not executable' => [126, '(exit 126). Nothing was analysed.'];
-        yield 'not found' => [127, '(exit 127). Nothing was analysed.'];
+        yield 'warnings' => [1, '❌ Qualimetrix found issues.', true];
+        yield 'errors' => [2, '❌ Qualimetrix found issues.', true];
+        yield 'configuration error' => [3, '❌ Qualimetrix refused the run.', false];
+        yield 'incomplete analysis' => [4, '❌ Qualimetrix analysis is incomplete.', false];
+        yield 'internal error' => [5, '❌ Qualimetrix failed with an internal error.', false];
+        yield 'not executable' => [126, '(exit 126). Nothing was analysed.', false];
+        yield 'not found' => [127, '(exit 127). Nothing was analysed.', false];
     }
 
     /**

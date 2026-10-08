@@ -370,6 +370,30 @@ final class SuppressionCompositionBuilderTest extends TestCase
         );
 
         self::assertSame([], $composition->neverMatched);
+        self::assertCount(1, $composition->all);
+        self::assertSame('subtree:src', $composition->all[0]->suppressor);
+    }
+
+    #[Test]
+    public function itCreditsTheFirstMatchingNamespaceWhileKeepingAnOverlappingPatternActive(): void
+    {
+        $finding = $this->finding('test.rule', 'src/Dirty.php', 'App\\Dirty');
+        $filterResult = new FindingProjectionResult(
+            annotationSuppression: self::emptyAnnotationSuppression(),
+            findings: [],
+            removedByStage: [FindingFilterStage::NamespaceExclusion->value => [$finding]],
+        );
+        $composition = $this->builder->build(
+            $filterResult,
+            $this->ruleExecution(),
+            $this->ruleConfiguration([]),
+            new FindingProjectionOptions(suppressNamespaces: $this->namespaces(['App', 'App\\Dirty'])),
+        );
+
+        self::assertSame([], $composition->neverMatched);
+        self::assertCount(1, $composition->all);
+        self::assertSame('subtree:App', $composition->all[0]->suppressor);
+        self::assertSame($finding, $composition->all[0]->finding);
     }
 
     #[Test]

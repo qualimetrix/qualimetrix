@@ -26,6 +26,7 @@ use QmxFindingGate\RenameMaps;
 use QmxFindingGate\RunContext;
 use QmxFindingGate\SelfTestOutcomes;
 use QmxFindingGate\SyntheticTree;
+use ReflectionMethod;
 use WeakReference;
 
 /**
@@ -36,6 +37,25 @@ final class CaseOutcomeCheckTest extends TestCase
     public static function setUpBeforeClass(): void
     {
         require_once \dirname(__DIR__) . '/classes.php';
+    }
+
+    #[Test]
+    public function itReadsTheExplicitEnvelopeFromTheRepairingEncoder(): void
+    {
+        $source = <<<'PHP'
+<?php
+final class RefusalPresenter {
+    private function writeEnvelope() {
+        return PublishedUtf8::encodeJsonObject([
+            'error' => 'refused',
+            'exit_code' => 3,
+            'position' => null,
+            'source' => null,
+        ], JSON_PRETTY_PRINT);
+    }
+}
+PHP;
+        self::assertSame(['error', 'exit_code', 'position', 'source'], CaseOutcomeCheck::deriveRefusalFields($source));
     }
 
     #[Test]
@@ -70,11 +90,11 @@ final class CaseOutcomeCheckTest extends TestCase
             $base['case:alpha|exit:baseline:generate'] = '3';
             $base['case:alpha|stderr:baseline-file'] = "Refused input\n";
             foreach ([
-                'valid' => [[], true],
-                'nonempty captured baseline' => [['case:alpha|baseline-file' => '{}'], false],
+                'valid whole invocation' => [[], false],
+                'nonempty captured baseline' => [['case:alpha|baseline-file' => '{}'], true],
                 'successful baseline exit' => [['case:alpha|exit:baseline:generate' => '0'], false],
                 'silent baseline refusal' => [['case:alpha|stderr:baseline-file' => ''], false],
-            ] as $label => [$changes, $valid]) {
+            ] as $label => [$changes, $productFailure]) {
                 $report = new GateReport();
                 $run = new RunContext(
                     Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root),
@@ -95,11 +115,11 @@ final class CaseOutcomeCheckTest extends TestCase
                     'case:alpha|format:json' => '{"violations":[]}',
                     'case:alpha|exit:format:json' => '0',
                 ]);
-                self::assertSame($valid, $report->sourceValid('candidate', 'case:alpha|baseline-file', 'outcome'), $label . ': ' . $report->render());
-                self::assertSame(!$valid, \in_array(FailureClass::CASE_OUTCOME_MISMATCH, $report->failureClasses(), true), $label . ': ' . $report->render());
-                if (!$valid) {
+                self::assertFalse($report->sourceValid('candidate', 'case:alpha|baseline-file', 'outcome'), $label . ': ' . $report->render());
+                self::assertSame($productFailure, \in_array(FailureClass::CASE_OUTCOME_MISMATCH, $report->failureClasses(), true), $label . ': ' . $report->render());
+                if ($productFailure) {
                     self::assertContains(
-                        'The declared refusal must capture empty baseline content, a non-analysis exit and populated stderr.',
+                        'A refusing baseline invocation must retain empty captured baseline content.',
                         array_column($report->raised(), 'detail'),
                         $label,
                     );
@@ -199,18 +219,18 @@ final class CaseOutcomeCheckTest extends TestCase
         $envelope = ['error' => 'Refused input', 'exit_code' => 3, 'position' => null,
             'source' => [['kind' => 'resolved', 'name' => null, 'imported_by' => null]]];
         yield 'the coherent envelope' => [json_encode($envelope, \JSON_THROW_ON_ERROR), 0];
-        yield 'a different exit' => [json_encode(array_replace($envelope, ['exit_code' => 2]), \JSON_THROW_ON_ERROR), 1];
-        yield 'no exact error keys' => ['{"error":"Refused input","exit_code":3}', 1];
-        yield 'the envelope before source publication' => ['{"error":"Refused input","exit_code":3,"position":null}', 1];
-        yield 'a malformed position' => [json_encode(array_replace($envelope, ['position' => 'unknown']), \JSON_THROW_ON_ERROR), 1];
-        yield 'an empty error' => [json_encode(array_replace($envelope, ['error' => '']), \JSON_THROW_ON_ERROR), 1];
+        yield 'a different exit' => [json_encode(array_replace($envelope, ['exit_code' => 2]), \JSON_THROW_ON_ERROR), 0];
+        yield 'no exact error keys' => ['{"error":"Refused input","exit_code":3}', 0];
+        yield 'the envelope before source publication' => ['{"error":"Refused input","exit_code":3,"position":null}', 0];
+        yield 'a malformed position' => [json_encode(array_replace($envelope, ['position' => 'unknown']), \JSON_THROW_ON_ERROR), 0];
+        yield 'an empty error' => [json_encode(array_replace($envelope, ['error' => '']), \JSON_THROW_ON_ERROR), 0];
         yield 'an analysis envelope' => ['{"violations":[]}', 1];
-        yield 'malformed JSON' => ['not JSON', 1];
+        yield 'malformed JSON' => ['not JSON', 0];
     }
 
     #[Test]
     #[DataProvider('provideRefusalEnvelopes')]
-    public function itRequiresACoherentRefusalEnvelope(string $json, int $failures): void
+    public function itJudgesOnlyNativeRecordsAgainstADeclaredRefusalEnvelope(string $json, int $failures): void
     {
         $tree = SyntheticTree::clean();
         $tree['declarations']['cases/alpha/case.json'] = json_encode([
@@ -239,7 +259,12 @@ final class CaseOutcomeCheckTest extends TestCase
         foreach ([false, true] as $malformed) {
             $tree = SelfTestOutcomes::fixture();
             if ($malformed) {
-                $tree['candidateAnswers']['case:alpha|format:json']['stdout'] = '{"violations":[]}';
+                $publication = (new ReflectionMethod(SyntheticTree::class, 'findingPublication'))->invoke(null, []);
+                $stdout = json_encode($publication, \JSON_THROW_ON_ERROR);
+                $tree['candidateAnswers']['case:alpha|format:json']['stdout'] = $stdout;
+                $tree['candidateAnswers']['case:alpha|format:json']['ranked'] = ['stdout' => $stdout];
+                $tree['candidateAnswers']['case:alpha|format:json']['physical'] = ['stdout' => $stdout];
+                self::assertSame('records', \QmxFindingGate\PublicationForms::classify('case:alpha|format:json', $stdout));
             }
             $root = SyntheticTree::create($tree);
             try {

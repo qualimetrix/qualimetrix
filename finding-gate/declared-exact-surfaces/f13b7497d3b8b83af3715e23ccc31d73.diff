@@ -1,0 +1,16 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 723
++visible 609
+@@ -11,2 +11,1 @@
+-         code-smell.long-parameter-list: Method has 5 parameters, exceeds threshold of 4. Consider introducing a parameter object (Reported::run)
+-         Recommendation: Parameters: 5 (threshold: 4) — consider introducing a parameter object
++         code-smell.long-parameter-list: Parameters: 5 (threshold: 4) — consider introducing a parameter object (Reported::run)
+@@ -18,1 +17,1 @@
+-invocation-format:summary 723
++invocation-format:summary 609
+@@ -28,2 +27,1 @@
+-         code-smell.long-parameter-list: Method has 5 parameters, exceeds threshold of 4. Consider introducing a parameter object (Reported::run)
+-         Recommendation: Parameters: 5 (threshold: 4) — consider introducing a parameter object
++         code-smell.long-parameter-list: Parameters: 5 (threshold: 4) — consider introducing a parameter object (Reported::run)

@@ -56,7 +56,7 @@ final class JsonShapePreservationTest extends TestCase
             ->addFindings([self::fileFinding(), self::projectFinding()])
             ->build();
 
-        $data = json_decode($formatter->format($report, new FormatterContext()), true, 512, \JSON_THROW_ON_ERROR);
+        $data = json_decode($formatter->format($report, new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertIsList($data);
         self::assertCount(2, $data);
@@ -82,7 +82,7 @@ final class JsonShapePreservationTest extends TestCase
             ->addFindings([self::fileFinding()])
             ->build();
 
-        $data = json_decode($formatter->format($report, new FormatterContext()), true, 512, \JSON_THROW_ON_ERROR);
+        $data = json_decode($formatter->format($report, new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
 
         $result = $data['runs'][0]['results'][0];
         $uri = $result['locations'][0]['physicalLocation']['artifactLocation']['uri'];
@@ -101,7 +101,7 @@ final class JsonShapePreservationTest extends TestCase
             ->addFindings([self::projectFinding()])
             ->build();
 
-        $data = json_decode($formatter->format($report, new FormatterContext()), true, 512, \JSON_THROW_ON_ERROR);
+        $data = json_decode($formatter->format($report, new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
 
         $result = $data['runs'][0]['results'][0];
         self::assertArrayNotHasKey('locations', $result, 'project-level SARIF result must omit "locations"');
@@ -116,7 +116,7 @@ final class JsonShapePreservationTest extends TestCase
 
         $report = ReportBuilder::create()->filesAnalyzed(0)->build();
 
-        $data = json_decode($formatter->format($report, new FormatterContext()), true, 512, \JSON_THROW_ON_ERROR);
+        $data = json_decode($formatter->format($report, new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertArrayHasKey('symbols', $data);
         self::assertIsList($data['symbols']);
@@ -150,7 +150,7 @@ final class JsonShapePreservationTest extends TestCase
         $data = json_decode($formatter->format(
             ReportBuilder::create()->addFinding($finding)->build(),
             new FormatterContext(),
-        ), true, 512, \JSON_THROW_ON_ERROR);
+        )->body, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame(['target' => 'class:App\\Target'], $data['violations'][0]['edge']);
     }

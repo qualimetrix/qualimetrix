@@ -7,29 +7,9 @@ namespace Qualimetrix\Reporting\Formatter;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 
 /**
- * What a published finding's text fields hold, surface by surface.
- *
- * A finding has two texts, `Finding::$message` and the optional
- * `Finding::$recommendation`, plus the accepted level a measured breach
- * carries (ADR 0017). Every surface publishes one of three compositions of
- * them, and a key names the same composition wherever a document uses it:
- *
- * | composition                    | where                                               | key                         |
- * |--------------------------------|-----------------------------------------------------|-----------------------------|
- * | the message, the recommendation | `json` (violations and topIssues), `html`, `suppressed` | `message`, `recommendation` |
- * | {@see self::annotatedMessage()} | `sarif`, `gitlab`, `checkstyle`, `github`, flat `text` | `message.text`, `description`, `message`, the annotation text |
- * | {@see self::advice()}          | `text --detail`, `summary` (details and top issues) | prose, no key               |
- *
- * The structured surfaces have room for both texts, so they publish both and
- * leave the accepted level to its own field. An interchange format has one
- * free-text slot, so the level rides in it. Prose for a person leads with the
- * recommendation when there is one. `metrics` and `health` publish no finding
- * text at all.
- *
- * `scripts/finding-gate/PublishedVocabulary.php` is not this: it tells the
- * equivalence gate which key to look for on a diff line. This class is what
- * the formatters call, so a surface cannot publish a composition it does not
- * name.
+ * Publishes message and recommendation separately wherever the surface has
+ * room for both. Single-slot interchange formats append baseline status to
+ * the message; prose prints that status on its own line.
  */
 final class PublishedFinding
 {
@@ -42,13 +22,24 @@ final class PublishedFinding
         return $finding->message . self::breachSuffix($finding);
     }
 
-    /**
-     * The recommendation when there is one, else the message, with the
-     * accepted level appended — prose addressed to a person.
-     */
-    public static function advice(Finding $finding): string
+    public static function place(Finding $finding): FindingPlace
     {
-        return $finding->getDisplayMessage() . self::breachSuffix($finding);
+        $symbol = $finding->symbolPath;
+
+        return $symbol->getType() === \Qualimetrix\Core\Symbol\SymbolType::Project
+            ? new FindingPlace(\Qualimetrix\Core\Symbol\SymbolLevel::Project, '[project]')
+            : new FindingPlace(\Qualimetrix\Core\Symbol\SymbolLevel::Namespace_, \Qualimetrix\Core\Symbol\SymbolPath::forNamespace($symbol->namespace ?? '')->toString());
+    }
+
+    /** The namespace label in a single text slot without a physical location. */
+    public static function locatedMessage(Finding $finding): string
+    {
+        $place = self::place($finding);
+        $prefix = $finding->location->file === null && $place->level === \Qualimetrix\Core\Symbol\SymbolLevel::Namespace_
+            ? $place->name . ': '
+            : '';
+
+        return $prefix . self::annotatedMessage($finding);
     }
 
     /**

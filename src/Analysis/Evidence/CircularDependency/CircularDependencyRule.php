@@ -128,17 +128,12 @@ final class CircularDependencyRule extends AbstractRule
      * For large cycles, emphasizes that the cycle is too large to fix at once
      * and suggests focusing on entry-point classes.
      *
-     * Includes structured cycle data (JSON) for AI agent consumption.
-     *
      * @param 'small'|'medium'|'large' $category
      */
     private function buildRecommendation(
         Cycle $cycle,
         string $category,
     ): string {
-        $structuredData = $cycle->toStructuredData();
-        $jsonData = json_encode($structuredData, \JSON_UNESCAPED_SLASHES);
-
         $guidance = match ($category) {
             'small' => \sprintf(
                 'Cycle path: %s (%d classes). Break by introducing an interface to invert one dependency.',
@@ -158,7 +153,7 @@ final class CircularDependencyRule extends AbstractRule
             ),
         };
 
-        return $guidance . "\n" . 'Cycle data: ' . $jsonData;
+        return $guidance;
     }
 
     /**

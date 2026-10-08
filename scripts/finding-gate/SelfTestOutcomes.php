@@ -16,19 +16,23 @@ final class SelfTestOutcomes extends SelfTestGroup
     {
         $root = SyntheticTree::create(self::fixture());
         try {
+            $before = Fs::read($root . '/finding-gate/declared-outcomes/alpha.json');
             $report = new GateReport();
             GateModes::run(Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD', '--derive-declarations'], $root), $report);
-            $this->same(GateReport::VERDICT_GREEN, $report->verdict(), 'a declared refusal derives only its exact check invocation snapshots');
-            $snapshot = Fs::read($root . '/finding-gate/declared-outcomes/alpha.json');
-            $this->assert($snapshot !== "placeholder\n", 'derive measures the complete refusal rather than retaining a placeholder');
+            $this->same(GateReport::VERDICT_RED, $report->verdict(), 'a whole-invocation refusal cannot derive an outcome snapshot');
+            $this->assert(self::has($report, FailureClass::SURFACE_MISMATCH), 'the refusal remains an exact whole-invocation comparison');
+            $this->same($before, Fs::read($root . '/finding-gate/declared-outcomes/alpha.json'), 'a refused derive run writes no outcome snapshot');
             $report = new GateReport();
             GateModes::run(Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root), $report);
-            $this->same(GateReport::VERDICT_GREEN, $report->verdict(), 'the measured refusal compares GREEN after channel ownership is transferred');
+            $this->same(GateReport::VERDICT_RED, $report->verdict(), 'a whole-invocation refusal cannot compare through an outcome snapshot');
+            $this->assert(self::has($report, FailureClass::OUTCOME_DECLARATION_STALE), 'the uncredited outcome declaration remains stale');
+            $this->same($before, Fs::read($root . '/finding-gate/declared-outcomes/alpha.json'), 'ordinary compare writes no outcome snapshot');
         } finally {
             SyntheticTree::remove($root);
         }
         foreach (['stderr', 'stdout', 'exit'] as $field) {
-            $tree = self::fixture($snapshot);
+            $tree = self::fixture();
+            $tree['candidateAnswers'] = [];
             if ($field === 'exit') {
                 $tree['candidateAnswers']['case:alpha|format:text']['exit'] = 2;
             } elseif ($field === 'stdout') {
@@ -36,25 +40,35 @@ final class SelfTestOutcomes extends SelfTestGroup
             } else {
                 $tree['candidateAnswers']['case:alpha|format:text']['stderr'] = 'A different refusal cause';
             }
+            $scope = 'case:alpha|' . ($field === 'stdout' ? 'format:text' : $field . ':format:text');
             $root = SyntheticTree::create($tree);
             try {
                 $before = Fs::read($root . '/finding-gate/declared-outcomes/alpha.json');
                 $report = new GateReport();
                 GateModes::run(Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root), $report);
-                $this->assert(self::has($report, FailureClass::CASE_OUTCOME_MISMATCH), 'a neighboring refusal ' . $field . ' remains RED');
+                $this->same(GateReport::VERDICT_RED, $report->verdict(), 'a neighboring ' . $field . ' change remains RED');
+                $this->assert(\in_array([FailureClass::SURFACE_MISMATCH, $scope], array_map(
+                    static fn(array $failure): array => [$failure['class'], $failure['scope']],
+                    $report->raised(),
+                ), true), 'the neighboring ' . $field . ' change has its exact whole-invocation scope');
                 $this->same($before, Fs::read($root . '/finding-gate/declared-outcomes/alpha.json'), 'ordinary compare writes no outcome snapshot');
             } finally {
                 SyntheticTree::remove($root);
             }
         }
-        $tree = self::fixture($snapshot);
+        $tree = self::fixture();
+        $tree['candidateAnswers'] = [];
         $tree['candidateAnswers']['case:alpha|rules'] = ['stdout' => 'An unrelated catalog change.'];
         $root = SyntheticTree::create($tree);
         try {
             $before = Fs::read($root . '/finding-gate/declared-outcomes/alpha.json');
             $report = new GateReport();
             GateModes::run(Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD', '--derive-declarations'], $root), $report);
-            $this->assert(self::has($report, FailureClass::SURFACE_MISMATCH), 'a non-check publication remains under its ordinary comparison');
+            $this->same(GateReport::VERDICT_RED, $report->verdict(), 'a non-check publication remains RED');
+            $this->assert(\in_array([FailureClass::SURFACE_MISMATCH, 'case:alpha|rules'], array_map(
+                static fn(array $failure): array => [$failure['class'], $failure['scope']],
+                $report->raised(),
+            ), true), 'a non-check publication remains under its ordinary comparison');
             $this->same($before, Fs::read($root . '/finding-gate/declared-outcomes/alpha.json'), 'a RED derive run writes no outcome snapshot');
         } finally {
             SyntheticTree::remove($root);
@@ -70,13 +84,18 @@ final class SelfTestOutcomes extends SelfTestGroup
         ];
         $root = SyntheticTree::create($tree);
         try {
-            $report = new GateReport();
-            GateModes::run(Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD', '--derive-declarations'], $root), $report);
-            $this->same(GateReport::VERDICT_GREEN, $report->verdict(), 'a real refusal file has a guarded exact destination and can be measured');
             $snapshot = Fs::read($root . '/finding-gate/declared-outcomes/alpha.json');
             $report = new GateReport();
+            GateModes::run(Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD', '--derive-declarations'], $root), $report);
+            $this->same(GateReport::VERDICT_RED, $report->verdict(), 'a real refusal file cannot license a whole-invocation outcome snapshot');
+            $this->assert(self::has($report, FailureClass::SURFACE_MISMATCH), 'the refusal file remains in the whole-invocation comparison');
+            $this->assert(!self::has($report, FailureClass::RUN_FAILED), 'the valid selected destination passes its product guard');
+            $this->same($snapshot, Fs::read($root . '/finding-gate/declared-outcomes/alpha.json'), 'a RED derive run writes no refusal snapshot');
+            $report = new GateReport();
             GateModes::run(Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root), $report);
-            $this->same(GateReport::VERDICT_GREEN, $report->verdict(), 'a refusal file participates in the exact ordinary snapshot');
+            $this->same(GateReport::VERDICT_RED, $report->verdict(), 'a refusal file compares through its whole invocation');
+            $this->assert(self::has($report, FailureClass::OUTCOME_DECLARATION_STALE), 'a whole refusal file does not credit the outcome declaration');
+            $this->same($snapshot, Fs::read($root . '/finding-gate/declared-outcomes/alpha.json'), 'ordinary compare writes no refusal snapshot');
         } finally {
             SyntheticTree::remove($root);
         }

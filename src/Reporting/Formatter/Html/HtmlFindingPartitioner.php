@@ -10,7 +10,7 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Reporting\Formatter\PublishedFinding;
+use Qualimetrix\Reporting\Formatter\FindingRecord;
 use Qualimetrix\Reporting\FormatterContext;
 
 /**
@@ -33,6 +33,8 @@ final readonly class HtmlFindingPartitioner
 {
     /** The project root's node path. */
     public const string ROOT = '';
+
+    public function __construct(private FindingRecord $record) {}
 
     /**
      * Partitions findings by tree node path.
@@ -117,16 +119,25 @@ final readonly class HtmlFindingPartitioner
     {
         $symbolPath = $finding->symbolPath;
         $namespace = $symbolPath->namespace ?? '';
+        $namespaceNode = $namespace === '' ? '(no namespace)' : $namespace;
 
         return match ($symbolPath->getType()) {
-            SymbolType::Method => [SymbolPath::forClass($namespace, $symbolPath->type ?? '')->toString(), $namespace],
-            SymbolType::Class_ => [$symbolPath->toString(), $namespace],
-            SymbolType::Function_, SymbolType::Namespace_ => [$namespace],
-            SymbolType::File => isset($soleClassByFile[$symbolPath->toString()])
-                ? [$soleClassByFile[$symbolPath->toString()]]
-                : [],
+            SymbolType::Method => [SymbolPath::forClass($namespace, $symbolPath->type ?? '')->toString(), $namespaceNode],
+            SymbolType::Class_ => [$symbolPath->toString(), $namespaceNode],
+            SymbolType::Function_, SymbolType::Namespace_ => [$namespaceNode],
+            SymbolType::File => self::fileCandidatePaths($symbolPath->toString(), $soleClassByFile),
             default => [],
         };
+    }
+
+    /**
+     * @param array<string, string> $soleClassByFile
+     *
+     * @return list<string>
+     */
+    private static function fileCandidatePaths(string $filePath, array $soleClassByFile): array
+    {
+        return isset($soleClassByFile[$filePath]) ? [$soleClassByFile[$filePath]] : [];
     }
 
     /**
@@ -134,8 +145,6 @@ final readonly class HtmlFindingPartitioner
      *
      * @param array<string, HtmlTreeNode> $nodesByPath
      * @param array<string, list<Finding>> $findingsByNode
-     *
-     * @qmx-threshold complexity.ccn warning=11 error=11 — Finite attachment projection keeps node lookup, magnitude normalization, and payload fields together.
      */
     public function attach(
         array $nodesByPath,
@@ -149,27 +158,7 @@ final readonly class HtmlFindingPartitioner
             ));
 
             foreach ($findings as $finding) {
-                $metricValue = $finding->metricValue;
-                if ($metricValue !== null && \is_float($metricValue) && (is_nan($metricValue) || is_infinite($metricValue))) {
-                    $metricValue = null;
-                }
-
-                $node->findings[] = [
-                    'subject' => $finding->subject->toCanonical(),
-                    'ruleName' => $finding->ruleName,
-                    'violationCode' => $finding->code,
-                    'message' => $finding->message,
-                    'recommendation' => $finding->recommendation,
-                    'severity' => $finding->severity->value,
-                    'metricValue' => $metricValue,
-                    'symbolPath' => $finding->symbolPath->toString(),
-                    'occurrence' => $finding->occurrenceKey?->value,
-                    'file' => $finding->location->file === null
-                        ? null
-                        : $context->relativizePath($finding->location->file),
-                    'line' => $finding->location->line,
-                    ...PublishedFinding::baselineFields($finding),
-                ];
+                $node->findings[] = $this->record->of($finding, $context);
             }
         }
     }

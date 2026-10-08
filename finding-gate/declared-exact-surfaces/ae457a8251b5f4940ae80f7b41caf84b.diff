@@ -1,0 +1,41 @@
+--- candidate
++++ reference (mapped)
+@@ -1,28 +1,10 @@
+-visible 341
+-Health Report (Qualimetrix dev-main) — 3 files analyzed
+-
+-Findings: 1 error(s), 6 warning(s), 0 info
+-
+-Analysis complete: 3 analyzed, 0 generated file(s) excluded.
+-
+-No health data available.
+-Run a full analysis with computed metrics enabled to see health scores.
+-
+-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
+-
+-invocation-format:health 341
+-Health Report (Qualimetrix dev-main) — 3 files analyzed
+-
+-Findings: 1 error(s), 6 warning(s), 0 info
+-
+-Analysis complete: 3 analyzed, 0 generated file(s) excluded.
+-
+-No health data available.
+-Run a full analysis with computed metrics enabled to see health scores.
+-
+-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
+-
+-invocation-stderr 0
+-
+-invocation-exit 1
+-2
++visible 0
++
++invocation-format:health 0
++
++invocation-stderr 150
++Internal error: Malformed UTF-8 characters, possibly incorrectly encoded
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-exit 1
++1

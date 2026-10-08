@@ -115,6 +115,11 @@ JSON file -> BaselineLoader -> Baseline -> BaselineCeilingStage -> Findings
                                                                     breaches promoted)
 ```
 
+For file and declaration identities, `SubjectRegion` restores the canonical file
+component to its raw path bytes before comparing it with analyzed-file coverage.
+For declarations it removes the terminal occurrence ordinal before decoding,
+so a literal filename ending in `#2` remains distinct from an ordinal suffix.
+
 The stage runs **fourth** in Reporting's finding-projection sequence, after `@qmx-ignore` and the
 `suppress_paths` / `suppress_namespaces` filters; `UnusedEntryAudit` follows ceiling judgement, then optional annotation
 rejoin and Git scope. That
@@ -556,3 +561,17 @@ New channel names are validated for form, not current registry membership.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+### Byte-named entries
+
+Canonical subject components escape literal `%` as `%25`, invalid bytes as
+`%XX`, and reserved declaration-file `#` as `%23`. These identities remain
+byte-distinct. Old entries for affected paths can become unmatched after an
+upgrade: review and migrate only those entries, without regenerating the
+baseline wholesale.
+
+Scope and exclusion selectors still carry raw input facts. A baseline whose
+scope or selector is not UTF-8 refuses with a native encoding reason; these
+fields cannot be renamed without changing their comparisons. Analyse a
+containing UTF-8 directory to record a byte-named entry. Raw-byte JSON
+selectors remain unsupported.

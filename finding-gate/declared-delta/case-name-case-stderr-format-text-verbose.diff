@@ -1,6 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -1,2 +1,1 @@
--[<normalized>] [WARNING] mixed spelling: Corpus\NameCase\FOO, Corpus\NameCase\Foo → Corpus\NameCase\FOO
--[<normalized>] [WARNING] mixed spelling: Corpus\NameCase\Web, Corpus\NameCase\web → Corpus\NameCase\Web
-+[<normalized>] [WARNING] DIT: 2 inheritance chain(s) leaving the analysed path were not followed to a root -- the walk stopped at: Corpus\NameCase\base, Corpus\NameCase\fOO. The depth published for the classes below them is what this run did follow.

@@ -102,7 +102,8 @@ export function aggregateSmallNodes(children, totalArea, totalValue) {
     name: `Other (${small.length} items)`,
     path: '',
     type: 'other',
-    metrics: { 'size.loc.sum': otherLoc },
+    metrics: {},
+    _loc: otherLoc,
     violations: [],
     violationCountTotal: otherViolations,
     debtMinutes: 0,
@@ -118,9 +119,10 @@ export function aggregateSmallNodes(children, totalArea, totalValue) {
  * Gets LOC value from a node's metrics.
  *
  * @param {object} node - Tree node
- * @returns {number} LOC value (minimum 1 to avoid zero-weight in treemap)
+ * @returns {number} Published LOC, or the visual group's summed area weight
  */
 export function getLoc(node) {
-  const loc = node.metrics?.['size.loc.sum'];
+  const loc = node._isOther ? node._loc : node.type === 'class'
+    ? node.metrics?.['size.class-loc'] : node.metrics?.['size.loc.sum'];
   return (loc != null && loc > 0) ? loc : 0;
 }

@@ -276,11 +276,11 @@ final class ChannelRenamePlants
      * channel without letting the two published fields drift apart. A code-only
      * rename is not expressible: a whole-name row would go on to rewrite the
      * `rule` field the mutation had left alone. Measured on the green control:
-     * that variant failed on the smells case's `html`, `json` and `text-verbose`
+     * that variant failed on the smells case's `html`, `json` and `text-detail`
      * surfaces and on `tree|rules`.
      *
      * **The new name is the same length as the old one, and that is load-bearing
-     * rather than tidy.** `qmx rules` and `--format=text-verbose` pad the channel
+     * rather than tidy.** `qmx rules` and `--format=text --detail=all` pad the channel
      * column to a fixed width, so a name one character longer shifts the text
      * beside it by one space — a shift no row can declare, because a row
      * translates a name and not the padding after it. Measured on `qmx rules`

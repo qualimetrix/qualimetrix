@@ -1,0 +1,54 @@
+--- candidate
++++ reference (mapped)
+@@ -1,41 +1,10 @@
+-visible 1713
+-<?xml version="1.0" encoding="UTF-8"?>
+-<checkstyle version="3.0">
+-  <file name="src/First.php">
+-    <error line="7" severity="warning" message="Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions" source="qmx.complexity.ccn"/>
+-    <error line="23" severity="warning" message="Layer &quot;public&quot; must not depend on layer &quot;private&quot; (Corpus\Utf8\Public\K%FF → Corpus\Utf8\Private\W%FFX, instantiates)" source="qmx.architecture.layer-violation"/>
+-    <error line="6" severity="warning" message="Duplicated code block (17 code lines, 2 occurrences): &quot;public function m%E9(array $rows): array $out = []; foreach ($rows as $key =&gt;...&quot; — also at src/Second.php:6-23" source="qmx.duplication.clone"/>
+-  </file>
+-  <file name="src/Second.php">
+-    <error line="7" severity="warning" message="Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions" source="qmx.complexity.ccn"/>
+-    <error line="23" severity="warning" message="Layer &quot;public&quot; must not depend on layer &quot;private&quot; (Corpus\Utf8\Public\K%FE → Corpus\Utf8\Private\W%FFX, instantiates)" source="qmx.architecture.layer-violation"/>
+-    <error line="6" severity="warning" message="Duplicated code block (17 code lines, 2 occurrences): &quot;public function m%E9(array $rows): array $out = []; foreach ($rows as $key =&gt;...&quot; — also at src/First.php:6-23" source="qmx.duplication.clone"/>
+-  </file>
+-  <file name="[project]">
+-    <error line="1" severity="error" message="Circular dependency (2 classes): K%FE → K%FF → K%FE" source="qmx.architecture.circular-dependency"/>
+-  </file>
+-</checkstyle>
+-
+-invocation-format:checkstyle 1713
+-<?xml version="1.0" encoding="UTF-8"?>
+-<checkstyle version="3.0">
+-  <file name="src/First.php">
+-    <error line="7" severity="warning" message="Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions" source="qmx.complexity.ccn"/>
+-    <error line="23" severity="warning" message="Layer &quot;public&quot; must not depend on layer &quot;private&quot; (Corpus\Utf8\Public\K%FF → Corpus\Utf8\Private\W%FFX, instantiates)" source="qmx.architecture.layer-violation"/>
+-    <error line="6" severity="warning" message="Duplicated code block (17 code lines, 2 occurrences): &quot;public function m%E9(array $rows): array $out = []; foreach ($rows as $key =&gt;...&quot; — also at src/Second.php:6-23" source="qmx.duplication.clone"/>
+-  </file>
+-  <file name="src/Second.php">
+-    <error line="7" severity="warning" message="Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions" source="qmx.complexity.ccn"/>
+-    <error line="23" severity="warning" message="Layer &quot;public&quot; must not depend on layer &quot;private&quot; (Corpus\Utf8\Public\K%FE → Corpus\Utf8\Private\W%FFX, instantiates)" source="qmx.architecture.layer-violation"/>
+-    <error line="6" severity="warning" message="Duplicated code block (17 code lines, 2 occurrences): &quot;public function m%E9(array $rows): array $out = []; foreach ($rows as $key =&gt;...&quot; — also at src/First.php:6-23" source="qmx.duplication.clone"/>
+-  </file>
+-  <file name="[project]">
+-    <error line="1" severity="error" message="Circular dependency (2 classes): K%FE → K%FF → K%FE" source="qmx.architecture.circular-dependency"/>
+-  </file>
+-</checkstyle>
+-
+-invocation-stderr 115
+-5 published string(s) contained invalid UTF-8 from the analysed source; invalid bytes were percent-escaped as %XX.
+-
+-invocation-exit 1
+-2
++visible 0
++
++invocation-format:checkstyle 0
++
++invocation-stderr 150
++Internal error: Malformed UTF-8 characters, possibly incorrectly encoded
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-exit 1
++1

@@ -458,6 +458,23 @@ final class ApplicationTest extends TestCase
         self::assertStringContainsString(ProductIdentity::pointerText(), $app->get('list')->getHelp());
     }
 
+    #[Test]
+    public function itRefusesAnUnknownGlyphModeBeforeRunningTheCommand(): void
+    {
+        $old = getenv('QMX_ASCII');
+        putenv('QMX_ASCII=maybe');
+        try {
+            $app = self::application();
+            $app->setAutoExit(false);
+            $output = new BufferedOutput();
+            $exit = $app->run(new ArrayInput(['command' => 'list']), $output);
+            self::assertSame(3, $exit);
+            self::assertStringContainsString('QMX_ASCII', $output->fetch());
+        } finally {
+            putenv($old === false ? 'QMX_ASCII' : 'QMX_ASCII=' . $old);
+        }
+    }
+
     private static function application(?ErrorStream $errorStream = null): Application
     {
         $errorStream ??= new ErrorStream();

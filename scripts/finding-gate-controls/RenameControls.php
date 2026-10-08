@@ -73,6 +73,15 @@ final class RenameControls
             [
                 new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:complexity'),
                 new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:detectors'),
+                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:detectors|format:json', exactScope: true),
+                new Expectation(FailureClass::FIELD_VALUES_MISMATCH, 'declared-fields.derived.tsv', exactScope: true),
+                ...array_map(static fn(string $scope): Expectation => new Expectation(FailureClass::SURFACE_MISMATCH, $scope, exactScope: true), [
+                    'case:detectors|baseline-file', 'case:detectors|check:output:file',
+                    'case:detectors|format:checkstyle', 'case:detectors|format:github',
+                    'case:detectors|format:gitlab', 'case:detectors|format:json',
+                    'case:detectors|format:sarif', 'case:detectors|format:text',
+                    'case:detectors|show-suppressed',
+                ]),
                 new Expectation(
                     FailureClass::WITNESS_DISAGREEMENT,
                     'governance/Channel/Fixtures/declared.txt',
@@ -215,6 +224,22 @@ final class RenameControls
             // this control. {@see ChannelRenamePlants::producerListingToleration()}.
             [
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells'),
+                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:detectors|format:json', exactScope: true),
+                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:detectors-smells|format:json', exactScope: true),
+                new Expectation(FailureClass::FIELD_VALUES_MISMATCH, 'declared-fields.derived.tsv', exactScope: true),
+                ...array_map(static fn(string $scope): Expectation => new Expectation(FailureClass::SURFACE_MISMATCH, $scope, exactScope: true), [
+                    'case:detectors-smells|baseline-file', 'case:detectors-smells|check:output:file',
+                    'case:detectors-smells|explain:declaration:class:Corpus\\Smells\\Injection@src/Injection.php',
+                    'case:detectors-smells|format:checkstyle', 'case:detectors-smells|format:github',
+                    'case:detectors-smells|format:gitlab', 'case:detectors-smells|format:json',
+                    'case:detectors-smells|format:sarif', 'case:detectors-smells|format:text',
+                    'case:detectors-smells|show-suppressed',
+                    'case:detectors|baseline-file', 'case:detectors|check:output:file',
+                    'case:detectors|format:checkstyle', 'case:detectors|format:github',
+                    'case:detectors|format:gitlab', 'case:detectors|format:json',
+                    'case:detectors|format:sarif', 'case:detectors|format:text',
+                    'case:detectors|show-suppressed',
+                ]),
                 ...ChannelRenamePlants::producerListingToleration(),
             ],
         );
@@ -273,13 +298,19 @@ final class RenameControls
             ),
             [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity|format:metrics'),
                 ...self::aggregateValueFailures()],
-            [new Expectation(FailureClass::SURFACE_MISMATCH, 'format:metrics')],
+            [new Expectation(FailureClass::SURFACE_MISMATCH, 'format:metrics'),
+                new Expectation(FailureClass::DELTA_TOO_LARGE, 'case:coupling|format:metrics', exactScope: true),
+                new Expectation(FailureClass::DELTA_TOO_LARGE, 'case:design|format:metrics', exactScope: true),
+                new Expectation(FailureClass::DELTA_TOO_LARGE, 'case:drill-down|format:metrics', exactScope: true),
+                new Expectation(FailureClass::DELTA_TOO_LARGE, 'case:layers|format:metrics', exactScope: true),
+                new Expectation(FailureClass::VALUE_MISMATCH, 'declared-values.derived.tsv', exactScope: true)],
         );
     }
 
     /**
-     * A value comparison requires records on both sides; outcome transitions
-     * with a reference refusal provide no metric records to compare.
+     * A value comparison requires records on both sides. The UTF-8 reference
+     * publishes a whole invocation, so its metrics surface is compared against
+     * the exact declared delta instead.
      *
      * @return list<Expectation>
      */
@@ -287,6 +318,10 @@ final class RenameControls
     {
         $required = [];
         foreach (\QmxFindingGate\Corpus::load(\dirname(__DIR__, 2))->cases as $case) {
+            if ($case->id === 'utf8-identifier') {
+                $required[] = new Expectation(FailureClass::DELTA_MISMATCH, 'case:utf8-identifier|format:metrics', exactScope: true);
+                continue;
+            }
             if (CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($case, 'reference'))
                 && CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($case, 'candidate'))) {
                 $required[] = new Expectation(FailureClass::VALUE_MISMATCH, 'case:' . $case->id . '|format:metrics|record:');
@@ -341,7 +376,8 @@ final class RenameControls
 
     /**
      * A suppressed report value renamed in product code, translated by
-     * `report-values.tsv`'s quoted-only substitution.
+     * `report-values.tsv`'s quoted-only substitution for JSON record pairs.
+     * The UTF-8 reference is a whole invocation and its exact surface changes.
      *
      * `SuppressionMechanism::NamespaceSuppression` is renamed rather than a
      * mechanism the corpus actually fires, because the declaration does not need
@@ -353,14 +389,15 @@ final class RenameControls
      */
     public static function reportValueRenamed(): Control
     {
-        return Control::greenWith(
+        return Control::red(
             'report-value-renamed',
-            'a suppressed report value is renamed, translated by a quoted-only report-values.tsv row',
+            'a suppressed report value is translated in JSON record pairs but changes a whole UTF-8 publication',
             self::reportValueMutation()->and(ChannelRenamePlants::trackedMapPlus(
                 'report-values.tsv',
                 ["namespace-suppression\tnamespace-block\tthe control renames the mechanism value"],
                 'a report-values row declaring the control\'s renamed value',
             )),
+            [new Expectation(FailureClass::DELTA_MISMATCH, 'case:utf8-identifier|format:suppressed', exactScope: true)],
         );
     }
 
@@ -379,7 +416,7 @@ final class RenameControls
      * `report-values.tsv` row — the class no control had watched fire for this
      * map.
      *
-     * The blast radius is every case's `format:suppressed` surface, and only
+     * The blast radius is every published `format:suppressed` surface, and only
      * that surface: `mechanisms` and `byMechanism` print every value in every
      * case regardless of whether that case's own findings were ever suppressed
      * by it. Early refusals publish no mechanism vocabulary. A populated
@@ -397,9 +434,9 @@ final class RenameControls
     }
 
     /**
-     * Every `format:suppressed` surface comparable on both sides, derived from
-     * the corpus rather than listed. A refusal publishes no mechanism vocabulary,
-     * including when that case becomes analysable only in the candidate.
+     * Record-paired suppressed publications come from the corpus. The UTF-8
+     * reference is whole and uses its exact delta; the drill-down early selector
+     * refusal publishes no mechanism vocabulary.
      *
      * @return list<Expectation>
      */
@@ -408,6 +445,13 @@ final class RenameControls
         $required = [];
 
         foreach (Corpus::load(\dirname(__DIR__, 2))->cases as $case) {
+            if ($case->id === 'drill-down') {
+                continue;
+            }
+            if ($case->id === 'utf8-identifier') {
+                $required[] = new Expectation(FailureClass::DELTA_MISMATCH, 'case:utf8-identifier|format:suppressed', exactScope: true);
+                continue;
+            }
             if (!CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($case, 'reference'))
                 || !CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($case, 'candidate'))) {
                 continue;

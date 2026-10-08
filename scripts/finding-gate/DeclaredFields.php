@@ -288,20 +288,30 @@ final class DeclaredFields
     }
 
     /** @return list<Measurement> */
-    public function measurements(string $report): array
+    public function measurements(string $report, ?PublicationForms $forms = null): array
     {
         self::assertReport($report);
         $measurements = [];
+        $outsideViews = [];
+        $activeViews = [];
         foreach ($this->required as $key => $publication) {
             if ($publication['report'] !== $report) {
                 continue;
             }
+            if ($forms?->schemaPair($publication['case'], $publication['view']) === false) {
+                $outsideViews[$publication['view']] = true;
+                continue;
+            }
+            $activeViews[$publication['view']] = true;
             if (!isset($this->measurements[$key])) {
                 throw new GateError('A required record publication was not supplied: ' . $key);
             }
             $measurements[] = $this->measurements[$key];
         }
         foreach ($this->views($report) as $view) {
+            if (isset($outsideViews[$view]) && !isset($activeViews[$view])) {
+                continue;
+            }
             if (array_filter($measurements, static fn(array $measurement): bool => $measurement['view'] === $view) === []) {
                 throw new GateError('No record publications were registered for declared fields of ' . $report . '/' . $view);
             }

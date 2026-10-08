@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
@@ -20,7 +21,11 @@ use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\SuppressionCompositionBuilder;
+use Qualimetrix\Reporting\Formatter\FormattedReport;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
+use Qualimetrix\Reporting\Formatter\Prose\ProseText;
+use Qualimetrix\Reporting\Formatter\PublicationKind;
+use Qualimetrix\Reporting\Formatter\PublishedUtf8;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
 use Qualimetrix\Reporting\ReportBuilder;
@@ -86,14 +91,6 @@ final class ResultPresenter
 
         $format = $outputFormat->value;
 
-        // Deprecation warning for text-verbose (stderr only, not in formatted output)
-        if ($format === 'text-verbose') {
-            $this->errorStream->write(
-                $output,
-                '<comment>Warning: --format=text-verbose is deprecated. Use --format=text --detail instead.</comment>',
-            );
-        }
-
         $formatter = $this->formatterRegistry->get($format);
         $context = $this->formatterContextFactory->create(
             $input,
@@ -107,7 +104,7 @@ final class ResultPresenter
         $this->assertDrillDownBinds($context, $analysisResult);
 
         // Apply --namespace/--class drill-down filter centrally (all formatters benefit)
-        $filteredFindings = $this->findingFilter->filterFindings($findings, $context);
+        $filteredFindings = $this->findingFilter->filterFindings($findings, $context, FileNamespaceIndex::fromRepository($analysisResult->measured->repository));
 
         // Build and output report with filtered findings
         $coverage = ReportCoverageProjection::of($analysisResult->measured->coverage, $projectRoot);
@@ -134,6 +131,13 @@ final class ResultPresenter
         $report = $reportBuilder->build();
         $report = $this->summaryEnricher->enrich($report);
         $formattedOutput = $formatter->format($report, $context);
+        if ($formatter->publicationKind() === PublicationKind::Prose) {
+            $published = ProseText::publish($formattedOutput->body, $this->errorStream->glyphMode());
+            $formattedOutput = new FormattedReport($published->body, $formattedOutput->escapedStrings + $published->escapedStrings);
+        }
+        if ($formattedOutput->escapedStrings > 0) {
+            $this->errorStream->write($output, PublishedUtf8::describe($formattedOutput->escapedStrings));
+        }
 
         $this->writeOutput($formattedOutput, $format, $input, $output, $runTargets);
 
@@ -264,7 +268,7 @@ final class ResultPresenter
      * status for the caller to reconcile with `ExitCodeResolver`.
      */
     private function writeOutput(
-        string $formattedOutput,
+        FormattedReport $formattedOutput,
         string $format,
         InputInterface $input,
         OutputInterface $output,
@@ -273,7 +277,7 @@ final class ResultPresenter
         $target = CommandLineSpelling::option($input, 'output');
 
         if ($target !== null) {
-            $runTargets->write('--output', $formattedOutput);
+            $runTargets->write('--output', $formattedOutput->body);
 
             $this->errorStream->write(
                 $output,
@@ -291,7 +295,7 @@ final class ResultPresenter
             );
         }
 
-        OutputHelper::write($output, $formattedOutput);
+        OutputHelper::write($output, $formattedOutput->body);
     }
 
     private function isOutputTty(OutputInterface $output): bool

@@ -39,7 +39,7 @@ final class RefusalDeclarationsTest extends TestCase
     protected function setUp(): void
     {
         $this->root = Fs::temporaryDirectory('refusal-declarations-test-');
-        Fs::write($this->root . '/src/Reporting/Formatter/Json/JsonFindingSection.php', '<?php class Publisher { function formatFinding() {} }');
+        Fs::write($this->root . '/src/Reporting/Formatter/FindingRecord.php', '<?php class Publisher { function of() {} }');
         Fs::write($this->root . '/' . EquivalenceTuple::TRACKED_PATH, Tsv::render(EquivalenceTuple::COLUMNS, [['message', EquivalenceTuple::source()]]));
     }
 

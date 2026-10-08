@@ -35,7 +35,7 @@ outputs:
     description: 'Number of violations found'
     value: ${{ steps.analysis.outputs.violations }}
   exit-code:
-    description: 'Exit code of the analysis'
+    description: 'Analysis exit: 0 clean, 1 warnings, 2 errors, 3 refusal, 4 incomplete, 5 internal error'
     value: ${{ steps.analysis.outputs.exit-code }}
 
 runs:

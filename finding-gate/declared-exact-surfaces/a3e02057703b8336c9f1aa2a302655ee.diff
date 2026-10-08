@@ -1,0 +1,622 @@
+--- candidate
++++ reference (mapped)
+@@ -1,599 +1,20 @@
+-visible 13657
+-{
+-    "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json",
+-    "version": "2.1.0",
+-    "runs": [
+-        {
+-            "tool": {
+-                "driver": {
+-                    "name": "Qualimetrix",
+-                    "version": "dev-main",
+-                    "informationUri": "https://qualimetrix.dev",
+-                    "properties": {
+-                        "llmsTxt": "https://qualimetrix.dev/llms.txt"
+-                    },
+-                    "rules": [
+-                        {
+-                            "id": "complexity.ccn",
+-                            "name": "Complexity Ccn",
+-                            "shortDescription": {
+-                                "text": "Checks cyclomatic complexity at method and class levels"
+-                            },
+-                            "fullDescription": {
+-                                "text": "Checks cyclomatic complexity at method and class levels"
+-                            },
+-                            "helpUri": "https://qualimetrix.dev/rules/complexity/",
+-                            "defaultConfiguration": {
+-                                "level": "warning"
+-                            }
+-                        },
+-                        {
+-                            "id": "architecture.layer-violation",
+-                            "name": "Architecture Layer Violation",
+-                            "shortDescription": {
+-                                "text": "Detects dependencies between layers that are not explicitly allowed by the architecture policy."
+-                            },
+-                            "fullDescription": {
+-                                "text": "Detects dependencies between layers that are not explicitly allowed by the architecture policy."
+-                            },
+-                            "helpUri": "https://qualimetrix.dev/rules/architecture/",
+-                            "defaultConfiguration": {
+-                                "level": "warning"
+-                            }
+-                        },
+-                        {
+-                            "id": "architecture.circular-dependency",
+-                            "name": "Architecture Circular Dependency",
+-                            "shortDescription": {
+-                                "text": "Detects circular dependencies between classes"
+-                            },
+-                            "fullDescription": {
+-                                "text": "Detects circular dependencies between classes"
+-                            },
+-                            "helpUri": "https://qualimetrix.dev/rules/architecture/",
+-                            "defaultConfiguration": {
+-                                "level": "error"
+-                            }
+-                        },
+-                        {
+-                            "id": "duplication.clone",
+-                            "name": "Duplication Clone",
+-                            "shortDescription": {
+-                                "text": "Detects duplicated code blocks"
+-                            },
+-                            "fullDescription": {
+-                                "text": "Detects duplicated code blocks"
+-                            },
+-                            "helpUri": "https://qualimetrix.dev/rules/duplication/",
+-                            "defaultConfiguration": {
+-                                "level": "warning"
+-                            }
+-                        }
+-                    ]
+-                }
+-            },
+-            "results": [
+-                {
+-                    "ruleId": "complexity.ccn",
+-                    "ruleIndex": 0,
+-                    "level": "warning",
+-                    "message": {
+-                        "text": "Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "complexity.ccn:declaration:callable:Corpus\\Utf8\\Public\\K%FF::m%E9@src/First.php"
+-                    },
+-                    "locations": [
+-                        {
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/First.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 7,
+-                                    "startColumn": 1
+-                                }
+-                            }
+-                        }
+-                    ]
+-                },
+-                {
+-                    "ruleId": "complexity.ccn",
+-                    "ruleIndex": 0,
+-                    "level": "warning",
+-                    "message": {
+-                        "text": "Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "complexity.ccn:declaration:callable:Corpus\\Utf8\\Public\\K%FE::m%E9@src/Second.php"
+-                    },
+-                    "locations": [
+-                        {
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/Second.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 7,
+-                                    "startColumn": 1
+-                                }
+-                            }
+-                        }
+-                    ]
+-                },
+-                {
+-                    "ruleId": "architecture.layer-violation",
+-                    "ruleIndex": 1,
+-                    "level": "warning",
+-                    "message": {
+-                        "text": "Layer \"public\" must not depend on layer \"private\" (Corpus\\Utf8\\Public\\K%FF \u2192 Corpus\\Utf8\\Private\\W%FFX, instantiates)"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "architecture.layer-violation:declaration:class:Corpus\\Utf8\\Public\\K%FF@src/First.php:a958228702b2f74d:new:class:Corpus\\Utf8\\Private\\W%FFX"
+-                    },
+-                    "locations": [
+-                        {
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/First.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 23,
+-                                    "startColumn": 1
+-                                }
+-                            }
+-                        }
+-                    ]
+-                },
+-                {
+-                    "ruleId": "architecture.layer-violation",
+-                    "ruleIndex": 1,
+-                    "level": "warning",
+-                    "message": {
+-                        "text": "Layer \"public\" must not depend on layer \"private\" (Corpus\\Utf8\\Public\\K%FE \u2192 Corpus\\Utf8\\Private\\W%FFX, instantiates)"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "architecture.layer-violation:declaration:class:Corpus\\Utf8\\Public\\K%FE@src/Second.php:0f051a936e8edc45:new:class:Corpus\\Utf8\\Private\\W%FFX"
+-                    },
+-                    "locations": [
+-                        {
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/Second.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 23,
+-                                    "startColumn": 1
+-                                }
+-                            }
+-                        }
+-                    ]
+-                },
+-                {
+-                    "ruleId": "architecture.circular-dependency",
+-                    "ruleIndex": 2,
+-                    "level": "error",
+-                    "message": {
+-                        "text": "Circular dependency (2 classes): K%FE \u2192 K%FF \u2192 K%FE"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "architecture.circular-dependency:project::449e174e1262085b"
+-                    }
+-                },
+-                {
+-                    "ruleId": "duplication.clone",
+-                    "ruleIndex": 3,
+-                    "level": "warning",
+-                    "message": {
+-                        "text": "Duplicated code block (17 code lines, 2 occurrences): \"public function m%E9(array $rows): array $out = []; foreach ($rows as $key =>...\" \u2014 also at src/Second.php:6-23"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "duplication.clone:file:src/First.php:41ed38f6560be1d0"
+-                    },
+-                    "locations": [
+-                        {
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/First.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 6,
+-                                    "startColumn": 1
+-                                }
+-                            }
+-                        }
+-                    ],
+-                    "relatedLocations": [
+-                        {
+-                            "id": 0,
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/Second.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 6,
+-                                    "startColumn": 1
+-                                }
+-                            },
+-                            "message": {
+-                                "text": "Related location"
+-                            }
+-                        }
+-                    ]
+-                },
+-                {
+-                    "ruleId": "duplication.clone",
+-                    "ruleIndex": 3,
+-                    "level": "warning",
+-                    "message": {
+-                        "text": "Duplicated code block (17 code lines, 2 occurrences): \"public function m%E9(array $rows): array $out = []; foreach ($rows as $key =>...\" \u2014 also at src/First.php:6-23"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "duplication.clone:file:src/Second.php:41ed38f6560be1d0"
+-                    },
+-                    "locations": [
+-                        {
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/Second.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 6,
+-                                    "startColumn": 1
+-                                }
+-                            }
+-                        }
+-                    ],
+-                    "relatedLocations": [
+-                        {
+-                            "id": 0,
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/First.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 6,
+-                                    "startColumn": 1
+-                                }
+-                            },
+-                            "message": {
+-                                "text": "Related location"
+-                            }
+-                        }
+-                    ]
+-                }
+-            ],
+-            "invocations": [
+-                {
+-                    "executionSuccessful": true,
+-                    "toolExecutionNotifications": [
+-                        {
+-                            "level": "warning",
+-                            "message": {
+-                                "text": "5 published string(s) contained invalid UTF-8 from the analysed source; invalid bytes were percent-escaped as %XX."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-PUBLICATION-INVALID-UTF8"
+-                            }
+-                        }
+-                    ]
+-                }
+-            ],
+-            "originalUriBaseIds": {
+-                "%SRCROOT%": {
+-                    "uri": "<normalized>"
+-                }
+-            }
+-        }
+-    ]
+-}
+-invocation-format:sarif 13657
+-{
+-    "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json",
+-    "version": "2.1.0",
+-    "runs": [
+-        {
+-            "tool": {
+-                "driver": {
+-                    "name": "Qualimetrix",
+-                    "version": "dev-main",
+-                    "informationUri": "https://qualimetrix.dev",
+-                    "properties": {
+-                        "llmsTxt": "https://qualimetrix.dev/llms.txt"
+-                    },
+-                    "rules": [
+-                        {
+-                            "id": "complexity.ccn",
+-                            "name": "Complexity Ccn",
+-                            "shortDescription": {
+-                                "text": "Checks cyclomatic complexity at method and class levels"
+-                            },
+-                            "fullDescription": {
+-                                "text": "Checks cyclomatic complexity at method and class levels"
+-                            },
+-                            "helpUri": "https://qualimetrix.dev/rules/complexity/",
+-                            "defaultConfiguration": {
+-                                "level": "warning"
+-                            }
+-                        },
+-                        {
+-                            "id": "architecture.layer-violation",
+-                            "name": "Architecture Layer Violation",
+-                            "shortDescription": {
+-                                "text": "Detects dependencies between layers that are not explicitly allowed by the architecture policy."
+-                            },
+-                            "fullDescription": {
+-                                "text": "Detects dependencies between layers that are not explicitly allowed by the architecture policy."
+-                            },
+-                            "helpUri": "https://qualimetrix.dev/rules/architecture/",
+-                            "defaultConfiguration": {
+-                                "level": "warning"
+-                            }
+-                        },
+-                        {
+-                            "id": "architecture.circular-dependency",
+-                            "name": "Architecture Circular Dependency",
+-                            "shortDescription": {
+-                                "text": "Detects circular dependencies between classes"
+-                            },
+-                            "fullDescription": {
+-                                "text": "Detects circular dependencies between classes"
+-                            },
+-                            "helpUri": "https://qualimetrix.dev/rules/architecture/",
+-                            "defaultConfiguration": {
+-                                "level": "error"
+-                            }
+-                        },
+-                        {
+-                            "id": "duplication.clone",
+-                            "name": "Duplication Clone",
+-                            "shortDescription": {
+-                                "text": "Detects duplicated code blocks"
+-                            },
+-                            "fullDescription": {
+-                                "text": "Detects duplicated code blocks"
+-                            },
+-                            "helpUri": "https://qualimetrix.dev/rules/duplication/",
+-                            "defaultConfiguration": {
+-                                "level": "warning"
+-                            }
+-                        }
+-                    ]
+-                }
+-            },
+-            "results": [
+-                {
+-                    "ruleId": "complexity.ccn",
+-                    "ruleIndex": 0,
+-                    "level": "warning",
+-                    "message": {
+-                        "text": "Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "complexity.ccn:declaration:callable:Corpus\\Utf8\\Public\\K%FF::m%E9@src/First.php"
+-                    },
+-                    "locations": [
+-                        {
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/First.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 7,
+-                                    "startColumn": 1
+-                                }
+-                            }
+-                        }
+-                    ]
+-                },
+-                {
+-                    "ruleId": "complexity.ccn",
+-                    "ruleIndex": 0,
+-                    "level": "warning",
+-                    "message": {
+-                        "text": "Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "complexity.ccn:declaration:callable:Corpus\\Utf8\\Public\\K%FE::m%E9@src/Second.php"
+-                    },
+-                    "locations": [
+-                        {
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/Second.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 7,
+-                                    "startColumn": 1
+-                                }
+-                            }
+-                        }
+-                    ]
+-                },
+-                {
+-                    "ruleId": "architecture.layer-violation",
+-                    "ruleIndex": 1,
+-                    "level": "warning",
+-                    "message": {
+-                        "text": "Layer \"public\" must not depend on layer \"private\" (Corpus\\Utf8\\Public\\K%FF \u2192 Corpus\\Utf8\\Private\\W%FFX, instantiates)"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "architecture.layer-violation:declaration:class:Corpus\\Utf8\\Public\\K%FF@src/First.php:a958228702b2f74d:new:class:Corpus\\Utf8\\Private\\W%FFX"
+-                    },
+-                    "locations": [
+-                        {
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/First.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 23,
+-                                    "startColumn": 1
+-                                }
+-                            }
+-                        }
+-                    ]
+-                },
+-                {
+-                    "ruleId": "architecture.layer-violation",
+-                    "ruleIndex": 1,
+-                    "level": "warning",
+-                    "message": {
+-                        "text": "Layer \"public\" must not depend on layer \"private\" (Corpus\\Utf8\\Public\\K%FE \u2192 Corpus\\Utf8\\Private\\W%FFX, instantiates)"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "architecture.layer-violation:declaration:class:Corpus\\Utf8\\Public\\K%FE@src/Second.php:0f051a936e8edc45:new:class:Corpus\\Utf8\\Private\\W%FFX"
+-                    },
+-                    "locations": [
+-                        {
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/Second.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 23,
+-                                    "startColumn": 1
+-                                }
+-                            }
+-                        }
+-                    ]
+-                },
+-                {
+-                    "ruleId": "architecture.circular-dependency",
+-                    "ruleIndex": 2,
+-                    "level": "error",
+-                    "message": {
+-                        "text": "Circular dependency (2 classes): K%FE \u2192 K%FF \u2192 K%FE"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "architecture.circular-dependency:project::449e174e1262085b"
+-                    }
+-                },
+-                {
+-                    "ruleId": "duplication.clone",
+-                    "ruleIndex": 3,
+-                    "level": "warning",
+-                    "message": {
+-                        "text": "Duplicated code block (17 code lines, 2 occurrences): \"public function m%E9(array $rows): array $out = []; foreach ($rows as $key =>...\" \u2014 also at src/Second.php:6-23"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "duplication.clone:file:src/First.php:41ed38f6560be1d0"
+-                    },
+-                    "locations": [
+-                        {
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/First.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 6,
+-                                    "startColumn": 1
+-                                }
+-                            }
+-                        }
+-                    ],
+-                    "relatedLocations": [
+-                        {
+-                            "id": 0,
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/Second.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 6,
+-                                    "startColumn": 1
+-                                }
+-                            },
+-                            "message": {
+-                                "text": "Related location"
+-                            }
+-                        }
+-                    ]
+-                },
+-                {
+-                    "ruleId": "duplication.clone",
+-                    "ruleIndex": 3,
+-                    "level": "warning",
+-                    "message": {
+-                        "text": "Duplicated code block (17 code lines, 2 occurrences): \"public function m%E9(array $rows): array $out = []; foreach ($rows as $key =>...\" \u2014 also at src/First.php:6-23"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "duplication.clone:file:src/Second.php:41ed38f6560be1d0"
+-                    },
+-                    "locations": [
+-                        {
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/Second.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 6,
+-                                    "startColumn": 1
+-                                }
+-                            }
+-                        }
+-                    ],
+-                    "relatedLocations": [
+-                        {
+-                            "id": 0,
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/First.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 6,
+-                                    "startColumn": 1
+-                                }
+-                            },
+-                            "message": {
+-                                "text": "Related location"
+-                            }
+-                        }
+-                    ]
+-                }
+-            ],
+-            "invocations": [
+-                {
+-                    "executionSuccessful": true,
+-                    "toolExecutionNotifications": [
+-                        {
+-                            "level": "warning",
+-                            "message": {
+-                                "text": "5 published string(s) contained invalid UTF-8 from the analysed source; invalid bytes were percent-escaped as %XX."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-PUBLICATION-INVALID-UTF8"
+-                            }
+-                        }
+-                    ]
+-                }
+-            ],
+-            "originalUriBaseIds": {
+-                "%SRCROOT%": {
+-                    "uri": "<normalized>"
+-                }
+-            }
+-        }
+-    ]
+-}
+-invocation-stderr 115
+-5 published string(s) contained invalid UTF-8 from the analysed source; invalid bytes were percent-escaped as %XX.
+-
+-invocation-exit 1
+-2
++visible 154
++{
++    "error": "Internal error: Malformed UTF-8 characters, possibly incorrectly encoded",
++    "exit_code": 1,
++    "position": null,
++    "source": null
++}
++
++invocation-format:sarif 154
++{
++    "error": "Internal error: Malformed UTF-8 characters, possibly incorrectly encoded",
++    "exit_code": 1,
++    "position": null,
++    "source": null
++}
++
++invocation-stderr 0
++
++invocation-exit 1
++1

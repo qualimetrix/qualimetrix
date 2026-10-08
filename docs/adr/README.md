@@ -140,6 +140,9 @@ What follows from the decision: trade-offs, constraints, and implications.
 
 - [0103 — Layer Policy Declaration Evidence and Selection](0103-layer-policy-declaration-evidence-and-selection.md) — separate declaration facts, source-owned findings, independent diagnostic publication, observed spelling and consumer baseline migration.
 
+- [0104 — Source Bytes and Prose Publication](0104-source-bytes-and-prose-publication.md) — canonical identity, display repairs and the closed prose mode.
+- [0105 — Finding Publication and Drill-down](0105-finding-publication-and-drill-down.md) — shared records, published bags, selection reach and generated-hook revision.
+
 ## Superseded history
 
 - [0008 — ArchitectureProcessor Service](0008-architecture-processor-service.md) — replaced by the capability-oriented topology in ADR 0022.

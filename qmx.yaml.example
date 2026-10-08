@@ -42,7 +42,7 @@
 # General Settings
 # -----------------------------------------------------------------------------
 
-# Output format: summary, text, text-verbose, json, metrics, checkstyle, sarif, gitlab, github, health, html
+# Output format: summary, text, json, metrics, checkstyle, sarif, gitlab, github, health, html
 # Docs: https://qualimetrix.github.io/qualimetrix/reference/output-formats/
 # format: summary              # default: summary
 

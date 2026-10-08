@@ -160,7 +160,7 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
         // `ChannelRenameRefusal` is a plain `RuntimeException`, but the carry
         // understood the baseline envelope and declined, which is the user's
         // to fix, so it is normalized here rather than left for the shared
-        // ladder's generic `RuntimeException` clause to answer with code 1.
+        // ladder's generic `RuntimeException` clause to classify it as internal.
         // Keep this normalization until `BaselineChannelRenamer` throws the
         // shared carrier directly.
         try {

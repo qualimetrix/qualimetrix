@@ -225,7 +225,10 @@ final class SyntheticTreeTest extends TestCase
             self::assertSame('info', $gitlab[0]['severity']);
             self::assertStringContainsString('message="Message (' . $fragment . ')"', self::publication($answers, 'format:checkstyle'));
             self::assertStringContainsString('::Message (' . $fragment . ')', self::publication($answers, 'format:github'));
-            self::assertStringContainsString('    Advice (' . $fragment . ')  [replay.alpha]', self::publication($answers, 'format:text-verbose'));
+            self::assertStringContainsString(
+                "    Message  [replay.alpha]\n    Recommendation: Advice\n    " . $fragment . "\n",
+                self::publication($answers, 'format:text-detail'),
+            );
             $html = json_decode(\QmxFindingGate\ReportPayload::of(self::publication($answers, 'format:html'), 'case:alpha|format:html', 'candidate'), true, flags: \JSON_THROW_ON_ERROR);
             self::assertSame('Message', $html['violations'][0]['message']);
         }
@@ -239,7 +242,7 @@ final class SyntheticTreeTest extends TestCase
             $finding = SyntheticTree::finding($tree['tuple'], 'replay.alpha', $subject);
             $finding['symbol'] = str_starts_with($subject, 'ns:') ? 'Replay\\Package' : $finding['file'];
             $answers = SyntheticTree::caseAnswers('alpha', [$finding], false, []);
-            $text = self::publication($answers, 'format:text-verbose');
+            $text = self::publication($answers, 'format:text-detail');
             self::assertStringContainsString('  ERROR ' . $finding['file'] . ':' . $finding['line'] . "\n    ", $text);
             self::assertStringNotContainsString('  ' . $finding['symbol'] . "\n", $text);
         }

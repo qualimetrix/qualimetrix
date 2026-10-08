@@ -362,7 +362,7 @@ final class CircularDependencyRuleTest extends TestCase
     }
 
     #[Test]
-    public function itContainsStructuredJsonDataInRecommendation(): void
+    public function itKeepsRoutingAdviceWithoutEmbeddingCycleData(): void
     {
         $cycles = [
             new Cycle($this->paths(['A', 'B', 'C']), $this->paths(['A', 'B', 'C', 'A'])),
@@ -381,20 +381,8 @@ final class CircularDependencyRuleTest extends TestCase
         self::assertNotNull($findings[0]->recommendation);
 
         $recommendation = $findings[0]->recommendation;
-        self::assertStringContainsString('Cycle data: {', $recommendation);
-
-        // Extract JSON from recommendation
-        $jsonStart = strpos($recommendation, 'Cycle data: ');
-        self::assertIsInt($jsonStart);
-        $jsonString = substr($recommendation, $jsonStart + \strlen('Cycle data: '));
-        $decoded = json_decode($jsonString, true);
-
-        self::assertIsArray($decoded);
-        self::assertArrayHasKey('cycle', $decoded);
-        self::assertArrayHasKey('length', $decoded);
-        self::assertArrayHasKey('category', $decoded);
-        self::assertSame(3, $decoded['length']);
-        self::assertSame('small', $decoded['category']);
+        self::assertStringNotContainsString('Cycle data:', $recommendation);
+        self::assertStringContainsString('invert one dependency', $recommendation);
     }
 
     #[Test]
@@ -428,19 +416,12 @@ final class CircularDependencyRuleTest extends TestCase
         $recommendation = $findings[0]->recommendation;
         self::assertNotNull($recommendation);
 
-        $jsonStart = strpos($recommendation, 'Cycle data: ');
-        self::assertIsInt($jsonStart);
-        $decoded = json_decode(substr($recommendation, $jsonStart + \strlen('Cycle data: ')), true);
-
-        self::assertIsArray($decoded);
-        self::assertSame(
-            ['App\\Billing\\Service', 'App\\Orders\\Service', 'App\\Billing\\Service'],
-            $decoded['cycle'],
-        );
+        self::assertStringNotContainsString('Cycle data:', $recommendation);
+        self::assertStringContainsString('Billing\\Service → Orders\\Service → Billing\\Service', $recommendation);
     }
 
     #[Test]
-    public function itLabelsCategoryAsLargeForBigCycles(): void
+    public function itKeepsLargeCycleAdviceWithoutEmbeddingCycleData(): void
     {
         // 30 classes → large category (>20)
         $classNames = array_map(static fn(int $i): string => "Class{$i}", range(1, 30));
@@ -463,14 +444,9 @@ final class CircularDependencyRuleTest extends TestCase
         self::assertNotNull($findings[0]->recommendation);
 
         $recommendation = $findings[0]->recommendation;
-        $jsonStart = strpos($recommendation, 'Cycle data: ');
-        self::assertIsInt($jsonStart);
-        $jsonString = substr($recommendation, $jsonStart + \strlen('Cycle data: '));
-        $decoded = json_decode($jsonString, true);
-
-        self::assertIsArray($decoded);
-        self::assertSame('large', $decoded['category']);
-        self::assertSame(30, $decoded['length']);
+        self::assertStringNotContainsString('Cycle data:', $recommendation);
+        self::assertStringContainsString('entry-point classes', $recommendation);
+        self::assertSame(30, $findings[0]->metricValue);
     }
 
     /**

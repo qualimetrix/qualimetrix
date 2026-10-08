@@ -139,6 +139,8 @@ describe('aggregateSmallNodes', () => {
     expect(other.name).toBe('Other (3 items)');
     expect(other.children).toHaveLength(3);
     expect(other.violationCountTotal).toBe(3);
+    expect(getLoc(other)).toBe(15);
+    expect(other.metrics).toEqual({});
   });
 
   it('does not aggregate single small node', () => {

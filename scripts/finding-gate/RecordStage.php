@@ -27,10 +27,12 @@ final class RecordStage implements SurfaceStage
      */
     public function countInputs(array $candidate, array $reference): array
     {
+        $this->run->publicationForms->supply('candidate', $candidate);
+        $this->run->publicationForms->supply('reference', $reference);
         foreach ($this->run->corpus->cases as $case) {
             $this->records->prepare($case->id);
             $key = 'case:' . $case->id . '|format:json';
-            if ($this->run->isExactSurface($key)) {
+            if ($this->run->isExactSurface($key) || $this->run->publicationForms->recordsPair($key) === false) {
                 continue;
             }
             foreach (['candidate', 'reference'] as $side) {
@@ -71,6 +73,9 @@ final class RecordStage implements SurfaceStage
         if (!str_starts_with($pair->key, 'case:') || $pair->candidate === null || $pair->reference === null) {
             return;
         }
+        if ($this->run->publicationForms->recordsPair($pair->key) === false) {
+            return;
+        }
         $case = substr($pair->key, 5, (int) strpos($pair->key, '|') - 5);
         $report = match ($pair->surface) {
             'format:json', 'check:baseline-source', 'check:output:file', 'check:parallel', 'check:baseline' => 'json',
@@ -84,6 +89,10 @@ final class RecordStage implements SurfaceStage
             'check:baseline' => 'check:baseline',
             default => $report === null ? 'format:json' : ReportViews::main($report),
         };
+        $sourceView = $pair->surface === 'baseline-file' ? $this->baselineView($case) : $view;
+        if ($this->run->publicationForms->recordsPair('case:' . $case . '|' . $sourceView) === false) {
+            return;
+        }
         $definition = $this->definition($case);
         foreach (['candidate', 'reference'] as $side) {
             $outcome = CaseOutcome::of($definition, $side);
@@ -181,7 +190,7 @@ final class RecordStage implements SurfaceStage
     private function structured(string $case, string $side, string $surface, string $text): string
     {
         $projected = ReportRecords::projected($surface, $text);
-        $removed = array_map(static fn(array $record): array => ReportRecords::projection($surface, RankingSchema::physical($record)), $this->records->licensedResiduals($case, 'format:json', $side));
+        $removed = array_map(fn(array $record): array => ReportRecords::projection($surface, RankingSchema::physical($record), $this->run->publicationCodec($side)), $this->records->licensedResiduals($case, 'format:json', $side));
         $edits = [];
         $budgets = [];
         foreach ($projected as $entry) {
@@ -195,7 +204,7 @@ final class RecordStage implements SurfaceStage
                 continue;
             }
             foreach ($this->records->authority($case, 'format:json', $side) as $record) {
-                if (ReportRecords::projection($surface, $record) !== $entry['fields']) {
+                if (ReportRecords::projection($surface, $record, $this->run->publicationCodec($side)) !== $entry['fields']) {
                     continue;
                 }
                 $base = $this->records->base('json', 'format:json', [$record])[0];
@@ -203,7 +212,7 @@ final class RecordStage implements SurfaceStage
                 if ($replacement === $base) {
                     break;
                 }
-                $changed = ReportRecords::projection($surface, $replacement);
+                $changed = ReportRecords::projection($surface, $replacement, $this->run->publicationCodec($side));
                 foreach ($changed as $field => $value) {
                     if ($value === $entry['fields'][$field]) {
                         continue;
@@ -253,13 +262,13 @@ final class RecordStage implements SurfaceStage
     {
         $removed = array_map(RankingSchema::physical(...), $this->records->licensedResiduals($case, 'format:json', $side));
         $published = $this->records->authority($case, 'format:json', $side);
-        foreach (array_reverse(ProseRecords::extract($surface, $text)) as $entry) {
+        foreach (array_reverse(ProseRecords::extract($surface, $text, $this->run->publicationCodec($side))) as $entry) {
             if ($surface === 'format:summary' && isset($entry['fields']['rank']) && RankingCheck::create($this->run)->observed($case, 'format:json', $side)) {
                 $text = ProseRecords::erase($text, $entry['lines']);
                 continue;
             }
             foreach ($published as $index => $record) {
-                if (!ProseRecords::matches($surface, $entry['fields'], $record)) {
+                if (!ProseRecords::matches($surface, $entry['fields'], $record, $this->run->publicationCodec($side))) {
                     continue;
                 }
                 unset($published[$index]);
@@ -271,7 +280,7 @@ final class RecordStage implements SurfaceStage
                     $base = $this->records->base('json', 'format:json', [$record])[0];
                     $replacement = $this->records->replacement($case, 'format:json', $side, $base);
                     if ($replacement !== $base) {
-                        $text = ProseRecords::rewriteProjection($surface, $text, $entry, $record, $replacement);
+                        $text = ProseRecords::rewriteProjection($surface, $text, $entry, $record, $replacement, $this->run->publicationCodec($side));
                     }
                 }
                 break;
@@ -282,7 +291,7 @@ final class RecordStage implements SurfaceStage
 
     private function checkstyle(string $case, string $side, string $text): string
     {
-        $removed = array_map(static fn(array $record): array => ReportRecords::projection('format:checkstyle', RankingSchema::physical($record)), $this->records->licensedResiduals($case, 'format:json', $side));
+        $removed = array_map(fn(array $record): array => ReportRecords::projection('format:checkstyle', RankingSchema::physical($record), $this->run->publicationCodec($side)), $this->records->licensedResiduals($case, 'format:json', $side));
         $published = $this->records->authority($case, 'format:json', $side);
         $rebuilt = preg_replace_callback('~<file\b[^>]*name="([^"]*)"[^>]*>(.*?)</file>~s', function (array $file) use ($case, $side, &$removed, &$published): string {
             $name = html_entity_decode($file[1], \ENT_QUOTES | \ENT_XML1, 'UTF-8');
@@ -299,7 +308,7 @@ final class RecordStage implements SurfaceStage
                     return '';
                 }
                 foreach ($published as $index => $record) {
-                    if (ReportRecords::projection('format:checkstyle', $record) !== $projection) {
+                    if (ReportRecords::projection('format:checkstyle', $record, $this->run->publicationCodec($side)) !== $projection) {
                         continue;
                     }
                     unset($published[$index]);
@@ -308,7 +317,7 @@ final class RecordStage implements SurfaceStage
                     if ($replacement === $base) {
                         return $error[0];
                     }
-                    $changed = ReportRecords::projection('format:checkstyle', $replacement);
+                    $changed = ReportRecords::projection('format:checkstyle', $replacement, $this->run->publicationCodec($side));
                     if ($changed['file'] !== $name) {
                         throw new GateError('A checkstyle file move cannot rewrite an unrelated file group.');
                     }

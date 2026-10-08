@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Refusal;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
@@ -13,6 +14,7 @@ use Qualimetrix\Core\Environment\EnvironmentFailureInterface;
 use Qualimetrix\Core\FileTarget\FileTargetFailure;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Reporting\Formatter\PublishedUtf8;
 use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Output\StreamOutput;
@@ -201,26 +203,21 @@ final class RefusalPresenter
      * `{kind, name, imported_by}`, one entry, or each contributing layer of a
      * refusal across layers — and is `null` for an outcome that is not one.
      *
-     * `JSON_INVALID_UTF8_SUBSTITUTE`: `$message` can embed raw CLI input
-     * (an option value, a path) that the user typed, and PHP argv bytes are
-     * not guaranteed valid UTF-8. Without this flag, `JSON_THROW_ON_ERROR`
-     * turns a malformed-input refusal into a `JsonException` that escapes
-     * this method and is caught by the outer ladder as an internal error —
-     * exit code 1 instead of the exit code 3 this refusal already committed
-     * to returning. Substituting the invalid bytes keeps the envelope valid
-     * JSON and keeps the refusal a refusal.
+     * Invalid bytes are percent-escaped because a refusal can quote raw argv
+     * bytes. A JSON encoding failure would turn the refused input into
+     * ConsoleExitCode::InternalError instead of its committed refusal status.
      */
     /** @param ?list<ConfigurationOrigin> $sources */
     private function writeEnvelope(OutputInterface $output, string $message, int $exitCode, ?RefusedPosition $position, ?array $sources): bool
     {
-        $payload = json_encode(
+        $payload = PublishedUtf8::encodeJsonObject(
             [
                 'error' => $message,
                 'exit_code' => $exitCode,
                 'position' => self::positionDocument($position),
                 'source' => $sources === null ? null : array_map(self::sourceDocument(...), $sources),
             ],
-            \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_INVALID_UTF8_SUBSTITUTE | \JSON_THROW_ON_ERROR,
+            \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES,
         ) . "\n";
 
         // amphp can leave STDOUT non-blocking after worker communication. A

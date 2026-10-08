@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Version;
+use Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Symfony\Component\Console\Application as BaseApplication;
 use Symfony\Component\Console\Exception\ExceptionInterface as ConsoleExceptionInterface;
@@ -37,11 +38,6 @@ use Throwable;
  * It does not cover the `configureIO()` window inside `run()`: that stays on
  * Symfony's own `catchExceptions` handling; no accepted input can raise a
  * {@see ConfigurationRefusal} in that window.
- *
- * @qmx-threshold cohesion.lcom 6 -- this is the composition root: wiring
- * together the otherwise-unrelated errorStream, refusalPresenter and
- * exit-code ladder is its job, not a sign that unrelated responsibilities
- * accreted onto one class.
  */
 final class Application extends BaseApplication
 {
@@ -149,7 +145,7 @@ final class Application extends BaseApplication
      * `Command/LockableTrait`; `grep -rn "new LogicException(" vendor/symfony/console`
      * finds the current set), reachable only by a bug in this project's own
      * command wiring, never by anything a user typed. That makes it a
-     * product defect, not a refusal, so it gets exit code 1 like any other
+     * product defect, not a refusal, so it gets {@see ConsoleExitCode::InternalError} like any other
      * internal error.
      *
      * `ConsoleExceptionInterface` and the bare `InvalidArgumentException`
@@ -171,6 +167,7 @@ final class Application extends BaseApplication
         $format = self::requestedFormat($input);
 
         try {
+            $this->errorStream->useGlyphMode(OutputEncoding::fromEnvironment(getenv('QMX_ASCII')));
             self::applyWorkingDirOption($input);
             $this->manifestSnapshot->beginInvocation();
 

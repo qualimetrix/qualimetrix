@@ -144,7 +144,7 @@ final class BaselineExplainCommand extends BaselineCommand
                 \sprintf(
                     'Unknown subject "%s": it is absent from both the current analysis and the baseline.',
                     $subjectKey,
-                ),
+                ) . ($explanation->canonicalSpelling === null ? '' : ' Canonical spelling: ' . $explanation->canonicalSpelling . '.'),
             );
         }
 
