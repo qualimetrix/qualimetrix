@@ -60,10 +60,7 @@ final class FindingFilter
                     return false;
                 }
 
-                $namespaces = $v->location->file !== null
-                    ? ($fileNamespaces?->namespacesOf($v->location->file) ?? [])
-                    : [];
-                foreach ($namespaces !== [] ? $namespaces : [''] as $namespace) {
+                foreach ($this->fileNamespaces($v, $fileNamespaces) as $namespace) {
                     if ($context->namespace->matches($namespace)) {
                         return true;
                     }
@@ -73,13 +70,26 @@ final class FindingFilter
             }
 
             if ($context->class !== null && $class !== null) {
-                $fqcn = $ns !== null && $ns !== '' ? $ns . '\\' . $class : $class;
-
-                return $fqcn === $context->class;
+                return $this->qualifiedClassName($ns, $class) === $context->class;
             }
 
             return false;
         }));
+    }
+
+    private function qualifiedClassName(?string $namespace, string $class): string
+    {
+        return $namespace !== null && $namespace !== '' ? $namespace . '\\' . $class : $class;
+    }
+
+    /** @return non-empty-list<string> */
+    private function fileNamespaces(Finding $finding, ?FileNamespaceIndex $fileNamespaces): array
+    {
+        $namespaces = $finding->location->file !== null
+            ? ($fileNamespaces?->namespacesOf($finding->location->file) ?? [])
+            : [];
+
+        return $namespaces !== [] ? $namespaces : [''];
     }
 
     /**

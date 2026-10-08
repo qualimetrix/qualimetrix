@@ -118,26 +118,23 @@ final class FindingSorter
 
     private static function byRuleSeverityFileLine(Finding $a, Finding $b): int
     {
-        return ($cmp1 = $a->ruleName <=> $b->ruleName) !== 0 ? $cmp1
-            : (($cmp2 = self::severityOrder($a->severity) <=> self::severityOrder($b->severity)) !== 0 ? $cmp2
-            : (($cmp3 = $a->location->pathString() <=> $b->location->pathString()) !== 0 ? $cmp3
-            : (($a->location->line ?? 0) <=> ($b->location->line ?? 0))));
+        $comparison = $a->ruleName <=> $b->ruleName;
+
+        return $comparison !== 0 ? $comparison : self::bySeverityFileLine($a, $b);
     }
 
     private static function byClassSeverityLine(Finding $a, Finding $b): int
     {
-        return ($cmp1 = self::extractClassName($a) <=> self::extractClassName($b)) !== 0 ? $cmp1
-            : (($cmp2 = self::severityOrder($a->severity) <=> self::severityOrder($b->severity)) !== 0 ? $cmp2
-            : (($cmp3 = $a->location->pathString() <=> $b->location->pathString()) !== 0 ? $cmp3
-            : (($a->location->line ?? 0) <=> ($b->location->line ?? 0))));
+        $comparison = self::extractClassName($a) <=> self::extractClassName($b);
+
+        return $comparison !== 0 ? $comparison : self::bySeverityFileLine($a, $b);
     }
 
     private static function byNamespaceSeverityLine(Finding $a, Finding $b): int
     {
-        return ($cmp1 = self::extractNamespaceName($a) <=> self::extractNamespaceName($b)) !== 0 ? $cmp1
-            : (($cmp2 = self::severityOrder($a->severity) <=> self::severityOrder($b->severity)) !== 0 ? $cmp2
-            : (($cmp3 = $a->location->pathString() <=> $b->location->pathString()) !== 0 ? $cmp3
-            : (($a->location->line ?? 0) <=> ($b->location->line ?? 0))));
+        $comparison = self::extractNamespaceName($a) <=> self::extractNamespaceName($b);
+
+        return $comparison !== 0 ? $comparison : self::bySeverityFileLine($a, $b);
     }
 
     /**
