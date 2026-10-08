@@ -246,6 +246,8 @@ final class SurfaceComparisonTest extends TestCase
             $gate = new \QmxFindingGate\Gate(Options::parse(['gate', '--candidate=' . $this->root, '--reference=HEAD'], $this->root), $report);
             try {
                 $run = (new ReflectionProperty($gate, 'context'))->getValue($gate);
+                $run->supplyPublicationTree('candidate', $this->root);
+                $run->supplyPublicationTree('reference', $this->root);
                 $capture = (new ReflectionMethod(RecordedComparison::class, 'capture'))->invoke(null, $this->root, $run);
                 $key = 'case:alpha|format:json';
                 $complete = json_decode($capture->artifacts[$key], true, 512, \JSON_THROW_ON_ERROR);

@@ -74,7 +74,6 @@ final class RankingCheck implements CaseCheck
             $this->run->report->fail(FailureClass::NONDETERMINISM_UNDECLARED, 'baseline eligibility', 'The same candidate inputs produced different product baseline eligibility decisions.');
         }
         $records = RecordCheck::create($this->run);
-        $fields = null;
         foreach ($this->run->corpus->cases as $case) {
             if (!CaseOutcome::applies(CaseOutcome::CHECK_FINDINGS, CaseOutcome::of($case, 'candidate'))) {
                 continue;
@@ -94,7 +93,9 @@ final class RankingCheck implements CaseCheck
                     $this->run->report->sourceEvidence('candidate', $key, 'repeatable', false);
                     continue;
                 }
-                $fields ??= $this->fields('candidate');
+                $fields = $this->run->report->sourceRejected('reference', $key, 'ranking')
+                    ? RankingSchema::derive($this->run->publicationTree('candidate'))->fields
+                    : $this->fields('candidate', $key);
                 $bags = [];
                 foreach ([$first, $second] as $capture) {
                     $slot = $capture->rankings[$key] ?? throw new GateError('A repeated capture has no validated own ranking: ' . $key);
@@ -199,25 +200,24 @@ final class RankingCheck implements CaseCheck
     }
 
     /** @return list<string> */
-    private function fields(string $side): array
+    private function fields(string $side, string $key): array
     {
-        $fields = RankingSchema::derive($this->run->options->candidateRoot)->fields;
-        $changes = $this->run->declarations->fields->changes('json', 'ranking');
-        $expected = RankingSchema::FIELDS;
-        foreach ($changes as $field => $change) {
-            if ($change === DeclaredFields::ADDED && !\in_array($field, $expected, true)) {
-                $expected[] = $field;
-            } elseif ($change === DeclaredFields::REMOVED) {
-                $expected = array_values(array_diff($expected, [$field]));
-            }
+        $fields = RankingSchema::derive($this->run->publicationTree($side))->fields;
+        if ($this->run->options->mode === Options::MODE_DERIVE_NORMALIZATION
+            || $this->run->publicationForms->recordsPair($key) !== true) {
+            return $fields;
         }
-        $actual = $fields;
-        sort($actual);
+        $other = $side === 'candidate' ? 'reference' : 'candidate';
+        $otherFields = RankingSchema::derive($this->run->publicationTree($other))->fields;
+        $candidate = $side === 'candidate' ? $fields : $otherFields;
+        $reference = $side === 'reference' ? $fields : $otherFields;
+        $expected = $this->run->declarations->fields->referenceFields('json', 'ranking', $candidate);
+        sort($reference);
         sort($expected);
-        if ($actual !== $expected) {
+        if ($reference !== $expected) {
             throw new GateError('The complete ranked publisher classification has an undeclared field change.');
         }
-        return $side === 'reference' ? $this->run->declarations->fields->referenceFields('json', 'ranking', $fields) : $fields;
+        return $fields;
     }
 
     /** @param list<array<string,mixed>> $published
@@ -234,7 +234,7 @@ final class RankingCheck implements CaseCheck
         $slot = $this->run->rankings->of($side, $key);
         $fullText = $slot['ranked']['stdout'];
         $full = ReportRecords::decode($fullText);
-        $fields = $this->fields($side);
+        $fields = $this->fields($side, $key);
         $issues = RankingSchema::records($full, $fields);
         $slice = RankingSchema::records($original, $fields);
         if (\count($issues) !== $meta['total'] || ReportRecords::rawRecords($originalText, 'topIssues') !== \array_slice(ReportRecords::rawRecords($fullText, 'topIssues'), 0, \count($slice))) {
@@ -439,19 +439,44 @@ final class RankingCheck implements CaseCheck
 
     public function supplyFields(string $case): void
     {
-        if ($this->run->declarations->fields->changes('json', 'ranking') === []
-            || $this->run->publicationForms->schemaPair($case, 'ranking') === false) {
+        if ($this->run->declarations->fields->changes('json', 'ranking') === []) {
+            return;
+        }
+        $eligible = [];
+        foreach ($this->run->capturePlan->rankingInvocations() as $source) {
+            if ($source['scope'] !== 'case:' . $case) {
+                continue;
+            }
+            $key = Surfaces::key($source['scope'], $source['surface']);
+            $pair = $this->run->publicationForms->recordsPair($key);
+            if ($pair === null) {
+                return;
+            }
+            if ($pair === false) {
+                continue;
+            }
+            if (!isset($this->observed[$case][$source['surface']]['candidate'], $this->observed[$case][$source['surface']]['reference'])) {
+                return;
+            }
+            $eligible[$source['surface']] = true;
+        }
+        if ($eligible === []) {
             return;
         }
         foreach (['candidate', 'reference'] as $side) {
             $key = $case . '|' . $side;
-            if (isset($this->supplied[$key])) {
+            if (isset($this->supplied[$key]) || !isset($this->fieldMeasurements[$case][$side])) {
                 continue;
             }
-            if (!isset($this->fieldMeasurements[$case][$side])) {
-                continue;
-            }
-            $this->run->declarations->fields->supply('json', $case, 'ranking', $side, $this->fieldMeasurements[$case][$side]);
+            $records = array_values(array_filter($this->fieldMeasurements[$case][$side], static function (array $row) use ($eligible): bool {
+                foreach ($eligible as $view => $_) {
+                    if (str_starts_with($row['record'], 'source:' . $view . '|join:')) {
+                        return true;
+                    }
+                }
+                return false;
+            }));
+            $this->run->declarations->fields->supply('json', $case, 'ranking', $side, $records);
             $this->supplied[$key] = true;
         }
     }

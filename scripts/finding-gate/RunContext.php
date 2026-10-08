@@ -10,6 +10,9 @@ final class RunContext
     /** @var array<string,true> */
     private array $exactSurfaces = [];
 
+    /** @var array<string,string> */
+    private array $publicationTrees = [];
+
     public function selectExactSurface(string $key): void
     {
         $this->exactSurfaces[$key] = true;
@@ -47,7 +50,14 @@ final class RunContext
 
     public function supplyPublicationTree(string $side, string $treeRoot): void
     {
-        $this->publicationCodecs[$side] = ReportRecords::codecOf($treeRoot);
+        $codec = ReportRecords::codecOf($treeRoot);
+        $this->publicationTrees[$side] = $treeRoot;
+        $this->publicationCodecs[$side] ??= $codec;
+    }
+
+    public function publicationTree(string $side): string
+    {
+        return $this->publicationTrees[$side] ?? throw new GateError('The ranking publication source tree is missing for ' . $side . '.');
     }
 
     /** Unsupplied sides belong to the single-root fixture; real comparisons supply both trees. */
@@ -58,6 +68,7 @@ final class RunContext
 
     public function copyPublicationsTo(self $target): void
     {
+        $target->publicationTrees = $this->publicationTrees;
         $target->publicationCodecs = $this->publicationCodecs;
     }
 

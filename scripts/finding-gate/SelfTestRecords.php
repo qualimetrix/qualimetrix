@@ -128,7 +128,7 @@ final class SelfTestRecords extends SelfTestGroup
             }
             $tree[$side]['case:' . $id . '|format:json'] = $answer;
             $tree[$side]['case:' . $id . '|check:output'] = ['file' => $document];
-            $tree[$side]['case:' . $id . '|format:summary'] = ['stdout' => self::summary($slice, $records)];
+            $tree[$side]['case:' . $id . '|format:summary'] = ['stdout' => self::summary($kind === 'order' ? $old : $slice, $records)];
         }
         return $tree;
     }
