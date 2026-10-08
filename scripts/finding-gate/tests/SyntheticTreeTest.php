@@ -225,7 +225,10 @@ final class SyntheticTreeTest extends TestCase
             self::assertSame('info', $gitlab[0]['severity']);
             self::assertStringContainsString('message="Message (' . $fragment . ')"', self::publication($answers, 'format:checkstyle'));
             self::assertStringContainsString('::Message (' . $fragment . ')', self::publication($answers, 'format:github'));
-            self::assertStringContainsString('    Advice (' . $fragment . ')  [replay.alpha]', self::publication($answers, 'format:text-detail'));
+            self::assertStringContainsString(
+                "    Message  [replay.alpha]\n    Recommendation: Advice\n    " . $fragment . "\n",
+                self::publication($answers, 'format:text-detail'),
+            );
             $html = json_decode(\QmxFindingGate\ReportPayload::of(self::publication($answers, 'format:html'), 'case:alpha|format:html', 'candidate'), true, flags: \JSON_THROW_ON_ERROR);
             self::assertSame('Message', $html['violations'][0]['message']);
         }

@@ -305,7 +305,7 @@ final class FieldValuesCheckTest extends TestCase
         $baseline = json_encode(['version' => 13, 'scope' => ['src'], 'entries' => [$base['subject'] => [['channel' => $base['channel'], 'magnitudes' => array_fill(0, $copies, 1)]]]], \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n";
         $tree['answers']['case:alpha|baseline-file'] = ['stdout' => $baseline, 'file' => $baseline];
         $this->root = $public ? SyntheticTree::create($tree) : SyntheticTree::fixture($tree);
-        $publisher = 'src/Reporting/Formatter/Json/JsonFindingSection.php';
+        $publisher = 'src/Reporting/Formatter/FindingRecord.php';
         $candidate = Fs::read($this->root . '/' . $publisher);
         $reference = preg_replace("~^ {12}'probe' => .*\\n~m", '', $candidate);
         self::assertIsString($reference);
@@ -409,7 +409,7 @@ final class FieldValuesCheckTest extends TestCase
         usort($rows, static fn(array $a, array $b): int => $a <=> $b);
         $tree['declarations'][DeclaredFields::DERIVED] = Tsv::render(DeclaredFields::DERIVED_COLUMNS, $rows);
         $this->root = $public ? SyntheticTree::create($tree) : SyntheticTree::fixture($tree);
-        $publisher = 'src/Reporting/Formatter/Json/JsonFindingSection.php';
+        $publisher = 'src/Reporting/Formatter/FindingRecord.php';
         $candidate = Fs::read($this->root . '/' . $publisher);
         $reference = preg_replace("~^ {12}'probe' => .*\\n~m", '', $candidate);
         self::assertIsString($reference);
