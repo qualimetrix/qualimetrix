@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Inline\Integration;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
@@ -266,9 +268,8 @@ final class DirectiveUsageTest extends TestCase
     }
 
     /**
-     * The projection claim: one computation, two answers. A `stale()` that
-     * reported anything else would mean the report and the channel disagree
-     * about the same directive.
+     * Findings and verdicts must agree about the same directive under the
+     * captured publication used by the invocation.
      */
     #[Test]
     public function itProjectsExactlyTheInertVerdictsIntoStaleFindings(): void
@@ -278,13 +279,15 @@ final class DirectiveUsageTest extends TestCase
             new Suppression(SuppressionTarget::NO_RULE_FILTER, 'reason', 4, SuppressionType::File, position: 0),
             new Suppression('complexity.ccn', 'reason', 5, SuppressionType::File, position: 0),
         ]];
-        $usage = self::usage();
+        $registry = new RuleOptionsRegistry();
+        $usage = self::usage($registry);
+        $publication = new ChannelPublication($registry->enablement() ?? throw new LogicException('Fixture requires resolved publication.'));
 
         $inert = array_values(array_filter(
             $usage->verdicts($directives, [self::finding()], LevelActivity::empty(), self::coverage()),
             static fn(DirectiveVerdict $verdict): bool => $verdict->effect === DirectiveEffect::Inert,
         ));
-        $stale = $usage->stale($directives, [self::finding()], Severity::Warning, LevelActivity::empty(), self::coverage());
+        $stale = $usage->usageResult($directives, [self::finding()], Severity::Warning, LevelActivity::empty(), self::coverage(), $publication)['findings'];
 
         self::assertCount(1, $inert);
         self::assertSame('complexity.ccn', $inert[0]->site->target);

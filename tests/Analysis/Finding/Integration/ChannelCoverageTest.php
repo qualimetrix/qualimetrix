@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Finding\Integration;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -21,6 +22,7 @@ use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\Coupling\ClassRankOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\ClassRankRule;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\ParamTypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageOptions;
@@ -38,6 +40,7 @@ use Qualimetrix\Analysis\Evidence\Security\SecurityPatternOptions;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountOptions;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountRule;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
@@ -58,6 +61,7 @@ use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator;
 use Qualimetrix\Analysis\Policy\Inline\Directive\RefusedDirectives;
 use Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -220,17 +224,18 @@ final class ChannelCoverageTest extends TestCase
         $rule = new ClassRankRule(new ClassRankOptions());
 
         $classInfo = self::classInfo('CriticalHub', RelativePath::fromString('src/CriticalHub.php'));
-        // With one class, computeScaleFactor(1) = sqrt(1/100) = 0.1, so the
-        // default error threshold (0.05) scales to 0.5 — 0.9 clears it.
-        // A class nothing depends on is never reported, whatever its rank.
-        $metricBag = (new MetricBag())->with('coupling.class-rank', 0.9)->with('coupling.ca', 1);
+        $metricBag = (new MetricBag())->with('coupling.class-rank-share', 10)->with('coupling.ca', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allLogicalClasses')->willReturn([$classInfo]);
         $repository->method('allClassDeclarations')->willReturn([$classInfo]);
         $repository->method('getSubject')->willReturn($metricBag);
+        $subject = $classInfo->subject ?? throw new LogicException('Fixture requires an exact declaration.');
+        $declaration = $subject->declarationPath() ?? throw new LogicException('Fixture requires a declaration path.');
+        $graph = self::createStub(DependencyGraphInterface::class);
+        $graph->method('getClassLikeDeclarations')->willReturn([ClassLikeDeclaration::of($declaration, ClassType::Class_, false, false)]);
 
-        $findings = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository, $graph));
         self::assertCount(1, $findings);
 
         self::assertDeclared($findings[0]->channel());
@@ -345,7 +350,7 @@ final class ChannelCoverageTest extends TestCase
         $file = 'src/Foo.php';
         $subject = MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString($file)));
 
-        $policy = self::directivePolicy();
+        [$policy, $publication] = self::directivePolicy();
         $policy->prepare(
             [
                 $file => [
@@ -396,7 +401,7 @@ final class ChannelCoverageTest extends TestCase
             self::assertDeclared($finding->channel());
         }
 
-        $unused = $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage());
+        $unused = $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage(), $publication)['findings'];
         self::assertCount(0, $unused, 'An unresolvable suppression is a configuration error, never stale debt.');
     }
 
@@ -405,7 +410,7 @@ final class ChannelCoverageTest extends TestCase
     {
         $file = 'src/Foo.php';
 
-        $policy = self::directivePolicy();
+        [$policy, $publication] = self::directivePolicy();
         $policy->prepare(
             [$file => [new Suppression('code-smell.goto', 'no longer needed', 10, SuppressionType::File, position: 0)]],
             [],
@@ -417,7 +422,7 @@ final class ChannelCoverageTest extends TestCase
         self::assertSame([], (new UnusedDirectiveRule($options, $policy))->analyze($context));
         self::assertSame([], (new InlineDirectiveValidator($policy, new RefusedDirectives(self::channelIdentity())))->validate($context));
 
-        $unused = $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage());
+        $unused = $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage(), $publication)['findings'];
         self::assertCount(1, $unused);
         self::assertSame(
             InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME,
@@ -427,7 +432,8 @@ final class ChannelCoverageTest extends TestCase
         self::assertDeclared($unused[0]->channel());
     }
 
-    private static function directivePolicy(): InlineDirectivePolicy
+    /** @return array{InlineDirectivePolicy, ChannelPublication} */
+    private static function directivePolicy(): array
     {
         $container = (new ContainerFactory())->create();
         $factory = $container->get(ChannelUniverseInterface::class);
@@ -441,7 +447,10 @@ final class ChannelCoverageTest extends TestCase
 
         $refused = new RefusedDirectives($identity);
 
-        return new InlineDirectivePolicy(new DirectiveUsage($identity, $configuration, $identity, $refused), $refused);
+        return [
+            new InlineDirectivePolicy(new DirectiveUsage($identity, $configuration, $identity, $refused), $refused),
+            new ChannelPublication($configuration->enablement() ?? throw new LogicException('Fixture requires resolved publication.')),
+        ];
     }
 
     private static function channelIdentity(): ChannelUniverseInterface
