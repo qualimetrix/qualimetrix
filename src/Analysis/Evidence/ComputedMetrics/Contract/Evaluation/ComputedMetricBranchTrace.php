@@ -140,45 +140,63 @@ final class ComputedMetricBranchTrace
     private function copyOf(Node $node, ?Node $catcher): Node
     {
         $copy = clone $node;
-        $conditional = ComputedMetricReads::conditionalOperands($node);
+        $this->copyChildren($copy, $node, $catcher);
 
+        if (ComputedMetricReads::keyOf($node) !== null) {
+            $copy->nodes['node'] = $this->metricName($node, $catcher);
+        }
+
+        $conditional = ComputedMetricReads::conditionalOperands($node);
+        if ($conditional !== []) {
+            $this->wrapEnteredOperands($copy, $node, $conditional);
+        } elseif (!$node instanceof GetAttrNode) {
+            $this->wrapEagerChildren($copy, $node);
+        }
+
+        return $copy;
+    }
+
+    private function copyChildren(Node $copy, Node $node, ?Node $catcher): void
+    {
         foreach ($node->nodes as $name => $child) {
             if (!$child instanceof Node) {
                 continue;
             }
 
-            if (ComputedMetricReads::hasNullableValues($node) && $name === 'arguments') {
-                $copy->nodes[$name] = $this->copyNullableArguments($child, $node);
-                continue;
-            }
-
-            $childCatcher = self::childCatcher($node, $name, $catcher);
-            $copy->nodes[$name] = $this->copyOf($child, $childCatcher);
+            $copy->nodes[$name] = ComputedMetricReads::hasNullableValues($node) && $name === 'arguments'
+                ? $this->copyNullableArguments($child, $node)
+                : $this->copyOf($child, self::childCatcher($node, $name, $catcher));
         }
+    }
 
-        if (ComputedMetricReads::keyOf($node) !== null) {
-            $copy->nodes['node'] = $this->metricName($node, $catcher !== null);
-        }
-
-        foreach ($conditional as $name) {
+    /** @param list<string|int> $operands */
+    private function wrapEnteredOperands(Node $copy, Node $node, array $operands): void
+    {
+        foreach ($operands as $name) {
             $copy->nodes[$name] = $this->entering($copy->nodes[$name], $node, $name);
         }
+    }
 
-        if (!$node instanceof GetAttrNode && $conditional === []) {
-            /** @var array<string, Node> $later */
-            $later = [];
-            foreach (array_reverse($copy->nodes, true) as $name => $child) {
-                if (!$child instanceof Node || $name === 'arguments') {
-                    continue;
-                }
+    private function wrapEagerChildren(Node $copy, Node $node): void
+    {
+        $children = array_filter(
+            $copy->nodes,
+            static fn(mixed $child, string|int $name): bool => $child instanceof Node && $name !== 'arguments',
+            \ARRAY_FILTER_USE_BOTH,
+        );
+        $this->wrapEagerOperands($copy, $node, $children);
+    }
 
-                $id = self::operandId($node, $name);
-                $copy->nodes[$name] = $this->eager($child, $id, $later);
-                $later = [$id => $copy->nodes[$name], ...$later];
-            }
+    /** @param array<string|int, Node> $operands */
+    private function wrapEagerOperands(Node $copy, Node $node, array $operands): void
+    {
+        /** @var array<string, Node> $later */
+        $later = [];
+        foreach (array_reverse($operands, true) as $name => $operand) {
+            $id = self::operandId($node, $name);
+            $copy->nodes[$name] = $this->eager($operand, $id, $later);
+            $later = [$id => $copy->nodes[$name], ...$later];
         }
-
-        return $copy;
     }
 
     private static function childCatcher(Node $node, string|int $name, ?Node $catcher): ?Node
@@ -199,44 +217,42 @@ final class ComputedMetricBranchTrace
         foreach (array_values($arguments->nodes) as $index => $argument) {
             $copy->nodes[$index] = $this->copyOf($argument, $index % 2 === 0 ? $function : null);
         }
-        /** @var array<string, Node> $later */
-        $later = [];
-        foreach (array_reverse($copy->nodes, true) as $index => $argument) {
-            $id = self::operandId($arguments, $index);
-            $copy->nodes[$index] = $this->eager($argument, $id, $later);
-            $later = [$id => $copy->nodes[$index], ...$later];
-        }
+        $this->wrapEagerOperands($copy, $arguments, $copy->nodes);
 
         return $copy;
     }
 
-    private function metricName(Node $read, bool $nullable): NameNode
+    private function metricName(Node $read, ?Node $catcher): NameNode
     {
         $metrics = $this->metrics;
-        $missing = $this->missing;
         $reached = &$this->reached;
         $onRead = static function () use (&$reached, $read): void {
             $reached[spl_object_id($read)] = true;
         };
+        $onAbsent = $this->onAbsent($catcher);
 
-        return new class ($metrics, $missing, $nullable, $onRead) extends NameNode {
+        return new class ($metrics, $onAbsent, $onRead) extends NameNode {
             /** @var ArrayAccess<mixed, mixed> */
             private readonly ArrayAccess $lookup;
 
-            /** @param Closure(): void $onRead */
+            /**
+             * @param Closure(): void $onAbsent
+             * @param Closure(): void $onRead
+             */
             public function __construct(
                 MetricLookup $metrics,
-                LogicException $missing,
-                bool $nullable,
+                Closure $onAbsent,
                 Closure $onRead,
             ) {
                 parent::__construct(ComputedMetricReads::VARIABLE);
-                $this->lookup = new class ($metrics, $missing, $nullable, $onRead) implements ArrayAccess {
-                    /** @param Closure(): void $onRead */
+                $this->lookup = new class ($metrics, $onAbsent, $onRead) implements ArrayAccess {
+                    /**
+                     * @param Closure(): void $onAbsent
+                     * @param Closure(): void $onRead
+                     */
                     public function __construct(
                         private readonly MetricLookup $metrics,
-                        private readonly LogicException $missing,
-                        private readonly bool $nullable,
+                        private readonly Closure $onAbsent,
                         private readonly Closure $onRead,
                     ) {}
 
@@ -246,9 +262,7 @@ final class ComputedMetricBranchTrace
                         if (isset($this->metrics[$offset])) {
                             return true;
                         }
-                        if (!$this->nullable) {
-                            throw $this->missing;
-                        }
+                        ($this->onAbsent)();
 
                         return false;
                     }
@@ -257,8 +271,8 @@ final class ComputedMetricBranchTrace
                     {
                         ($this->onRead)();
                         $value = $this->metrics[$offset];
-                        if ($value === null && !$this->nullable) {
-                            throw $this->missing;
+                        if ($value === null) {
+                            ($this->onAbsent)();
                         }
 
                         return $value;
@@ -284,6 +298,20 @@ final class ComputedMetricBranchTrace
             {
                 return $this->lookup;
             }
+        };
+    }
+
+    /** @return Closure(): void */
+    private function onAbsent(?Node $catcher): Closure
+    {
+        if ($catcher !== null) {
+            return static function (): void {};
+        }
+
+        $missing = $this->missing;
+
+        return static function () use ($missing): void {
+            throw $missing;
         };
     }
 
