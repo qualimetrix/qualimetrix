@@ -241,5 +241,3 @@ OOM.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
-
-Duplication accounts one copy-occurrence for each native admitted block copy before severity selection. Repeated copies in one file remain separate judgement events. Native block admission and finding identities remain owned by the existing duplication evidence.

@@ -125,5 +125,3 @@ looked for through, and sensitive-name matching.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
-
-Security rules account native decoded entry occurrences at their actual subject levels before selecting severity or constructing findings. The declaration is reused once per invocation; identities come from source entries, not emitted findings. These ungated populations have no synthetic per-declaration roster.
