@@ -128,6 +128,12 @@ parents. The published `size.class-count.sum` remains a subtree total for other
 consumers. Equality with the configured warning or error boundary is a finding;
 the defaults are 15 and 25 respectively.
 
+Selected rule population distinguishes an unpublished own count from a measured
+zero. The former cannot be judged; the latter is outside the nonempty namespace
+population. A positive count below the finding threshold is a healthy judgement.
+These population outcomes travel separately from findings and do not change the
+exit status.
+
 ### Example
 
 ```php
