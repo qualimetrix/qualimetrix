@@ -9,8 +9,16 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyThreshold;
+use Qualimetrix\Analysis\Finding\Contract\Population\KindIn;
+
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
@@ -136,6 +144,11 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
                 ),
                 SymbolLevel::Class_,
                 SymbolLevel::Namespace_,
+            )->withGates(
+                new PopulationGate('class-coordinate', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
+                new PopulationGate('class-cbo', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KeyPresent('class-cbo', ['all' => MetricName::COUPLING_CBO, 'application' => MetricName::COUPLING_CBO_APP]), 'The selected CBO publication is unavailable.'),
+                new PopulationGate('own-classes', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', new KeyThreshold('own-classes', [MetricName::SIZE_CLASS_COUNT], '>=', 'own-classes', 'zero', true), 'Own classes are below the configured minimum.'),
+                new PopulationGate('own-cbo', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', new KeyPresent('own-cbo', [MetricName::COUPLING_CBO_OWN]), 'Own CBO was not published.'),
             ),
         ];
     }
@@ -149,9 +162,10 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             return [];
         }
         $findings = [];
+        $declaration = self::channelDeclarations()[self::NAME];
 
         foreach ($context->metrics->allClassDeclarations() as $classInfo) {
-            $finding = $this->classFinding($classInfo, $context, $this->options->class);
+            $finding = $this->classFinding($classInfo, $context, $this->options->class, $declaration);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -160,20 +174,22 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         return $findings;
     }
 
-    private function classFinding(SymbolInfo $info, AnalysisContext $context, ClassCboOptions $options): ?Finding
+    private function classFinding(SymbolInfo $info, AnalysisContext $context, ClassCboOptions $options, ChannelDeclaration $declaration): ?Finding
     {
         $subject = $info->subject ?? throw new LogicException('CBO class findings require an exact class declaration subject');
-        if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+        $metrics = null;
+        $applicationScope = false;
+        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), $declaration, (function () use ($context, $subject, &$metrics, &$options, &$applicationScope): iterable {
+            yield GateInput::kind('class-coordinate', $subject->toSymbolPath()->getType());
+            $options = $this->getEffectiveOptions($context, $options, $subject);
+            $metrics = $context->metrics->getSubject($subject);
+            $applicationScope = $options->scope === 'application';
+            yield GateInput::metrics('class-cbo', $metrics, selector: $options->scope);
+        })())) {
             return null;
         }
-
-        $metrics = $context->metrics->getSubject($subject);
-        $applicationScope = $options->scope === 'application';
         $metricName = $applicationScope ? MetricName::COUPLING_CBO_APP : MetricName::COUPLING_CBO;
         $cbo = $metrics->get($metricName);
-        if ($cbo === null) {
-            return null;
-        }
 
         $frameworkCe = $applicationScope ? (int) ($metrics->get(MetricName::COUPLING_CE_FRAMEWORK) ?? 0) : null;
 
@@ -210,9 +226,10 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             return [];
         }
         $findings = [];
+        $declaration = self::channelDeclarations()[self::NAME];
 
         foreach ($context->metrics->all(SymbolLevel::Namespace_) as $nsInfo) {
-            $finding = $this->namespaceFinding($nsInfo, $context, $this->options->namespace);
+            $finding = $this->namespaceFinding($nsInfo, $context, $this->options->namespace, $declaration);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -221,13 +238,17 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         return $findings;
     }
 
-    private function namespaceFinding(SymbolInfo $info, AnalysisContext $context, NamespaceCboOptions $options): ?Finding
+    private function namespaceFinding(SymbolInfo $info, AnalysisContext $context, NamespaceCboOptions $options, ChannelDeclaration $declaration): ?Finding
     {
         $subject = $info->subject ?? MetricSubject::aggregate($info->symbolPath);
         $metrics = $context->metrics->get($info->symbolPath);
-        $classCount = (int) ($metrics->get(MetricName::SIZE_CLASS_COUNT) ?? 0);
+        $options = $this->getEffectiveOptions($context, $options, $subject);
+        $metrics->get(MetricName::SIZE_CLASS_COUNT);
         $cbo = $metrics->get(MetricName::COUPLING_CBO_OWN);
-        if ($classCount < $options->minClassCount || $cbo === null) {
+        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Namespace_, PopulationIdentity::aggregate($info->symbolPath), $declaration, (static function () use ($metrics, $options): iterable {
+            yield GateInput::metrics('own-classes', $metrics, $options->minClassCount);
+            yield GateInput::metrics('own-cbo', $metrics);
+        })())) {
             return null;
         }
 

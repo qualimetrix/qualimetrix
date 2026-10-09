@@ -453,3 +453,13 @@ malformed refusal, distinct-level writes and coherent effective bands.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+CBO and instability reuse their full source declarations at each native
+class or namespace invocation. Missing publications, own class minima and
+afferent minima are eligibility gates before severity selection. CBO
+retains its scope-specific metric choice; instability keeps publication
+presence before its afferent check. Framework-selector accounting first
+judges whole-project scope, then graph availability, then the actual names
+classified by coupling. An unknown graph contributes one invocation; an
+empty configured selector roster contributes none. Known selector rosters
+retain their configured-selector unit.
