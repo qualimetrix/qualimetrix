@@ -191,7 +191,7 @@ final class PopulationSelectionTest extends TestCase
             self::assertStringContainsString('ordinary member unit', $failure->getMessage());
         }
         foreach ([
-            ['occurrence', new KeyPresent('value', ['value']), 'invocation'],
+            ['occurrence', new KeyPresent('graphAvailable', ['value']), 'invocation'],
             ['occurrence', new ContextGuard('graphAvailable'), 'declaration'],
             ['invocation', new ContextGuard('graphAvailable'), 'invocation'],
             ['occurrence', new ContextGuard('namespaceClaimsJudged'), 'invocation'],
