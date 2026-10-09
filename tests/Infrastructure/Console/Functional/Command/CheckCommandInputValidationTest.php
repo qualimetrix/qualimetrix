@@ -101,6 +101,7 @@ final class CheckCommandInputValidationTest extends TestCase
         $payload = json_decode($tester->getDisplay(), true, 512, \JSON_THROW_ON_ERROR);
         self::assertFalse($payload['coverage']['complete']);
         self::assertSame(1, $payload['coverage']['failed']);
+        self::assertNull($payload['health']);
         self::assertStringNotContainsString($projectRoot . '/', $tester->getDisplay());
         self::assertStringContainsString('Parse error', $tester->getErrorOutput());
     }

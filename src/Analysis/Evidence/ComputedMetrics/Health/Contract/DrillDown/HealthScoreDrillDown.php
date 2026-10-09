@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown;
 
+use Closure;
 use Generator;
 use LogicException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
@@ -65,10 +66,15 @@ final readonly class HealthScoreDrillDown
             $dimensionName = $dim->shortName();
 
             $inputs = $this->classInputs($dimension);
+            $classes = $inputs === [] ? [] : iterator_to_array($this->filterClassesByNamespace($metrics, $namespace), false);
+            $inputs = $this->decomposition->selectContributorInputs($inputs, array_map(
+                static fn(SymbolInfo $symbol): Closure => $metrics->getSubject($symbol->subject ?? throw new LogicException('Class contributor requires exact subject'))->get(...),
+                $classes,
+            ));
             $contributors = $inputs === []
                 ? []
                 : $this->contributorRanker->rank(
-                    $this->contributorCandidates($metrics, $this->filterClassesByNamespace($metrics, $namespace), $inputs),
+                    $this->contributorCandidates($metrics, $classes, $inputs),
                     $inputs[0]['direction'],
                 );
 
@@ -233,7 +239,7 @@ final readonly class HealthScoreDrillDown
      * @param iterable<SymbolInfo> $classSymbols
      * @param list<array{classKey: string, direction: string}> $inputs
      *
-     * @return Generator<array{symbol: SymbolInfo, primaryValue: float|null, contributorMetrics: array<string, int|float>, primaryDirection: string}>
+     * @return Generator<array{symbol: SymbolInfo, primaryValue: float|null, contributorMetrics: array<string, int|float>}>
      */
     private function contributorCandidates(
         MetricRepositoryInterface $repository,
@@ -248,8 +254,6 @@ final readonly class HealthScoreDrillDown
                 'symbol' => $symbol,
                 'primaryValue' => $selection['primaryValue'],
                 'contributorMetrics' => $selection['contributorMetrics'],
-                'primaryDirection' => ($inputs[0]['classKey'] ?? null) === 'cohesion.tcc'
-                    && $metrics->get('cohesion.tcc') === null ? 'lower' : $inputs[0]['direction'],
             ];
         }
     }

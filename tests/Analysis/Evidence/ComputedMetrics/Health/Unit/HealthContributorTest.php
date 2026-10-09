@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\HealthScoreDrillDown;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthContributor;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummary;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummaryBuilder;
@@ -251,7 +252,7 @@ final class HealthContributorTest extends TestCase
     /**
      * @param list<array{ns: string, name: string, ccn?: int, cognitive?: int, tcc?: float, lcom?: int, ce?: int, distance?: float, mi?: float}> $classSpecs
      */
-    private function buildReportWithClasses(array $classSpecs): Report
+    private function buildReportWithClasses(array $classSpecs, bool $namespaceScore = false): Report
     {
         $classes = [];
         $classMetrics = [];
@@ -317,6 +318,8 @@ final class HealthContributorTest extends TestCase
 
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray($dimensionMetrics),
+            namespaces: $namespaceScore ? [new SymbolInfo(SymbolPath::forNamespace('App'), RelativePath::fromString('src/Fixture.php'), 1)] : [],
+            namespaceMetrics: $namespaceScore ? ['ns:App' => MetricBag::fromArray(['health.cohesion' => 50.0, 'size.class-count' => \count($classSpecs)])] : [],
             classes: $classes,
             classMetrics: $classMetrics,
         );
@@ -333,17 +336,54 @@ final class HealthContributorTest extends TestCase
     }
 
     #[Test]
+    public function itUsesOneParticipatingCohesionAxisAcrossTheScope(): void
+    {
+        $report = $this->buildReportWithClasses([
+            ['ns' => 'App', 'name' => 'LcomOnly', 'cohesion.lcom' => 1],
+            ['ns' => 'App', 'name' => 'TccZero', 'cohesion.tcc' => 0.0, 'cohesion.lcom' => 2],
+        ], namespaceScore: true);
+        $contributors = $this->summarize($report)->healthScores['cohesion']->worstContributors;
+
+        self::assertSame(['TccZero'], array_column($contributors, 'className'));
+        self::assertSame(['cohesion.tcc' => 0.0, 'cohesion.lcom' => 2], $contributors[0]->metricValues);
+        self::assertNotNull($report->metrics);
+        $scoped = (new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class)))
+            ->buildSubtreeHealthScores($report->metrics, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact('App'));
+        self::assertEquals($contributors, $scoped['cohesion']->worstContributors);
+    }
+
+    #[Test]
     public function itRanksExactlyTwoLcomOnlyContributorsWorstFirst(): void
     {
         $report = $this->buildReportWithClasses([
             ['ns' => 'App', 'name' => 'Connected', 'cohesion.lcom' => 1],
             ['ns' => 'App', 'name' => 'Disconnected', 'cohesion.lcom' => 5],
-        ]);
+        ], namespaceScore: true);
         $contributors = $this->summarize($report)->healthScores['cohesion']->worstContributors;
 
         self::assertCount(2, $contributors);
         self::assertSame(['Disconnected', 'Connected'], array_column($contributors, 'className'));
         self::assertSame(['cohesion.lcom' => 5], $contributors[0]->metricValues);
+        self::assertNotNull($report->metrics);
+        $scoped = (new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class)))
+            ->buildSubtreeHealthScores($report->metrics, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact('App'));
+        self::assertEquals($contributors, $scoped['cohesion']->worstContributors);
+    }
+
+    #[Test]
+    public function itChoosesTheCohesionAxisWithinTheSelectedNamespace(): void
+    {
+        $report = $this->buildReportWithClasses([
+            ['ns' => 'App', 'name' => 'Connected', 'cohesion.lcom' => 1],
+            ['ns' => 'App', 'name' => 'Disconnected', 'cohesion.lcom' => 5],
+            ['ns' => 'Other', 'name' => 'TccZero', 'cohesion.tcc' => 0.0],
+        ], namespaceScore: true);
+        self::assertSame(['TccZero'], array_column($this->summarize($report)->healthScores['cohesion']->worstContributors, 'className'));
+        self::assertNotNull($report->metrics);
+        $scoped = (new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class)))
+            ->buildSubtreeHealthScores($report->metrics, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact('App'));
+
+        self::assertSame(['Disconnected', 'Connected'], array_column($scoped['cohesion']->worstContributors, 'className'));
     }
 
 }

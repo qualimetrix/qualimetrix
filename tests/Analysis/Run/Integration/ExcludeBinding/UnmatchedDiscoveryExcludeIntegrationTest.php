@@ -199,8 +199,11 @@ final class UnmatchedDiscoveryExcludeIntegrationTest extends TestCase
     {
         $bound = $this->check(options: ['--exclude' => ['exact:src/Kept', 'subtree:src/Legacy']]);
 
+        self::assertSame(0, $bound->getStatusCode(), $bound->getDisplay());
         self::assertSame([], $this->findingsOnChannel($bound));
         self::assertSame(0, $this->analysedFileCount($bound), 'Both forms must really have removed their directory.');
+        $payload = json_decode($bound->getDisplay(), true, 512, \JSON_THROW_ON_ERROR);
+        self::assertNull($payload['health']);
     }
 
     /** Two roots naming the same tree are one answer, not two: the binding is a boolean. */

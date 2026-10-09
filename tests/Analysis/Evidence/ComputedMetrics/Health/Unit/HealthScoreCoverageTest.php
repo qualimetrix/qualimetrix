@@ -340,6 +340,27 @@ final class HealthScoreCoverageTest extends TestCase
     }
 
     #[Test]
+    public function itDoesNotInventHealthForAnUnaggregatedProject(): void
+    {
+        $definition = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition(
+            'health.cohesion',
+            ['namespace' => '80'],
+            'Builtin',
+            [\Qualimetrix\Core\Symbol\SymbolLevel::Namespace_, \Qualimetrix\Core\Symbol\SymbolLevel::Project],
+            applicability: ['namespace' => \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricApplicability::always()],
+        );
+        $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
+        $catalog->method('find')->willReturnCallback(static fn(string $name) => $name === 'health.cohesion' ? $definition : null);
+        $scores = (new HealthSummaryBuilder(new HealthMetricCatalog(), $catalog))->build(
+            $this->createMetricRepository(new MetricBag()),
+            new NamespaceTree([]),
+            [],
+        )->healthScores;
+
+        self::assertSame([], $scores);
+    }
+
+    #[Test]
     public function itRefusesAnImpossibleMeasuredPopulation(): void
     {
         $this->expectException(LogicException::class);

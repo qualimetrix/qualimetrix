@@ -371,6 +371,10 @@ final class CheckCommandBaselineTest extends TestCase
         foreach (['text', 'json', 'checkstyle', 'sarif', 'gitlab', 'github', 'html', 'summary', 'metrics', 'health', 'suppressed'] as $format) {
             $tester = $this->runCheck(['--baseline' => $this->baselinePath, '--format' => $format, '--fail-on' => 'none']);
             self::assertSame(4, $tester->getStatusCode(), $format . ': ' . $tester->getDisplay());
+            if ($format === 'json') {
+                $payload = json_decode($tester->getDisplay(), true, 512, \JSON_THROW_ON_ERROR);
+                self::assertNull($payload['health']);
+            }
             self::assertStringNotContainsString('is stale', $tester->getDisplay());
         }
     }

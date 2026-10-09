@@ -407,13 +407,6 @@ final class HealthDecompositionCatalog
     public function selectContributorMetrics(array $inputs, callable $readMetric): array
     {
         $primaryValue = isset($inputs[0]) ? $readMetric($inputs[0]['classKey']) : null;
-        if ($primaryValue === null && ($inputs[0]['classKey'] ?? null) === 'cohesion.tcc') {
-            foreach ($inputs as $input) {
-                if ($input['classKey'] === MetricName::COHESION_LCOM) {
-                    $primaryValue = $readMetric($input['classKey']);
-                }
-            }
-        }
         $contributorMetrics = [];
         foreach ($inputs as $input) {
             $value = $readMetric($input['classKey']);
@@ -426,6 +419,37 @@ final class HealthDecompositionCatalog
             'primaryValue' => $primaryValue === null ? null : (float) $primaryValue,
             'contributorMetrics' => $contributorMetrics,
         ];
+    }
+
+    /**
+     * @param list<array{classKey: string, direction: string}> $inputs
+     * @param iterable<callable(string): (int|float|null)> $readMetrics
+     *
+     * @return list<array{classKey: string, direction: string}>
+     */
+    public function selectContributorInputs(array $inputs, iterable $readMetrics): array
+    {
+        if (($inputs[0]['classKey'] ?? null) !== MetricName::COHESION_TCC) {
+            return $inputs;
+        }
+
+        foreach ($readMetrics as $readMetric) {
+            if ($readMetric(MetricName::COHESION_TCC) !== null) {
+                return $inputs;
+            }
+        }
+
+        // Raw TCC and LCOM values are incomparable. Use LCOM for the whole
+        // scope only when no candidate participates in the preferred TCC axis.
+        foreach ($inputs as $index => $input) {
+            if ($input['classKey'] === MetricName::COHESION_LCOM) {
+                unset($inputs[$index]);
+
+                return [$input, ...array_values($inputs)];
+            }
+        }
+
+        return $inputs;
     }
 
     /** @return list<string> */

@@ -75,11 +75,14 @@ distinguishes measured, not-measured and not-applicable, retaining an explanatio
 or the measured/eligible share. Enabled builtin project dimensions can remain
 visible without a score; disabled dimensions are omitted. An absent selected
 class or namespace score never falls back to the project score.
+An unaggregated run with no project metrics has no health projection; absent
+populations are unknown rather than zero.
 
 PHP prepares project decomposition and coverage for the HTML payload. The
 viewer renders those values without another formula evaluator. Cohesion
-contributors follow participating TCC, or otherwise measured LCOM with its
-lower-is-better direction. Other contributor ranking and eligibility policies
+contributors share one axis across the selected scope: TCC when any candidate
+has it, including zero, otherwise measured LCOM with its lower-is-better
+direction. Candidates missing the selected axis are omitted. Other ranking policies
 remain separate decisions.
 
 Every successful normal check JSON report includes `computedMetricOutcomes`,

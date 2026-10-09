@@ -159,6 +159,12 @@ decomposition), in `--format=summary` (one line under each score) and in
 `summary.healthDecomposition` beside `summary.healthScores`). The viewer
 renders this PHP evidence without evaluating formulas in JavaScript.
 
+Cohesion contributors use TCC for the whole selected scope when any candidate
+has it, including measured zero; otherwise they rank by LCOM, larger values
+first. Candidates missing the selected metric are omitted. A run with no
+aggregated project metrics publishes no health projection: its populations are
+unknown rather than zero.
+
 A coverage short of 100% is not automatically a fault in the run. Some gaps are
 permanent by construction: TCC can be absent on small classes, and a namespace
 that declares nothing but bare enums has no abstractness

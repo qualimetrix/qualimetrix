@@ -42,6 +42,12 @@ resolved so the HTML report picks by the node's own level. Which class dragged a
 parent score down is a separate question with a separate list — the contributor
 keys — and the two must not be conflated.
 
+Cohesion contributors use one ranking axis for the entire selected scope:
+TCC when any candidate has it, including measured zero; otherwise LCOM, with
+larger values first. Candidates missing that axis do not enter the ranking.
+An unaggregated run with no project metrics has no health projection; its
+populations are unknown rather than zero.
+
 Class scores and their inputs are read on exact declaration subjects. Class
 aggregate samples and `size.symbol-class-count` count declarations, including
 duplicate names. Graph inputs remain logical-name values overlaid on each

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary;
 
+use Closure;
 use LogicException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
@@ -79,6 +80,11 @@ final readonly class HealthSummaryBuilder
     private function buildHealthScores(MetricRepositoryInterface $metrics, NamespaceTree $tree): array
     {
         $projectMetrics = $metrics->get(SymbolPath::forProject());
+        // Aggregation publishes no project bag when discovery or collection
+        // leaves no symbols. Missing populations are unknown, not zero.
+        if ($projectMetrics->all() === []) {
+            return [];
+        }
         $healthScores = [];
 
         foreach (HealthDimension::all() as $dim) {
@@ -142,6 +148,12 @@ final readonly class HealthSummaryBuilder
             return [];
         }
 
+        $classes = iterator_to_array($metrics->allClassDeclarations(), false);
+        $inputs = $this->decomposition->selectContributorInputs($inputs, array_map(
+            static fn($symbol): Closure => $metrics->getSubject($symbol->subject ?? throw new LogicException('Class contributor requires an exact subject'))->get(...),
+            $classes,
+        ));
+
         return $this->contributorRanker->rank(
             array_map(function ($symbol) use ($metrics, $inputs): array {
                 $subject = $symbol->subject ?? throw new LogicException('Class contributor requires an exact subject');
@@ -154,11 +166,8 @@ final readonly class HealthSummaryBuilder
                     'symbol' => $symbol,
                     'primaryValue' => $selection['primaryValue'],
                     'contributorMetrics' => $selection['contributorMetrics'],
-                    'primaryDirection' => ($inputs[0]['classKey'] ?? null) === MetricName::COHESION_TCC
-                        && $metrics->getSubject($subject)->get(MetricName::COHESION_TCC) === null
-                        ? 'lower' : $inputs[0]['direction'],
                 ];
-            }, iterator_to_array($metrics->allClassDeclarations(), false)),
+            }, $classes),
             $inputs[0]['direction'],
         );
     }
