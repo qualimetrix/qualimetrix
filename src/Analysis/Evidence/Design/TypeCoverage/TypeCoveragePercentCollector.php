@@ -55,8 +55,8 @@ final class TypeCoveragePercentCollector implements DerivedCollectorInterface, P
         $totalTyped = $paramTyped + $returnTyped + $propertyTyped;
         $totalAll = $paramTotal + $returnTotal + $propertyTotal;
 
-        if ($totalAll === 0) {
-            return (new MetricBag())->with(MetricName::DESIGN_TYPE_COVERAGE_ALL, 100.0);
+        if ($totalAll === 0 || $totalAll === 0.0) {
+            return new MetricBag();
         }
 
         $pct = round($totalTyped / $totalAll * 100, 2);

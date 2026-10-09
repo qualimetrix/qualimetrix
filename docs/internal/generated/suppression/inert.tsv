@@ -24,4 +24,13 @@ rule-path-suppression	duplication.clone: exact:src/Analysis/Evidence/Design/Inhe
 rule-path-suppression	duplication.clone: exact:src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php
 rule-path-suppression	duplication.clone: regex:src/Analysis/Run/ExcludeBinding/.*Options\.php
 rule-path-suppression	health.cohesion: exact:src/Analysis/Evidence/Measurement/Aggregation/MeasurementAggregationService.php
+rule-path-suppression	health.cohesion: exact:src/Analysis/Finding/RuleConfiguration/OptionForms/RuleOptionShapeWording.php
 rule-path-suppression	health.cohesion: exact:src/Infrastructure/Console/Application.php
+rule-path-suppression	health.cohesion: exact:src/Infrastructure/Console/Command/BaselineCleanupCommand.php
+rule-path-suppression	health.cohesion: exact:src/Infrastructure/Console/Command/BaselineExplainCommand.php
+rule-path-suppression	health.cohesion: exact:src/Infrastructure/Console/Command/BaselineGenerateCommand.php
+rule-path-suppression	health.cohesion: exact:src/Infrastructure/Console/Command/BaselineRenameChannelsCommand.php
+rule-path-suppression	health.cohesion: exact:src/Infrastructure/Console/Command/BaselineUpdateCommand.php
+rule-path-suppression	health.cohesion: exact:src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php
+rule-path-suppression	health.cohesion: exact:src/Infrastructure/Console/Command/GraphExportCommand.php
+rule-path-suppression	health.cohesion: exact:src/Reporting/Formatter/CheckstyleFormatter.php

@@ -1070,6 +1070,7 @@ Available tests:
  - Qualimetrix\Governance\GeneratedArtifactFreshness\HtmlPayloadFixtureFreshnessTest::itMatchesTheNativeCliPayload
  - Qualimetrix\Governance\GeneratedArtifactFreshness\SuppressionSnapshotFreshnessTest::itMatchesAFreshSelfAnalysisOfSrc
  - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itDefinesEveryDefaultAtClassNamespaceAndProjectLevel
+ - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itDefinesExactEffectivePolicyInputsAndValidatesEverySuppliedOperand
  - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itExpectedKeys
  - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itExplicitProjectFormulas
  - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itGivesEveryDefaultAClassAndNamespaceFormula
@@ -1079,6 +1080,9 @@ Available tests:
  - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itProjectFormulaInheritance
  - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itReturnsEveryDefaultAsAComputedMetricDefinition
  - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itReturnsSixDefaults
+ - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itSeparatesNamespaceCouplingAbsenceFromMeasuredZeroFacts
+ - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itUsesOnlyMeasuredCohesionHalves
+ - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itUsesPositiveTypingDenominatorsAndMeasuredCohesionHalves
  - Qualimetrix\Governance\HealthVocabulary\HealthDecompositionAgreesWithFormulasTest::itAdvertisesTheThresholdTheFormulaApplies
  - Qualimetrix\Governance\HealthVocabulary\HealthDecompositionAgreesWithFormulasTest::itBandsTheHtmlTooltipAtTheThresholdItAdvertises
  - Qualimetrix\Governance\HealthVocabulary\HealthDecompositionAgreesWithFormulasTest::itKeepsEveryDeclaredDivergenceReal
@@ -1642,6 +1646,7 @@ Available tests:
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itKeepsTheTwoDirectionsApart
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itNeverPutsAPublishedDimensionIntoTheVariableMap
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itPoolsAParentThatCarriesTheKeyAndTheLeafRuleDrops
+ - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itPreservesAllApplicableScoresWithStrictFloatingPointEquality
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itPublishesNoAggregateWhenNoAdmittedNamespaceCarriesTheMetric
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itRefusesToJudgeCoverageWithoutADeclaredFraction
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itReportsADimensionAsNotApplicableBelowTheDeclaredFraction
@@ -3511,6 +3516,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\ContributorRankerTest::itSkipsClassesWithoutPrimaryMetric
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\ContributorRankerTest::itTiedPrimaryMetricSortsByCanonicalPath
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\DecompositionItemTest::itRefusesAWriteToAConstructedItem
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthContributorTest::itChoosesTheCohesionAxisWithinTheSelectedNamespace
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthContributorTest::itClassWithNullMetricSkipped
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthContributorTest::itCohesionContributorsRankedByLowestTcc
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthContributorTest::itComplexityContributorsRankedByHighestCcn
@@ -3520,7 +3526,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthContributorTest::itFewerClassesThanLimitShowsAll
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthContributorTest::itMaintainabilityContributorsRankedByLowestMi
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthContributorTest::itOverallDimensionHasNoContributors
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthContributorTest::itRanksExactlyTwoLcomOnlyContributorsWorstFirst
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthContributorTest::itTieBreaksByClassNameAlphabetically
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthContributorTest::itUsesOneParticipatingCohesionAxisAcrossTheScope
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDecompositionCatalogTest::itDeclaresACoverageForEveryProjectLevelInputOfAnAggregatedDimension
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDecompositionCatalogTest::itGetDecompositionAnswersPerLevel
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDecompositionCatalogTest::itGetDecompositionDimensionThatDecomposesIntoNothing
@@ -3563,17 +3571,32 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthReasonBuilderTest::itUnknownDimensionNameUsedAsIs
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itCountsCallablesForCallableAggregates
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itCountsDeclaringNamespacesForANamespaceCollectedAggregate
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itCoversOnlyPresentTermsOfAnAuthoredNullableMean
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itCoversTheParticipatingLcomTermWhileKeepingMissingTccVisible
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itDoesNotBorrowBuiltinCoverageForAnAuthoredLiteral
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itDoesNotCoverAnUnenteredAuthoredFormulaBranch
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itDoesNotInventHealthForAnUnaggregatedProject
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itKeepsAnAuthoredTypingAbsenceOutOfBuiltinHealthRecords
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itKeepsExpectedMissingDistanceAsNullWithAnExplicitZeroOfN
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itPreservesAnEnabledBuiltinNullableScoreAndItsExpectedInputs
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itPublishesAMeasuredZeroWhenTheAggregateNeverReachedTheProject
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itRefusesAPopulationMetricThisRunNeverPublished
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itRefusesAnImpossibleMeasuredPopulation
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itRefusesInvalidPublishedCoverageCounts"fractional"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itRefusesInvalidPublishedCoverageCounts"infinite"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itRefusesInvalidPublishedCoverageCounts"negative"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itRefusesInvalidPublishedCoverageCounts"not a number"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itRefusesToCallAnEmptyPopulationACoverageOfZero
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itReportsTheNarrowestInputRatherThanTheWidest
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itShowsANamespaceTheAggregateNeverReachedAsAGap
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itStatesWhyADimensionHasNoCoverageInsteadOfReportingZero
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itUsesOnlyTheSelectedAuthoredInputAndItsPopulation
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreDrillDownTest::itBuildClassHealthScoresMatchesGlobalClass
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreDrillDownTest::itBuildClassHealthScoresReturnsDimensionScores
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreDrillDownTest::itBuildClassHealthScoresReturnsEmptyWhenClassNotFound
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreDrillDownTest::itBuildClassHealthScoresSkipsMissingDimensions
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreDrillDownTest::itBuildsHealthScoresForAnExactSelector
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreDrillDownTest::itDoesNotBorrowBuiltinContributorsForAnAuthoredNamespaceScore
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreDrillDownTest::itRefusesAnAmbiguousClassNameAcrossExactDeclarations
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreDrillDownTest::itRefusesLegacyClassEnumerationInHealthFixtures
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreDrillDownTest::itRefusesLegacyClassReadsInHealthFixtures
@@ -3588,6 +3611,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreTest::itRequiresEveryScoreToStateWhatItCovers
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthSummaryBuilderTest::itCountsAnOwnedFindingOnlyForItsExactDuplicateClass
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthSummaryBuilderTest::itEnrichesWithHealthScores
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthSummaryBuilderTest::itKeepsExpectedMissingInputsNullableWithoutWritingRepositoryScalars
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthSummaryBuilderTest::itRanksANamespaceOnlyWhenItDeclaresClassesOfItsOwn
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\MetricHintCatalogTest::itDescribesTheOwnScopeCboLikeItsSiblings
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\MetricHintCatalogTest::itGetDirectionKnown
@@ -3655,6 +3679,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\UnwrittenEntryBodyTest::itRefusesAnInvalidNameWrittenWithAnEmptyBody"null"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricAnalysisTest::itDefaultReturnsEmptyArray
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricAnalysisTest::itPreservesInstalledDefinitionsWhenResolutionFails
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricAnalysisTest::itPreservesTheInstalledFormulaSourceWhenLaterResolutionFails
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricAnalysisTest::itPreservesTheResolvedCoordinateForSyntheticDefinitionsWithoutARefusalCallback
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricAnalysisTest::itRefusesLoudlyWhenARealTokenHasLostAnAuthoredFormulaSource
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricAnalysisTest::itSetAndGetDefinitions
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricAnalysisTest::itSetDefinitionsReplacePrevious
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefinitionTest::itDefaultThresholdValues
@@ -3669,6 +3696,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefinitionTest::itInvalidNameNoPrefix
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefinitionTest::itInvalidNameSegmentStartsWithDigit
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefinitionTest::itInvalidNameSegmentWithSpecialChars
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefinitionTest::itKeepsBareBuiltinAndSyntheticDefinitionsDistinct
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefinitionTest::itSelectsBuiltinPoliciesAlongsideTheEffectiveFormula
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefinitionTest::itThresholdFields
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefinitionTest::itValidComputedName
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricDefinitionTest::itValidHealthName
@@ -3680,6 +3709,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itComputesAnIndependentMetricValuePerClass
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itComputesTheDefaultHealthScoresAtClassLevel
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itComputesTheDefaultHealthScoresAtNamespaceLevel
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itCountsDuplicateLogicalClassesAsExactDeclarations
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itDoesNotRefuseAKeyNoSymbolCarriesWhereOnlyABranchReadsIt
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itDoesNotStoreANanFormulaResult
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itDoesNotStoreAnInfiniteFormulaResult
@@ -3690,30 +3720,38 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itFallsBackToInputOrderWithoutCrashingOnACircularDependency
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itFallsBackToTheNamespaceFormulaAtProjectLevel
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itJudgesTheRightSideOfAndByWhetherTheEvaluationReachedIt
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itKeepsCopiedBuiltinNullAsAuthoredAbsenceWhileTheBuiltinIsQuiet
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itKeepsCustomMissingAndNullAbsenceSeparateFromAuthoredHealthConstant
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itLeavesTheRepositoryUntouchedWhenGivenNoDefinitions
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itLetsAnEnclosingFallbackCatchTheNullOfTheTakenBranch
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itListsAllUnknownMetricsReferencedByAFormula
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itNamesTheKeyANestedTernaryReadsOnEveryPath
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itNeverRunsTheBranchItEntersWithAnAbsentKey
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itOmitsTypingHealthAtProjectLevelWhenThereIsNoTypeSurface
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itOmitsTypingHealthForANamespaceMissingAllTypeCoverageMetrics
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itOmitsTypingHealthForANamespaceWithNoTypeablePositions
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itOwnsTheComputedProfilerSpan
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itPassesInvalidRawPolicyFactsAtAllThreeLevelsToThePureEvaluation
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itPenalizesNamespaceCouplingHealthForHighEfferentBreadth
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itPublishesNoValueForASymbolMissingAnUnguardedMetric
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itPublishesNoValueWhereTheConditionReadsAnAbsentKey
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itPublishesNoValueWhereTheTakenBranchReadsAnAbsentKey
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itPublishesTheBranchATernaryTakesWithoutTheKeyOnlyTheOtherBranchReads
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itPublishesTheLeftSideOfAFallbackBetweenMetricsWhereOnlyTheLeftIsPresent
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itReadsOneImmutableDefinitionSnapshotPerEvaluation
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itRefusesAFallbackChainWhereNoSymbolAtTheLevelCarriesAnyLink
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itRefusesAFormulaReferencingAnUnknownMetricWithoutAFallback
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itReportsSkippedSymbolsOnceForTheMetricAndLevel
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itRefusesApplicableBuiltinMissingOrNullInsteadOfSummarizingIt
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itRefusesInvalidFormulaResultsAndReadOperands
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itReturnsAnEmptySummaryForTheInstalledEmptySnapshot
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itRewardsNamespaceCouplingHealthForLowOutgoingCoupling
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itScoresTypingHealthAsFullAtProjectLevelWhenThereIsNoTypeSurface
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itScoresTypingHealthAsFullForANamespaceMissingAllTypeCoverageMetrics
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itScoresTypingHealthAsFullForANamespaceWithNoTypeablePositions
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itSkipsASymbolCarryingNeitherSideOfAFallbackBetweenMetrics
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itSummarizesAbsencesWithBoundedExactSamplesForTheMetricAndLevel
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itTreatsAParenthesisedFallbackChainAsGuardedToItsLastLink
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itUsesTheNullCoalescingFallbackForAMissingMetric
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itAcceptsALiteralIndexHoweverItIsSpaced
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itEvaluatesNullableMeanClampArgumentsOnceInNativeOrder
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itEvaluatesOrderedNullableMeansWithoutDroppingZero
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itKeepsStrictReadsInsideNullableMeanValuesAndWeights
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesAKeyThatIsGuardedInOnePlaceAndBareInAnother
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"a bare read in the condition"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"a bare read of a present key"
@@ -3745,6 +3783,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"the right side of and"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"the right side of ||"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"two bare reads, one absent"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itPreservesOneNativeControlRunAndReachedGetAttrStages
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itPreservesStrictClampOperandsOutsideTheNullableMeanResult
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itReadsNoKeyOutOfAnIndexOnSomethingOtherThanTheLookup
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itReadsOnlyComputedMetricReferences
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itRefusesAnAccessThatIsNotALiteralIndex"a method call on the lookup"
@@ -3753,6 +3793,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itRefusesAnAccessThatIsNotALiteralIndex"an index that is another lookup"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itRefusesAnAccessThatIsNotALiteralIndex"the lookup guarded on its own"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itRefusesAnAccessThatIsNotALiteralIndex"the lookup handed to a function"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itReleasesACompletedNativeRunWithoutCycleCollection
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itReturnsNoValueForExactCopiedNullableBuiltinFormulas
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itReturnsTheClosedSubjectOutcomesWithoutNumericCoercion
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itValidatesWeightsEvenForAbsentValues
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricFindingBuilderTest::itCarriesThresholdFieldInFinding
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricFindingBuilderTest::itEmitsErrorWhenInvertedMetricBelowErrorThreshold
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricFindingBuilderTest::itEmitsErrorWhenNormalMetricAboveErrorThreshold
@@ -3777,6 +3821,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAttributesALevelWordToTheLayerThatWroteTheList
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAttributesAnUnknownComputedReferenceToItsFormulaWriter"default formula"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAttributesAnUnknownComputedReferenceToItsFormulaWriter"namespace formula inherited by project"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAttributesMeasuredLevelRefusalToTheFormulaRatherThanLaterMetadata
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAttributesTheSelectedBrokenFormulaToItsExactWriter"class reporting subset"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAttributesTheSelectedBrokenFormulaToItsExactWriter"explicit project beats namespace"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itAttributesTheSelectedBrokenFormulaToItsExactWriter"generic above a namespace refinement"
@@ -3816,6 +3861,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itRefusesToReadASectionTheDocumentCarriedUnread
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itRemovesAPresetMetricByEnabledFalse
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itReplacesTheLevelListWhole
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itRetainsTheEffectiveFormulaWriterForRuntimeRefusalAfterResolution
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricReachTest::itReadsEveryAstBranchAndIgnoresMetricLikeTextInStringValues
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricReachTest::itRefusesANonLiteralMetricAccessInsteadOfInventingMemberReach
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricReachTest::itRefusesAReportedLevelWithoutAFormula
@@ -3866,6 +3912,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itJudgesContextualFormulaReferencesOnlyInTheWinningFormula"unknown base metric"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itJudgesContextualFormulaReferencesOnlyInTheWinningFormula"unknown computed metric"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itKeepsTheBuiltInErrorWhenOnlyWarningIsWritten
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itKeepsTheNativeListQueryAsAProjectionOfSourcedResolution
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itOffersEveryExcludableDimensionButOverallForAnUnknownExclusion
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itOverridesHealthFormulaSingular
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricsConfigResolverTest::itOverridesHealthFormulasPerLevel
@@ -3940,16 +3987,18 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthFormulaExcluderTest::itExcludingAllSubDimensionsRemovesOverall
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthFormulaExcluderTest::itExcludingOneDimensionRenormalizesWeights
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthFormulaExcluderTest::itExcludingOverallDimensionDoesNotThrow
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthFormulaExcluderTest::itKeepsTheWeightsSummingToOneForEveryExclusion
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthFormulaExcluderTest::itKeepsEveryExclusionAtTheCeilingWithoutRoundingItsWeights
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthFormulaExcluderTest::itPreservesBuiltinAndAuthoredPoliciesThroughExclusion
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthFormulaExcluderTest::itPreservesOtherFieldsInRebuiltDefinition
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthFormulaExcluderTest::itRebuildsAllLevelsOfOverallFormula
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthFormulaExcluderTest::itReturnsUnchangedDefinitionsWhenNoExclusions
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthFormulaExcluderTest::itThrowsExplicitlyForCustomNonWeightedOverallFormula
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthFormulaExcluderTest::itTreatsAnUnknownDimensionAsTheCallersDefect
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthFormulaExcluderTest::itWrapsRebuiltFormulaInClamp
- - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\WeightedHealthFormulaTest::itReadsAWeightedSumInEveryShapeTheLanguageAccepts
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\WeightedHealthFormulaTest::itReadsNoWeightedSumAtAllWhenOneTermIsNotOne
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\WeightedHealthFormulaTest::itReadsNoWeightedSumOutOfAFormulaThatIsNotOne
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\WeightedHealthFormulaTest::itReadsTheCompleteOrderedMeanOnTheNativeAst
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\WeightedHealthFormulaTest::itRefusesPartialDuplicateOrInvalidCanonicalTerms
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceCboScopeIntegrationTest::itJudgesANamespaceWithASubNamespaceOnItsOwnClasses
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceCboScopeIntegrationTest::itJudgesTheSameNamespaceOnFewerCouplingsWhenADependentIsLeftOutOfTheRun
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceCboScopeIntegrationTest::itReachesTheSameVerdictWhenTheSubNamespaceIsLeftOutOfTheRun
@@ -4794,12 +4843,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageOptionsTest::itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageOptionsTest::itValidatesOverridesInInvertedDirection
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itDefaultsMissingTypedCountsToZero
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itOmitsPercentageForEmptyBag
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itOmitsPercentageWhenAllTotalsAreZero
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itOmitsPercentagesForIntegerAndFloatingPointZeroTotals
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itPreservesSixRawZerosAndTheirNonemptySumWithoutPercentages
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itProvidesTypeCoveragePctMetric
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itRequiresTypeCoverageDependency
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itReturns0PercentForUntypedClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itReturns100PercentForEmptyBag
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itReturns100PercentForFullyTypedClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itReturns100PercentWhenAllTotalsAreZero
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itReturnsClassLevelMetricDefinitionWithNoAggregation
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itReturnsCollectorName
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoveragePercentCollectorTest::itReturnsCorrectPercentageForPartiallyTypedClass
@@ -9928,8 +9979,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisCoverageTest::itTreatsGeneratedExclusionsAsCompleteCoverage
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisPipelineTest::itMeasuresElapsedSecondsWhenTheWallClockMovesBackwards
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisPipelineTest::itPassesCapturedConfigurationToProjectFiles
+ - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisPipelineTest::itRefusesRuntimeFormulaFailureDuringSharedAuditPreparation
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisPipelineTest::itReportsEachMixedSpellingGroupOnceAcrossRepositoryAndGraph
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisPipelineTest::itRunsWithAnExplicitOwnerConfigurationAndReturnsMeasuredCoverage
+ - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisPipelineTest::itTransportsNonfailureSummaryOnlyThroughNormalAnalysis
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisPipelineTest::itUsesTheProjectRootFromEachRunInTheSameProcess
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itCountsFindingsBySeverity
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itCountsZeroWhenNoFindings
@@ -9943,6 +9996,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itKeepsTheLeftRepositoryWhenTheRightRepositoryCannotMerge
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itKeepsTheOtherSidesRuleExecutionWhenOneSideHasNone
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itMergesBothSidesOfRuleExecutionRatherThanKeepingOnlyOne
+ - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itMergesComputedAbsenceBesideMeasuredResultsAndPreservesEmptyIdentity
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itMergesFindings
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itMergesMetricsFromBothRepositories
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itMergesSuppressionsForOverlappingFiles
@@ -10448,6 +10502,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandConfigErrorExitCodeTest::itClassifiesInvalidComputedMetricFormulaAsConfigError
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandConfigErrorExitCodeTest::itClassifiesUnknownComputedMetricReferenceAsConfigError
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandConfigErrorExitCodeTest::itPublishesThePositionItsThrowSiteLocated
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandConfigErrorExitCodeTest::itRoutesAnActualEvaluatorRuntimeFailureToQuietJsonExitThree
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandConfigurationErrorGateTest::itFailsAndReportsThroughAPathExclusionCoveringTheFile
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandConfigurationErrorGateTest::itFailsAndReportsThroughAnInlineSuppressionOfTheDiagnostic
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandDrillDownFormatTest::itRefusesASelectionTheFormatCannotMarkBeforeAnalysis"checkstyle --class"
@@ -11015,6 +11070,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itRefusesAnExplicitNonPhpFileAtEveryMeasuringDoor"graph"
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itRefusesAnUnknownDocumentKeyAtTheNewDoors"graph"
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itRefusesAnUnknownDocumentKeyAtTheNewDoors"rules"
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itRoutesAnActualEvaluatorFailureThroughNativeDirectivesPreparation
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ConfigurationRefusalRoutingTest::itWiresThePresenterIntoEveryCommandTheRealContainerBuilds
  - Qualimetrix\Tests\Infrastructure\Console\Integration\FindingFilterOrchestratorBaselineReportingTest::itDoesNotCountAShrunkButPresentGroupAsResolved
  - Qualimetrix\Tests\Infrastructure\Console\Integration\FindingFilterOrchestratorBaselineReportingTest::itPrintsNoScopeMismatchForARunOverTheProjectRoot
@@ -11038,11 +11094,13 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itAcceptsAWritableOutputTargetOrNoTargetAtAll
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itAppliesTheExplicitExitPolicyWithoutAConfigurationProvider
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itBindsANamespaceTheTreeKnowsAndTheMetricsDoNot
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itCarriesSuccessfulAbsencesAndUsesOnlyTheResolvedJsonQuietRoute
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itDefaultsToErrorOnlyExitBehavior
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itKeepsTheMutuallyExclusivePairRefusedByItsOwnMessage
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itLeavesDiagnosticsOnSymfonyFormattedOutput
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itPresentsAClassThatExistsAndIsClean
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itPresentsANamespaceThatExistsAndIsClean
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itPublishesBothCustomAbsencesThroughTheNativeQuietJsonPipeline
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itReachesBothVerdictsWithoutANamespaceTree
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itRefusesAClassThatSelectsNothingInTheRun
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itRefusesADirectoryOutputTargetBeforeAnalysis
@@ -11351,7 +11409,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\OutputEncodingTest::itRefusesADifferentModeAfterBindingOne
  - Qualimetrix\Tests\Infrastructure\Console\Unit\OutputHelperTest::itDoesNotWriteToASuppressedStream"quiet"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\OutputHelperTest::itDoesNotWriteToASuppressedStream"silent"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\OutputHelperTest::itKeepsJsonSilentAndLeavesTheGenericQuietRouteSuppressed
  - Qualimetrix\Tests\Infrastructure\Console\Unit\OutputHelperTest::itRefusesAReadOnlyBorrowedStreamWithoutChangingOrClosingIt
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\OutputHelperTest::itWritesJsonAtQuietVerbosityWithoutInterpretingMarkup"normal"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\OutputHelperTest::itWritesJsonAtQuietVerbosityWithoutInterpretingMarkup"quiet"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ProfilePresenterTest::itRefusesAnExportWhoseWriteFails
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ProfilePresenterTest::itWritesAnExportItCanWrite
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ProfileSummaryRendererTest::itNamesSpansThatWereNotTimed
@@ -12558,6 +12619,8 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Health\HealthTextFormatterTest::itPrintsCoverageBesideEveryScore"wide"
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Health\HealthTextFormatterTest::itReturnsHealthAsName
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Health\HealthTextFormatterTest::itReturnsNoneAsDefaultGroupBy
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Health\HealthTextFormatterTest::itShowsActualCustomAbsencesWithNullLoggerBeforeAndBesideHealth
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Health\HealthTextFormatterTest::itShowsBothNonfailureAbsencesBeforeReturningWithoutScores
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Health\HealthTextFormatterTest::itShowsContributorsInOutput
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Health\HealthTextFormatterTest::itShowsDecompositionInOutput
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Health\HealthTextFormatterTest::itShowsFileCountInHeader
@@ -12615,6 +12678,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itBuildsWithEmptyMetrics
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itBuildsWithNullMetrics
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itCalculatesDebtDuringBuild
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itCarriesPreparedNullableDecompositionToTheViewer
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itCountsFindingsTotalBottomUp
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itEscapesHtmlTagsInJsonEncoding
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itFiltersInternalMetricsFromOutput
@@ -12687,6 +12751,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itProducesIso8601Timestamp
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itProducesNullForEmptyHealthScores
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itProducesNullForNanAndInfMetricValues
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itPublishesAStableEmptyAndNonfailureComputedOutcomeField
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itPublishesTheConfigurationDiagnosticsSectionEvenWhenEmpty
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itRefusesToPickBetweenViolationsAndLimit
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itRejectsAnInvalidViolationsOptionThatBypassedTheCommandLine
@@ -12713,6 +12778,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFormatterTest::itUsesDisplayMessageFallbackForFinding
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonHealthSectionTest::itFormatsMultipleHealthScores
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonHealthSectionTest::itFormatsWithNullScore
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonHealthSectionTest::itPreservesNullBeforeNumericFormattingAndKeepsMeasuredZero
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonHealthSectionTest::itPublishesCoverageWithTheSameKeysInBothStates
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonHealthSectionTest::itReturnsCorrectStructure
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonHealthSectionTest::itReturnsNullForEmptyScoresWithoutNamespace
@@ -12843,6 +12909,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\HealthBarRendererTest::itRendersScaleExplanationWhenDifferentThresholds
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\HealthBarRendererTest::itRendersUnicodeBar
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\HealthBarRendererTest::itSaysOneSharedCoverageStatementOnce
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\HealthBarRendererTest::itShowsNullableOverallAndInputWithoutManufacturingZero
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\HintRendererTest::itAddsTheDocumentationPointerAsItsOwnLineBelowHints
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\HintRendererTest::itAlwaysShowsHtmlFormatHint
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\HintRendererTest::itEscapesBackslashesInNamespaceHint
@@ -12895,6 +12962,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\SummaryFormatterTest::itReturnsDefaultGroupByAsNone
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\SummaryFormatterTest::itReturnsNameAsSummary
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\SummaryFormatterTest::itSelectsTheWorstDetailFindingBeforeGroupingByFile
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\SummaryFormatterTest::itShowsBothNonfailureAbsencesBeforeReturningWithoutScores
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\SummaryFormatterTest::itShowsDrillDownHintForWorstOffender
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\SummaryFormatterTest::itShowsHintsForFindings
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\SummaryFormatterTest::itShowsNamespaceHealthScoresWhenFilteringByNamespace
@@ -12957,6 +13025,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itReturnsDefaultGroupByNone
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itReturnsTextName
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itSelectsTheWorstDetailFindingBeforeGroupingByFile
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itShowsBothNonfailureAbsencesBeforeReturningWithoutScores
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itSortsBySeverityThenFile
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itUsesCodeInBrackets
  - Qualimetrix\Tests\Reporting\Unit\Health\HealthHintProjectorTest::itExportForHtmlEveryRangedMetricHasLabel
@@ -12967,8 +13036,9 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Health\HealthHintProjectorTest::itExportForHtmlMetricHintsContainsAllRangedMetrics
  - Qualimetrix\Tests\Reporting\Unit\Health\HealthHintProjectorTest::itExportForHtmlRangesEndWithAbove
  - Qualimetrix\Tests\Reporting\Unit\Health\HealthHintProjectorTest::itExportForHtmlReturnsExpectedTopLevelKeys
- - Qualimetrix\Tests\Reporting\Unit\Health\HealthScoreResolverTest::itClassFilterFallsBackToProjectWhenClassNotFound
+ - Qualimetrix\Tests\Reporting\Unit\Health\HealthScoreResolverTest::itClassFilterDoesNotBorrowProjectWhenClassNotFound
  - Qualimetrix\Tests\Reporting\Unit\Health\HealthScoreResolverTest::itClassFilterReturnsClassHealthScores
+ - Qualimetrix\Tests\Reporting\Unit\Health\HealthScoreResolverTest::itKeepsAnExistingClassWithNoScoreLocal
  - Qualimetrix\Tests\Reporting\Unit\Health\HealthScoreResolverTest::itNamespaceFilterReturnsEmptyWhenNoMatchingNamespaces
  - Qualimetrix\Tests\Reporting\Unit\Health\HealthScoreResolverTest::itNamespaceFilterReturnsSubtreeHealthScores
  - Qualimetrix\Tests\Reporting\Unit\Health\HealthScoreResolverTest::itReturnsProjectHealthScoresWhenNoFilter
@@ -12980,6 +13050,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Health\SummaryEnricherTest::itEnrichesWithTechDebt
  - Qualimetrix\Tests\Reporting\Unit\Health\SummaryEnricherTest::itHealthScoresEmptyWhenNoProjectHealthMetrics
  - Qualimetrix\Tests\Reporting\Unit\Health\SummaryEnricherTest::itNullMetricsReturnsUnchangedReport
+ - Qualimetrix\Tests\Reporting\Unit\Health\SummaryEnricherTest::itPreservesComputedAbsencesThroughTheFullReportCopy
  - Qualimetrix\Tests\Reporting\Unit\Health\SummaryEnricherTest::itPreservesOriginalReportFields
  - Qualimetrix\Tests\Reporting\Unit\Health\SummaryEnricherTest::itReturnsUnchangedReportWhenNoMetrics
  - Qualimetrix\Tests\Reporting\Unit\Health\SummaryEnricherTest::itSkipsSymbolsAboveWarningThreshold
@@ -13008,6 +13079,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\ReportBuilderTest::itAddsFindingsFromIterator
  - Qualimetrix\Tests\Reporting\Unit\ReportBuilderTest::itBuildsEmptyReport
  - Qualimetrix\Tests\Reporting\Unit\ReportBuilderTest::itCalculatesViolationCountsCorrectly
+ - Qualimetrix\Tests\Reporting\Unit\ReportBuilderTest::itCarriesComputedAbsencesAndDefaultsToAnEmptySummary
  - Qualimetrix\Tests\Reporting\Unit\ReportBuilderTest::itCreatesNewInstance
  - Qualimetrix\Tests\Reporting\Unit\ReportBuilderTest::itDefaultsMetricsToNull
  - Qualimetrix\Tests\Reporting\Unit\ReportBuilderTest::itPassesMetricsThrough

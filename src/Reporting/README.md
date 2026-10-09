@@ -86,7 +86,8 @@ Reporting/
     ├── MetricsJsonFormatter.php            # Raw metrics JSON export
     ├── AcceptedLevelNarrator.php            # "accepted at 25, now 31" fragment for a breach or not-compared group
     ├── CoverageNarrator.php                 # Complete/empty/incomplete human coverage summary
-    ├── Prose/                              # UTF-8 repair and publication-time glyph selection
+    ├── Prose/                              # Prose narration and publication
+    │   ├── ComputedMetricAbsenceNarrator.php # Bounded computed-value absence groups
     │   ├── ProseText.php                   # Publishes one prose body and its repaired-string count
     │   ├── GlyphMode.php                   # Unicode or closed-table ASCII publication
     │   └── AsciiGlyphs.php                 # Product glyph replacements; other Unicode stays intact
@@ -340,6 +341,7 @@ final readonly class Report
         public ?OutOfScopeFindings $outOfScope = null, // what a --namespace/--class selection left out; null without one
         public ?ReportProjectScope $projectScope = null, // how the run's paths stood against composer.json autoload; set on every check run
         public array $configurationDiagnostics = [], // list<{message, source}> — warnings about the accepted configuration, already published
+        public ComputedMetricEvaluationSummary $computedMetricEvaluation = new ComputedMetricEvaluationSummary(),
     ) {}
 
     public function isEmpty(): bool;
@@ -353,6 +355,12 @@ Enriches a base `Report` with immutable Health summary values, worst offenders,
 technical debt, and impact. Health score/decomposition semantics are owned by
 [`Analysis\\Evidence\\ComputedMetrics`](../Analysis/Evidence/ComputedMetrics/README.md);
 Reporting retains only report assembly.
+
+`ReportBuilder` accepts the normal analysis `computedMetricEvaluation` separately
+from findings and configuration diagnostics. `SummaryEnricher` preserves it in
+both its unchanged-report and reconstructed-report paths; direct synthetic
+constructors default to an empty immutable summary. Directive audit retains its
+separate verdict document.
 
 ```php
 final readonly class SummaryEnricher
@@ -479,13 +487,14 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 
 **Name:** `json`
 
-Summary-oriented JSON for AI agents, CI/CD, and programmatic consumption. Includes health scores, worst offenders, and every finding unless `violations=N` caps the list. Example:
+Summary-oriented JSON for AI agents, CI/CD, and programmatic consumption. Includes health scores, worst offenders, and every finding unless `violations=N` caps the list. Every successful report also includes `computedMetricOutcomes`, empty when no authored value is absent. Example:
 
 ```json
 {
   "meta": { "version": "<qmx version>", "package": "qmx", "timestamp": "...", "docs": "https://qualimetrix.dev", "llmsTxt": "https://qualimetrix.dev/llms.txt" },
   "summary": { "filesAnalyzed": 342, "violationCount": 47, "errorCount": 12, "warningCount": 35, "techDebtMinutes": 270, "debtPer1kLoc": 5.4 },
   "outOfScope": null,
+  "computedMetricOutcomes": [],
   "health": { "complexity": { "score": 65, "label": "Fair", "threshold": { "warning": 50, "error": 25 }, "coverage": { "state": "measured", "measured": 2263, "eligible": 2263, "ratio": 1.0, "unit": "callables", "basis": "complexity.ccn.count", "reason": null }, "decomposition": [...] } },
   "worstNamespaces": [{ "symbolPath": "App\\Payment", "healthOverall": 31, "reason": "low cohesion, high complexity" }],
   "worstClasses": [{ "symbolPath": "App\\Payment\\PaymentService", "file": "src/...", "healthOverall": 28, "metrics": {...} }],
@@ -832,6 +841,7 @@ $report->topIssues        // list<RankedIssue> — top findings by impact score
 $report->coverage         // ?ReportCoverage — discovered/analyzed/generated/failed verdict
 $report->projectScope     // ?ReportProjectScope — covered/narrowed/unknown/unmeasured with source reasons
 $report->configurationDiagnostics // list<{message, source}> — warnings about the accepted configuration
+$report->computedMetricEvaluation // ComputedMetricEvaluationSummary — bounded authored absence groups
 ```
 
 ADR 0062 publishes a health score's coverage alongside the score, and every
@@ -840,6 +850,26 @@ surface that shows a score shows it: `json` and the HTML payload
 column on every row including `overall` and at every terminal width, and the
 default `summary` one dimmed line per dimension. The HTML viewer's own
 rendering of that payload lives in `html-report/`.
+
+Health coverage has three explicit states: `measured`, `not-measured` and
+`not-applicable`. A positive eligible population with no measured participating
+input reports 0/N as not-measured; no applicable population carries a reason.
+Numeric zero remains a measured input. Missing decomposition values are null
+and are branched before numeric sanitization, formatting or target comparison.
+Enabled builtin project dimensions remain visible with a nullable score;
+disabled dimensions are omitted. Selected class and namespace scores remain
+local to that subject and never fall back to a project score.
+
+The JSON `health` object describes coverage and decomposition of the selected
+effective formula. An authored constant cannot borrow the inputs of a builtin
+with the same name. PHP also prepares project decomposition and coverage for
+the HTML payload (`summary.healthDecomposition` and `summary.healthCoverage`);
+the viewer renders them without evaluating formulas in JavaScript.
+
+JSON absence records contain `metric`, `level`, `missingKeysCount`,
+`noValueCount`, `missingKeys` and `subjects` (canonical exact identities).
+Text, summary and health render bounded lines from the same immutable summary,
+including before the no-health early return and without logger output.
 
 `ReportCoverage` is the Reporting-layer projection of the pipeline's canonical
 coverage state. Every formatter must preserve a useful payload for zero files and

@@ -539,7 +539,7 @@ final class HealthBarRendererTest extends TestCase
         $this->renderer->render($report, new FormatterContext(), $this->color, 80, $lines);
 
         $output = implode("\n", $lines);
-        self::assertStringContainsString('computed over 0 of 10 classes (0%)', $output);
+        self::assertStringContainsString('not measured 0/10 classes', $output);
         self::assertStringContainsString('coverage: not applicable — composes the other dimensions', $output);
     }
 
@@ -579,4 +579,23 @@ final class HealthBarRendererTest extends TestCase
             healthScores: $healthScores,
         );
     }
+
+    #[Test]
+    public function itShowsNullableOverallAndInputWithoutManufacturingZero(): void
+    {
+        $coverage = \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage::over(0, 2, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\CoverageUnit::Classes, 'cohesion.tcc.count');
+        $report = $this->createReport(healthScores: [
+            'overall' => new HealthScore('overall', null, 'Not measured', 50.0, 25.0, HealthCoverage::notApplicable('composes dimensions')),
+            'cohesion' => new HealthScore('cohesion', null, 'Not measured', 50.0, 25.0, $coverage, [
+                new DecompositionItem('cohesion.tcc.avg', 'TCC', null, '> 0.5', 'higher', '', $coverage),
+            ]),
+        ]);
+        $lines = [];
+        $this->renderer->render($report, new FormatterContext(useColor: false), $this->color, 120, $lines);
+        $body = implode("\n", $lines);
+        self::assertStringContainsString('Health Not measured', $body);
+        self::assertStringContainsString('TCC: not measured 0/2', $body);
+        self::assertStringNotContainsString('0.0%', $body);
+    }
+
 }

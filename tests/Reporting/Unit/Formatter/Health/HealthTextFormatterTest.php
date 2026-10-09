@@ -480,4 +480,82 @@ final class HealthTextFormatterTest extends TestCase
             healthScores: $healthScores,
         );
     }
+
+    #[Test]
+    public function itShowsBothNonfailureAbsencesBeforeReturningWithoutScores(): void
+    {
+        $summary = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence(
+                'computed.custom',
+                \Qualimetrix\Core\Symbol\SymbolLevel::Project,
+                2,
+                1,
+                ['missing.input'],
+                [\Qualimetrix\Core\Symbol\MetricSubject::aggregate(\Qualimetrix\Core\Symbol\SymbolPath::forProject())],
+            ),
+        ]);
+        $report = new Report([], 1, 0, 0.0, 0, 0, computedMetricEvaluation: $summary);
+        $body = $this->formatter->format($report, new FormatterContext(useColor: false))->body;
+        self::assertStringContainsString('Computed metric computed.custom (project): not measured', $body);
+        self::assertStringContainsString('missing keys [missing.input] for 2 subject(s)', $body);
+        self::assertStringContainsString('no value for 1 subject(s)', $body);
+        $withScores = new \Qualimetrix\Reporting\Report([], 1, 0, 0.0, 0, 0, healthScores: [
+            'overall' => new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore('overall', 0.0, 'Critical', 50.0, 25.0, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage::notApplicable('composes dimensions')),
+        ], computedMetricEvaluation: $summary);
+        $alongside = $this->formatter->format($withScores, new FormatterContext(useColor: false))->body;
+        self::assertStringContainsString('missing keys [missing.input] for 2 subject(s)', $alongside);
+        self::assertStringContainsString('no value for 1 subject(s)', $alongside);
+        $expected = 'Computed metric computed.custom (project): not measured — missing keys [missing.input] for 2 subject(s); no value for 1 subject(s); examples: project:';
+        self::assertContains($expected, explode("\n", $body));
+        self::assertContains($expected, explode("\n", $alongside));
+        self::assertSame(1, substr_count($body, 'Computed metric computed.custom'));
+        self::assertSame(1, substr_count($alongside, 'Computed metric computed.custom'));
+
+    }
+
+    #[Test]
+    public function itShowsActualCustomAbsencesWithNullLoggerBeforeAndBesideHealth(): void
+    {
+        $repository = new \Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository([
+            new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition('cohesion.tcc', \Qualimetrix\Core\Symbol\SymbolLevel::Class_),
+        ]);
+        foreach (['One' => [], 'Two' => [], 'Pair' => ['cohesion.tcc' => 1]] as $name => $metrics) {
+            $file = \Qualimetrix\Core\Path\RelativePath::fromString('src/' . $name . '.php');
+            $subject = \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(
+                \Qualimetrix\Core\Symbol\SymbolPath::forClass('App', $name),
+                $file,
+                \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0),
+            ));
+            $repository->addSubject($subject, \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag::fromArray($metrics), $file, 1);
+        }
+        $analysis = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricAnalysis(
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver(
+                new \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator(),
+                new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder(),
+            ),
+        );
+        $analysis->replace(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition(
+                'computed.custom',
+                ['class' => 'm["cohesion.tcc"] > 0 ? null : m["coupling.cbo"]'],
+                'Custom',
+                [\Qualimetrix\Core\Symbol\SymbolLevel::Class_],
+            ),
+        ]));
+        $summary = (new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator(
+            $analysis,
+            self::createStub(\Qualimetrix\Core\Profiler\Contract\ProfilerInterface::class),
+            new \Psr\Log\NullLogger(),
+        ))->evaluate($repository, 1);
+        self::assertCount(1, $summary->absences);
+        self::assertSame(2, $summary->absences[0]->missingKeysCount);
+        self::assertSame(1, $summary->absences[0]->noValueCount);
+        foreach ([[], ['overall' => new HealthScore('overall', 80.0, 'Good', 50.0, 25.0, HealthCoverage::notApplicable('composes dimensions'))]] as $scores) {
+            $body = $this->formatter->format(new Report([], 1, 0, 0.0, 0, 0, healthScores: $scores, computedMetricEvaluation: $summary), new FormatterContext(useColor: false))->body;
+            self::assertSame(1, substr_count($body, 'Computed metric computed.custom (class):'));
+            self::assertStringContainsString('missing keys [cohesion.tcc] for 2 subject(s)', $body);
+            self::assertStringContainsString('no value for 1 subject(s)', $body);
+        }
+    }
+
 }

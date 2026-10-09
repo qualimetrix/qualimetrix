@@ -190,9 +190,21 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 
 **Когда использовать:** Пользовательские скрипты, дашборды, программная обработка.
 
-**Ключи верхнего уровня:** `meta`, `summary`, `outOfScope`, `coverage`, `projectScope` (см. [Охват проекта во всех форматах](#project-scope-in-every-format)), `configurationDiagnostics`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, плюс `violationGroups`, когда передан `--group-by` — без него ключа нет вовсе, это не пустой объект.
+**Ключи верхнего уровня:** `meta`, `summary`, `outOfScope`, `coverage`, `projectScope` (см. [Охват проекта во всех форматах](#project-scope-in-every-format)), `configurationDiagnostics`, `computedMetricOutcomes`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, плюс `violationGroups`, когда передан `--group-by` — без него ключа нет вовсе, это не пустой объект.
 
 `configurationDiagnostics` перечисляет предупреждения о конфигурации, которую прогон принял, — те же, что `check` печатает в stderr, — и равен `[]`, когда их нет. Каждая запись — `{"message": "…", "source": [{"kind": "preset", "name": "…", "imported_by": null}, …]}`: `source` называет каждый слой, о котором предупреждение, от младшего к старшему, в той же форме, что `source` ошибки конфигурации. Например, `only_rules: []` в `qmx.yaml` поверх пресета, фильтрующего правила, законно и даёт одну запись, называющую оба слоя.
+
+Каждый успешный JSON-документ check содержит `computedMetricOutcomes`, в том
+числе пустой массив. Непустые записи группируют недостающие входы и null-результаты
+авторских формул по метрике и уровню: `metric`, `level`, `missingKeysCount`,
+`noValueCount`, `missingKeys` и `subjects`. Ключи — точное объединение недостающих
+ключей; предметы — не более трёх детерминированных канонических точных идентичностей.
+Это отдельная сводка, не находки и не `configurationDiagnostics`.
+
+Успешный check с разрешённым форматом ровно `json` и выводом в stdout пишет полный
+исходный документ при обычной и тихой подробности. SILENT не выводит ни байта.
+JSON из конфигурации следует тому же пути; файловые назначения и остальные
+форматы сохраняют прежнее поведение вывода.
 
 `meta` называет инструмент, записавший документ: `version`, `package`, `timestamp` и два адреса документации — `docs`, сайт документации, и `llmsTxt`, индекс для ИИ-агентов. Оба адреса есть в каждом JSON-отчёте, у которого есть объект-конверт; см. исключения в [Адреса документации в JSON-отчётах](#documentation-addresses).
 
@@ -228,6 +240,7 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
         "reasons": []
     },
     "configurationDiagnostics": [],
+    "computedMetricOutcomes": [],
     "health": {
         "complexity": {
             "score": 78.0,
@@ -247,9 +260,18 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
             },
             "decomposition": [
                 {
-                    "metric": "complexity.ccn.sum",
+                    "metric": "complexity.ccn.avg",
                     "humanName": "Cyclomatic complexity",
-                    "value": 412,
+                    "value": 4.12,
+                    "coverage": {
+                        "state": "measured",
+                        "measured": 2263,
+                        "eligible": 2263,
+                        "ratio": 1.0,
+                        "unit": "callables",
+                        "basis": "complexity.ccn.count",
+                        "reason": null
+                    },
                     "good": true,
                     "direction": "lower-is-better"
                 }
@@ -831,6 +853,13 @@ code_quality:
 
 Текстовая таблица оценок здоровья для терминального вывода. Показывает каждое измерение с оценкой, статусом, порогами и деталями декомпозиции.
 
+Включённые встроенные измерения проекта сохраняются с недоступными оценками и
+явным покрытием. Отсутствующие значения декомпозиции равны null, отличаются от
+числового 0 и показывают измеренную/подходящую долю. Text, summary и health также
+публикуют ограниченные строки отсутствующих авторских значений, даже без оценок
+здоровья и вывода логгера. При выборе класса или пространства имён отсутствующая
+локальная оценка не заменяется проектной.
+
 **Когда использовать:** Быстрая проверка здоровья из CLI, рабочие процессы AI-агентов, диагностика пайплайнов.
 
 **Основные возможности:**
@@ -841,6 +870,9 @@ code_quality:
 - Декомпозиция по каждому измерению
 - Колонка `Coverage` и по одной строке `Computed over N of M ...` на измерение внутри декомпозиции — доля предмета, о которой говорит эта оценка (см. [Что покрывает оценка](../reference/health-scores.ru.md#what-a-score-covers))
 - Поддержка drill-down через `--namespace` и `--class`
+
+Участники cohesion следуют TCC, когда он участвует, иначе измеренному LCOM
+с его направлением «меньше — лучше».
 
 **Худшие участники по измерениям:**
 
@@ -871,6 +903,7 @@ bin/qmx check src/ --format=health --namespace='subtree:App\Service'
 - Цветовая кодировка оценок здоровья для каждого узла
 - Переход вглубь пространств имён по клику
 - Панель деталей с метриками, нарушениями и декомпозицией
+- Декомпозиция проекта подготовлена PHP в `summary.healthDecomposition`, покрытие — в `summary.healthCoverage`; viewer сохраняет null-входы и измеренный 0 без вычисления формул в JavaScript
 - Покрытие рядом с каждым проектным баром здоровья (`n/a`, когда покрытие не определено) — из объекта `summary.healthCoverage`, который нагрузка несёт рядом с `summary.healthScores`
 - Каждое нарушение отчёта висит на узле дерева, поэтому счётчики дерева сходятся с `summary.totalViolations`: нарушение без собственного узла класса или пространства имён — проектное, файловое в файле без класса или с несколькими, глобальная функция вне пространства имён — показывается на корне проекта
 - Отчёт назван по анализируемому проекту: `--format-opt=project-name=...`, иначе `name` из его `composer.json`, иначе имя его каталога

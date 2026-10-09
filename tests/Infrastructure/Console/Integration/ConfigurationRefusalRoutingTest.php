@@ -117,6 +117,33 @@ final class ConfigurationRefusalRoutingTest extends TestCase
     }
 
     #[Test]
+    public function itRoutesAnActualEvaluatorFailureThroughNativeDirectivesPreparation(): void
+    {
+        $path = sys_get_temp_dir() . '/qmx-runtime-audit-' . bin2hex(random_bytes(6)) . '.yaml';
+        $this->presentBaselines[] = $path;
+        file_put_contents($path, "computed_metrics:\n  computed.bad:\n    formula: '1 / 0'\n    levels: [project]\n");
+        $container = (new ContainerFactory())->create();
+        $command = $container->get(DirectivesCommand::class);
+        self::assertInstanceOf(DirectivesCommand::class, $command);
+        $presenter = $container->get(RefusalPresenter::class);
+        self::assertInstanceOf(RefusalPresenter::class, $presenter);
+        $application = new \Qualimetrix\Infrastructure\Console\Application(new ErrorStream(), $presenter, new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
+        $application->addCommand($command);
+        $tester = new CommandTester($command);
+        $code = $tester->execute([
+            'paths' => ['tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php'], '--config' => $path, '--format' => 'json', '--quiet' => true,
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation'],
+        ], ['capture_stderr_separately' => true]);
+        self::assertSame(3, $code, $tester->getDisplay() . $tester->getErrorOutput());
+        $document = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(3, $document['exit_code']);
+        self::assertStringContainsString('Computed metric "computed.bad" failed at level "project"', $document['error']);
+        self::assertSame(['computed_metrics', 'computed.bad', 'formula'], $document['position']['path']);
+        self::assertSame([['kind' => 'file', 'name' => $path, 'imported_by' => null]], $document['source']);
+        self::assertArrayNotHasKey('verdicts', $document);
+    }
+
+    #[Test]
     public function itWiresThePresenterIntoEveryCommandTheRealContainerBuilds(): void
     {
         $container = (new ContainerFactory())->create();

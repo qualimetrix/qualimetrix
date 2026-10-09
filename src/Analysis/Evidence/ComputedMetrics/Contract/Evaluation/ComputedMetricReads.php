@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation;
 use Symfony\Component\ExpressionLanguage\Node\BinaryNode;
 use Symfony\Component\ExpressionLanguage\Node\ConditionalNode;
 use Symfony\Component\ExpressionLanguage\Node\ConstantNode;
+use Symfony\Component\ExpressionLanguage\Node\FunctionNode;
 use Symfony\Component\ExpressionLanguage\Node\GetAttrNode;
 use Symfony\Component\ExpressionLanguage\Node\NameNode;
 use Symfony\Component\ExpressionLanguage\Node\Node;
@@ -26,6 +27,9 @@ use Symfony\Component\ExpressionLanguage\Node\NullCoalesceNode;
  * - A ternary branch, and the right side of `and`/`or`, run only on a value
  *   the symbol carries. Before a run only a key every path reads counts;
  *   after one, {@see ComputedMetricBranchTrace} says which operands ran.
+ *
+ * @qmx-threshold coupling.instability warning=0.81 -- Ca=2, Ce=8: native AST node kinds
+ * belong to this one strict-read classifier; splitting them merely transfers the low-Ca signal.
  */
 final class ComputedMetricReads
 {
@@ -67,12 +71,17 @@ final class ComputedMetricReads
      *
      * @param callable(string): bool $isPresent
      * @param ?callable(Node, string): bool $entered whether a run entered an operand of a node; null before a run
+     * @param ?callable(Node): bool $reached whether a run reached this exact read; null before a run
      *
      * @return list<string> in order of first appearance
      */
-    public static function missingOf(Node $root, callable $isPresent, ?callable $entered = null): array
-    {
-        [$consumed, $value] = self::absentReads($root, $isPresent, $entered);
+    public static function missingOf(
+        Node $root,
+        callable $isPresent,
+        ?callable $entered = null,
+        ?callable $reached = null,
+    ): array {
+        [$consumed, $value] = self::absentReads($root, $isPresent, $entered, $reached);
 
         return array_values(array_unique([...$consumed, ...$value]));
     }
@@ -86,19 +95,30 @@ final class ComputedMetricReads
      *
      * @param callable(string): bool $isPresent
      * @param ?callable(Node, string): bool $entered which conditional operands ran; null before a run
+     * @param ?callable(Node): bool $reached which exact reads ran; null before a run
      *
      * @return array{0: list<string>, 1: list<string>}
      */
-    public static function absentReads(Node $node, callable $isPresent, ?callable $entered): array
-    {
+    public static function absentReads(
+        Node $node,
+        callable $isPresent,
+        ?callable $entered,
+        ?callable $reached = null,
+    ): array {
         $key = self::keyOf($node);
 
         return match (true) {
-            $key !== null => [[], $isPresent($key) ? [] : [$key]],
-            $node instanceof NullCoalesceNode => self::absentReadsOfFallback($node, $isPresent, $entered),
-            $node instanceof ConditionalNode => self::absentReadsOfBranches($node, $isPresent, $entered),
-            default => [self::absentReadsOfOperands($node, $isPresent, $entered), []],
+            $key !== null => [[], ($reached !== null && !$reached($node)) || $isPresent($key) ? [] : [$key]],
+            $node instanceof NullCoalesceNode => self::absentReadsOfFallback($node, $isPresent, $entered, $reached),
+            $node instanceof ConditionalNode => self::absentReadsOfBranches($node, $isPresent, $entered, $reached),
+            self::hasNullableValues($node) => [self::absentReadsOfWeightedMean($node, $isPresent, $entered, $reached), []],
+            default => [self::absentReadsOfOperands($node, $isPresent, $entered, $reached), []],
         };
+    }
+
+    public static function hasNullableValues(Node $node): bool
+    {
+        return $node instanceof FunctionNode && $node->attributes['name'] === 'weighted_mean';
     }
 
     /**
@@ -107,8 +127,33 @@ final class ComputedMetricReads
      *
      * @return list<string>
      */
-    private static function absentReadsOfOperands(Node $node, callable $isPresent, ?callable $entered): array
-    {
+    private static function absentReadsOfWeightedMean(
+        Node $node,
+        callable $isPresent,
+        ?callable $entered,
+        ?callable $reached,
+    ): array {
+        $missing = [];
+        foreach (array_values($node->nodes['arguments']->nodes) as $index => $argument) {
+            [$consumed, $value] = self::absentReads($argument, $isPresent, $entered, $reached);
+            $missing = [...$missing, ...$consumed, ...($index % 2 === 0 ? [] : $value)];
+        }
+
+        return $missing;
+    }
+
+    /**
+     * @param callable(string): bool $isPresent
+     * @param ?callable(Node, string): bool $entered
+     *
+     * @return list<string>
+     */
+    private static function absentReadsOfOperands(
+        Node $node,
+        callable $isPresent,
+        ?callable $entered,
+        ?callable $reached,
+    ): array {
         $conditional = self::conditionalOperands($node);
         $consumed = [];
 
@@ -117,7 +162,7 @@ final class ComputedMetricReads
             $skipped = \in_array($name, $conditional, true) && ($entered === null || !$entered($node, $name));
 
             if ($child instanceof Node && !$skipped) {
-                [$childConsumed, $childValue] = self::absentReads($child, $isPresent, $entered);
+                [$childConsumed, $childValue] = self::absentReads($child, $isPresent, $entered, $reached);
                 $consumed = [...$consumed, ...$childConsumed, ...$childValue];
             }
         }
@@ -131,10 +176,18 @@ final class ComputedMetricReads
      *
      * @return array{0: list<string>, 1: list<string>}
      */
-    private static function absentReadsOfFallback(NullCoalesceNode $node, callable $isPresent, ?callable $entered): array
-    {
+    private static function absentReadsOfFallback(
+        NullCoalesceNode $node,
+        callable $isPresent,
+        ?callable $entered,
+        ?callable $reached,
+    ): array {
         $left = $node->nodes['expr1'];
-        [$consumed, $value] = self::absentReads($left, $isPresent, $entered);
+        [$consumed, $value] = self::absentReads($left, $isPresent, $entered, $reached);
+
+        if ($entered !== null && !$entered($node, 'expr2')) {
+            return [$consumed, $value];
+        }
 
         // Only a read or another `??` says here whether it is null. Any
         // other left side might be — a ternary, `max()` of two nulls — so
@@ -144,7 +197,7 @@ final class ComputedMetricReads
             return [$consumed, []];
         }
 
-        [$rightConsumed, $rightValue] = self::absentReads($node->nodes['expr2'], $isPresent, $entered);
+        [$rightConsumed, $rightValue] = self::absentReads($node->nodes['expr2'], $isPresent, $entered, $reached);
 
         // Null only when both sides are; then both sides' keys are why.
         return [[...$consumed, ...$rightConsumed], $rightValue === [] ? [] : [...$value, ...$rightValue]];
@@ -156,20 +209,28 @@ final class ComputedMetricReads
      *
      * @return array{0: list<string>, 1: list<string>}
      */
-    private static function absentReadsOfBranches(ConditionalNode $node, callable $isPresent, ?callable $entered): array
-    {
-        [$consumed, $conditionValue] = self::absentReads($node->nodes['expr1'], $isPresent, $entered);
+    private static function absentReadsOfBranches(
+        ConditionalNode $node,
+        callable $isPresent,
+        ?callable $entered,
+        ?callable $reached,
+    ): array {
+        [$consumed, $conditionValue] = self::absentReads($node->nodes['expr1'], $isPresent, $entered, $reached);
         $consumed = [...$consumed, ...$conditionValue];
         $value = [];
         $branches = $entered === null ? [] : array_filter(['expr2', 'expr3'], static fn(string $branch): bool => $entered($node, $branch));
 
         foreach ($branches as $branch) {
-            [$branchConsumed, $branchValue] = self::absentReads($node->nodes[$branch], $isPresent, $entered);
+            [$branchConsumed, $branchValue] = self::absentReads($node->nodes[$branch], $isPresent, $entered, $reached);
             $consumed = [...$consumed, ...$branchConsumed];
             $value = [...$value, ...$branchValue];
         }
 
         if ($branches !== []) {
+            return [$consumed, $value];
+        }
+
+        if ($entered !== null) {
             return [$consumed, $value];
         }
 
@@ -208,6 +269,10 @@ final class ComputedMetricReads
     {
         if ($node instanceof ConditionalNode) {
             return ['expr2', 'expr3'];
+        }
+
+        if ($node instanceof NullCoalesceNode) {
+            return ['expr2'];
         }
 
         if ($node instanceof BinaryNode && \in_array($node->attributes['operator'], self::SHORT_CIRCUIT_OPERATORS, true)) {

@@ -25,6 +25,7 @@ final class JsonEncodingPopulationTest extends TestCase
 {
     /** @var array<class-string, string> */
     private const array OWNERS = [
+        \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder::class => 'Only finite positive float weights from native ConstantNode values checked by WeightedHealthFormula::weightOf are encoded, preserving the JSON fraction.',
         \Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateContentMerger::class => 'Source strings are framed before hashing.',
         \Qualimetrix\Analysis\Finding\Contract\OccurrenceKey::class => 'Source kind, evidence names and values are framed before hashing.',
         \Qualimetrix\Analysis\Policy\Architecture\Layer\UnmatchedTypeOccurrence::class => 'Named types and provenance come from parsed UTF-8 configuration.',

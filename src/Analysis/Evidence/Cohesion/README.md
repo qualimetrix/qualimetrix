@@ -53,6 +53,10 @@ appears twice in one file. The shared stack keeps physical declaration identity
 separate from the name used to interpret member references. Nested anonymous
 classes cannot change an enclosing declaration's facts.
 
+Absent TCC or LCC remains absent. Builtin health cohesion combines available TCC
+and LCOM contributions without a small-class TCC default; measured LCOM can still
+contribute for stateless classes. The existing purity adjustment is unchanged.
+
 `cohesion.lcom` is the stable rule ID — its `cohesion` family, and so the
 heading `qmx rules` lists it under, is now read off that name rather than
 declared beside it (renamed from Design, see ADR). It carries warning/error

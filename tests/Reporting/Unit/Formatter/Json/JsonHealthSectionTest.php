@@ -283,4 +283,23 @@ final class JsonHealthSectionTest extends TestCase
             $result['typing']['coverage'],
         );
     }
+
+    #[Test]
+    public function itPreservesNullBeforeNumericFormattingAndKeepsMeasuredZero(): void
+    {
+        $coverage = HealthCoverage::over(0, 3, CoverageUnit::Classes, 'cohesion.tcc.count');
+        $score = new HealthScore('cohesion', null, 'Not measured', 50.0, 25.0, $coverage, [
+            new DecompositionItem('cohesion.tcc.avg', 'TCC', null, '> 0.5', 'higher', '', coverage: $coverage),
+            new DecompositionItem('cohesion.lcom.avg', 'LCOM', 0.0, '< 2', 'lower', '', coverage: HealthCoverage::over(3, 3, CoverageUnit::Classes, 'cohesion.lcom.count')),
+        ]);
+        $json = $this->section->format($this->buildReport(['cohesion' => $score]), new FormatterContext());
+
+        self::assertIsArray($json);
+        self::assertNull($json['cohesion']['score']);
+        self::assertNull($json['cohesion']['decomposition'][0]['value']);
+        self::assertSame('not-measured', $json['cohesion']['decomposition'][0]['coverage']['state']);
+        self::assertSame(0.0, $json['cohesion']['decomposition'][1]['value']);
+        self::assertSame('measured', $json['cohesion']['decomposition'][1]['coverage']['state']);
+    }
+
 }

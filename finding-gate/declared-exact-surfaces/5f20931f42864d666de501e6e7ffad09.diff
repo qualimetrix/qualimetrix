@@ -1,0 +1,52 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 7413
++visible 7367
+@@ -6,1 +6,1 @@
+-Health ██████████████████████████░░░░ 85.3% Excellent
++Health █████████████████████████░░░░░ 82.3% Excellent
+@@ -16,3 +16,2 @@
+-  Cohesion        ██████████████████████████████ 100% Excellent
+-                   computed over 101 of 101 classes (100%)
+-                   TCC: not measured 0/101
++  Cohesion        ██████████████████████████░░░░ 85.4% Excellent
++                   computed over 0 of 101 classes (0%)
+@@ -38,6 +37,6 @@
+-  85.3 Corpus\ParallelFiles (101 classes, 101 violations, 5.9/100 LOC)
+-
+-Worst classes
+-  97.2 Corpus\ParallelFiles\Shard002 (1 violations, 5.6/100 LOC)
+-  97.2 Corpus\ParallelFiles\Shard005 (1 violations, 5.6/100 LOC)
+-  97.2 Corpus\ParallelFiles\Shard008 (1 violations, 5.6/100 LOC)
++  82.3 Corpus\ParallelFiles (101 classes, 101 violations, 5.9/100 LOC)
++
++Worst classes
++  93.5 Corpus\ParallelFiles\Shard002 (1 violations, 5.6/100 LOC)
++  93.5 Corpus\ParallelFiles\Shard005 (1 violations, 5.6/100 LOC)
++  93.5 Corpus\ParallelFiles\Shard008 (1 violations, 5.6/100 LOC)
+@@ -83,1 +82,1 @@
+-invocation-format:summary 7413
++invocation-format:summary 7367
+@@ -88,1 +87,1 @@
+-Health ██████████████████████████░░░░ 85.3% Excellent
++Health █████████████████████████░░░░░ 82.3% Excellent
+@@ -98,3 +97,2 @@
+-  Cohesion        ██████████████████████████████ 100% Excellent
+-                   computed over 101 of 101 classes (100%)
+-                   TCC: not measured 0/101
++  Cohesion        ██████████████████████████░░░░ 85.4% Excellent
++                   computed over 0 of 101 classes (0%)
+@@ -120,6 +118,6 @@
+-  85.3 Corpus\ParallelFiles (101 classes, 101 violations, 5.9/100 LOC)
+-
+-Worst classes
+-  97.2 Corpus\ParallelFiles\Shard002 (1 violations, 5.6/100 LOC)
+-  97.2 Corpus\ParallelFiles\Shard005 (1 violations, 5.6/100 LOC)
+-  97.2 Corpus\ParallelFiles\Shard008 (1 violations, 5.6/100 LOC)
++  82.3 Corpus\ParallelFiles (101 classes, 101 violations, 5.9/100 LOC)
++
++Worst classes
++  93.5 Corpus\ParallelFiles\Shard002 (1 violations, 5.6/100 LOC)
++  93.5 Corpus\ParallelFiles\Shard005 (1 violations, 5.6/100 LOC)
++  93.5 Corpus\ParallelFiles\Shard008 (1 violations, 5.6/100 LOC)

@@ -71,4 +71,50 @@ final class OutputHelperTest extends TestCase
             fclose($stream);
         }
     }
+
+    /** @return iterable<string, array{int}> */
+    public static function provideJsonReportVerbosity(): iterable
+    {
+        yield 'normal' => [OutputInterface::VERBOSITY_NORMAL];
+        yield 'quiet' => [OutputInterface::VERBOSITY_QUIET];
+    }
+
+    #[Test]
+    #[DataProvider('provideJsonReportVerbosity')]
+    public function itWritesJsonAtQuietVerbosityWithoutInterpretingMarkup(int $verbosity): void
+    {
+        $payload = "{\"value\":\"<info>literal</info>\"}\n";
+        $buffer = new \Symfony\Component\Console\Output\BufferedOutput($verbosity, true);
+        OutputHelper::writeJsonReport($buffer, $payload);
+        self::assertSame($payload, $buffer->fetch());
+        $stream = fopen('php://temp', 'w+');
+        self::assertIsResource($stream);
+        try {
+            OutputHelper::writeJsonReport(new StreamOutput($stream, $verbosity, true), $payload);
+            rewind($stream);
+            self::assertSame($payload, stream_get_contents($stream));
+        } finally {
+            fclose($stream);
+        }
+    }
+
+    #[Test]
+    public function itKeepsJsonSilentAndLeavesTheGenericQuietRouteSuppressed(): void
+    {
+        $silent = new \Symfony\Component\Console\Output\BufferedOutput(OutputInterface::VERBOSITY_SILENT);
+        OutputHelper::writeJsonReport($silent, 'JSON');
+        self::assertSame('', $silent->fetch());
+        $stream = fopen('php://temp', 'w+');
+        self::assertIsResource($stream);
+        try {
+            OutputHelper::writeJsonReport(new StreamOutput($stream, OutputInterface::VERBOSITY_SILENT), 'JSON');
+            self::assertSame(0, ftell($stream));
+        } finally {
+            fclose($stream);
+        }
+        $quiet = new \Symfony\Component\Console\Output\BufferedOutput(OutputInterface::VERBOSITY_QUIET);
+        OutputHelper::write($quiet, 'OTHER');
+        self::assertSame('', $quiet->fetch());
+    }
+
 }

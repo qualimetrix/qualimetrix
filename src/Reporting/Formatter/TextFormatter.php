@@ -13,6 +13,7 @@ use Qualimetrix\Core\Version;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
 use Qualimetrix\Reporting\Formatter\Detail\DetailedFindingRenderer;
 use Qualimetrix\Reporting\Formatter\Ordering\FindingSorter;
+use Qualimetrix\Reporting\Formatter\Prose\ComputedMetricAbsenceNarrator;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
@@ -44,7 +45,7 @@ final class TextFormatter implements FormatterInterface
 
         $color = new AnsiColor($context->useColor);
 
-        return new FormattedReport($formatted . $color->dim(ProductIdentity::pointerText()) . "\n");
+        return new FormattedReport($formatted . implode("\n", ComputedMetricAbsenceNarrator::lines($report)) . ($report->computedMetricEvaluation->absences === [] ? '' : "\n") . $color->dim(ProductIdentity::pointerText()) . "\n");
     }
 
     public function publicationKind(): PublicationKind

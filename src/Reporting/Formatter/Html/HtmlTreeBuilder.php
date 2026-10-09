@@ -6,6 +6,7 @@ namespace Qualimetrix\Reporting\Formatter\Html;
 
 use LogicException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
@@ -274,12 +275,27 @@ final class HtmlTreeBuilder
             }
         }
 
+        foreach ($report->healthScores as $name => $score) {
+            $healthScores['health.' . $name] = $score->score;
+        }
+
         return [
             'totalFiles' => $report->filesAnalyzed,
             'totalClasses' => $classCount,
             'totalViolations' => $report->getTotalFindings(),
             'totalDebtMinutes' => $root->debtMinutes,
             'healthScores' => (object) $healthScores,
+            'healthDecomposition' => (object) array_combine(
+                array_map(static fn(HealthScore $score): string => 'health.' . $score->name, array_values($report->healthScores)),
+                array_map(static fn(HealthScore $score): array => array_map(static fn(DecompositionItem $item): array => [
+                    'metric' => $item->metricKey,
+                    'humanName' => $item->humanName,
+                    'value' => $item->value,
+                    'good' => $item->goodValue,
+                    'direction' => $item->direction,
+                    'coverage' => HealthCoverageNarrator::record($item->coverage),
+                ], $score->decomposition), array_values($report->healthScores)),
+            ),
             // ADR 0062 publishes coverage alongside the score, and this
             // surface used to carry the bare values alone: a score over a tenth
             // of the classes arrived indistinguishable from one over all of

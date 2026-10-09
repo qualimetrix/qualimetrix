@@ -35,12 +35,25 @@ final class ComputedMetricOverrideReader
         return new ComputedMetricDefinition(
             name: $base->name,
             formulas: self::formulas($entry, $base->formulas),
+            applicability: self::retainedApplicability($entry, $base),
             description: self::string($entry, ComputedMetricEntryKeys::DESCRIPTION) ?? $base->description,
             levels: self::levels($entry, $base->levels, $base->name),
             inverted: self::bool($entry, ComputedMetricEntryKeys::INVERTED) ?? $base->inverted,
             warningThreshold: self::number($entry, ComputedMetricEntryKeys::WARNING) ?? $base->warningThreshold,
             errorThreshold: self::number($entry, ComputedMetricEntryKeys::ERROR) ?? $base->errorThreshold,
         );
+    }
+
+    /** @return array<string, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricApplicability> */
+    private static function retainedApplicability(ResolvedMapInterface $entry, ComputedMetricDefinition $base): array
+    {
+        if (self::string($entry, ComputedMetricEntryKeys::FORMULA) !== null) {
+            return [];
+        }
+        $perLevel = self::field($entry, ComputedMetricEntryKeys::FORMULAS);
+        $authored = $perLevel instanceof ResolvedMapInterface ? $perLevel->plain() : [];
+
+        return array_diff_key($base->applicability, $authored);
     }
 
     /**

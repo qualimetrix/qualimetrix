@@ -7,63 +7,62 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation;
 use LogicException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricAnalysis;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDependencyGraphCalculator;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricRefusalWording;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Throwable;
 
 class ComputedMetricEvaluator
 {
-    private const int SKIPPED_SYMBOL_SAMPLE = 5;
-
     private readonly ComputedMetricExpression $expression;
+    private readonly ComputedMetricSubjectEvaluation $subjectEvaluation;
     private readonly ComputedMetricDependencyGraphCalculator $dependencyGraphCalculator;
 
     public function __construct(
-        private readonly ComputedMetricDefinitionCatalogInterface $definitionCatalog,
+        private readonly ComputedMetricAnalysis $analysis,
         private readonly ProfilerInterface $profiler,
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {
         $this->expression = new ComputedMetricExpression();
+        $this->subjectEvaluation = new ComputedMetricSubjectEvaluation($this->expression);
         $this->dependencyGraphCalculator = new ComputedMetricDependencyGraphCalculator($this->expression);
     }
 
-    public function evaluate(MetricRepositoryInterface $repo, int $filesAnalyzed): void
+    public function evaluate(MetricRepositoryInterface $repo, int $filesAnalyzed): ComputedMetricEvaluationSummary
     {
-        $definitions = $this->definitionCatalog->all();
+        $definitions = $this->analysis->all();
+        $summary = new ComputedMetricEvaluationSummary();
         if ($filesAnalyzed === 0 || $definitions === []) {
-            return;
+            return $summary;
         }
 
-        $profiler = $this->profiler;
-        $profiler->start('computed', 'pipeline');
-
-        // Build dependency graph and topological sort
-        $sorted = $this->topologicalSort($definitions);
-
-        // Evaluate in dependency order
-        foreach ($sorted as $definition) {
-            $profiler->start('computed.' . $definition->name, 'computed');
-
-            foreach ($definition->levels as $level) {
-                $formula = $definition->getFormulaForLevel($level);
-                if ($formula === null) {
-                    continue;
+        $this->profiler->start('computed', 'pipeline');
+        try {
+            foreach ($this->topologicalSort($definitions) as $definition) {
+                $this->profiler->start('computed.' . $definition->name, 'computed');
+                try {
+                    foreach ($definition->levels as $level) {
+                        $formula = $definition->getFormulaForLevel($level);
+                        if ($formula !== null) {
+                            $summary = $summary->merge($this->evaluateAtLevel($repo, $definition, $level, $formula));
+                        }
+                    }
+                } finally {
+                    $this->profiler->stop('computed.' . $definition->name);
                 }
-
-                $this->evaluateAtLevel($repo, $definition, $level, $formula);
             }
-
-            $profiler->stop('computed.' . $definition->name);
+        } finally {
+            $this->profiler->stop('computed');
         }
 
-        $profiler->stop('computed');
+        return $summary;
     }
 
     private function evaluateAtLevel(
@@ -71,100 +70,50 @@ class ComputedMetricEvaluator
         ComputedMetricDefinition $definition,
         SymbolLevel $level,
         string $formula,
-    ): void {
+    ): ComputedMetricEvaluationSummary {
         $symbols = $this->getSymbolsForLevel($repo, $level);
-
-        $this->validateFormulaVariables($repo, $definition, $level, $formula, $symbols);
-
-        $skipped = [];
-        $missingKeys = [];
-
-        foreach ($symbols as [$subject, $file, $line]) {
-            $symbolPath = $subject->toSymbolPath();
-            try {
-                [$missing, $result] = $this->expression->evaluateOn($formula, new MetricLookup($repo->getSubject($subject)->all()));
-            } catch (Throwable $e) {
-                $this->logger->warning('Computed metric evaluation failed', [
-                    'metric' => $definition->name,
-                    'symbol' => $symbolPath->toString(),
-                    'level' => $level->value,
-                    'error' => $e->getMessage(),
-                ]);
-
-                continue;
-            }
-
-            if ($missing !== []) {
-                // The level carries the key somewhere, or only a branch reads
-                // it; this symbol's evaluation reached it without it. Its
-                // `null` would reach the arithmetic, which PHP coerces to 0 —
-                // a fabricated measurement that scores the symbol and can
-                // raise a finding. The honest answer is no value.
-                $skipped[] = $symbolPath->toString();
-                $missingKeys = [...$missingKeys, ...$missing];
-
-                continue;
-            }
-
-            if (!is_numeric($result)) {
-                $this->logger->warning('Computed metric returned non-numeric result', [
-                    'metric' => $definition->name,
-                    'symbol' => $symbolPath->toString(),
-                ]);
-
-                continue;
-            }
-
-            $result = (float) $result;
-
-            if (is_nan($result) || is_infinite($result)) {
-                $this->logger->warning('Computed metric returned NaN or Infinity', [
-                    'metric' => $definition->name,
-                    'symbol' => $symbolPath->toString(),
-                ]);
-
-                continue;
-            }
-
-            $repo->addSubjectScalar($subject, $definition->name, $result);
+        if (!$definition->isBuiltinFormulaForLevel($level)) {
+            $this->validateFormulaVariables($repo, $definition, $level, $formula, $symbols);
+        }
+        $summary = new ComputedMetricEvaluationSummary();
+        foreach ($symbols as [$subject]) {
+            $outcome = $this->subjectEvaluation->evaluate($definition, $level, $repo->getSubject($subject)->all());
+            $summary = $summary->merge($this->publishOutcome($repo, $definition, $level, $subject, $outcome));
         }
 
-        $this->reportSkipped($definition, $level, $skipped, $missingKeys);
+        return $summary;
     }
 
-    /**
-     * One line per metric and level: a formula that misses on most of a large
-     * project would otherwise print one line per symbol.
-     *
-     * @param list<string> $skipped
-     * @param list<string> $missingKeys
-     */
-    private function reportSkipped(
+    private function publishOutcome(
+        MetricRepositoryInterface $repo,
         ComputedMetricDefinition $definition,
         SymbolLevel $level,
-        array $skipped,
-        array $missingKeys,
-    ): void {
-        if ($skipped === []) {
-            return;
+        MetricSubject $subject,
+        ComputedMetricOutcome $outcome,
+    ): ComputedMetricEvaluationSummary {
+        if ($outcome->kind === ComputedMetricOutcome::VALUE) {
+            $repo->addSubjectScalar($subject, $definition->name, (float) $outcome->value);
+            return new ComputedMetricEvaluationSummary();
         }
-
-        $this->logger->warning('Computed metric published no value for symbols lacking a metric its formula reads without a "??" fallback', [
-            'metric' => $definition->name,
-            'level' => $level->value,
-            'skipped' => \count($skipped),
-            'symbols' => self::sampleOf($skipped),
-            'missing' => implode(', ', array_values(array_unique($missingKeys))),
-        ]);
-    }
-
-    /** @param non-empty-list<string> $symbols */
-    private static function sampleOf(array $symbols): string
-    {
-        $sample = implode(', ', \array_slice($symbols, 0, self::SKIPPED_SYMBOL_SAMPLE));
-        $rest = \count($symbols) - self::SKIPPED_SYMBOL_SAMPLE;
-
-        return $rest > 0 ? \sprintf('%s (and %d more)', $sample, $rest) : $sample;
+        if ($outcome->kind === ComputedMetricOutcome::NOT_APPLICABLE) {
+            return new ComputedMetricEvaluationSummary();
+        }
+        if ($outcome->kind === ComputedMetricOutcome::FAILURE || $definition->isBuiltinFormulaForLevel($level)) {
+            throw $this->analysis->refuseFormula($definition, $level, ComputedMetricRefusalWording::runtimeFailure(
+                $definition->name,
+                $level->value,
+                $subject->toCanonical(),
+                $outcome->reason ?? 'Applicable builtin formula produced ' . $outcome->kind . '.',
+            ));
+        }
+        return new ComputedMetricEvaluationSummary([new ComputedMetricValueAbsence(
+            metricName: $definition->name,
+            level: $level,
+            missingKeysCount: $outcome->kind === ComputedMetricOutcome::MISSING_KEYS ? 1 : 0,
+            noValueCount: $outcome->kind === ComputedMetricOutcome::NO_VALUE ? 1 : 0,
+            missingKeys: $outcome->missingKeys,
+            subjects: [$subject],
+        )]);
     }
 
     /**
@@ -213,10 +162,11 @@ class ComputedMetricEvaluator
             // "Internal error" with exit code 1 — the code that means
             // "warnings were found", so CI read a refusal as an ordinary result.
             ComputedMetricFormulaValidator::refuseMetricsAbsentAtLevel(
-                $definition->name,
+                $definition,
                 $unknownVars,
-                $level->value,
+                $level,
                 $formula,
+                $this->analysis->refuseFormula(...),
             );
         }
     }

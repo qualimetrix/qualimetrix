@@ -2439,6 +2439,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0105-finding-publication-and-drill-down.md' => 'Reporting',
         'docs/adr/0106-declaration-metric-records-and-declared-publication.md' => 'Analysis.Evidence.Measurement',
         'docs/adr/0107-inheritance-chain-outcomes.md' => 'Analysis.Evidence.Design',
+        'docs/adr/0108-health-score-applicability-and-evaluation.md' => 'Analysis.Evidence.ComputedMetrics',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/ProjectManifest/README.md' => 'Analysis.ProjectManifest',

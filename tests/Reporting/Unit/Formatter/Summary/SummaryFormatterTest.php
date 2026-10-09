@@ -1394,4 +1394,36 @@ final class SummaryFormatterTest extends TestCase
         return new Finding(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, code: $code, message: $message, severity: $severity, metricValue: $metricValue, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
     }
 
+    #[Test]
+    public function itShowsBothNonfailureAbsencesBeforeReturningWithoutScores(): void
+    {
+        $summary = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence(
+                'computed.custom',
+                \Qualimetrix\Core\Symbol\SymbolLevel::Project,
+                2,
+                1,
+                ['missing.input'],
+                [\Qualimetrix\Core\Symbol\MetricSubject::aggregate(\Qualimetrix\Core\Symbol\SymbolPath::forProject())],
+            ),
+        ]);
+        $report = new Report([], 1, 0, 0.0, 0, 0, computedMetricEvaluation: $summary);
+        $body = $this->formatter->format($report, new FormatterContext(useColor: false))->body;
+        self::assertStringContainsString('Computed metric computed.custom (project): not measured', $body);
+        self::assertStringContainsString('missing keys [missing.input] for 2 subject(s)', $body);
+        self::assertStringContainsString('no value for 1 subject(s)', $body);
+        $withScores = new \Qualimetrix\Reporting\Report([], 1, 0, 0.0, 0, 0, healthScores: [
+            'overall' => new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore('overall', 0.0, 'Critical', 50.0, 25.0, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage::notApplicable('composes dimensions')),
+        ], computedMetricEvaluation: $summary);
+        $alongside = $this->formatter->format($withScores, new FormatterContext(useColor: false))->body;
+        self::assertStringContainsString('missing keys [missing.input] for 2 subject(s)', $alongside);
+        self::assertStringContainsString('no value for 1 subject(s)', $alongside);
+        $expected = 'Computed metric computed.custom (project): not measured — missing keys [missing.input] for 2 subject(s); no value for 1 subject(s); examples: project:';
+        self::assertContains($expected, explode("\n", $body));
+        self::assertContains($expected, explode("\n", $alongside));
+        self::assertSame(1, substr_count($body, 'Computed metric computed.custom'));
+        self::assertSame(1, substr_count($alongside, 'Computed metric computed.custom'));
+
+    }
+
 }

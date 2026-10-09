@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\Contract\Pipeline;
 
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary;
+
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -21,6 +23,7 @@ final readonly class AnalysisResult
         public ?RuleExecutionResult $ruleExecution,
         public array $latePublished,
         private array $publicationOrder,
+        public ComputedMetricEvaluationSummary $computedMetricEvaluation,
     ) {}
 
     /**
@@ -32,11 +35,12 @@ final readonly class AnalysisResult
         DirectiveObservations $directives,
         ?RuleExecutionResult $ruleExecution,
         array $latePublished,
+        ComputedMetricEvaluationSummary $computedMetricEvaluation = new ComputedMetricEvaluationSummary(),
     ): self {
         return new self($measured, $directives, $ruleExecution, $latePublished, [[
             'publishedCount' => \count($ruleExecution->published ?? []),
             'lateCount' => \count($latePublished),
-        ]]);
+        ]], $computedMetricEvaluation);
     }
 
     /** @return list<Finding> */
@@ -100,6 +104,7 @@ final readonly class AnalysisResult
             ruleExecution: $this->mergedRuleExecution($other),
             latePublished: [...$this->latePublished, ...$other->latePublished],
             publicationOrder: [...$this->publicationOrder, ...$other->publicationOrder],
+            computedMetricEvaluation: $this->computedMetricEvaluation->merge($other->computedMetricEvaluation),
         );
     }
 

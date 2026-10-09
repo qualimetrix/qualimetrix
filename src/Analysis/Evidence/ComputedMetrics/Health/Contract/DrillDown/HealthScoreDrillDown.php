@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown;
 
+use Closure;
 use Generator;
 use LogicException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
@@ -65,10 +66,15 @@ final readonly class HealthScoreDrillDown
             $dimensionName = $dim->shortName();
 
             $inputs = $this->classInputs($dimension);
+            $classes = $inputs === [] ? [] : iterator_to_array($this->filterClassesByNamespace($metrics, $namespace), false);
+            $inputs = $this->decomposition->selectContributorInputs($inputs, array_map(
+                static fn(SymbolInfo $symbol): Closure => $metrics->getSubject($symbol->subject ?? throw new LogicException('Class contributor requires exact subject'))->get(...),
+                $classes,
+            ));
             $contributors = $inputs === []
                 ? []
                 : $this->contributorRanker->rank(
-                    $this->contributorCandidates($metrics, $this->filterClassesByNamespace($metrics, $namespace), $inputs),
+                    $this->contributorCandidates($metrics, $classes, $inputs),
                     $inputs[0]['direction'],
                 );
 
@@ -218,6 +224,11 @@ final readonly class HealthScoreDrillDown
      */
     private function classInputs(string $dimension): array
     {
+        $definition = $this->definitionCatalog->find($dimension);
+        if ($definition !== null && !$definition->isBuiltinFormulaForLevel(SymbolLevel::Namespace_)) {
+            return [];
+        }
+
         return array_map(static fn(array $input): array => [
             'classKey' => $input['classKey'],
             'direction' => $input['direction'],

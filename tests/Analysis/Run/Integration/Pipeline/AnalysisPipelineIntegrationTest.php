@@ -19,6 +19,7 @@ use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingCollector;
@@ -313,6 +314,9 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $ruleExecutor->method('publication')->willReturn(new ChannelPublication(new RuleEnablement([], null)));
         $ruleExecutor->method('publishable')->willReturn([]);
         $producerGate = new RuleSelectorProducerGate($registry);
+        $computed = self::createStub(ComputedMetricEvaluator::class);
+        $computed->method('evaluate')->willReturn(new ComputedMetricEvaluationSummary());
+
         $pipeline = TestPipelineBuilder::create()
             ->withProjectFiles($discovery)
             ->withCollectionOrchestrator($orchestrator)
@@ -323,7 +327,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
                 new CompositeCollector([], new DeclarationRegistrarFactory()),
                 $this->profiler,
             ))
-            ->withComputedMetricEvaluation(self::createStub(ComputedMetricEvaluator::class))
+            ->withComputedMetricEvaluation($computed)
             ->withCircularDependencyPreparation(new CircularDependencyAnalysis(new CircularDependencyDetector()))
             ->withFileSetInspection(new FileSetInspectionComposite([$participant], $producerGate, $this->profiler), $producerGate)
             ->withProfiler($this->profiler)
@@ -1092,13 +1096,16 @@ PHP);
         $configuration = new RuleOptionsRegistry();
         $configuration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), $ruleExecutor->allRules()));
 
+        $computed = self::createStub(ComputedMetricEvaluator::class);
+        $computed->method('evaluate')->willReturn(new ComputedMetricEvaluationSummary());
+
         return TestPipelineBuilder::create()
             ->withProjectFiles($discovery)
             ->withCollectionOrchestrator($orchestrator)
             ->withRuleExecution($ruleExecutor)
             ->withRuleConfiguration($configuration)
             ->withMeasurementAggregation(new MeasurementAggregationService([], $fileCollector, $this->profiler))
-            ->withComputedMetricEvaluation(self::createStub(ComputedMetricEvaluator::class))
+            ->withComputedMetricEvaluation($computed)
             ->withCircularDependencyPreparation(
                 $circularDependencyAnalysis ?? new CircularDependencyAnalysis(new CircularDependencyDetector()),
             )
@@ -1152,13 +1159,16 @@ PHP);
         $configuration = new RuleOptionsRegistry();
         $configuration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), $ruleExecutor->allRules()));
 
+        $computed = self::createStub(ComputedMetricEvaluator::class);
+        $computed->method('evaluate')->willReturn(new ComputedMetricEvaluationSummary());
+
         return TestPipelineBuilder::create()
             ->withProjectFiles($discovery)
             ->withCollectionOrchestrator($orchestrator)
             ->withRuleExecution($ruleExecutor)
             ->withRuleConfiguration($configuration)
             ->withMeasurementAggregation($globalCollectorRunner)
-            ->withComputedMetricEvaluation(self::createStub(ComputedMetricEvaluator::class))
+            ->withComputedMetricEvaluation($computed)
             ->withCircularDependencyPreparation(new CircularDependencyAnalysis(new CircularDependencyDetector()))
             ->withFileSetInspection($this->emptyFileSetInspection($configuration))
             ->withProfiler($this->profiler)

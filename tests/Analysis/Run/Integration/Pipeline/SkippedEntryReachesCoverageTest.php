@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyDetector;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MeasurementAggregationService;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
@@ -147,6 +148,9 @@ final class SkippedEntryReachesCoverageTest extends TestCase
         $configuration = new RuleOptionsRegistry();
         $configuration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), []));
 
+        $computed = self::createStub(ComputedMetricEvaluator::class);
+        $computed->method('evaluate')->willReturn(new ComputedMetricEvaluationSummary());
+
         $pipeline = TestPipelineBuilder::create()
             ->withProjectFiles($discovery)
             ->withCollectionOrchestrator($orchestrator)
@@ -157,7 +161,7 @@ final class SkippedEntryReachesCoverageTest extends TestCase
                 new CompositeCollector([], new DeclarationRegistrarFactory()),
                 $this->profiler,
             ))
-            ->withComputedMetricEvaluation(self::createStub(ComputedMetricEvaluator::class))
+            ->withComputedMetricEvaluation($computed)
             ->withCircularDependencyPreparation(new CircularDependencyAnalysis(new CircularDependencyDetector()))
             ->withFileSetInspection(new FileSetInspectionComposite(
                 [],

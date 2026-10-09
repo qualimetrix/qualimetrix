@@ -16,6 +16,7 @@ use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
 use Qualimetrix\Reporting\Formatter\FormatOptionValue;
 use Qualimetrix\Reporting\Formatter\FormattedReport;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\Formatter\Prose\ComputedMetricAbsenceNarrator;
 use Qualimetrix\Reporting\Formatter\PublicationKind;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
@@ -28,9 +29,8 @@ use Qualimetrix\Reporting\Report;
  * Renders a table of health dimensions with scores, status labels,
  * and threshold info, followed by decomposition details for each dimension.
  *
- * @qmx-threshold complexity.wmc warning=60 -- average per-method complexity
- * here is about 3.5; WMC is high because of how many small rendering
- * methods the formatter has, not because any one of them is complex.
+ * @qmx-threshold complexity.wmc warning=61 -- WMC 60 spans twenty related rendering methods,
+ * with maximum CCN 7 after sharing absence prose; moving another renderer only transfers its branches.
  */
 final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysInterface
 {
@@ -61,6 +61,8 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
             array_push($lines, ...$coverageLines);
             $lines[] = '';
         }
+
+        array_push($lines, ...ComputedMetricAbsenceNarrator::lines($report));
 
         $healthScores = $this->healthScoreResolver->resolve($report, $context);
 
@@ -311,6 +313,10 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
 
     private function renderDecompositionItem(DecompositionItem $item, AnsiColor $color): string
     {
+        if ($item->value === null) {
+            return \sprintf('%s%s: not measured %s', '    ', $item->humanName, $item->coverage->applicable ? \sprintf('%d/%d', $item->coverage->measured, $item->coverage->eligible) : '—');
+        }
+
         $value = $this->formatValue($item->value);
         $boldValue = $color->bold($value);
         $paddedValue = $this->ansiRightPad($boldValue, 8);

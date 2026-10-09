@@ -48,9 +48,10 @@ final readonly class ContributorRanker
         }
 
         usort($ranked, static function (array $a, array $b) use ($direction): int {
-            $cmp = $direction === 'higher'
-                ? $a['primaryValue'] <=> $b['primaryValue']
-                : $b['primaryValue'] <=> $a['primaryValue'];
+            $cmp = $a['primaryValue'] <=> $b['primaryValue'];
+            if ($direction === 'lower') {
+                $cmp = -$cmp;
+            }
 
             return $cmp !== 0
                 ? $cmp

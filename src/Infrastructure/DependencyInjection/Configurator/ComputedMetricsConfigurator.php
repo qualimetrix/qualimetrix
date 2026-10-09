@@ -63,7 +63,7 @@ final class ComputedMetricsConfigurator implements ContainerConfiguratorInterfac
             new Reference($configResolver),
         ]);
         $container->register($evaluator)->setArguments([
-            new Reference(self::CATALOG),
+            new Reference($analysis),
             new Reference(ProfilerInterface::class),
             new Reference($delegatingLogger),
         ]);

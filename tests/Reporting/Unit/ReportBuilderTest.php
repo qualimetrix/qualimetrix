@@ -195,4 +195,21 @@ final class ReportBuilderTest extends TestCase
         return new Finding(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, code: $code, message: $message, severity: $severity, metricValue: $metricValue, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
     }
 
+    #[Test]
+    public function itCarriesComputedAbsencesAndDefaultsToAnEmptySummary(): void
+    {
+        $summary = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence(
+                'computed.custom',
+                \Qualimetrix\Core\Symbol\SymbolLevel::Project,
+                2,
+                1,
+                ['missing.input'],
+                [\Qualimetrix\Core\Symbol\MetricSubject::aggregate(\Qualimetrix\Core\Symbol\SymbolPath::forProject())],
+            ),
+        ]);
+        self::assertSame([], ReportBuilder::create()->build()->computedMetricEvaluation->absences);
+        self::assertSame($summary, ReportBuilder::create()->computedMetricEvaluation($summary)->build()->computedMetricEvaluation);
+    }
+
 }

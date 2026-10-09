@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 final class ComputedMetricAnalysis implements
     ComputedMetricConfiguratorInterface,
@@ -24,12 +26,17 @@ final class ComputedMetricAnalysis implements
 
     public function resolve(ConfigurationDocument $document): ResolvedComputedMetricDefinitions
     {
-        return new ResolvedComputedMetricDefinitions($this->configResolver->resolve($document->resolved()));
+        return $this->configResolver->resolveWithSources($document->resolved());
     }
 
     public function replace(ResolvedComputedMetricDefinitions $definitions): void
     {
         $this->definitions = $definitions;
+    }
+
+    public function refuseFormula(ComputedMetricDefinition $definition, SymbolLevel $level, string $summary): ConfigurationRefusal
+    {
+        return $this->definitions->refuseFormula($definition, $level, $summary);
     }
 
     public function all(): array

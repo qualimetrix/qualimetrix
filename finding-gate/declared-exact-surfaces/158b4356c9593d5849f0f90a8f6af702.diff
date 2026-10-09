@@ -1,0 +1,256 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 23811
++visible 17311
+@@ -39,1 +39,0 @@
+-    "computedMetricOutcomes": [],
+@@ -62,9 +61,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 2,
+-                        "eligible": 2,
+-                        "ratio": 1,
+-                        "unit": "callables",
+-                        "basis": "complexity.ccn.count",
+-                        "reason": null
+-                    },
+@@ -78,9 +68,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 2,
+-                        "eligible": 2,
+-                        "ratio": 1,
+-                        "unit": "callables",
+-                        "basis": "complexity.cognitive.count",
+-                        "reason": null
+-                    },
+@@ -94,9 +75,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 2,
+-                        "eligible": 2,
+-                        "ratio": 1,
+-                        "unit": "callables",
+-                        "basis": "complexity.ccn.count",
+-                        "reason": null
+-                    },
+@@ -110,9 +82,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 2,
+-                        "eligible": 2,
+-                        "ratio": 1,
+-                        "unit": "callables",
+-                        "basis": "complexity.cognitive.count",
+-                        "reason": null
+-                    },
+@@ -126,9 +89,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 2,
+-                        "eligible": 2,
+-                        "ratio": 1,
+-                        "unit": "callables",
+-                        "basis": "complexity.ccn.count",
+-                        "reason": null
+-                    },
+@@ -159,1 +113,1 @@
+-            "score": 100,
++            "score": 85.35533905932738,
+@@ -167,5 +121,5 @@
+-                "measured": 2,
+-                "eligible": 2,
+-                "ratio": 1,
+-                "unit": "classes",
+-                "basis": "cohesion.lcom.count",
++                "measured": 0,
++                "eligible": 2,
++                "ratio": 0,
++                "unit": "classes",
++                "basis": "cohesion.tcc.count",
+@@ -176,28 +130,3 @@
+-                    "metric": "cohesion.tcc.avg",
+-                    "humanName": "TCC",
+-                    "value": null,
+-                    "coverage": {
+-                        "state": "not-measured",
+-                        "measured": 0,
+-                        "eligible": 2,
+-                        "ratio": 0,
+-                        "unit": "classes",
+-                        "basis": "cohesion.tcc.count",
+-                        "reason": null
+-                    },
+-                    "good": "above 0.5",
+-                    "direction": "higher_is_better"
+-                },
+-                {
+-                    "metric": "cohesion.lcom.avg",
+-                    "humanName": "LCOM4 (avg)",
+-                    "value": 1,
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 2,
+-                        "eligible": 2,
+-                        "ratio": 1,
+-                        "unit": "classes",
+-                        "basis": "cohesion.lcom.count",
+-                        "reason": null
+-                    },
++                    "metric": "cohesion.lcom.avg",
++                    "humanName": "LCOM4 (avg)",
++                    "value": 1,
+@@ -208,16 +137,1 @@
+-            "worstContributors": [
+-                {
+-                    "className": "Breach",
+-                    "symbolPath": "class:Corpus\\BaselineCycle\\Breach",
+-                    "metrics": {
+-                        "cohesion.lcom": 1
+-                    }
+-                },
+-                {
+-                    "className": "Stale",
+-                    "symbolPath": "class:Corpus\\BaselineCycle\\Stale",
+-                    "metrics": {
+-                        "cohesion.lcom": 1
+-                    }
+-                }
+-            ]
++            "worstContributors": []
+@@ -246,9 +160,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 1,
+-                        "eligible": 1,
+-                        "ratio": 1,
+-                        "unit": "namespaces declaring a type",
+-                        "basis": "coupling.distance-own.count",
+-                        "reason": null
+-                    },
+@@ -262,9 +167,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 2,
+-                        "eligible": 2,
+-                        "ratio": 1,
+-                        "unit": "classes",
+-                        "basis": "coupling.cbo.count",
+-                        "reason": null
+-                    },
+@@ -278,9 +174,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 2,
+-                        "eligible": 2,
+-                        "ratio": 1,
+-                        "unit": "classes",
+-                        "basis": "coupling.cbo.count",
+-                        "reason": null
+-                    },
+@@ -294,9 +181,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 2,
+-                        "eligible": 2,
+-                        "ratio": 1,
+-                        "unit": "classes",
+-                        "basis": "coupling.cbo.count",
+-                        "reason": null
+-                    },
+@@ -347,9 +225,0 @@
+-                    "coverage": {
+-                        "state": "not-applicable",
+-                        "measured": null,
+-                        "eligible": null,
+-                        "ratio": null,
+-                        "unit": null,
+-                        "basis": null,
+-                        "reason": "this input has no declared symbol population"
+-                    },
+@@ -363,9 +232,0 @@
+-                    "coverage": {
+-                        "state": "not-applicable",
+-                        "measured": null,
+-                        "eligible": null,
+-                        "ratio": null,
+-                        "unit": null,
+-                        "basis": null,
+-                        "reason": "this input has no declared symbol population"
+-                    },
+@@ -414,9 +274,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 2,
+-                        "eligible": 2,
+-                        "ratio": 1,
+-                        "unit": "callables",
+-                        "basis": "maintainability.mi.count",
+-                        "reason": null
+-                    },
+@@ -430,9 +281,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 2,
+-                        "eligible": 2,
+-                        "ratio": 1,
+-                        "unit": "callables",
+-                        "basis": "maintainability.mi.count",
+-                        "reason": null
+-                    },
+@@ -446,9 +288,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 2,
+-                        "eligible": 2,
+-                        "ratio": 1,
+-                        "unit": "callables",
+-                        "basis": "maintainability.mi.count",
+-                        "reason": null
+-                    },
+@@ -462,1 +295,1 @@
+-            "score": 90.35021428944034,
++            "score": 87.42128210130582,
+@@ -484,1 +317,1 @@
+-            "healthOverall": 90.35021428944034,
++            "healthOverall": 87.42128210130582,
+@@ -492,5 +325,5 @@
+-                "cohesion": 100,
+-                "coupling": 75,
+-                "typing": 100,
+-                "maintainability": 76.75107144720175,
+-                "overall": 90.35021428944034
++                "cohesion": 85.35533905932738,
++                "coupling": 75,
++                "typing": 100,
++                "maintainability": 76.75107144720175,
++                "overall": 87.42128210130582
+@@ -503,1 +336,1 @@
+-            "healthOverall": 100,
++            "healthOverall": 96.33883476483184,
+@@ -519,5 +352,5 @@
+-                "cohesion": 100,
+-                "coupling": 100,
+-                "typing": 100,
+-                "maintainability": 86.05064286832106,
+-                "overall": 100
++                "cohesion": 85.35533905932738,
++                "coupling": 100,
++                "typing": 100,
++                "maintainability": 86.05064286832106,
++                "overall": 96.33883476483184
+@@ -528,1 +361,1 @@
+-            "healthOverall": 100,
++            "healthOverall": 96.33883476483184,
+@@ -544,5 +377,5 @@
+-                "cohesion": 100,
+-                "coupling": 100,
+-                "typing": 100,
+-                "maintainability": 86.05064286832106,
+-                "overall": 100
++                "cohesion": 85.35533905932738,
++                "coupling": 100,
++                "typing": 100,
++                "maintainability": 86.05064286832106,
++                "overall": 96.33883476483184

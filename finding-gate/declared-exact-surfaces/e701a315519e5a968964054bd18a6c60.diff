@@ -1,23 +1,74 @@
 --- candidate
 +++ reference (mapped)
 @@ -1,1 +1,1 @@
--visible 2544
-+visible 2547
-@@ -29,2 +29,2 @@
--         design.dit: DIT is at least 1, reaches threshold of 1. Prefer composition over deep inheritance
--         Recommendation: DIT is at least 1 (threshold: 1) — deep inheritance, fragile hierarchy
-+         design.dit: DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance
-+         Recommendation: DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy
-@@ -36,1 +36,1 @@
--invocation-format:summary 2544
-+invocation-format:summary 2547
-@@ -64,2 +64,2 @@
--         design.dit: DIT is at least 1, reaches threshold of 1. Prefer composition over deep inheritance
--         Recommendation: DIT is at least 1 (threshold: 1) — deep inheritance, fragile hierarchy
-+         design.dit: DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance
-+         Recommendation: DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy
-@@ -71,2 +71,2 @@
--invocation-stderr 90
--[<normalized>] [WARNING] DIT: 1 incomplete inheritance chain(s) publish DIT lower bounds.
-+invocation-stderr 253
-+[<normalized>] [WARNING] DIT: 1 inheritance chain(s) leaving the analysed path were not followed to a root -- the walk stopped at: Corpus\StderrWarning\External\ExternalParent. The depth published for the classes below them is what this run did follow.
+-visible 2729
++visible 2544
+@@ -6,13 +6,7 @@
+-Health ██████████████████████████████ 100% Excellent
+-  coverage: not applicable — health.overall composes the other dimensions; each of them publishes its own coverage
+-
+-  Complexity      N/A Not measured
+-                   coverage: not applicable — no callables were measured
+-                   Cyclomatic (avg): not measured —
+-                   Cognitive (avg): not measured —
+-                   Cyclomatic (p95): not measured —
+-                   Cognitive (p95): not measured —
+-                   Cyclomatic (max): not measured —
+-  Cohesion        ██████████████████████████████ 100% Excellent
+-                   computed over 1 of 1 classes (100%)
+-                   TCC: not measured 0/1
++Health ████████████████████████████░░ 92.1% Excellent
++  coverage: not applicable — health.overall composes the other dimensions; each of them publishes its own coverage
++
++  Complexity      ██████████████████████████████ 100% Excellent
++                   coverage: not applicable — no callables were measured
++  Cohesion        ██████████████████████████░░░░ 85.4% Excellent
++                   computed over 0 of 1 classes (0%)
+@@ -26,7 +20,4 @@
+-  Typing          N/A Not measured
+-                   coverage: not applicable — the typing formula reads typed and total sums over declaration positions, and no .count is published for them
+-  Maintainability N/A Not measured
+-                   coverage: not applicable — no callables were measured
+-                   MI (avg): not measured —
+-                   MI (p5): not measured —
+-                   MI (min): not measured —
++  Typing          ██████████████████████████████ 100% Excellent
++                   coverage: not applicable — the typing formula reads typed and total sums over declaration positions, and no .count is published for them
++  Maintainability ███████████████████████░░░░░░░ 75% Good
++                   coverage: not applicable — no callables were measured
+@@ -45,1 +36,1 @@
+-invocation-format:summary 2729
++invocation-format:summary 2544
+@@ -50,13 +41,7 @@
+-Health ██████████████████████████████ 100% Excellent
+-  coverage: not applicable — health.overall composes the other dimensions; each of them publishes its own coverage
+-
+-  Complexity      N/A Not measured
+-                   coverage: not applicable — no callables were measured
+-                   Cyclomatic (avg): not measured —
+-                   Cognitive (avg): not measured —
+-                   Cyclomatic (p95): not measured —
+-                   Cognitive (p95): not measured —
+-                   Cyclomatic (max): not measured —
+-  Cohesion        ██████████████████████████████ 100% Excellent
+-                   computed over 1 of 1 classes (100%)
+-                   TCC: not measured 0/1
++Health ████████████████████████████░░ 92.1% Excellent
++  coverage: not applicable — health.overall composes the other dimensions; each of them publishes its own coverage
++
++  Complexity      ██████████████████████████████ 100% Excellent
++                   coverage: not applicable — no callables were measured
++  Cohesion        ██████████████████████████░░░░ 85.4% Excellent
++                   computed over 0 of 1 classes (0%)
+@@ -70,7 +55,4 @@
+-  Typing          N/A Not measured
+-                   coverage: not applicable — the typing formula reads typed and total sums over declaration positions, and no .count is published for them
+-  Maintainability N/A Not measured
+-                   coverage: not applicable — no callables were measured
+-                   MI (avg): not measured —
+-                   MI (p5): not measured —
+-                   MI (min): not measured —
++  Typing          ██████████████████████████████ 100% Excellent
++                   coverage: not applicable — the typing formula reads typed and total sums over declaration positions, and no .count is published for them
++  Maintainability ███████████████████████░░░░░░░ 75% Good
++                   coverage: not applicable — no callables were measured

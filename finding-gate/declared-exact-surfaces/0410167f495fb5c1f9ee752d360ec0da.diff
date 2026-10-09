@@ -1,0 +1,239 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 19708
++visible 13374
+@@ -39,1 +39,0 @@
+-    "computedMetricOutcomes": [],
+@@ -62,9 +61,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 1,
+-                        "eligible": 1,
+-                        "ratio": 1,
+-                        "unit": "callables",
+-                        "basis": "complexity.ccn.count",
+-                        "reason": null
+-                    },
+@@ -78,9 +68,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 1,
+-                        "eligible": 1,
+-                        "ratio": 1,
+-                        "unit": "callables",
+-                        "basis": "complexity.cognitive.count",
+-                        "reason": null
+-                    },
+@@ -94,9 +75,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 1,
+-                        "eligible": 1,
+-                        "ratio": 1,
+-                        "unit": "callables",
+-                        "basis": "complexity.ccn.count",
+-                        "reason": null
+-                    },
+@@ -110,9 +82,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 1,
+-                        "eligible": 1,
+-                        "ratio": 1,
+-                        "unit": "callables",
+-                        "basis": "complexity.cognitive.count",
+-                        "reason": null
+-                    },
+@@ -126,9 +89,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 1,
+-                        "eligible": 1,
+-                        "ratio": 1,
+-                        "unit": "callables",
+-                        "basis": "complexity.ccn.count",
+-                        "reason": null
+-                    },
+@@ -151,1 +105,1 @@
+-            "score": 100,
++            "score": 85.35533905932738,
+@@ -159,5 +113,5 @@
+-                "measured": 1,
+-                "eligible": 1,
+-                "ratio": 1,
+-                "unit": "classes",
+-                "basis": "cohesion.lcom.count",
++                "measured": 0,
++                "eligible": 1,
++                "ratio": 0,
++                "unit": "classes",
++                "basis": "cohesion.tcc.count",
+@@ -168,28 +122,3 @@
+-                    "metric": "cohesion.tcc.avg",
+-                    "humanName": "TCC",
+-                    "value": null,
+-                    "coverage": {
+-                        "state": "not-measured",
+-                        "measured": 0,
+-                        "eligible": 1,
+-                        "ratio": 0,
+-                        "unit": "classes",
+-                        "basis": "cohesion.tcc.count",
+-                        "reason": null
+-                    },
+-                    "good": "above 0.5",
+-                    "direction": "higher_is_better"
+-                },
+-                {
+-                    "metric": "cohesion.lcom.avg",
+-                    "humanName": "LCOM4 (avg)",
+-                    "value": 1,
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 1,
+-                        "eligible": 1,
+-                        "ratio": 1,
+-                        "unit": "classes",
+-                        "basis": "cohesion.lcom.count",
+-                        "reason": null
+-                    },
++                    "metric": "cohesion.lcom.avg",
++                    "humanName": "LCOM4 (avg)",
++                    "value": 1,
+@@ -200,9 +129,1 @@
+-            "worstContributors": [
+-                {
+-                    "className": "Breach",
+-                    "symbolPath": "class:Corpus\\BaselineCycle\\Breach",
+-                    "metrics": {
+-                        "cohesion.lcom": 1
+-                    }
+-                }
+-            ]
++            "worstContributors": []
+@@ -231,9 +152,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 1,
+-                        "eligible": 1,
+-                        "ratio": 1,
+-                        "unit": "namespaces declaring a type",
+-                        "basis": "coupling.distance-own.count",
+-                        "reason": null
+-                    },
+@@ -247,9 +159,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 1,
+-                        "eligible": 1,
+-                        "ratio": 1,
+-                        "unit": "classes",
+-                        "basis": "coupling.cbo.count",
+-                        "reason": null
+-                    },
+@@ -263,9 +166,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 1,
+-                        "eligible": 1,
+-                        "ratio": 1,
+-                        "unit": "classes",
+-                        "basis": "coupling.cbo.count",
+-                        "reason": null
+-                    },
+@@ -279,9 +173,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 1,
+-                        "eligible": 1,
+-                        "ratio": 1,
+-                        "unit": "classes",
+-                        "basis": "coupling.cbo.count",
+-                        "reason": null
+-                    },
+@@ -324,9 +209,0 @@
+-                    "coverage": {
+-                        "state": "not-applicable",
+-                        "measured": null,
+-                        "eligible": null,
+-                        "ratio": null,
+-                        "unit": null,
+-                        "basis": null,
+-                        "reason": "this input has no declared symbol population"
+-                    },
+@@ -340,9 +216,0 @@
+-                    "coverage": {
+-                        "state": "not-applicable",
+-                        "measured": null,
+-                        "eligible": null,
+-                        "ratio": null,
+-                        "unit": null,
+-                        "basis": null,
+-                        "reason": "this input has no declared symbol population"
+-                    },
+@@ -384,9 +251,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 1,
+-                        "eligible": 1,
+-                        "ratio": 1,
+-                        "unit": "callables",
+-                        "basis": "maintainability.mi.count",
+-                        "reason": null
+-                    },
+@@ -400,9 +258,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 1,
+-                        "eligible": 1,
+-                        "ratio": 1,
+-                        "unit": "callables",
+-                        "basis": "maintainability.mi.count",
+-                        "reason": null
+-                    },
+@@ -416,9 +265,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 1,
+-                        "eligible": 1,
+-                        "ratio": 1,
+-                        "unit": "callables",
+-                        "basis": "maintainability.mi.count",
+-                        "reason": null
+-                    },
+@@ -432,2 +272,2 @@
+-            "score": 80.32348865633432,
+-            "label": "Excellent",
++            "score": 77.3945564681998,
++            "label": "Good",
+@@ -454,2 +294,2 @@
+-            "healthOverall": 80.32348865633432,
+-            "label": "Excellent",
++            "healthOverall": 77.3945564681998,
++            "label": "Good",
+@@ -462,5 +302,5 @@
+-                "cohesion": 100,
+-                "coupling": 75,
+-                "typing": 100,
+-                "maintainability": 53.61744328167159,
+-                "overall": 80.32348865633432
++                "cohesion": 85.35533905932738,
++                "coupling": 75,
++                "typing": 100,
++                "maintainability": 53.61744328167159,
++                "overall": 77.3945564681998
+@@ -473,1 +313,1 @@
+-            "healthOverall": 97.19999999999999,
++            "healthOverall": 93.53883476483185,
+@@ -489,5 +329,5 @@
+-                "cohesion": 100,
+-                "coupling": 100,
+-                "typing": 100,
+-                "maintainability": 72.17046596900295,
+-                "overall": 97.19999999999999
++                "cohesion": 85.35533905932738,
++                "coupling": 100,
++                "typing": 100,
++                "maintainability": 72.17046596900295,
++                "overall": 93.53883476483185

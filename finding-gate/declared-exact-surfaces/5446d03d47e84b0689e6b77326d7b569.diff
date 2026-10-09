@@ -1,7 +1,99 @@
 --- candidate
 +++ reference (mapped)
-@@ -71,2 +71,2 @@
--invocation-stderr 90
--[<normalized>] [WARNING] DIT: 1 incomplete inheritance chain(s) publish DIT lower bounds.
-+invocation-stderr 253
-+[<normalized>] [WARNING] DIT: 1 inheritance chain(s) leaving the analysed path were not followed to a root -- the walk stopped at: Corpus\StderrWarning\External\ExternalParent. The depth published for the classes below them is what this run did follow.
+@@ -1,1 +1,1 @@
+-visible 2425
++visible 2178
+@@ -10,21 +10,11 @@
+-  Complexity           N/A   Not measured       n/a
+-  Cohesion          100.0%   ▲ Excellent       100%  warn < 50  err < 25
+-  Coupling          100.0%   ▲ Excellent       100%  warn < 50  err < 25
+-  Typing               N/A   Not measured       n/a
+-  Maintainability      N/A   Not measured       n/a
+-  ─────────────────────────────────────────────────────────────────
+-  Overall           100.0%   ▲ Excellent        n/a  warn < 50  err < 30
+-
+-  Complexity decomposition:
+-    Computed over: not applicable — no callables were measured
+-    Cyclomatic (avg): not measured —
+-    Cognitive (avg): not measured —
+-    Cyclomatic (p95): not measured —
+-    Cognitive (p95): not measured —
+-    Cyclomatic (max): not measured —
+-  Cohesion decomposition:
+-    Computed over 1 of 1 classes (100%), from cohesion.lcom.count
+-    TCC: not measured 0/1
+-    LCOM4 (avg)                     0   (target: 1 or less) — classes are cohesive
+-    Worst contributors:
+-      Child                          LCOM=0
++  Complexity        100.0%   ▲ Excellent        n/a  warn < 50  err < 25
++  Cohesion           85.4%   ▲ Excellent         0%  warn < 50  err < 25
++  Coupling          100.0%   ▲ Excellent       100%  warn < 50  err < 25
++  Typing            100.0%   ▲ Excellent        n/a  warn < 80  err < 50
++  Maintainability    75.0%   ▲ Good             n/a  warn < 50  err < 25
++  ─────────────────────────────────────────────────────────────────
++  Overall            92.1%   ▲ Excellent        n/a  warn < 50  err < 30
++
++  Cohesion decomposition:
++    Computed over 0 of 1 classes (0%), from cohesion.tcc.count
++    LCOM4 (avg)                     0   (target: 1 or less) — classes are cohesive
+@@ -39,9 +29,8 @@
+-  Maintainability decomposition:
+-    Computed over: not applicable — no callables were measured
+-    MI (avg): not measured —
+-    MI (p5): not measured —
+-    MI (min): not measured —
+-
+-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
+-
+-invocation-format:health 2425
++  Typing decomposition:
++    Computed over: not applicable — the typing formula reads typed and total sums over declaration positions, and no .count is published for them
++    Worst contributors:
++      Child                          TYPE_COVERAGE.ALL=100.0
++
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-format:health 2178
+@@ -56,21 +45,11 @@
+-  Complexity           N/A   Not measured       n/a
+-  Cohesion          100.0%   ▲ Excellent       100%  warn < 50  err < 25
+-  Coupling          100.0%   ▲ Excellent       100%  warn < 50  err < 25
+-  Typing               N/A   Not measured       n/a
+-  Maintainability      N/A   Not measured       n/a
+-  ─────────────────────────────────────────────────────────────────
+-  Overall           100.0%   ▲ Excellent        n/a  warn < 50  err < 30
+-
+-  Complexity decomposition:
+-    Computed over: not applicable — no callables were measured
+-    Cyclomatic (avg): not measured —
+-    Cognitive (avg): not measured —
+-    Cyclomatic (p95): not measured —
+-    Cognitive (p95): not measured —
+-    Cyclomatic (max): not measured —
+-  Cohesion decomposition:
+-    Computed over 1 of 1 classes (100%), from cohesion.lcom.count
+-    TCC: not measured 0/1
+-    LCOM4 (avg)                     0   (target: 1 or less) — classes are cohesive
+-    Worst contributors:
+-      Child                          LCOM=0
++  Complexity        100.0%   ▲ Excellent        n/a  warn < 50  err < 25
++  Cohesion           85.4%   ▲ Excellent         0%  warn < 50  err < 25
++  Coupling          100.0%   ▲ Excellent       100%  warn < 50  err < 25
++  Typing            100.0%   ▲ Excellent        n/a  warn < 80  err < 50
++  Maintainability    75.0%   ▲ Good             n/a  warn < 50  err < 25
++  ─────────────────────────────────────────────────────────────────
++  Overall            92.1%   ▲ Excellent        n/a  warn < 50  err < 30
++
++  Cohesion decomposition:
++    Computed over 0 of 1 classes (0%), from cohesion.tcc.count
++    LCOM4 (avg)                     0   (target: 1 or less) — classes are cohesive
+@@ -85,5 +64,4 @@
+-  Maintainability decomposition:
+-    Computed over: not applicable — no callables were measured
+-    MI (avg): not measured —
+-    MI (p5): not measured —
+-    MI (min): not measured —
++  Typing decomposition:
++    Computed over: not applicable — the typing formula reads typed and total sums over declaration positions, and no .count is published for them
++    Worst contributors:
++      Child                          TYPE_COVERAGE.ALL=100.0

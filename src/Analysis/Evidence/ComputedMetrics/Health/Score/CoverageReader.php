@@ -36,29 +36,22 @@ final readonly class CoverageReader
      * reader is not left guessing which term is the narrow one.
      *
      * @param callable(string): (int|float|null) $readProjectMetric
+     * @param list<array{key: string, sources: list<string>, label: string, direction: string, coverage: array{count: string, unit: CoverageUnit}|null}>|null $inputs
      */
-    public function read(string $dimension, callable $readProjectMetric): HealthCoverage
+    public function read(string $dimension, callable $readProjectMetric, ?array $inputs = null): HealthCoverage
     {
         $narrowest = null;
         $emptyPopulation = null;
 
-        foreach ($this->decomposition->inputsFor($dimension, SymbolLevel::Project) as $input) {
-            $spec = $input['coverage'];
+        $inputs ??= $this->decomposition->inputsFor($dimension, SymbolLevel::Project);
 
-            if ($spec === null) {
+        foreach (self::inputCoverages($inputs, $readProjectMetric) as $candidate) {
+            if (!$candidate->applicable) {
+                $emptyPopulation ??= $candidate->reason;
                 continue;
             }
 
-            $eligible = self::population($spec['unit'], $readProjectMetric);
-
-            if ($eligible <= 0) {
-                $emptyPopulation ??= \sprintf('no %s were measured', $spec['unit']->value);
-                continue;
-            }
-
-            $candidate = self::measured($spec['count'], $spec['unit'], $eligible, $readProjectMetric);
-
-            if ($narrowest === null || $candidate->ratio < $narrowest->ratio) {
+            if ($candidate->ratio < ($narrowest->ratio ?? \PHP_FLOAT_MAX)) {
                 $narrowest = $candidate;
             }
         }
@@ -69,7 +62,22 @@ final readonly class CoverageReader
     }
 
     /**
-     * An absent count is a measured zero, not a missing field: the
+     * @param list<array{key: string, sources: list<string>, label: string, direction: string, coverage: array{count: string, unit: CoverageUnit}|null}> $inputs
+     * @param callable(string): (int|float|null) $readProjectMetric
+     *
+     * @return iterable<HealthCoverage>
+     */
+    private static function inputCoverages(array $inputs, callable $readProjectMetric): iterable
+    {
+        foreach ($inputs as $input) {
+            if ($input['coverage'] !== null) {
+                yield self::forSpec($input['coverage'], $readProjectMetric);
+            }
+        }
+    }
+
+    /**
+     * An absent count means no input was measured: the
      * aggregator publishes no key at all when nothing contributed
      * (`AggregationHelper::applyAggregations()` skips an empty value
      * list), the formula then read the aggregate through `?? 0` and
@@ -85,7 +93,7 @@ final readonly class CoverageReader
      */
     private static function measured(string $count, CoverageUnit $unit, int $eligible, callable $readProjectMetric): HealthCoverage
     {
-        return HealthCoverage::over((int) ($readProjectMetric($count) ?? 0), $eligible, $unit, $count);
+        return HealthCoverage::over(self::count($readProjectMetric($count) ?? 0, $count), $eligible, $unit, $count);
     }
 
     /**
@@ -106,10 +114,44 @@ final readonly class CoverageReader
     {
         $metric = $unit->populationMetric();
 
-        return (int) ($readProjectMetric($metric) ?? throw new LogicException(\sprintf(
+        return self::count($readProjectMetric($metric) ?? throw new LogicException(\sprintf(
             'Coverage unit "%s" names "%s" as its population, and this run publishes no such project metric.',
             $unit->value,
             $metric,
-        )));
+        )), $metric);
+    }
+
+    /** @param callable(string): (int|float|null) $readProjectMetric */
+    public function forInput(string $dimension, string $key, callable $readProjectMetric): HealthCoverage
+    {
+        foreach ($this->decomposition->inputsFor($dimension, SymbolLevel::Project) as $input) {
+            if ($input['key'] === $key && $input['coverage'] !== null) {
+                return self::forSpec($input['coverage'], $readProjectMetric);
+            }
+        }
+
+        return HealthCoverage::notApplicable('this input has no declared symbol population');
+    }
+
+    /**
+     * @param array{count: string, unit: CoverageUnit} $spec
+     * @param callable(string): (int|float|null) $readProjectMetric
+     */
+    private static function forSpec(array $spec, callable $readProjectMetric): HealthCoverage
+    {
+        $eligible = self::population($spec['unit'], $readProjectMetric);
+
+        return $eligible === 0
+            ? HealthCoverage::notApplicable(\sprintf('no %s were measured', $spec['unit']->value))
+            : self::measured($spec['count'], $spec['unit'], $eligible, $readProjectMetric);
+    }
+
+    private static function count(int|float $value, string $metric): int
+    {
+        if (!is_finite((float) $value) || $value < 0 || $value > \PHP_INT_MAX || floor((float) $value) !== (float) $value) {
+            throw new LogicException(\sprintf('Coverage metric "%s" must be a non-negative finite integer.', $metric));
+        }
+
+        return (int) $value;
     }
 }

@@ -1020,6 +1020,7 @@ final class DirectivesCommandTest extends TestCase
         $check = $this->runCheck(['paths' => [$this->tempDir . '/src'], '--config' => $config, '--format' => 'json']);
         self::assertSame(4, $check->getStatusCode());
         self::assertFalse(self::decode($check->getDisplay())['coverage']['complete']);
+        self::assertNull(self::decode($check->getDisplay())['health']);
     }
 
     #[Test]

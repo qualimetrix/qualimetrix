@@ -4,25 +4,22 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
+use Closure;
+
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricAuthorship;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricRefusalWording;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricsSection;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricValueForm;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use ReflectionClass;
 
 /**
  * Validates computed metric definitions: formula syntax, level coverage,
  * circular dependencies, cross-metric references and the levels they are
  * read at, and that every other addressed metric key exists in the catalog.
- *
- * @qmx-threshold coupling.instability warning=0.81 -- Ca=2, Ce=8: the eighth efferent
- * edge is the refusal authorship the six checks name. Moving the one refusal it builds
- * itself into ComputedMetricAuthorship drops Ca to 1 and pushes ComputedMetricsSection
- * to 0.83 instead.
  */
 final class ComputedMetricFormulaValidator
 {
@@ -292,18 +289,21 @@ final class ComputedMetricFormulaValidator
      * a key no symbol publishes is only knowable once a run has measured.
      *
      * @param list<string> $keys as the formula spells them
+     * @param Closure(ComputedMetricDefinition, SymbolLevel, string): ConfigurationRefusal $refuseFormula
      *
      * @throws ConfigurationRefusal
      */
     public static function refuseMetricsAbsentAtLevel(
-        string $definitionName,
+        ComputedMetricDefinition $definition,
         array $keys,
-        string $level,
+        SymbolLevel $level,
         string $formula,
+        Closure $refuseFormula,
     ): never {
-        throw ConfigurationRefusal::atResolvedKey(
-            ComputedMetricsSection::position($definitionName),
-            ComputedMetricRefusalWording::referencesMetricAbsentAtLevel($definitionName, $keys, $level, $formula),
+        throw $refuseFormula(
+            $definition,
+            $level,
+            ComputedMetricRefusalWording::referencesMetricAbsentAtLevel($definition->name, $keys, $level->value, $formula),
         );
     }
 

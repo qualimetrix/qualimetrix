@@ -107,6 +107,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             ),
             ruleExecution: $prepared->ruleExecution,
             latePublished: $latePublished,
+            computedMetricEvaluation: $prepared->computedMetricEvaluation,
         );
     }
 
@@ -254,7 +255,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         $namespaceTree = $this->measurementAggregation->aggregate($repository, $graph);
 
         // Phase 4: Computed metric evaluation.
-        $this->computedMetricEvaluation->evaluate($repository, $collectionResult->filesAnalyzed);
+        $computedMetricEvaluation = $this->computedMetricEvaluation->evaluate($repository, $collectionResult->filesAnalyzed);
 
         // Phase 5: Circular dependency preparation.
         $this->ruleProducerPreparation->prepareCircularDependencies(
@@ -330,6 +331,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             coverage: $coverage,
             subjectCoverage: $subjectCoverage,
             unmatchedExcludeFindings: $this->unmatchedExcludeAudit->findings($measuredScope->judgement(), $configuration->projectRoot),
+            computedMetricEvaluation: $computedMetricEvaluation,
         ), $measuredScope];
     }
 

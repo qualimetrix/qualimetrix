@@ -1,0 +1,26 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 3625
++visible 3578
+@@ -6,1 +6,1 @@
+-Health ████████████████████████░░░░░░ 80.3% Excellent
++Health ███████████████████████░░░░░░░ 77.4% Good
+@@ -16,3 +16,2 @@
+-  Cohesion        ██████████████████████████████ 100% Excellent
+-                   computed over 1 of 1 classes (100%)
+-                   TCC: not measured 0/1
++  Cohesion        ██████████████████████████░░░░ 85.4% Excellent
++                   computed over 0 of 1 classes (0%)
+@@ -47,1 +46,1 @@
+-invocation-format:summary 3625
++invocation-format:summary 3578
+@@ -52,1 +51,1 @@
+-Health ████████████████████████░░░░░░ 80.3% Excellent
++Health ███████████████████████░░░░░░░ 77.4% Good
+@@ -62,3 +61,2 @@
+-  Cohesion        ██████████████████████████████ 100% Excellent
+-                   computed over 1 of 1 classes (100%)
+-                   TCC: not measured 0/1
++  Cohesion        ██████████████████████████░░░░ 85.4% Excellent
++                   computed over 0 of 1 classes (0%)

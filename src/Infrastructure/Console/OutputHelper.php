@@ -13,6 +13,23 @@ use Symfony\Component\Console\Output\StreamOutput;
  */
 final class OutputHelper
 {
+    public static function writeJsonReport(OutputInterface $output, string $content): void
+    {
+        if ($output->getVerbosity() === OutputInterface::VERBOSITY_SILENT) {
+            return;
+        }
+
+        if ($output instanceof StreamOutput) {
+            $stream = $output->getStream();
+            $spelling = stream_get_meta_data($stream)['uri'] ?? 'console output stream';
+            HeldTarget::writeToStream($stream, $content, $spelling);
+
+            return;
+        }
+
+        $output->write($content, false, OutputInterface::OUTPUT_RAW | OutputInterface::VERBOSITY_QUIET);
+    }
+
     /**
      * Writes content to output, checking stream writes after restoring blocking mode.
      *

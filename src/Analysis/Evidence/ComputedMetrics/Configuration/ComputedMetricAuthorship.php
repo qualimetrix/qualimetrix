@@ -16,10 +16,6 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * Which layers wrote each computed metric, so a refusal about a resolved
  * definition names them. A definition no layer touched is the built-in
  * defaults'.
- *
- * @qmx-threshold coupling.instability warning=0.82 -- Ca=2, Ce=9: it reads the resolved
- * document (three types) and builds the refusal (two types) for its two callers, so it
- * depends outward by construction.
  */
 final readonly class ComputedMetricAuthorship
 {
@@ -41,7 +37,17 @@ final readonly class ComputedMetricAuthorship
     {
         $writer = $this->formulaWriter($definition, $level);
 
-        return $writer !== null ? Provenance::refusalOf($writer->contributors(), $summary) : self::defaults($definition->name, $summary, [
+        if ($writer !== null) {
+            return Provenance::refusalOf($writer->contributors(), $summary);
+        }
+        if (!$definition->isBuiltinFormulaForLevel(SymbolLevel::from($level))) {
+            return ConfigurationRefusal::atResolvedKey(
+                ComputedMetricsSection::position($definition->name),
+                'The authored formula source is unavailable. ' . $summary,
+            );
+        }
+
+        return self::defaults($definition->name, $summary, [
             ComputedMetricEntryKeys::FORMULAS,
             $definition->formulaLevelFor(SymbolLevel::from($level)) ?? $level,
         ]);

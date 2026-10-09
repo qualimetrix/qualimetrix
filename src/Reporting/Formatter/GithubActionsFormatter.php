@@ -19,10 +19,6 @@ use Qualimetrix\Reporting\ReportProjectScope;
  * when running inside GitHub Actions CI.
  *
  * @see https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#setting-a-warning-message
- *
- * @qmx-ignore health.cohesion -- Stateless: no instance field for TCC to measure, so from the sixth
- *             counted method the score reads an undefined TCC as zero; the escaping and notice
- *             helpers share no state by design.
  */
 final class GithubActionsFormatter implements FormatterInterface
 {

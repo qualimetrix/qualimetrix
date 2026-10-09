@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
@@ -34,6 +35,15 @@ final class ReportBuilder
 
     /** @var list<array{message: string, source: list<array<string, mixed>>}> */
     private array $configurationDiagnostics = [];
+
+    private ComputedMetricEvaluationSummary $computedMetricEvaluation;
+
+    public function computedMetricEvaluation(ComputedMetricEvaluationSummary $summary): self
+    {
+        $this->computedMetricEvaluation = $summary;
+
+        return $this;
+    }
 
     /**
      * Creates a new builder instance.
@@ -217,6 +227,7 @@ final class ReportBuilder
             outOfScope: $this->outOfScope,
             projectScope: $this->projectScope,
             configurationDiagnostics: $this->configurationDiagnostics,
+            computedMetricEvaluation: $this->computedMetricEvaluation ?? new ComputedMetricEvaluationSummary(),
         );
     }
 }

@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- Built-in health dimensions now omit numeric scores when their measured inputs are inapplicable; numeric 0 remains a measurement. Cohesion uses only available TCC/LCOM contributions, without the small-class TCC default, and overall uses only available dimensions instead of a neutral 75-point fallback. Recheck health limits and accepted findings on sparse subjects.
+- Type coverage no longer publishes percentages when the combined typeable total is zero. The six raw typed/total counters retain measured 0; positive totals with no typed declarations still publish 0%. Treat missing percentages and typing health as inapplicable rather than 100%.
+- Health exclusions now remove complete ordered `weighted_mean` terms without rounding or pre-normalizing coefficients. Custom overall formulas must use the supported canonical weighted-mean shape when excluding dimensions; migrate legacy sum/product formulas or explicitly handle available inputs.
+- `ComputedMetricEvaluator::evaluate()` now returns an immutable `ComputedMetricEvaluationSummary` instead of `void`. Resolve the evaluator through its configured owner rather than injecting a bare definition catalog, and carry its absence summary beside normal measured results. Applicable builtin absence and invalid formula results now refuse with the effective configuration source and exit 3 instead of logging and continuing; authored missing inputs and null results remain successful absence.
+- Every successful check JSON document now includes `computedMetricOutcomes`, including `[]`; consume authored absence records separately from findings and configuration diagnostics. Text, summary and health publish the same bounded explanation without logger output. Successful check JSON to stdout is complete at normal and quiet verbosity, including configuration-selected JSON; silent emits no bytes.
+- Health coverage now distinguishes `measured`, `not-measured` (0/N) and `not-applicable` with a reason. Enabled builtin project dimensions retain nullable scores and missing decomposition inputs remain null; numeric 0 stays measured. Coverage follows the selected formula's participating inputs, and authored constants cannot borrow builtin evidence. Class and namespace selection no longer substitutes project scores for absent local values. Read prepared HTML project decomposition from `summary.healthDecomposition`. See [ADR 0108](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0108-health-score-applicability-and-evaluation.md) for rationale and migration.
+
 - `design.dit` now follows registered PHP builtin ancestry transitively instead of stopping at the first builtin. Recheck DIT limits and accepted baseline values for builtin descendants; a `RuntimeException` subclass reports 2, and an `ArgumentCountError` subclass reports 3.
 - Class metrics publish `design.dit-unresolved` (0 for exact depth, 1 for a floor or loop). Loops and their descendants omit numeric `design.dit` instead of publishing a loop length; handle a missing DIT as unresolved, not 0, and use the new key when consuming floors.
 - `design.is-exception` now follows ancestry to PHP `Throwable` instead of matching the immediate parent's short name; unknown status omits the key. With `design.data-class.exclude_exceptions: true`, unknown status is skipped rather than treated as non-exception. Set it to `false` to judge the remaining criteria regardless of ancestry, and recheck accepted DataClass findings.
@@ -1634,6 +1641,11 @@ What changes for a configuration you already have:
 
 ### Fixed
 
+- Formula evaluation no longer lets an independent missing key hide a reached
+  invalid non-null metric input. Unselected branches and later chained-access
+  stages remain unjudged. Selection uses one native evaluation without an
+  extra control probe or replay of an argument or control position; Expression
+  Language may evaluate a shared Elvis expression twice.
 - Namespace LOC contributions preserve integer sums and compute subtree
   averages and counts from each file contribution exactly once.
 - Promoted constructor properties retain their names in get/set hook subjects.

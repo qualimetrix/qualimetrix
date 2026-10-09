@@ -118,6 +118,7 @@ final class ResultPresenter
             ->namespaceTree($analysisResult->measured->namespaceTree)
             ->coverage($coverage)
             ->configurationDiagnostics($configurationDiagnostics);
+        $reportBuilder->computedMetricEvaluation($analysisResult->computedMetricEvaluation);
 
         if ($context->namespace !== null || $context->class !== null) {
             $reportBuilder->outOfScope(OutOfScopeFindings::between($findings, $filteredFindings));
@@ -295,7 +296,17 @@ final class ResultPresenter
             );
         }
 
-        OutputHelper::write($output, $formattedOutput->body);
+        if ($format === 'json') {
+            // The application normalizes --silent to quiet so refusals survive;
+            // a successful report still honors the original silent request.
+            if ($input->hasParameterOption('--silent', true)) {
+                return;
+            }
+
+            OutputHelper::writeJsonReport($output, $formattedOutput->body);
+        } else {
+            OutputHelper::write($output, $formattedOutput->body);
+        }
     }
 
     private function isOutputTty(OutputInterface $output): bool

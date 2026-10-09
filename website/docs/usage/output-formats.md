@@ -191,9 +191,21 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
 
 **When to use:** Custom scripts, dashboards, programmatic processing.
 
-**Top-level keys:** `meta`, `summary`, `outOfScope`, `coverage`, `projectScope` (see [Project scope in every format](#project-scope-in-every-format)), `configurationDiagnostics`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, plus `violationGroups` when `--group-by` is passed — without it, the key is absent entirely, not an empty object.
+**Top-level keys:** `meta`, `summary`, `outOfScope`, `coverage`, `projectScope` (see [Project scope in every format](#project-scope-in-every-format)), `configurationDiagnostics`, `computedMetricOutcomes`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, plus `violationGroups` when `--group-by` is passed — without it, the key is absent entirely, not an empty object.
 
 `configurationDiagnostics` lists the warnings about the configuration the run accepted — the same ones `check` prints on stderr — and is `[]` when there are none. Each entry is `{"message": "…", "source": [{"kind": "preset", "name": "…", "imported_by": null}, …]}`: `source` names every layer the warning is about, lowest precedence first, in the form a configuration error's `source` uses. For example, `only_rules: []` in `qmx.yaml` over a preset that filters the rules is lawful, and draws one entry naming both.
+
+Every successful check JSON document includes `computedMetricOutcomes`, including
+an empty array. Nonempty records group authored missing inputs and null results
+by metric and level: `metric`, `level`, `missingKeysCount`, `noValueCount`,
+`missingKeys` and `subjects`. The keys are the exact missing-key union; subjects
+are at most three deterministic canonical exact identities. This summary is
+separate from findings and `configurationDiagnostics`.
+
+A successful check whose resolved format is exactly `json` and destination is
+stdout writes the complete raw document at normal and quiet verbosity. SILENT
+emits no bytes. JSON selected in configuration follows the same route; file
+targets and other formats retain their existing output behavior.
 
 `meta` identifies the tool that wrote the document: `version`, `package`, `timestamp`, and two documentation addresses — `docs`, the documentation site, and `llmsTxt`, the index written for AI agents. Every JSON report with an envelope object carries the same two addresses; see the exceptions in [Documentation addresses in JSON reports](#documentation-addresses).
 
@@ -229,6 +241,7 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
         "reasons": []
     },
     "configurationDiagnostics": [],
+    "computedMetricOutcomes": [],
     "health": {
         "complexity": {
             "score": 78.0,
@@ -248,9 +261,18 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
             },
             "decomposition": [
                 {
-                    "metric": "complexity.ccn.sum",
+                    "metric": "complexity.ccn.avg",
                     "humanName": "Cyclomatic complexity",
-                    "value": 412,
+                    "value": 4.12,
+                    "coverage": {
+                        "state": "measured",
+                        "measured": 2263,
+                        "eligible": 2263,
+                        "ratio": 1.0,
+                        "unit": "callables",
+                        "basis": "complexity.ccn.count",
+                        "reason": null
+                    },
                     "good": true,
                     "direction": "lower-is-better"
                 }
@@ -828,6 +850,13 @@ Annotations appear directly on the changed lines in your pull request — no SAR
 
 Text table of health scores for terminal output. Shows each dimension with its score, status label, thresholds, and decomposition details.
 
+Enabled builtin project dimensions remain visible with unavailable scores and
+explicit coverage. Missing decomposition values are null, distinct from numeric
+0, and show their measured/eligible share. Text, summary and health also publish
+bounded authored-absence lines when there are no health scores and without logger
+output. Class and namespace selection never substitutes a project score for an
+absent local score.
+
 **When to use:** Quick health check from CLI, AI agent workflows, pipeline diagnostics.
 
 **Key features:**
@@ -838,6 +867,9 @@ Text table of health scores for terminal output. Shows each dimension with its s
 - Decomposition breakdown for each dimension
 - A `Coverage` column, and one `Computed over N of M ...` line per dimension in the decomposition — the share of the subject that score speaks for (see [What a Score Covers](../reference/health-scores.md#what-a-score-covers))
 - Supports `--namespace` and `--class` drill-down
+
+Cohesion contributors follow TCC when it participates, otherwise measured LCOM
+with its lower-is-better direction.
 
 **Worst contributors per dimension:**
 
@@ -868,6 +900,7 @@ Interactive treemap report with D3.js visualization. Generates a self-contained 
 - Color-coded health scores per node
 - Click to drill down into namespaces
 - Detail panel with metrics, violations, and decomposition
+- Project decomposition is prepared by PHP in `summary.healthDecomposition`, with coverage in `summary.healthCoverage`; the viewer preserves null inputs and measured 0 without a JavaScript formula scorer
 - Health coverage beside each project health bar (`n/a` when coverage is undefined), from the `summary.healthCoverage` object the payload carries next to `summary.healthScores`
 - Every violation of the report sits on a node of the tree, so the tree's counts agree with `summary.totalViolations`: a violation with no class or namespace node of its own — a project-level finding, a file-level one in a file that declares no class or several, a global function outside any namespace — is listed on the project root
 - The report is named after the analysed project: `--format-opt=project-name=...`, else the `name` in its `composer.json`, else its directory name

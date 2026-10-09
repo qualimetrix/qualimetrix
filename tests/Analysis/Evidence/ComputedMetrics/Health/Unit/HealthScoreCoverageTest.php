@@ -224,4 +224,235 @@ final class HealthScoreCoverageTest extends TestCase
             [],
         )->healthScores;
     }
+
+    #[Test]
+    public function itCoversTheParticipatingLcomTermWhileKeepingMissingTccVisible(): void
+    {
+        $score = $this->build([
+            'health.cohesion' => 80.0,
+            'cohesion.lcom.avg' => 0,
+            'cohesion.lcom.count' => 2,
+            'size.symbol-class-count' => 3,
+        ])['cohesion'];
+
+        self::assertSame('measured', $score->coverage->state);
+        self::assertSame('cohesion.lcom.count', $score->coverage->basis);
+        self::assertSame(2, $score->coverage->measured);
+        self::assertSame(3, $score->coverage->eligible);
+        self::assertNull($score->decomposition[0]->value);
+        self::assertSame('not-measured', $score->decomposition[0]->coverage->state);
+        self::assertSame(0, $score->decomposition[0]->coverage->measured);
+        self::assertSame(3, $score->decomposition[0]->coverage->eligible);
+        self::assertSame(0.0, $score->decomposition[1]->value);
+        self::assertSame('measured', $score->decomposition[1]->coverage->state);
+    }
+
+    #[Test]
+    public function itDoesNotBorrowBuiltinCoverageForAnAuthoredLiteral(): void
+    {
+        $definition = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition(
+            'health.cohesion',
+            ['project' => '80'],
+            'Authored',
+            [\Qualimetrix\Core\Symbol\SymbolLevel::Project],
+        );
+        $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
+        $catalog->method('find')->willReturnCallback(static fn(string $name) => $name === 'health.cohesion' ? $definition : null);
+        $score = (new HealthSummaryBuilder(new HealthMetricCatalog(), $catalog))->build(
+            $this->createMetricRepository(MetricBag::fromArray([
+                'health.cohesion' => 80.0, 'cohesion.tcc.avg' => 0.2, 'cohesion.tcc.count' => 2,
+                'size.symbol-class-count' => 3,
+            ])),
+            new NamespaceTree([]),
+            [],
+        )->healthScores['cohesion'];
+
+        self::assertFalse($score->coverage->applicable);
+        self::assertSame([], $score->decomposition);
+        self::assertSame([], $score->worstContributors);
+    }
+
+    #[Test]
+    public function itUsesOnlyTheSelectedAuthoredInputAndItsPopulation(): void
+    {
+        $definition = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition(
+            'health.cohesion',
+            ['namespace' => "m['cohesion.lcom.avg']"],
+            'Authored',
+            [\Qualimetrix\Core\Symbol\SymbolLevel::Namespace_, \Qualimetrix\Core\Symbol\SymbolLevel::Project],
+        );
+        $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
+        $catalog->method('find')->willReturnCallback(static fn(string $name) => $name === 'health.cohesion' ? $definition : null);
+        $score = (new HealthSummaryBuilder(new HealthMetricCatalog(), $catalog))->build(
+            $this->createMetricRepository(MetricBag::fromArray([
+                'health.cohesion' => 2.0, 'cohesion.lcom.avg' => 2.0, 'cohesion.lcom.count' => 2,
+                'cohesion.tcc.avg' => 0.2, 'cohesion.tcc.count' => 1, 'size.symbol-class-count' => 3,
+            ])),
+            new NamespaceTree([]),
+            [],
+        )->healthScores['cohesion'];
+
+        self::assertSame('cohesion.lcom.count', $score->coverage->basis);
+        self::assertSame(2, $score->coverage->measured);
+        self::assertCount(1, $score->decomposition);
+        self::assertSame('cohesion.lcom.avg', $score->decomposition[0]->metricKey);
+    }
+
+    #[Test]
+    public function itKeepsExpectedMissingDistanceAsNullWithAnExplicitZeroOfN(): void
+    {
+        $score = $this->build([
+            'health.coupling' => 50.0, 'coupling.cbo.avg' => 0, 'coupling.cbo.count' => 2,
+            'size.symbol-class-count' => 2, 'size.symbol-declaring-namespace-count' => 4,
+        ])['coupling'];
+        self::assertNull($score->decomposition[0]->value);
+        self::assertSame('coupling.distance-own.avg', $score->decomposition[0]->metricKey);
+        self::assertSame('not-measured', $score->decomposition[0]->coverage->state);
+        self::assertSame(0, $score->decomposition[0]->coverage->measured);
+        self::assertSame(4, $score->decomposition[0]->coverage->eligible);
+        self::assertSame(0.0, $score->decomposition[1]->value);
+        self::assertSame(2, $score->decomposition[1]->coverage->measured);
+    }
+
+    #[Test]
+    public function itPreservesAnEnabledBuiltinNullableScoreAndItsExpectedInputs(): void
+    {
+        $definition = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition(
+            'health.cohesion',
+            ['namespace' => '80'],
+            'Builtin',
+            [\Qualimetrix\Core\Symbol\SymbolLevel::Namespace_, \Qualimetrix\Core\Symbol\SymbolLevel::Project],
+            applicability: ['namespace' => \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricApplicability::always()],
+        );
+        $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
+        $catalog->method('find')->willReturnCallback(static fn(string $name) => $name === 'health.cohesion' ? $definition : null);
+        $score = (new HealthSummaryBuilder(new HealthMetricCatalog(), $catalog))->build(
+            $this->createMetricRepository(MetricBag::fromArray(['size.symbol-class-count' => 2])),
+            new NamespaceTree([]),
+            [],
+        )->healthScores['cohesion'];
+        self::assertNull($score->score);
+        self::assertSame('Not measured', $score->label);
+        self::assertSame('not-measured', $score->coverage->state);
+        self::assertCount(2, $score->decomposition);
+        self::assertNull($score->decomposition[0]->value);
+        self::assertNull($score->decomposition[1]->value);
+    }
+
+    #[Test]
+    public function itDoesNotInventHealthForAnUnaggregatedProject(): void
+    {
+        $definition = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition(
+            'health.cohesion',
+            ['namespace' => '80'],
+            'Builtin',
+            [\Qualimetrix\Core\Symbol\SymbolLevel::Namespace_, \Qualimetrix\Core\Symbol\SymbolLevel::Project],
+            applicability: ['namespace' => \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricApplicability::always()],
+        );
+        $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
+        $catalog->method('find')->willReturnCallback(static fn(string $name) => $name === 'health.cohesion' ? $definition : null);
+        $scores = (new HealthSummaryBuilder(new HealthMetricCatalog(), $catalog))->build(
+            $this->createMetricRepository(new MetricBag()),
+            new NamespaceTree([]),
+            [],
+        )->healthScores;
+
+        self::assertSame([], $scores);
+    }
+
+    #[Test]
+    public function itRefusesAnImpossibleMeasuredPopulation(): void
+    {
+        $this->expectException(LogicException::class);
+        HealthCoverage::over(3, 2, CoverageUnit::Classes, 'cohesion.lcom.count');
+    }
+
+    #[Test]
+    public function itDoesNotCoverAnUnenteredAuthoredFormulaBranch(): void
+    {
+        $definition = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition(
+            'health.cohesion',
+            ['project' => 'm["cohesion.lcom.avg"] > 0 ? 80 : m["cohesion.tcc.avg"]'],
+            'Authored',
+            [\Qualimetrix\Core\Symbol\SymbolLevel::Project],
+        );
+        $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
+        $catalog->method('find')->willReturnCallback(static fn(string $name) => $name === 'health.cohesion' ? $definition : null);
+        $score = (new HealthSummaryBuilder(new HealthMetricCatalog(), $catalog))->build(
+            $this->createMetricRepository(MetricBag::fromArray([
+                'health.cohesion' => 80.0, 'cohesion.lcom.avg' => 2.0, 'cohesion.lcom.count' => 2,
+                'cohesion.tcc.avg' => 0.2, 'cohesion.tcc.count' => 1, 'size.symbol-class-count' => 3,
+            ])),
+            new NamespaceTree([]),
+            [],
+        )->healthScores['cohesion'];
+        self::assertSame('cohesion.lcom.count', $score->coverage->basis);
+        self::assertSame(2, $score->coverage->measured);
+        self::assertCount(1, $score->decomposition);
+        self::assertSame('cohesion.lcom.avg', $score->decomposition[0]->metricKey);
+    }
+
+    #[Test]
+    public function itCoversOnlyPresentTermsOfAnAuthoredNullableMean(): void
+    {
+        $definition = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition(
+            'health.cohesion',
+            ['project' => 'clamp(weighted_mean(m["cohesion.tcc.avg"] ?? null, 2, m["cohesion.lcom.avg"] ?? null, 1), 0, 100)'],
+            'Authored',
+            [\Qualimetrix\Core\Symbol\SymbolLevel::Project],
+        );
+        $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
+        $catalog->method('find')->willReturnCallback(static fn(string $name) => $name === 'health.cohesion' ? $definition : null);
+        $score = (new HealthSummaryBuilder(new HealthMetricCatalog(), $catalog))->build(
+            $this->createMetricRepository(MetricBag::fromArray([
+                'health.cohesion' => 2.0, 'cohesion.lcom.avg' => 2.0, 'cohesion.lcom.count' => 2, 'size.symbol-class-count' => 3,
+            ])),
+            new NamespaceTree([]),
+            [],
+        )->healthScores['cohesion'];
+        self::assertSame('cohesion.lcom.count', $score->coverage->basis);
+        self::assertSame(2, $score->coverage->measured);
+        self::assertCount(1, $score->decomposition);
+    }
+
+    #[Test]
+    public function itKeepsAnAuthoredTypingAbsenceOutOfBuiltinHealthRecords(): void
+    {
+        $definition = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition(
+            'health.typing',
+            ['project' => 'null'],
+            'Authored',
+            [\Qualimetrix\Core\Symbol\SymbolLevel::Project],
+        );
+        $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
+        $catalog->method('find')->willReturnCallback(static fn(string $name) => $name === 'health.typing' ? $definition : null);
+        $scores = (new HealthSummaryBuilder(new HealthMetricCatalog(), $catalog))->build(
+            $this->createMetricRepository(MetricBag::fromArray(['health.overall' => 80.0])),
+            new NamespaceTree([]),
+            [],
+        )->healthScores;
+        self::assertArrayHasKey('overall', $scores);
+        self::assertArrayNotHasKey('typing', $scores);
+    }
+
+    /** @return iterable<string, array{float}> */
+    public static function invalidCoverageCounts(): iterable
+    {
+        yield 'negative' => [-1.0];
+        yield 'fractional' => [0.5];
+        yield 'infinite' => [\INF];
+        yield 'not a number' => [\NAN];
+    }
+
+    #[Test]
+    #[\PHPUnit\Framework\Attributes\DataProvider('invalidCoverageCounts')]
+    public function itRefusesInvalidPublishedCoverageCounts(float $count): void
+    {
+        $this->expectException(LogicException::class);
+        $this->build([
+            'health.cohesion' => 80.0, 'cohesion.lcom.avg' => 1.0, 'cohesion.lcom.count' => $count,
+            'size.symbol-class-count' => 3,
+        ]);
+    }
+
 }

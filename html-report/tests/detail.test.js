@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { formatHealthCoverage, coverageRecordFor, findingMessage, acceptedLevelMessage, escapeHtml } from '../src/detail.js';
+import { parseHTML } from 'linkedom';
+import { renderDetail, formatHealthCoverage, coverageRecordFor, findingMessage, acceptedLevelMessage, escapeHtml } from '../src/detail.js';
 
 // The payload shape asserted here is HealthCoverageNarrator::record() in PHP,
 // carried to the viewer as summary.healthCoverage keyed by the same health.*
@@ -133,5 +134,42 @@ describe('acceptedLevelMessage', () => {
 describe('findingMessage', () => {
   it('keeps the diagnostic independent of advice and baseline state', () => {
     expect(findingMessage({ message: 'Debt', recommendation: 'Repair it', acceptedLevel: { describe: '25' }, baselineVerdict: 'breached' })).toBe('Debt');
+  });
+});
+
+
+describe('not measured health coverage', () => {
+  it('publishes zero of N as an absent measurement rather than a measured score of zero', () => {
+    const formatted = formatHealthCoverage({ state: 'not-measured', measured: 0, eligible: 2, unit: 'classes', ratio: 0, basis: 'cohesion.tcc.count' });
+    expect(formatted.short).toBe('not measured 0/2');
+    expect(formatted.full).toContain('not measured 0/2 classes');
+  });
+});
+
+
+describe('prepared health rows in the mounted detail panel', () => {
+  it('mounts an absent project score beside measured numeric zero without a numeric target', () => {
+    const originalDocument = globalThis.document;
+    const { document } = parseHTML('<html><body><div id="health-bars"></div></body></html>');
+    globalThis.document = document;
+    try {
+      renderDetail({ type: 'project', metrics: {}, children: [] }, {
+        healthScores: { 'health.cohesion': null, 'health.coupling': 0 },
+        healthCoverage: {
+          'health.cohesion': { state: 'not-measured', measured: 0, eligible: 2, unit: 'classes' },
+          'health.coupling': { state: 'measured', measured: 2, eligible: 2, ratio: 1, unit: 'classes' },
+        },
+        healthDecomposition: { 'health.cohesion': [], 'health.coupling': [] },
+      }, 'health.overall');
+      const rows = [...document.querySelectorAll('.health-bar-row')];
+      expect(rows).toHaveLength(2);
+      expect(rows[0].querySelector('.health-bar-value').textContent).toBe('not measured');
+      expect(rows[0].querySelector('.health-bar-inner').hasAttribute('data-score')).toBe(false);
+      expect(rows[0].textContent).toContain('not measured 0/2');
+      expect(rows[1].querySelector('.health-bar-value').textContent).toBe('0');
+      expect(rows[1].querySelector('.health-bar-inner').getAttribute('data-score')).toBe('0');
+    } finally {
+      globalThis.document = originalDocument;
+    }
   });
 });

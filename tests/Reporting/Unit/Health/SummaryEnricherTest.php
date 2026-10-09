@@ -351,7 +351,8 @@ final class SummaryEnricherTest extends TestCase
         self::assertArrayHasKey('complexity', $result->healthScores);
         $complexity = $result->healthScores['complexity'];
         self::assertSame(30.0, $complexity->score);
-        self::assertCount(2, $complexity->decomposition);
+        self::assertCount(5, $complexity->decomposition);
+        self::assertNull($complexity->decomposition[2]->value);
         self::assertSame('complexity.ccn.avg', $complexity->decomposition[0]->metricKey);
         self::assertSame(12.0, $complexity->decomposition[0]->value);
         self::assertSame('complexity.cognitive.avg', $complexity->decomposition[1]->metricKey);
@@ -491,7 +492,7 @@ final class SummaryEnricherTest extends TestCase
         self::assertArrayHasKey('typing', $result->healthScores);
         $typing = $result->healthScores['typing'];
         self::assertNull($typing->score);
-        self::assertSame('0 classes analyzed', $typing->label);
+        self::assertSame('Not measured', $typing->label);
     }
 
     /**
@@ -522,6 +523,25 @@ final class SummaryEnricherTest extends TestCase
         $result = $this->enricher->enrich($report);
 
         self::assertArrayNotHasKey('typing', $result->healthScores);
+    }
+
+    #[Test]
+    public function itPreservesComputedAbsencesThroughTheFullReportCopy(): void
+    {
+        $summary = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence(
+                'computed.custom',
+                \Qualimetrix\Core\Symbol\SymbolLevel::Project,
+                2,
+                1,
+                ['missing.input'],
+                [\Qualimetrix\Core\Symbol\MetricSubject::aggregate(\Qualimetrix\Core\Symbol\SymbolPath::forProject())],
+            ),
+        ]);
+        $report = new Report([], 1, 0, 0.0, 0, 0, metrics: $this->createMetricRepository(new MetricBag()), computedMetricEvaluation: $summary);
+        $enriched = $this->enricher->enrich($report);
+        self::assertNotSame($report, $enriched);
+        self::assertSame($summary, $enriched->computedMetricEvaluation);
     }
 
 }

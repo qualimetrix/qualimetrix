@@ -11,6 +11,7 @@ use Qualimetrix\Reporting\Formatter\Detail\DetailedFindingRenderer;
 use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
 use Qualimetrix\Reporting\Formatter\FormattedReport;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\Formatter\Prose\ComputedMetricAbsenceNarrator;
 use Qualimetrix\Reporting\Formatter\PublicationKind;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
@@ -47,6 +48,8 @@ final class SummaryFormatter implements FormatterInterface, FormatOptionKeysInte
             array_push($lines, ...$coverageLines);
             $lines[] = '';
         }
+
+        array_push($lines, ...ComputedMetricAbsenceNarrator::lines($report));
 
         $this->healthBarRenderer->render($report, $context, $color, $terminalWidth, $lines);
         $this->offenderListRenderer->renderWorstNamespaces($report, $color, $context, $lines);

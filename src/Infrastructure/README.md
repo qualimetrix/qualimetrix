@@ -511,6 +511,14 @@ constructor-reflected option catalogue participates in runtime execution.
 
 ## Report publication
 
+`ResultPresenter` forwards the normal analysis absence summary to
+`ReportBuilder`. For successful check with resolved format exactly `json` and
+stdout destination, `OutputHelper::writeJsonReport()` writes the complete raw
+document at NORMAL and QUIET verbosity, preserving literal markup. SILENT emits
+no bytes. Configuration-selected JSON follows the same route. File destinations
+retain judged full publication, and other formats retain their ordinary output
+behavior. Formula failures retain the effective-source refusal and exit 3.
+
 Formatters return Reporting's `FormattedReport` (`body`, `escapedStrings`) and
 state `PublicationKind`. `ResultPresenter` applies the invocation's prose mode
 or preserves a structured body, and reports a positive repair count on the

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation;
 
+use InvalidArgumentException;
+use LogicException;
 use Symfony\Component\ExpressionLanguage\ExpressionFunction;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Symfony\Component\ExpressionLanguage\Node\NameNode;
@@ -42,13 +44,6 @@ final class ComputedMetricExpression
 
     private readonly ExpressionLanguage $expressionLanguage;
 
-    /**
-     * Per formula, its branch trace, or null where every operand always runs.
-     *
-     * @var array<string, ?ComputedMetricBranchTrace>
-     */
-    private array $traces = [];
-
     public function __construct()
     {
         $this->expressionLanguage = new ExpressionLanguage();
@@ -61,6 +56,12 @@ final class ComputedMetricExpression
         $this->expressionLanguage->addFunction(ExpressionFunction::fromPhp('log10'));
 
         $this->expressionLanguage->addFunction(new ExpressionFunction(
+            'weighted_mean',
+            static fn(string ...$arguments): string => throw new LogicException('Computed formulas are evaluated, not compiled.'),
+            static fn(array $variables, mixed ...$arguments): ?float => self::weightedMean(array_values($arguments)),
+        ));
+
+        $this->expressionLanguage->addFunction(new ExpressionFunction(
             'clamp',
             static fn(string $value, string $min, string $max): string => \sprintf(
                 'max(%s, min(%s, %s))',
@@ -68,8 +69,45 @@ final class ComputedMetricExpression
                 $max,
                 $value,
             ),
-            static fn(array $arguments, float $value, float $min, float $max): float => max($min, min($max, $value)),
+            static fn(array $arguments, float $value, float $min, float $max): float => self::clamp($value, $min, $max),
         ));
+    }
+
+    /** @param list<mixed> $arguments */
+    private static function weightedMean(array $arguments): ?float
+    {
+        $argumentCount = \count($arguments);
+        if ($argumentCount === 0 || $argumentCount % 2 !== 0) {
+            throw new InvalidArgumentException('weighted_mean requires ordered value/weight pairs.');
+        }
+        $sum = 0.0;
+        $weights = 0.0;
+        for ($index = 0; $index < $argumentCount; $index += 2) {
+            $value = $arguments[$index];
+            $weight = self::measuredNumber($arguments[$index + 1], 'weighted_mean weights must be strictly positive finite numbers.');
+            if ($weight <= 0) {
+                throw new InvalidArgumentException('weighted_mean weights must be strictly positive finite numbers.');
+            }
+            if ($value === null) {
+                continue;
+            }
+            $sum += self::measuredNumber($value, 'weighted_mean values must be finite numbers or null.') * $weight;
+            $weights += $weight;
+        }
+        if (!is_finite($sum) || !is_finite($weights)) {
+            throw new InvalidArgumentException('weighted_mean accumulation must remain finite.');
+        }
+
+        return $weights === 0.0 ? null : $sum / $weights;
+    }
+
+    private static function measuredNumber(mixed $value, string $reason): int|float
+    {
+        if ((!\is_int($value) && !\is_float($value)) || !is_finite((float) $value)) {
+            throw new InvalidArgumentException($reason);
+        }
+
+        return $value;
     }
 
     /**
@@ -85,7 +123,23 @@ final class ComputedMetricExpression
      */
     public function evaluate(string $formula, array $variables): mixed
     {
-        return $this->expressionLanguage->evaluate($formula, $variables);
+        return $this->evaluateParsed($this->expressionLanguage->parse($formula, array_keys($variables)), $variables);
+    }
+
+    private static function clamp(float $value, float $min, float $max): float
+    {
+        return max($min, min($max, $value));
+    }
+
+    /** @param array<string, mixed> $variables */
+    private function evaluateParsed(ParsedExpression $formula, array $variables): mixed
+    {
+        $root = ComputedMetricBranchTrace::nullableMeanClamps(
+            $formula->getNodes(),
+            static fn(?float $value, float $min, float $max): ?float => $value === null ? null : self::clamp($value, $min, $max),
+        );
+
+        return $this->expressionLanguage->evaluate(new ParsedExpression((string) $formula, $root), $variables);
     }
 
     /**
@@ -150,13 +204,7 @@ final class ComputedMetricExpression
      */
     public function keysOf(string $formula): array
     {
-        $keys = [];
-
-        foreach ($this->accesses($formula) as $key) {
-            $keys[$key] = true;
-        }
-
-        return array_keys($keys);
+        return array_keys(array_fill_keys($this->accesses($formula), true));
     }
 
     /**
@@ -207,24 +255,19 @@ final class ComputedMetricExpression
      */
     public function evaluateOn(string $formula, MetricLookup $metrics): array
     {
-        $isPresent = static fn(string $key): bool => isset($metrics[$key]);
-
-        $missing = $this->missingKeysOf($formula, $isPresent);
-        if ($missing !== []) {
-            return [$missing, null];
-        }
-
         $variables = [self::VARIABLE => $metrics];
-        $trace = $this->traceOf($formula);
-        if ($trace === null) {
-            return [[], $this->evaluate($formula, $variables)];
-        }
-
-        $trace->start($isPresent);
+        $root = ComputedMetricBranchTrace::nullableMeanClamps(
+            $this->parse($formula)->getNodes(),
+            static fn(?float $value, float $min, float $max): ?float => $value === null ? null : self::clamp($value, $min, $max),
+        );
+        $trace = ComputedMetricBranchTrace::of($root, $metrics);
 
         try {
             $value = $this->expressionLanguage->evaluate(new ParsedExpression($formula, $trace->traced), $variables);
         } catch (Throwable $failure) {
+            if (!$trace->isMissing($failure)) {
+                throw $failure;
+            }
             $missing = $trace->missingInRun();
 
             return $missing !== [] ? [$missing, null] : throw $failure;
@@ -233,15 +276,6 @@ final class ComputedMetricExpression
         $missing = $trace->missingInRun();
 
         return $missing !== [] ? [$missing, null] : [[], $value];
-    }
-
-    private function traceOf(string $formula): ?ComputedMetricBranchTrace
-    {
-        if (!\array_key_exists($formula, $this->traces)) {
-            $this->traces[$formula] = ComputedMetricBranchTrace::of($this->parse($formula)->getNodes());
-        }
-
-        return $this->traces[$formula];
     }
 
     /**

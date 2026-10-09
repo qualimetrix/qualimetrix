@@ -624,4 +624,108 @@ final class ResultPresenterTest extends TestCase
             severity: $severity,
         );
     }
+
+    #[Test]
+    public function itCarriesSuccessfulAbsencesAndUsesOnlyTheResolvedJsonQuietRoute(): void
+    {
+        $summary = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence(
+                'computed.custom',
+                \Qualimetrix\Core\Symbol\SymbolLevel::Project,
+                2,
+                1,
+                ['missing.input'],
+                [\Qualimetrix\Core\Symbol\MetricSubject::aggregate(\Qualimetrix\Core\Symbol\SymbolPath::forProject())],
+            ),
+        ]);
+        $payload = "{\"custom\":\"<info>literal</info>\"}\n";
+        $formatter = $this->createMock(FormatterInterface::class);
+        $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
+        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Formatter\PublicationKind::JsonDocument);
+        $formatter->expects(self::exactly(2))->method('format')->with(self::callback(static fn(Report $report): bool => $report->computedMetricEvaluation === $summary), self::anything())->willReturn(new FormattedReport($payload));
+        $registry = self::createStub(FormatterRegistryInterface::class);
+        $registry->method('get')->willReturn($formatter);
+        $result = AnalysisResult::fromRun(
+            $this->analysisResult()->measured,
+            new DirectiveObservations([], []),
+            null,
+            [],
+            computedMetricEvaluation: $summary,
+        );
+        foreach (['json' => $payload, 'metrics-json' => ''] as $format => $expected) {
+            $output = new BufferedOutput(\Symfony\Component\Console\Output\OutputInterface::VERBOSITY_QUIET, true);
+            $exit = $this->presenter($registry)->presentResults([], $result, $this->input(['--format' => 'text']), $output, AbsolutePath::fromString('/project'), $this->targets(), new OutputFormat($format), new ExitPolicy());
+            self::assertSame(0, $exit);
+            self::assertSame($expected, $output->fetch());
+        }
+    }
+
+    #[Test]
+    public function itPublishesBothCustomAbsencesThroughTheNativeQuietJsonPipeline(): void
+    {
+        $directory = sys_get_temp_dir() . '/qmx_atomic_publication_' . bin2hex(random_bytes(6));
+        self::assertTrue(mkdir($directory));
+        try {
+            self::assertNotFalse(file_put_contents($directory . '/Fixture.php', <<<'PHP'
+                <?php
+                namespace NativePublication;
+                class One { public function run(): int { return 1; } }
+                class Two { public function run(): int { return 2; } }
+                class Pair {
+                    private int $shared = 0;
+                    public function first(): int { return $this->shared; }
+                    public function second(): int { return $this->shared; }
+                }
+                PHP));
+            self::assertNotFalse(file_put_contents($directory . '/qmx.yaml', <<<'YAML'
+                computed_metrics:
+                  computed.missing:
+                    formula: 'm["cohesion.tcc"]'
+                    levels: [class]
+                  computed.nil:
+                    formula: 'null'
+                    levels: [project]
+                YAML));
+            $process = new \Symfony\Component\Process\Process([
+                \PHP_BINARY, 'bin/qmx', '--working-dir=' . $directory, 'check', '.',
+                '--config=qmx.yaml', '--workers=0', '--no-cache', '--no-progress', '--format=json', '--quiet',
+            ], \dirname(__DIR__, 4));
+            self::assertSame(0, $process->run(), $process->getErrorOutput());
+            self::assertSame('', $process->getErrorOutput());
+            $document = json_decode($process->getOutput(), true, 512, \JSON_THROW_ON_ERROR);
+            self::assertCount(2, $document['computedMetricOutcomes']);
+            self::assertSame('computed.missing', $document['computedMetricOutcomes'][0]['metric']);
+            self::assertSame(2, $document['computedMetricOutcomes'][0]['missingKeysCount']);
+            self::assertSame(['cohesion.tcc'], $document['computedMetricOutcomes'][0]['missingKeys']);
+            self::assertCount(2, $document['computedMetricOutcomes'][0]['subjects']);
+            self::assertSame('computed.nil', $document['computedMetricOutcomes'][1]['metric']);
+            self::assertSame(1, $document['computedMetricOutcomes'][1]['noValueCount']);
+            self::assertArrayHasKey('cohesion', $document['health']);
+            $silent = new \Symfony\Component\Process\Process([
+                \PHP_BINARY, 'bin/qmx', '--working-dir=' . $directory, 'check', '.',
+                '--config=qmx.yaml', '--workers=0', '--no-cache', '--no-progress', '--format=json', '--silent',
+            ], \dirname(__DIR__, 4));
+            self::assertSame(0, $silent->run(), $silent->getErrorOutput());
+            self::assertSame('', $silent->getOutput());
+            self::assertSame('', $silent->getErrorOutput());
+            self::assertNotFalse(file_put_contents($directory . '/qmx.yaml', "\nformat: json\n", \FILE_APPEND));
+            $configured = new \Symfony\Component\Process\Process([
+                \PHP_BINARY, 'bin/qmx', '--working-dir=' . $directory, 'check', '.',
+                '--config=qmx.yaml', '--workers=0', '--no-cache', '--no-progress', '--quiet',
+            ], \dirname(__DIR__, 4));
+            self::assertSame(0, $configured->run(), $configured->getErrorOutput());
+            self::assertSame('', $configured->getErrorOutput());
+            $configuredDocument = json_decode($configured->getOutput(), true, 512, \JSON_THROW_ON_ERROR);
+            self::assertSame($document['computedMetricOutcomes'], $configuredDocument['computedMetricOutcomes']);
+
+        } finally {
+            foreach (['Fixture.php', 'qmx.yaml'] as $file) {
+                if (is_file($directory . '/' . $file)) {
+                    unlink($directory . '/' . $file);
+                }
+            }
+            rmdir($directory);
+        }
+    }
+
 }
