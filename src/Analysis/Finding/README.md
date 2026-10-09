@@ -452,6 +452,10 @@ view and never imports file-to-namespace attribution from reporting selection.
 
 ## Selected rule populations
 
+`GatePredicate` is exposed through the public `PopulationGate.predicate` field.
+The manifest records that surface for each exact external consumer of
+`PopulationGate`; those consumers do not need a direct interface import.
+
 `ChannelDeclaration` owns the complete ordered population gates, and
 `AnalysisContext::admit()` uses the same pure eligibility for direct, selected
 and unselected execution. Source-owned inputs are lazy: the first failed gate

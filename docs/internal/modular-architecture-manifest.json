@@ -26436,7 +26436,230 @@
       "kind": "interface",
       "owner": "Analysis.Finding",
       "visibility": "contract",
-      "consumers": []
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.CircularDependency",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.CodeSmell",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\AbstractCodeSmellRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.CodeSmell",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\BooleanArgumentRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.CodeSmell",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.CodeSmell",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.CodeSmell",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.CodeSmell",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\ComplexityRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathComplexityRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\WmcRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Finding\\ComputedMetricChannelFamily",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CboRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\UnmatchedFrameworkNamespaceRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassExclusionCheck",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\AbstractTypeCoverageRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.Maintainability",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\MaintainabilityRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.Size",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\ClassCountRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.Size",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Evidence.Size",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\PropertyCountRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerDeclaration\\LayerDeclarationRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerDeclaration\\UnmatchedExcludeDiagnostic",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerDeclaration\\UnmatchedTypeDiagnostic",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Observation\\EdgeEvidenceWalk",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\UnassignedClass\\UnassignedClassRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\UnusedDirectiveRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Run",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\JudgedPopulation": {
       "path": "src/Analysis/Finding/Contract/Population/JudgedPopulation.php",
