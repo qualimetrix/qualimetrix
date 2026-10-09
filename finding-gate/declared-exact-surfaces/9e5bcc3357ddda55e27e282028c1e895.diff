@@ -1,45 +1,30 @@
 --- candidate
 +++ reference (mapped)
-@@ -1,1 +1,1 @@
--visible 3544
-+visible 3452
-@@ -17,0 +17,1 @@
-+    <error line="1" severity="warning" message="Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
-@@ -28,13 +29,8 @@
--  </file>
--  <file name="Corpus\Design\Anonymous">
--    <error line="1" severity="error" message="Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
--  </file>
--  <file name="Corpus\Design\Hierarchy">
--    <error line="1" severity="error" message="Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
--  </file>
--  <file name="Corpus\Design\Model">
--    <error line="1" severity="warning" message="Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
--  </file>
--</checkstyle>
--
--invocation-format:checkstyle 3544
-+    <error line="1" severity="error" message="Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
+@@ -1,3 +1,6 @@
+-visible 3781
+-<?xml version="1.0" encoding="UTF-8"?>
+-<checkstyle version="3.0">
++visible 3876
++<?xml version="1.0" encoding="UTF-8"?>
++<checkstyle version="3.0">
++  <file name="src/Hierarchy/ExceptionGrandchild.php">
++    <error line="5" severity="warning" message="Data Class detected: only 0% of the public interface is behavior (WOC, threshold 50%) and complexity is low (WMC=2, threshold 10). Consider encapsulating behavior or using a DTO pattern" source="qmx.design.data-class"/>
 +  </file>
-+  <file name="src/Anonymous/AnonTrait.php">
-+    <error line="1" severity="error" message="Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
+@@ -19,3 +22,0 @@
+-  </file>
+-  <file name="src/Hierarchy/ExceptionGrandchild.php">
+-    <error line="5" severity="warning" message="DIT (Depth of Inheritance) is 3, reaches threshold of 3. Prefer composition over deep inheritance" source="qmx.design.dit"/>
+@@ -43,3 +43,6 @@
+-invocation-format:checkstyle 3781
+-<?xml version="1.0" encoding="UTF-8"?>
+-<checkstyle version="3.0">
++invocation-format:checkstyle 3876
++<?xml version="1.0" encoding="UTF-8"?>
++<checkstyle version="3.0">
++  <file name="src/Hierarchy/ExceptionGrandchild.php">
++    <error line="5" severity="warning" message="Data Class detected: only 0% of the public interface is behavior (WOC, threshold 50%) and complexity is low (WMC=2, threshold 10). Consider encapsulating behavior or using a DTO pattern" source="qmx.design.data-class"/>
 +  </file>
-+</checkstyle>
-+
-+invocation-format:checkstyle 3452
-@@ -56,0 +52,1 @@
-+    <error line="1" severity="warning" message="Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
-@@ -67,9 +64,4 @@
+@@ -61,3 +64,0 @@
 -  </file>
--  <file name="Corpus\Design\Anonymous">
--    <error line="1" severity="error" message="Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
--  </file>
--  <file name="Corpus\Design\Hierarchy">
--    <error line="1" severity="error" message="Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
--  </file>
--  <file name="Corpus\Design\Model">
--    <error line="1" severity="warning" message="Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
-+    <error line="1" severity="error" message="Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
-+  </file>
-+  <file name="src/Anonymous/AnonTrait.php">
-+    <error line="1" severity="error" message="Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
+-  <file name="src/Hierarchy/ExceptionGrandchild.php">
+-    <error line="5" severity="warning" message="DIT (Depth of Inheritance) is 3, reaches threshold of 3. Prefer composition over deep inheritance" source="qmx.design.dit"/>

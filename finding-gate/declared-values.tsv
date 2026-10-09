@@ -1,6 +1,1 @@
 kind	key	level	reason
-field	file	*	Publish exact class declaration source files and remove borrowed namespace/project source files; namespace findings consequently have no physical source.
-field	line	*	Publish exact class declaration source lines and null aggregate source lines; namespace finding source lines follow the aggregate.
-field	ranking.coupling.class-rank	file	Build file ClassRank evidence from exact class declaration source files, so file findings in a file declaring a class receive that class rank.
-field	ranking.impactScore	project	Calculate the project finding fallback impact from the median rank over physical class declarations, including both authored case variants of a logical class name.
-order	ranking	*	Preserve the existing equal-impact file and line tie-breaker after namespace findings lose their borrowed physical source; the two measured namespace findings move ahead of equal-impact physical-source findings.

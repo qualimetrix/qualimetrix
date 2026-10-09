@@ -1,58 +1,32 @@
 --- candidate
 +++ reference (mapped)
-@@ -1,2 +1,2 @@
--visible 4999
--Corpus\Design\Anonymous (1 violation)
-+visible 4932
-+src/Anonymous/AnonTrait.php (1 violation)
-@@ -7,1 +7,1 @@
--Corpus\Design\Hierarchy (1 violation)
-+src/Hierarchy/Base.php (2 violations)
-@@ -12,6 +12,0 @@
--Corpus\Design\Model (1 violation)
--  WARN
--    Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces  [size.class-count]
--    Recommendation: Classes: 3 (threshold: 2) — too many classes in namespace
--
--src/Hierarchy/Base.php (1 violation)
-@@ -32,4 +26,8 @@
--src/Model/Order.php (3 violations)
--  ERROR  Order
--    God Class detected (4/4 criteria): high WMC (4 >= 4), high LCOM (2 >= 1), low TCC (0.33 < 0.90), large size (27 >= 10 LOC)  [design.god-class]
--    Recommendation: Apply the Single Responsibility Principle. Extract cohesive method groups into separate classes.
-+src/Model/Order.php (4 violations)
-+  ERROR  Order
-+    God Class detected (4/4 criteria): high WMC (4 >= 4), high LCOM (2 >= 1), low TCC (0.33 < 0.90), large size (27 >= 10 LOC)  [design.god-class]
-+    Recommendation: Apply the Single Responsibility Principle. Extract cohesive method groups into separate classes.
-+
-+  WARN
-+    Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces  [size.class-count]
-+    Recommendation: Classes: 3 (threshold: 2) — too many classes in namespace
-@@ -91,2 +89,2 @@
--invocation-format:text-detail 4999
--Corpus\Design\Anonymous (1 violation)
-+invocation-format:text-detail 4932
-+src/Anonymous/AnonTrait.php (1 violation)
-@@ -97,1 +95,1 @@
--Corpus\Design\Hierarchy (1 violation)
-+src/Hierarchy/Base.php (2 violations)
-@@ -102,6 +100,0 @@
--Corpus\Design\Model (1 violation)
--  WARN
--    Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces  [size.class-count]
--    Recommendation: Classes: 3 (threshold: 2) — too many classes in namespace
--
--src/Hierarchy/Base.php (1 violation)
-@@ -122,4 +114,8 @@
--src/Model/Order.php (3 violations)
--  ERROR  Order
--    God Class detected (4/4 criteria): high WMC (4 >= 4), high LCOM (2 >= 1), low TCC (0.33 < 0.90), large size (27 >= 10 LOC)  [design.god-class]
--    Recommendation: Apply the Single Responsibility Principle. Extract cohesive method groups into separate classes.
-+src/Model/Order.php (4 violations)
-+  ERROR  Order
-+    God Class detected (4/4 criteria): high WMC (4 >= 4), high LCOM (2 >= 1), low TCC (0.33 < 0.90), large size (27 >= 10 LOC)  [design.god-class]
-+    Recommendation: Apply the Single Responsibility Principle. Extract cohesive method groups into separate classes.
-+
-+  WARN
-+    Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces  [size.class-count]
-+    Recommendation: Classes: 3 (threshold: 2) — too many classes in namespace
+@@ -1,1 +1,1 @@
+-visible 5279
++visible 5399
+@@ -24,2 +24,2 @@
+-    DIT (Depth of Inheritance) is 3, reaches threshold of 3. Prefer composition over deep inheritance  [design.dit]
+-    Recommendation: DIT: 3 (threshold: 3) — deep inheritance, fragile hierarchy
++    Data Class detected: only 0% of the public interface is behavior (WOC, threshold 50%) and complexity is low (WMC=2, threshold 10). Consider encapsulating behavior or using a DTO pattern  [design.data-class]
++    Recommendation: Add behavior methods that operate on the data, or confirm this is intentionally a DTO.
+@@ -82,3 +82,3 @@
+-  design.dit                               ~1h 30min (3 violations)
+-  size.class-count                         ~1h 30min (3 violations)
+-  design.data-class                        ~1h       (2 violations)
++  design.data-class                        ~1h 30min (3 violations)
++  size.class-count                         ~1h 30min (3 violations)
++  design.dit                               ~1h       (2 violations)
+@@ -96,1 +96,1 @@
+-invocation-format:text-detail 5279
++invocation-format:text-detail 5399
+@@ -119,2 +119,2 @@
+-    DIT (Depth of Inheritance) is 3, reaches threshold of 3. Prefer composition over deep inheritance  [design.dit]
+-    Recommendation: DIT: 3 (threshold: 3) — deep inheritance, fragile hierarchy
++    Data Class detected: only 0% of the public interface is behavior (WOC, threshold 50%) and complexity is low (WMC=2, threshold 10). Consider encapsulating behavior or using a DTO pattern  [design.data-class]
++    Recommendation: Add behavior methods that operate on the data, or confirm this is intentionally a DTO.
+@@ -177,3 +177,3 @@
+-  design.dit                               ~1h 30min (3 violations)
+-  size.class-count                         ~1h 30min (3 violations)
+-  design.data-class                        ~1h       (2 violations)
++  design.data-class                        ~1h 30min (3 violations)
++  size.class-count                         ~1h 30min (3 violations)
++  design.dit                               ~1h       (2 violations)
