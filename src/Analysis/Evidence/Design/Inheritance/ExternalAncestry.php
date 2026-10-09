@@ -37,18 +37,14 @@ final class ExternalAncestry
             $builtin = PhpBuiltinClassRegistry::canonicalName($current);
             if ($builtin !== null) {
                 $throwable = $throwable === true || $this->builtinReachesThrowable($builtin);
-                $parents = PhpBuiltinClassHierarchy::extendsOf($builtin) ?? [];
-                if ($parents === []) {
-                    return ExternalDepth::reachedRoot($depth, $throwable);
-                }
-                $current = $parents[0];
+                $next = $this->builtinStep($builtin, $depth);
             } else {
                 $next = $this->sourceStep($current, $depth);
-                if ($next instanceof ExternalDepth) {
-                    return $next;
-                }
-                $current = $next;
             }
+            if ($next instanceof ExternalDepth) {
+                return $next;
+            }
+            $current = $next;
             ++$depth;
         }
 
@@ -56,6 +52,15 @@ final class ExternalAncestry
         return isset($analysedNames[ClassNameSpelling::fold($current)])
             ? ExternalDepth::reachedAnalysedName($depth, $current, $throwable)
             : ExternalDepth::brokeAt($depth, $current, $throwable);
+    }
+
+    private function builtinStep(string $builtin, int $depth): ExternalDepth|string
+    {
+        $parents = PhpBuiltinClassHierarchy::extendsOf($builtin) ?? [];
+
+        return $parents === []
+            ? ExternalDepth::reachedRoot($depth, $this->builtinReachesThrowable($builtin))
+            : $parents[0];
     }
 
     private function builtinReachesThrowable(string $builtin): bool
