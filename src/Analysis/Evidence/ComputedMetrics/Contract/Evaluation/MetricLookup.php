@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation;
 
 use ArrayAccess;
+use InvalidArgumentException;
 use LogicException;
 
 /**
@@ -25,7 +26,7 @@ final readonly class MetricLookup implements ArrayAccess
 
     public function offsetExists(mixed $offset): bool
     {
-        return $this->offsetGet($offset) !== null;
+        return \is_string($offset) && ($this->values[$offset] ?? null) !== null;
     }
 
     public function offsetGet(mixed $offset): int|float|null
@@ -35,8 +36,14 @@ final readonly class MetricLookup implements ArrayAccess
         }
 
         $value = $this->values[$offset] ?? null;
+        if ($value === null) {
+            return null;
+        }
+        if ((!\is_int($value) && !\is_float($value)) || !is_finite((float) $value)) {
+            throw new InvalidArgumentException(\sprintf('Metric input "%s" must be a finite measured number or null.', $offset));
+        }
 
-        return \is_int($value) || \is_float($value) ? $value : null;
+        return $value;
     }
 
     public function offsetSet(mixed $offset, mixed $value): void

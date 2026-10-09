@@ -150,16 +150,28 @@ final class ComputedMetricEvaluatorTest extends TestCase
     }
 
     #[Test]
-    public function itRefusesBoolNumericStringAndRuntimeDivision(): void
+    public function itRefusesInvalidFormulaResultsAndReadOperands(): void
     {
-        foreach (['true', '"80"', '1 / 0'] as $formula) {
+        foreach ([
+            [new ComputedMetricDefinition('computed.test', ['project' => 'true'], '', [SymbolLevel::Project]), []],
+            [new ComputedMetricDefinition('computed.test', ['project' => '"80"'], '', [SymbolLevel::Project]), []],
+            [new ComputedMetricDefinition('computed.test', ['project' => '1 / 0'], '', [SymbolLevel::Project]), []],
+            [ComputedMetricDefaults::getDefaults()['health.complexity'], [
+                'complexity.ccn.sum' => 10,
+                'size.symbol-method-count' => \NAN,
+            ]],
+        ] as [$definition, $values]) {
             $repo = $this->repository();
+            if ($values !== []) {
+                $this->addFixture($repo, SymbolPath::forProject(), MetricBag::fromArray($values), null, null);
+            }
             try {
-                $this->evaluate($repo, [new ComputedMetricDefinition('computed.test', ['project' => $formula], '', [SymbolLevel::Project])]);
+                $this->evaluate($repo, [$definition]);
                 self::fail('A failed formula must refuse the run.');
             } catch (ConfigurationRefusal $refusal) {
-                self::assertStringContainsString('Computed metric "computed.test" failed at level "project"', $refusal->summary());
-                self::assertNull($repo->getSubject(MetricSubject::aggregate(SymbolPath::forProject()))->get('computed.test'));
+                self::assertStringContainsString('Computed metric "' . $definition->name . '" failed at level "project"', $refusal->summary());
+                self::assertSame('the merged configuration', $refusal->sources()[0]->describe());
+                self::assertNull($repo->getSubject(MetricSubject::aggregate(SymbolPath::forProject()))->get($definition->name));
             }
         }
     }

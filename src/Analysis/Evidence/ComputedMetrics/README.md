@@ -200,7 +200,9 @@ before constructing its internal lookup. Authored missing inputs or null results
 publish no scalar and enter a bounded summary by metric and level: separate
 reason counts, exact missing-key union, and at most three deterministic exact
 subject samples. This summary does not depend on logger output. The right side
-of `??` counts only where its left side is absent.
+of `??` counts only where its left side is absent. Every non-null raw input the
+selected evaluation actually reads must be a finite number; booleans, numeric
+strings and nonfinite values refuse before fallback, coercion or clamping.
 
 A ternary branch and the right side of `and`/`or` run only on a value the
 symbol carries, so before a run only a key every path reads counts; the
@@ -208,7 +210,8 @@ condition always runs and counts in full. Per symbol, `ComputedMetricBranchTrace
 runs the formula as a copy whose conditional operands report their entry, and
 the operands the evaluation entered decide. Entering one that would read an
 absent strict input prevents a fabricated numeric result before `null` reaches
-arithmetic or a PHP function. Only nullable value positions of `weighted_mean`
+arithmetic or a PHP function. Invalid inputs in operands the evaluation never
+enters remain unjudged. Only nullable value positions of `weighted_mean`
 permit absence; weights and strict nested operands still require their inputs.
 The exact enclosing `clamp(weighted_mean(...), bounds)` preserves an empty mean's
 null result, whereas ordinary clamp of null fails. Arguments are evaluated once.

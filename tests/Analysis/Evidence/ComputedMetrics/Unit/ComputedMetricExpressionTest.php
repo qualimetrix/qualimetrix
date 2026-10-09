@@ -267,6 +267,15 @@ final class ComputedMetricExpressionTest extends TestCase
             ['null', [], ComputedMetricOutcome::NO_VALUE, null],
             ['weighted_mean(m["a"], 1)', [], ComputedMetricOutcome::NO_VALUE, null],
             ['m["a"] + 1', [], ComputedMetricOutcome::MISSING_KEYS, null],
+            ['m["a"] ?? 80', [], ComputedMetricOutcome::VALUE, 80],
+            ['m["a"] ?? 80', ['a' => null], ComputedMetricOutcome::VALUE, 80],
+            ['m["a"] ?? 80', ['a' => 0], ComputedMetricOutcome::VALUE, 0],
+            ['m["a"] ?? 80', ['a' => true], ComputedMetricOutcome::FAILURE, null],
+            ['m["a"] ?? 80', ['a' => '42'], ComputedMetricOutcome::FAILURE, null],
+            ['clamp(m["a"], 0, 100)', ['a' => \NAN], ComputedMetricOutcome::FAILURE, null],
+            ['clamp(m["a"], 0, 100)', ['a' => \INF], ComputedMetricOutcome::FAILURE, null],
+            ['clamp(m["a"], 0, 100)', ['a' => -\INF], ComputedMetricOutcome::FAILURE, null],
+            ['m["flag"] > 0 ? m["a"] : 80', ['flag' => 0, 'a' => \NAN], ComputedMetricOutcome::VALUE, 80],
             ['true', [], ComputedMetricOutcome::FAILURE, null],
             ['"80"', [], ComputedMetricOutcome::FAILURE, null],
             ['1e999', [], ComputedMetricOutcome::FAILURE, null],
@@ -284,6 +293,12 @@ final class ComputedMetricExpressionTest extends TestCase
                 self::assertNotEmpty($outcome->reason);
             }
         }
+
+        $complexity = ComputedMetricDefaults::getDefaults()['health.complexity'];
+        self::assertSame(
+            ComputedMetricOutcome::NOT_APPLICABLE,
+            $evaluation->evaluate($complexity, SymbolLevel::Project, ['size.symbol-method-count' => \NAN])->kind,
+        );
     }
 
     #[Test]
