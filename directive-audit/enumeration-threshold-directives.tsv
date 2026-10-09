@@ -61,10 +61,8 @@ src/Analysis/Evidence/Complexity/NpathExpressionCalculator.php	52	complexity.ccn
 src/Core/Symbol/MetricSubjectCodec.php	68	complexity.ccn	warning=13 error=13 — Canonical finite wire grammar keeps four closed subject shapes and exact validation together.
 src/Core/Symbol/MetricSubjectCodec.php	69	complexity.npath	warning=289 error=289 — Canonical finite wire grammar keeps four closed subject shapes and exact validation together.
 src/Analysis/Evidence/Complexity/NpathExpressionCalculator.php	30	complexity.wmc	warning=52 error=52 -- Finite php-parser expression algebra keeps exact NPath composition and saturation together (grew by one arm for the `??=` assignment-coalesce operator).
-src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php	33	complexity.wmc	warning=63 error=63 -- Exact subject and ranked-score refusals leave WMC 62 across twelve methods after simplifying the shared routes; moving those guards into the evidence readers transfers the branches. One-point headroom preserves the next growth signal.
 src/Analysis/Evidence/Measurement/Repository/InMemoryMetricRepository.php	25	complexity.wmc	warning=63 -- The 17-operation repository port and its shared identity routes have WMC 62 after removing duplicate reads, writes and merge entrypoints.
-src/Reporting/Formatter/Health/HealthTextFormatter.php	32	complexity.wmc	warning=60 -- average per-method complexity
-src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php	34	coupling.cbo	21 -- This health projection composes nineteen evidence, catalog and value types (CBO 20); a catalog forwarding method only relocates the same dependency and adds a surface. Keep the direct composition with one-edge headroom.
+src/Reporting/Formatter/Health/HealthTextFormatter.php	32	complexity.wmc	warning=61 -- WMC 60 spans twenty related rendering methods,
 src/Analysis/Evidence/Coupling/CboRule.php	40	coupling.cbo	22 -- Raw CBO 21: this hierarchical rule's own dependencies plus
 src/Analysis/Evidence/Coupling/DistanceRule.php	52	coupling.cbo	22 -- Raw CBO 21 includes the ThresholdCrossing wording contract
 src/Analysis/Evidence/Measurement/Contract/AbstractCollector.php	18	coupling.cbo	27 -- Measurement collector base is a stable provider-owned extension hub; current raw CBO 26 gets one-edge headroom.
@@ -74,10 +72,12 @@ src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	25	coupling.c
 src/Analysis/Policy/Baseline/BaselineUpdater.php	18	coupling.cbo	21 -- BaselineUpdateInvocation adds a third reader; the update lifecycle retains Ce 17
 src/Core/ProductIdentity.php	17	coupling.cbo	26 -- Documentation identity has 24 incoming readers and one outgoing Version dependency.
 src/Reporting/FormatterContext.php	15	coupling.cbo	warning=33 error=33 -- Formatter context is the immutable Reporting input boundary every formatter's `format(Report, FormatterContext)` signature depends on. `Infrastructure\Console\ResultPresenter` also names it directly to refuse a `--namespace` or `--class` value that selects nothing, and the bound namespace selector is now part of that stable boundary. Raw CBO 32 gets one-edge headroom from the inclusive threshold of 33.
-src/Reporting/Report.php	20	coupling.cbo	warning=32 error=32 -- Report is the transport VO every formatter's
+src/Reporting/Report.php	20	coupling.cbo	warning=34 error=34 -- Report is the transport VO every formatter's
 src/Analysis/Evidence/Measurement/Contract/MetricBag.php	14	coupling.class-rank	warning=0.035 error=0.035 -- Intentional Measurement
-src/Analysis/Evidence/ComputedMetrics/ComputedMetricFormulaValidator.php	24	coupling.instability	warning=0.81 -- Ca=2, Ce=8: the eighth efferent
+src/Analysis/Evidence/ComputedMetrics/ComputedMetricFormulaValidator.php	25	coupling.instability	warning=0.81 -- Ca=2, Ce=8: the eighth efferent
 src/Analysis/Evidence/ComputedMetrics/Configuration/ComputedMetricAuthorship.php	20	coupling.instability	warning=0.82 -- Ca=2, Ce=9: it reads the resolved
+src/Analysis/Evidence/ComputedMetrics/Configuration/ComputedMetricsSection.php	25	coupling.instability	warning=0.85 -- Ca=2, Ce=11: the owned section schema
+src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricReads.php	31	coupling.instability	warning=0.81 -- Ca=2, Ce=8: native AST node kinds
 src/Analysis/Evidence/Design/DataClass/DataClassOptions.php	28	coupling.instability	warning=0.81 -- The eighth efferent edge is
 src/Analysis/Evidence/Design/GodClass/GodClassOptions.php	36	coupling.instability	warning=0.81 -- The eighth efferent edge is
 src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	26	coupling.instability	warning=0.95 error=0.95 -- A composition root depends outward on everything it assembles and is depended on by one trait; instability near one is its shape, not its defect.

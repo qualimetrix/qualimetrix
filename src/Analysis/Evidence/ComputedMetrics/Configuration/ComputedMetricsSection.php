@@ -21,6 +21,9 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  *
  * A name is judged in the layer that wrote it, whatever is written under it:
  * a `health.*` name is one of six, any other follows the name grammar.
+ *
+ * @qmx-threshold coupling.instability warning=0.85 -- Ca=2, Ce=11: the owned section schema
+ * uses the native schema and refusal vocabulary; moving one edge only moves the low-Ca signal.
  */
 final readonly class ComputedMetricsSection implements DocumentSectionSchemaInterface
 {

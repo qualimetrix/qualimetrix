@@ -135,11 +135,12 @@ ComputedMetrics/
 │   │   ├── ComputedMetricEvaluationSummary.php # bounded successful absence groups
 │   │   ├── ComputedMetricValueAbsence.php      # reason counts, keys, and exact samples
 │   │   ├── ComputedMetricReads.php            # strict and nullable input reads
-│   │   └── ComputedMetricBranchTrace.php      # operands one evaluation entered
+│   │   └── ComputedMetricBranchTrace.php      # native nullable AST copies and entered operands
 │   └── Finding/                      # computed finding channel family
 ├── Configuration/
 │   ├── ComputedMetricsSection.php            # the `computed_metrics:` section declared to the document, and where an entry sits in it
 │   ├── ExcludeHealthSection.php              # the `exclude_health:` section declared to the document
+│   ├── HealthDimensionExclusions.php         # resolved exclusion judgement and source-bound application
 │   ├── ComputedMetricEntryKeys.php           # one entry's schema, reporting levels, six health names
 │   ├── ComputedMetricValueForm.php          # shared context-free formula and level validation in each writing layer
 │   ├── ComputedMetricAuthorship.php          # which layers wrote each metric, for a refusal to name
@@ -164,7 +165,9 @@ ComputedMetrics/
     ├── Configuration/                # formula exclusion
     ├── Metadata/                     # metric hints, decomposition, dimension wording, facade
     ├── Offender/                     # evidence, reasons, projection builder
-    └── Score/                        # contributor ranking, covered-share reading
+    └── Score/                        # project scores, nullable decomposition, contributors and coverage
+        ├── ProjectHealthScoreBuilder.php    # one project dimension's selected formula and evidence
+        └── HealthDecompositionBuilder.php   # nullable expected inputs and typing percentages
 ```
 
 ## Lifecycle and phase

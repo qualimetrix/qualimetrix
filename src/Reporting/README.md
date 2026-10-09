@@ -86,7 +86,8 @@ Reporting/
     ├── MetricsJsonFormatter.php            # Raw metrics JSON export
     ├── AcceptedLevelNarrator.php            # "accepted at 25, now 31" fragment for a breach or not-compared group
     ├── CoverageNarrator.php                 # Complete/empty/incomplete human coverage summary
-    ├── Prose/                              # UTF-8 repair and publication-time glyph selection
+    ├── Prose/                              # Prose narration and publication
+    │   ├── ComputedMetricAbsenceNarrator.php # Bounded computed-value absence groups
     │   ├── ProseText.php                   # Publishes one prose body and its repaired-string count
     │   ├── GlyphMode.php                   # Unicode or closed-table ASCII publication
     │   └── AsciiGlyphs.php                 # Product glyph replacements; other Unicode stays intact

@@ -251,6 +251,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricValueForm'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricsSection'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ExcludeHealthSection'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\HealthDimensionExclusions'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\HealthFormulaExclusionInterface'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricApplicability'
@@ -296,6 +297,8 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Score\ContributorRanker'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Score\CoverageReader'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Score\HealthDecompositionBuilder'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Score\ProjectHealthScoreBuilder'
     - name: analysis-evidence-coupling
       patterns:
         - 'Qualimetrix\Analysis\Evidence\Coupling\AbstractnessCollector'
@@ -1459,6 +1462,7 @@ architecture:
         - 'Qualimetrix\Reporting\Formatter\MetricsJsonFormatter'
         - 'Qualimetrix\Reporting\Formatter\Ordering\FindingSorter'
         - 'Qualimetrix\Reporting\Formatter\Prose\AsciiGlyphs'
+        - 'Qualimetrix\Reporting\Formatter\Prose\ComputedMetricAbsenceNarrator'
         - 'Qualimetrix\Reporting\Formatter\Prose\GlyphMode'
         - 'Qualimetrix\Reporting\Formatter\Prose\ProseText'
         - 'Qualimetrix\Reporting\Formatter\PublicationKind'
@@ -1877,6 +1881,9 @@ rules:
       # Their required capability composition gives own unions 22, 67, 40, 18 and 78;
       # moving the wiring only moves the signal. Declaration checks remain active.
       coupling.cbo:
+        # Contract readership gives namespace unions 21 and 16; declaration quality stays measured.
+        - exact: 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition'
+        - exact: 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation'
         - exact: 'Qualimetrix\Analysis\Run\Pipeline'
         - exact: 'Qualimetrix\Infrastructure\Console'
         - exact: 'Qualimetrix\Infrastructure\Console\Command'
@@ -2050,6 +2057,8 @@ rules:
       # RunConfiguration is the shared run-policy carrier: inbound Ca=17, CBO=21.
       # Its exact declaration deliberately serves those named run consumers.
       - exact: src/Analysis/Run/Contract/Configuration/RunConfiguration.php
+      # Definition is an immutable contract read by 18 types; CBO 22 measures that reach.
+      - exact: src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricDefinition.php
       # The file-failure carrier has Ca=19/Ce=2: one typed cause shared by its readers.
       - exact: src/Core/FileTarget/FileTargetFailure.php
       # These neutral read/facade types have Ca/Ce 17/5 and 12/8; splitting the
@@ -2137,6 +2146,8 @@ rules:
   # leaf, so it has its own prefix.
   coupling.distance:
     suppress_namespaces:
+      # Concrete prose operations and glyph values need no abstract provider; A=0, I=1/3 gives D=2/3.
+      - exact: 'Qualimetrix\Reporting\Formatter\Prose'
       # Baseline's concrete public facts form a contract hub (raw distance 0.659091).
       - exact: 'Qualimetrix\Analysis\Policy\Baseline\Contract'
       # Private token representation stays inside one duplication owner; local D=1 is not a module boundary.
@@ -2512,6 +2523,9 @@ rules:
     warning: 8
     error: 12
     suppress_paths:
+      # Eight independent run facts and eight authored definition facts are immutable data, not services.
+      - exact: src/Analysis/Run/Pipeline/PreparedRun.php
+      - exact: src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricDefinition.php
       # Mandatory independent declaration, policy and evidence facts are not injected services.
       - exact: src/Analysis/Evidence/DependencyModel/Contract/Dependency.php
       - exact: src/Analysis/Policy/Architecture/Contract/ExternalSupertypes.php
@@ -2540,6 +2554,9 @@ rules:
 
   code-smell.constructor-overinjection:
     suppress_paths:
+      # Eight independent run facts and eight authored definition facts are immutable data, not services.
+      - exact: src/Analysis/Run/Pipeline/PreparedRun.php
+      - exact: src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricDefinition.php
       # Mandatory independent declaration, policy and evidence facts are not injected services.
       - exact: src/Analysis/Evidence/DependencyModel/Contract/Dependency.php
       - exact: src/Analysis/Evidence/DependencyModel/DependencyGraph.php
@@ -2608,6 +2625,10 @@ rules:
   # Health debt is ratcheted in qmx-baseline.json; new regressions fail selfcheck.
   health.cohesion:
     suppress_paths:
+      # Stateless collector metadata and one abstractness lifecycle share no instance fields (LCOM 4, score 40).
+      - exact: src/Analysis/Evidence/Coupling/AbstractnessCollector.php
+      # Serializer identity, availability and native encode/decode implement one stateless protocol (LCOM 4, score 40).
+      - exact: src/Infrastructure/Serializer/IgbinarySerializer.php
       # A stateless XML formatter's metadata and document-writing methods share no fields by design (40).
       - exact: src/Reporting/Formatter/CheckstyleFormatter.php
       # Immutable spelling and namespace-prefix projections share one binding, while field cohesion measures their separate lookup maps (40).
@@ -2684,6 +2705,10 @@ rules:
       - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php
     suppress_namespace_channels:
       health.cohesion:
+        # Catalog classes score 71.2–83.3 individually; partial TCC plus static LCOM yields aggregate 43.1.
+        - exact: 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata'
+        # Stateless serializer alternatives have no measured TCC; LCOM 8/3 gives 16.7 after removing invented TCC.
+        - exact: 'Qualimetrix\Infrastructure\Serializer'
         # One audit, immutable options and rule metadata form a coherent three-class leaf (41.7).
         - exact: 'Qualimetrix\Analysis\Policy\Baseline\EntryBinding'
         # Stateless expansion algorithms and their immutable result do not share

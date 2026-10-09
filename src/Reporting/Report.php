@@ -17,13 +17,16 @@ use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
 /**
  * Value Object representing the analysis report.
  *
- * @qmx-threshold coupling.cbo warning=32 error=32 -- Report is the transport VO every formatter's
+ * @qmx-threshold coupling.cbo warning=34 error=34 -- Report is the transport VO every formatter's
  *                `format(Report, FormatterContext)` signature depends on, and the type every
  *                pipeline consumer that builds one depends on in turn; the `SuppressionComposition`
  *                field and its eleventh formatter consumer (`SuppressedFormatter`) are the intentional
  *                cause of the two-point rise from the previously baseline-accepted 28, and the
  *                `ReportProjectScope` field of one more: a fact about the run every format publishes
- *                travels on the one object every format reads. A point
+ *                travels on the one object every format reads. The bounded computed-value absence
+ *                summary and its shared prose narrator add two intended dependencies;
+ *                raw CBO 33 retains one-edge headroom.
+ *                A point
  *                threshold replaces that baseline entry rather than raising it, per the same reasoning
  *                already applied to the sibling hub {@see FormatterContext}.
  */

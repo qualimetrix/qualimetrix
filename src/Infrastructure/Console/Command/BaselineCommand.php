@@ -32,13 +32,6 @@ use Throwable;
  * exist. Left to each command those become five slightly different
  * spellings of the same three sentences, and the one that forgets a `catch`
  * answers a bad path with a stack trace.
- *
- * @qmx-ignore health.cohesion -- the final execute() / abstract doExecute()
- * split is a template-method seam: this base class carries the shared
- * ladder and none of a subcommand's own state, so it measures as low
- * cohesion by construction, not as a defect. `@qmx-threshold` cannot retune
- * this instead: `health.cohesion` is a computed metric with no per-symbol
- * override support.
  */
 abstract class BaselineCommand extends Command
 {

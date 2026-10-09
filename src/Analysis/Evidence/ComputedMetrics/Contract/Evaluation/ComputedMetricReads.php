@@ -27,6 +27,9 @@ use Symfony\Component\ExpressionLanguage\Node\NullCoalesceNode;
  * - A ternary branch, and the right side of `and`/`or`, run only on a value
  *   the symbol carries. Before a run only a key every path reads counts;
  *   after one, {@see ComputedMetricBranchTrace} says which operands ran.
+ *
+ * @qmx-threshold coupling.instability warning=0.81 -- Ca=2, Ce=8: native AST node kinds
+ * belong to this one strict-read classifier; splitting them merely transfers the low-Ca signal.
  */
 final class ComputedMetricReads
 {

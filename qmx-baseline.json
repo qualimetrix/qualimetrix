@@ -133,9 +133,6 @@
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyOptions@src/Analysis/Evidence/CircularDependency/CircularDependencyOptions.php": [
       {"channel":"health.cohesion","magnitudes":[40]}
     ],
-    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathExpressionCalculator@src/Analysis/Evidence/Complexity/NpathExpressionCalculator.php": [
-      {"channel":"health.cohesion","magnitudes":[40]}
-    ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRfcData@src/Analysis/Evidence/Coupling/RfcVisitor.php": [
       {"channel":"design.data-class","magnitudes":[22]}
     ],
@@ -192,9 +189,6 @@
     ],
     "declaration:class:Qualimetrix\\Infrastructure\\Logging\\LoggerHolder@src/Infrastructure/Logging/LoggerHolder.php": [
       {"channel":"design.data-class","magnitudes":[33]}
-    ],
-    "declaration:class:Qualimetrix\\Reporting\\DrillDown\\DrillDownBinding@src/Reporting/DrillDown/DrillDownBinding.php": [
-      {"channel":"health.cohesion","magnitudes":[40]}
     ],
     "declaration:class:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeNode@src/Reporting/Formatter/Html/HtmlTreeNode.php": [
       {"channel":"design.data-class","magnitudes":[10]}
@@ -279,9 +273,6 @@
     "ns:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator": [
       {"channel":"size.class-count","magnitudes":[24]}
     ],
-    "ns:Qualimetrix\\Infrastructure\\Serializer": [
-      {"channel":"health.cohesion","magnitudes":[43.7]}
-    ],
     "ns:Qualimetrix\\Reporting\\Formatter\\Html": [
       {"channel":"health.cohesion","magnitudes":[41.7]}
     ],
@@ -290,7 +281,7 @@
     ],
     "project:": [
       {"channel":"architecture.circular-dependency","occurrence":"366eed4cdda70adf","magnitudes":[3]},
-      {"channel":"health.coupling","magnitudes":[48.2]}
+      {"channel":"health.coupling","magnitudes":[47.6]}
     ]
   }
 }
