@@ -67,6 +67,45 @@ final class RuleExecutionTest extends TestCase
     }
 
     #[Test]
+    public function itKeepsFreshExecutionPartitionsAndNativeProducedOccurrencesAcrossSelection(): void
+    {
+        $rules = [new \Qualimetrix\Analysis\Evidence\Security\SqlInjectionRule(new \Qualimetrix\Analysis\Evidence\Security\SecurityPatternOptions()), new \Qualimetrix\Analysis\Evidence\CodeSmell\ErrorSuppressionRule(new \Qualimetrix\Analysis\Evidence\CodeSmell\ErrorSuppressionOptions())];
+        $lookups = array_map(ResolvedOptionsFixture::lookup(...), $rules);
+        $metadata = array_column($lookups, 'metadata');
+        $declarations = [];
+        $channelsByProducer = [];
+        foreach ($rules as $rule) {
+            $declarations = [...$declarations, ...$rule::channelDeclarations()];
+            $channelsByProducer[$rule->getName()] = [$rule->getName()];
+        }
+        $channels = new ChannelUniverse($declarations, $channelsByProducer, array_fill_keys(array_keys($channelsByProducer), false), new ResolvedComputedMetricDefinitions([]), ...self::unusedReachPorts());
+        $registry = new RuleOptionsRegistry();
+        $registry->replace(ResolvedOptionsFixture::ready(ResolvedOptionsFixture::authoredConfiguration([], $metadata), $metadata, channels: $channels));
+        $execution = new RuleExecution($lookups, self::createStub(ProfilerInterface::class), $registry);
+        $file = RelativePath::fromString('src/Native.php');
+        $repository = new \Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository();
+        $repository->add(SymbolPath::forFile($file), (new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag())->withEntry('security.sql_injection', ['subjectKind' => 'file', 'line' => 1, 'superglobal' => ''])->withEntry('codeSmell.error_suppression', ['subjectKind' => 'file', 'line' => 2]), $file, 1);
+        $context = new AnalysisContext($repository);
+        $first = $execution->execute($context);
+        $second = $execution->execute($context);
+        $counterfactual = $execution->execute($context, 'security.sql-injection');
+        self::assertCount(2, $first->produced);
+        self::assertCount(2, $first->published);
+        self::assertSame(2, $first->population->judgedCount());
+        self::assertSame(4, $first->merge($second)->population->judgedCount());
+        self::assertSame(2, $first->merge($first)->population->judgedCount());
+        self::assertCount(1, $counterfactual->produced);
+        self::assertSame(1, $counterfactual->population->judgedCount());
+        self::assertSame(2, $first->population->judgedCount());
+        self::assertSame($repository, $context->metrics);
+        $registry->replace(ResolvedOptionsFixture::ready(ResolvedOptionsFixture::authoredConfiguration([], $metadata, disabled: ['security.sql-injection']), $metadata, channels: $channels));
+        $disabled = $execution->execute($context);
+        self::assertCount(1, $disabled->produced);
+        self::assertSame(1, $disabled->population->judgedCount());
+        self::assertSame('code-smell.error-suppression', $disabled->population->judgedCounts()[0]['producer']);
+    }
+
+    #[Test]
     public function itExecutesWithNoRules(): void
     {
         $provider = $this->createConfiguredProvider();

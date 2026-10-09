@@ -28,6 +28,28 @@ final class RuleExecutionResultTest extends TestCase
      * without a reason while the counters still say findings were excluded.
      */
     #[Test]
+    public function itMergesIndependentPopulationPartitionsWithoutDoublingAdoption(): void
+    {
+        $left = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
+        $right = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
+        foreach (['zeta', 'alpha'] as $producer) {
+            foreach (range(0, 5) as $ordinal) {
+                $identity = \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::occurrence($producer, $ordinal);
+                $left->record($producer, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($producer), \Qualimetrix\Core\Symbol\SymbolLevel::Project, $identity, 'present', 'Missing publication.');
+                $right->record($producer, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($producer), \Qualimetrix\Core\Symbol\SymbolLevel::Project, $identity, 'present', 'Missing publication.');
+            }
+        }
+        $first = new RuleExecutionResult([], [], new RuleExclusionStats(), LevelActivity::empty(), population: $left->freeze());
+        $second = new RuleExecutionResult([], [], new RuleExclusionStats(), LevelActivity::empty(), population: $right->freeze());
+        $merged = $first->merge($second)->merge($first);
+        self::assertSame(24, $merged->population->unjudgedCount());
+        self::assertSame(['alpha', 'zeta'], array_column($merged->population->abstentions(), 'producer'));
+        self::assertSame([12, 12], array_column($merged->population->abstentions(), 'count'));
+        self::assertCount(5, $merged->population->abstentions()[0]->examples);
+        self::assertSame(12, $first->population->unjudgedCount());
+    }
+
+    #[Test]
     public function itMergesAttributionsAlongsideTheFindingsTheyExplain(): void
     {
         $left = $this->finding('src/Left.php');

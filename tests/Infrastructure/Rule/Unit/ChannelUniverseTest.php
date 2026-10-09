@@ -46,6 +46,25 @@ final class ChannelUniverseTest extends TestCase
     private array $definitions = [];
 
     #[Test]
+    public function itSharesFullDefinitionOwnedGatesBetweenRuntimeAndSnapshotDeclarations(): void
+    {
+        $this->definitions = [new ComputedMetricDefinition('computed.population', ['class' => '0', 'namespace' => '0', 'project' => '0'], 'Population', [SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project], inverted: true)];
+        $universe = $this->universe();
+        $channel = new FindingChannel('computed.population');
+        $runtime = $universe->declarationFor($channel);
+        $snapshot = $universe->snapshot(new ResolvedComputedMetricDefinitions($this->definitions))->declarationFor($channel);
+        self::assertNotNull($runtime);
+        self::assertEquals($runtime, $snapshot);
+        self::assertSame(WorseDirection::Lower, $runtime->direction);
+        self::assertSame(['class-coordinate', 'published-value'], array_column($runtime->gatesFor($channel, SymbolLevel::Class_), 'id'));
+        self::assertSame(['published-value'], array_column($runtime->gatesFor($channel, SymbolLevel::Namespace_), 'id'));
+        self::assertSame(['published-value'], array_column($runtime->gatesFor($channel, SymbolLevel::Project), 'id'));
+        self::assertSame(['declaration', 'declaration', 'namespace', 'project'], array_column($runtime->populationGates, 'unit'));
+        $definitionOwned = ComputedMetricChannelFamily::declarationForDefinition($this->definitions[0]);
+        self::assertEquals($definitionOwned, $runtime);
+    }
+
+    #[Test]
     public function itReturnsTheDeclarationForAStaticallyDeclaredChannel(): void
     {
         $channel = new FindingChannel('complexity.cyclomatic.callable');

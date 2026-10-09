@@ -37,6 +37,25 @@ final class PopulationSessionTest extends TestCase
         $population = $this->measured(20, true);
         self::assertSame(20, $population->judgedCount());
         self::assertSame([], $population->abstentions());
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession($this->publication());
+        $context = (new \Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext(new \Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository()))->withPopulationTrace($session);
+        $weakContext = WeakReference::create($context);
+        $weakInputs = [];
+        for ($ordinal = 0; $ordinal < 20; ++$ordinal) {
+            $bag = MetricBag::fromArray(['value' => 0]);
+            $identity = PopulationIdentity::occurrence('healthy', $ordinal);
+            $weakInputs[] = [WeakReference::create($bag), WeakReference::create($identity)];
+            self::assertTrue($context->admit('fixture.population', new FindingChannel('fixture.population'), SymbolLevel::Project, $identity, $this->declaration(), [GateInput::metrics('value', $bag)]));
+            unset($bag, $identity);
+        }
+        unset($context);
+        gc_collect_cycles();
+        self::assertNull($weakContext->get());
+        foreach ($weakInputs as [$weakBag, $weakIdentity]) {
+            self::assertNull($weakBag->get());
+            self::assertNull($weakIdentity->get());
+        }
+        self::assertSame(20, $session->freeze()->judgedCount());
     }
 
     #[Test]

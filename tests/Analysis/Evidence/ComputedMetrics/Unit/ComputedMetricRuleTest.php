@@ -43,6 +43,24 @@ use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 final class ComputedMetricRuleTest extends TestCase
 {
     #[Test]
+    public function itAccountsTheEmptyProjectCoordinateWithoutInventingClassSubjects(): void
+    {
+        $definition = new ComputedMetricDefinition('computed.empty-project', ['project' => 'throw_if_evaluated()'], 'Project', [SymbolLevel::Project], warningThreshold: 5);
+        $channel = new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($definition->name);
+        $publication = new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement([
+            new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(ComputedMetricRule::NAME, $channel, SymbolLevel::Project, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct)),
+        ], null));
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession($publication);
+        $repository = new InMemoryMetricRepository();
+        self::assertSame([], iterator_to_array($repository->allClassDeclarations(), false));
+        self::assertSame([], $this->createRuleWithDefinitions([$definition])->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
+        self::assertSame(0, $session->freeze()->judgedCount());
+        self::assertSame(1, $session->freeze()->unjudgedCount());
+        self::assertSame('project', $session->freeze()->abstentions()[0]->unit);
+        self::assertSame(['project:'], $session->freeze()->abstentions()[0]->examples);
+    }
+
+    #[Test]
     public function itAccountsDefinitionOwnedValuesAndExcludesNonApplicableSubjectsWithoutEvaluatingFormulas(): void
     {
         $definitions = [

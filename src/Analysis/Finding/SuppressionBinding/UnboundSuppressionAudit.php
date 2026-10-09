@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression;
+use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\PathPattern;
@@ -116,8 +117,16 @@ final readonly class UnboundSuppressionAudit
             return ['findings' => [], 'population' => JudgedPopulation::empty()];
         }
 
+        $declarations = UnboundSuppressionRule::channelDeclarations();
+        $selected = false;
+        foreach ($declarations as $code => $declaration) {
+            $selected = $selected || $publication->publishes(UnboundSuppressionRule::NAME, new FindingChannel($code), SymbolLevel::Project);
+        }
+        if (!$selected) {
+            return ['findings' => [], 'population' => JudgedPopulation::empty()];
+        }
         $findings = [];
-        $members = [];
+        $session = new PopulationSession($publication);
 
         foreach ($this->configuredValues($suppressPaths, $suppressNamespaces) as $ordinal => $value) {
             $channel = new FindingChannel($value['channel']);
@@ -126,21 +135,18 @@ final readonly class UnboundSuppressionAudit
             }
             $judged = $this->judges($value, $declaredNamespaces, $scope);
             $input = GateInput::context($value['pattern'] instanceof PathPattern ? 'suppressionPathJudged' : 'suppressionNamespaceJudged', $judged);
-            $members[$channel->code][] = [
-                'identity' => PopulationIdentity::occurrence(json_encode([$value['channel'], $value['rule'], $value['option'], $value['pattern']->definition->display()], \JSON_THROW_ON_ERROR), $ordinal, 'configured-suppression-value-occurrence'),
-                'inputs' => $channel->code === UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER ? [$input, $input] : [$input],
-            ];
+            $identity = PopulationIdentity::occurrence(json_encode([$value['channel'], $value['rule'], $value['option'], $value['pattern']->definition->display()], \JSON_THROW_ON_ERROR), $ordinal, 'configured-suppression-value-occurrence');
+            $declaration = $declarations[$channel->code];
+            $failed = $declaration->populationFailure($channel, SymbolLevel::Project, $identity, $channel->code === UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER ? [$input, $input] : [$input]);
+            $session->record(UnboundSuppressionRule::NAME, $channel, SymbolLevel::Project, $identity, $declaration, $failed['gate'] ?? null, $failed['reason'] ?? null);
+            unset($identity, $input, $failed);
             if ($judged && !self::binds($value, $analyzedFiles, $declaredNamespaces)) {
                 $findings[] = self::unboundFinding($value);
             }
         }
 
-        $population = JudgedPopulation::empty();
-        $declarations = UnboundSuppressionRule::channelDeclarations();
-        foreach ($members as $code => $roster) {
-            $population = $population->merge(JudgedPopulation::measure($publication, UnboundSuppressionRule::NAME, new FindingChannel($code), SymbolLevel::Project, $declarations[$code], $roster));
-        }
-        return ['findings' => $this->ruleExecution->publishable($findings), 'population' => $population];
+        unset($value);
+        return ['findings' => $this->ruleExecution->publishable($findings), 'population' => $session->freeze()];
     }
 
     /**
