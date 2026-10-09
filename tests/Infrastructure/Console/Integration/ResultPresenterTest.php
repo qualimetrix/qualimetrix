@@ -799,4 +799,43 @@ final class ResultPresenterTest extends TestCase
         }
     }
 
+    #[Test]
+    public function itPublishesRulePopulationThroughRealVerboseQuietSilentAndFileRoutes(): void
+    {
+        $directory = sys_get_temp_dir() . '/qmx_prose_population_' . bin2hex(random_bytes(6));
+        self::assertTrue(mkdir($directory));
+        try {
+            self::assertNotFalse(file_put_contents($directory . '/Fixture.php', '<?php function fixture(bool $isActive): void {}'));
+            self::assertNotFalse(file_put_contents($directory . '/qmx.yaml', "rules: {}\n"));
+            $base = [\PHP_BINARY, 'bin/qmx', '--working-dir=' . $directory, 'check', '.', '--config=qmx.yaml', '--workers=0', '--no-cache', '--no-progress', '--only-rule=code-smell.boolean-argument', '--format=text'];
+            $normal = new \Symfony\Component\Process\Process($base, \dirname(__DIR__, 4));
+            self::assertSame(0, $normal->run(), $normal->getErrorOutput());
+            self::assertSame(1, substr_count($normal->getOutput(), 'Rule population incomplete'));
+            self::assertStringContainsString('occurrence: 0 judged, 1 not judged', $normal->getOutput());
+            self::assertStringNotContainsString('gate allowed-extra', $normal->getOutput());
+            $verbose = new \Symfony\Component\Process\Process([...$base, '-v'], \dirname(__DIR__, 4));
+            self::assertSame(0, $verbose->run(), $verbose->getErrorOutput());
+            self::assertStringContainsString('code-smell.boolean-argument / code-smell.boolean-argument (callable), gate allowed-extra', $verbose->getOutput());
+            foreach (['--quiet', '--silent'] as $flag) {
+                $muted = new \Symfony\Component\Process\Process([...$base, $flag], \dirname(__DIR__, 4));
+                self::assertSame(0, $muted->run(), $muted->getErrorOutput());
+                self::assertSame('', $muted->getOutput());
+                self::assertSame('', $muted->getErrorOutput());
+            }
+            $file = new \Symfony\Component\Process\Process([...$base, '-v', '--output=report.txt'], \dirname(__DIR__, 4));
+            self::assertSame(0, $file->run(), $file->getErrorOutput());
+            $body = file_get_contents($directory . '/report.txt');
+            self::assertNotFalse($body);
+            self::assertStringContainsString('gate allowed-extra', $body);
+            self::assertStringNotContainsString('Rule population incomplete', $file->getOutput());
+        } finally {
+            foreach (['Fixture.php', 'qmx.yaml', 'report.txt'] as $name) {
+                if (is_file($directory . '/' . $name)) {
+                    unlink($directory . '/' . $name);
+                }
+            }
+            rmdir($directory);
+        }
+    }
+
 }

@@ -17,6 +17,7 @@ use Qualimetrix\Reporting\Formatter\FormatOptionValue;
 use Qualimetrix\Reporting\Formatter\FormattedReport;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\Prose\ComputedMetricAbsenceNarrator;
+use Qualimetrix\Reporting\Formatter\Prose\RuleAbstentionNarrator;
 use Qualimetrix\Reporting\Formatter\PublicationKind;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
@@ -62,6 +63,7 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
             $lines[] = '';
         }
 
+        array_push($lines, ...RuleAbstentionNarrator::lines($report, $context->verbose));
         array_push($lines, ...ComputedMetricAbsenceNarrator::lines($report));
 
         $healthScores = $this->healthScoreResolver->resolve($report, $context);

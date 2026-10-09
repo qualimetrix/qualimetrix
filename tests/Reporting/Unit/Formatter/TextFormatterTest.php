@@ -40,6 +40,21 @@ final class TextFormatterTest extends TestCase
     }
 
     #[Test]
+    public function itPublishesPopulationBeforeEmptyDataReturnsAndKeepsReasonsVerbose(): void
+    {
+        $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
+        $trace->record('fixture.rule', new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('fixture.channel'), \Qualimetrix\Core\Symbol\SymbolLevel::Project, \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::selector('project:fixture', 'project'), 'published', 'The fixture value is absent.');
+        $report = new \Qualimetrix\Reporting\Report([], 0, 0, 0, 0, 0, population: $trace->freeze());
+        $compact = $this->formatter->format($report, new FormatterContext(useColor: false))->body;
+        self::assertSame(1, substr_count($compact, 'Rule population incomplete'));
+        self::assertStringContainsString('project: 0 judged, 1 not judged', $compact);
+        self::assertStringNotContainsString('The fixture value is absent.', $compact);
+        $verbose = $this->formatter->format($report, (new FormatterContext(useColor: false, verbose: true))->withDetail(true))->body;
+        self::assertStringContainsString('fixture.rule / fixture.channel (project), gate published: The fixture value is absent.', $verbose);
+        self::assertStringContainsString('examples: project:fixture', $verbose);
+    }
+
+    #[Test]
     public function itSelectsTheWorstDetailFindingBeforeGroupingByFile(): void
     {
         $warning = self::finding(new Location(RelativePath::fromString('src/A.php'), 1), SymbolPath::forClass('Shop', 'A'), 'complexity.ccn', 'complexity.ccn', 'Hidden warning', Severity::Warning);

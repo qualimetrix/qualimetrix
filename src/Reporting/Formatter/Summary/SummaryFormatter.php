@@ -12,6 +12,7 @@ use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
 use Qualimetrix\Reporting\Formatter\FormattedReport;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\Prose\ComputedMetricAbsenceNarrator;
+use Qualimetrix\Reporting\Formatter\Prose\RuleAbstentionNarrator;
 use Qualimetrix\Reporting\Formatter\PublicationKind;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
@@ -49,6 +50,7 @@ final class SummaryFormatter implements FormatterInterface, FormatOptionKeysInte
             $lines[] = '';
         }
 
+        array_push($lines, ...RuleAbstentionNarrator::lines($report, $context->verbose));
         array_push($lines, ...ComputedMetricAbsenceNarrator::lines($report));
 
         $this->healthBarRenderer->render($report, $context, $color, $terminalWidth, $lines);

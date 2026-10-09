@@ -88,6 +88,7 @@ Reporting/
     ├── CoverageNarrator.php                 # Complete/empty/incomplete human coverage summary
     ├── Prose/                              # Prose narration and publication
     │   ├── ComputedMetricAbsenceNarrator.php # Bounded computed-value absence groups
+    │   ├── RuleAbstentionNarrator.php        # Compact or verbose unjudged rule populations
     │   ├── ProseText.php                   # Publishes one prose body and its repaired-string count
     │   ├── GlyphMode.php                   # Unicode or closed-table ASCII publication
     │   └── AsciiGlyphs.php                 # Product glyph replacements; other Unicode stays intact
@@ -1084,3 +1085,13 @@ same glyph sequence inside a source identifier or path: the completed body no
 longer retains that provenance. Unicode mode preserves such valid characters.
 Other Unicode letters, such as Café, remain intact in either mode. Structured
 formatters keep their own encoders and canonical identities.
+
+`RuleAbstentionNarrator::lines(Report, bool $verbose = false)` is the shared
+Text, Summary and Health route for incomplete rule populations, including an
+empty findings or health-data report. Normal prose publishes one indication
+with judged and unjudged counts separated by unit. Verbose prose adds the
+producer, channel, level, first failed gate, reason and bounded examples of
+each group. These are judgement counts, not globally unique symbol counts.
+The formatter context carries console verbosity through copied contexts;
+quiet, silent and file publication retain the normal output policy. Native
+prose publication repairs invalid source bytes after narration.
