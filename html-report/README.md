@@ -84,3 +84,12 @@ retains the logical name for display. Hash links, search results, treemap
 selection and Martin points address the id, so two declarations of one name
 remain independently selectable. Class bags include the graph metrics of their
 logical name; namespace and project records carry no source file or line.
+
+## Health evidence
+
+PHP supplies prepared project decomposition and coverage in
+`summary.healthDecomposition` and `summary.healthCoverage`, beside nullable
+`summary.healthScores`. Detail panels and hints preserve unavailable inputs and
+measured zero; the viewer does not evaluate health formulas. Cohesion
+contributors follow participating TCC or otherwise measured LCOM with its
+lower-is-better direction.

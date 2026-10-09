@@ -53,9 +53,11 @@ so a missing inferred target names its Composer source; no path provenance is
 reconstructed from the selected file spelling.
 
 `AnalysisResult::fromRun()` composes Run's `MeasuredRunResult`, Inline's
-`DirectiveObservations`, nullable rule execution and a separate late-published
-list. Measurements contain repository, coverage, namespace tree, final project
-scope and duration. `findings()` reads canonical execution publication and late
+`DirectiveObservations`, nullable rule execution, a separate late-published
+list and ComputedMetrics' immutable absence summary. Summary merge combines
+reason counts, exact missing keys and deterministic exact samples capped at three,
+without adding another repository or coverage carrier. Measurements contain
+repository, coverage, namespace tree, final project scope and duration. `findings()` reads canonical execution publication and late
 findings; private counts preserve each original run's publication order through
 merge, including null execution. The old upper fields and count aliases are
 removed; see [ADR 0094](../../../docs/adr/0094-analysis-results-publish-subject-owned-values.md).
@@ -168,8 +170,9 @@ igbinary worker serialization; services and capability-owned state never cross
 it. DependencyModel receives
 collected dependency occurrences through its public builder contract.
 Measurement owns repository creation and aggregation. ComputedMetrics owns
-formula definitions and evaluation; Run invokes only its evaluation contract
-and stores no computed-metric state or result payload.
+formula definitions and evaluation. Run invokes its declared evaluation contract
+and owns no mutable ComputedMetrics state; the normal result transports the
+capability-owned immutable absence summary beside `MeasuredRunResult`.
 
 Analysis and phase durations use monotonic `hrtime` readings, converted from
 nanoseconds to seconds. Adjusting the system date cannot make a measured run's
@@ -292,6 +295,11 @@ neither answer is wrong. The rule selection is deliberately not carried: it is
 Finding's internal type, and the caller that prints it resolved those selectors
 itself. See ADR 0039.
 
+Both entry points share computed preparation and effective-source runtime
+refusals. Only normal analysis forwards nonfailure computed absence summaries to
+Reporting; directive audit retains its separate verdict, coverage and sweep
+document.
+
 ## Test ownership
 
 Run owns the subject-first tests under `tests/Analysis/Run/`, including
@@ -321,8 +329,8 @@ participant ordering is deterministic, and two sequential runs reset state.
   or not the tree lies under the project root.
 - An `exclude:` selector the walk could not settle, because a directory would
   not list, is reported as unjudged rather than dropped from the answer.
-- Run imports capability promises only through declared contracts and stores no
-  capability payload.
+- Run imports capability promises only through declared contracts and owns no
+  mutable capability state. Immutable result values retain their subject owner.
 
 
 ## Final producer preparation

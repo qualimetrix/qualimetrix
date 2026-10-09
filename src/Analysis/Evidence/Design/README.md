@@ -91,7 +91,10 @@ unknown exception status when duplicate parent declarations disagree.
 - `TypeCoverageCollector` and `TypeCoverageVisitor` collect parameter, return,
   and property declaration counts and coverage percentages for named
   class-like declarations. `TypeCoveragePercentCollector` derives the combined
-  percentage from those raw counts.
+  percentage from those raw counts. All six raw typed/total counters retain
+  measured 0. A combined typeable total of zero omits percentage fields; a
+  positive total with no typed declarations publishes 0%. Aggregate typing
+  health uses the actual summed parameter, return and property totals.
 - `DitGlobalCollector` is the sole writer and definition owner of
   `design.dit`, `design.dit-unresolved`, and `design.is-exception`. It requires
   an exact Measurement subject for every named class graph fact; a missing

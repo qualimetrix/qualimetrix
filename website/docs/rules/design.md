@@ -317,6 +317,11 @@ bin/qmx check src/ --rule-opt="design.dit:threshold=5"
 
 The percentage of method and function parameters in a class that carry a type declaration.
 
+The raw parameter, return and property typed/total counters retain measured 0.
+If the combined typeable total is zero, percentage metrics are absent rather
+than 100%; a positive total with zero typed declarations publishes 0%. Builtin
+[typing health](../reference/health-scores.md) uses the actual summed denominator.
+
 Like the two rules below, this one uses **inverted thresholds**: lower values are worse. A warning is reported when coverage drops below the warning threshold, and an error when it drops below the error threshold. A class with no parameters at all has nothing to type and is never reported.
 
 **How to read the value:**

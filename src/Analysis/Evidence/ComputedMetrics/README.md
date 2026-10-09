@@ -35,7 +35,7 @@ said the class held two subjects.
 A decomposition answers per symbol level, because the formulas do: the project
 coupling score is computed from CBO aggregates where the namespace one is
 computed from Ce aggregates, and a single list described the wrong score at two
-levels out of three. `HealthDimensionCatalog::inputsFor()` resolves the project
+levels out of three. `HealthDecompositionCatalog::inputsFor()` resolves the project
 level from the namespace one exactly where `ComputedMetricDefinition`
 inherits the namespace formula, and the metadata projection ships every level
 resolved so the HTML report picks by the node's own level. Which class dragged a
@@ -51,10 +51,10 @@ Class finding counts and LOC density use that declaration's own findings and
 
 Every input line also declares what it covers: the `.count` its aggregate
 already publishes and the population that count is a share of. A score reports
-the *narrowest* of its inputs' ratios, because a score is only as much a
-statement about the project as its least-covered term — a cohesion score whose
-TCC term saw a third of the classes is a statement about that third, however
-completely LCOM saw the rest. Populations are symbol counts
+the *narrowest* participating input ratio. An absent TCC half dropped by the
+formula does not limit measured LCOM coverage. Selected effective formulas
+determine which inputs participate; an authored constant cannot borrow builtin
+coverage or decomposition by name. Populations are symbol counts
 (`size.symbol-class-count`, `size.symbol-method-count`,
 `size.symbol-declaring-namespace-count`), never the `.count` of a
 neighbouring metric and never the walk an aggregate makes: a denominator that
@@ -70,17 +70,18 @@ An input line declares only the population; the `.count` is derived from the
 line's own key, because it is the sample size of the very aggregate the line
 displays. Declared beside the key it was a second spelling of one fact, and a
 retargeted key with a stale count published "0 of 168 (0%)" in the tone of a
-measurement. An absent `.count` at runtime is a genuine measured zero — the
-aggregator publishes no key when nothing contributed — so it cannot be refused
-there; an absent population is refused, since every run writes all three from
-its own symbol list.
+measurement. An absent `.count` means no input was measured: the aggregator
+publishes no key when nothing contributed. A positive population then reports
+`not-measured` as 0/N; an empty population reports `not-applicable` with a reason.
+Measured coverage uses `measured`. Numeric zero remains a measured value.
+Negative, fractional and nonfinite counts or an absent population refuse;
+every run writes all three populations from its own symbol list.
 
 A ratio below 100% is not automatically a defect. `namespaces declaring a type`
 carries a permanent gap: a namespace of bare enums declares a type but has no
 abstractness of its own, so it is in the denominator and in no numerator. Two
-such namespaces make this repository read 99%. Narrowing the denominator to the
-namespaces the aggregate reached would print 100% and would be the same defect
-the leaf-only population was.
+such namespaces leave a visible coverage gap. Narrowing the denominator to the
+namespaces the aggregate reached would print 100% and hide that gap.
 
 Coverage is published on every surface that publishes a score: `json` and the
 HTML payload carry the full record, `--format=health` a `Coverage` column on
@@ -88,17 +89,24 @@ every row including `overall` and at every terminal width, and the default
 `summary` one dimmed line per dimension. A surface that shows the score and not
 the share is a score over an unstated part of the subject.
 
-`--exclude-health` renormalizes the remaining weights and hands the rounding
-remainder to the widest share, so the printed weights sum to exactly one.
-Rounding each on its own left the scale at 0.9999 and a subject scoring 100
-everywhere published 99.99.
+Enabled builtin project dimensions remain visible with nullable scores when
+unmeasured, while disabled dimensions are omitted. Decomposition preserves
+expected absent inputs as null with their own coverage; renderers branch before
+numeric formatting or target comparison. Selected class and namespace scores
+never fall back to a project score. PHP prepares project decomposition and
+coverage for HTML detail and hints; the viewer adds no formula evaluator.
+
+Health exclusions remove complete canonical weighted-mean terms, preserving
+original weights and term order. Evaluation divides by the participating weight
+sum; coefficients are neither rounded nor pre-normalized. Excluding a dimension
+from an unsupported authored overall formula refuses with the effective source.
 
 Namespace drill-down receives a bound `NamespacePattern`. `exact` aggregates
 only the named namespace; `subtree` and `regex` aggregate every matched
 namespace with the same class-count weighting used for report health and worst
 classes. Renderers retain the authored selector spelling for diagnostics.
 
-The threshold a decomposition line advertises is the knee its formula term
+The threshold a builtin decomposition line advertises is the knee its formula term
 applies, and nothing else. Both had drifted silently while the catalog
 transcribed the constants by hand, so
 `HealthDecompositionAgreesWithFormulasTest` now reads the formulas and fails on
@@ -111,12 +119,17 @@ declared knee-less and rechecked as such.
 
 ```text
 ComputedMetrics/
-├── Contract/                         # exact promises consumed outside the root owner
+├── Contract/                         # subject contracts and internal evaluation values
 │   ├── Configuration/                # runtime configuration and Health exclusion promises
-│   ├── Definition/                   # definitions, dimensions, and immutable resolved snapshot
-│   ├── Evaluation/                   # concrete evaluation service consumed by Run
-│   │   ├── ComputedMetricReads.php       # which absent keys a formula reads where it cannot use null
-│   │   └── ComputedMetricBranchTrace.php # the conditional operands one evaluation entered
+│   ├── Definition/                   # definitions, dimensions, and immutable sourced snapshot
+│   │   └── ComputedMetricApplicability.php # selected builtin input policy
+│   ├── Evaluation/                   # evaluation service and immutable outcomes
+│   │   ├── ComputedMetricSubjectEvaluation.php # pure evaluation over raw subject values
+│   │   ├── ComputedMetricOutcome.php          # value, inapplicability, absence, or failure
+│   │   ├── ComputedMetricEvaluationSummary.php # bounded successful absence groups
+│   │   ├── ComputedMetricValueAbsence.php      # reason counts, keys, and exact samples
+│   │   ├── ComputedMetricReads.php            # strict and nullable input reads
+│   │   └── ComputedMetricBranchTrace.php      # operands one evaluation entered
 │   └── Finding/                      # computed finding channel family
 ├── Configuration/
 │   ├── ComputedMetricsSection.php            # the `computed_metrics:` section declared to the document, and where an entry sits in it
@@ -162,28 +175,35 @@ previous stores untouched and the selector static-only.
 
 `AnalysisPipeline` calls `ComputedMetricEvaluator::evaluate()` after
 Measurement aggregation and before CircularDependency preparation. Evaluation
-reads the replaced immutable definition token, mutates only
-`MetricRepositoryInterface`, owns the `computed` profiler span, and is a no-op
-when no files or definitions exist.
+reads the replaced immutable definitions/source token, mutates only
+`MetricRepositoryInterface`, and owns the `computed` profiler span. It returns
+an immutable absence summary, empty when no files or definitions exist. The
+private resolver's list query projects the same sourced resolution; runtime
+configuration retains the sourced snapshot rather than discarding its writers.
 
 Which absent keys a formula would read as `null` is one query,
 `ComputedMetricExpression::missingKeysOf()`, asked against three presence
 sets. `ComputedMetricFormulaValidator` asks it with every referenced computed
 metric present only at its own `levels:`, so a bare cross-level read is a
-configuration refusal before the run. The evaluator asks it with the union of
-keys the level carries (a miss is the same refusal, after measurement) and then
-per symbol through `evaluateOn()` (a miss publishes no value, counted in one
-warning per metric and level). The right side of `??` counts only where its
-left side is absent.
+configuration refusal before the run. The evaluator preserves this measured-level
+refusal for authored formulas using the union of keys the level carries. Per-subject evaluation reads the raw values
+before constructing its internal lookup. Authored missing inputs or null results
+publish no scalar and enter a bounded summary by metric and level: separate
+reason counts, exact missing-key union, and at most three deterministic exact
+subject samples. This summary does not depend on logger output. The right side
+of `??` counts only where its left side is absent.
 
 A ternary branch and the right side of `and`/`or` run only on a value the
 symbol carries, so before a run only a key every path reads counts; the
 condition always runs and counts in full. Per symbol, `ComputedMetricBranchTrace`
 runs the formula as a copy whose conditional operands report their entry, and
 the operands the evaluation entered decide. Entering one that would read an
-absent key where no enclosing `??` catches it stops the run before the `null`
-reaches the arithmetic or a PHP function. Which branch runs is taken from the
-evaluation itself and never computed beside it; the trace relies only on
+absent strict input prevents a fabricated numeric result before `null` reaches
+arithmetic or a PHP function. Only nullable value positions of `weighted_mean`
+permit absence; weights and strict nested operands still require their inputs.
+The exact enclosing `clamp(weighted_mean(...), bounds)` preserves an empty mean's
+null result, whereas ordinary clamp of null fails. Arguments are evaluated once.
+Which branch runs is taken from the evaluation itself and never computed beside it; the trace relies only on
 Expression Language evaluating one branch of `?:` and short-circuiting
 `and`/`or`, not on how it marks the left side of `??`.
 
@@ -192,6 +212,10 @@ Expression Language evaluating one branch of `?:` and short-circuiting
 - `ComputedMetricConfiguratorInterface` —
   `Infrastructure\Console\AnalysisRuntimeConfigurator`.
 - `ComputedMetricEvaluator` — `Analysis\Run\Pipeline\AnalysisPipeline`.
+- `ComputedMetricEvaluationSummary` and `ComputedMetricValueAbsence` — immutable
+  successful absence values transported by normal Run results and Reporting.
+  Pure subject evaluation and its closed outcomes remain internal; catalog and
+  configuration ports gain no runtime mutation operation.
 - `ResolvedComputedMetricDefinitions` — immutable definitions resolved for one
   run. Infrastructure Rule receives it as the input to its exact
   `RuleChannelSnapshotFactoryInterface`, which builds a preflight channel
@@ -241,6 +265,9 @@ decision is [ADR 0086](../../../../docs/adr/0086-one-configuration-document-merg
   A refusal about one formula names its exact writing leaf, even when another
   layer changed only the metric's description. Health exclusions use the same
   selection and order their formula and exclusion writers by precedence.
+  Bare-name and metadata-only entries retain builtin applicability. An authored
+  effective formula, including copied builtin text, uses Always for that stored
+  formula; other stored levels keep their own policy and provenance.
 - `levels` is replaced whole by the last layer that writes it.
 - `~` and `{}` write nothing under the name: a metric written either way
   leaves the metric below it — a built-in dimension or a preset's metric —
@@ -252,7 +279,7 @@ decision is [ADR 0086](../../../../docs/adr/0086-one-configuration-document-merg
   file's typo names the file and the item's path, an option's names the
   option.
 - Disabled built-in dimensions are folded into exclusions before formula
-  validation and `health.overall` weight normalization.
+  validation and canonical overall term removal.
 - Definitions may reference other computed metrics; cycles and unknown
   references fail configuration before publication.
 - A metric name is judged by the document engine in the layer that wrote it,
@@ -263,14 +290,23 @@ decision is [ADR 0086](../../../../docs/adr/0086-one-configuration-document-merg
   definition names the layers that wrote it (`ComputedMetricAuthorship`); a
   built-in definition no layer touched is attributed to the defaults.
 
+Builtin applicability is selected with the effective formula: Always, presence
+among exact measured inputs, or a positive summed denominator. Numeric 0 counts
+as present. All supplied non-null policy operands are validated first: bools,
+numeric strings and nonfinite values fail, and denominators must be nonnegative.
+Aggregate typing requires a positive sum of actual parameter, return and property
+totals. Inapplicable builtins produce no scalar or summary. An applicable builtin
+must yield a finite value; its absence and every evaluation failure refuse with
+the effective formula source and exit 3, without a successful partial report.
+
 ## Tests
 
 Owned tests live under `tests/Analysis/Evidence/ComputedMetrics/`. The
-materialized slice contains 29 PHPUnit classes, one support class, and no
-fixtures when the three
-retained Reporting assembly tests are included. Topology tests classify 42 raw relations exactly: 37 classified
-relations (21 non-Health and 16 Health) plus five unchanged composed carriers.
-The classified set includes `ResolvedComputedMetricDefinitions` relations to
+current test and relation inventories are generated under
+`docs/internal/generated/modular-architecture/`. Topology tests classify the
+subject's actual relations, including the retained Reporting assembly tests and
+composed carriers. The classified set includes `ResolvedComputedMetricDefinitions`
+relations to
 `AnalysisRuntimeConfigurator`, `RuleInputValidator`, and
 `RuleChannelSnapshotFactoryInterface`. `ChannelUniverse` itself reads only
 `ComputedMetricDefinitionCatalogInterface`: the concrete resolved value reaches
@@ -284,8 +320,9 @@ internal, and unclassified Contract imports fail closed.
 - Run depends only on the evaluation contract and stores no capability state.
 - Health imports no Reporting type; Reporting imports only root/Health
   contracts for computed-metric semantics.
-- Formula evaluation, finding channels, health values, and output schemas
-  preserve their existing behavior.
+- Applicable all-dimension values retain arithmetic order. Inapplicability,
+  authored absence and runtime failure follow distinct contracts; normal result
+  copies and merges preserve the bounded absence summary.
 - Manifest, generated ownership evidence, PHPUnit discovery, and dogfooding are
   fresh and green.
 
