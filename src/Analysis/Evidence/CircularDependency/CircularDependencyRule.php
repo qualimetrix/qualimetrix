@@ -8,8 +8,13 @@ use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependency
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
+use Qualimetrix\Analysis\Finding\Contract\Population\RuleValueThreshold;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
@@ -72,19 +77,30 @@ final class CircularDependencyRule extends AbstractRule
 
         \assert($this->options instanceof CircularDependencyOptions);
 
+        $declaration = self::channelDeclarations()[self::NAME];
         $findings = [];
         $projectSubject = MetricSubject::aggregate(SymbolPath::forProject());
 
         foreach ($this->analysis->all() as $cycle) {
-            $severity = $this->getEffectiveSeverity($context, $this->options, $projectSubject, $cycle->getSize());
-            if ($severity === null) {
-                continue; // Cycle too large or filtered out
-            }
-
             $classes = $cycle->getClasses();
             \assert($classes !== [], 'CircularDependencyRule invariant: cycle has at least one class');
             $memberCanonicals = array_map(static fn(SymbolPath $class): string => $class->toCanonical(), $classes);
             sort($memberCanonicals);
+
+            if (!$context->admit(
+                self::NAME,
+                new FindingChannel(self::NAME),
+                SymbolLevel::Project,
+                PopulationIdentity::cycle($memberCanonicals),
+                $declaration,
+                [GateInput::ruleNumber('max-cycle-size', $cycle->getSize(), $this->options->maxCycleSize)],
+            )) {
+                continue;
+            }
+            $severity = $this->getEffectiveSeverity($context, $this->options, $projectSubject, $cycle->getSize());
+            if ($severity === null) {
+                continue;
+            }
 
             $category = $cycle->getSizeCategory();
             $size = $cycle->getSize();
@@ -170,10 +186,9 @@ final class CircularDependencyRule extends AbstractRule
      * `magnitude` / `higher` is a **decision, not a derivation**
      * (ADR 0017): {@see CircularDependencyOptions::getSeverity()}
      * is not monotone in `$size` — a direct two-class cycle is `Error` while a
-     * twelve-class cycle is only `Warning`, and any cycle whose size exceeds
-     * `maxCycleSize` is dropped before a `Finding` is ever built (`$size >
-     * $this->maxCycleSize`). Declaring `higher` says a cycle that
-     * gains a member is worse debt, independent of that severity ladder; it
+     * twelve-class cycle is only `Warning`. The declared population ceiling
+     * excludes larger cycles before severity is evaluated. Declaring `higher`
+     * says a cycle that gains a member is worse debt, independent of that severity ladder; it
      * does not change the rule's own cutoff, which stays exactly as
      * configured.
      *
@@ -182,7 +197,9 @@ final class CircularDependencyRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project)->readingRunEvidence(),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project)->readingRunEvidence()->withGates(
+                new PopulationGate('max-cycle-size', new FindingChannel(self::NAME), SymbolLevel::Project, 'cycle', new RuleValueThreshold('max-cycle-size', '<=', 'max-cycle-size', true), 'The cycle exceeds the configured population ceiling.'),
+            ),
         ];
     }
 }
