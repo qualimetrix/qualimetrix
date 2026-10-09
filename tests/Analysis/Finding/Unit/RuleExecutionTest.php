@@ -48,6 +48,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
+use WeakReference;
 
 #[CoversClass(RuleExecution::class)]
 #[CoversClass(RuleMaterialization::class)]
@@ -64,6 +65,93 @@ final class RuleExecutionTest extends TestCase
     protected function setUp(): void
     {
         $this->captureExcludedFindings = true;
+    }
+
+    #[Test]
+    public function itCountsRegisteredUngatedWritersFromEntriesAndCopiesIncludingShortCopies(): void
+    {
+        $provider = new \Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider();
+        $blocks = (new \Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlockFinder())->find(\Qualimetrix\Tests\Analysis\Evidence\Duplication\Support\SplitSameContentFixture::request());
+        self::assertNotEmpty($blocks);
+        $provider->replace([...$blocks, new \Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlock([
+            new \Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateLocation(RelativePath::fromString('a.php'), 1, 40, 5, 'long'),
+            new \Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateLocation(RelativePath::fromString('b.php'), 2, 60, 2, 'short'),
+        ], 80, str_repeat('a', 64))]);
+        $rules = [
+            new \Qualimetrix\Analysis\Evidence\Security\SqlInjectionRule(new \Qualimetrix\Analysis\Evidence\Security\SecurityPatternOptions()),
+            new \Qualimetrix\Analysis\Evidence\Security\HardcodedCredentialsRule(new \Qualimetrix\Analysis\Evidence\Security\HardcodedCredentialsOptions()),
+            new \Qualimetrix\Analysis\Evidence\Security\SensitiveParameterRule(new \Qualimetrix\Analysis\Evidence\Security\SensitiveParameterOptions()),
+            new \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule(new \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions(error: 5), $provider),
+        ];
+        $execution = $this->nativePopulationExecution($rules);
+        $file = RelativePath::fromString('src/Native.php');
+        $repository = new \Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository();
+        $bag = new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag();
+        foreach (range(1, 2) as $ordinal) {
+            $bag = $bag->withEntry('security.sql_injection', ['subjectKind' => 'file', 'line' => $ordinal, 'superglobal' => ''])->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => $ordinal, 'pattern' => 'variable'])->withEntry('security.sensitive-parameter', ['subjectKind' => 'file', 'line' => $ordinal, 'paramName' => 'password']);
+        }
+        $repository->add(SymbolPath::forFile($file), $bag, $file, 1);
+        $result = $execution->execute(new AnalysisContext($repository));
+        $copies = array_sum(array_map(static fn($block): int => \count($block->locations), $provider->all()));
+        self::assertSame(6 + $copies, $result->population->judgedCount());
+        self::assertSame(0, $result->population->unjudgedCount());
+        self::assertCount(6 + $copies, $result->produced);
+        self::assertSame(['copy-occurrence', 'occurrence', 'occurrence', 'occurrence'], array_column($result->population->judgedCounts(), 'unit'));
+        $short = array_values(array_filter($result->produced, static fn(Finding $finding): bool => $finding->location->pathString() === 'b.php'));
+        self::assertCount(1, $short);
+        self::assertSame(2, $short[0]->metricValue);
+        self::assertSame(Severity::Warning, $short[0]->severity);
+        $provider->reset();
+        $empty = $execution->execute(new AnalysisContext(new \Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository()));
+        self::assertTrue($empty->population->isEmpty());
+        self::assertSame([], $empty->produced);
+    }
+
+    #[Test]
+    public function itSharesOneDerivedContextAcrossArchitectureConsumersAndFreshExecutions(): void
+    {
+        $repository = new \Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository();
+        $nativeGraph = (new \Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder(new \Qualimetrix\Analysis\Evidence\DependencyModel\UnplacedExternalClassSpelling()))->build([], [])->graph;
+        $graph = self::createMock(\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface::class);
+        $graph->expects(self::exactly(2))->method('getAllDependencies')->willReturn([]);
+        $graph->method('getClassLikeDeclarations')->willReturn([]);
+        $configuration = new \Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration(new \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry([new \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition('app', new \Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec(patterns: ['App']))]), new \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy([]), \Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode::Ignore);
+        $processor = \Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ProcessorBuilder::prepared($configuration, $nativeGraph, $repository);
+        $lv = new \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions();
+        $ua = new \Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassOptions(\Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassMode::Warn);
+        $ld = new \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationOptions();
+        $collector = new \Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidenceCollector($lv, $ua, $ld, $processor);
+        $execution = $this->nativePopulationExecution([new \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule($lv, $collector), new \Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassRule($ua, $collector), new \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationRule($ld, $collector)]);
+        $context = new AnalysisContext($repository, $graph);
+        $weak = WeakReference::create($context);
+        $first = $execution->execute($context);
+        $second = $execution->execute($context);
+        self::assertSame([], $first->produced);
+        self::assertSame(1, $first->population->judgedCount());
+        self::assertSame(0, $first->population->unjudgedCount());
+        self::assertSame('invocation', $first->population->judgedCounts()[0]['unit']);
+        self::assertSame(2, $first->merge($second)->population->judgedCount());
+        unset($context);
+        gc_collect_cycles();
+        self::assertNull($weak->get());
+    }
+
+    /** @param list<RuleInterface> $rules */
+    private function nativePopulationExecution(array $rules): RuleExecution
+    {
+        $lookups = array_map(ResolvedOptionsFixture::lookup(...), $rules);
+        $metadata = array_column($lookups, 'metadata');
+        $declarations = [];
+        $channelsByProducer = [];
+        foreach ($rules as $rule) {
+            $declared = \Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader::read($rule::class);
+            $declarations = [...$declarations, ...$declared];
+            $channelsByProducer[$rule->getName()] = array_keys($declared);
+        }
+        $channels = new ChannelUniverse($declarations, $channelsByProducer, array_fill_keys(array_keys($channelsByProducer), false), new ResolvedComputedMetricDefinitions([]), ...self::unusedReachPorts());
+        $registry = new RuleOptionsRegistry();
+        $registry->replace(ResolvedOptionsFixture::ready(ResolvedOptionsFixture::authoredConfiguration([], $metadata), $metadata, channels: $channels));
+        return new RuleExecution($lookups, self::createStub(ProfilerInterface::class), $registry);
     }
 
     #[Test]

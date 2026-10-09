@@ -26,6 +26,19 @@ use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 final class PropertyCountRuleTest extends TestCase
 {
     #[Test]
+    public function itUsesReadonlyAndPromotedPublicationInsteadOfAStaleInterfaceFlag(): void
+    {
+        foreach (['design.is-readonly', 'design.is-promoted-properties-only'] as $flag) {
+            $repository = self::createStub(MetricRepositoryInterface::class);
+            $info = self::subjectInfo(SymbolPath::forClass('Population', 'Readonly'), RelativePath::fromString('src/Readonly.php'), 1);
+            $repository->method('allClassDeclarations')->willReturn([$info]);
+            $repository->method('getSubject')->willReturn((new MetricBag())->with('size.property-count', 20)->with($flag, 1)->with('design.is-interface', 0));
+            self::assertSame([], (new PropertyCountRule(new PropertyCountOptions()))->analyze(new AnalysisContext($repository)));
+            self::assertCount(1, (new PropertyCountRule(new PropertyCountOptions(excludeReadonly: false, excludePromotedOnly: false)))->analyze(new AnalysisContext($repository)));
+        }
+    }
+
+    #[Test]
     public function itCountsMeasuredZeroBeforeSeverityAndDistinguishesMissingPublication(): void
     {
         $rule = new PropertyCountRule(new PropertyCountOptions(excludeReadonly: false, excludePromotedOnly: false));

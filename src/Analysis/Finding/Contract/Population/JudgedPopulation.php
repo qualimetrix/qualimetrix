@@ -50,8 +50,9 @@ final readonly class JudgedPopulation
         foreach ($members as $member) {
             $failed = $declaration->populationFailure($channel, $level, $member['identity'], $member['inputs']);
             $session->record($producer, $channel, $level, $member['identity'], $declaration, $failed['gate'] ?? null, $failed['reason'] ?? null);
+            unset($member);
         }
-        unset($member, $members);
+        unset($members);
         return $session->freeze();
     }
 

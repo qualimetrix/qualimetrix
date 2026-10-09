@@ -45,8 +45,8 @@ final class MaintainabilityRuleTest extends TestCase
         $repository->method('allCallables')->willReturn($infos);
         $repository->expects(self::exactly(2))->method('getSubject')->willReturnCallback(static function (\Qualimetrix\Core\Symbol\MetricSubject $subject): MetricBag {
             return match ($subject->toSymbolPath()->type) {
-                'Healthy' => (new MetricBag())->with('maintainability.mi', 0),
-                'Missing' => new MetricBag(),
+                'Healthy' => (new MetricBag())->with('maintainability.mi', 0)->with('size.method-statement-count', 20)->with('size.loc', 0),
+                'Missing' => (new MetricBag())->with('size.method-statement-count', 20)->with('size.loc', 200),
                 default => throw new LogicException('Excluded metric bags must not be read.'),
             };
         });
@@ -57,7 +57,7 @@ final class MaintainabilityRuleTest extends TestCase
             }
         }
         $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)));
-        $rule = new MaintainabilityRule(new MaintainabilityOptions(minStatements: 0));
+        $rule = new MaintainabilityRule(new MaintainabilityOptions(minStatements: 15));
         $findings = $rule->analyze((new AnalysisContext($repository))->withPopulationTrace($session));
         self::assertCount(1, $findings);
         self::assertSame(0.0, $findings[0]->metricValue);

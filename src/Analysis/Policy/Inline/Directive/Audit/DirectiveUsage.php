@@ -118,24 +118,25 @@ final class DirectiveUsage
         ChannelPublication $publication,
     ): array {
         $stale = [];
-        $members = [];
 
         $channel = new FindingChannel(\Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy::UNUSED_DIRECTIVE_NAME);
         if (!$publication->publishes(UnusedDirectiveRule::NAME, $channel, SymbolLevel::File)) {
             return ['findings' => [], 'population' => JudgedPopulation::empty()];
         }
-        foreach ($this->evaluate($suppressionsByFile, $findings, $activity, $subjectCoverage) as $pair) {
-            $site = $pair['verdict']->site;
-            $members[] = [
-                'identity' => PopulationIdentity::selector(json_encode([$site->file->value(), $site->line, $site->position, $site->form, $site->target], \JSON_THROW_ON_ERROR), 'directive-site'),
-                'inputs' => [GateInput::context('directiveScopeMeasured', $pair['verdict']->reason === null)],
-            ];
-            if ($pair['verdict']->effect === DirectiveEffect::Inert) {
-                $stale[] = StaleDirectiveFinding::of($pair['verdict']->site->file, $pair['directive'], $severity);
+        $members = (function () use ($suppressionsByFile, $findings, $activity, $subjectCoverage, $severity, &$stale): iterable {
+            foreach ($this->evaluate($suppressionsByFile, $findings, $activity, $subjectCoverage) as $pair) {
+                $site = $pair['verdict']->site;
+                yield [
+                    'identity' => PopulationIdentity::selector(json_encode([$site->file->value(), $site->line, $site->position, $site->form, $site->target], \JSON_THROW_ON_ERROR), 'directive-site'),
+                    'inputs' => [GateInput::context('directiveScopeMeasured', $pair['verdict']->reason === null)],
+                ];
+                if ($pair['verdict']->effect === DirectiveEffect::Inert) {
+                    $stale[] = StaleDirectiveFinding::of($pair['verdict']->site->file, $pair['directive'], $severity);
+                }
             }
-        }
-
-        return ['findings' => $stale, 'population' => JudgedPopulation::measure($publication, UnusedDirectiveRule::NAME, $channel, SymbolLevel::File, UnusedDirectiveRule::channelDeclarations()[$channel->code], $members)];
+        })();
+        $population = JudgedPopulation::measure($publication, UnusedDirectiveRule::NAME, $channel, SymbolLevel::File, UnusedDirectiveRule::channelDeclarations()[$channel->code], $members);
+        return ['findings' => $stale, 'population' => $population];
     }
 
     /**

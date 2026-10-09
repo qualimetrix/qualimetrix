@@ -56,6 +56,18 @@ final class HostedPopulationTest extends TestCase
         self::assertSame('configured-discovery-selector', $unjudged->abstentions()[0]->unit);
         self::assertSame(1, $judged->merge($judged)->judgedCount());
         self::assertSame(1, $judged->merge($unjudged)->unjudgedCount());
+        $preset = ConfigurationOrigin::of(ConfigurationSource::Preset, 'strict');
+        $nested = new PathPattern(SelectorDefinition::fromKindAndValue('subtree', 'vendor/cache'));
+        $same = ExcludeSelectorVerdict::fromMeasuredFacts($nested, [$origin], [], [], null, null, [['directory' => 'vendor', 'selector' => 'subtree:vendor', 'sources' => [$origin]]], true);
+        $other = ExcludeSelectorVerdict::fromMeasuredFacts($nested, [$origin], [], [], null, null, [['directory' => 'vendor', 'selector' => 'subtree:vendor', 'sources' => [$preset]]], true);
+        $unmatched = ExcludeSelectorVerdict::fromMeasuredFacts(new PathPattern(SelectorDefinition::fromKindAndValue('subtree', 'gone')), [$origin], [], [], null, null, [], true);
+        $blocked = ExcludeSelectorVerdict::fromMeasuredFacts($pattern, [$origin], [], [], null, 'vendor', [], true);
+        $coalesced = ExcludeSelectorVerdict::fromMeasuredFacts($pattern, [$origin, $preset], ['vendor/A.php'], ['vendor/A.php'], 'php-file', null, [], true);
+        $all = new ProjectScopeJudgement(excludeSelectors: [$coalesced, $same, $other, $unmatched, $blocked]);
+        $measured = $audit->population($all, $publication, $channel, $declaration);
+        self::assertSame(3, $measured->judgedCount());
+        self::assertSame(2, $measured->unjudgedCount());
+        self::assertTrue($audit->population($all, self::publication(UnmatchedExcludeRule::NAME, UnmatchedExcludeRule::channelDeclarations(), false), $channel, $declaration)->isEmpty());
     }
 
     #[Test]
@@ -136,6 +148,41 @@ final class HostedPopulationTest extends TestCase
         $disabled = $audit->auditResult([$path], [$namespace], [], null, $scope, self::publication($producer, $declarations, false));
         self::assertTrue($disabled['population']->isEmpty());
         self::assertSame([], $disabled['findings']);
+    }
+
+    #[Test]
+    public function itSeparatesUnknownGraphFromKnownEmptyNativeArchitectureAndUnavailablePreparation(): void
+    {
+        $repository = new \Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository();
+        $graph = (new \Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder(new \Qualimetrix\Analysis\Evidence\DependencyModel\UnplacedExternalClassSpelling()))->build([], [])->graph;
+        $configuration = new \Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration(new \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry([new \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition('app', new \Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec(patterns: ['App']))]), new \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy([]), \Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode::Ignore);
+        foreach ([[$configuration, null, 1, 1], [$configuration, $graph, 1, 0], [\Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ProcessorBuilder::empty(), $graph, 0, 4]] as [$config, $contextGraph, $judged, $unjudged]) {
+            $processor = \Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ProcessorBuilder::prepared($config, $graph, $repository);
+            $lv = new \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions();
+            $ua = new \Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassOptions(\Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassMode::Warn);
+            $ld = new \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationOptions();
+            $collector = new \Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidenceCollector($lv, $ua, $ld, $processor);
+            $rules = [new \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule($lv, $collector), new \Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassRule($ua, $collector), new \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationRule($ld, $collector)];
+            $decisions = [];
+            foreach ($rules as $rule) {
+                foreach ($rule::channelDeclarations() as $name => $declaration) {
+                    foreach ($declaration->levels as $level) {
+                        $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress($rule->getName(), new FindingChannel($name), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
+                    }
+                }
+            }
+            $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)));
+            $context = (new \Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext($repository, $contextGraph))->withPopulationTrace($session);
+            foreach ($rules as $rule) {
+                self::assertSame([], $rule->analyze($context));
+            }
+            self::assertSame($judged, $session->freeze()->judgedCount());
+            self::assertSame($unjudged, $session->freeze()->unjudgedCount());
+            foreach ($session->freeze()->abstentions() as $absence) {
+                self::assertSame('invocation', $absence->unit);
+                self::assertSame(1, $absence->count);
+            }
+        }
     }
 
     /** @param array<string, \Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration> $declarations */

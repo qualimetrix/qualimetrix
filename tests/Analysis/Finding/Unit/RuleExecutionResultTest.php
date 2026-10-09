@@ -21,12 +21,6 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 #[CoversClass(RuleExecutionResult::class)]
 final class RuleExecutionResultTest extends TestCase
 {
-    /**
-     * `$excludedFindings` and `$attributions` are index-aligned: entry `i` of
-     * the second says why entry `i` of the first was removed. A merge that
-     * concatenates one list and not the other leaves every excluded finding
-     * without a reason while the counters still say findings were excluded.
-     */
     #[Test]
     public function itMergesIndependentPopulationPartitionsWithoutDoublingAdoption(): void
     {
@@ -49,6 +43,12 @@ final class RuleExecutionResultTest extends TestCase
         self::assertSame(12, $first->population->unjudgedCount());
     }
 
+    /**
+     * `$excludedFindings` and `$attributions` are index-aligned: entry `i` of
+     * the second says why entry `i` of the first was removed. A merge that
+     * concatenates one list and not the other leaves every excluded finding
+     * without a reason while the counters still say findings were excluded.
+     */
     #[Test]
     public function itMergesAttributionsAlongsideTheFindingsTheyExplain(): void
     {

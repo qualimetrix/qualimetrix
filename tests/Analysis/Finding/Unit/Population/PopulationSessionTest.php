@@ -86,6 +86,22 @@ final class PopulationSessionTest extends TestCase
         gc_collect_cycles();
         self::assertNull($weak->get());
         self::assertSame(1, $population->judgedCount());
+        $members = (static function (): iterable {
+            $weakInputs = [];
+            for ($ordinal = 0; $ordinal < 20; ++$ordinal) {
+                if ($ordinal >= 2) {
+                    self::assertNull($weakInputs[$ordinal - 2][0]->get());
+                    self::assertNull($weakInputs[$ordinal - 2][1]->get());
+                }
+                $bag = MetricBag::fromArray(['value' => 0]);
+                $identity = PopulationIdentity::occurrence('streaming', $ordinal);
+                $weakInputs[] = [WeakReference::create($bag), WeakReference::create($identity)];
+                yield ['identity' => $identity, 'inputs' => [GateInput::metrics('value', $bag)]];
+                unset($bag, $identity);
+            }
+        })();
+        $streamed = JudgedPopulation::measure($this->publication(), 'fixture.population', new FindingChannel('fixture.population'), SymbolLevel::Project, $this->declaration(), $members);
+        self::assertSame(20, $streamed->judgedCount());
     }
     private function publication(bool $selected = true): ChannelPublication
     {
