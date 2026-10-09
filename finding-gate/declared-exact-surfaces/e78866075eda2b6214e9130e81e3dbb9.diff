@@ -1,0 +1,40 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 3963
++visible 3774
+@@ -11,1 +11,1 @@
+-  Cohesion          100.0%   ▲ Excellent       100%  warn < 50  err < 25
++  Cohesion           85.4%   ▲ Excellent         0%  warn < 50  err < 25
+@@ -16,1 +16,1 @@
+-  Overall            85.3%   ▲ Excellent        n/a  warn < 50  err < 30
++  Overall            82.3%   ▲ Excellent        n/a  warn < 50  err < 30
+@@ -30,7 +30,2 @@
+-    Computed over 101 of 101 classes (100%), from cohesion.lcom.count
+-    TCC: not measured 0/101
+-    LCOM4 (avg)                     1   (target: 1 or less) — classes are cohesive
+-    Worst contributors:
+-      Shard000                       LCOM=1
+-      Shard001                       LCOM=1
+-      Shard002                       LCOM=1
++    Computed over 0 of 101 classes (0%), from cohesion.tcc.count
++    LCOM4 (avg)                     1   (target: 1 or less) — classes are cohesive
+@@ -63,1 +58,1 @@
+-invocation-format:health 3963
++invocation-format:health 3774
+@@ -73,1 +68,1 @@
+-  Cohesion          100.0%   ▲ Excellent       100%  warn < 50  err < 25
++  Cohesion           85.4%   ▲ Excellent         0%  warn < 50  err < 25
+@@ -78,1 +73,1 @@
+-  Overall            85.3%   ▲ Excellent        n/a  warn < 50  err < 30
++  Overall            82.3%   ▲ Excellent        n/a  warn < 50  err < 30
+@@ -92,7 +87,2 @@
+-    Computed over 101 of 101 classes (100%), from cohesion.lcom.count
+-    TCC: not measured 0/101
+-    LCOM4 (avg)                     1   (target: 1 or less) — classes are cohesive
+-    Worst contributors:
+-      Shard000                       LCOM=1
+-      Shard001                       LCOM=1
+-      Shard002                       LCOM=1
++    Computed over 0 of 101 classes (0%), from cohesion.tcc.count
++    LCOM4 (avg)                     1   (target: 1 or less) — classes are cohesive

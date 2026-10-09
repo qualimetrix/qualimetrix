@@ -1,0 +1,424 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 152080
++visible 143537
+@@ -39,1 +39,0 @@
+-    "computedMetricOutcomes": [],
+@@ -62,9 +61,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 101,
+-                        "eligible": 101,
+-                        "ratio": 1,
+-                        "unit": "callables",
+-                        "basis": "complexity.ccn.count",
+-                        "reason": null
+-                    },
+@@ -78,9 +68,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 101,
+-                        "eligible": 101,
+-                        "ratio": 1,
+-                        "unit": "callables",
+-                        "basis": "complexity.cognitive.count",
+-                        "reason": null
+-                    },
+@@ -94,9 +75,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 101,
+-                        "eligible": 101,
+-                        "ratio": 1,
+-                        "unit": "callables",
+-                        "basis": "complexity.ccn.count",
+-                        "reason": null
+-                    },
+@@ -110,9 +82,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 101,
+-                        "eligible": 101,
+-                        "ratio": 1,
+-                        "unit": "callables",
+-                        "basis": "complexity.cognitive.count",
+-                        "reason": null
+-                    },
+@@ -126,9 +89,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 101,
+-                        "eligible": 101,
+-                        "ratio": 1,
+-                        "unit": "callables",
+-                        "basis": "complexity.ccn.count",
+-                        "reason": null
+-                    },
+@@ -223,1 +177,1 @@
+-            "score": 100,
++            "score": 85.35533905932738,
+@@ -231,5 +185,5 @@
+-                "measured": 101,
+-                "eligible": 101,
+-                "ratio": 1,
+-                "unit": "classes",
+-                "basis": "cohesion.lcom.count",
++                "measured": 0,
++                "eligible": 101,
++                "ratio": 0,
++                "unit": "classes",
++                "basis": "cohesion.tcc.count",
+@@ -240,28 +194,3 @@
+-                    "metric": "cohesion.tcc.avg",
+-                    "humanName": "TCC",
+-                    "value": null,
+-                    "coverage": {
+-                        "state": "not-measured",
+-                        "measured": 0,
+-                        "eligible": 101,
+-                        "ratio": 0,
+-                        "unit": "classes",
+-                        "basis": "cohesion.tcc.count",
+-                        "reason": null
+-                    },
+-                    "good": "above 0.5",
+-                    "direction": "higher_is_better"
+-                },
+-                {
+-                    "metric": "cohesion.lcom.avg",
+-                    "humanName": "LCOM4 (avg)",
+-                    "value": 1,
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 101,
+-                        "eligible": 101,
+-                        "ratio": 1,
+-                        "unit": "classes",
+-                        "basis": "cohesion.lcom.count",
+-                        "reason": null
+-                    },
++                    "metric": "cohesion.lcom.avg",
++                    "humanName": "LCOM4 (avg)",
++                    "value": 1,
+@@ -272,72 +201,1 @@
+-            "worstContributors": [
+-                {
+-                    "className": "Shard000",
+-                    "symbolPath": "class:Corpus\\ParallelFiles\\Shard000",
+-                    "metrics": {
+-                        "cohesion.lcom": 1
+-                    }
+-                },
+-                {
+-                    "className": "Shard001",
+-                    "symbolPath": "class:Corpus\\ParallelFiles\\Shard001",
+-                    "metrics": {
+-                        "cohesion.lcom": 1
+-                    }
+-                },
+-                {
+-                    "className": "Shard002",
+-                    "symbolPath": "class:Corpus\\ParallelFiles\\Shard002",
+-                    "metrics": {
+-                        "cohesion.lcom": 1
+-                    }
+-                },
+-                {
+-                    "className": "Shard003",
+-                    "symbolPath": "class:Corpus\\ParallelFiles\\Shard003",
+-                    "metrics": {
+-                        "cohesion.lcom": 1
+-                    }
+-                },
+-                {
+-                    "className": "Shard004",
+-                    "symbolPath": "class:Corpus\\ParallelFiles\\Shard004",
+-                    "metrics": {
+-                        "cohesion.lcom": 1
+-                    }
+-                },
+-                {
+-                    "className": "Shard005",
+-                    "symbolPath": "class:Corpus\\ParallelFiles\\Shard005",
+-                    "metrics": {
+-                        "cohesion.lcom": 1
+-                    }
+-                },
+-                {
+-                    "className": "Shard006",
+-                    "symbolPath": "class:Corpus\\ParallelFiles\\Shard006",
+-                    "metrics": {
+-                        "cohesion.lcom": 1
+-                    }
+-                },
+-                {
+-                    "className": "Shard007",
+-                    "symbolPath": "class:Corpus\\ParallelFiles\\Shard007",
+-                    "metrics": {
+-                        "cohesion.lcom": 1
+-                    }
+-                },
+-                {
+-                    "className": "Shard008",
+-                    "symbolPath": "class:Corpus\\ParallelFiles\\Shard008",
+-                    "metrics": {
+-                        "cohesion.lcom": 1
+-                    }
+-                },
+-                {
+-                    "className": "Shard009",
+-                    "symbolPath": "class:Corpus\\ParallelFiles\\Shard009",
+-                    "metrics": {
+-                        "cohesion.lcom": 1
+-                    }
+-                }
+-            ]
++            "worstContributors": []
+@@ -366,9 +224,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 1,
+-                        "eligible": 1,
+-                        "ratio": 1,
+-                        "unit": "namespaces declaring a type",
+-                        "basis": "coupling.distance-own.count",
+-                        "reason": null
+-                    },
+@@ -382,9 +231,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 101,
+-                        "eligible": 101,
+-                        "ratio": 1,
+-                        "unit": "classes",
+-                        "basis": "coupling.cbo.count",
+-                        "reason": null
+-                    },
+@@ -398,9 +238,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 101,
+-                        "eligible": 101,
+-                        "ratio": 1,
+-                        "unit": "classes",
+-                        "basis": "coupling.cbo.count",
+-                        "reason": null
+-                    },
+@@ -414,9 +245,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 101,
+-                        "eligible": 101,
+-                        "ratio": 1,
+-                        "unit": "classes",
+-                        "basis": "coupling.cbo.count",
+-                        "reason": null
+-                    },
+@@ -531,9 +353,0 @@
+-                    "coverage": {
+-                        "state": "not-applicable",
+-                        "measured": null,
+-                        "eligible": null,
+-                        "ratio": null,
+-                        "unit": null,
+-                        "basis": null,
+-                        "reason": "this input has no declared symbol population"
+-                    },
+@@ -547,9 +360,0 @@
+-                    "coverage": {
+-                        "state": "not-applicable",
+-                        "measured": null,
+-                        "eligible": null,
+-                        "ratio": null,
+-                        "unit": null,
+-                        "basis": null,
+-                        "reason": "this input has no declared symbol population"
+-                    },
+@@ -654,9 +458,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 101,
+-                        "eligible": 101,
+-                        "ratio": 1,
+-                        "unit": "callables",
+-                        "basis": "maintainability.mi.count",
+-                        "reason": null
+-                    },
+@@ -670,9 +465,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 101,
+-                        "eligible": 101,
+-                        "ratio": 1,
+-                        "unit": "callables",
+-                        "basis": "maintainability.mi.count",
+-                        "reason": null
+-                    },
+@@ -686,9 +472,0 @@
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 101,
+-                        "eligible": 101,
+-                        "ratio": 1,
+-                        "unit": "callables",
+-                        "basis": "maintainability.mi.count",
+-                        "reason": null
+-                    },
+@@ -702,1 +479,1 @@
+-            "score": 85.2603249466698,
++            "score": 82.33139275853527,
+@@ -724,1 +501,1 @@
+-            "healthOverall": 85.2603249466698,
++            "healthOverall": 82.33139275853527,
+@@ -732,5 +509,5 @@
+-                "cohesion": 100,
+-                "coupling": 75,
+-                "typing": 100,
+-                "maintainability": 64.66796136701234,
+-                "overall": 85.2603249466698
++                "cohesion": 85.35533905932738,
++                "coupling": 75,
++                "typing": 100,
++                "maintainability": 64.66796136701234,
++                "overall": 82.33139275853527
+@@ -743,1 +520,1 @@
+-            "healthOverall": 97.19999999999999,
++            "healthOverall": 93.53883476483185,
+@@ -759,5 +536,5 @@
+-                "cohesion": 100,
+-                "coupling": 100,
+-                "typing": 100,
+-                "maintainability": 72.17046596900295,
+-                "overall": 97.19999999999999
++                "cohesion": 85.35533905932738,
++                "coupling": 100,
++                "typing": 100,
++                "maintainability": 72.17046596900295,
++                "overall": 93.53883476483185
+@@ -768,1 +545,1 @@
+-            "healthOverall": 97.19999999999999,
++            "healthOverall": 93.53883476483185,
+@@ -784,5 +561,5 @@
+-                "cohesion": 100,
+-                "coupling": 100,
+-                "typing": 100,
+-                "maintainability": 72.17046596900295,
+-                "overall": 97.19999999999999
++                "cohesion": 85.35533905932738,
++                "coupling": 100,
++                "typing": 100,
++                "maintainability": 72.17046596900295,
++                "overall": 93.53883476483185
+@@ -793,1 +570,1 @@
+-            "healthOverall": 97.19999999999999,
++            "healthOverall": 93.53883476483185,
+@@ -809,5 +586,5 @@
+-                "cohesion": 100,
+-                "coupling": 100,
+-                "typing": 100,
+-                "maintainability": 72.17046596900295,
+-                "overall": 97.19999999999999
++                "cohesion": 85.35533905932738,
++                "coupling": 100,
++                "typing": 100,
++                "maintainability": 72.17046596900295,
++                "overall": 93.53883476483185
+@@ -818,1 +595,1 @@
+-            "healthOverall": 97.19999999999999,
++            "healthOverall": 93.53883476483185,
+@@ -834,5 +611,5 @@
+-                "cohesion": 100,
+-                "coupling": 100,
+-                "typing": 100,
+-                "maintainability": 72.17046596900295,
+-                "overall": 97.19999999999999
++                "cohesion": 85.35533905932738,
++                "coupling": 100,
++                "typing": 100,
++                "maintainability": 72.17046596900295,
++                "overall": 93.53883476483185
+@@ -843,1 +620,1 @@
+-            "healthOverall": 97.19999999999999,
++            "healthOverall": 93.53883476483185,
+@@ -859,5 +636,5 @@
+-                "cohesion": 100,
+-                "coupling": 100,
+-                "typing": 100,
+-                "maintainability": 72.17046596900295,
+-                "overall": 97.19999999999999
++                "cohesion": 85.35533905932738,
++                "coupling": 100,
++                "typing": 100,
++                "maintainability": 72.17046596900295,
++                "overall": 93.53883476483185
+@@ -868,1 +645,1 @@
+-            "healthOverall": 97.19999999999999,
++            "healthOverall": 93.53883476483185,
+@@ -884,5 +661,5 @@
+-                "cohesion": 100,
+-                "coupling": 100,
+-                "typing": 100,
+-                "maintainability": 72.17046596900295,
+-                "overall": 97.19999999999999
++                "cohesion": 85.35533905932738,
++                "coupling": 100,
++                "typing": 100,
++                "maintainability": 72.17046596900295,
++                "overall": 93.53883476483185
+@@ -893,1 +670,1 @@
+-            "healthOverall": 97.19999999999999,
++            "healthOverall": 93.53883476483185,
+@@ -909,5 +686,5 @@
+-                "cohesion": 100,
+-                "coupling": 100,
+-                "typing": 100,
+-                "maintainability": 72.17046596900295,
+-                "overall": 97.19999999999999
++                "cohesion": 85.35533905932738,
++                "coupling": 100,
++                "typing": 100,
++                "maintainability": 72.17046596900295,
++                "overall": 93.53883476483185
+@@ -918,1 +695,1 @@
+-            "healthOverall": 97.19999999999999,
++            "healthOverall": 93.53883476483185,
+@@ -934,5 +711,5 @@
+-                "cohesion": 100,
+-                "coupling": 100,
+-                "typing": 100,
+-                "maintainability": 72.17046596900295,
+-                "overall": 97.19999999999999
++                "cohesion": 85.35533905932738,
++                "coupling": 100,
++                "typing": 100,
++                "maintainability": 72.17046596900295,
++                "overall": 93.53883476483185
+@@ -943,1 +720,1 @@
+-            "healthOverall": 97.19999999999999,
++            "healthOverall": 93.53883476483185,
+@@ -959,5 +736,5 @@
+-                "cohesion": 100,
+-                "coupling": 100,
+-                "typing": 100,
+-                "maintainability": 72.17046596900295,
+-                "overall": 97.19999999999999
++                "cohesion": 85.35533905932738,
++                "coupling": 100,
++                "typing": 100,
++                "maintainability": 72.17046596900295,
++                "overall": 93.53883476483185
+@@ -968,1 +745,1 @@
+-            "healthOverall": 97.19999999999999,
++            "healthOverall": 93.53883476483185,
+@@ -984,5 +761,5 @@
+-                "cohesion": 100,
+-                "coupling": 100,
+-                "typing": 100,
+-                "maintainability": 72.17046596900295,
+-                "overall": 97.19999999999999
++                "cohesion": 85.35533905932738,
++                "coupling": 100,
++                "typing": 100,
++                "maintainability": 72.17046596900295,
++                "overall": 93.53883476483185

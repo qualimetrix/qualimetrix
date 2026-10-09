@@ -1,1 +1,6 @@
 change	report	view	field	reason
+added	json-document	format:json	computedMetricOutcomes	Successful check reports publish the run-owned authored computed-value absence summary
+added	json-document	check:output:file	computedMetricOutcomes	Successful check reports publish the run-owned authored computed-value absence summary
+added	json-document	check:parallel	computedMetricOutcomes	Successful check reports publish the run-owned authored computed-value absence summary
+added	json-document	check:baseline	computedMetricOutcomes	Successful check reports publish the run-owned authored computed-value absence summary
+added	json-document	check:baseline-source	computedMetricOutcomes	Successful check reports publish the run-owned authored computed-value absence summary
