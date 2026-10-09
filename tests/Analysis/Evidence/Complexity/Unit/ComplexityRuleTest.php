@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
+use LogicException;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -572,6 +573,34 @@ final class ComplexityRuleTest extends TestCase
             'declaration:callable:App\\Service\\Twin::run@src/A.php',
             'declaration:callable:App\\Service\\Twin::run@src/B.php',
         ], $subjects);
+    }
+
+    #[Test]
+    public function itAccountsHealthyZeroAndMissingCallablePublicationsSeparately(): void
+    {
+        $file = RelativePath::fromString('src/Service.php');
+        $zero = self::subjectInfo(SymbolPath::forMethod('App', 'Service', 'zero'), $file, 1);
+        $missing = self::subjectInfo(SymbolPath::forMethod('App', 'Service', 'missing'), $file, 2);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allCallables')->willReturn([$zero, $missing]);
+        $zeroSubject = $zero->subject ?? throw new LogicException('Fixture requires an exact callable.');
+        $repository->method('getSubject')->willReturnCallback(static fn($subject): MetricBag =>
+            $subject->toCanonical() === $zeroSubject->toCanonical() ? MetricBag::fromArray(['complexity.ccn' => 0]) : new MetricBag());
+        $channel = new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.ccn');
+        $publication = new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement([
+            new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
+                new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress('complexity.ccn', $channel, SymbolLevel::Callable, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable),
+                new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
+            ),
+        ], null));
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession($publication);
+        $context = (new AnalysisContext($repository))->withPopulationTrace($session);
+        self::assertSame([], (new ComplexityRule(new ComplexityOptions()))->analyzeLevel(SymbolLevel::Callable, $context));
+        $population = $session->freeze();
+        self::assertSame(1, $population->judgedCount());
+        self::assertSame(1, $population->unjudgedCount());
+        self::assertSame('callable', $population->abstentions()[0]->unit);
+        self::assertStringContainsString('missing', $population->abstentions()[0]->examples[0]);
     }
 
     private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo

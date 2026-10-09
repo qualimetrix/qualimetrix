@@ -10,8 +10,15 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
+use Qualimetrix\Analysis\Finding\Contract\Population\KindIn;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
@@ -143,6 +150,10 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
                 ),
                 SymbolLevel::Callable,
                 SymbolLevel::Class_,
+            )->withGates(
+                new PopulationGate('callable-value', new FindingChannel(self::NAME), SymbolLevel::Callable, 'callable', new KeyPresent('callable-value', [MetricName::COMPLEXITY_CCN]), 'Callable complexity was not published.'),
+                new PopulationGate('class-coordinate', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
+                new PopulationGate('class-maximum', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KeyPresent('class-maximum', [MetricName::agg(MetricName::COMPLEXITY_CCN, AggregationStrategy::Max)]), 'Maximum method complexity was not published.'),
             ),
         ];
     }
@@ -155,6 +166,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
         \assert($this->options instanceof ComplexityOptions);
         $methodOptions = $this->options->callable;
 
+        $declaration = self::channelDeclarations()[self::NAME];
         $findings = [];
 
         foreach ($context->metrics->allCallables() as $methodInfo) {
@@ -163,7 +175,14 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
             $ccn = $metrics->get(MetricName::COMPLEXITY_CCN);
             $cognitive = $metrics->get(MetricName::COMPLEXITY_COGNITIVE);
 
-            if ($ccn === null) {
+            if (!$context->admit(
+                self::NAME,
+                new FindingChannel(self::NAME),
+                SymbolLevel::Callable,
+                PopulationIdentity::subject($subject, 'callable'),
+                $declaration,
+                [GateInput::metrics('callable-value', $metrics)],
+            )) {
                 continue;
             }
 

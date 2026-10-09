@@ -40,7 +40,14 @@ Complexity/
 ```
 
 The three callable collectors retain their names, requirements and metric
-definitions. Rule metadata retains the exact option-class mappings:
+definitions. Callable CCN, cognitive and NPath rule coordinates declare
+required metric publication through their full channel declarations. Exact
+callable subjects with measured zero complete healthy judgement; absent values
+belong to the `callable-value` absence group. Selected accounting includes both
+healthy and finding sides without changing threshold comparisons or collector
+algorithms. Direct and unselected calls use the same pure eligibility gate.
+
+Rule metadata retains the exact option-class mappings:
 `ComplexityRule` -> `ComplexityOptions`, `CognitiveComplexityRule` ->
 `CognitiveComplexityOptions`, `NpathComplexityRule` ->
 `NpathComplexityOptions`, and `WmcRule` -> `WmcOptions`.
