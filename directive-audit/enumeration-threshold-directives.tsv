@@ -74,8 +74,6 @@ src/Core/ProductIdentity.php	17	coupling.cbo	26 -- Documentation identity has 24
 src/Reporting/FormatterContext.php	15	coupling.cbo	warning=33 error=33 -- Formatter context is the immutable Reporting input boundary every formatter's `format(Report, FormatterContext)` signature depends on. `Infrastructure\Console\ResultPresenter` also names it directly to refuse a `--namespace` or `--class` value that selects nothing, and the bound namespace selector is now part of that stable boundary. Raw CBO 32 gets one-edge headroom from the inclusive threshold of 33.
 src/Reporting/Report.php	20	coupling.cbo	warning=34 error=34 -- Report is the transport VO every formatter's
 src/Analysis/Evidence/Measurement/Contract/MetricBag.php	14	coupling.class-rank	warning=0.035 error=0.035 -- Intentional Measurement
-src/Analysis/Evidence/ComputedMetrics/ComputedMetricFormulaValidator.php	25	coupling.instability	warning=0.81 -- Ca=2, Ce=8: the eighth efferent
-src/Analysis/Evidence/ComputedMetrics/Configuration/ComputedMetricAuthorship.php	20	coupling.instability	warning=0.82 -- Ca=2, Ce=9: it reads the resolved
 src/Analysis/Evidence/ComputedMetrics/Configuration/ComputedMetricsSection.php	25	coupling.instability	warning=0.85 -- Ca=2, Ce=11: the owned section schema
 src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricReads.php	31	coupling.instability	warning=0.81 -- Ca=2, Ce=8: native AST node kinds
 src/Analysis/Evidence/Design/DataClass/DataClassOptions.php	28	coupling.instability	warning=0.81 -- The eighth efferent edge is

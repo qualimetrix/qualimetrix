@@ -39,7 +39,7 @@ complexity.wmc	channel	?		27	180	2	2	2	39	0	2076	0	0	0	0
 coupling.cbo	channel	?		67	389	2	6	7	132	0	3011	0	0	0	0
 coupling.class-rank	channel	?		25	135	0	2	1	42	0	2289	0	0	0	0
 coupling.distance	channel	?		41	124	2	2	0	51	0	1077	0	0	0	0
-coupling.instability	channel	?		66	150	2	4	4	60	0	2843	0	0	0	0
+coupling.instability	channel	?		64	150	2	4	4	60	0	2843	0	0	0	0
 coupling.unmatched-framework-namespace	channel	?		5	11	0	0	0	18	0	14	0	0	0	0
 design.data-class	channel	?		17	23	1	1	6	37	0	153	0	0	0	0
 design.dit	channel	?		16	122	2	2	0	48	0	2955	0	0	0	0
@@ -92,7 +92,7 @@ coupling.ce-packages	metric-key	?		19	13	0	0	0	5	0	2052	0	0	0	0
 coupling.class-rank	metric-key	?		25	135	0	2	1	42	0	2289	0	0	0	0
 coupling.distance	metric-key	?		41	124	2	2	0	51	0	1077	0	0	0	0
 coupling.distance-own	metric-key	?		11	18	0	0	0	9	0	628	0	0	0	0
-coupling.instability	metric-key	?		66	150	2	4	4	60	0	2843	0	0	0	0
+coupling.instability	metric-key	?		64	150	2	4	4	60	0	2843	0	0	0	0
 coupling.instability-own	metric-key	?		9	9	0	0	0	5	0	862	0	0	0	0
 coupling.rfc	metric-key	?		14	33	0	0	0	0	0	2052	0	0	0	0
 coupling.rfc-external	metric-key	?		8	4	0	0	0	0	0	1908	0	0	0	0
@@ -182,7 +182,7 @@ computed	producer	?		139	169	0	1	0	63	0	64	0	0	0	0
 coupling.cbo	producer	?		67	389	2	6	7	132	0	3011	0	0	0	0
 coupling.class-rank	producer	?		25	135	0	2	1	42	0	2289	0	0	0	0
 coupling.distance	producer	?		41	124	2	2	0	51	0	1077	0	0	0	0
-coupling.instability	producer	?		66	150	2	4	4	60	0	2843	0	0	0	0
+coupling.instability	producer	?		64	150	2	4	4	60	0	2843	0	0	0	0
 coupling.unmatched-framework-namespace	producer	?		5	11	0	0	0	18	0	14	0	0	0	0
 design.data-class	producer	?		17	23	1	1	6	37	0	153	0	0	0	0
 design.dit	producer	?		16	122	2	2	0	48	0	2955	0	0	0	0

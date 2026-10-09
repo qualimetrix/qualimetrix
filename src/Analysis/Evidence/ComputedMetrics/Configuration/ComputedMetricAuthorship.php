@@ -16,10 +16,6 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * Which layers wrote each computed metric, so a refusal about a resolved
  * definition names them. A definition no layer touched is the built-in
  * defaults'.
- *
- * @qmx-threshold coupling.instability warning=0.82 -- Ca=2, Ce=9: it reads the resolved
- * document (three types) and builds the refusal (two types) for its two callers, so it
- * depends outward by construction.
  */
 final readonly class ComputedMetricAuthorship
 {
