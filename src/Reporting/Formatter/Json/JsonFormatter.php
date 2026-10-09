@@ -162,7 +162,7 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
             $result[] = [
                 'rank' => $rank + 1,
                 'impactScore' => round($issue->impactScore, 2),
-                'coupling.class-rank' => $issue->classRank !== null ? round($issue->classRank, 4) : null,
+                'coupling.class-rank-share' => $issue->classRankShare !== null ? round($issue->classRankShare, 4) : null,
                 'debtMinutes' => $issue->debtMinutes,
                 'file' => $record['file'],
                 'line' => $record['line'],

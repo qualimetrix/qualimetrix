@@ -54,15 +54,16 @@ final class ClassRankCollectorTest extends TestCase
     #[Test]
     public function itProvidesTheClassRankMetric(): void
     {
-        self::assertSame(['coupling.class-rank'], $this->collector->provides());
+        self::assertSame(['coupling.class-rank', 'coupling.class-rank-share'], $this->collector->provides());
     }
 
     #[Test]
-    public function itDeclaresOneMetricDefinitionAggregatedAtNamespaceAndProject(): void
+    public function itDeclaresProbabilityAndShareDefinitionsAggregatedAtNamespaceAndProject(): void
     {
         $definitions = $this->collector->getMetricDefinitions();
 
-        self::assertCount(1, $definitions);
+        self::assertCount(2, $definitions);
+        self::assertSame('coupling.class-rank-share', $definitions[1]->name);
 
         $def = $definitions[0];
         self::assertSame('coupling.class-rank', $def->name);
@@ -107,6 +108,7 @@ final class ClassRankCollectorTest extends TestCase
         $metrics = $this->logicalMetrics($repository, $fooPath);
 
         self::assertEqualsWithDelta(1.0, $metrics->get('coupling.class-rank'), 0.001);
+        self::assertSame(1.0, $metrics->get('coupling.class-rank-share'));
     }
 
     #[Test]
@@ -149,6 +151,7 @@ final class ClassRankCollectorTest extends TestCase
         self::assertCount(1, iterator_to_array($repository->allLogicalClasses()));
         self::assertCount(2, iterator_to_array($repository->allDeclarations()));
         self::assertSame(1.0, $this->logicalMetrics($repository, $class)->get('coupling.class-rank'));
+        self::assertSame(1.0, $this->logicalMetrics($repository, $class)->get('coupling.class-rank-share'));
     }
 
     #[Test]
@@ -359,6 +362,30 @@ final class ClassRankCollectorTest extends TestCase
 
         // Center should have the highest rank by far
         self::assertGreaterThan($rankA, $rankCenter);
+    }
+
+    #[Test]
+    public function itPublishesUniformShareSeparatelyFromTheAcademicProbability(): void
+    {
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
+        $this->registerClass($repository, 'App\A');
+        $this->registerClass($repository, 'App\B');
+        $this->registerClass($repository, 'App\Hub');
+        $graph = $this->graph([$this->dep('App\A', 'App\Hub'), $this->dep('App\B', 'App\Hub')], [
+            new LogicalClassPath(SymbolPath::forClass('App', 'A')), new LogicalClassPath(SymbolPath::forClass('App', 'B')), new LogicalClassPath(SymbolPath::forClass('App', 'Hub')),
+        ]);
+        $this->collector->calculate($graph, $repository);
+        $probabilitySum = $shareSum = 0.0;
+        foreach (['A', 'B', 'Hub'] as $name) {
+            $metrics = $this->logicalMetrics($repository, SymbolPath::forClass('App', $name));
+            $raw = $metrics->require('coupling.class-rank');
+            $share = $metrics->require('coupling.class-rank-share');
+            self::assertEqualsWithDelta($raw * 3, $share, 1e-12);
+            $probabilitySum += $raw;
+            $shareSum += $share;
+        }
+        self::assertEqualsWithDelta(1.0, $probabilitySum, 1e-6);
+        self::assertEqualsWithDelta(3.0, $shareSum, 1e-6);
     }
 
     private function dep(string $source, string $target): Dependency

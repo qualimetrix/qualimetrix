@@ -17,7 +17,7 @@ final readonly class RankedIssue
     public function __construct(
         public Finding $finding,
         public float $impactScore,
-        public ?float $classRank,
+        public ?float $classRankShare,
         public int $debtMinutes,
         public int $severityWeight,
     ) {}

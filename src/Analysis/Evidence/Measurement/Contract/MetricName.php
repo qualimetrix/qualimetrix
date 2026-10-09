@@ -40,6 +40,7 @@ final class MetricName
     public const string COUPLING_ABSTRACTNESS_OWN = 'coupling.abstractness-own';
     public const string COUPLING_DISTANCE_OWN = 'coupling.distance-own';
     public const string COUPLING_CLASS_RANK = 'coupling.class-rank';
+    public const string COUPLING_CLASS_RANK_SHARE = 'coupling.class-rank-share';
     public const string COUPLING_CE_PACKAGES = 'coupling.ce-packages';
     public const string COUPLING_CBO_APP = 'coupling.cbo-app';
     public const string COUPLING_CE_FRAMEWORK = 'coupling.ce-framework';

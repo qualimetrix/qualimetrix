@@ -230,11 +230,18 @@ final class MetricHintCatalog
             'goodExplanation' => 'well-balanced design of its own classes',
         ],
         MetricName::COUPLING_CLASS_RANK => [
-            'label' => 'ClassRank',
+            'label' => 'ClassRank probability',
             'direction' => 'lower_is_better',
-            'goodValue' => 'below 0.02',
-            'badExplanation' => 'coupling hotspot, much of the dependency graph leads here',
-            'goodExplanation' => 'peripheral, low risk',
+            'goodValue' => 'PageRank probability mass',
+            'badExplanation' => 'a larger share of dependency graph probability',
+            'goodExplanation' => 'a smaller share of dependency graph probability',
+        ],
+        MetricName::COUPLING_CLASS_RANK_SHARE => [
+            'label' => 'ClassRank share',
+            'direction' => 'lower_is_better',
+            'goodValue' => 'below 5× uniform share',
+            'badExplanation' => 'coupling hotspot relative to the uniform graph population',
+            'goodExplanation' => 'below the coupling hotspot boundary',
         ],
         MetricName::DESIGN_DIT => [
             'label' => 'DIT',
@@ -527,9 +534,12 @@ final class MetricHintCatalog
             ['above' => true, 'text' => 'Off balance'],
         ],
         MetricName::COUPLING_CLASS_RANK => [
-            ['max' => 0.009, 'text' => 'Peripheral class'],
-            ['max' => 0.02, 'text' => 'Moderate importance'],
-            ['max' => 0.05, 'text' => 'Important hub'],
+            ['above' => true, 'text' => 'PageRank probability'],
+        ],
+        MetricName::COUPLING_CLASS_RANK_SHARE => [
+            ['max' => 1, 'text' => 'At most uniform share'],
+            ['max' => 5, 'text' => 'Below hotspot share'],
+            ['max' => 10, 'text' => 'Important hub'],
             ['above' => true, 'text' => 'Critical coupling point'],
         ],
         // Design

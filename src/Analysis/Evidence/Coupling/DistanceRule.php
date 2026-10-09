@@ -5,15 +5,23 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Coupling;
 
 use Psr\Log\LoggerInterface;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceResolverInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Namespace_\ProjectNamespaceResolver;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\ContextGuard;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyThreshold;
+use Qualimetrix\Analysis\Finding\Contract\Population\NameMatches;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
@@ -103,9 +111,10 @@ final class DistanceRule extends AbstractRule
         $findings = [];
         $totalNamespaces = 0;
         $analyzedNamespaces = 0;
+        $declaration = self::channelDeclarations()[self::NAME];
 
         foreach ($context->metrics->all(SymbolLevel::Namespace_) as $nsInfo) {
-            $result = $this->namespaceResult($nsInfo, $context);
+            $result = $this->namespaceResult($nsInfo, $context, $declaration);
             $totalNamespaces += (int) $result['present'];
             $analyzedNamespaces += (int) $result['projectMatched'];
             if ($result['finding'] !== null) {
@@ -128,36 +137,40 @@ final class DistanceRule extends AbstractRule
     /**
      * @return array{present: bool, projectMatched: bool, finding: ?Finding}
      */
-    private function namespaceResult(SymbolInfo $namespaceInfo, AnalysisContext $context): array
+    private function namespaceResult(SymbolInfo $namespaceInfo, AnalysisContext $context, ChannelDeclaration $declaration): array
     {
         \assert($this->options instanceof DistanceOptions);
 
         $namespace = $namespaceInfo->symbolPath->namespace;
-        if ($namespace === null) {
-            return ['present' => false, 'projectMatched' => false, 'finding' => null];
-        }
-
-        if (!$this->shouldAnalyzeNamespace($namespace)) {
-            return ['present' => true, 'projectMatched' => false, 'finding' => null];
-        }
-
-        return [
-            'present' => true,
-            'projectMatched' => true,
-            'finding' => $this->matchedNamespaceFinding($namespaceInfo, $context),
-        ];
+        $present = $namespace !== null;
+        $matched = false;
+        $admitted = $context->admit(
+            self::NAME,
+            new FindingChannel(self::NAME),
+            SymbolLevel::Namespace_,
+            PopulationIdentity::aggregate($namespaceInfo->symbolPath),
+            $declaration,
+            (function () use ($namespace, $present, $namespaceInfo, $context, &$matched): iterable {
+                yield GateInput::context('namespaceCoordinateKnown', $present);
+                \assert($namespace !== null);
+                $matched = $this->shouldAnalyzeNamespace($namespace);
+                yield GateInput::boundName('namespace-selected', $matched);
+                $metrics = $context->metrics->get($namespaceInfo->symbolPath);
+                \assert($this->options instanceof DistanceOptions);
+                yield GateInput::metrics('own-types', $metrics, $this->options->minTypeCount);
+                yield GateInput::metrics('own-distance', $metrics);
+                yield GateInput::metrics('own-coupling', $metrics);
+            })(),
+        );
+        return ['present' => $present, 'projectMatched' => $matched, 'finding' => $admitted ? $this->matchedNamespaceFinding($namespaceInfo, $context) : null];
     }
 
     private function matchedNamespaceFinding(SymbolInfo $info, AnalysisContext $context): ?Finding
     {
         \assert($this->options instanceof DistanceOptions);
 
-        if (!$this->isJudged($info, $context)) {
-            return null;
-        }
-
         $metrics = $context->metrics->get($info->symbolPath);
-        $distance = $metrics->get(MetricName::COUPLING_DISTANCE);
+        $distance = $metrics->get(MetricName::COUPLING_DISTANCE_OWN);
         $subject = $info->subject ?? MetricSubject::aggregate($info->symbolPath);
         $distanceValue = (float) $distance;
         /** @var DistanceOptions $effectiveOptions */
@@ -167,8 +180,8 @@ final class DistanceRule extends AbstractRule
             return null;
         }
 
-        $abstractness = (float) ($metrics->get(MetricName::COUPLING_ABSTRACTNESS) ?? 0.0);
-        $instability = (float) ($metrics->get(MetricName::COUPLING_INSTABILITY) ?? 0.0);
+        $abstractness = (float) ($metrics->get(MetricName::COUPLING_ABSTRACTNESS_OWN) ?? 0.0);
+        $instability = (float) ($metrics->get(MetricName::COUPLING_INSTABILITY_OWN) ?? 0.0);
         $threshold = $severity === Severity::Error ? $effectiveOptions->maxDistanceError : $effectiveOptions->maxDistanceWarning;
 
         return new Finding(
@@ -189,26 +202,6 @@ final class DistanceRule extends AbstractRule
             recommendation: \sprintf('Distance: %.2f (threshold: %.2f) — poor balance of abstraction and stability', $distanceValue, $threshold),
             threshold: $threshold,
         );
-    }
-
-    /**
-     * A namespace is judged when it is large enough, has a distance, and is
-     * coupled at all. With Ca = Ce = 0 instability is 0 by convention rather
-     * than by measurement, and the distance built on it describes no package:
-     * a concrete namespace nothing touches would read as the worst zone of pain.
-     */
-    private function isJudged(SymbolInfo $info, AnalysisContext $context): bool
-    {
-        \assert($this->options instanceof DistanceOptions);
-
-        $metrics = $context->metrics->get($info->symbolPath);
-        $classCount = (int) ($metrics->get(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)) ?? 0);
-
-        if ($classCount < $this->options->minClassCount || $metrics->get(MetricName::COUPLING_DISTANCE) === null) {
-            return false;
-        }
-
-        return (int) $metrics->require(MetricName::COUPLING_CA) + (int) $metrics->require(MetricName::COUPLING_CE) > 0;
     }
 
     /**
@@ -262,8 +255,14 @@ final class DistanceRule extends AbstractRule
         return [
             self::NAME => ChannelDeclaration::judging(
                 WorseDirection::Higher,
-                JudgedMetrics::of(MetricName::COUPLING_DISTANCE),
+                JudgedMetrics::of(MetricName::COUPLING_DISTANCE_OWN),
                 SymbolLevel::Namespace_,
+            )->withGates(
+                new PopulationGate('namespace-known', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', new ContextGuard('namespaceCoordinateKnown'), 'The namespace coordinate is unknown.'),
+                new PopulationGate('namespace-selected', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', new NameMatches('namespace-selected'), 'The namespace is outside the configured project selection.'),
+                new PopulationGate('own-types', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', new KeyThreshold('own-types', [MetricName::SIZE_CLASS_COUNT, MetricName::SIZE_TRAIT_COUNT, MetricName::SIZE_INTERFACE_COUNT, MetricName::SIZE_IMPLEMENTING_ENUM_COUNT], '>=', 'own-types', 'zero', true), 'The own type population is below its minimum.'),
+                new PopulationGate('own-distance', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', new KeyPresent('own-distance', [MetricName::COUPLING_DISTANCE_OWN]), 'Own distance was not published.'),
+                new PopulationGate('own-coupling', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', new KeyThreshold('own-coupling', [MetricName::COUPLING_CA_OWN, MetricName::COUPLING_CE_OWN], '>', 0, 'refuse', true), 'The own namespace has no coupling.'),
             ),
         ];
     }
