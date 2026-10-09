@@ -176,51 +176,143 @@ final class HarnessSelfTest
             $originalSource = Shell::read($repository . '/' . $sourcePath);
             $fieldIndex = 'finding-gate/' . DeclaredFields::INDEX;
             $fieldDerived = 'finding-gate/' . DeclaredFields::DERIVED;
-            $originalFieldIndex = Shell::read($repository . '/' . $fieldIndex);
-            $originalFieldDerived = Shell::read($repository . '/' . $fieldDerived);
-            $intentRows = Tsv::rows($repository . '/' . $fieldIndex, DeclaredFields::COLUMNS);
-            $derivedRows = Tsv::rows($repository . '/' . $fieldDerived, DeclaredFields::DERIVED_COLUMNS);
-            $retainedIntents = array_values(array_filter(
-                $intentRows,
-                static fn(array $row): bool => $row['report'] !== 'json' || $row['view'] !== 'ranking',
-            ));
-            $retainedDerived = array_values(array_filter(
-                $derivedRows,
-                static fn(array $row): bool => $row['report'] !== 'json' || $row['view'] !== 'ranking',
-            ));
-            $this->same(
-                \count($retainedIntents) < \count($intentRows),
-                \count($retainedDerived) < \count($derivedRows),
-                'ranking field intentions and measurements are paired, including an empty pair',
-            );
+            $originalFields = [];
+            foreach ([$fieldIndex, $fieldDerived] as $path) {
+                $originalFields[$path] = is_file($repository . '/' . $path)
+                    ? [true, Shell::read($repository . '/' . $path)] : [false, null];
+            }
             $originalTuple = \QmxFindingGate\EquivalenceTuple::derive($repository);
             $this->same(19, \count($originalTuple->fields), 'the existing finding record publishes nineteen fields');
-            TupleControls::publisherDrift()->mutation->apply($scratch, $repository);
-            $mutatedTuple = \QmxFindingGate\EquivalenceTuple::derive($scratch->tree);
-            $this->same([...$originalTuple->fields, 'probe'], $mutatedTuple->fields, 'the shared added-member mutation reaches the actual finding record');
-            $this->same([...$originalTuple->sources, \QmxFindingGate\EquivalenceTuple::source()], $mutatedTuple->sources, 'the added member retains the finding record producer');
+            $tuplePlant = <<<'PHP'
+                use QmxFindingGate\DeclarationTable;
+                use QmxFindingGate\DeclaredFields;
+                use QmxFindingGate\EquivalenceTuple;
+                use QmxFindingGate\Tsv;
+                use QmxFindingGateControls\Scratch;
+                use QmxFindingGateControls\Shell;
+                use QmxFindingGateControls\TupleControls;
+
+                require getcwd() . '/scripts/finding-gate/classes.php';
+                require getcwd() . '/scripts/finding-gate-controls/classes.php';
+                $root = getcwd();
+                $producer = 'src/Reporting/Formatter/FindingRecord.php';
+                $index = 'finding-gate/' . DeclaredFields::INDEX;
+                $derived = 'finding-gate/' . DeclaredFields::DERIVED;
+                $snapshot = static fn(string $path): array => is_file($path) ? [true, Shell::read($path)] : [false, null];
+                $originalSource = Shell::read($root . '/' . $producer);
+                $originalTuple = EquivalenceTuple::derive($root);
+                $originalTables = [$index => $snapshot($root . '/' . $index)[1], $derived => $snapshot($root . '/' . $derived)[1]];
+                $stage = static function (array $tables) use ($root): void {
+                    foreach ($tables as $path => $contents) {
+                        if ($contents !== null) {
+                            Shell::replace($root . '/' . $path, $contents);
+                        } elseif (is_file($root . '/' . $path) && !unlink($root . '/' . $path)) {
+                            throw new RuntimeException('Cannot remove the private field table ' . $path);
+                        }
+                    }
+                };
+                $observations = [];
+                $check = static function (mixed $expected, mixed $actual, string $description) use (&$observations): void {
+                    $observations[] = [$expected, $actual, $description];
+                };
+                $intentRows = [
+                    ['added', 'json', 'ranking', 'privateRanking', 'A private ranked field.'],
+                    ['added', 'json', 'format:json', 'privateRetained', 'A private JSON field.'],
+                    ['added', 'metrics', 'format:metrics', 'privateRanking', 'A private metrics field.'],
+                ];
+                $derivedRows = [
+                    ['json', 'ranking', 'privateRanking', 'self-test-case', '{}', '1'],
+                    ['json', 'format:json', 'privateRetained', 'self-test-case', '{}', '2'],
+                    ['metrics', 'format:metrics', 'privateRanking', 'self-test-case', '{}', '3'],
+                ];
+                $retained = [
+                    $index => Tsv::render(DeclaredFields::COLUMNS, [$intentRows[1], $intentRows[2]]),
+                    $derived => Tsv::render(DeclaredFields::DERIVED_COLUMNS, [$derivedRows[1], $derivedRows[2]]),
+                ];
+                $cells = [
+                    'current' => $originalTables,
+                    'absent' => [$index => null, $derived => null],
+                    'empty' => [$index => Tsv::render(DeclaredFields::COLUMNS, []), $derived => Tsv::render(DeclaredFields::DERIVED_COLUMNS, [])],
+                    'paired' => [$index => Tsv::render(DeclaredFields::COLUMNS, $intentRows), $derived => Tsv::render(DeclaredFields::DERIVED_COLUMNS, $derivedRows)],
+                ];
+                try {
+                    foreach ($cells as $name => $tables) {
+                        $stage($tables);
+                        DeclaredFields::load($root . '/finding-gate');
+                        $mutation = TupleControls::publisherDrift()->mutation;
+                        $directory = $argv[1] . '/' . $name;
+                        $tree = $directory . '/tree';
+                        mkdir($tree, 0700, true);
+                        $target = (new ReflectionClass(Scratch::class))->newInstanceWithoutConstructor();
+                        (new ReflectionMethod(Scratch::class, '__construct'))->invoke($target, $tree, $directory);
+                        try {
+                            $inputs = array_values(array_unique([...$mutation->relativePaths(), $producer, $index, $derived]));
+                            foreach ($inputs as $path) {
+                                if (is_file($root . '/' . $path)) {
+                                    if (!is_dir(dirname($target->path($path)))) {
+                                        mkdir(dirname($target->path($path)), 0700, true);
+                                    }
+                                    Shell::replace($target->path($path), Shell::read($root . '/' . $path));
+                                }
+                            }
+                            $check($originalSource, Shell::read($target->path($producer)), $name . ': the target retains the original producer before mutation');
+                            foreach ($tables as $path => $contents) {
+                                $check([$contents !== null, $contents], $snapshot($target->path($path)), $name . ': the target preserves table presence and bytes before mutation: ' . $path);
+                            }
+                            $beforeIntents = DeclarationTable::rows($target->path('finding-gate'), DeclaredFields::INDEX, DeclaredFields::COLUMNS);
+                            $beforeDerived = DeclarationTable::rows($target->path('finding-gate'), DeclaredFields::DERIVED, DeclaredFields::DERIVED_COLUMNS);
+                            $check($name === 'paired' ? 3 : 0, count($beforeIntents), $name . ': the field intention pre-count is concrete');
+                            $check($name === 'paired' ? 3 : 0, count($beforeDerived), $name . ': the field measurement pre-count is concrete');
+                            $check($name === 'paired' ? [$index, $derived] : [], array_values(array_intersect($mutation->relativePaths(), [$index, $derived])), $name . ': field cleanup is composed only for the nonempty pair');
+                            $mutation->apply($target, $root);
+                            $mutatedTuple = EquivalenceTuple::derive($tree);
+                            $check([...$originalTuple->fields, 'probe'], $mutatedTuple->fields, $name . ': the shared added-member mutation reaches the actual finding record');
+                            $check([...$originalTuple->sources, EquivalenceTuple::source()], $mutatedTuple->sources, $name . ': the added member retains the finding record producer');
+                            $check($originalSource, Shell::read($root . '/' . $producer), $name . ': the shared mutation leaves the original publisher intact');
+                            $expectedTables = $name === 'paired' ? $retained : $tables;
+                            foreach ($expectedTables as $path => $contents) {
+                                $check([$contents !== null, $contents], $snapshot($target->path($path)), $name . ': the private tuple plant removes only unavailable ranking rows: ' . $path);
+                                $check([$tables[$path] !== null, $tables[$path]], $snapshot($root . '/' . $path), $name . ': the original field table retains its presence and bytes: ' . $path);
+                            }
+                            $afterIntents = DeclarationTable::rows($target->path('finding-gate'), DeclaredFields::INDEX, DeclaredFields::COLUMNS);
+                            $afterDerived = DeclarationTable::rows($target->path('finding-gate'), DeclaredFields::DERIVED, DeclaredFields::DERIVED_COLUMNS);
+                            $check($name === 'paired' ? 2 : 0, count($afterIntents), $name . ': exactly the retained field intentions remain');
+                            $check($name === 'paired' ? 2 : 0, count($afterDerived), $name . ': exactly the retained field measurements remain');
+                            $check(count($afterIntents) < count($beforeIntents), count($afterDerived) < count($beforeDerived), $name . ': ranking field intentions and measurements are paired, including an empty pair');
+                            $fields = DeclaredFields::load($target->path('finding-gate'));
+                            $check([], $fields->changes('json', 'ranking'), $name . ': the private tuple plant leaves no unmeasurable ranking field obligations');
+                            $check($name === 'paired' ? ['privateRetained' => 'added'] : [], $fields->changes('json', 'format:json'), $name . ': the retained JSON field obligation survives');
+                            $check($name === 'paired' ? ['privateRanking' => 'added'] : [], $fields->changes('metrics', 'format:metrics'), $name . ': the retained metrics field obligation survives');
+                        } finally {
+                            $target->remove();
+                        }
+                    }
+                } finally {
+                    $stage($originalTables);
+                }
+                foreach ($originalTables as $path => $contents) {
+                    $check([$contents !== null, $contents], $snapshot($root . '/' . $path), 'the private source restores the original table presence and bytes: ' . $path);
+                }
+                echo json_encode($observations, JSON_THROW_ON_ERROR);
+                PHP;
+            $plant = Shell::run([\PHP_BINARY, '-r', $tuplePlant, $scratch->beside('tuple-cells')], $scratch->tree);
+            $this->same(0, $plant['exit'], 'the actual private tuple plant covers all four table cells: ' . $plant['stderr']);
+            if ($plant['exit'] === 0) {
+                foreach (json_decode($plant['stdout'], true, 512, \JSON_THROW_ON_ERROR) as [$expected, $actual, $description]) {
+                    $this->same($expected, $actual, $description);
+                }
+            }
             $this->same($originalSource, Shell::read($repository . '/' . $sourcePath), 'the shared mutation leaves the original publisher intact');
-            $this->same(
-                Tsv::render(DeclaredFields::COLUMNS, array_map(static fn(array $row): array => array_values($row), $retainedIntents)),
-                Shell::read($scratch->path($fieldIndex)),
-                'the private tuple plant removes only unavailable ranking field intentions',
-            );
-            $this->same(
-                Tsv::render(DeclaredFields::DERIVED_COLUMNS, array_map(static fn(array $row): array => array_values($row), $retainedDerived)),
-                Shell::read($scratch->path($fieldDerived)),
-                'the private tuple plant removes only unavailable ranking field measurements',
-            );
-            $this->same(
-                [],
-                DeclaredFields::load($scratch->path('finding-gate'))->changes('json', 'ranking'),
-                'the private tuple plant leaves no unmeasurable ranking field obligations',
-            );
-            $this->same($originalFieldIndex, Shell::read($repository . '/' . $fieldIndex), 'the original field intentions retain their bytes');
-            $this->same($originalFieldDerived, Shell::read($repository . '/' . $fieldDerived), 'the original field measurements retain their bytes');
+            foreach ($originalFields as $path => $snapshot) {
+                $actual = is_file($repository . '/' . $path) ? [true, Shell::read($repository . '/' . $path)] : [false, null];
+                $this->same($snapshot, $actual, 'the original field table retains its presence and bytes: ' . $path);
+            }
 
             $recordIndex = 'finding-gate/' . DeclaredRecords::INDEX;
             $recordDerived = 'finding-gate/' . DeclaredRecords::DERIVED;
             $originalRecordIndex = Shell::read($repository . '/' . $recordIndex);
+            $originalRecordDerived = is_file($repository . '/' . $recordDerived)
+                ? Shell::read($repository . '/' . $recordDerived) : null;
             $pairedRecord = '{"channel":"self-test.paired"}';
             $pairedIntent = ['introduced', 'self-test-case', 'json', 'format:json', $pairedRecord, 'A private measured record.'];
             $pairedIntentText = Tsv::render(DeclaredRecords::COLUMNS, [$pairedIntent]);
@@ -247,6 +339,16 @@ final class HarnessSelfTest
             $idleMutation->apply($scratch, $repository);
             $this->same(1, DeclaredRecords::load($scratch->path('finding-gate'))->count(), 'the header-only index gains exactly one idle selector');
             $this->same($originalRecordIndex, Shell::read($repository . '/' . $recordIndex), 'the original record index retains its bytes');
+            $this->same(
+                $originalRecordDerived,
+                is_file($repository . '/' . $recordDerived) ? Shell::read($repository . '/' . $recordDerived) : null,
+                'the original record measurements retain their presence and bytes',
+            );
+            if ($originalRecordDerived !== null) {
+                Shell::replace($scratch->path($recordDerived), $originalRecordDerived);
+            } elseif (!unlink($scratch->path($recordDerived))) {
+                throw new RuntimeException('Cannot remove the staged record measurement table.');
+            }
 
             $orphan = $scratch->path('finding-gate/declared-outcomes');
             if (!is_dir($orphan)) {

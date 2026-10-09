@@ -7,6 +7,7 @@ namespace QmxFindingGateControls;
 use QmxFindingGate\CaseOutcome;
 use QmxFindingGate\Corpus;
 use QmxFindingGate\Declarations;
+use QmxFindingGate\DeclarationTable;
 use QmxFindingGate\DeclaredFields;
 use QmxFindingGate\DeclaredValues;
 use QmxFindingGate\EquivalenceTuple;
@@ -27,13 +28,8 @@ final class TupleControls
             self::addedMember()->and(self::unavailableFindingValueMeasurements())->and(self::unavailableRankingFieldMeasurements()),
             [new Expectation(FailureClass::TUPLE_FIELD_DRIFT, EquivalenceTuple::TRACKED_PATH),
                 new Expectation(FailureClass::RUN_FAILED, 'candidate-2 / annotations', exactScope: true),
-                new Expectation(FailureClass::RUN_FAILED, 'candidate-claims / utf8-identifier', exactScope: true),
-                new Expectation(FailureClass::CANDIDATE_INPUT_REFUSED, 'case:utf8-identifier', exactScope: true),
                 ...self::recordExpectations('candidate')],
-            [...self::invalidCaptureBaselineFailures(),
-                ...self::rankingProjectionFailures('reference'),
-                new Expectation(FailureClass::FINDING_COUNT_MISMATCH, 'case:drill-down', exactScope: true),
-                ...self::staleRecordFailures()],
+            self::invalidCaptureBaselineFailures('candidate'),
         );
     }
 
@@ -48,10 +44,7 @@ final class TupleControls
                 'the tracked candidate tuple includes the unannounced member',
             ))->and(self::unavailableFindingValueMeasurements())->and(self::unavailableRankingFieldMeasurements()),
             self::recordExpectations('reference'),
-            [...self::rankingProjectionFailures('candidate'),
-                new Expectation(FailureClass::RANKING_PROJECTION_MISMATCH, 'reference / case:drill-down|check:baseline', exactScope: true),
-                new Expectation(FailureClass::FINDING_COUNT_MISMATCH, 'case:drill-down', exactScope: true),
-                ...self::staleRecordFailures()],
+            self::invalidCaptureBaselineFailures('reference'),
         );
     }
 
@@ -126,8 +119,8 @@ final class TupleControls
         $root = \dirname(__DIR__, 2) . '/finding-gate';
         $fields = DeclaredFields::load($root);
         $changes = $fields->changes('json', 'ranking');
-        $intents = Tsv::rows($root . '/' . DeclaredFields::INDEX, DeclaredFields::COLUMNS);
-        $derived = Tsv::rows($root . '/' . DeclaredFields::DERIVED, DeclaredFields::DERIVED_COLUMNS);
+        $intents = DeclarationTable::rows($root, DeclaredFields::INDEX, DeclaredFields::COLUMNS);
+        $derived = DeclarationTable::rows($root, DeclaredFields::DERIVED, DeclaredFields::DERIVED_COLUMNS);
         $retainedIntents = array_values(array_filter($intents, static fn(array $row): bool =>
             $row['report'] !== 'json' || $row['view'] !== 'ranking' || !isset($changes[$row['field']])));
         $retainedDerived = array_values(array_filter($derived, static fn(array $row): bool =>
@@ -157,83 +150,39 @@ final class TupleControls
     }
 
     /** @return list<Expectation> */
-    private static function rankingProjectionFailures(string $side): array
-    {
-        $scopes = array_map(static fn(string $case): string => 'case:' . $case . '|format:json', [
-            'annotations',
-            'applied-threshold',
-            'baseline-cycle',
-            'complexity',
-            'config-precedence',
-            'coupling',
-            'cycle',
-            'design',
-            'detectors',
-            'detectors-security',
-            'detectors-smells',
-            'directive-placement',
-            'disabled-rule',
-            'disabled-rule-duplication',
-            'discovery',
-            'drill-down',
-            'duplicate-declaration',
-            'duplication',
-            'duplication-size',
-            'excluded-path',
-            'external-parent',
-            'health',
-            'incomplete-directory-symlink',
-            'layered-threshold',
-            'layers',
-            'name-case',
-            'only-rules',
-            'parallel-files',
-            'rule-exclusion-ledger',
-            'scoped-layers',
-            'security',
-            'smells',
-            'stderr-warning',
-            'suppression',
-            'threshold-raising',
-        ]);
-        foreach (['baseline-cycle', 'drill-down', 'scoped-layers'] as $case) {
-            $scopes[] = 'case:' . $case . '|check:baseline-source';
-            $scopes[] = 'case:' . $case . '|check:baseline';
-        }
-        return array_map(static fn(string $scope): Expectation => new Expectation(
-            FailureClass::RANKING_PROJECTION_MISMATCH,
-            $side . ' / ' . $scope,
-            exactScope: true,
-        ), $scopes);
-    }
-
-    /** @return list<Expectation> */
-    private static function staleRecordFailures(): array
-    {
-        return [
-            new Expectation(FailureClass::RECORD_STALE, 'case:drill-down|format:json', exactScope: true),
-            new Expectation(FailureClass::RECORD_STALE, 'case:drill-down|check:baseline', exactScope: true),
-            new Expectation(FailureClass::RECORD_STALE, 'declared-records.tsv', exactScope: true),
-        ];
-    }
-
-    /** @return list<Expectation> */
-    private static function invalidCaptureBaselineFailures(): array
+    private static function invalidCaptureBaselineFailures(string $brokenSide): array
     {
         $root = \dirname(__DIR__, 2);
         $exact = array_fill_keys(Declarations::load($root)->exactSurfaces->keys(), true);
         $failures = [];
 
         foreach (Corpus::load($root)->cases as $case) {
-            if (CaseOutcome::of($case, 'reference') !== CaseOutcome::REFUSAL
-                || !CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($case, 'candidate'))) {
+            $scope = 'case:' . $case->id . '|baseline-file';
+            if ($case->channels === [] || !isset($exact[$scope])) {
                 continue;
             }
 
-            $scope = 'case:' . $case->id . '|baseline-file';
-            if (isset($exact[$scope])) {
-                $failures[] = new Expectation(FailureClass::SURFACE_MISMATCH, $scope, exactScope: true);
+            $source = $case->baselineSource() === null ? 'format:json' : 'check:baseline-source';
+            if (ReportViews::reportOf($source) !== 'json'
+                || !CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($case, $brokenSide))) {
+                continue;
             }
+
+            $candidate = CaseOutcome::of($case, 'candidate');
+            $reference = CaseOutcome::of($case, 'reference');
+            if ($brokenSide === 'candidate' && $reference === CaseOutcome::REFUSAL) {
+                $failures[] = new Expectation(FailureClass::SURFACE_MISMATCH, $scope, exactScope: true);
+                continue;
+            }
+
+            // The exact baseline trial requires physical JSON records on both sides.
+            foreach ([$candidate, $reference] as $outcome) {
+                if (!CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, $outcome)
+                    || !CaseOutcome::applies(CaseOutcome::CHECK_BASELINE_FILE, $outcome)) {
+                    continue 2;
+                }
+            }
+            $failures[] = new Expectation(FailureClass::SURFACE_MISMATCH, $scope, exactScope: true);
         }
 
         return $failures;
@@ -244,12 +193,16 @@ final class TupleControls
     {
         $required = [];
         foreach (Corpus::load(\dirname(__DIR__, 2))->cases as $case) {
-            if ($case->channels === [] || $case->id === 'utf8-identifier'
-                || !CaseOutcome::applies(CaseOutcome::CHECK_TUPLE, CaseOutcome::of($case, $side))) {
+            if ($case->channels === []) {
                 continue;
             }
-            $required[] = new Expectation(FailureClass::FINDING_TUPLE_MISMATCH, $side . ' / ' . $case->id . ' / finding');
-            $required[] = new Expectation(FailureClass::RECORD_PROJECTION_MISMATCH, $side . ' / case:' . $case->id . '|');
+            $outcome = CaseOutcome::of($case, $side);
+            if (CaseOutcome::applies(CaseOutcome::CHECK_TUPLE, $outcome)) {
+                $required[] = new Expectation(FailureClass::FINDING_TUPLE_MISMATCH, $side . ' / ' . $case->id . ' / finding');
+            }
+            if (CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, $outcome)) {
+                $required[] = new Expectation(FailureClass::RECORD_PROJECTION_MISMATCH, $side . ' / case:' . $case->id . '|');
+            }
         }
         if ($required === []) {
             throw new RuntimeException('The tuple member control has no populated publication to judge.');
