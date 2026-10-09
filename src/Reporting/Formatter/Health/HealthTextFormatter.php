@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Health;
 
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthContributor;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
@@ -17,6 +16,7 @@ use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
 use Qualimetrix\Reporting\Formatter\FormatOptionValue;
 use Qualimetrix\Reporting\Formatter\FormattedReport;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\Formatter\Prose\ComputedMetricAbsenceNarrator;
 use Qualimetrix\Reporting\Formatter\PublicationKind;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
@@ -29,9 +29,8 @@ use Qualimetrix\Reporting\Report;
  * Renders a table of health dimensions with scores, status labels,
  * and threshold info, followed by decomposition details for each dimension.
  *
- * @qmx-threshold complexity.wmc warning=60 -- average per-method complexity
- * here is about 3.5; WMC is high because of how many small rendering
- * methods the formatter has, not because any one of them is complex.
+ * @qmx-threshold complexity.wmc warning=61 -- WMC 60 spans twenty related rendering methods,
+ * with maximum CCN 7 after sharing absence prose; moving another renderer only transfers its branches.
  */
 final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysInterface
 {
@@ -63,7 +62,7 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
             $lines[] = '';
         }
 
-        array_push($lines, ...self::computedAbsenceLines($report));
+        array_push($lines, ...ComputedMetricAbsenceNarrator::lines($report));
 
         $healthScores = $this->healthScoreResolver->resolve($report, $context);
 
@@ -96,23 +95,6 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
         $this->appendPointer($color, $lines);
 
         return new FormattedReport(implode("\n", $lines) . "\n");
-    }
-
-    /** @return list<string> */
-    private static function computedAbsenceLines(Report $report): array
-    {
-        return array_map(static function (ComputedMetricValueAbsence $absence): string {
-            $reasons = [];
-            if ($absence->missingKeysCount > 0) {
-                $reasons[] = \sprintf('missing keys [%s] for %d subject(s)', implode(', ', $absence->missingKeys), $absence->missingKeysCount);
-            }
-            if ($absence->noValueCount > 0) {
-                $reasons[] = \sprintf('no value for %d subject(s)', $absence->noValueCount);
-            }
-            $examples = array_map(static fn($subject): string => $subject->toCanonical(), $absence->subjects);
-
-            return \sprintf('Computed metric %s (%s): not measured — %s%s', $absence->metricName, $absence->level->value, implode('; ', $reasons), $examples === [] ? '' : '; examples: ' . implode(', ', $examples));
-        }, $report->computedMetricEvaluation->absences);
     }
 
     public function publicationKind(): PublicationKind

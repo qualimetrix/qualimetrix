@@ -505,6 +505,11 @@ final class HealthTextFormatterTest extends TestCase
         $alongside = $this->formatter->format($withScores, new FormatterContext(useColor: false))->body;
         self::assertStringContainsString('missing keys [missing.input] for 2 subject(s)', $alongside);
         self::assertStringContainsString('no value for 1 subject(s)', $alongside);
+        $expected = 'Computed metric computed.custom (project): not measured — missing keys [missing.input] for 2 subject(s); no value for 1 subject(s); examples: project:';
+        self::assertContains($expected, explode("\n", $body));
+        self::assertContains($expected, explode("\n", $alongside));
+        self::assertSame(1, substr_count($body, 'Computed metric computed.custom'));
+        self::assertSame(1, substr_count($alongside, 'Computed metric computed.custom'));
 
     }
 
