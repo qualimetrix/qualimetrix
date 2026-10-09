@@ -56,16 +56,16 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
                 ],
             ),
             new MetricDefinition(
-                MetricName::DESIGN_DIT_UNRESOLVED,
-                SymbolLevel::Class_,
+                name: MetricName::DESIGN_DIT_UNRESOLVED,
+                collectedAt: SymbolLevel::Class_,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
                     SymbolLevel::Project->value => [AggregationStrategy::Sum],
                 ],
             ),
             new MetricDefinition(
-                MetricName::DESIGN_IS_EXCEPTION,
-                SymbolLevel::Class_,
+                name: MetricName::DESIGN_IS_EXCEPTION,
+                collectedAt: SymbolLevel::Class_,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
                     SymbolLevel::Project->value => [AggregationStrategy::Sum],
