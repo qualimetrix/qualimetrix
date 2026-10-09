@@ -80,9 +80,11 @@ this capability imports neither a composer type nor a parser (ADR 0074).
 `InheritanceResolution` represents a private complete answer with
 `InheritanceOutcome`: nullable depth, `Exact`/`Floor`/`Loop`, and nullable knowledge of whether the
 chain reaches PHP's `Throwable`. `ExternalDepth` and `ExternalChainOutcome`
-carry the corresponding external-tail evidence. Depth completeness and exception
-classification are independent; a finite exact depth can still have unknown
-exception status when duplicate parent declarations disagree.
+carry external-tail evidence, including an explicit continuation to an already
+analysed name. The same resolver resumes that continuation using every known
+declaration; Composer never chooses one body from that roster. Depth completeness
+and exception classification are independent; a finite exact depth can still have
+unknown exception status when duplicate parent declarations disagree.
 
 ## Behaviour and lifecycle
 
@@ -100,13 +102,18 @@ exception status when duplicate parent declarations disagree.
   parent; a logical parent merges all candidate answers. Finite depths merge
   by maximum, any floor makes the result a floor, and any loop removes numeric
   depth from the descendant. Completed answers are memoized by exact
-  declaration, separately from canonical identities active in the walk.
+  declaration, separately from canonical identities active in the walk. A chain
+  returning from external sources to an analysed name uses the same roster,
+  active path and memo; its external prefix contributes each parent link once.
 - Registered PHP builtin ancestry is followed transitively through Core's
   static hierarchy before asking whether Composer source placement is
   configured. External project ancestry is read through
   `Contract\ExternalParentSourceInterface`, never loaded. Unregistered
   extension classes remain unknown unless readable source supplies evidence;
-  loaded extensions on the analysing machine do not decide the result.
+  loaded extensions on the analysing machine do not decide the result. The
+  64-visit budget applies to each consecutive external segment. A known analysed
+  target reached by the 64th link continues through graph evidence without a
+  65th external read; a still-external target remains a floor.
 - An unread, unplaced, unconfigured, or 64-step-capped tail yields a numeric
   floor. A canonical inheritance loop, including a named class's own
   self-`extends`, yields no `design.dit`. Every named class receives

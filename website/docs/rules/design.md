@@ -240,6 +240,10 @@ the analysing machine's loaded extensions do not change the measurement.
 
 Other parents outside the analysed path are followed by reading their files
 through **your** project's Composer source map. Analysed code is never loaded.
+The 64-visit limit applies to each consecutive external segment. If its last
+allowed parent link reaches an already analysed name, graph facts continue the
+chain without an extra external read; an external name still beyond the limit
+leaves a floor.
 The result separates three outcomes:
 
 - **Exact:** the chain reaches a root; `design.dit-unresolved` is 0.
@@ -256,8 +260,12 @@ A parent name can have several declarations, including a root alongside one
 with a parent. All alternatives participate: finite depths merge by maximum,
 any floor makes the answer a floor, and any loop removes numeric depth. This
 policy is independent of encounter order. Each class record and finding retains
-its exact declaration identity. DIT aggregates use the published numeric
-values, including roots and floors; loop declarations contribute no numeric
+its exact declaration identity. This also applies when a chain leaves the
+analysed path and returns: all known declarations of the reached name participate,
+rather than only the source body selected by Composer. The known external prefix
+is counted once, and a mixed cycle still removes numeric depth.
+
+DIT aggregates use the published numeric values, including roots and floors; loop declarations contribute no numeric
 sample.
 
 The enabled `design.dit` rule writes at most one warning per execution,

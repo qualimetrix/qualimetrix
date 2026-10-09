@@ -4539,7 +4539,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DitAggregateRunTest::itPublishesDegreeZeroAbstractClassesAndOnlyClassDepthsFromSource
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DuplicateDeclarationDepthRunTest::itDoesNotMoveWhenTheTwoDeclarationsSwapFileNames
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DuplicateDeclarationDepthRunTest::itGivesEachDeclarationOfOneNameItsOwnDepth
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DuplicateDeclarationDepthRunTest::itKeepsParsedMixedCyclesIndependentOfComposerSelectedRoot
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DuplicateDeclarationDepthRunTest::itPublishesTheGlobalDepthOfACrossFileChain
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DuplicateDeclarationDepthRunTest::itUsesAllParsedDeclarationsWhenAnExternalComposerParentReturnsToTheProject
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnloadableExternalParentRunTest::itConfirmsTheFixtureIsReachableAndStillCannotFinishLoading
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnloadableExternalParentRunTest::itKeepsCoverageCompleteWhenAnExternalParentCannotFinishLoading#0
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnloadableExternalParentRunTest::itKeepsCoverageCompleteWhenAnExternalParentCannotFinishLoading#1
@@ -4618,6 +4620,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itKeepsInterfacesOutOfTheDitPopulation
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itOmitsBothDitValuesForACycleThroughADuplicatedName
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itOmitsDitForACyclicExternalTail
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itOmitsNumericDepthForACycleReachedThroughExternalSource
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itOwnsTheDitMetricDefinition
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itPreservesOtherMetricsWhileUpdatingDit
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itProvidesTheDitMetric
@@ -4626,6 +4629,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itPublishesCompleteNonThrowableExternalRoots
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itPublishesIncompleteEvidenceForEachChildOfAnUnreadParent
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itPublishesLoopOmissionAndUnknownClassifierWithoutFallbackScalars
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itPublishesRejoinedAcyclicDepthAndOmitsAnAmbiguousClassifier
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itPublishesTheFullPositiveRosterWithoutALocalDitSeed
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itPublishesTheKnownFloorAtTheExternalVisitCap
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itPublishesUnknownExceptionForAnUnreadExternalTail
@@ -4635,14 +4639,18 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itScoresDitZeroForAClassWithNoParent
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itAnswersTheSameWayTwice
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itBoundsStaticSourceWalksAtSixtyFourVisits
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itCompletesKnownGraphBoundariesAtTheExternalVisitLimit
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itCountsEveryStepToTheRoot
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itFollowsBuiltinAncestryWithoutAnInstall
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itFollowsEveryBuiltinParent
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itKeepsStaticBuiltinLookupBeforeComposerPlacement
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itOmitsNumericDepthForACanonicalExternalLoop
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itPreservesExternalOnlyWalkingWhenNoGraphNamesAreSupplied
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itRefusesToCallACycleADepth
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itReportsAChainThatStopsBeingReadable
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itScoresAClassWithNoParentAsZero
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itSeparatesHavingNoInstallFromHavingNoEntry
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itStopsAtAnAnalysedNameBeforeReadingItsSource
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itTreatsAnUnregisteredExtensionNameAsUnreadInsteadOfRuntimeEvidence
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itDoesNotMistakeProjectExceptionAndErrorNamesForBuiltins
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itIncludesEveryBuiltinAncestorWithoutComposer"ArgumentCountError folded"
@@ -4657,9 +4665,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itIncludesEveryBuiltinAncestorWithoutComposer"LogicException"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itIncludesEveryBuiltinAncestorWithoutComposer"RuntimeException folded"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itIncludesEveryBuiltinAncestorWithoutComposer"RuntimeException"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itKeepsBuiltinPrefixThrowableWhenTheGraphTailIsIncomplete
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itKeepsCompletedMemoSeparateFromCanonicalActivePaths
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itKeepsExactSameFileOrdinalAnswersDistinct
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itKeepsExternalBridgeAnswersIndependentOfMemoAndQueryOrder
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itKeepsProvenThrowableAcrossARejoinedIncompleteTail
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itKeepsProvenThrowableWhenALaterTailIsUnread
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itMergesEveryAnalysedAlternativeAfterAnExternalBridge
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itMergesEveryParentBranchIncludingDegreeZeroRoots"all false forward"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itMergesEveryParentBranchIncludingDegreeZeroRoots"all false reverse"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itMergesEveryParentBranchIncludingDegreeZeroRoots"all true forward"
@@ -4676,7 +4688,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itMergesEveryParentBranchIncludingDegreeZeroRoots"true and false reverse"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itMergesEveryParentBranchIncludingDegreeZeroRoots"true and unknown forward"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itMergesEveryParentBranchIncludingDegreeZeroRoots"true and unknown reverse"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itPreservesFloorsAndUnanimousClassifiersAcrossAnExternalBridge
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itPropagatesACycleAcrossAnExternalBridge
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itPropagatesAnExternalLoopAndReadsTheFullVendorBuiltinTail
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itResolvesKnownGraphEvidenceAfterSixtyFourExternalVisits
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itUsesOneActivePathAcrossRepeatedExternalGraphReturns
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itGeneratesError
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itGeneratesWarning
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itGetsCliAliases

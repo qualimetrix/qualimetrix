@@ -41,7 +41,11 @@ roots. Finite depths merge by maximum; any floor yields a floor and any loop
 withholds the number. Exception knowledge is true only when all alternatives
 prove true, false only when all prove false, and unknown otherwise. Depth
 completeness and classifier knowledge are independent: an exact maximum does
-not settle contradictory exception evidence.
+not settle contradictory exception evidence. When an external chain returns to
+an already analysed name, it hands its finite prefix and evidence back to the
+same resolver before Composer chooses a source body. Every known declaration
+participates again, with the same active path and completed memo; mixed chains
+cannot hide an alternative depth, classifier or cycle.
 
 **Builtin ancestry is evidence, not runtime reflection.** Registered PHP names
 are followed transitively through the static hierarchy before asking whether
@@ -50,7 +54,11 @@ external-source port, never autoloaded. Unplaced or unread source, no source map
 and the existing 64-step cap yield floors; canonical external cycles yield
 loops. Unregistered extension classes remain unknown unless readable source
 resolves them, so the analysing machine's loaded extensions cannot decide a
-metric. Already-proven `Throwable` evidence survives an unread later tail.
+metric. Already-proven `Throwable` evidence survives an unread later tail. The
+64-visit cap applies per consecutive external segment. An analysed name reached
+by the last allowed link continues from graph facts without another source
+lookup; a still-external name at the cap remains a floor. Known graph chains are
+not subject to that external cap.
 
 **A self-parent is a declaration fact.** DependencyModel preserves named class
 self-`extends`, including case-folded identity, in its existing declaration
