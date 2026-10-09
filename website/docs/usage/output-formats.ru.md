@@ -260,9 +260,18 @@ JSON из конфигурации следует тому же пути; фай
             },
             "decomposition": [
                 {
-                    "metric": "complexity.ccn.sum",
+                    "metric": "complexity.ccn.avg",
                     "humanName": "Cyclomatic complexity",
-                    "value": 412,
+                    "value": 4.12,
+                    "coverage": {
+                        "state": "measured",
+                        "measured": 2263,
+                        "eligible": 2263,
+                        "ratio": 1.0,
+                        "unit": "callables",
+                        "basis": "complexity.ccn.count",
+                        "reason": null
+                    },
                     "good": true,
                     "direction": "lower-is-better"
                 }

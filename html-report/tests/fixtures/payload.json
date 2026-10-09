@@ -421,12 +421,9 @@
                     "coupling.class-rank.avg": 0.11494254865797657,
                     "coupling.class-rank.p95": 0.11494254865797657,
                     "coupling.class-rank.count": 1,
-                    "health.complexity": 100,
-                    "health.cohesion": 85.35533905932738,
+                    "health.cohesion": 100,
                     "health.coupling": 75,
-                    "health.typing": 100,
-                    "health.maintainability": 75,
-                    "health.overall": 87.07106781186548
+                    "health.overall": 87.5
                 },
                 "violations": [],
                 "violationCountTotal": 0,
@@ -478,16 +475,12 @@
                             "design.is-abstract": 0,
                             "design.is-interface": 0,
                             "design.woc": 100,
-                            "design.type-coverage.all": 100,
                             "design.dit": 0,
                             "design.dit-unresolved": 0,
                             "design.is-exception": 0,
-                            "health.complexity": 100,
-                            "health.cohesion": 85.35533905932738,
+                            "health.cohesion": 100,
                             "health.coupling": 100,
-                            "health.typing": 100,
-                            "health.maintainability": 85,
-                            "health.overall": 96.33883476483184
+                            "health.overall": 100
                         },
                         "violations": [],
                         "violationCountTotal": 0,
@@ -1220,14 +1213,9 @@
                                     "design.is-abstract": 0,
                                     "design.is-interface": 0,
                                     "design.woc": 100,
-                                    "design.type-coverage.all": 100,
                                     "design.is-exception": 0,
-                                    "health.complexity": 100,
-                                    "health.cohesion": 85.35533905932738,
                                     "health.coupling": 100,
-                                    "health.typing": 100,
-                                    "health.maintainability": 85,
-                                    "health.overall": 96.33883476483184
+                                    "health.overall": 100
                                 },
                                 "violations": [],
                                 "violationCountTotal": 0,
@@ -1279,16 +1267,12 @@
                                     "design.is-abstract": 0,
                                     "design.is-interface": 0,
                                     "design.woc": 100,
-                                    "design.type-coverage.all": 100,
                                     "design.dit": 0,
                                     "design.dit-unresolved": 0,
                                     "design.is-exception": 0,
-                                    "health.complexity": 100,
-                                    "health.cohesion": 85.35533905932738,
+                                    "health.cohesion": 100,
                                     "health.coupling": 100,
-                                    "health.typing": 100,
-                                    "health.maintainability": 85,
-                                    "health.overall": 96.33883476483184
+                                    "health.overall": 100
                                 },
                                 "violations": [],
                                 "violationCountTotal": 0,
@@ -1377,11 +1361,10 @@
                                     "size.symbol-method-count": 1,
                                     "design.is-exception": 0,
                                     "health.complexity": 100,
-                                    "health.cohesion": 85.35533905932738,
                                     "health.coupling": 100,
                                     "health.typing": 100,
                                     "health.maintainability": 100,
-                                    "health.overall": 96.33883476483184
+                                    "health.overall": 100
                                 },
                                 "violations": [],
                                 "violationCountTotal": 0,
@@ -1470,11 +1453,10 @@
                                     "size.symbol-method-count": 1,
                                     "design.is-exception": 0,
                                     "health.complexity": 100,
-                                    "health.cohesion": 85.35533905932738,
                                     "health.coupling": 100,
                                     "health.typing": 100,
                                     "health.maintainability": 100,
-                                    "health.overall": 96.33883476483184
+                                    "health.overall": 100
                                 },
                                 "violations": [],
                                 "violationCountTotal": 0,
@@ -1702,11 +1684,10 @@
                             "coupling.class-rank.p95": 0.21264362835505873,
                             "coupling.class-rank.count": 1,
                             "health.complexity": 100,
-                            "health.cohesion": 85.35533905932738,
                             "health.coupling": 100,
                             "health.typing": 100,
                             "health.maintainability": 100,
-                            "health.overall": 97.07106781186548
+                            "health.overall": 100
                         },
                         "violations": [],
                         "violationCountTotal": 0,
@@ -1795,11 +1776,10 @@
                                     "size.symbol-method-count": 1,
                                     "design.is-exception": 0,
                                     "health.complexity": 100,
-                                    "health.cohesion": 85.35533905932738,
                                     "health.coupling": 100,
                                     "health.typing": 100,
                                     "health.maintainability": 100,
-                                    "health.overall": 96.33883476483184
+                                    "health.overall": 100
                                 },
                                 "violations": [],
                                 "violationCountTotal": 0,
@@ -1823,6 +1803,291 @@
             "health.typing": 100,
             "health.maintainability": 100,
             "health.overall": 86.9609756097561
+        },
+        "healthDecomposition": {
+            "health.complexity": [
+                {
+                    "metric": "complexity.ccn.avg",
+                    "humanName": "Cyclomatic (avg)",
+                    "value": 2,
+                    "good": "below 2",
+                    "direction": "lower_is_better",
+                    "coverage": {
+                        "state": "measured",
+                        "measured": 6,
+                        "eligible": 6,
+                        "ratio": 1,
+                        "unit": "callables",
+                        "basis": "complexity.ccn.count",
+                        "reason": null
+                    }
+                },
+                {
+                    "metric": "complexity.cognitive.avg",
+                    "humanName": "Cognitive (avg)",
+                    "value": 1.5,
+                    "good": "below 1",
+                    "direction": "lower_is_better",
+                    "coverage": {
+                        "state": "measured",
+                        "measured": 6,
+                        "eligible": 6,
+                        "ratio": 1,
+                        "unit": "callables",
+                        "basis": "complexity.cognitive.count",
+                        "reason": null
+                    }
+                },
+                {
+                    "metric": "complexity.ccn.p95",
+                    "humanName": "Cyclomatic (p95)",
+                    "value": 4,
+                    "good": "below 5",
+                    "direction": "lower_is_better",
+                    "coverage": {
+                        "state": "measured",
+                        "measured": 6,
+                        "eligible": 6,
+                        "ratio": 1,
+                        "unit": "callables",
+                        "basis": "complexity.ccn.count",
+                        "reason": null
+                    }
+                },
+                {
+                    "metric": "complexity.cognitive.p95",
+                    "humanName": "Cognitive (p95)",
+                    "value": 5.25,
+                    "good": "below 6",
+                    "direction": "lower_is_better",
+                    "coverage": {
+                        "state": "measured",
+                        "measured": 6,
+                        "eligible": 6,
+                        "ratio": 1,
+                        "unit": "callables",
+                        "basis": "complexity.cognitive.count",
+                        "reason": null
+                    }
+                },
+                {
+                    "metric": "complexity.ccn.max",
+                    "humanName": "Cyclomatic (max)",
+                    "value": 4,
+                    "good": "below 20",
+                    "direction": "lower_is_better",
+                    "coverage": {
+                        "state": "measured",
+                        "measured": 6,
+                        "eligible": 6,
+                        "ratio": 1,
+                        "unit": "callables",
+                        "basis": "complexity.ccn.count",
+                        "reason": null
+                    }
+                }
+            ],
+            "health.cohesion": [
+                {
+                    "metric": "cohesion.tcc.avg",
+                    "humanName": "TCC",
+                    "value": 0,
+                    "good": "above 0.5",
+                    "direction": "higher_is_better",
+                    "coverage": {
+                        "state": "measured",
+                        "measured": 1,
+                        "eligible": 7,
+                        "ratio": 0.14285714285714285,
+                        "unit": "classes",
+                        "basis": "cohesion.tcc.count",
+                        "reason": null
+                    }
+                },
+                {
+                    "metric": "cohesion.lcom.avg",
+                    "humanName": "LCOM4 (avg)",
+                    "value": 0.6666666666666666,
+                    "good": "1 or less",
+                    "direction": "lower_is_better",
+                    "coverage": {
+                        "state": "measured",
+                        "measured": 3,
+                        "eligible": 7,
+                        "ratio": 0.42857142857142855,
+                        "unit": "classes",
+                        "basis": "cohesion.lcom.count",
+                        "reason": null
+                    }
+                }
+            ],
+            "health.coupling": [
+                {
+                    "metric": "coupling.distance-own.avg",
+                    "humanName": "Distance (own)",
+                    "value": 0.4166666666666667,
+                    "good": "below 0.3",
+                    "direction": "lower_is_better",
+                    "coverage": {
+                        "state": "measured",
+                        "measured": 3,
+                        "eligible": 3,
+                        "ratio": 1,
+                        "unit": "namespaces declaring a type",
+                        "basis": "coupling.distance-own.count",
+                        "reason": null
+                    }
+                },
+                {
+                    "metric": "coupling.cbo.avg",
+                    "humanName": "CBO (avg)",
+                    "value": 0.8571428571428571,
+                    "good": "below 8",
+                    "direction": "lower_is_better",
+                    "coverage": {
+                        "state": "measured",
+                        "measured": 7,
+                        "eligible": 7,
+                        "ratio": 1,
+                        "unit": "classes",
+                        "basis": "coupling.cbo.count",
+                        "reason": null
+                    }
+                },
+                {
+                    "metric": "coupling.cbo.p95",
+                    "humanName": "CBO (p95)",
+                    "value": 1.6999999999999993,
+                    "good": "below 15",
+                    "direction": "lower_is_better",
+                    "coverage": {
+                        "state": "measured",
+                        "measured": 7,
+                        "eligible": 7,
+                        "ratio": 1,
+                        "unit": "classes",
+                        "basis": "coupling.cbo.count",
+                        "reason": null
+                    }
+                },
+                {
+                    "metric": "coupling.cbo.max",
+                    "humanName": "CBO (max)",
+                    "value": 2,
+                    "good": "below 30",
+                    "direction": "lower_is_better",
+                    "coverage": {
+                        "state": "measured",
+                        "measured": 7,
+                        "eligible": 7,
+                        "ratio": 1,
+                        "unit": "classes",
+                        "basis": "coupling.cbo.count",
+                        "reason": null
+                    }
+                }
+            ],
+            "health.typing": [
+                {
+                    "metric": "design.type-coverage.param.typed.sum",
+                    "humanName": "Parameter types",
+                    "value": 100,
+                    "good": "100%",
+                    "direction": "higher_is_better",
+                    "coverage": {
+                        "state": "not-applicable",
+                        "measured": null,
+                        "eligible": null,
+                        "ratio": null,
+                        "unit": null,
+                        "basis": null,
+                        "reason": "this input has no declared symbol population"
+                    }
+                },
+                {
+                    "metric": "design.type-coverage.return.typed.sum",
+                    "humanName": "Return types",
+                    "value": 100,
+                    "good": "100%",
+                    "direction": "higher_is_better",
+                    "coverage": {
+                        "state": "not-applicable",
+                        "measured": null,
+                        "eligible": null,
+                        "ratio": null,
+                        "unit": null,
+                        "basis": null,
+                        "reason": "this input has no declared symbol population"
+                    }
+                },
+                {
+                    "metric": "design.type-coverage.property.typed.sum",
+                    "humanName": "Property types",
+                    "value": 100,
+                    "good": "100%",
+                    "direction": "higher_is_better",
+                    "coverage": {
+                        "state": "not-applicable",
+                        "measured": null,
+                        "eligible": null,
+                        "ratio": null,
+                        "unit": null,
+                        "basis": null,
+                        "reason": "this input has no declared symbol population"
+                    }
+                }
+            ],
+            "health.maintainability": [
+                {
+                    "metric": "maintainability.mi.avg",
+                    "humanName": "MI (avg)",
+                    "value": 92.1737102281687,
+                    "good": "above 85",
+                    "direction": "higher_is_better",
+                    "coverage": {
+                        "state": "measured",
+                        "measured": 6,
+                        "eligible": 6,
+                        "ratio": 1,
+                        "unit": "callables",
+                        "basis": "maintainability.mi.count",
+                        "reason": null
+                    }
+                },
+                {
+                    "metric": "maintainability.mi.p5",
+                    "humanName": "MI (p5)",
+                    "value": 72.49921864427665,
+                    "good": "above 65",
+                    "direction": "higher_is_better",
+                    "coverage": {
+                        "state": "measured",
+                        "measured": 6,
+                        "eligible": 6,
+                        "ratio": 1,
+                        "unit": "callables",
+                        "basis": "maintainability.mi.count",
+                        "reason": null
+                    }
+                },
+                {
+                    "metric": "maintainability.mi.min",
+                    "humanName": "MI (min)",
+                    "value": 67.35614714822512,
+                    "good": "above 5",
+                    "direction": "higher_is_better",
+                    "coverage": {
+                        "state": "measured",
+                        "measured": 6,
+                        "eligible": 6,
+                        "ratio": 1,
+                        "unit": "callables",
+                        "basis": "maintainability.mi.count",
+                        "reason": null
+                    }
+                }
+            ],
+            "health.overall": []
         },
         "healthCoverage": {
             "health.complexity": {

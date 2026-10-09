@@ -3516,6 +3516,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\ContributorRankerTest::itSkipsClassesWithoutPrimaryMetric
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\ContributorRankerTest::itTiedPrimaryMetricSortsByCanonicalPath
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\DecompositionItemTest::itRefusesAWriteToAConstructedItem
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthContributorTest::itChoosesTheCohesionAxisWithinTheSelectedNamespace
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthContributorTest::itClassWithNullMetricSkipped
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthContributorTest::itCohesionContributorsRankedByLowestTcc
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthContributorTest::itComplexityContributorsRankedByHighestCcn
@@ -3527,6 +3528,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthContributorTest::itOverallDimensionHasNoContributors
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthContributorTest::itRanksExactlyTwoLcomOnlyContributorsWorstFirst
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthContributorTest::itTieBreaksByClassNameAlphabetically
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthContributorTest::itUsesOneParticipatingCohesionAxisAcrossTheScope
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDecompositionCatalogTest::itDeclaresACoverageForEveryProjectLevelInputOfAnAggregatedDimension
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDecompositionCatalogTest::itGetDecompositionAnswersPerLevel
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDecompositionCatalogTest::itGetDecompositionDimensionThatDecomposesIntoNothing
@@ -3573,6 +3575,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itCoversTheParticipatingLcomTermWhileKeepingMissingTccVisible
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itDoesNotBorrowBuiltinCoverageForAnAuthoredLiteral
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itDoesNotCoverAnUnenteredAuthoredFormulaBranch
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itDoesNotInventHealthForAnUnaggregatedProject
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itKeepsAnAuthoredTypingAbsenceOutOfBuiltinHealthRecords
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itKeepsExpectedMissingDistanceAsNullWithAnExplicitZeroOfN
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreCoverageTest::itPreservesAnEnabledBuiltinNullableScoreAndItsExpectedInputs
@@ -3677,6 +3680,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricAnalysisTest::itDefaultReturnsEmptyArray
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricAnalysisTest::itPreservesInstalledDefinitionsWhenResolutionFails
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricAnalysisTest::itPreservesTheInstalledFormulaSourceWhenLaterResolutionFails
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricAnalysisTest::itPreservesTheResolvedCoordinateForSyntheticDefinitionsWithoutARefusalCallback
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricAnalysisTest::itRefusesLoudlyWhenARealTokenHasLostAnAuthoredFormulaSource
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricAnalysisTest::itSetAndGetDefinitions
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricAnalysisTest::itSetDefinitionsReplacePrevious

@@ -29,7 +29,7 @@ Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	Analysis
 Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	54	7
 Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource	Analysis.Configuration	6	4
 Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface	Analysis.Configuration	8	1
-Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	13	4
+Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	14	4
 Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions	Analysis.Configuration	3	2
 Qualimetrix\Analysis\Configuration\SelectorYamlDecoder	Analysis.Configuration	2	2
 Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface	Analysis.Evidence.CircularDependency	4	2
@@ -95,7 +95,7 @@ Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag	Analysis.Evidence.M
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface	Analysis.Evidence.Measurement	1	1
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition	Analysis.Evidence.Measurement	24	8
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinitionCatalogInterface	Analysis.Evidence.Measurement	2	1
-Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	66	14
+Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	67	14
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach	Analysis.Evidence.Measurement	3	2
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface	Analysis.Evidence.Measurement	3	3
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface	Analysis.Evidence.Measurement	6	3
@@ -367,8 +367,8 @@ Qualimetrix\Core\Symbol\MetricSubjectCodec	Core.Symbol	7	3
 Qualimetrix\Core\Symbol\MixedSpelling	Core.Symbol	3	2
 Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy	Core.Symbol	5	2
 Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	6	3
-Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	28	11
-Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	146	22
+Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	29	11
+Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	147	22
 Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	6	4
 Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	87	21
 Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	37	13
