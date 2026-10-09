@@ -4,20 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary;
 
-use Closure;
 use LogicException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthContributor;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderBuilder;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Score\ContributorRanker;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Score\CoverageReader;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Score\ProjectHealthScoreBuilder;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
@@ -29,27 +23,20 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
  * Builds health scores and offender projections from measured evidence.
- *
- * @qmx-threshold complexity.wmc warning=63 error=63 -- Exact subject and ranked-score refusals leave WMC 62 across twelve methods after simplifying the shared routes; moving those guards into the evidence readers transfers the branches. One-point headroom preserves the next growth signal.
- * @qmx-threshold coupling.cbo 21 -- This health projection composes nineteen evidence, catalog and value types (CBO 20); a catalog forwarding method only relocates the same dependency and adds a surface. Keep the direct composition with one-edge headroom.
  */
 final readonly class HealthSummaryBuilder
 {
     private const int DEFAULT_TOP_NAMESPACES = 10;
     private const int DEFAULT_TOP_CLASSES = 10;
 
-    private ContributorRanker $contributorRanker;
-    private CoverageReader $coverage;
-    private HealthDecompositionCatalog $decomposition;
+    private ProjectHealthScoreBuilder $projectScores;
     private WorstOffenderBuilder $offenderBuilder;
 
     public function __construct(
         private HealthMetricCatalog $hintProvider,
         private ComputedMetricDefinitionCatalogInterface $definitionCatalog,
     ) {
-        $this->contributorRanker = new ContributorRanker();
-        $this->decomposition = new HealthDecompositionCatalog();
-        $this->coverage = new CoverageReader($this->decomposition);
+        $this->projectScores = new ProjectHealthScoreBuilder($this->hintProvider, $this->definitionCatalog);
         $this->offenderBuilder = new WorstOffenderBuilder();
     }
 
@@ -59,7 +46,7 @@ final readonly class HealthSummaryBuilder
         NamespaceTree $tree,
         array $findings,
     ): HealthSummary {
-        $healthScores = $this->buildHealthScores($metrics, $tree);
+        $healthScores = $this->projectScores->build($metrics);
         // The levels ranked here are published as
         // RankedOffenderLevels::LEVELS: a caller asking what a `--namespace`
         // value can select has to know which symbols get a canonical name into
@@ -75,192 +62,6 @@ final readonly class HealthSummaryBuilder
     }
 
     /**
-     * @return array<string, HealthScore>
-     */
-    private function buildHealthScores(MetricRepositoryInterface $metrics, NamespaceTree $tree): array
-    {
-        $projectMetrics = $metrics->get(SymbolPath::forProject());
-        // Aggregation publishes no project bag when discovery or collection
-        // leaves no symbols. Missing populations are unknown, not zero.
-        if ($projectMetrics->all() === []) {
-            return [];
-        }
-        $healthScores = [];
-
-        foreach (HealthDimension::all() as $dim) {
-            $score = $projectMetrics->get($dim->value);
-
-            $definition = $this->definitionCatalog->find($dim->value);
-            if ($score === null && ($definition === null || !$definition->hasLevel(SymbolLevel::Project) || !$definition->isBuiltinFormulaForLevel(SymbolLevel::Project))) {
-                continue;
-            }
-
-            $scoreValue = $score === null ? null : (float) $score;
-            [$warnThreshold, $errThreshold] = $this->thresholds($dim);
-            $inputs = $this->decomposition->inputsForFormula($dim->value, SymbolLevel::Project, $projectMetrics->get(...), $definition);
-            $decomposition = $this->buildDecomposition($dim->value, $projectMetrics);
-            $contributors = $scoreValue === null || ($definition !== null && !$definition->isBuiltinFormulaForLevel(SymbolLevel::Project))
-                ? [] : $this->rankContributors($dim->value, $metrics);
-            $dimensionName = $dim->shortName();
-            $healthScores[$dimensionName] = new HealthScore(
-                name: $dimensionName,
-                score: $scoreValue,
-                label: $scoreValue === null ? 'Not measured' : $this->hintProvider->getScoreLabel($scoreValue, $warnThreshold, $errThreshold),
-                warningThreshold: $warnThreshold,
-                errorThreshold: $errThreshold,
-                coverage: $inputs === [] && $definition !== null && !$definition->isBuiltinFormulaForLevel(SymbolLevel::Project)
-                    ? \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage::notApplicable('the authored formula has no identifiable symbol population')
-                    : $this->coverage->read($dim->value, $projectMetrics->get(...), $inputs),
-                decomposition: $decomposition,
-                worstContributors: $contributors,
-            );
-        }
-
-        // Show the absent typing dimension when other dimensions exist,
-        // unless typing was explicitly excluded via --exclude-health
-        $typingDefinition = $this->definitionCatalog->find(HealthDimension::Typing->value);
-        if ($healthScores !== [] && !isset($healthScores['typing']) && !$this->isDefinitionExcluded(HealthDimension::Typing->value)
-            && ($typingDefinition === null || $typingDefinition->isBuiltinFormulaForLevel(SymbolLevel::Project))) {
-            [$typingWarning, $typingError] = $this->thresholds(HealthDimension::Typing);
-            $healthScores['typing'] = new HealthScore(
-                name: 'typing',
-                score: null,
-                label: 'Not measured',
-                warningThreshold: $typingWarning,
-                errorThreshold: $typingError,
-                coverage: $this->coverage->read(HealthDimension::Typing->value, $projectMetrics->get(...)),
-            );
-        }
-
-        return $healthScores;
-    }
-
-    /**
-     * The classes that pushed a project score down, worst first.
-     *
-     * @return list<HealthContributor>
-     */
-    private function rankContributors(string $dimension, MetricRepositoryInterface $metrics): array
-    {
-        $inputs = $this->hintProvider->getDecompositionForClasses($dimension);
-
-        if ($inputs === []) {
-            return [];
-        }
-
-        $classes = iterator_to_array($metrics->allClassDeclarations(), false);
-        $inputs = $this->decomposition->selectContributorInputs($inputs, array_map(
-            static fn($symbol): Closure => $metrics->getSubject($symbol->subject ?? throw new LogicException('Class contributor requires an exact subject'))->get(...),
-            $classes,
-        ));
-
-        return $this->contributorRanker->rank(
-            array_map(function ($symbol) use ($metrics, $inputs): array {
-                $subject = $symbol->subject ?? throw new LogicException('Class contributor requires an exact subject');
-                $selection = $this->decomposition->selectContributorMetrics(
-                    $inputs,
-                    $metrics->getSubject($subject)->get(...),
-                );
-
-                return [
-                    'symbol' => $symbol,
-                    'primaryValue' => $selection['primaryValue'],
-                    'contributorMetrics' => $selection['contributorMetrics'],
-                ];
-            }, $classes),
-            $inputs[0]['direction'],
-        );
-    }
-
-    /**
-     * Builds decomposition items for a health dimension.
-     *
-     * Always returns the contributing metrics regardless of score value,
-     * so that JSON consumers can inspect what feeds into each dimension.
-     *
-     * @return list<DecompositionItem>
-     */
-    private function buildDecomposition(
-        string $dimension,
-        MetricBag $projectMetrics,
-    ): array {
-        // Typing dimension needs special handling: compute percentages from raw sums
-        if ($dimension === HealthDimension::Typing->value) {
-            $definition = $this->definitionCatalog->find($dimension);
-            if ($definition !== null && !$definition->isBuiltinFormulaForLevel(SymbolLevel::Project)) {
-                return [];
-            }
-
-            return $this->buildTypingDecomposition($projectMetrics);
-        }
-
-        $definition = $this->definitionCatalog->find($dimension);
-        $inputs = $definition !== null && !$definition->isBuiltinFormulaForLevel(SymbolLevel::Project)
-            ? $this->decomposition->inputsForFormula($dimension, SymbolLevel::Project, $projectMetrics->get(...), $definition)
-            : $this->decomposition->inputsFor($dimension, SymbolLevel::Project);
-        $metricKeys = array_column($inputs, 'key');
-        $items = [];
-
-        foreach ($metricKeys as $metricKey) {
-            $value = $projectMetrics->get($metricKey);
-
-            $floatValue = $value === null ? null : (float) $value;
-            $label = $this->hintProvider->getLabel($metricKey) ?? $metricKey;
-            $goodValue = $this->hintProvider->getGoodValue($metricKey) ?? '';
-            $direction = $this->hintProvider->getDirection($metricKey) ?? 'lower_is_better';
-            $explanation = $floatValue === null ? '' : $this->hintProvider->getExplanation($metricKey, $floatValue);
-
-            $items[] = new DecompositionItem(
-                metricKey: $metricKey,
-                humanName: $label,
-                value: $floatValue,
-                goodValue: $goodValue,
-                direction: $direction,
-                explanation: $explanation,
-                coverage: $this->coverage->forInput($dimension, $metricKey, $projectMetrics->get(...)),
-            );
-        }
-
-        return $items;
-    }
-
-    /**
-     * @return list<DecompositionItem>
-     */
-    private function buildTypingDecomposition(MetricBag $metrics): array
-    {
-        $components = [
-            ['label' => 'Parameter types', 'typed' => MetricName::agg(MetricName::DESIGN_TYPE_COVERAGE_PARAM_TYPED, AggregationStrategy::Sum), 'total' => MetricName::agg(MetricName::DESIGN_TYPE_COVERAGE_PARAM_TOTAL, AggregationStrategy::Sum)],
-            ['label' => 'Return types', 'typed' => MetricName::agg(MetricName::DESIGN_TYPE_COVERAGE_RETURN_TYPED, AggregationStrategy::Sum), 'total' => MetricName::agg(MetricName::DESIGN_TYPE_COVERAGE_RETURN_TOTAL, AggregationStrategy::Sum)],
-            ['label' => 'Property types', 'typed' => MetricName::agg(MetricName::DESIGN_TYPE_COVERAGE_PROPERTY_TYPED, AggregationStrategy::Sum), 'total' => MetricName::agg(MetricName::DESIGN_TYPE_COVERAGE_PROPERTY_TOTAL, AggregationStrategy::Sum)],
-        ];
-
-        $items = [];
-
-        foreach ($components as $component) {
-            $typed = $metrics->get($component['typed']);
-            $total = $metrics->get($component['total']);
-
-            if ($total === null || (int) $total === 0) {
-                continue;
-            }
-
-            $pct = round((float) $typed / (float) $total * 100, 1);
-
-            $items[] = new DecompositionItem(
-                metricKey: $component['typed'],
-                humanName: $component['label'],
-                value: $pct,
-                goodValue: '100%',
-                direction: 'higher_is_better',
-                explanation: \sprintf('%d of %d typed (%.1f%%)', (int) $typed, (int) $total, $pct),
-            );
-        }
-
-        return $items;
-    }
-
-    /**
      * @param list<Finding> $findings
      *
      * @return list<WorstOffender>
@@ -272,7 +73,9 @@ final readonly class HealthSummaryBuilder
         int $limit,
         NamespaceTree $tree,
     ): array {
-        [$warnThreshold, $errorThreshold] = $this->thresholds(HealthDimension::Overall);
+        $definition = $this->definitionCatalog->find(HealthDimension::Overall->value);
+        $warnThreshold = $definition->warningThreshold ?? 50.0;
+        $errorThreshold = $definition->errorThreshold ?? 30.0;
         $candidates = self::rankedCandidates($repository, $level);
         $violationCounts = $this->countFindingsPerSymbol($repository, $findings, $level, $tree);
         $offenders = [];
@@ -443,35 +246,4 @@ final readonly class HealthSummaryBuilder
         return $notable;
     }
 
-    /**
-     * Checks if a computed metric definition was excluded via --exclude-health.
-     *
-     * Returns true only when definitions are loaded AND the named metric is not among them.
-     * When no definitions are loaded (e.g., in tests), returns false (not excluded).
-     */
-    private function isDefinitionExcluded(string $name): bool
-    {
-        $definitions = $this->definitionCatalog->all();
-
-        return $definitions !== [] && !\in_array(
-            $name,
-            array_map(static fn($definition): string => $definition->name, $definitions),
-            true,
-        );
-    }
-
-    /** @return array{float, float} */
-    private function thresholds(HealthDimension $dimension): array
-    {
-        $definition = $this->definitionCatalog->find($dimension->value);
-
-        return [
-            $definition->warningThreshold ?? ($dimension === HealthDimension::Typing ? 80.0 : 50.0),
-            $definition->errorThreshold ?? match ($dimension) {
-                HealthDimension::Typing => 50.0,
-                HealthDimension::Overall => 30.0,
-                default => 25.0,
-            },
-        ];
-    }
 }

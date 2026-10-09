@@ -43,23 +43,15 @@ final readonly class CoverageReader
         $narrowest = null;
         $emptyPopulation = null;
 
-        foreach ($inputs ?? $this->decomposition->inputsFor($dimension, SymbolLevel::Project) as $input) {
-            $spec = $input['coverage'];
+        $inputs ??= $this->decomposition->inputsFor($dimension, SymbolLevel::Project);
 
-            if ($spec === null) {
+        foreach (self::inputCoverages($inputs, $readProjectMetric) as $candidate) {
+            if (!$candidate->applicable) {
+                $emptyPopulation ??= $candidate->reason;
                 continue;
             }
 
-            $eligible = self::population($spec['unit'], $readProjectMetric);
-
-            if ($eligible <= 0) {
-                $emptyPopulation ??= \sprintf('no %s were measured', $spec['unit']->value);
-                continue;
-            }
-
-            $candidate = self::measured($spec['count'], $spec['unit'], $eligible, $readProjectMetric);
-
-            if ($narrowest === null || $candidate->ratio < $narrowest->ratio) {
+            if ($candidate->ratio < ($narrowest->ratio ?? \PHP_FLOAT_MAX)) {
                 $narrowest = $candidate;
             }
         }
@@ -67,6 +59,21 @@ final readonly class CoverageReader
         return $narrowest ?? HealthCoverage::notApplicable(
             $emptyPopulation ?? $this->decomposition->coverageAbsenceReason($dimension),
         );
+    }
+
+    /**
+     * @param list<array{key: string, sources: list<string>, label: string, direction: string, coverage: array{count: string, unit: CoverageUnit}|null}> $inputs
+     * @param callable(string): (int|float|null) $readProjectMetric
+     *
+     * @return iterable<HealthCoverage>
+     */
+    private static function inputCoverages(array $inputs, callable $readProjectMetric): iterable
+    {
+        foreach ($inputs as $input) {
+            if ($input['coverage'] !== null) {
+                yield self::forSpec($input['coverage'], $readProjectMetric);
+            }
+        }
     }
 
     /**
@@ -119,16 +126,24 @@ final readonly class CoverageReader
     {
         foreach ($this->decomposition->inputsFor($dimension, SymbolLevel::Project) as $input) {
             if ($input['key'] === $key && $input['coverage'] !== null) {
-                $spec = $input['coverage'];
-                $eligible = self::population($spec['unit'], $readProjectMetric);
-
-                return $eligible === 0
-                    ? HealthCoverage::notApplicable(\sprintf('no %s were measured', $spec['unit']->value))
-                    : self::measured($spec['count'], $spec['unit'], $eligible, $readProjectMetric);
+                return self::forSpec($input['coverage'], $readProjectMetric);
             }
         }
 
         return HealthCoverage::notApplicable('this input has no declared symbol population');
+    }
+
+    /**
+     * @param array{count: string, unit: CoverageUnit} $spec
+     * @param callable(string): (int|float|null) $readProjectMetric
+     */
+    private static function forSpec(array $spec, callable $readProjectMetric): HealthCoverage
+    {
+        $eligible = self::population($spec['unit'], $readProjectMetric);
+
+        return $eligible === 0
+            ? HealthCoverage::notApplicable(\sprintf('no %s were measured', $spec['unit']->value))
+            : self::measured($spec['count'], $spec['unit'], $eligible, $readProjectMetric);
     }
 
     private static function count(int|float $value, string $metric): int
