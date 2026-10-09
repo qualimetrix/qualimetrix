@@ -882,6 +882,61 @@ final class DitGlobalCollectorTest extends TestCase
         $this->collector->calculate($graph, new InMemoryMetricRepository($this->collector->getMetricDefinitions()));
     }
 
+    #[Test]
+    public function itPublishesRejoinedAcyclicDepthAndOmitsAnAmbiguousClassifier(): void
+    {
+        foreach ([false, true] as $reverse) {
+            [$repository, $subjects] = $this->bridgePublication('RuntimeException', $reverse);
+            $bag = $repository->getSubject($subjects[2]);
+            self::assertSame(4, $bag->get('design.dit'));
+            self::assertSame(0, $bag->get('design.dit-unresolved'));
+            self::assertFalse($bag->has('design.is-exception'));
+            self::assertSame(0, $repository->getSubject($subjects[0])->get('design.dit'));
+            self::assertSame(2, $repository->getSubject($subjects[1])->get('design.dit'));
+            self::assertSame(0, $repository->getSubject($subjects[0])->get('design.is-exception'));
+            self::assertSame(1, $repository->getSubject($subjects[1])->get('design.is-exception'));
+            self::assertNotSame($subjects[0]->toCanonical(), $subjects[1]->toCanonical());
+        }
+    }
+
+    #[Test]
+    public function itOmitsNumericDepthForACycleReachedThroughExternalSource(): void
+    {
+        foreach ([false, true] as $reverse) {
+            [$repository, $subjects] = $this->bridgePublication('App\C', $reverse);
+            foreach ([2, 3] as $i) {
+                $bag = $repository->getSubject($subjects[$i]);
+                self::assertFalse($bag->has('design.dit'));
+                self::assertSame(1, $bag->get('design.dit-unresolved'));
+                self::assertFalse($bag->has('design.is-exception'));
+            }
+            self::assertSame(0, $repository->getSubject($subjects[0])->get('design.dit'));
+            self::assertSame(0, $repository->getSubject($subjects[0])->get('design.is-exception'));
+        }
+    }
+
+    /** @return array{InMemoryMetricRepository, list<MetricSubject>} */
+    private function bridgePublication(string $alternativeParent, bool $reverse): array
+    {
+        $this->facts = [];
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
+        $rows = [['App\A', null], ['App\A', $alternativeParent], ['App\C', 'Vendor\B'], ['App\Below', 'App\C']];
+        $subjects = [];
+        $dependencies = [];
+        foreach ($reverse ? [3, 2, 1, 0] : [0, 1, 2, 3] as $i) {
+            [$name, $parent] = $rows[$i];
+            $subjects[$i] = $this->seedDeclaration($repository, $name, new MetricBag(), RelativePath::fromString('bridge.php'), $i);
+            if ($parent !== null) {
+                $dependencies[] = $this->createExtends($name, $parent, file: RelativePath::fromString('bridge.php'), ordinal: $i);
+            }
+        }
+        $collector = new DitGlobalCollector(new ExternalAncestry(new FixedParentSource(['Vendor\B' => 'App\A', 'App\A' => null])));
+        $this->calculate($this->graph($dependencies), $repository, $collector);
+        ksort($subjects);
+
+        return [$repository, array_values($subjects)];
+    }
+
     private static function assertIncompletePublication(InMemoryMetricRepository $repository): void
     {
         $population = iterator_to_array($repository->allClassDeclarations());

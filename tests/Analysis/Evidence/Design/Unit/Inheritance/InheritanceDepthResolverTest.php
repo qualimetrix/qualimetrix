@@ -143,6 +143,147 @@ final class InheritanceDepthResolverTest extends TestCase
         self::assertTrue($resolver->depthOf($declarations[2])->reachesThrowable);
     }
 
+    #[Test]
+    public function itMergesEveryAnalysedAlternativeAfterAnExternalBridge(): void
+    {
+        foreach ([[null, 'RuntimeException'], ['RuntimeException', null]] as $parents) {
+            [$resolver, $declarations] = $this->resolver([
+                ['App\A', $parents[0]], ['App\A', $parents[1]], ['App\C', 'Vendor\B'],
+            ], new FixedParentSource(['Vendor\B' => 'App\A', 'App\A' => null]));
+            $answer = $resolver->depthOf($declarations[2]);
+            self::assertSame(4, $answer->depth);
+            self::assertSame(InheritanceOutcome::Exact, $answer->outcome);
+            self::assertNull($answer->reachesThrowable);
+            foreach ($parents as $i => $parent) {
+                self::assertSame($parent === null ? 0 : 2, $resolver->depthOf($declarations[$i])->depth);
+                self::assertSame($parent !== null, $resolver->depthOf($declarations[$i])->reachesThrowable);
+            }
+        }
+    }
+
+    #[Test]
+    public function itPropagatesACycleAcrossAnExternalBridge(): void
+    {
+        foreach ([[null, 'App\C'], ['App\C', null]] as $parents) {
+            [$resolver, $declarations] = $this->resolver([
+                ['App\A', $parents[0]], ['App\A', $parents[1]], ['App\C', 'Vendor\B'], ['App\Below', 'App\C'],
+            ], new FixedParentSource(['Vendor\B' => 'App\A', 'App\A' => null]));
+            foreach ([2, 3] as $i) {
+                $answer = $resolver->depthOf($declarations[$i]);
+                self::assertSame(InheritanceOutcome::Loop, $answer->outcome);
+                self::assertNull($answer->depth);
+                self::assertNull($answer->reachesThrowable);
+            }
+            $root = $resolver->depthOf($declarations[array_search(null, $parents, true)]);
+            self::assertSame(0, $root->depth);
+            self::assertFalse($root->reachesThrowable);
+        }
+    }
+
+    #[Test]
+    public function itKeepsExternalBridgeAnswersIndependentOfMemoAndQueryOrder(): void
+    {
+        foreach ([[null, 'App\C'], ['App\C', null]] as $parents) {
+            foreach ([[0, 1, 2], [1, 0, 2], [2, 1, 0]] as $order) {
+                [$resolver, $declarations] = $this->resolver([
+                    ['App\A', $parents[0]], ['App\A', $parents[1]], ['App\C', 'Vendor\B'],
+                ], new FixedParentSource(['Vendor\B' => 'app\a', 'app\a' => null]));
+                foreach ($order as $i) {
+                    $resolver->depthOf($declarations[$i]);
+                }
+                $answer = $resolver->depthOf($declarations[2]);
+                self::assertSame(InheritanceOutcome::Loop, $answer->outcome);
+                self::assertNull($answer->depth);
+                self::assertNull($answer->reachesThrowable);
+                self::assertSame($answer, $resolver->depthOf($declarations[2]));
+                self::assertSame(0, $resolver->depthOf($declarations[array_search(null, $parents, true)])->depth);
+            }
+        }
+    }
+
+    #[Test]
+    public function itPreservesFloorsAndUnanimousClassifiersAcrossAnExternalBridge(): void
+    {
+        $cases = [
+            [null, 'Vendor\Unread', 3, InheritanceOutcome::Floor, null],
+            ['Exception', 'RuntimeException', 4, InheritanceOutcome::Exact, true],
+            ['App\Root', null, 3, InheritanceOutcome::Exact, false],
+        ];
+        foreach ($cases as [$first, $second, $depth, $outcome, $truth]) {
+            foreach ([[$first, $second], [$second, $first]] as $parents) {
+                [$resolver, $declarations] = $this->resolver([
+                    ['App\A', $parents[0]], ['App\A', $parents[1]], ['App\C', 'Vendor\B'], ['App\Root', null],
+                ], new FixedParentSource(['Vendor\B' => 'App\A', 'App\A' => null]));
+                $answer = $resolver->depthOf($declarations[2]);
+                self::assertSame($depth, $answer->depth);
+                self::assertSame($outcome, $answer->outcome);
+                self::assertSame($truth, $answer->reachesThrowable);
+            }
+        }
+    }
+
+    #[Test]
+    public function itKeepsProvenThrowableAcrossARejoinedIncompleteTail(): void
+    {
+        foreach (['Vendor\Unread' => InheritanceOutcome::Floor, 'App\C' => InheritanceOutcome::Loop] as $parent => $outcome) {
+            [$resolver, $declarations] = $this->resolver([
+                ['App\A', null], ['App\A', $parent], ['App\C', 'Vendor\B', 'Throwable'],
+            ], new FixedParentSource(['Vendor\B' => 'App\A', 'App\A' => null]));
+            $answer = $resolver->depthOf($declarations[2]);
+            self::assertSame($outcome, $answer->outcome);
+            self::assertSame($outcome === InheritanceOutcome::Loop ? null : 3, $answer->depth);
+            self::assertTrue($answer->reachesThrowable);
+        }
+    }
+
+    #[Test]
+    public function itResolvesKnownGraphEvidenceAfterSixtyFourExternalVisits(): void
+    {
+        foreach ([63, 64, 65] as $length) {
+            $parents = [];
+            for ($i = 0; $i < $length; ++$i) {
+                $parents['Vendor\C' . $i] = $i + 1 === $length ? 'App\A' : 'Vendor\C' . ($i + 1);
+            }
+            [$resolver, $declarations] = $this->resolver([
+                ['App\A', null], ['App\A', 'RuntimeException'], ['App\Child', 'Vendor\C0'],
+            ], new FixedParentSource($parents));
+            $answer = $resolver->depthOf($declarations[2]);
+            self::assertSame($length <= 64 ? $length + 3 : 65, $answer->depth);
+            self::assertSame($length <= 64 ? InheritanceOutcome::Exact : InheritanceOutcome::Floor, $answer->outcome);
+            self::assertNull($answer->reachesThrowable);
+        }
+    }
+
+    #[Test]
+    public function itKeepsBuiltinPrefixThrowableWhenTheGraphTailIsIncomplete(): void
+    {
+        foreach (['Vendor\Unread' => InheritanceOutcome::Floor, 'App\C' => InheritanceOutcome::Loop] as $parent => $outcome) {
+            [$resolver, $declarations] = $this->resolver([
+                ['Error', $parent], ['App\C', 'ArgumentCountError'],
+            ]);
+            $answer = $resolver->depthOf($declarations[1]);
+            self::assertSame($outcome, $answer->outcome);
+            self::assertSame($outcome === InheritanceOutcome::Loop ? null : 4, $answer->depth);
+            self::assertTrue($answer->reachesThrowable);
+        }
+    }
+
+    #[Test]
+    public function itUsesOneActivePathAcrossRepeatedExternalGraphReturns(): void
+    {
+        foreach (['RuntimeException' => InheritanceOutcome::Exact, 'App\C' => InheritanceOutcome::Loop] as $parent => $outcome) {
+            foreach ([[null, $parent], [$parent, null]] as $parents) {
+                [$resolver, $declarations] = $this->resolver([
+                    ['App\A', $parents[0]], ['App\A', $parents[1]], ['App\C', 'Vendor\B'], ['App\D', 'Vendor\E'],
+                ], new FixedParentSource(['Vendor\B' => '\APP\d', 'Vendor\E' => 'app\a', 'APP\d' => null, 'app\a' => null]));
+                $answer = $resolver->depthOf($declarations[2]);
+                self::assertSame($outcome, $answer->outcome);
+                self::assertSame($outcome === InheritanceOutcome::Loop ? null : 6, $answer->depth);
+                self::assertNull($answer->reachesThrowable);
+            }
+        }
+    }
+
     /**
      * @param list<array{string, ?string, string?: string}> $rows
      *

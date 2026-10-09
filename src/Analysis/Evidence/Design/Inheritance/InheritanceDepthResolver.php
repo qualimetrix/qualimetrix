@@ -20,6 +20,9 @@ final class InheritanceDepthResolver
     /** @var array<string, true> canonical PHP identities on the current path */
     private array $active = [];
 
+    /** @var array<string, true> */
+    private readonly array $analysedNames;
+
     /**
      * @param array<string, string> $names exact declaration => folded name
      * @param array<string, non-empty-list<string>> $declarationsByName
@@ -32,7 +35,9 @@ final class InheritanceDepthResolver
         private readonly array $parents,
         private readonly array $throwableDeclarations,
         private readonly ExternalAncestry $externalAncestry,
-    ) {}
+    ) {
+        $this->analysedNames = array_fill_keys(array_keys($declarationsByName), true);
+    }
 
     public static function fromGraph(DependencyGraphInterface $graph, ExternalAncestry $externalAncestry): self
     {
@@ -144,13 +149,29 @@ final class InheritanceDepthResolver
 
     private function externalResolution(string $parent): InheritanceResolution
     {
-        $tail = $this->externalAncestry->depthOf($parent);
+        $tail = $this->externalAncestry->depthOf($parent, $this->analysedNames);
+        if ($tail->outcome === ExternalChainOutcome::ReachedAnalysedName) {
+            return $this->rejoinedResolution($tail);
+        }
 
         return new InheritanceResolution($tail->depth, match ($tail->outcome) {
             ExternalChainOutcome::ReachedRoot => InheritanceOutcome::Exact,
             ExternalChainOutcome::Loop => InheritanceOutcome::Loop,
             default => InheritanceOutcome::Floor,
         }, $tail->reachesThrowable);
+    }
+
+    private function rejoinedResolution(ExternalDepth $tail): InheritanceResolution
+    {
+        $name = $tail->analysedName ?? throw new LogicException('An analysed ancestry boundary requires a logical name');
+        $prefix = $tail->depth ?? throw new LogicException('An analysed ancestry boundary requires a finite prefix depth');
+        $answer = $this->parentResolution($name);
+
+        return new InheritanceResolution(
+            $answer->depth === null ? null : $prefix + $answer->depth,
+            $answer->outcome,
+            $tail->reachesThrowable === true ? true : $answer->reachesThrowable,
+        );
     }
 
     /** @param non-empty-list<InheritanceResolution> $answers */

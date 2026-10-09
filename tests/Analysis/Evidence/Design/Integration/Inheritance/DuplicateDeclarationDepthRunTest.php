@@ -4,11 +4,27 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance;
 
+use Closure;
+use PhpParser\NodeTraverser;
+use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
+use Qualimetrix\Analysis\Evidence\DependencyModel\UnplacedExternalClassSpelling;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\DitGlobalCollector;
+use Qualimetrix\Analysis\Evidence\Design\Inheritance\ExternalAncestry;
+use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthResolver;
+use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceOutcome;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceRule;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
+use Qualimetrix\Core\Ast\NameResolution;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap;
+use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
+use Qualimetrix\Infrastructure\Composer\DeclaredParentReader;
 use RuntimeException;
 use Symfony\Component\Process\Process;
 
@@ -33,6 +49,11 @@ final class DuplicateDeclarationDepthRunTest extends TestCase
 
     private string $analysedDirectory;
 
+    /** @var list<string> */
+    private array $fixtureAutoloadQueries = [];
+
+    private ?Closure $fixtureAutoloader = null;
+
     protected function setUp(): void
     {
         $this->workingDirectory = \sprintf(
@@ -40,6 +61,12 @@ final class DuplicateDeclarationDepthRunTest extends TestCase
             sys_get_temp_dir(),
             bin2hex(random_bytes(6)),
         );
+        $this->fixtureAutoloader = function (string $name): void {
+            if (str_starts_with($name, 'App\\') || str_starts_with($name, 'Vendor\\')) {
+                $this->fixtureAutoloadQueries[] = $name;
+            }
+        };
+        spl_autoload_register($this->fixtureAutoloader);
         $this->analysedDirectory = $this->workingDirectory . '/src';
 
         if (!mkdir($this->analysedDirectory, 0o777, true) && !is_dir($this->analysedDirectory)) {
@@ -52,6 +79,9 @@ final class DuplicateDeclarationDepthRunTest extends TestCase
 
     protected function tearDown(): void
     {
+        if ($this->fixtureAutoloader !== null) {
+            spl_autoload_unregister($this->fixtureAutoloader);
+        }
         // Removed as a tree: the run writes a `.qmx-cache/` into its working
         // directory even under `--no-cache`.
         self::removeTree($this->workingDirectory);
@@ -115,6 +145,91 @@ final class DuplicateDeclarationDepthRunTest extends TestCase
 
         self::assertSame(['src/Base2.php' => 1, 'src/First.php' => 1, 'src/Second.php' => 2], $before);
         self::assertSame(['src/Base2.php' => 1, 'src/First.php' => 2, 'src/Second.php' => 1], $this->publishedDepths());
+    }
+
+    #[Test]
+    public function itUsesAllParsedDeclarationsWhenAnExternalComposerParentReturnsToTheProject(): void
+    {
+        $this->writeBridgeSources('RuntimeException');
+        foreach ([false, true] as $reverse) {
+            foreach ([false, true] as $includeBridge) {
+                [$resolver, $child] = $this->parsedBridge($reverse, $includeBridge);
+                $answer = $resolver->depthOf($child);
+                self::assertSame(4, $answer->depth);
+                self::assertSame(InheritanceOutcome::Exact, $answer->outcome);
+                self::assertNull($answer->reachesThrowable);
+                self::assertSame('src/C.php', $child->file->value());
+                self::assertSame(0, $child->ordinal->value);
+            }
+        }
+        self::assertFalse(class_exists('App\C', false));
+        self::assertFalse(class_exists('Vendor\B', false));
+        self::assertSame([], $this->fixtureAutoloadQueries);
+    }
+
+    #[Test]
+    public function itKeepsParsedMixedCyclesIndependentOfComposerSelectedRoot(): void
+    {
+        $this->writeBridgeSources('App\C');
+        foreach ([false, true] as $reverse) {
+            foreach ([false, true] as $includeBridge) {
+                [$resolver, $child] = $this->parsedBridge($reverse, $includeBridge);
+                $answer = $resolver->depthOf($child);
+                self::assertSame(InheritanceOutcome::Loop, $answer->outcome);
+                self::assertNull($answer->depth);
+                self::assertNull($answer->reachesThrowable);
+            }
+        }
+        self::assertFalse(class_exists('App\A', false));
+        self::assertFalse(class_exists('Vendor\B', false));
+        self::assertSame([], $this->fixtureAutoloadQueries);
+    }
+
+    private function writeBridgeSources(string $alternativeParent): void
+    {
+        file_put_contents($this->workingDirectory . '/composer.json', json_encode(['autoload' => ['psr-4' => ['App\\' => 'src/', 'Vendor\\' => 'vendor-src/']]], \JSON_THROW_ON_ERROR));
+        file_put_contents($this->analysedDirectory . '/A.php', '<?php namespace App; if (!class_exists(A::class, false)) { class A {} }');
+        file_put_contents($this->analysedDirectory . '/Alternative.php', '<?php namespace App; if (!class_exists(A::class, false)) { abstract class A extends \\' . $alternativeParent . ' {} }');
+        file_put_contents($this->analysedDirectory . '/C.php', '<?php namespace App; class C extends \\Vendor\\B {}');
+        mkdir($this->workingDirectory . '/vendor-src');
+        file_put_contents($this->workingDirectory . '/vendor-src/B.php', '<?php namespace Vendor; class B extends \\App\\A {}');
+    }
+
+    /** @return array{InheritanceDepthResolver, DeclarationPath} */
+    private function parsedBridge(bool $reverse, bool $includeBridge): array
+    {
+        $files = $reverse ? ['src/Alternative.php', 'src/A.php', 'src/C.php'] : ['src/A.php', 'src/Alternative.php', 'src/C.php'];
+        if ($includeBridge) {
+            $files[] = 'vendor-src/B.php';
+        }
+        $facts = $edges = [];
+        $child = null;
+        $parser = (new ParserFactory())->createForHostVersion();
+        foreach ($files as $file) {
+            $contents = file_get_contents($this->workingDirectory . '/' . $file);
+            self::assertIsString($contents);
+            $ast = $parser->parse($contents);
+            self::assertNotNull($ast);
+            NameResolution::resolve($ast);
+            $registrar = (new DeclarationRegistrarFactory())->createForFile();
+            $visitor = new DependencyVisitor();
+            $visitor->beginFile(RelativePath::fromString($file), $registrar->index());
+            (new NodeTraverser($registrar, $visitor))->traverse($ast);
+            array_push($facts, ...$visitor->classLikeDeclarations());
+            array_push($edges, ...$visitor->dependencies());
+            if ($file === 'src/C.php') {
+                $child = $visitor->classLikeDeclarations()[0]->declaration;
+            }
+        }
+        self::assertNotNull($child);
+        self::assertCount($includeBridge ? 4 : 3, $facts);
+        $reader = new DeclaredParentReader(new ComposerAutoloadMap(new ComposerManifestReader()));
+        $reader->pointAt($this->workingDirectory, ['src']);
+        self::assertNull($reader->parentOf('App\A')->parent);
+        $graph = (new DependencyGraphBuilder(new UnplacedExternalClassSpelling()))->build($edges, $facts)->graph;
+        self::assertCount($includeBridge ? 3 : 2, $graph->getDeclarationDependencies());
+
+        return [InheritanceDepthResolver::fromGraph($graph, new ExternalAncestry($reader)), $child];
     }
 
     /**

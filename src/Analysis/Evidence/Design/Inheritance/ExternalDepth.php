@@ -12,6 +12,7 @@ final readonly class ExternalDepth
         public ExternalChainOutcome $outcome,
         public ?string $unresolved,
         public ?bool $reachesThrowable,
+        public ?string $analysedName = null,
     ) {}
 
     /** @qmx-ignore code-smell.boolean-argument -- reachesThrowable records measured ancestry truth in immutable evidence, not a behavior switch. */
@@ -36,6 +37,12 @@ final readonly class ExternalDepth
     public static function loop(string $fqcn, ?bool $reachesThrowable = null): self
     {
         return new self(null, ExternalChainOutcome::Loop, $fqcn, $reachesThrowable);
+    }
+
+    /** @qmx-ignore code-smell.boolean-argument -- reachesThrowable records measured ancestry truth in immutable evidence, not a behavior switch. */
+    public static function reachedAnalysedName(int $depth, string $fqcn, ?bool $reachesThrowable = null): self
+    {
+        return new self($depth, ExternalChainOutcome::ReachedAnalysedName, null, $reachesThrowable, $fqcn);
     }
 
     public function isComplete(): bool

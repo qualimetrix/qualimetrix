@@ -16,7 +16,8 @@ final class ExternalAncestry
 
     public function __construct(private readonly ExternalParentSourceInterface $parents) {}
 
-    public function depthOf(string $fqcn): ExternalDepth
+    /** @param array<string, true> $analysedNames folded positive class identities */
+    public function depthOf(string $fqcn, array $analysedNames = []): ExternalDepth
     {
         $current = ltrim($fqcn, '\\');
         $depth = 0;
@@ -25,6 +26,9 @@ final class ExternalAncestry
 
         for ($step = 0; $step < self::VISIT_CAP; ++$step) {
             $identity = ClassNameSpelling::fold($current);
+            if (isset($analysedNames[$identity])) {
+                return ExternalDepth::reachedAnalysedName($depth, $current, $throwable);
+            }
             if (isset($seen[$identity])) {
                 return ExternalDepth::loop($current, $throwable);
             }
@@ -48,7 +52,10 @@ final class ExternalAncestry
             ++$depth;
         }
 
-        return ExternalDepth::brokeAt($depth, $current, $throwable);
+        // The last permitted edge can reach graph evidence without another source visit.
+        return isset($analysedNames[ClassNameSpelling::fold($current)])
+            ? ExternalDepth::reachedAnalysedName($depth, $current, $throwable)
+            : ExternalDepth::brokeAt($depth, $current, $throwable);
     }
 
     private function builtinReachesThrowable(string $builtin): bool
