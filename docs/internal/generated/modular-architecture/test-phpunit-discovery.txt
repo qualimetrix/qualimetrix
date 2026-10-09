@@ -3793,6 +3793,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itRefusesAnAccessThatIsNotALiteralIndex"an index that is another lookup"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itRefusesAnAccessThatIsNotALiteralIndex"the lookup guarded on its own"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itRefusesAnAccessThatIsNotALiteralIndex"the lookup handed to a function"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itReleasesACompletedNativeRunWithoutCycleCollection
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itReturnsNoValueForExactCopiedNullableBuiltinFormulas
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itReturnsTheClosedSubjectOutcomesWithoutNumericCoercion
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itValidatesWeightsEvenForAbsentValues
