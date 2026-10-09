@@ -27,6 +27,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMe
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricSubjectEvaluation;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\MetricLookup;
 use Qualimetrix\Core\Symbol\SymbolLevel;
+use WeakReference;
 
 enum ComputedMetricExpressionControlCase
 {
@@ -439,6 +440,30 @@ final class ComputedMetricExpressionTest extends TestCase
             );
             self::assertSame(ComputedMetricOutcome::FAILURE, $outcome->kind);
             self::assertSame(0, ComputedMetricExpressionControlCounter::ticks());
+        }
+    }
+
+    #[Test]
+    public function itReleasesACompletedNativeRunWithoutCycleCollection(): void
+    {
+        $garbageCollectionWasEnabled = gc_enabled();
+        gc_collect_cycles();
+        gc_disable();
+
+        try {
+            $expression = new ComputedMetricExpression();
+            $metrics = new MetricLookup(['a' => 1]);
+            $weakMetrics = WeakReference::create($metrics);
+
+            self::assertSame([[], 2], $expression->evaluateOn('m["a"] + 1', $metrics));
+            unset($metrics);
+
+            self::assertNull($weakMetrics->get());
+        } finally {
+            gc_collect_cycles();
+            if ($garbageCollectionWasEnabled) {
+                gc_enable();
+            }
         }
     }
 

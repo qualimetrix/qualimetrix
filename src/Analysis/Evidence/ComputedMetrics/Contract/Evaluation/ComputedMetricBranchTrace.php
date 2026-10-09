@@ -21,7 +21,9 @@ use Throwable;
  * A private identity exception stops an absent strict read before PHP or a
  * function can coerce it. Eager sibling operands still run once so a reached
  * invalid value cannot be hidden by an independent absence. Native conditional
- * nodes retain sole ownership of branch selection.
+ * nodes retain sole ownership of branch selection. Callbacks capture run state
+ * rather than this per-subject owner, and eager recovery points only forward,
+ * so a completed trace does not wait for cyclic garbage collection.
  */
 final class ComputedMetricBranchTrace
 {
@@ -44,7 +46,8 @@ final class ComputedMetricBranchTrace
 
     private function __construct(private readonly Node $root, private readonly MetricLookup $metrics)
     {
-        $this->isPresent = fn(string $key): bool => isset($this->metrics[$key]);
+        $metrics = $this->metrics;
+        $this->isPresent = static fn(string $key): bool => isset($metrics[$key]);
         $this->missing = new LogicException('The evaluation reached an absent metric.');
         $this->traced = $this->copyOf($root, null);
     }
@@ -157,21 +160,22 @@ final class ComputedMetricBranchTrace
             $copy->nodes['node'] = $this->metricName($node, $catcher !== null);
         }
 
-        foreach ($copy->nodes as $name => $child) {
-            if (!$child instanceof Node) {
-                continue;
-            }
+        foreach ($conditional as $name) {
+            $copy->nodes[$name] = $this->entering($copy->nodes[$name], $node, $name);
+        }
 
-            if (\in_array($name, $conditional, true)) {
-                $copy->nodes[$name] = $this->entering($child, $node, $name);
-                continue;
-            }
+        if (!$node instanceof GetAttrNode && $conditional === []) {
+            /** @var array<string, Node> $later */
+            $later = [];
+            foreach (array_reverse($copy->nodes, true) as $name => $child) {
+                if (!$child instanceof Node || $name === 'arguments') {
+                    continue;
+                }
 
-            if ($node instanceof GetAttrNode || $conditional !== [] || $name === 'arguments') {
-                continue;
+                $id = self::operandId($node, $name);
+                $copy->nodes[$name] = $this->eager($child, $id, $later);
+                $later = [$id => $copy->nodes[$name], ...$later];
             }
-
-            $copy->nodes[$name] = $this->eager($child, $node, $name, $copy);
         }
 
         return $copy;
@@ -195,8 +199,12 @@ final class ComputedMetricBranchTrace
         foreach (array_values($arguments->nodes) as $index => $argument) {
             $copy->nodes[$index] = $this->copyOf($argument, $index % 2 === 0 ? $function : null);
         }
-        foreach ($copy->nodes as $index => $argument) {
-            $copy->nodes[$index] = $this->eager($argument, $arguments, $index, $copy);
+        /** @var array<string, Node> $later */
+        $later = [];
+        foreach (array_reverse($copy->nodes, true) as $index => $argument) {
+            $id = self::operandId($arguments, $index);
+            $copy->nodes[$index] = $this->eager($argument, $id, $later);
+            $later = [$id => $copy->nodes[$index], ...$later];
         }
 
         return $copy;
@@ -206,8 +214,9 @@ final class ComputedMetricBranchTrace
     {
         $metrics = $this->metrics;
         $missing = $this->missing;
-        $onRead = function () use ($read): void {
-            $this->reached[spl_object_id($read)] = true;
+        $reached = &$this->reached;
+        $onRead = static function () use (&$reached, $read): void {
+            $reached[spl_object_id($read)] = true;
         };
 
         return new class ($metrics, $missing, $nullable, $onRead) extends NameNode {
@@ -280,8 +289,9 @@ final class ComputedMetricBranchTrace
 
     private function entering(Node $operand, Node $node, string|int $name): Node
     {
-        $onEnter = function () use ($node, $name): void {
-            $this->entered[self::operandId($node, $name)] = true;
+        $entered = &$this->entered;
+        $onEnter = static function () use (&$entered, $node, $name): void {
+            $entered[self::operandId($node, $name)] = true;
         };
 
         return new class ($operand, $onEnter) extends Node {
@@ -304,32 +314,29 @@ final class ComputedMetricBranchTrace
         };
     }
 
-    private function eager(Node $operand, Node $node, string|int $name, Node $parent): Node
+    /** @param array<string, Node> $later */
+    private function eager(Node $operand, string $id, array $later): Node
     {
-        $visit = function () use ($node, $name): void {
-            $this->visited[self::operandId($node, $name)] = true;
+        $visited = &$this->visited;
+        $missing = $this->missing;
+        $visit = static function () use (&$visited, $id): void {
+            $visited[$id] = true;
         };
-        $recover = function (array $functions, array $values) use ($node, $name, $parent): void {
-            $positions = array_keys($parent->nodes);
-            $position = array_search($name, $positions, true);
-            if ($position === false) {
-                return;
-            }
-
-            foreach (\array_slice($positions, $position + 1) as $later) {
-                if (isset($this->visited[self::operandId($node, $later)])) {
+        $recover = static function (array $functions, array $values) use (&$visited, $later, $missing): void {
+            foreach ($later as $laterId => $laterOperand) {
+                if (isset($visited[$laterId])) {
                     continue;
                 }
                 try {
-                    $parent->nodes[$later]->evaluate($functions, $values);
+                    $laterOperand->evaluate($functions, $values);
                 } catch (Throwable $failure) {
-                    if (!$this->isMissing($failure)) {
+                    if ($failure !== $missing) {
                         throw $failure;
                     }
                 }
             }
         };
-        $isMissing = $this->isMissing(...);
+        $isMissing = static fn(Throwable $failure): bool => $failure === $missing;
 
         return new class ($operand, $visit, $recover, $isMissing) extends Node {
             /**
