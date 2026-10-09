@@ -216,8 +216,10 @@ Invalid inputs in operands the evaluation never enters remain unjudged. Only
 nullable value positions of `weighted_mean` permit absence; weights and strict
 nested operands still require their inputs. The exact enclosing
 `clamp(weighted_mean(...), bounds)` preserves an empty mean's null result,
-whereas ordinary clamp of null fails. Arguments and stateful conditions are
-evaluated once; branch selection is never computed beside the native run.
+whereas ordinary clamp of null fails. One native evaluation selects branches;
+the trace does not replay an argument or control position or run a separate
+control probe. Expression Language may evaluate a shared Elvis expression at
+two native positions.
 
 ## Public contracts and named consumers
 
