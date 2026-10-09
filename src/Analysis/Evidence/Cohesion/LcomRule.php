@@ -5,13 +5,21 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Cohesion;
 
 use LogicException;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\FlagExcludes;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyThreshold;
+use Qualimetrix\Analysis\Finding\Contract\Population\KindIn;
+
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
@@ -66,9 +74,10 @@ final class LcomRule extends AbstractRule
         }
 
         $findings = [];
+        $declaration = self::channelDeclarations()[self::NAME];
 
         foreach ($context->metrics->allClassDeclarations() as $classInfo) {
-            $finding = $this->findingForClass($classInfo, $context, $this->options);
+            $finding = $this->findingForClass($classInfo, $context, $this->options, $declaration);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -77,18 +86,22 @@ final class LcomRule extends AbstractRule
         return [...$findings, ...LcomExcludedMethods::findings($context, $this->options)];
     }
 
-    private function findingForClass(SymbolInfo $classInfo, AnalysisContext $context, LcomOptions $options): ?Finding
+    private function findingForClass(SymbolInfo $classInfo, AnalysisContext $context, LcomOptions $options, ChannelDeclaration $declaration): ?Finding
     {
         $subject = $classInfo->subject ?? throw new LogicException('LCOM findings require an exact class declaration subject');
-        if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+        $metrics = null;
+        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), $declaration, (function () use ($context, $subject, &$metrics, &$options): iterable {
+            yield GateInput::kind('class-coordinate', $subject->toSymbolPath()->getType());
+            $metrics = $context->metrics->getSubject($subject);
+            $options = $this->getEffectiveOptions($context, $options, $subject);
+            yield GateInput::metrics('exclude-readonly', $metrics, option: $options->excludeReadonly);
+            yield GateInput::metrics('minimum-methods', $metrics, $options->minMethods);
+            yield GateInput::metrics('class-value', $metrics);
+        })())) {
             return null;
         }
-
-        $metrics = $context->metrics->getSubject($subject);
-        $lcomValue = $this->eligibleLcom($metrics, $options);
-        if ($lcomValue === null) {
-            return null;
-        }
+        $lcom = $metrics->get(MetricName::COHESION_LCOM);
+        $lcomValue = (int) $lcom;
 
         /** @var LcomOptions $effectiveOptions */
         $effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
@@ -122,20 +135,6 @@ final class LcomRule extends AbstractRule
         );
     }
 
-    private function eligibleLcom(MetricBag $metrics, LcomOptions $options): ?int
-    {
-        if ($options->excludeReadonly && $metrics->get(MetricName::DESIGN_IS_READONLY) === 1) {
-            return null;
-        }
-        $methodCount = (int) ($metrics->get(MetricName::SIZE_METHOD_COUNT) ?? 0);
-        if ($methodCount < $options->minMethods) {
-            return null;
-        }
-        $lcom = $metrics->get(MetricName::COHESION_LCOM);
-
-        return $lcom !== null ? (int) $lcom : null;
-    }
-
     /**
      * @return class-string<LcomOptions>
      */
@@ -159,6 +158,11 @@ final class LcomRule extends AbstractRule
                 WorseDirection::Higher,
                 JudgedMetrics::of(MetricName::COHESION_LCOM),
                 SymbolLevel::Class_,
+            )->withGates(
+                new PopulationGate('class-coordinate', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
+                new PopulationGate('exclude-readonly', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new FlagExcludes('exclude-readonly', MetricName::DESIGN_IS_READONLY, 1, true), 'The configured class exclusion applies.'),
+                new PopulationGate('minimum-methods', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KeyThreshold('minimum-methods', [MetricName::SIZE_METHOD_COUNT], '>=', 'minimum-methods', 'zero', true), 'Methods are below the configured minimum.'),
+                new PopulationGate('class-value', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KeyPresent('class-value', [MetricName::COHESION_LCOM]), 'The class metric was not published.'),
             ),
             'cohesion.unmatched-exclude-method' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project)
                 ->withoutConfiguredWarningBoundary()

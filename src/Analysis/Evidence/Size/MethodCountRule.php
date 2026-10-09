@@ -9,8 +9,15 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
+use Qualimetrix\Analysis\Finding\Contract\Population\KindIn;
+
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
@@ -72,6 +79,9 @@ final class MethodCountRule extends AbstractRule
                 WorseDirection::Higher,
                 JudgedMetrics::of(MetricName::SIZE_METHOD_COUNT),
                 SymbolLevel::Class_,
+            )->withGates(
+                new PopulationGate('class-coordinate', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
+                new PopulationGate('method-count', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KeyPresent('method-count', [MetricName::SIZE_METHOD_COUNT]), 'Method count was not published.'),
             ),
         ];
     }
@@ -86,18 +96,19 @@ final class MethodCountRule extends AbstractRule
         }
 
         $findings = [];
+        $declaration = self::channelDeclarations()[self::NAME];
 
         foreach ($context->metrics->allClassDeclarations() as $classInfo) {
             $subject = $classInfo->subject ?? throw new LogicException('Method count findings require an exact class declaration subject');
-            if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+            $metrics = null;
+            if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), $declaration, (static function () use ($context, $subject, &$metrics): iterable {
+                yield GateInput::kind('class-coordinate', $subject->toSymbolPath()->getType());
+                $metrics = $context->metrics->getSubject($subject);
+                yield GateInput::metrics('method-count', $metrics);
+            })())) {
                 continue;
             }
-            $metrics = $context->metrics->getSubject($subject);
             $methodCount = $metrics->get(MetricName::SIZE_METHOD_COUNT);
-
-            if ($methodCount === null) {
-                continue;
-            }
 
             $methodCountValue = (int) $methodCount;
             /** @var MethodCountOptions $effectiveOptions */

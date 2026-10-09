@@ -9,8 +9,16 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyThreshold;
+use Qualimetrix\Analysis\Finding\Contract\Population\NameMatches;
+
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
@@ -64,27 +72,21 @@ final class MaintainabilityRule extends AbstractRule
         }
 
         $findings = [];
+        $declaration = self::channelDeclarations()[self::NAME];
 
         foreach ($context->metrics->allCallables() as $methodInfo) {
             $subject = $methodInfo->subject ?? throw new LogicException('Maintainability findings require an exact callable subject');
-            // Skip test files if configured
-            if ($this->options->excludeTests && $this->isTestFile($methodInfo->file)) {
+            $metrics = null;
+            $options = $this->getEffectiveOptions($context, $this->options, $subject);
+            if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Callable, PopulationIdentity::subject($subject, 'callable'), $declaration, (function () use ($context, $subject, $methodInfo, $options, &$metrics): iterable {
+                yield GateInput::boundName('exclude-tests', $options->excludeTests ? !$this->isTestFile($methodInfo->file) : true, $options->excludeTests);
+                $metrics = $context->metrics->getSubject($subject);
+                yield GateInput::metrics('minimum-statements', $metrics, $options->minStatements);
+                yield GateInput::metrics('maintainability', $metrics);
+            })())) {
                 continue;
             }
-
-            $metrics = $context->metrics->getSubject($subject);
-
-            // Skip methods with too few statements.
-            $statementCount = (int) ($metrics->get(MetricName::SIZE_METHOD_STATEMENT_COUNT) ?? 0);
-            if ($statementCount < $this->options->minStatements) {
-                continue;
-            }
-
             $mi = $metrics->get(MetricName::MAINTAINABILITY_MI);
-
-            if ($mi === null) {
-                continue;
-            }
 
             $miValue = (float) $mi;
             /** @var MaintainabilityOptions $effectiveOptions */
@@ -157,6 +159,10 @@ final class MaintainabilityRule extends AbstractRule
                 WorseDirection::Lower,
                 JudgedMetrics::of(MetricName::MAINTAINABILITY_MI),
                 SymbolLevel::Callable,
+            )->withGates(
+                new PopulationGate('exclude-tests', new FindingChannel(self::NAME), SymbolLevel::Callable, 'callable', new NameMatches('exclude-tests', true), 'The configured test-file exclusion applies.'),
+                new PopulationGate('minimum-statements', new FindingChannel(self::NAME), SymbolLevel::Callable, 'callable', new KeyThreshold('minimum-statements', [MetricName::SIZE_METHOD_STATEMENT_COUNT], '>=', 'minimum-statements', 'zero', true), 'Statement count is below the configured minimum.'),
+                new PopulationGate('maintainability', new FindingChannel(self::NAME), SymbolLevel::Callable, 'callable', new KeyPresent('maintainability', [MetricName::MAINTAINABILITY_MI]), 'Maintainability was not published.'),
             ),
         ];
     }

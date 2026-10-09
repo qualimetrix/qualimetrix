@@ -244,18 +244,19 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
         $classOptions = $this->options->class;
 
         $findings = [];
+        $declaration = self::channelDeclarations()[self::NAME];
 
         foreach ($context->metrics->allClassDeclarations() as $classInfo) {
             $subject = $classInfo->subject ?? throw new LogicException('NPath complexity class findings require an exact declaration subject');
-            if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+            $metrics = null;
+            if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), $declaration, (static function () use ($context, $subject, &$metrics): iterable {
+                yield GateInput::kind('class-coordinate', $subject->toSymbolPath()->getType());
+                $metrics = $context->metrics->getSubject($subject);
+                yield GateInput::metrics('class-maximum', $metrics);
+            })())) {
                 continue;
             }
-            $metrics = $context->metrics->getSubject($subject);
             $maxNpath = $metrics->get(MetricName::agg(MetricName::COMPLEXITY_NPATH, AggregationStrategy::Max));
-
-            if ($maxNpath === null) {
-                continue;
-            }
 
             $maxNpathValue = (int) $maxNpath;
 

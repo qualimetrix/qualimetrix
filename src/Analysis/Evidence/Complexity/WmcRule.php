@@ -9,8 +9,16 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\FlagExcludes;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
+use Qualimetrix\Analysis\Finding\Contract\Population\KindIn;
+
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
@@ -63,9 +71,10 @@ final class WmcRule extends AbstractRule
         }
 
         $findings = [];
+        $declaration = self::channelDeclarations()[self::NAME];
 
         foreach ($context->metrics->allClassDeclarations() as $classInfo) {
-            $finding = $this->findingForClass($classInfo, $context, $this->options);
+            $finding = $this->findingForClass($classInfo, $context, $this->options, $declaration);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -74,24 +83,22 @@ final class WmcRule extends AbstractRule
         return $findings;
     }
 
-    private function findingForClass(SymbolInfo $classInfo, AnalysisContext $context, WmcOptions $options): ?Finding
+    private function findingForClass(SymbolInfo $classInfo, AnalysisContext $context, WmcOptions $options, ChannelDeclaration $declaration): ?Finding
     {
         $subject = $classInfo->subject ?? throw new LogicException('WMC findings require an exact class declaration subject');
-        if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+        $metrics = null;
+        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), $declaration, (function () use ($context, $subject, &$metrics, &$options): iterable {
+            yield GateInput::kind('class-coordinate', $subject->toSymbolPath()->getType());
+            $metrics = $context->metrics->getSubject($subject);
+            $options = $this->getEffectiveOptions($context, $options, $subject);
+            yield GateInput::metrics('exclude-data-classes', $metrics, option: $options->excludeDataClasses);
+            yield GateInput::metrics('class-value', $metrics);
+        })())) {
             return null;
         }
-
-        $metrics = $context->metrics->getSubject($subject);
-        if ($options->excludeDataClasses && $metrics->get(MetricName::DESIGN_IS_DATA_CLASS) === 1) {
-            return null;
-        }
-
         $wmc = $metrics->get(MetricName::COMPLEXITY_WMC);
-        if ($wmc === null) {
-            return null;
-        }
-
         $wmcValue = (int) $wmc;
+
         /** @var WmcOptions $effectiveOptions */
         $effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
         $severity = $effectiveOptions->getSeverity($wmcValue);
@@ -180,6 +187,10 @@ final class WmcRule extends AbstractRule
                 WorseDirection::Higher,
                 JudgedMetrics::of(MetricName::COMPLEXITY_WMC),
                 SymbolLevel::Class_,
+            )->withGates(
+                new PopulationGate('class-coordinate', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
+                new PopulationGate('exclude-data-classes', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new FlagExcludes('exclude-data-classes', MetricName::DESIGN_IS_DATA_CLASS, 1, true), 'The configured class exclusion applies.'),
+                new PopulationGate('class-value', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KeyPresent('class-value', [MetricName::COMPLEXITY_WMC]), 'The class metric was not published.'),
             ),
         ];
     }

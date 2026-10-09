@@ -226,18 +226,19 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
         $classOptions = $this->options->class;
 
         $findings = [];
+        $declaration = self::channelDeclarations()[self::NAME];
 
         foreach ($context->metrics->allClassDeclarations() as $classInfo) {
             $subject = $classInfo->subject ?? throw new LogicException('Cognitive complexity class findings require an exact declaration subject');
-            if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+            $metrics = null;
+            if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), $declaration, (static function () use ($context, $subject, &$metrics): iterable {
+                yield GateInput::kind('class-coordinate', $subject->toSymbolPath()->getType());
+                $metrics = $context->metrics->getSubject($subject);
+                yield GateInput::metrics('class-maximum', $metrics);
+            })())) {
                 continue;
             }
-            $metrics = $context->metrics->getSubject($subject);
             $maxCognitive = $metrics->get(MetricName::agg(MetricName::COMPLEXITY_COGNITIVE, AggregationStrategy::Max));
-
-            if ($maxCognitive === null) {
-                continue;
-            }
 
             $maxCognitiveValue = (int) $maxCognitive;
 

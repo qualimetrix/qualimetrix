@@ -5,13 +5,20 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Size;
 
 use LogicException;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\FlagExcludes;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
+use Qualimetrix\Analysis\Finding\Contract\Population\KindIn;
+
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
@@ -77,6 +84,11 @@ final class PropertyCountRule extends AbstractRule
                 WorseDirection::Higher,
                 JudgedMetrics::of(MetricName::SIZE_PROPERTY_COUNT),
                 SymbolLevel::Class_,
+            )->withGates(
+                new PopulationGate('class-coordinate', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
+                new PopulationGate('class-value', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KeyPresent('class-value', [MetricName::SIZE_PROPERTY_COUNT]), 'The class metric was not published.'),
+                new PopulationGate('exclude-readonly', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new FlagExcludes('exclude-readonly', MetricName::DESIGN_IS_READONLY, 1, true), 'The configured class exclusion applies.'),
+                new PopulationGate('exclude-promoted-only', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new FlagExcludes('exclude-promoted-only', MetricName::DESIGN_IS_PROMOTED_PROPERTIES_ONLY, 1, true), 'The configured class exclusion applies.'),
             ),
         ];
     }
@@ -88,9 +100,10 @@ final class PropertyCountRule extends AbstractRule
         }
 
         $findings = [];
+        $declaration = self::channelDeclarations()[self::NAME];
 
         foreach ($context->metrics->allClassDeclarations() as $classInfo) {
-            $finding = $this->findingForClass($classInfo, $context, $this->options);
+            $finding = $this->findingForClass($classInfo, $context, $this->options, $declaration);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -103,17 +116,22 @@ final class PropertyCountRule extends AbstractRule
         SymbolInfo $classInfo,
         AnalysisContext $context,
         PropertyCountOptions $options,
+        ChannelDeclaration $declaration,
     ): ?Finding {
         $subject = $classInfo->subject ?? throw new LogicException('Property count findings require an exact class declaration subject');
-        if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+        $metrics = null;
+        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), $declaration, (function () use ($context, $subject, &$metrics, &$options): iterable {
+            yield GateInput::kind('class-coordinate', $subject->toSymbolPath()->getType());
+            $metrics = $context->metrics->getSubject($subject);
+            $options = $this->getEffectiveOptions($context, $options, $subject);
+            yield GateInput::metrics('class-value', $metrics);
+            yield GateInput::metrics('exclude-readonly', $metrics, option: $options->excludeReadonly);
+            yield GateInput::metrics('exclude-promoted-only', $metrics, option: $options->excludePromotedOnly);
+        })())) {
             return null;
         }
-
-        $metrics = $context->metrics->getSubject($subject);
-        $propertyCountValue = $this->eligiblePropertyCount($metrics, $options);
-        if ($propertyCountValue === null) {
-            return null;
-        }
+        $propertyCount = $metrics->get(MetricName::SIZE_PROPERTY_COUNT);
+        $propertyCountValue = (int) $propertyCount;
 
         /** @var PropertyCountOptions $effectiveOptions */
         $effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
@@ -144,22 +162,6 @@ final class PropertyCountRule extends AbstractRule
             recommendation: $recommendation,
             threshold: $threshold,
         );
-    }
-
-    private function eligiblePropertyCount(MetricBag $metrics, PropertyCountOptions $options): ?int
-    {
-        $propertyCount = $metrics->get(MetricName::SIZE_PROPERTY_COUNT);
-        if ($propertyCount === null) {
-            return null;
-        }
-        if ($options->excludeReadonly && $metrics->get(MetricName::DESIGN_IS_READONLY) === 1) {
-            return null;
-        }
-        if ($options->excludePromotedOnly && $metrics->get(MetricName::DESIGN_IS_PROMOTED_PROPERTIES_ONLY) === 1) {
-            return null;
-        }
-
-        return (int) $propertyCount;
     }
 
     /**
