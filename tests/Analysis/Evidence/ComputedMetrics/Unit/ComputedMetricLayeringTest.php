@@ -53,6 +53,56 @@ final class ComputedMetricLayeringTest extends TestCase
     private const array USER_METRIC = ['formula' => '4', 'levels' => ['project']];
 
     #[Test]
+    public function itRetainsTheEffectiveFormulaWriterForRuntimeRefusalAfterResolution(): void
+    {
+        foreach (['formula', 'namespace', 'project'] as $selected) {
+            $entry = $selected === 'formula'
+                ? ['formula' => 'sqrt(-1)', 'levels' => ['project']]
+                : ['formulas' => [$selected => 'sqrt(-1)'], 'levels' => ['project']];
+            $analysis = $this->configure([
+                self::preset(['computed_metrics' => ['computed.x' => $entry]]),
+                self::file(['computed_metrics' => ['computed.x' => ['warning' => 20]]]),
+            ]);
+            $repo = new \Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository();
+            try {
+                (new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator(
+                    $analysis,
+                    self::createStub(\Qualimetrix\Core\Profiler\Contract\ProfilerInterface::class),
+                ))->evaluate($repo, 1);
+                self::fail('A runtime numeric failure must retain the selected formula source.');
+            } catch (ConfigurationRefusal $refusal) {
+                self::assertSame(['preset "strict"'], self::described($refusal));
+                self::assertSame($selected === 'formula' ? ['computed_metrics', 'computed.x', 'formula'] : ['computed_metrics', 'computed.x', 'formulas', $selected], $refusal->position()?->segments);
+                self::assertStringContainsString('level "project"', $refusal->summary());
+            }
+        }
+    }
+
+    #[Test]
+    public function itAttributesMeasuredLevelRefusalToTheFormulaRatherThanLaterMetadata(): void
+    {
+        $analysis = $this->configure([
+            self::preset(['computed_metrics' => ['computed.x' => ['formula' => 'm["cohesion.tcc.avg"]', 'levels' => ['namespace']]]]),
+            self::file(['computed_metrics' => ['computed.x' => ['warning' => 20]]]),
+        ]);
+        $repo = new \Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository([new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition('health.coupling', SymbolLevel::Class_)]);
+        $repo->addSubject(\Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(
+            \Qualimetrix\Core\Symbol\SymbolPath::forClass('App', 'Empty'),
+            \Qualimetrix\Core\Path\RelativePath::fromString('Empty.php'),
+            \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0),
+        )), new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag(), \Qualimetrix\Core\Path\RelativePath::fromString('Empty.php'), 1);
+        $repo->add(\Qualimetrix\Core\Symbol\SymbolPath::forNamespace('App'), \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag::fromArray(['size.loc' => 1]), null, null);
+        try {
+            (new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator($analysis, self::createStub(\Qualimetrix\Core\Profiler\Contract\ProfilerInterface::class)))->evaluate($repo, 1);
+            self::fail('A measured-level absent key must refuse.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame(['preset "strict"'], self::described($refusal));
+            self::assertSame(['computed_metrics', 'computed.x', 'formula'], $refusal->position()?->segments);
+            self::assertStringContainsString('where no symbol carries it', $refusal->summary());
+        }
+    }
+
+    #[Test]
     public function itExpandsTheThresholdShorthandInTheLayerThatWroteIt(): void
     {
         $metric = $this->metric('computed.x', self::preset(['computed_metrics' => ['computed.x' => [...self::USER_METRIC, 'threshold' => 5]]]), self::file(['computed_metrics' => ['computed.x' => ['warning' => 3]]]));

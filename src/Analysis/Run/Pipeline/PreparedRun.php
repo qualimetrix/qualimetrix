@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\Pipeline;
 
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary;
+
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
@@ -49,5 +51,6 @@ final readonly class PreparedRun
         public AnalysisCoverage $coverage,
         public SubjectCoverageFacts $subjectCoverage,
         public array $unmatchedExcludeFindings,
+        public ComputedMetricEvaluationSummary $computedMetricEvaluation = new ComputedMetricEvaluationSummary(),
     ) {}
 }

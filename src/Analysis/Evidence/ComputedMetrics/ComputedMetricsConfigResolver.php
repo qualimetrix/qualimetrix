@@ -20,6 +20,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ExcludeHealthSec
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\HealthFormulaExclusionInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 
 /**
  * Lays the resolved `computed_metrics` and `exclude_health` sections over the
@@ -39,12 +40,16 @@ final class ComputedMetricsConfigResolver
         private readonly HealthFormulaExclusionInterface $healthFormulaExcluder,
     ) {}
 
+    /** @return list<ComputedMetricDefinition> */
+    public function resolve(ResolvedDocument $document): array
+    {
+        return $this->resolveWithSources($document)->all();
+    }
+
     /**
      * @throws ConfigurationRefusal
-     *
-     * @return list<ComputedMetricDefinition>
      */
-    public function resolve(ResolvedDocument $document): array
+    public function resolveWithSources(ResolvedDocument $document): ResolvedComputedMetricDefinitions
     {
         $definitions = ComputedMetricDefaults::getDefaults();
         $entries = self::entries($document->get(ComputedMetricsSection::KEY));
@@ -77,7 +82,7 @@ final class ComputedMetricsConfigResolver
 
         $this->formulaValidator->validate($result, $authorship);
 
-        return $result;
+        return new ResolvedComputedMetricDefinitions($result, $authorship);
     }
 
     /**

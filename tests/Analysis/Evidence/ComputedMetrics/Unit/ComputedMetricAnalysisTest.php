@@ -27,6 +27,44 @@ use Qualimetrix\Core\Path\AbsolutePath;
 final class ComputedMetricAnalysisTest extends TestCase
 {
     #[Test]
+    public function itPreservesTheInstalledFormulaSourceWhenLaterResolutionFails(): void
+    {
+        $analysis = $this->analysis();
+        $analysis->replace($analysis->resolve($this->document(['computed_metrics' => [
+            'computed.x' => ['formula' => 'sqrt(-1)', 'levels' => ['project']],
+        ]])));
+        try {
+            $analysis->resolve($this->document(['exclude_health' => ['unknown']]));
+            self::fail('Invalid candidate configuration must refuse.');
+        } catch (ConfigurationRefusal) {
+            $definition = $analysis->find('computed.x');
+            self::assertNotNull($definition);
+            $refusal = $analysis->refuseFormula($definition, \Qualimetrix\Core\Symbol\SymbolLevel::Project, 'Runtime failure');
+            self::assertSame('qmx.yaml', $refusal->sources()[0]->locator());
+            self::assertSame(['computed_metrics', 'computed.x', 'formula'], $refusal->position()?->segments);
+            self::assertSame('sqrt(-1)', $definition->getFormulaForLevel(\Qualimetrix\Core\Symbol\SymbolLevel::Project));
+        }
+    }
+
+    #[Test]
+    public function itRefusesLoudlyWhenARealTokenHasLostAnAuthoredFormulaSource(): void
+    {
+        $definition = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition(
+            'computed.x',
+            ['project' => 'sqrt(-1)'],
+            '',
+            [\Qualimetrix\Core\Symbol\SymbolLevel::Project],
+        );
+        $token = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions(
+            [$definition],
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricAuthorship(),
+        );
+        $refusal = $token->refuseFormula($definition, \Qualimetrix\Core\Symbol\SymbolLevel::Project, 'Runtime failure');
+        self::assertStringContainsString('authored formula source is unavailable', $refusal->summary());
+        self::assertSame(ConfigurationSource::Resolved, $refusal->sources()[0]->source());
+    }
+
+    #[Test]
     public function itDefaultReturnsEmptyArray(): void
     {
         self::assertSame([], $this->analysis()->all());

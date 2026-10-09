@@ -49,6 +49,40 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class AnalysisResultTest extends TestCase
 {
     #[Test]
+    public function itMergesComputedAbsenceBesideMeasuredResultsAndPreservesEmptyIdentity(): void
+    {
+        $base = $this->createResult([], filesAnalyzed: 0);
+        $subjects = array_map(static fn(string $file): MetricSubject => MetricSubject::declaration(DeclarationPath::of(
+            SymbolPath::forClass('App', 'Duplicate'),
+            RelativePath::fromString($file),
+            DeclarationOrdinal::fromRank(0),
+        )), ['z.php', 'a.php', 'b.php', 'c.php']);
+        $left = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence('computed.x', SymbolLevel::Class_, 2, 1, ['z', 'a'], [$subjects[0], $subjects[1]]),
+        ]);
+        $right = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence('computed.x', SymbolLevel::Class_, 3, 2, ['b', 'a'], [$subjects[2], $subjects[3]]),
+        ]);
+        $leftResult = AnalysisResult::fromRun($base->measured, $base->directives, null, [], $left);
+        $rightResult = AnalysisResult::fromRun($base->measured, $base->directives, null, [], $right);
+        self::assertSame($left, $leftResult->computedMetricEvaluation);
+        self::assertSame([], $base->computedMetricEvaluation->absences);
+        self::assertSame($left, $leftResult->merge($base)->computedMetricEvaluation);
+        self::assertSame($left, $base->merge($leftResult)->computedMetricEvaluation);
+        $merged = $leftResult->merge($rightResult);
+        self::assertSame([], $merged->findings());
+        $absence = $merged->computedMetricEvaluation->absences[0];
+        self::assertSame(5, $absence->missingKeysCount);
+        self::assertSame(3, $absence->noValueCount);
+        self::assertSame(['a', 'b', 'z'], $absence->missingKeys);
+        self::assertSame(
+            ['declaration:class:App\Duplicate@a.php', 'declaration:class:App\Duplicate@b.php', 'declaration:class:App\Duplicate@c.php'],
+            array_map(static fn(MetricSubject $subject): string => $subject->toCanonical(), $absence->subjects),
+        );
+        self::assertSame($merged->computedMetricEvaluation->absences[0]->subjects, $rightResult->merge($leftResult)->computedMetricEvaluation->absences[0]->subjects);
+    }
+
+    #[Test]
     public function itHasErrorsWhenErrorFindingPresent(): void
     {
         $result = $this->createResult([

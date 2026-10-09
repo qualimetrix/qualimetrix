@@ -8,9 +8,12 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricAnalysis;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuild;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
@@ -163,8 +166,8 @@ final class DirectiveAuditUniverseTest extends TestCase
         $profiler = self::createStub(ProfilerInterface::class);
         $aggregation = self::createStub(MeasurementAggregationInterface::class);
         $aggregation->method('aggregate')->willReturn(new NamespaceTree([]));
-        $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $catalog->method('all')->willReturn([]);
+        $analysis = new ComputedMetricAnalysis(new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator(), new HealthFormulaExcluder()));
+        $analysis->replace(new ResolvedComputedMetricDefinitions([]));
         $graphBuilder = self::createStub(DependencyGraphBuilderInterface::class);
         $graphBuilder->method('build')->willReturn(new DependencyGraphBuild(AdjacencyGraphBuilder::empty(), []));
         $repositoryFactory = self::createStub(MetricRepositoryFactoryInterface::class);
@@ -183,7 +186,7 @@ final class DirectiveAuditUniverseTest extends TestCase
                 $profiler,
             ))
             ->withMeasurementAggregation($aggregation)
-            ->withComputedMetricEvaluation(new ComputedMetricEvaluator($catalog, $profiler))
+            ->withComputedMetricEvaluation(new ComputedMetricEvaluator($analysis, $profiler))
             ->withGraphBuilder($graphBuilder)
             ->withRepositoryFactory($repositoryFactory)
             ->withProfiler($profiler)

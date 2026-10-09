@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricAuthorship;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricRefusalWording;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricsSection;
@@ -12,6 +13,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricVa
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use ReflectionClass;
 
 /**
@@ -296,14 +298,16 @@ final class ComputedMetricFormulaValidator
      * @throws ConfigurationRefusal
      */
     public static function refuseMetricsAbsentAtLevel(
-        string $definitionName,
+        ComputedMetricDefinition $definition,
         array $keys,
-        string $level,
+        SymbolLevel $level,
         string $formula,
+        ComputedMetricAnalysis $analysis,
     ): never {
-        throw ConfigurationRefusal::atResolvedKey(
-            ComputedMetricsSection::position($definitionName),
-            ComputedMetricRefusalWording::referencesMetricAbsentAtLevel($definitionName, $keys, $level, $formula),
+        throw $analysis->refuseFormula(
+            $definition,
+            $level,
+            ComputedMetricRefusalWording::referencesMetricAbsentAtLevel($definition->name, $keys, $level->value, $formula),
         );
     }
 

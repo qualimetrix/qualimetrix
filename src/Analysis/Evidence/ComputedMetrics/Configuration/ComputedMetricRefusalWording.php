@@ -182,6 +182,17 @@ final class ComputedMetricRefusalWording
         );
     }
 
+    public static function runtimeFailure(string $metricName, string $level, string $subject, string $reason): string
+    {
+        return \sprintf(
+            'Computed metric "%s" failed at level "%s" for subject "%s": %s',
+            $metricName,
+            $level,
+            $subject,
+            substr($reason, 0, 500),
+        );
+    }
+
     public static function referencesUnknownMetricKey(string $metricName, string $key, string $formula): string
     {
         return \sprintf(

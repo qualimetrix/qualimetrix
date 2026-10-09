@@ -38,6 +38,26 @@ final class CheckCommandConfigErrorExitCodeTest extends TestCase
     }
 
     #[Test]
+    public function itRoutesAnActualEvaluatorRuntimeFailureToQuietJsonExitThree(): void
+    {
+        $config = $this->writeFile('runtime.yaml', <<<'YAML'
+            computed_metrics:
+              computed.bad:
+                formula: 'sqrt(-1)'
+                levels: [project]
+            YAML);
+        $tester = $this->runCheck(['--config' => $config, '--quiet' => true]);
+        self::assertSame(3, $tester->getStatusCode());
+        $envelope = self::envelope($tester);
+        self::assertSame(3, $envelope['exit_code']);
+        self::assertStringContainsString('Computed metric "computed.bad" failed at level "project"', $envelope['error']);
+        self::assertSame(['computed_metrics', 'computed.bad', 'formula'], $envelope['position']['path']);
+        self::assertSame([['kind' => 'file', 'name' => $config, 'imported_by' => null]], $envelope['source']);
+        self::assertStringNotContainsString('Computed metric', $tester->getErrorOutput());
+        self::assertArrayNotHasKey('metrics', $envelope);
+    }
+
+    #[Test]
     public function itClassifiesInvalidComputedMetricFormulaAsConfigError(): void
     {
         $config = $this->writeFile('qmx.yaml', <<<'YAML'

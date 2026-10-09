@@ -40,6 +40,25 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     }
 
     #[Test]
+    public function itKeepsTheNativeListQueryAsAProjectionOfSourcedResolution(): void
+    {
+        $document = DocumentComposer::compose(new DocumentSchema([new ComputedMetricsSection(), new ExcludeHealthSection()]), []);
+        $list = $this->resolver->resolve($document);
+        $snapshot = $this->resolver->resolveWithSources($document);
+        self::assertCount(6, $list);
+        self::assertEquals($snapshot->all(), $list);
+        $cohesion = null;
+        foreach ($list as $definition) {
+            if ($definition->name === 'health.cohesion') {
+                $cohesion = $definition;
+            }
+        }
+        self::assertNotNull($cohesion, 'Native foreach consumers must actually reach the definitions.');
+        self::assertTrue($cohesion->isBuiltinFormulaForLevel(SymbolLevel::Project));
+        self::assertFalse($cohesion->getApplicabilityForLevel(SymbolLevel::Project)->appliesTo([]));
+    }
+
+    #[Test]
     public function itResolveWithEmptyConfigReturns6Defaults(): void
     {
         $result = $this->resolve([]);
@@ -127,16 +146,20 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertNotContains('health.typing', $names);
         self::assertContains('health.overall', $names);
 
-        // health.overall formula must no longer reference health__typing,
-        // and remaining weights must sum to ~1.0
         $overall = $this->findByName($result, 'health.overall');
         self::assertNotNull($overall);
-
         $classFormula = $overall->formulas['class'] ?? '';
-        self::assertStringNotContainsString('m["health.typing"]', $classFormula);
-        preg_match_all('/\*\s*([\d.]+)/', $classFormula, $matches);
-        $weights = array_map('floatval', $matches[1]);
-        self::assertEqualsWithDelta(1.0, array_sum($weights), 0.001);
+        $expression = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression();
+        self::assertSame([
+            'health.complexity' => ['weight' => 0.35],
+            'health.cohesion' => ['weight' => 0.25],
+            'health.coupling' => ['weight' => 0.25],
+        ], \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\WeightedHealthFormula::termsOf($expression, $classFormula));
+        [$missing, $value] = $expression->evaluateOn($classFormula, new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\MetricLookup([
+            'health.complexity' => 100, 'health.cohesion' => 100, 'health.coupling' => 100,
+        ]));
+        self::assertSame([], $missing);
+        self::assertEqualsWithDelta(100, $value, 0.001);
     }
 
     #[Test]
@@ -293,7 +316,13 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     public function itPositionsARefusalOfAMetricAbsentAtALevelAtTheMetricEntry(): void
     {
         try {
-            ComputedMetricFormulaValidator::refuseMetricsAbsentAtLevel('computed.x', ['size.loc'], 'class', 'm["size.loc"]');
+            ComputedMetricFormulaValidator::refuseMetricsAbsentAtLevel(
+                new ComputedMetricDefinition(name: 'computed.x', formulas: ['class' => 'm["size.loc"]'], description: '', levels: [SymbolLevel::Class_]),
+                ['size.loc'],
+                SymbolLevel::Class_,
+                'm["size.loc"]',
+                new \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricAnalysis($this->resolver),
+            );
         } catch (ConfigurationRefusal $refusal) {
             self::assertCount(1, $refusal->sources());
             self::assertSame(ConfigurationSource::Resolved, $refusal->sources()[0]->source());
@@ -1100,7 +1129,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     #[DataProvider('provideContextualReferencesReplacedByAHigherLayer')]
     public function itJudgesContextualFormulaReferencesOnlyInTheWinningFormula(string $formula): void
     {
-        $result = $this->resolver->resolve(self::composeMetricLayers(['formula' => $formula], ['formula' => '1']));
+        $result = $this->resolver->resolveWithSources(self::composeMetricLayers(['formula' => $formula], ['formula' => '1']))->all();
         $definition = $this->findByName($result, 'computed.custom');
 
         self::assertNotNull($definition);

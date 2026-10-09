@@ -12,8 +12,12 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricAnalysis;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuild;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
@@ -65,6 +69,61 @@ use SplFileInfo;
 #[CoversClass(InlineDirectiveRun::class)]
 final class AnalysisPipelineTest extends TestCase
 {
+    #[Test]
+    public function itTransportsNonfailureSummaryOnlyThroughNormalAnalysis(): void
+    {
+        $root = AbsolutePath::fromString(\dirname(__DIR__, 5));
+        $file = new SplFileInfo(__FILE__);
+        $relative = PathFactory::published(AbsolutePath::fromString(__FILE__), $root);
+        $discovery = self::createStub(ProjectFilesInterface::class);
+        $discovery->method('discover')->willReturn(self::discovered([$file]));
+        $collection = self::createStub(CollectionOrchestratorInterface::class);
+        $collection->method('collect')->willReturn(new CollectionPhaseOutput([$relative], [], classLikeDeclarations: []));
+        $definitions = new ResolvedComputedMetricDefinitions([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition('computed.null', ['project' => 'null'], '', [\Qualimetrix\Core\Symbol\SymbolLevel::Project]),
+        ]);
+        $configuration = new RunConfiguration(
+            pathExcludes: [],
+            projectRoot: $root,
+            generatedFilePolicy: GeneratedFilePolicy::Include,
+            authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
+        );
+        $normal = $this->pipeline($discovery, $collection, computedDefinitions: $definitions)->analyze($configuration);
+        self::assertSame(1, $normal->computedMetricEvaluation->absences[0]->noValueCount);
+        self::assertSame('computed.null', $normal->computedMetricEvaluation->absences[0]->metricName);
+        self::assertSame([], $normal->findings());
+        $audit = $this->pipeline($discovery, $collection, computedDefinitions: $definitions)->auditDirectives($configuration);
+        self::assertSame([], $audit->verdicts);
+        self::assertSame(0, $audit->producedFindings);
+        self::assertSame([$relative], $audit->coverage->analyzedFiles);
+    }
+
+    #[Test]
+    public function itRefusesRuntimeFormulaFailureDuringSharedAuditPreparation(): void
+    {
+        $root = AbsolutePath::fromString(\dirname(__DIR__, 5));
+        $file = new SplFileInfo(__FILE__);
+        $discovery = self::createStub(ProjectFilesInterface::class);
+        $discovery->method('discover')->willReturn(self::discovered([$file]));
+        $collection = self::createStub(CollectionOrchestratorInterface::class);
+        $collection->method('collect')->willReturn(new CollectionPhaseOutput([PathFactory::published(AbsolutePath::fromString(__FILE__), $root)], [], classLikeDeclarations: []));
+        $definitions = new ResolvedComputedMetricDefinitions([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition('computed.bad', ['project' => '1 / 0'], '', [\Qualimetrix\Core\Symbol\SymbolLevel::Project]),
+        ]);
+        self::expectException(\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal::class);
+        self::expectExceptionMessage('Computed metric "computed.bad" failed at level "project"');
+        $this->pipeline($discovery, $collection, computedDefinitions: $definitions)->auditDirectives(new RunConfiguration(
+            pathExcludes: [],
+            projectRoot: $root,
+            generatedFilePolicy: GeneratedFilePolicy::Include,
+            authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
+        ));
+    }
+
     #[Test]
     public function itRunsWithAnExplicitOwnerConfigurationAndReturnsMeasuredCoverage(): void
     {
@@ -258,6 +317,7 @@ final class AnalysisPipelineTest extends TestCase
         ?MetricRepositoryInterface $repository = null,
         ?DependencyGraphBuild $graphBuild = null,
         ?LoggerInterface $logger = null,
+        ?ResolvedComputedMetricDefinitions $computedDefinitions = null,
     ): AnalysisPipeline {
         $profiler = self::createStub(ProfilerInterface::class);
         $ruleConfiguration = new RuleOptionsRegistry();
@@ -284,9 +344,9 @@ final class AnalysisPipelineTest extends TestCase
         $aggregation = self::createStub(MeasurementAggregationInterface::class);
         $aggregation->method('aggregate')->willReturn(new NamespaceTree([]));
 
-        $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $catalog->method('all')->willReturn([]);
-        $computed = new ComputedMetricEvaluator($catalog, $profiler);
+        $analysis = new ComputedMetricAnalysis(new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator(), new HealthFormulaExcluder()));
+        $analysis->replace($computedDefinitions ?? new ResolvedComputedMetricDefinitions([]));
+        $computed = new ComputedMetricEvaluator($analysis, $profiler);
 
         $graphBuilder = self::createStub(DependencyGraphBuilderInterface::class);
         $graphBuilder->method('build')->willReturn($graphBuild ?? new DependencyGraphBuild(AdjacencyGraphBuilder::empty(), []));
