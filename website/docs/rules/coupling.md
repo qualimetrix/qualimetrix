@@ -660,7 +660,9 @@ The raw `coupling.class-rank` remains PageRank probability mass `r`. The rule
 uses the separate share `r / (1 / N) = r * N`: how many times the vertex's rank
 exceeds the uniform rank in this measured graph. A share of 1 is uniform.
 `N` counts distinct measured logical class-like vertices, including isolated
-ones; duplicate declarations do not inflate it. Both metrics project to each
+ones with logical subjects in the metric repository. Unmeasured external
+vertices stay outside this analysed PageRank population; duplicate declarations
+do not inflate it. Both metrics project to each
 exact declaration and provide namespace/project max, average and p95 values.
 The rule judges exact PHP classes, including abstract classes, with positive
 `coupling.ca`; interfaces, traits and enums retain evidence but are not judged.

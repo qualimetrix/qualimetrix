@@ -344,8 +344,9 @@ Ideal packages lie on the line `A + I = 1`:
 
 Raw PageRank `r` remains probability mass: ranks sum to 1 over the distinct
 measured logical graph vertices. The new share is `r / (1 / N) = r * N`, where
-`N` includes every measured logical class-like vertex, including isolated
-vertices. Duplicate declarations do not increase `N`. An empty graph publishes
+`N` includes graph class-like vertices with a logical subject in the metric
+repository, including isolates; unmeasured external vertices stay outside this
+analysed PageRank population. Duplicate declarations do not increase `N`. An empty graph publishes
 neither metric; a singleton publishes raw 1 and share 1. Both values are
 projected to each exact declaration and have namespace/project max, average
 and p95 aggregates.

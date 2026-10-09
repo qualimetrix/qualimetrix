@@ -50,10 +50,12 @@ document; computed evaluation outcomes retain their independent summary.
 
 **Academic PageRank and uniform-relative share are separate metrics.**
 `coupling.class-rank` remains raw PageRank probability with total probability
-one on a nonempty logical graph. `coupling.class-rank-share` is raw probability
-multiplied by N, the number of logical vertices, and therefore measures
-multiples of uniform probability. Named PHP classes, interfaces, traits and
-enums, including isolates, participate in N. Duplicate declarations do not
+one on a nonempty measured logical graph. `coupling.class-rank-share` is raw
+probability multiplied by N, the number of analysed logical PageRank vertices,
+and therefore measures multiples of uniform probability. N contains graph
+vertices with a logical subject in the metric repository; unmeasured external
+vertices do not enter it. Named PHP classes, interfaces, traits and enums,
+including isolates, participate in this measured population. Duplicate declarations do not
 inflate it. An empty graph publishes no per-vertex value; a singleton has raw
 probability and share one. This changes no PageRank formula.
 
