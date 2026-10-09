@@ -54,7 +54,7 @@ final readonly class ComputedMetricApplicability
         };
     }
 
-    private function measuredOperand(string $key, int|float|string|bool $value): int|float
+    private function measuredOperand(string $key, mixed $value): int|float
     {
         if ((!\is_int($value) && !\is_float($value)) || !is_finite((float) $value)) {
             throw new InvalidArgumentException(\sprintf('Applicability input "%s" must be a finite measured number.', $key));

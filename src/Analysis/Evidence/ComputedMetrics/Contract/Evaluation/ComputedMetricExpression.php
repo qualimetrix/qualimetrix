@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation;
 
-use Closure;
 use InvalidArgumentException;
 use LogicException;
 use Symfony\Component\ExpressionLanguage\ExpressionFunction;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
-use Symfony\Component\ExpressionLanguage\Node\FunctionNode;
 use Symfony\Component\ExpressionLanguage\Node\NameNode;
 use Symfony\Component\ExpressionLanguage\Node\Node;
 use Symfony\Component\ExpressionLanguage\ParsedExpression;
@@ -85,18 +83,22 @@ final class ComputedMetricExpression
     /** @param list<mixed> $arguments */
     private static function weightedMean(array $arguments): ?float
     {
-        if ($arguments === [] || \count($arguments) % 2 !== 0) {
+        $argumentCount = \count($arguments);
+        if ($argumentCount === 0 || $argumentCount % 2 !== 0) {
             throw new InvalidArgumentException('weighted_mean requires ordered value/weight pairs.');
         }
         $sum = 0.0;
         $weights = 0.0;
-        for ($index = 0; $index < \count($arguments); $index += 2) {
+        for ($index = 0; $index < $argumentCount; $index += 2) {
             $value = $arguments[$index];
-            $weight = self::positiveWeight($arguments[$index + 1]);
+            $weight = self::measuredNumber($arguments[$index + 1], 'weighted_mean weights must be strictly positive finite numbers.');
+            if ($weight <= 0) {
+                throw new InvalidArgumentException('weighted_mean weights must be strictly positive finite numbers.');
+            }
             if ($value === null) {
                 continue;
             }
-            $sum += self::measuredValue($value) * $weight;
+            $sum += self::measuredNumber($value, 'weighted_mean values must be finite numbers or null.') * $weight;
             $weights += $weight;
         }
         if (!is_finite($sum) || !is_finite($weights)) {
@@ -106,22 +108,13 @@ final class ComputedMetricExpression
         return $weights === 0.0 ? null : $sum / $weights;
     }
 
-    private static function measuredValue(mixed $value): int|float
+    private static function measuredNumber(mixed $value, string $reason): int|float
     {
         if ((!\is_int($value) && !\is_float($value)) || !is_finite((float) $value)) {
-            throw new InvalidArgumentException('weighted_mean values must be finite numbers or null.');
+            throw new InvalidArgumentException($reason);
         }
 
         return $value;
-    }
-
-    private static function positiveWeight(mixed $weight): int|float
-    {
-        if ((!\is_int($weight) && !\is_float($weight)) || !is_finite((float) $weight) || $weight <= 0) {
-            throw new InvalidArgumentException('weighted_mean weights must be strictly positive finite numbers.');
-        }
-
-        return $weight;
     }
 
     /**
@@ -148,56 +141,12 @@ final class ComputedMetricExpression
     /** @param array<string, mixed> $variables */
     private function evaluateParsed(ParsedExpression $formula, array $variables): mixed
     {
-        $root = self::nullableMeanClamps($formula->getNodes());
+        $root = ComputedMetricBranchTrace::nullableMeanClamps(
+            $formula->getNodes(),
+            static fn(?float $value, float $min, float $max): ?float => $value === null ? null : self::clamp($value, $min, $max),
+        );
 
         return $this->expressionLanguage->evaluate(new ParsedExpression((string) $formula, $root), $variables);
-    }
-
-    private static function nullableMeanClamps(Node $node): Node
-    {
-        $copy = clone $node;
-        foreach ($node->nodes as $name => $child) {
-            if ($child instanceof Node) {
-                $copy->nodes[$name] = self::nullableMeanClamps($child);
-            }
-        }
-        if (!self::isMeanClamp($node)) {
-            return $copy;
-        }
-
-        $evaluate = static fn(?float $value, float $min, float $max): ?float => $value === null ? null : self::clamp($value, $min, $max);
-
-        return new class ($copy->nodes['arguments'], $evaluate) extends Node {
-            /** @param Closure(?float, float, float): ?float $evaluate */
-            public function __construct(Node $arguments, private readonly Closure $evaluate)
-            {
-                parent::__construct(['arguments' => $arguments]);
-            }
-
-            /**
-             * @param array<mixed> $functions
-             * @param array<mixed> $values
-             */
-            public function evaluate(array $functions, array $values): mixed
-            {
-                $arguments = [];
-                foreach (array_values($this->nodes['arguments']->nodes) as $argument) {
-                    $arguments[] = $argument->evaluate($functions, $values);
-                }
-
-                return ($this->evaluate)(...$arguments);
-            }
-        };
-    }
-
-    private static function isMeanClamp(Node $node): bool
-    {
-        if (!$node instanceof FunctionNode || $node->attributes['name'] !== 'clamp') {
-            return false;
-        }
-        $arguments = array_values($node->nodes['arguments']->nodes);
-
-        return \count($arguments) === 3 && ComputedMetricReads::hasNullableValues($arguments[0]);
     }
 
     /**
@@ -262,13 +211,7 @@ final class ComputedMetricExpression
      */
     public function keysOf(string $formula): array
     {
-        $keys = [];
-
-        foreach ($this->accesses($formula) as $key) {
-            $keys[$key] = true;
-        }
-
-        return array_keys($keys);
+        return array_keys(array_fill_keys($this->accesses($formula), true));
     }
 
     /**

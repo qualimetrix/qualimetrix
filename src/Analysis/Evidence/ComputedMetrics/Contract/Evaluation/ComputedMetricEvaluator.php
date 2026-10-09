@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMe
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -77,32 +78,42 @@ class ComputedMetricEvaluator
         $summary = new ComputedMetricEvaluationSummary();
         foreach ($symbols as [$subject]) {
             $outcome = $this->subjectEvaluation->evaluate($definition, $level, $repo->getSubject($subject)->all());
-            if ($outcome->kind === ComputedMetricOutcome::VALUE) {
-                $repo->addSubjectScalar($subject, $definition->name, (float) $outcome->value);
-                continue;
-            }
-            if ($outcome->kind === ComputedMetricOutcome::NOT_APPLICABLE) {
-                continue;
-            }
-            if ($outcome->kind === ComputedMetricOutcome::FAILURE || $definition->isBuiltinFormulaForLevel($level)) {
-                throw $this->analysis->refuseFormula($definition, $level, ComputedMetricRefusalWording::runtimeFailure(
-                    $definition->name,
-                    $level->value,
-                    $subject->toCanonical(),
-                    $outcome->reason ?? 'Applicable builtin formula produced ' . $outcome->kind . '.',
-                ));
-            }
-            $summary = $summary->merge(new ComputedMetricEvaluationSummary([new ComputedMetricValueAbsence(
-                metricName: $definition->name,
-                level: $level,
-                missingKeysCount: $outcome->kind === ComputedMetricOutcome::MISSING_KEYS ? 1 : 0,
-                noValueCount: $outcome->kind === ComputedMetricOutcome::NO_VALUE ? 1 : 0,
-                missingKeys: $outcome->missingKeys,
-                subjects: [$subject],
-            )]));
+            $summary = $summary->merge($this->publishOutcome($repo, $definition, $level, $subject, $outcome));
         }
 
         return $summary;
+    }
+
+    private function publishOutcome(
+        MetricRepositoryInterface $repo,
+        ComputedMetricDefinition $definition,
+        SymbolLevel $level,
+        MetricSubject $subject,
+        ComputedMetricOutcome $outcome,
+    ): ComputedMetricEvaluationSummary {
+        if ($outcome->kind === ComputedMetricOutcome::VALUE) {
+            $repo->addSubjectScalar($subject, $definition->name, (float) $outcome->value);
+            return new ComputedMetricEvaluationSummary();
+        }
+        if ($outcome->kind === ComputedMetricOutcome::NOT_APPLICABLE) {
+            return new ComputedMetricEvaluationSummary();
+        }
+        if ($outcome->kind === ComputedMetricOutcome::FAILURE || $definition->isBuiltinFormulaForLevel($level)) {
+            throw $this->analysis->refuseFormula($definition, $level, ComputedMetricRefusalWording::runtimeFailure(
+                $definition->name,
+                $level->value,
+                $subject->toCanonical(),
+                $outcome->reason ?? 'Applicable builtin formula produced ' . $outcome->kind . '.',
+            ));
+        }
+        return new ComputedMetricEvaluationSummary([new ComputedMetricValueAbsence(
+            metricName: $definition->name,
+            level: $level,
+            missingKeysCount: $outcome->kind === ComputedMetricOutcome::MISSING_KEYS ? 1 : 0,
+            noValueCount: $outcome->kind === ComputedMetricOutcome::NO_VALUE ? 1 : 0,
+            missingKeys: $outcome->missingKeys,
+            subjects: [$subject],
+        )]);
     }
 
     /**
@@ -155,7 +166,7 @@ class ComputedMetricEvaluator
                 $unknownVars,
                 $level,
                 $formula,
-                $this->analysis,
+                $this->analysis->refuseFormula(...),
             );
         }
     }

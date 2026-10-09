@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation;
 use Closure;
 use LogicException;
 use Symfony\Component\ExpressionLanguage\Node\ConditionalNode;
+use Symfony\Component\ExpressionLanguage\Node\FunctionNode;
 use Symfony\Component\ExpressionLanguage\Node\Node;
 use Symfony\Component\ExpressionLanguage\Node\NullCoalesceNode;
 
@@ -73,6 +74,52 @@ final class ComputedMetricBranchTrace
         );
     }
 
+    /** @param Closure(?float, float, float): ?float $evaluate */
+    public static function nullableMeanClamps(Node $node, Closure $evaluate): Node
+    {
+        $copy = clone $node;
+        foreach ($node->nodes as $name => $child) {
+            if ($child instanceof Node) {
+                $copy->nodes[$name] = self::nullableMeanClamps($child, $evaluate);
+            }
+        }
+        if (!self::isMeanClamp($node)) {
+            return $copy;
+        }
+
+        return new class ($copy->nodes['arguments'], $evaluate) extends Node {
+            /** @param Closure(?float, float, float): ?float $evaluate */
+            public function __construct(Node $arguments, private readonly Closure $evaluate)
+            {
+                parent::__construct(['arguments' => $arguments]);
+            }
+
+            /**
+             * @param array<mixed> $functions
+             * @param array<mixed> $values
+             */
+            public function evaluate(array $functions, array $values): mixed
+            {
+                $arguments = [];
+                foreach (array_values($this->nodes['arguments']->nodes) as $argument) {
+                    $arguments[] = $argument->evaluate($functions, $values);
+                }
+
+                return ($this->evaluate)(...$arguments);
+            }
+        };
+    }
+
+    private static function isMeanClamp(Node $node): bool
+    {
+        if (!$node instanceof FunctionNode || $node->attributes['name'] !== 'clamp') {
+            return false;
+        }
+        $arguments = array_values($node->nodes['arguments']->nodes);
+
+        return \count($arguments) === 3 && ComputedMetricReads::hasNullableValues($arguments[0]);
+    }
+
     private static function hasConditionalOperand(Node $node): bool
     {
         if (ComputedMetricReads::conditionalOperands($node) !== []) {
@@ -115,11 +162,7 @@ final class ComputedMetricBranchTrace
                 continue;
             }
 
-            $childCatcher = match (true) {
-                $node instanceof NullCoalesceNode => $name === 'expr1' ? $node : $catcher,
-                $node instanceof ConditionalNode => $name === 'expr1' ? null : $catcher,
-                default => null,
-            };
+            $childCatcher = self::childCatcher($node, $name, $catcher);
             $childCopy = $this->copyOf($child, $childCatcher);
 
             if (\in_array($name, $conditional, true)) {
@@ -130,6 +173,18 @@ final class ComputedMetricBranchTrace
         }
 
         return $copy;
+    }
+
+    private static function childCatcher(Node $node, string|int $name, ?Node $catcher): ?Node
+    {
+        if ($node instanceof NullCoalesceNode) {
+            return $name === 'expr1' ? $node : $catcher;
+        }
+        if ($node instanceof ConditionalNode && $name !== 'expr1') {
+            return $catcher;
+        }
+
+        return null;
     }
 
     private function copyNullableArguments(Node $arguments, Node $function): Node

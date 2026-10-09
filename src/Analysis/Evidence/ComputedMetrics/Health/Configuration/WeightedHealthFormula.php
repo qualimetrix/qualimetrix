@@ -26,11 +26,12 @@ final class WeightedHealthFormula
             return null;
         }
         $arguments = array_values($mean->nodes['arguments']->nodes);
-        if ($arguments === [] || \count($arguments) % 2 !== 0) {
+        $argumentCount = \count($arguments);
+        if ($argumentCount === 0 || $argumentCount % 2 !== 0) {
             return null;
         }
         $terms = [];
-        for ($index = 0; $index < \count($arguments); $index += 2) {
+        for ($index = 0; $index < $argumentCount; $index += 2) {
             $term = self::termOf($arguments[$index], $arguments[$index + 1]);
             if ($term === null || isset($terms[$term['key']])) {
                 return null;

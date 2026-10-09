@@ -321,7 +321,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
                 ['size.loc'],
                 SymbolLevel::Class_,
                 'm["size.loc"]',
-                new \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricAnalysis($this->resolver),
+                (new \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricAnalysis($this->resolver))->refuseFormula(...),
             );
         } catch (ConfigurationRefusal $refusal) {
             self::assertCount(1, $refusal->sources());

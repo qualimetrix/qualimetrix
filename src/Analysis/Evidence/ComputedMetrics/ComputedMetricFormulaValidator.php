@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Closure;
 
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricAuthorship;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricRefusalWording;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricsSection;
@@ -294,6 +295,7 @@ final class ComputedMetricFormulaValidator
      * a key no symbol publishes is only knowable once a run has measured.
      *
      * @param list<string> $keys as the formula spells them
+     * @param Closure(ComputedMetricDefinition, SymbolLevel, string): ConfigurationRefusal $refuseFormula
      *
      * @throws ConfigurationRefusal
      */
@@ -302,9 +304,9 @@ final class ComputedMetricFormulaValidator
         array $keys,
         SymbolLevel $level,
         string $formula,
-        ComputedMetricAnalysis $analysis,
+        Closure $refuseFormula,
     ): never {
-        throw $analysis->refuseFormula(
+        throw $refuseFormula(
             $definition,
             $level,
             ComputedMetricRefusalWording::referencesMetricAbsentAtLevel($definition->name, $keys, $level->value, $formula),
