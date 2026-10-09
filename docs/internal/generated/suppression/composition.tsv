@@ -174,7 +174,6 @@ rule-path-suppression	complexity.ccn	complexity.ccn	src/Analysis/Evidence/Comple
 rule-path-suppression	complexity.ccn	complexity.ccn	src/Analysis/Evidence/Complexity/NpathComplexityVisitor.php	Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityVisitor::enterNode	warning	1
 rule-path-suppression	complexity.ccn	complexity.ccn	src/Analysis/Evidence/Complexity/NpathComplexityVisitor.php	Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityVisitor::getExprTypeLabel	warning	1
 rule-path-suppression	complexity.ccn	complexity.ccn	src/Analysis/Evidence/Complexity/NpathComplexityVisitor.php	Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityVisitor::getStmtTypeLabel	warning	1
-rule-path-suppression	complexity.ccn	complexity.ccn	src/Analysis/Evidence/Design/Inheritance/InheritanceDepthVisitor.php	Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthVisitor::enterNode	warning	1
 rule-path-suppression	complexity.ccn	complexity.ccn	src/Analysis/Evidence/Maintainability/HalsteadVisitor.php	Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor	warning	1
 rule-path-suppression	complexity.ccn	complexity.ccn	src/Analysis/Evidence/Maintainability/HalsteadVisitor.php	Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor::getAssignOpName	warning	1
 rule-path-suppression	complexity.ccn	complexity.ccn	src/Analysis/Evidence/Maintainability/HalsteadVisitor.php	Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor::getBinaryOpName	error	1
@@ -192,7 +191,6 @@ rule-path-suppression	complexity.cognitive	complexity.cognitive	src/Analysis/Evi
 rule-path-suppression	complexity.cognitive	complexity.cognitive	src/Analysis/Evidence/Cohesion/LcomVisitor.php	Qualimetrix\Analysis\Evidence\Cohesion\LcomVisitor::isConstantExpression	warning	1
 rule-path-suppression	complexity.cognitive	complexity.cognitive	src/Analysis/Evidence/Cohesion/TccLccVisitor.php	Qualimetrix\Analysis\Evidence\Cohesion\TccLccVisitor	error	1
 rule-path-suppression	complexity.cognitive	complexity.cognitive	src/Analysis/Evidence/Cohesion/TccLccVisitor.php	Qualimetrix\Analysis\Evidence\Cohesion\TccLccVisitor::enterNode	error	1
-rule-path-suppression	complexity.cognitive	complexity.cognitive	src/Analysis/Evidence/Design/Inheritance/InheritanceDepthVisitor.php	Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthVisitor::enterNode	warning	1
 rule-path-suppression	complexity.cognitive	complexity.cognitive	src/Analysis/Evidence/Maintainability/HalsteadVisitor.php	Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor	warning	1
 rule-path-suppression	complexity.cognitive	complexity.cognitive	src/Analysis/Evidence/Maintainability/HalsteadVisitor.php	Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor::getOperandName	error	1
 rule-path-suppression	complexity.npath	complexity.npath	src/Analysis/Evidence/CodeSmell/UnusedPrivateVisitor.php	Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateVisitor::enterClassLike	warning	1
@@ -200,7 +198,6 @@ rule-path-suppression	complexity.npath	complexity.npath	src/Analysis/Evidence/Co
 rule-path-suppression	complexity.npath	complexity.npath	src/Analysis/Evidence/Cohesion/LcomVisitor.php	Qualimetrix\Analysis\Evidence\Cohesion\LcomVisitor::enterNode	error	1
 rule-path-suppression	complexity.npath	complexity.npath	src/Analysis/Evidence/Cohesion/LcomVisitor.php	Qualimetrix\Analysis\Evidence\Cohesion\LcomVisitor::isConstantExpression	warning	1
 rule-path-suppression	complexity.npath	complexity.npath	src/Analysis/Evidence/Cohesion/TccLccVisitor.php	Qualimetrix\Analysis\Evidence\Cohesion\TccLccVisitor::enterNode	error	1
-rule-path-suppression	complexity.npath	complexity.npath	src/Analysis/Evidence/Design/Inheritance/InheritanceDepthVisitor.php	Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthVisitor::enterNode	warning	1
 rule-path-suppression	complexity.npath	complexity.npath	src/Analysis/Evidence/Maintainability/HalsteadVisitor.php	Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor::getOperandName	error	1
 rule-path-suppression	complexity.npath	complexity.npath	src/Analysis/Evidence/Size/ClassCountVisitor.php	Qualimetrix\Analysis\Evidence\Size\ClassCountVisitor::enterNode	warning	1
 rule-path-suppression	complexity.npath	complexity.npath	src/Analysis/Evidence/Size/MethodCountVisitor.php	Qualimetrix\Analysis\Evidence\Size\MethodCountVisitor::countMethod	warning	1
@@ -354,10 +351,9 @@ rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/
 rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Coupling/UnmatchedFrameworkNamespaceOptions.php	src/Analysis/Evidence/Coupling/UnmatchedFrameworkNamespaceOptions.php	warning	2
 rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Design/Inheritance/InheritanceOptions.php	src/Analysis/Evidence/Design/Inheritance/InheritanceOptions.php	error	2
 rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Design/Inheritance/InheritanceOptions.php	src/Analysis/Evidence/Design/Inheritance/InheritanceOptions.php	warning	2
-rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Design/Inheritance/InheritanceRule.php	src/Analysis/Evidence/Design/Inheritance/InheritanceRule.php	warning	1
 rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Design/Inheritance/NocOptions.php	src/Analysis/Evidence/Design/Inheritance/NocOptions.php	error	2
 rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Design/Inheritance/NocOptions.php	src/Analysis/Evidence/Design/Inheritance/NocOptions.php	warning	2
-rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Design/Inheritance/NocRule.php	src/Analysis/Evidence/Design/Inheritance/NocRule.php	warning	2
+rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Design/Inheritance/NocRule.php	src/Analysis/Evidence/Design/Inheritance/NocRule.php	warning	1
 rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageOptions.php	src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageOptions.php	warning	1
 rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Maintainability/MaintainabilityOptions.php	src/Analysis/Evidence/Maintainability/MaintainabilityOptions.php	warning	1
 rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Security/HardcodedCredentialsOptions.php	src/Analysis/Evidence/Security/HardcodedCredentialsOptions.php	warning	1
@@ -396,6 +392,10 @@ suppression	src/Analysis/Evidence/DependencyModel/Contract/ClassLikeDeclaration.
 suppression	src/Analysis/Evidence/DependencyModel/Contract/Dependency.php	code-smell.boolean-argument	src/Analysis/Evidence/DependencyModel/Contract/Dependency.php	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency::ofAttribute	warning	1
 suppression	src/Analysis/Evidence/DependencyModel/Contract/Dependency.php	code-smell.boolean-argument	src/Analysis/Evidence/DependencyModel/Contract/Dependency.php	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency::ofClassLike	warning	2
 suppression	src/Analysis/Evidence/DependencyModel/DependencyGraph.php	health.cohesion	src/Analysis/Evidence/DependencyModel/DependencyGraph.php	Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraph	error	1
+suppression	src/Analysis/Evidence/Design/Inheritance/ExternalDepth.php	code-smell.boolean-argument	src/Analysis/Evidence/Design/Inheritance/ExternalDepth.php	Qualimetrix\Analysis\Evidence\Design\Inheritance\ExternalDepth::brokeAt	warning	1
+suppression	src/Analysis/Evidence/Design/Inheritance/ExternalDepth.php	code-smell.boolean-argument	src/Analysis/Evidence/Design/Inheritance/ExternalDepth.php	Qualimetrix\Analysis\Evidence\Design\Inheritance\ExternalDepth::loop	warning	1
+suppression	src/Analysis/Evidence/Design/Inheritance/ExternalDepth.php	code-smell.boolean-argument	src/Analysis/Evidence/Design/Inheritance/ExternalDepth.php	Qualimetrix\Analysis\Evidence\Design\Inheritance\ExternalDepth::noMap	warning	1
+suppression	src/Analysis/Evidence/Design/Inheritance/ExternalDepth.php	code-smell.boolean-argument	src/Analysis/Evidence/Design/Inheritance/ExternalDepth.php	Qualimetrix\Analysis\Evidence\Design\Inheritance\ExternalDepth::reachedRoot	warning	1
 suppression	src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	health.cohesion	src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorMethodContext	warning	1
 suppression	src/Analysis/Evidence/Prioritization/Impact/ClassRankIndex.php	health.cohesion	src/Analysis/Evidence/Prioritization/Impact/ClassRankIndex.php	Qualimetrix\Analysis\Evidence\Prioritization\Impact\ClassRankIndex	warning	1
 suppression	src/Analysis/Finding/Contract/ProjectScope/ExcludeSelectorVerdict.php	code-smell.boolean-argument	src/Analysis/Finding/Contract/ProjectScope/ExcludeSelectorVerdict.php	Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorVerdict::fromMeasuredFacts	warning	1

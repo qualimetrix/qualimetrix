@@ -8,7 +8,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\DitGlobalCollector;
-use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthCollector;
 use RuntimeException;
 use Symfony\Component\Process\Process;
 
@@ -34,7 +33,6 @@ use Symfony\Component\Process\Process;
  * so that this repository's own `qmx.yaml` cannot contribute findings about
  * this repository to a run whose analysed path is a temporary directory.
  */
-#[CoversClass(InheritanceDepthCollector::class)]
 #[CoversClass(DitGlobalCollector::class)]
 final class DitAggregateRunTest extends TestCase
 {
@@ -100,6 +98,53 @@ final class DitAggregateRunTest extends TestCase
             $project['design.dit.count'],
             'DIT is denominated in something other than what this product counts as a class',
         );
+    }
+
+    #[Test]
+    public function itAggregatesIncompleteFloorsAndLoopsWithoutEnrollingNonClasses(): void
+    {
+        $this->write('Floor.php', 'class Floor extends \\Vendor\\Unread {}');
+        $this->write('Loop.php', 'class Loop extends loop {} class Below extends Loop {}');
+        foreach (['project', 'namespace'] as $level) {
+            $metrics = $this->metricsOfLevel($level);
+            self::assertSame(3, $metrics['design.dit-unresolved.sum'], $level);
+            self::assertSame(4, $metrics['design.dit.count'], $level);
+            self::assertSame(2, $metrics['design.dit.max'], $level);
+            self::assertEqualsWithDelta(1.0, $metrics['design.dit.avg'], 1.0e-9, $level);
+            self::assertSame(0, $metrics['design.is-exception.sum'], $level);
+        }
+    }
+
+    #[Test]
+    public function itPublishesDegreeZeroAbstractClassesAndOnlyClassDepthsFromSource(): void
+    {
+        $this->write('Kinds.php', "abstract class AbstractRoot {} class Methodless extends AbstractRoot {} interface Marker {} interface ChildContract extends Marker {} trait Work {} enum Plain {} enum Backed: string { case One = 'one'; }");
+        $process = new Process([
+            \PHP_BINARY, \dirname(__DIR__, 6) . '/bin/qmx', 'check', $this->analysedDirectory,
+            '--workers=0', '--no-cache', '--no-progress', '--format=metrics', '--fail-on=none',
+        ], $this->workingDirectory);
+        $process->run();
+        self::assertSame(0, $process->getExitCode(), $process->getErrorOutput());
+        /** @var array{symbols: list<array{name: string, metrics: array<string, int|float>}>} $report */
+        $report = json_decode($process->getOutput(), true, flags: \JSON_THROW_ON_ERROR);
+        $metricsByName = [];
+        foreach ($report['symbols'] as $symbol) {
+            $metricsByName[$symbol['name']] = $symbol['metrics'];
+        }
+        foreach (['AbstractRoot' => 0, 'Methodless' => 1] as $name => $depth) {
+            $metrics = $metricsByName['Chain\\' . $name];
+            self::assertSame($depth, $metrics['design.dit']);
+            self::assertSame(0, $metrics['design.dit-unresolved']);
+            self::assertSame(0, $metrics['design.is-exception']);
+            self::assertSame(0, $metrics['complexity.wmc']);
+        }
+        foreach (['Marker', 'ChildContract', 'Work', 'Plain', 'Backed'] as $name) {
+            $metrics = $metricsByName['Chain\\' . $name];
+            self::assertSame(0, $metrics['design.is-exception']);
+            self::assertArrayNotHasKey('design.dit', $metrics);
+            self::assertArrayNotHasKey('design.dit-unresolved', $metrics);
+            self::assertArrayNotHasKey('design.noc', $metrics);
+        }
     }
 
     /**

@@ -3889,29 +3889,8 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceClassInfo": {
-      "path": "src/Analysis/Evidence/Design/Inheritance/InheritanceClassInfo.php",
-      "kind": "class",
-      "owner": "Analysis.Evidence.Design",
-      "visibility": "internal",
-      "consumers": []
-    },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector": {
-      "path": "src/Analysis/Evidence/Design/Inheritance/InheritanceDepthCollector.php",
-      "kind": "class",
-      "owner": "Analysis.Evidence.Design",
-      "visibility": "internal",
-      "consumers": []
-    },
     "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthResolver": {
       "path": "src/Analysis/Evidence/Design/Inheritance/InheritanceDepthResolver.php",
-      "kind": "class",
-      "owner": "Analysis.Evidence.Design",
-      "visibility": "internal",
-      "consumers": []
-    },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthVisitor": {
-      "path": "src/Analysis/Evidence/Design/Inheritance/InheritanceDepthVisitor.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
@@ -3947,13 +3926,6 @@
     },
     "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule": {
       "path": "src/Analysis/Evidence/Design/Inheritance/NocRule.php",
-      "kind": "class",
-      "owner": "Analysis.Evidence.Design",
-      "visibility": "internal",
-      "consumers": []
-    },
-    "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\UnreadChainTally": {
-      "path": "src/Analysis/Evidence/Design/Inheritance/UnreadChainTally.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
@@ -4333,10 +4305,6 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageCollector"
         },
         {
@@ -4573,10 +4541,6 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageCollector"
         },
         {
@@ -4673,10 +4637,6 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageVisitor"
         },
         {
@@ -4734,10 +4694,6 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector"
         },
         {
           "owner": "Analysis.Evidence.Design",
@@ -5014,10 +4970,6 @@
         {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector"
         },
         {
           "owner": "Analysis.Evidence.Design",
@@ -5366,10 +5318,6 @@
         {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector"
         },
         {
           "owner": "Analysis.Evidence.Design",
@@ -5830,10 +5778,6 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcVisitor"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthVisitor"
         },
         {
           "owner": "Analysis.Evidence.Design",
@@ -11037,6 +10981,10 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Observation\\ClassEvidenceWalk"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule"
         }
       ]
     },
@@ -16015,10 +15963,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Security\\SensitiveParameterVisitor"
         },
         {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountVisitor"
-        },
-        {
           "owner": "Analysis.Evidence.DependencyModel",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\DependencyResolver"
         },
@@ -16697,10 +16641,6 @@
         {
           "owner": "Analysis.Evidence.DependencyModel",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\DependencyVisitor"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector"
         },
         {
           "owner": "Analysis.Evidence.Design",
@@ -17715,6 +17655,26 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\DeclarationRelationIndex"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthResolver"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.DependencyModel",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DependencyIdentityCanonicalizer"
+        },
+        {
+          "owner": "Analysis.Evidence.DependencyModel",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\DependencyRecorder"
         }
       ]
     },
@@ -18231,6 +18191,10 @@
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\HealthScoreDrillDown"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector"
         }
       ]
     },
@@ -18287,6 +18251,14 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\ImplicitStringability"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\ExternalAncestry"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthResolver"
         }
       ]
     },
@@ -18305,20 +18277,8 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\ExternalAncestry"
         },
         {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthResolver"
-        },
-        {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\LayerCriterionNormalizer"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountVisitor"
         },
         {
           "owner": "Analysis.Policy.Architecture",
@@ -18383,10 +18343,6 @@
         {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule"
         },
         {
           "owner": "Analysis.Evidence.Design",
@@ -19170,10 +19126,6 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageVisitor"
         },
         {
@@ -19487,10 +19439,6 @@
         {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector"
         },
         {
           "owner": "Analysis.Evidence.Design",
@@ -25255,6 +25203,14 @@
         {
           "owner": "Reporting.GraphProjection",
           "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\NamespaceSelection"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\ExternalAncestry"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthResolver"
         }
       ]
     },
@@ -25621,6 +25577,20 @@
       "path": "src/Analysis/Evidence/Measurement/Repository/ClassMetricScopeRegistry.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Measurement",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceOutcome": {
+      "path": "src/Analysis/Evidence/Design/Inheritance/InheritanceOutcome.php",
+      "kind": "enum",
+      "owner": "Analysis.Evidence.Design",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceResolution": {
+      "path": "src/Analysis/Evidence/Design/Inheritance/InheritanceResolution.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Design",
       "visibility": "internal",
       "consumers": []
     }

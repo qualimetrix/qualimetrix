@@ -38,6 +38,37 @@ final class DependencyVisitorTest extends TestCase
     }
 
     #[Test]
+    public function itRecordsNamedClassSelfExtendsWithoutOrdinarySelfReferences(): void
+    {
+        foreach (['A', 'a'] as $parent) {
+            $deps = $this->analyze('<?php namespace App; class A extends ' . $parent . ' { public function f(A $a): A { A::f($a); return $a; } }');
+            $extends = array_values(array_filter($deps, static fn($edge): bool => $edge->type === DependencyType::Extends));
+            self::assertCount(1, $extends);
+            self::assertFalse($extends[0]->describesNestedAnonymousClass);
+            self::assertFalse($extends[0]->interfaceExtends);
+        }
+        self::assertSame([], $this->analyze('<?php namespace App; interface A extends A {}'));
+    }
+
+    #[Test]
+    public function itPreservesSelfExtendsSourcesAndOrdinalsAcrossDuplicateBodies(): void
+    {
+        $deps = $this->analyze("<?php\nnamespace App;\nclass A extends A {}\nif (false) { class A extends a {} }\n");
+        self::assertCount(2, $deps);
+        self::assertSame(0, $deps[0]->source->ordinal->value);
+        self::assertSame(1, $deps[1]->source->ordinal->value);
+        $graph = (new \Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder(new \Qualimetrix\Analysis\Evidence\DependencyModel\UnplacedExternalClassSpelling()))->build(array_values($deps), $this->visitor->classLikeDeclarations())->graph;
+        $declarationEdges = $graph->getDeclarationDependencies();
+        self::assertCount(2, $declarationEdges);
+        foreach ($deps as $i => $dependency) {
+            self::assertSame($dependency->source, $declarationEdges[$i]->source);
+            self::assertSame($dependency->location, $declarationEdges[$i]->location);
+            self::assertSame('App\\A', $declarationEdges[$i]->targetLogical()->toString());
+        }
+        self::assertSame([], $graph->getAllDependencies());
+    }
+
+    #[Test]
     public function itRecordsAnExtendsDependencyForAClass(): void
     {
         $code = <<<'PHP'

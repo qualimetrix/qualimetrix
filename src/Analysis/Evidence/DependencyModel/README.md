@@ -72,7 +72,10 @@ case. Otherwise the observed byte-smallest spelling is used. Mixed-spelling
 warnings describe only groups with two or more observed variants; a singleton
 has no placement-status warning. Both edge endpoints and the logical projection of declaration facts are
 rewritten, while every exact `DeclarationPath`, declaration kind and body fact
-is preserved. An edge whose endpoints become the same identity is discarded.
+is preserved. Canonical self dependencies are discarded from ordinary graph
+views. A named class's self-`extends` alone survives in the declaration view,
+with its original exact source ordinal and location; this preserves an
+inheritance-loop fact without adding a coupling edge.
 `DependencyGraphBuild` returns the graph together with deterministic
 `MixedSpelling` evidence; the evidence is kept outside
 `DependencyGraphInterface` because it describes construction input rather than
@@ -91,8 +94,8 @@ The builder leaves every edge whose target is a class PHP itself declares out
 of the coupling view — `getAllDependencies()`, the per-class dependency lists,
 `getAllClasses()`, Ce/Ca and both namespace scopes — because coupling to the
 standard library is not architectural risk. An `extends` edge is kept in
-`getAllDependencies()` (and its target in `getAllClasses()`), because DIT and
-NOC read inheritance from it, but it is in no per-class dependency list and
+`getAllDependencies()` (and its target in `getAllClasses()`), because NOC
+reads inheritance from it, but it is in no per-class dependency list and
 counts toward no Ce, Ca or namespace scope: `extends \RuntimeException` is no
 more coupling than `implements \Countable`, and a consumer computing CBO from
 the per-class lists agrees with Ce and Ca without deciding again what a PHP
@@ -104,7 +107,12 @@ declaration states about itself — and keeps every `extends`, `implements`,
 membership reads it (`Policy\Architecture\Layer\ClassContext\ClassContextFactory`): read from
 the coupling view, a class declaring `implements \JsonSerializable` is
 indistinguishable from one that does not. Adding an edge to this view moves no
-coupling metric; adding one to the coupling view does.
+coupling metric; adding one to the coupling view does. DIT also reads this
+declaration view, including named class self-`extends` after case folding, so a
+self cycle is distinguishable from a root. Ordinary self references, interface
+self-`extends`, and nested-anonymous declaration policy are not widened.
+`getAllDependencies()`, per-class lists, Ce/Ca, namespace coupling, ClassRank,
+export and circular-dependency views remain free of canonical self edges.
 
 `ClassLikeHandler` records the interfaces PHP gives an enum without their being
 written: `UnitEnum` on every enum and `BackedEnum` on a backed one. Direct
@@ -159,9 +167,9 @@ See ADR 0071.
 class when a class declares it, and the graph carries no declaration kind
 otherwise, so a reader asking which interfaces a declaration has needs the
 flag to count `J` for `I` without counting a parent class for its subclass.
-Only `Policy\Architecture\Layer\ClassContext\ClassContextFactory` (layer
-`implements:` membership) reads it; DIT, NOC,
-coupling and `graph:export` treat both edges alike.
+Declaration readers use the flag to distinguish interface inheritance from
+class inheritance: DIT and NOC do not count an interface as a parent class or
+child class. Coupling and `graph:export` retain their dependency semantics.
 
 `DependencyGraphInterface` exposes the named declaration stream beside edge and
 coupling queries. Declaration facts are graph evidence, not a lifecycle port or

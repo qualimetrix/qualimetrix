@@ -32,6 +32,33 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class DependencyGraphBuilderTest extends TestCase
 {
     #[Test]
+    public function itPreservesOnlyNamedClassSelfExtendsInTheDeclarationView(): void
+    {
+        foreach (['App\\A', 'app\\a'] as $target) {
+            $edge = self::dependency('App\\A', $target, DependencyType::Extends);
+            $graph = self::builder()->build([$edge, self::dependency('App\\A', $target, DependencyType::StaticCall)], [self::declaration('App\\A')])->graph;
+            self::assertCount(1, $graph->getDeclarationDependencies());
+            self::assertSame($edge->source, $graph->getDeclarationDependencies()[0]->source);
+            self::assertSame($edge->location, $graph->getDeclarationDependencies()[0]->location);
+            self::assertSame([], $graph->getAllDependencies());
+            self::assertSame([], $graph->getClassDependencies(self::logical('App\\A')->symbolPath));
+            self::assertSame(0, $graph->getClassCe(self::logical('App\\A')->symbolPath));
+            self::assertSame(0, $graph->getClassCa(self::logical('App\\A')->symbolPath));
+        }
+    }
+
+    #[Test]
+    public function itDoesNotWidenSelfDeclarationFactsToInterfacesOrNestedAnonymousClasses(): void
+    {
+        $interface = self::dependency('App\\I', 'app\\i', DependencyType::Extends);
+        $classEdge = self::dependency('App\\A', 'app\\a', DependencyType::Extends);
+        $nested = Dependency::ofClassLike($classEdge->source, new LogicalClassPath($classEdge->targetLogical()), DependencyType::Extends, $classEdge->location, true, false);
+        $graph = self::builder()->build([$interface, $nested], [self::declaration('App\\I', ClassType::Interface_), self::declaration('App\\A')])->graph;
+        self::assertSame([], $graph->getDeclarationDependencies());
+        self::assertSame([], $graph->getAllDependencies());
+    }
+
+    #[Test]
     public function itKeepsTypedFactsForDegreeZeroDeclarations(): void
     {
         $declaration = self::declaration('App\\Standalone', ClassType::Trait_, false, true);

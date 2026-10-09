@@ -4351,12 +4351,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itCanonicalizesPhpClassIdentityWithoutChangingExactDeclarations
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itCountsAnExtendsEdgeToANonPhpClassAsCoupling
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itDeduplicatesClassAndNamespaceCouplingEndpoints
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itDoesNotWidenSelfDeclarationFactsToInterfacesOrNestedAnonymousClasses
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itDropsSelfReferencesAfterCanonicalization
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itFiltersBuiltinCouplingButRetainsBuiltinInheritanceForInheritanceReadersOnly
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itKeepsADeclarationEdgeToAPhpTypeForDeclarationReadersOnly
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itKeepsDegreeZeroDeclarationsAndUndeclaredExternalTargets
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itKeepsTypedFactsForDegreeZeroDeclarations
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itLeavesEveryCouplingViewAsItWasWithoutThePhpTypedDeclarationEdges
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itPreservesOnlyNamedClassSelfExtendsInTheDeclarationView
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itTreatsSiblingEdgesAsInternalToTheirParentAndExternalEdgesAsBoundaryCrossings
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itUsesTheInstalledDeclarationSpellingForAnExternalIdentity
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::itCountsAChildNamespaceDependencyOutsideTheParentAsCe
@@ -4454,6 +4456,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itPreservesAnonymousProvenanceForEveryAttributeSite"property hook"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itPreservesAnonymousProvenanceForEveryAttributeSite"property"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itPreservesExactDeclarationSourcesForEveryNamedClassLike
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itPreservesSelfExtendsSourcesAndOrdinalsAcrossDuplicateBodies
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itPublishesNamedClassLikeFactsWithoutSyntheticStringableEdges
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsACatchDependency
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAClassConstFetchDependency
@@ -4473,6 +4476,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAnImplementsDependencyForAnEnum
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAnInstanceofDependency
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsConstantAndEnumCaseTypesAndAttributeSites
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsNamedClassSelfExtendsWithoutOrdinarySelfReferences
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsNestedFunctionSignatureAndItsAttributeSites
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsPropertyHookAndHookParameterFacts
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsTheInterfacesPhpGivesAClassLikeUnwritten"backed enum"
@@ -4510,6 +4514,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\StringSetTest::itReturnsOnlyElementsCommonToBothSetsInIntersect
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\StringSetTest::itReturnsTheSameInstanceWhenAddingADuplicate
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\StringSetTest::itYieldsEveryStringWhenIterated
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itExcludesProjectGrandchildrenOfThrowableButJudgesProjectExceptionNames
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"accessor trait"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"accessors only"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"behaviour methods"
@@ -4517,6 +4522,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"no public members"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"public fields plus accessors"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"struct without methods"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itJudgesAnUnreadParentOnlyWhenExceptionExclusionIsDisabled
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itKeepsTheConstructorOutOfTheRatio
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itReportsTheWocShareItGatedOn
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itSeesOnlyMembersDeclaredByTheClassItself
@@ -4527,8 +4533,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\AnonymousClassDeclarationEdgeRunTest::itKeepsTheNamespaceDitAggregateAtTheCorrectedMaximum
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\AnonymousClassDeclarationEdgeRunTest::itLeavesTheEnclosingClassAtDitZeroInsteadOfInheritingTheAnonymousClasssParent
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\AnonymousClassDeclarationEdgeRunTest::itPreservesCouplingForTheEdgeTheFlagMustNotHide
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DitAggregateRunTest::itAggregatesIncompleteFloorsAndLoopsWithoutEnrollingNonClasses
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DitAggregateRunTest::itAggregatesTheDepthItPublishesPerClass
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DitAggregateRunTest::itCountsClassesRatherThanEveryClassLevelSymbol
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DitAggregateRunTest::itPublishesDegreeZeroAbstractClassesAndOnlyClassDepthsFromSource
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DuplicateDeclarationDepthRunTest::itDoesNotMoveWhenTheTwoDeclarationsSwapFileNames
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DuplicateDeclarationDepthRunTest::itGivesEachDeclarationOfOneNameItsOwnDepth
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DuplicateDeclarationDepthRunTest::itPublishesTheGlobalDepthOfACrossFileChain
@@ -4536,6 +4544,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnloadableExternalParentRunTest::itKeepsCoverageCompleteWhenAnExternalParentCannotFinishLoading#0
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnloadableExternalParentRunTest::itKeepsCoverageCompleteWhenAnExternalParentCannotFinishLoading#1
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnloadableExternalParentRunTest::itKeepsCoverageCompleteWhenAnExternalParentCannotFinishLoading#2
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnreadAncestryDiagnosticRunTest::itKeepsDiagnosticsQuietWhenTheInheritanceRuleIsDisabled
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnreadAncestryDiagnosticRunTest::itNamesFloorAndLoopOutcomesTogetherOnce
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnreadAncestryDiagnosticRunTest::itNamesTheClassWhenAnInstallExistsButDoesNotCarryIt
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnreadAncestryDiagnosticRunTest::itReadsACompleteAncestryFromANestedComposerClassmap
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnreadAncestryDiagnosticRunTest::itReportsABreakDeeperThanTheFirstLink
@@ -4543,6 +4553,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnreadAncestryDiagnosticRunTest::itSaysNothingWhenTheChainReachesARoot
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnreadAncestryDiagnosticRunTest::itSaysTheRunHadNoInstallToReadThrough
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\UnreadAncestryDiagnosticRunTest::itSaysTheSameThingWhileGeneratingABaseline
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itAbstainsOnUnknownExceptionOnlyWhenExclusionIsEnabled
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itAnalyzeDisabledReturnsEmpty
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itDetectsLowWocLowWmc
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass\DataClassRuleTest::itDoesNotFlagHighWmc
@@ -4596,67 +4607,76 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itComputesDitThreeAcrossFilesForAThreeLevelInheritanceChain
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itComputesDitTwoAcrossFilesForATwoLevelInheritanceChain
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itCountsABuiltinInsideAnExternalChain
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itCountsChildDeclarationsRatherThanDistinctAncestors
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itDeclaresTheIncompleteAndExceptionSumsAtBothAggregateLevels
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itDoesNotLookOutsideForAParentTheProjectDeclares
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itGivesEachDeclarationOfADuplicatedNameItsOwnDepth
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itGivesTheSameDitRegardlessOfDeclarationInsertionOrder
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itIgnoresAnExtendsEdgeFlaggedAsANestedAnonymousClassDeclaration
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itIncludesTheBuiltinParentsOwnDepth
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itIsNamedDitGlobal
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itKeepsDuplicatedNameDepthsOnTheirOwnDeclarations
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itLeavesSymbolsTheFilePassNeverMeasuredAlone
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itKeepsInterfacesOutOfTheDitPopulation
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itOmitsBothDitValuesForACycleThroughADuplicatedName
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itOmitsDitForACyclicExternalTail
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itOwnsTheDitMetricDefinition
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itPreservesOtherMetricsWhileUpdatingDit
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itProvidesTheDitMetric
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itReportsOnceAndNamesWhereReadingStopped
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itPublishesAnIncompleteFloorWithoutAnInstall
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itPublishesCompleteInProjectRootsAndTheirChildren
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itPublishesCompleteNonThrowableExternalRoots
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itPublishesIncompleteEvidenceForEachChildOfAnUnreadParent
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itPublishesLoopOmissionAndUnknownClassifierWithoutFallbackScalars
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itPublishesTheFullPositiveRosterWithoutALocalDitSeed
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itPublishesTheKnownFloorAtTheExternalVisitCap
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itPublishesUnknownExceptionForAnUnreadExternalTail
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itRefusesAGraphClassWhoseExactRepositoryRecordIsMissing
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itRequiresNoUpstreamMetrics
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itSaysNothingWhenEveryExternalChainReachesARoot
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itSaysNothingWhenNoChainLeavesTheAnalysedPath
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itScoresAChildOfADuplicatedParentNameAtMaxPlusOne
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itScoresDitOneForAClassExtendingAStandardPhpClass
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itScoresDitZeroForAClassWithNoParent
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itSeparatesHavingNoInstallFromHavingNoEntryInTheMessage
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itStaysTrueForACycleAndPrescribesNothing
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itStaysTrueWhenTheWalkGivesUpOnALongChain
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\DitGlobalCollectorTest::itTerminatesACycleThroughADuplicatedNameWithoutGivingBothTheFallback
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itAnswersTheSameWayTwice
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itBoundsStaticSourceWalksAtSixtyFourVisits
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itCountsEveryStepToTheRoot
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itFollowsBuiltinAncestryWithoutAnInstall
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itFollowsEveryBuiltinParent
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itOmitsNumericDepthForACanonicalExternalLoop
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itRefusesToCallACycleADepth
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itReportsAChainThatStopsBeingReadable
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itScoresAClassWithNoParentAsZero
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itSeparatesHavingNoInstallFromHavingNoEntry
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itStopsAtAPhpBuiltin
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itAsksNoAutoloaderAboutAParentItCannotSee
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForClassExtendingExternalClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForClassExtendingRuntimeException
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForClassExtendingSplStack
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForClassExtendingStandardException
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForClassExtendingStdClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForDateTimeClasses
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForMultipleBranches
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsDitForSplClasses
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsSingleLevelInheritanceInSameFile
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsThreeLevelInheritance
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itCountsTwoLevelInheritanceInSameFile
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itDeclaresNoMetricDefinition
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itDeliberatelyDoesNotProvideCallableMetrics
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itDoesNotTreatNamespacedErrorAsStandardPhpClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itDoesNotTreatNamespacedExceptionAsStandardPhpClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itGetsName
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itHandlesClassWithoutNamespace
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itHandlesFullyQualifiedExtends
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itHandlesRelativeExtends
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itIgnoresAnonymousClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itProvides
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itResetsState
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itReturnsZeroForClassWithNoParent
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itTreatsUnqualifiedExceptionAsStandardPhpClass
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthCollectorTest::itUsesEachDuplicateDeclarationsOwnImmediateParent
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthUseAliasTest::itAccumulatesDitAcrossAUseImportedChainInTheSameFile
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthUseAliasTest::itLinksAnAliasedParentDeclaredInTheSameFile
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthUseAliasTest::itResolvesDitForAFullyQualifiedParent
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthUseAliasTest::itResolvesDitForAnAliasedParentFromADifferentNamespace
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthUseAliasTest::itResolvesTheParentFqnFromAPlainUseImport
- - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthUseAliasTest::itResolvesTheParentFqnFromAUseImportAlias
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\ExternalAncestryTest::itTreatsAnUnregisteredExtensionNameAsUnreadInsteadOfRuntimeEvidence
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itDoesNotMistakeProjectExceptionAndErrorNamesForBuiltins
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itIncludesEveryBuiltinAncestorWithoutComposer"ArgumentCountError folded"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itIncludesEveryBuiltinAncestorWithoutComposer"ArgumentCountError"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itIncludesEveryBuiltinAncestorWithoutComposer"Error folded"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itIncludesEveryBuiltinAncestorWithoutComposer"Error"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itIncludesEveryBuiltinAncestorWithoutComposer"ErrorException folded"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itIncludesEveryBuiltinAncestorWithoutComposer"ErrorException"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itIncludesEveryBuiltinAncestorWithoutComposer"Exception folded"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itIncludesEveryBuiltinAncestorWithoutComposer"Exception"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itIncludesEveryBuiltinAncestorWithoutComposer"LogicException folded"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itIncludesEveryBuiltinAncestorWithoutComposer"LogicException"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itIncludesEveryBuiltinAncestorWithoutComposer"RuntimeException folded"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itIncludesEveryBuiltinAncestorWithoutComposer"RuntimeException"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itKeepsCompletedMemoSeparateFromCanonicalActivePaths
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itKeepsExactSameFileOrdinalAnswersDistinct
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itKeepsProvenThrowableWhenALaterTailIsUnread
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itMergesEveryParentBranchIncludingDegreeZeroRoots"all false forward"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itMergesEveryParentBranchIncludingDegreeZeroRoots"all false reverse"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itMergesEveryParentBranchIncludingDegreeZeroRoots"all true forward"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itMergesEveryParentBranchIncludingDegreeZeroRoots"all true reverse"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itMergesEveryParentBranchIncludingDegreeZeroRoots"false and unknown forward"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itMergesEveryParentBranchIncludingDegreeZeroRoots"false and unknown reverse"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itMergesEveryParentBranchIncludingDegreeZeroRoots"finite and cyclic forward"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itMergesEveryParentBranchIncludingDegreeZeroRoots"finite and cyclic reverse"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itMergesEveryParentBranchIncludingDegreeZeroRoots"root and Throwable forward"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itMergesEveryParentBranchIncludingDegreeZeroRoots"root and Throwable reverse"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itMergesEveryParentBranchIncludingDegreeZeroRoots"root and unread forward"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itMergesEveryParentBranchIncludingDegreeZeroRoots"root and unread reverse"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itMergesEveryParentBranchIncludingDegreeZeroRoots"true and false forward"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itMergesEveryParentBranchIncludingDegreeZeroRoots"true and false reverse"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itMergesEveryParentBranchIncludingDegreeZeroRoots"true and unknown forward"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itMergesEveryParentBranchIncludingDegreeZeroRoots"true and unknown reverse"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceDepthResolverTest::itPropagatesAnExternalLoopAndReadsTheFullVendorBuiltinTail
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itGeneratesError
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itGeneratesWarning
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itGetsCliAliases
@@ -4677,6 +4697,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itSkipsClassWithoutDitMetric
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itThrowsExceptionForWrongOptionsType
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itWarnsOncePerEnabledInvocationAndQualifiesFloorFindings"disabled"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itWarnsOncePerEnabledInvocationAndQualifiesFloorFindings"floor"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itWarnsOncePerEnabledInvocationAndQualifiesFloorFindings"loop"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\InheritanceRuleTest::itWarnsOncePerEnabledInvocationAndQualifiesFloorFindings"mixed"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::itAssignsNocOneToAClassWithOneChild
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::itAssignsNocTwoToAClassWithTwoChildren
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance\NocCollectorTest::itAssignsNocZeroToAClassWithoutChildren
@@ -5134,8 +5158,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itPreservesBothDeclarationsOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector, flat namespace"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itPreservesBothDeclarationsOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Coupling\RfcCollector, braced namespace"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itPreservesBothDeclarationsOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Coupling\RfcCollector, flat namespace"
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itPreservesBothDeclarationsOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthCollector, braced namespace"
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itPreservesBothDeclarationsOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthCollector, flat namespace"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itPreservesBothDeclarationsOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageCollector, braced namespace"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itPreservesBothDeclarationsOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageCollector, flat namespace"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itPreservesBothDeclarationsOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Size\LocCollector, braced namespace"
@@ -6289,9 +6311,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itIgnoresAnonymousClass
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itIncludesStaticProperties
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itKeepsDistinctCountsForSameFileClassDeclarations
+ - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itLeavesExceptionClassificationToGlobalInheritanceEvidence
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itProjectsTheSameClassMetricsAsTheFileBagIncludingDegenerateWoc
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itProvides
- - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itRecognizesAnExceptionBaseImportedWithDifferentAliasCase
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itResetsState
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itReturns100WocForAClassWithoutPublicMembers
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itReturnsZeroCountsForEmptyClass
@@ -7851,6 +7873,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itKeepsUnreadableAndUnmappedExternalLinksAsDoubts
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itMemoizesTheBuiltContextAcrossRepeatedCalls
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itPlacesImplicitStringableByTheExternalDeclarationKind
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itReadsDirectSelfInheritanceAsABoundedDeclarationFactWithoutCoupling
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itResetsCachedContextsWhenTheGraphIsRebound
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itSwitchesBackToAMinimalContextWhenTheGraphIsUnbound
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itWalksExternalParentInterfaceAndTraitChains
@@ -11493,7 +11516,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\ContainerFactoryTest::itAllowsConfiguringRuleOptionsAtRuntime
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\ContainerFactoryTest::itCreatesCompiledContainer
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\ContainerFactoryTest::itCreatesFreshRepositoriesFromTheConfiguredComputedCatalog
- - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\ContainerFactoryTest::itGivesTheDitCollectorTheRunsLogger
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\ContainerFactoryTest::itGivesTheConfiguredLazyInheritanceRuleTheRunsLogger
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\ContainerFactoryTest::itHasAnalysisPipeline
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\ContainerFactoryTest::itHasBaselineCleanupCommandWithAllDependencies
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\ContainerFactoryTest::itHasCache

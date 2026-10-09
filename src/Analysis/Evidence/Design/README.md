@@ -36,16 +36,14 @@ Design/
 │   ├── ExternalAncestry.php
 │   ├── ExternalChainOutcome.php
 │   ├── ExternalDepth.php
-│   ├── InheritanceClassInfo.php
-│   ├── InheritanceDepthCollector.php
 │   ├── InheritanceDepthResolver.php
-│   ├── InheritanceDepthVisitor.php
 │   ├── InheritanceOptions.php
+│   ├── InheritanceOutcome.php
+│   ├── InheritanceResolution.php
 │   ├── InheritanceRule.php
 │   ├── NocCollector.php
 │   ├── NocOptions.php
-│   ├── NocRule.php
-│   └── UnreadChainTally.php
+│   └── NocRule.php
 └── TypeCoverage/
     ├── AbstractTypeCoverageRule.php
     ├── ParamTypeCoverageRule.php
@@ -67,24 +65,24 @@ own. Do not recreate `Metrics/`, `Rules/`, or a generic helper subdirectory
 inside any of them, and do not put a type back in the root: a type that would
 belong to no family is the signal that a fifth family is being named.
 
-Because they read one tree, DIT and NOC are measured on one population: the
-named classes the per-file pass measured. `NocCollector` recognises them by the
-`design.dit` that pass left on them, so an interface, a trait or an enum gets
-no `design.noc` (not 0), and `interface B extends A` is not a subclass of `A`
-(the edge carries `Dependency::$interfaceExtends`). Otherwise every NOC
-aggregate would divide by a larger count than its DIT neighbour.
+DIT and NOC start from DependencyModel's positive named-class declaration
+facts, including abstract classes and degree-zero roots. Interfaces, traits and
+enums receive neither metric. DIT resolves an answer for each exact declaration;
+NOC counts distinct logical child names from the ordinary graph. A loop has no
+numeric DIT but still belongs to NOC's class population, so numeric DIT and NOC
+aggregate sample counts can differ.
 
-`Inheritance/Contract/` is the one public surface here. It exists because
-following a chain out of the analysed path needs a file placed and read, which
-is delivery: the port is promised to the composer adapter in
-`Infrastructure\Composer`, and this capability imports neither a composer type
-nor a parser (ADR 0074).
+`Inheritance/Contract/` is the one public surface here. Following a chain out
+of the analysed path requires a file placed and read, which is delivery: the
+port is promised to the composer adapter in `Infrastructure\Composer`, and
+this capability imports neither a composer type nor a parser (ADR 0074).
 
-`ExternalAncestry` decides what counts as a depth and how a chain ended;
-`UnreadChainTally` collects those endings for one `calculate()` call so the
-collector can say once what the run could not read. The tally is deliberately
-not a service: it lives and dies inside the call, which is why nothing resets
-it.
+`InheritanceResolution` represents a private complete answer with
+`InheritanceOutcome`: nullable depth, `Exact`/`Floor`/`Loop`, and nullable knowledge of whether the
+chain reaches PHP's `Throwable`. `ExternalDepth` and `ExternalChainOutcome`
+carry the corresponding external-tail evidence. Depth completeness and exception
+classification are independent; a finite exact depth can still have unknown
+exception status when duplicate parent declarations disagree.
 
 ## Behaviour and lifecycle
 
@@ -92,40 +90,38 @@ it.
   and property declaration counts and coverage percentages for named
   class-like declarations. `TypeCoveragePercentCollector` derives the combined
   percentage from those raw counts.
-- `InheritanceDepthCollector` provides per-file DIT evidence. Its visitor
-  resolves local and imported parents; `DitGlobalCollector` recalculates DIT
-  through `DependencyGraphInterface` so cross-file inheritance stays correct.
-- The external half of a chain is followed by `ExternalAncestry`, which counts
-  depth and decides where a chain ends. It reads through
-  `Contract\ExternalParentSourceInterface`; placing a class and parsing its
-  declaration are delivery and live in `Infrastructure\Composer` (ADR 0074).
-  Nothing here loads a class, which is what stopped the tool from executing the
-  code it measures.
-- A chain ends three ways -- it reaches a root, finds no install to read, or
-  breaks partway -- and `ExternalDepth` keeps them apart even though the metric
-  publishes one number.
-- DIT's `MetricDefinition` belongs to `DitGlobalCollector`, not to the per-file
-  collector, because re-aggregation runs over the definitions the global
-  collectors declare (ADR 0069). The per-file pass still decides DIT's
-  population: `DitGlobalCollector` corrects the depth of symbols that already
-  carry a per-file `design.dit` and leaves the rest alone, which is what keeps
-  interfaces, traits and enums out of the metric and its aggregates. That makes
-  the global pass depend on the file pass's keys, which `requires()` cannot
-  express — it orders global collectors against each other. Removing the
-  per-file write would empty DIT rather than fail.
-- `InheritanceDepthResolver` owns the walk: it indexes the graph's `extends`
-  edges by declaration and by name, and answers the depth of one declaration.
-  It was split out of `DitGlobalCollector`, which the product's own god-class
-  rule flagged once the walk grew a second index — the collector now keeps the
-  protocol and the repository pass, and the campaign that replaces external
-  ancestry has one class to replace instead of a method inside a collector.
-- `DitGlobalCollector` resolves and writes a depth per class **declaration**.
-  DIT has no logical-name overwrite: two declarations with different parents
-  keep their own answers. `InheritanceRule` reads the exact subject it iterates.
-  The per-file visitor retains every physical declaration; local evidence starts
-  at that declaration's own immediate parent before resolving ancestor names.
-  Type-coverage collection likewise keeps independent counts for same-name
-  declarations and joins its facts by physical declaration identity.
+- `DitGlobalCollector` is the sole writer and definition owner of
+  `design.dit`, `design.dit-unresolved`, and `design.is-exception`. It requires
+  an exact Measurement subject for every named class graph fact; a missing
+  subject is an invariant failure, not a silently omitted measurement.
+- `InheritanceDepthResolver` indexes every named class declaration before its
+  declaration-view `extends` edges. Root declarations remain candidates when
+  a parent name has several declarations. Each child retains its own immediate
+  parent; a logical parent merges all candidate answers. Finite depths merge
+  by maximum, any floor makes the result a floor, and any loop removes numeric
+  depth from the descendant. Completed answers are memoized by exact
+  declaration, separately from canonical identities active in the walk.
+- Registered PHP builtin ancestry is followed transitively through Core's
+  static hierarchy before asking whether Composer source placement is
+  configured. External project ancestry is read through
+  `Contract\ExternalParentSourceInterface`, never loaded. Unregistered
+  extension classes remain unknown unless readable source supplies evidence;
+  loaded extensions on the analysing machine do not decide the result.
+- An unread, unplaced, unconfigured, or 64-step-capped tail yields a numeric
+  floor. A canonical inheritance loop, including a named class's own
+  self-`extends`, yields no `design.dit`. Every named class receives
+  `design.dit-unresolved`: 0 for exact, 1 for floor or loop. Namespace and
+  project DIT aggregates include only published numeric depths, including zero
+  roots, through Measurement's existing exact-declaration aggregation.
+- `design.is-exception` is 1 when all parent alternatives prove `Throwable`,
+  0 when all prove otherwise, and absent when their answers disagree or remain
+  unknown. Proven `Throwable` evidence survives a later unread tail.
+  Interfaces, traits and enums receive 0. Size does not classify exceptions.
+- `InheritanceRule` emits at most one warning per enabled `analyze()` call,
+  distinguishing floors, loops, or both. Disabling the rule silences this
+  warning while collection still publishes the metric evidence. A numeric
+  floor can cross the unchanged thresholds; both its finding and recommendation
+  say the DIT is at least the published value. A loop emits no numeric finding.
 - `NocCollector` derives direct-child counts from the same DependencyModel
   graph and retains its collector name, definitions, ordering, and aggregation
   semantics. It counts distinct child **names**: a subclass declared in two
@@ -161,8 +157,10 @@ it.
   members at all score 100 and are never flagged, and the size floor
   (`minMembers`) counts declared methods plus declared properties so a struct
   of public fields stays in reach. Traits are in the population; only
-  interfaces, abstract classes, exceptions and property-less classes are
-  excluded.
+  interfaces, abstract classes and property-less classes are excluded. With
+  `excludeExceptions=true`, proven exceptions and unknown exception status
+  cannot be judged; `false` ignores that classification and applies the
+  remaining criteria. Readonly and promoted-only exclusions remain configurable.
 - Per-file visitors implement Measurement reset semantics. Global collectors
   are stateless across runs; the worker wire payload remains Measurement-owned.
 
@@ -191,8 +189,8 @@ Unit/
 │   └── GodClassRuleTest.php
 ├── Inheritance/
 │   ├── DitGlobalCollectorTest.php
-│   ├── InheritanceDepthCollectorTest.php
-│   ├── InheritanceDepthUseAliasTest.php
+│   ├── ExternalAncestryTest.php
+│   ├── InheritanceDepthResolverTest.php
 │   ├── InheritanceRuleTest.php
 │   ├── NocCollectorTest.php
 │   └── NocRuleTest.php
@@ -214,7 +212,8 @@ hand-written metric bag: the unit suite can only assert what the rule does with
 a WOC number, never what that number means, which is how an inverted WOC
 survived it. The tests cover type-coverage
 projection and scale, data/god-class criteria, local/imported/external
-inheritance fallback, DIT/NOC global graph behavior, thresholds, and finding
+inheritance floors and loops, static builtin ancestry, duplicate-parent merges,
+exception classification, DIT/NOC global graph behavior, thresholds, and finding
 identity. Shared container, worker, and cross-capability integration tests stay
 with their owning integration subjects.
 

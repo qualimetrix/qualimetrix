@@ -417,7 +417,7 @@ PHP;
     {
         $definitions = $this->collector->getMetricDefinitions();
 
-        self::assertCount(19, $definitions);
+        self::assertCount(18, $definitions);
 
         $metricNames = array_map(fn($d) => $d->name, $definitions);
         self::assertContains('size.method-count', $metricNames);
@@ -437,7 +437,7 @@ PHP;
         self::assertContains('design.is-data-class', $metricNames);
         self::assertContains('design.is-abstract', $metricNames);
         self::assertContains('design.is-interface', $metricNames);
-        self::assertContains('design.is-exception', $metricNames);
+        self::assertNotContains('design.is-exception', $metricNames);
         self::assertContains('design.woc', $metricNames);
 
         // Check collected at level
@@ -1012,11 +1012,11 @@ PHP;
     }
 
     #[Test]
-    public function itRecognizesAnExceptionBaseImportedWithDifferentAliasCase(): void
+    public function itLeavesExceptionClassificationToGlobalInheritanceEvidence(): void
     {
         $metrics = $this->collectMetrics('<?php namespace App; use RuntimeException as Be; class Failure extends be {}');
 
-        self::assertSame(1, $metrics->get('design.is-exception:App\\Failure'));
+        self::assertNull($metrics->get('design.is-exception:App\\Failure'));
     }
 
     #[Test]

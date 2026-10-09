@@ -8,33 +8,13 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\DitGlobalCollector;
-use Qualimetrix\Analysis\Evidence\Design\Inheritance\UnreadChainTally;
+use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceRule;
 use RuntimeException;
 use Symfony\Component\Process\Process;
 
-/**
- * What a user is told when DIT could not read a chain to its end.
- *
- * The collector's own unit tests answer the same questions against a fixed
- * parent source. They cannot answer this one: whether the sentence reaches a
- * person. That depends on the composer adapter placing files, on the container
- * binding a logger the collector would otherwise not receive, and on the
- * diagnostic stream surviving a machine-readable format -- three things no unit
- * test touches. So these cases run the real binary and read its stderr.
- *
- * The finding-gate corpus cannot carry them. A case that speaks produces a
- * `stderr:<surface>` artifact the reference side does not have, and the gate
- * records a one-sided key as a mismatch before it reaches any declaration,
- * which no declared delta can express and which would empty the whole derive
- * run. These shapes live here instead, and the gate keeps the job it is good
- * at -- proving no published number moved.
- *
- * Each shape is built rather than committed as a fixture, because two of them
- * are defined by what is *absent* from an install, and an absence is not a file
- * anyone can check in.
- */
+/** Exercises actual CLI diagnostics and lazy rule logger wiring across external-source outcomes. */
 #[CoversClass(DitGlobalCollector::class)]
-#[CoversClass(UnreadChainTally::class)]
+#[CoversClass(InheritanceRule::class)]
 final class UnreadAncestryDiagnosticRunTest extends TestCase
 {
     private string $workingDirectory;
@@ -71,8 +51,8 @@ final class UnreadAncestryDiagnosticRunTest extends TestCase
 
         $stderr = $this->runBinary();
 
-        self::assertStringContainsString('were not followed to a root', $stderr);
-        self::assertStringContainsString('no composer install', $stderr);
+        self::assertStringContainsString('publish DIT lower bounds', $stderr);
+        self::assertSame(1, substr_count($stderr, 'DIT:'));
         self::assertStringNotContainsString('Vendor\\Absent\\Base', $stderr);
     }
 
@@ -89,7 +69,7 @@ final class UnreadAncestryDiagnosticRunTest extends TestCase
 
         $stderr = $this->runBinary();
 
-        self::assertStringContainsString('the walk stopped at: Vendor\\Absent\\Base', $stderr);
+        self::assertStringContainsString('incomplete inheritance chain(s) publish DIT lower bounds', $stderr);
         self::assertStringNotContainsString('no composer install', $stderr);
     }
 
@@ -108,7 +88,7 @@ final class UnreadAncestryDiagnosticRunTest extends TestCase
 
         $stderr = $this->runBinary();
 
-        self::assertStringContainsString('the walk stopped at: Acme\\Far\\Faraway', $stderr);
+        self::assertStringContainsString('incomplete inheritance chain(s) publish DIT lower bounds', $stderr);
         self::assertStringNotContainsString('Acme\\Mid\\Middle', $stderr);
     }
 
@@ -123,7 +103,7 @@ final class UnreadAncestryDiagnosticRunTest extends TestCase
         $this->writeRootManifest();
         $this->writeInstalledPackage(parent: null);
 
-        self::assertStringNotContainsString('were not followed to a root', $this->runBinary());
+        self::assertStringNotContainsString('publish DIT lower bounds', $this->runBinary());
     }
 
     #[Test]
@@ -162,7 +142,7 @@ final class UnreadAncestryDiagnosticRunTest extends TestCase
         self::assertSame(0, $run['exitCode']);
         self::assertCompleteCoverage($run['report']);
         self::assertSame(2, self::ditValue($run['report']));
-        self::assertStringNotContainsString('were not followed to a root', $run['stderr']);
+        self::assertStringNotContainsString('publish DIT lower bounds', $run['stderr']);
     }
 
     #[Test]
@@ -195,7 +175,7 @@ final class UnreadAncestryDiagnosticRunTest extends TestCase
         self::assertSame(0, $run['exitCode']);
         self::assertCompleteCoverage($run['report']);
         self::assertSame(1, self::ditValue($run['report']));
-        self::assertStringContainsString('the walk stopped at: Acme\\Broken\\ParentClass', $run['stderr']);
+        self::assertStringContainsString('incomplete inheritance chain(s) publish DIT lower bounds', $run['stderr']);
         self::assertStringNotContainsString('Internal error', $run['stderr']);
     }
 
@@ -225,7 +205,28 @@ final class UnreadAncestryDiagnosticRunTest extends TestCase
         $process->run();
 
         self::assertFileExists($this->workingDirectory . '/baseline.json');
-        self::assertStringContainsString('were not followed to a root', $process->getErrorOutput());
+        self::assertStringContainsString('publish DIT lower bounds', $process->getErrorOutput());
+    }
+
+    #[Test]
+    public function itKeepsDiagnosticsQuietWhenTheInheritanceRuleIsDisabled(): void
+    {
+        $this->writeAnalysedClass('Vendor\\Absent\\Base');
+        $run = $this->runBinaryReport(['--disable-rule=design.dit']);
+        self::assertSame(0, $run['exitCode']);
+        self::assertStringNotContainsString('DIT:', $run['stderr']);
+    }
+
+    #[Test]
+    public function itNamesFloorAndLoopOutcomesTogetherOnce(): void
+    {
+        $this->writeAnalysedClass('Vendor\\Absent\\Base');
+        $this->write('/src/Loop.php', '<?php namespace Probe\\App; class Loop extends loop {} class Below extends Loop {}');
+        $run = $this->runBinaryReport(['--only-rule=design.dit']);
+        self::assertSame(0, $run['exitCode']);
+        self::assertSame(1, substr_count($run['stderr'], 'DIT:'));
+        self::assertStringContainsString('lower bounds', $run['stderr']);
+        self::assertStringContainsString('cyclic inheritance chain(s) have no numeric DIT', $run['stderr']);
     }
 
     private function writeAnalysedClass(string $parentFqcn): void

@@ -13,8 +13,6 @@ use PhpParser\Node\Stmt\Interface_;
 use PhpParser\Node\Stmt\Property;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
-use Qualimetrix\Core\Ast\ResolvedName;
-use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 
 /**
  * Visitor for counting methods and properties in classes by visibility.
@@ -37,34 +35,6 @@ use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
  */
 final class MethodCountVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
 {
-    /**
-     * Exception base classes in PHP.
-     * Any class extending one of these is considered an exception class.
-     */
-    private const array EXCEPTION_BASE_CLASSES = [
-        'Exception',
-        'Error',
-        'RuntimeException',
-        'LogicException',
-        'InvalidArgumentException',
-        'BadMethodCallException',
-        'BadFunctionCallException',
-        'DomainException',
-        'LengthException',
-        'OutOfRangeException',
-        'OverflowException',
-        'RangeException',
-        'UnderflowException',
-        'UnexpectedValueException',
-        'OutOfBoundsException',
-        'TypeError',
-        'ValueError',
-        'ArithmeticError',
-        'DivisionByZeroError',
-        'ParseError',
-        'FiberError',
-    ];
-
     /**
      * @var array<int, MethodCountMetrics>
      */
@@ -163,7 +133,6 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
         if ($node instanceof Class_) {
             $metrics->isReadonly = $node->isReadonly();
             $metrics->isAbstract = $node->isAbstract();
-            $metrics->isException = $this->isExceptionClass($node);
             $this->processConstructorPromotedProperties($node, $position);
         }
     }
@@ -374,36 +343,4 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
         return Class_::MODIFIER_PUBLIC; // default
     }
 
-    /**
-     * Check if a class extends a known exception base class.
-     *
-     * Resolves the parent class name and checks against
-     * the list of standard PHP exception/error classes.
-     */
-    private function isExceptionClass(Class_ $node): bool
-    {
-        if ($node->extends === null) {
-            return false;
-        }
-
-        $parentFqn = ResolvedName::className($node->extends);
-        if ($parentFqn === null) {
-            return false;
-        }
-
-        // Strip leading backslash for comparison
-        $parentFqn = ltrim($parentFqn, '\\');
-
-        // Check the short name (last segment) against known exception base classes.
-        // This catches both direct extends (\Exception) and project-specific exceptions
-        // that extend framework exceptions (e.g., App\Exception\BaseException extends \RuntimeException).
-        $lastBackslash = strrpos($parentFqn, '\\');
-        $shortName = $lastBackslash !== false
-            ? substr($parentFqn, $lastBackslash + 1)
-            : $parentFqn;
-
-        $canonical = PhpBuiltinClassRegistry::canonicalName($shortName);
-
-        return $canonical !== null && \in_array($canonical, self::EXCEPTION_BASE_CLASSES, true);
-    }
 }

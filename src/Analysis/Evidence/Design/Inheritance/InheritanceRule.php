@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Design\Inheritance;
 
 use LogicException;
+use Psr\Log\LoggerInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
@@ -14,11 +15,11 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
-use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
 
@@ -39,6 +40,11 @@ final class InheritanceRule extends AbstractRule
     public const int REMEDIATION_MINUTES = 30;
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
+    public function __construct(RuleOptionsInterface $options, private readonly ?LoggerInterface $logger = null)
+    {
+        parent::__construct($options);
+    }
+
     public function getName(): string
     {
         return self::NAME;
@@ -59,39 +65,68 @@ final class InheritanceRule extends AbstractRule
         }
 
         $findings = [];
-
+        $outcomes = [InheritanceOutcome::Exact->name => 0, InheritanceOutcome::Floor->name => 0, InheritanceOutcome::Loop->name => 0];
         foreach ($context->metrics->allDeclarations() as $classInfo) {
             $subject = $classInfo->subject ?? throw new LogicException('Inheritance findings require an exact class declaration subject');
-            if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
-                continue;
-            }
-            // The exact declaration, not its logical projection: one name can
-            // be declared in more than one file with a different parent each
-            // time, and the projection keeps a single value for the name.
-            $metrics = $context->metrics->getSubject($subject);
-            $dit = $metrics->get(MetricName::DESIGN_DIT);
-
-            if ($dit === null) {
-                continue;
-            }
-
-            $ditValue = (int) $dit;
-            /** @var InheritanceOptions $effectiveOptions */
-            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $subject);
-            $finding = $this->findingForClass($classInfo, $subject, $ditValue, $effectiveOptions);
+            [$finding, $outcome] = $this->analyzeDeclaration($subject, new Location($classInfo->file, $classInfo->line), $context, $this->options);
+            ++$outcomes[$outcome->name];
             if ($finding !== null) {
                 $findings[] = $finding;
             }
         }
+        $this->warnAboutIncompleteChains($outcomes[InheritanceOutcome::Floor->name], $outcomes[InheritanceOutcome::Loop->name]);
 
         return $findings;
     }
 
+    /** @return array{?Finding, InheritanceOutcome} */
+    private function analyzeDeclaration(MetricSubject $subject, Location $location, AnalysisContext $context, InheritanceOptions $options): array
+    {
+        if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+            return [null, InheritanceOutcome::Exact];
+        }
+        // One logical name can have different parents in different bodies.
+        $metrics = $context->metrics->getSubject($subject);
+        $dit = $metrics->get(MetricName::DESIGN_DIT);
+        $outcome = $this->publishedOutcome($dit, $metrics->get(MetricName::DESIGN_DIT_UNRESOLVED));
+        if ($dit === null) {
+            return [null, $outcome];
+        }
+        /** @var InheritanceOptions $effectiveOptions */
+        $effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
+
+        return [$this->findingForClass($location, $subject, (int) $dit, $effectiveOptions, $outcome), $outcome];
+    }
+
+    private function publishedOutcome(int|float|null $dit, int|float|null $unresolved): InheritanceOutcome
+    {
+        if ($unresolved !== 1) {
+            return InheritanceOutcome::Exact;
+        }
+
+        return $dit === null ? InheritanceOutcome::Loop : InheritanceOutcome::Floor;
+    }
+
+    private function warnAboutIncompleteChains(int $floors, int $loops): void
+    {
+        $parts = [];
+        if ($floors !== 0) {
+            $parts[] = \sprintf('%d incomplete inheritance chain(s) publish DIT lower bounds', $floors);
+        }
+        if ($loops !== 0) {
+            $parts[] = \sprintf('%d cyclic inheritance chain(s) have no numeric DIT', $loops);
+        }
+        if ($parts !== []) {
+            $this->logger?->warning('DIT: ' . implode('; ', $parts) . '.');
+        }
+    }
+
     private function findingForClass(
-        SymbolInfo $classInfo,
+        Location $location,
         MetricSubject $subject,
         int $ditValue,
         InheritanceOptions $options,
+        InheritanceOutcome $outcome,
     ): ?Finding {
         if ($ditValue >= $options->error) {
             $severity = Severity::Error;
@@ -104,19 +139,19 @@ final class InheritanceRule extends AbstractRule
         }
 
         return new Finding(
-            location: new Location($classInfo->file, $classInfo->line),
+            location: $location,
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
             code: self::NAME,
             message: \sprintf(
-                'DIT (Depth of Inheritance) is %d, ' . ThresholdCrossing::of($ditValue, $threshold)->value . ' threshold of %d. Prefer composition over deep inheritance',
+                ($outcome === InheritanceOutcome::Floor ? 'DIT is at least %d, ' : 'DIT (Depth of Inheritance) is %d, ') . ThresholdCrossing::of($ditValue, $threshold)->value . ' threshold of %d. Prefer composition over deep inheritance',
                 $ditValue,
                 $threshold,
             ),
             severity: $severity,
             metricValue: $ditValue,
-            recommendation: \sprintf('DIT: %d (threshold: %d) — deep inheritance, fragile hierarchy', $ditValue, $threshold),
+            recommendation: \sprintf($outcome === InheritanceOutcome::Floor ? 'DIT is at least %d (threshold: %d) — deep inheritance, fragile hierarchy' : 'DIT: %d (threshold: %d) — deep inheritance, fragile hierarchy', $ditValue, $threshold),
             threshold: $threshold,
         );
     }

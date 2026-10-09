@@ -86,8 +86,8 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
     {
         return array_values(array_filter(
             $dependencies,
-            fn(Dependency $dependency): bool => $dependency->type === DependencyType::Extends
-                || !$this->isPhpBuiltinClass($dependency->targetLogical()),
+            fn(Dependency $dependency): bool => $dependency->sourceLogical()->toCanonical() !== $dependency->targetLogical()->toCanonical()
+                && ($dependency->type === DependencyType::Extends || !$this->isPhpBuiltinClass($dependency->targetLogical())),
         ));
     }
 

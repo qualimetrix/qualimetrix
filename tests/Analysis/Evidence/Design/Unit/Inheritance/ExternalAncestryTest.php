@@ -41,16 +41,12 @@ final class ExternalAncestryTest extends TestCase
         self::assertSame(ExternalChainOutcome::ReachedRoot, $depth->outcome);
     }
 
-    /**
-     * PHP's own classes are the floor: the step onto one counts, and their own
-     * ancestry is not the analysed project's to report.
-     */
     #[Test]
-    public function itStopsAtAPhpBuiltin(): void
+    public function itFollowsEveryBuiltinParent(): void
     {
         $depth = $this->ancestry(['Vendor\\Failure' => 'RuntimeException'])->depthOf('Vendor\\Failure');
 
-        self::assertSame(1, $depth->depth);
+        self::assertSame(2, $depth->depth);
         self::assertSame(ExternalChainOutcome::ReachedRoot, $depth->outcome);
     }
 
@@ -88,7 +84,8 @@ final class ExternalAncestryTest extends TestCase
             'Vendor\\B' => 'Vendor\\A',
         ])->depthOf('Vendor\\A');
 
-        self::assertSame(ExternalChainOutcome::BrokeAt, $depth->outcome);
+        self::assertSame(ExternalChainOutcome::Loop, $depth->outcome);
+        self::assertNull($depth->depth);
     }
 
     #[Test]
@@ -97,6 +94,44 @@ final class ExternalAncestryTest extends TestCase
         $ancestry = $this->ancestry(['Vendor\\Child' => 'Vendor\\Base', 'Vendor\\Base' => null]);
 
         self::assertEquals($ancestry->depthOf('Vendor\\Child'), $ancestry->depthOf('Vendor\\Child'));
+    }
+
+    #[Test]
+    public function itFollowsBuiltinAncestryWithoutAnInstall(): void
+    {
+        $ancestry = new ExternalAncestry(FixedParentSource::unconfigured());
+        self::assertSame(1, $ancestry->depthOf('runtimeexception')->depth);
+        self::assertSame(2, $ancestry->depthOf('ArgumentCountError')->depth);
+    }
+
+    #[Test]
+    public function itOmitsNumericDepthForACanonicalExternalLoop(): void
+    {
+        $depth = $this->ancestry(['Vendor\\A' => 'Vendor\\B', 'Vendor\\B' => 'vendor\\a'])->depthOf('Vendor\\A');
+        self::assertNull($depth->depth);
+    }
+
+    #[Test]
+    public function itBoundsStaticSourceWalksAtSixtyFourVisits(): void
+    {
+        $parents = [];
+        for ($i = 0; $i < 80; ++$i) {
+            $parents['Vendor\\C' . $i] = 'Vendor\\C' . ($i + 1);
+        }
+        $answer = $this->ancestry($parents)->depthOf('Vendor\\C0');
+        self::assertSame(64, $answer->depth);
+        self::assertSame(ExternalChainOutcome::BrokeAt, $answer->outcome);
+        self::assertSame('Vendor\\C64', $answer->unresolved);
+        self::assertNull($answer->reachesThrowable);
+    }
+
+    #[Test]
+    public function itTreatsAnUnregisteredExtensionNameAsUnreadInsteadOfRuntimeEvidence(): void
+    {
+        $answer = $this->ancestry([])->depthOf('Probe\\PeclException');
+        self::assertSame(0, $answer->depth);
+        self::assertSame(ExternalChainOutcome::BrokeAt, $answer->outcome);
+        self::assertNull($answer->reachesThrowable);
     }
 
     /**

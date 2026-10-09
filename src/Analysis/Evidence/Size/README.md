@@ -333,6 +333,10 @@ Rule IDs remain stable. `MethodCountCollector` publishes the method/property
 metrics and the WOC input consumed by design policy, while WMC remains the
 Complexity-owned sum of method CCN on each exact class declaration.
 
+Exception ancestry classification (`design.is-exception`) belongs to Design's
+`DitGlobalCollector`. Size publishes no exception flag; method, accessor,
+property and WOC measurement remain independent of that classification.
+
 `design.woc` follows Lanza & Marinescu: functional public methods — neither accessor
 nor constructor — over all other public members, which are public methods
 (accessors included) plus public properties. Accessor-ness is decided by method

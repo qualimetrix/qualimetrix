@@ -61,7 +61,6 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalPa
 use Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassRule;
 use Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassRule;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\DitGlobalCollector;
-use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthCollector;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceRule;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\NocRule;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\ParamTypeCoverageRule;
@@ -855,7 +854,6 @@ PHP;
             MethodCountCollector::class,
             LcomCollector::class,
             TccLccCollector::class,
-            InheritanceDepthCollector::class,
             RfcCollector::class,
         ];
 
@@ -919,45 +917,27 @@ PHP;
         );
     }
 
-    /**
-     * Registration is not wiring, and for this collector the difference is the
-     * whole feature.
-     *
-     * `Psr\Log\LoggerInterface` is not a service id in this container -- it is
-     * reachable only through an alias keyed by the holder's class name -- so
-     * autowiring cannot fill an argument called `$logger`. The collector's
-     * diagnostic about chains it could not read would then be addressed to a
-     * logger nobody listens to, with every unit test still green, which is why
-     * the argument is asserted on the instance the container actually built
-     * rather than on one a test constructed.
-     */
     #[Test]
-    public function itGivesTheDitCollectorTheRunsLogger(): void
+    public function itGivesTheConfiguredLazyInheritanceRuleTheRunsLogger(): void
     {
         $container = $this->factory->create();
-
-        $pipeline = $container->get(AnalysisPipelineInterface::class);
-        self::assertInstanceOf(AnalysisPipeline::class, $pipeline);
-
-        $aggregation = (new ReflectionProperty(AnalysisPipeline::class, 'measurementAggregation'))->getValue($pipeline);
-        self::assertInstanceOf(MeasurementAggregationService::class, $aggregation);
-
-        /** @var list<object> $collectors */
-        $collectors = (new ReflectionProperty(MeasurementAggregationService::class, 'sortedCollectors'))
-            ->getValue($aggregation);
-
-        $dit = null;
-
-        foreach ($collectors as $collector) {
-            if ($collector instanceof DitGlobalCollector) {
-                $dit = $collector;
+        $execution = $container->get(RuleExecutionInterface::class);
+        self::assertInstanceOf(RuleExecution::class, $execution);
+        $metadata = $execution->allRules();
+        $configuration = $container->get(RuleConfigurationInterface::class);
+        self::assertInstanceOf(RuleConfigurationInterface::class, $configuration);
+        $configuration->replace(ResolvedOptionsFixture::ready(ResolvedOptionsFixture::authoredConfiguration([], $metadata), $metadata));
+        $materialization = (new ReflectionProperty($execution, 'materialization'))->getValue($execution);
+        /** @var list<array{metadata: \Qualimetrix\Analysis\Finding\Contract\RuleMetadata, create: Closure(): object}> $lookups */
+        $lookups = (new ReflectionProperty($materialization, 'rules'))->getValue($materialization);
+        $rule = null;
+        foreach ($lookups as $lookup) {
+            if ($lookup['metadata']->name === InheritanceRule::NAME) {
+                $rule = $lookup['create']();
             }
         }
-
-        self::assertInstanceOf(DitGlobalCollector::class, $dit);
-
-        $logger = (new ReflectionProperty(DitGlobalCollector::class, 'logger'))->getValue($dit);
-
+        self::assertInstanceOf(InheritanceRule::class, $rule);
+        $logger = (new ReflectionProperty(InheritanceRule::class, 'logger'))->getValue($rule);
         self::assertInstanceOf(DelegatingLogger::class, $logger);
     }
 

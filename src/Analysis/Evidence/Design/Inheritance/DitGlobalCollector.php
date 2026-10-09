@@ -4,47 +4,22 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Design\Inheritance;
 
-use Psr\Log\LoggerInterface;
+use LogicException;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
-use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
-use Qualimetrix\Core\Symbol\SymbolType;
 
-/**
- * Recalculates DIT (Depth of Inheritance Tree) using the global dependency graph.
- *
- * The per-file InheritanceDepthCollector can only see classes within a single file,
- * so it cannot traverse inheritance chains that span multiple files. This global
- * collector builds a complete parent map from the dependency graph and recalculates
- * DIT correctly for all project classes.
- *
- * How a depth is resolved belongs to {@see InheritanceDepthResolver}; what is
- * left here is the collector protocol and the repository walk — which
- * declarations carry this metric, and where each answer is written.
- */
+/** Publishes exact declaration inheritance evidence from the positive graph class roster. */
 final class DitGlobalCollector implements GlobalContextCollectorInterface
 {
     private const NAME = 'dit-global';
 
-    /**
-     * The logger is required rather than defaulted on purpose.
-     *
-     * `LoggerInterface` is not a service id in this container -- it is reachable
-     * only through an alias keyed by the holder's class name -- so an optional
-     * parameter would autowire to its default and the diagnostic below would be
-     * addressed to nobody, with every unit test still green. A required one
-     * turns a missing registration into a container that refuses to compile.
-     */
-    public function __construct(
-        private readonly ExternalAncestry $externalAncestry,
-        private readonly LoggerInterface $logger,
-    ) {}
+    public function __construct(private readonly ExternalAncestry $externalAncestry) {}
 
     public function getName(): string
     {
@@ -53,15 +28,12 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
 
     public function requires(): array
     {
-        // No dependencies on other global collectors.
-        // DIT is initially computed per-file by InheritanceDepthCollector;
-        // this collector overwrites with correct cross-file values.
         return [];
     }
 
     public function provides(): array
     {
-        return [MetricName::DESIGN_DIT];
+        return [MetricName::DESIGN_DIT, MetricName::DESIGN_DIT_UNRESOLVED, MetricName::DESIGN_IS_EXCEPTION];
     }
 
     public function getMetricDefinitions(): array
@@ -83,124 +55,45 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
                     ],
                 ],
             ),
+            new MetricDefinition(
+                MetricName::DESIGN_DIT_UNRESOLVED,
+                SymbolLevel::Class_,
+                aggregations: [
+                    SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
+                    SymbolLevel::Project->value => [AggregationStrategy::Sum],
+                ],
+            ),
+            new MetricDefinition(
+                MetricName::DESIGN_IS_EXCEPTION,
+                SymbolLevel::Class_,
+                aggregations: [
+                    SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
+                    SymbolLevel::Project->value => [AggregationStrategy::Sum],
+                ],
+            ),
         ];
     }
 
-    public function calculate(
-        DependencyGraphInterface $graph,
-        MetricRepositoryInterface $repository,
-    ): void {
-        /** @var list<array{fqn: string, subject: MetricSubject, declaration: DeclarationPath}> $population */
-        $population = [];
-        $measured = [];
-
-        foreach ($this->measuredClassDeclarations($repository) as $classFqn => $subject) {
-            $declaration = $subject->declarationPath();
-            \assert($declaration !== null);
-
-            $population[] = ['fqn' => $classFqn, 'subject' => $subject, 'declaration' => $declaration];
-            $measured[$declaration->toCanonical()] = true;
-        }
-
-        $tally = new UnreadChainTally();
-        $resolver = InheritanceDepthResolver::fromGraph($graph, $this->projectClassNames($repository), $measured, $this->externalAncestry, $tally);
-
-        foreach ($population as $entry) {
-            $dit = $resolver->depthOf($entry['declaration']);
-
-            $repository->addSubjectScalar($entry['subject'], MetricName::DESIGN_DIT, $dit);
-
-        }
-
-        $this->reportUnreadChains($tally);
-    }
-
-    /**
-     * Say once what this run did not follow to a root, or say nothing.
-     *
-     * The statement is about this run, never about the analysed code: a project
-     * with no install is a normal thing to measure.
-     *
-     * Every word has to hold for all seven ways a walk ends, and two of them
-     * rule out the obvious phrasings. A cycle publishes `1 + the length of the
-     * loop`, so calling the number a truncated depth or a lower bound on a real
-     * one is false -- a loop has no real depth. A genuine builtin missing from
-     * {@see \Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry} is not placed by
-     * any install, so it books the same outcome while its depth is in fact
-     * correct; saying the chain was not followed to a root stays true of it,
-     * saying the depth was cut short does not. At the visit cap the class named
-     * reads perfectly well, which is why the walk stopped *at* it rather than
-     * reading stopping *at* it.
-     */
-    private function reportUnreadChains(UnreadChainTally $tally): void
+    public function calculate(DependencyGraphInterface $graph, MetricRepositoryInterface $repository): void
     {
-        if ($tally->isEmpty()) {
-            return;
-        }
-
-        $where = $tally->sawMissingInstall()
-            ? 'this run found no composer install to follow them through'
-            : \sprintf('the walk stopped at: %s', implode(', ', $tally->names()));
-
-        $this->logger->warning(\sprintf(
-            'DIT: %d inheritance chain(s) leaving the analysed path were not followed to a root -- %s. The depth published for the classes below them is what this run did follow.',
-            $tally->chains(),
-            $where,
-        ));
-    }
-
-    /**
-     * The analysed project's own class names.
-     *
-     * A parent absent from the inheritance index is only "external" when it is
-     * absent from here too: a class that has no parent of its own has no entry
-     * in an index built from `extends` edges, so without this set every
-     * in-project root was sent out to be resolved as though it belonged to
-     * somebody else. Measured before the fix: 25 of 40 such lookups on
-     * symfony/http-kernel, and 3 of 3 across the whole finding-gate corpus.
-     *
-     * @return array<string, true>
-     */
-    private function projectClassNames(MetricRepositoryInterface $repository): array
-    {
-        $names = [];
-
-        foreach ($repository->allLogicalClasses() as $classSymbol) {
-            $names[$classSymbol->symbolPath->toString()] = true;
-        }
-
-        return $names;
-    }
-
-    /**
-     * Every class declaration this metric is measured on, keyed by its name.
-     *
-     * The key repeats for a name declared more than once, which is the point:
-     * the subjects are distinct and each gets its own depth.
-     *
-     * The per-file pass measures named class declarations only, so its keys
-     * are DIT's population. Correcting every class-level symbol instead would
-     * silently enrol interfaces, traits and enums and move the denominator of
-     * every aggregate.
-     *
-     * @return iterable<string, MetricSubject>
-     */
-    private function measuredClassDeclarations(MetricRepositoryInterface $repository): iterable
-    {
-        foreach ($repository->allClassDeclarations() as $declarationSymbol) {
-            $subject = $declarationSymbol->subject;
-            $declaration = $subject?->declarationPath();
-
-            if ($subject === null || $declaration === null || $declaration->logical->getType() !== SymbolType::Class_) {
+        $resolver = InheritanceDepthResolver::fromGraph($graph, $this->externalAncestry);
+        foreach ($graph->getClassLikeDeclarations() as $fact) {
+            $subject = MetricSubject::declaration($fact->declaration);
+            if (!$repository->hasSubject($subject)) {
+                throw new LogicException('Graph class-like declaration requires an exact repository subject: ' . $fact->declaration->toCanonical());
+            }
+            if ($fact->type !== \Qualimetrix\Core\Symbol\ClassType::Class_) {
+                $repository->addSubjectScalar($subject, MetricName::DESIGN_IS_EXCEPTION, 0);
                 continue;
             }
-
-            if (!$repository->getSubject($subject)->has(MetricName::DESIGN_DIT)) {
-                continue;
+            $answer = $resolver->depthOf($fact->declaration);
+            if ($answer->depth !== null) {
+                $repository->addSubjectScalar($subject, MetricName::DESIGN_DIT, $answer->depth);
             }
-
-            yield $declaration->logical->toString() => $subject;
+            $repository->addSubjectScalar($subject, MetricName::DESIGN_DIT_UNRESOLVED, $answer->outcome === InheritanceOutcome::Exact ? 0 : 1);
+            if ($answer->reachesThrowable !== null) {
+                $repository->addSubjectScalar($subject, MetricName::DESIGN_IS_EXCEPTION, $answer->reachesThrowable ? 1 : 0);
+            }
         }
     }
-
 }

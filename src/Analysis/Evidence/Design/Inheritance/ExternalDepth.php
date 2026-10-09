@@ -4,36 +4,38 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Design\Inheritance;
 
-/**
- * How deep the part of a chain outside the analysed path went, and whether that
- * number is the whole answer.
- *
- * `$depth` is what was actually walked. When the outcome is not
- * {@see ExternalChainOutcome::ReachedRoot} the number is a floor rather than a
- * measurement: the chain continues somewhere this run could not read.
- */
+/** External tail evidence; an incomplete finite depth is a lower bound, while a loop has no depth. */
 final readonly class ExternalDepth
 {
     private function __construct(
-        public int $depth,
+        public ?int $depth,
         public ExternalChainOutcome $outcome,
-        /** The class the walk could not place, when it stopped early. */
-        public ?string $unresolved = null,
+        public ?string $unresolved,
+        public ?bool $reachesThrowable,
     ) {}
 
-    public static function reachedRoot(int $depth): self
+    /** @qmx-ignore code-smell.boolean-argument -- reachesThrowable records measured ancestry truth in immutable evidence, not a behavior switch. */
+    public static function reachedRoot(int $depth, bool $reachesThrowable = false): self
     {
-        return new self($depth, ExternalChainOutcome::ReachedRoot);
+        return new self($depth, ExternalChainOutcome::ReachedRoot, null, $reachesThrowable);
     }
 
-    public static function noMap(): self
+    /** @qmx-ignore code-smell.boolean-argument -- reachesThrowable records measured ancestry truth in immutable evidence, not a behavior switch. */
+    public static function noMap(int $depth = 0, ?bool $reachesThrowable = null): self
     {
-        return new self(0, ExternalChainOutcome::NoMapForIt);
+        return new self($depth, ExternalChainOutcome::NoMapForIt, null, $reachesThrowable);
     }
 
-    public static function brokeAt(int $depth, string $fqcn): self
+    /** @qmx-ignore code-smell.boolean-argument -- reachesThrowable records measured ancestry truth in immutable evidence, not a behavior switch. */
+    public static function brokeAt(int $depth, string $fqcn, ?bool $reachesThrowable = null): self
     {
-        return new self($depth, ExternalChainOutcome::BrokeAt, $fqcn);
+        return new self($depth, ExternalChainOutcome::BrokeAt, $fqcn, $reachesThrowable);
+    }
+
+    /** @qmx-ignore code-smell.boolean-argument -- reachesThrowable records measured ancestry truth in immutable evidence, not a behavior switch. */
+    public static function loop(string $fqcn, ?bool $reachesThrowable = null): self
+    {
+        return new self(null, ExternalChainOutcome::Loop, $fqcn, $reachesThrowable);
     }
 
     public function isComplete(): bool

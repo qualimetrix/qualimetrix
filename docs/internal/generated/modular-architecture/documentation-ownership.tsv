@@ -99,6 +99,7 @@ docs/adr/0103-layer-policy-declaration-evidence-and-selection.md	Analysis.Policy
 docs/adr/0104-source-bytes-and-prose-publication.md	Reporting	"Move or update atomically with the named subject owner."
 docs/adr/0105-finding-publication-and-drill-down.md	Reporting	"Move or update atomically with the named subject owner."
 docs/adr/0106-declaration-metric-records-and-declared-publication.md	Analysis.Evidence.Measurement	"Move or update atomically with the named subject owner."
+docs/adr/0107-inheritance-chain-outcomes.md	Analysis.Evidence.Design	"Move or update atomically with the named subject owner."
 docs/adr/README.md	Architecture.Governance	"Repository-wide governance documentation; review with the manifest and generated topology."
 docs/internal/CLI_CONVENTIONS.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/COMPETITOR_COMPARISON.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."

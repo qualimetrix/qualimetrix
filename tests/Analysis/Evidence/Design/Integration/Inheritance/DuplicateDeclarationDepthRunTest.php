@@ -15,12 +15,8 @@ use Symfony\Component\Process\Process;
 /**
  * The depth a `design.dit` finding carries belongs to the declaration it points at.
  *
- * Every other test of this metric reads it through the logical class -- from
- * `--format=metrics`, or from an aggregate. That view holds one value per
- * name, so none of them can see a depth attached to the wrong declaration, and
- * none of them notices a rule that reads the name while iterating
- * declarations. This one asserts the number a user reads out of a finding,
- * which is the only place the two identities are distinguishable.
+ * This test checks the exact source identity and depth together in the emitted
+ * finding, so a logical-name read cannot silently replace one body's answer.
  *
  * Two declarations of one name are ordinary PHP: a `class_exists()`-guarded
  * polyfill and its native counterpart are exactly this shape.

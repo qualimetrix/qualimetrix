@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Design\Inheritance;
 
-enum ExternalChainOutcome
+enum InheritanceOutcome
 {
-    case ReachedRoot;
-    case NoMapForIt;
-    case BrokeAt;
+    case Exact;
+    case Floor;
     case Loop;
 }
