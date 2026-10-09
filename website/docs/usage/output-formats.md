@@ -1179,13 +1179,13 @@ selectors; do not add different units into a subject total. Independent analysis
 calls retain separate populations when combined; adopting the same frozen
 population twice does not double its counts.
 
-| Format                      | Selected subjects left unjudged                                                        |
-| --------------------------- | -------------------------------------------------------------------------------------- |
-| `text`, `summary`, `health` | A bounded explanation under `-v`, including on an empty finding report                 |
-| `json`                      | Full top-level `abstentions` groups, at normal and quiet verbosity and in output files |
-| `sarif`                     | Invocation `note` with descriptor `QMX-RULE-POPULATION-INCOMPLETE`                     |
-| `github`                    | A `::notice title=rule-population.incomplete::` line                                   |
-| `html`                      | A visible banner and full `abstentions` payload                                        |
+| Format                      | Selected subjects left unjudged                                                                     |
+| --------------------------- | --------------------------------------------------------------------------------------------------- |
+| `text`, `summary`, `health` | A compact indication at normal verbosity and bounded details under `-v`, including without findings |
+| `json`                      | Full top-level `abstentions` groups, at normal and quiet verbosity and in output files              |
+| `sarif`                     | Invocation `note` with descriptor `QMX-RULE-POPULATION-INCOMPLETE`                                  |
+| `github`                    | A `::notice title=rule-population.incomplete::` line                                                |
+| `html`                      | A visible banner and full `abstentions` payload                                                     |
 
 These records do not create violations, change severities or the policy exit
 code, consume baseline ceilings, or increase suppression counts. They remain
