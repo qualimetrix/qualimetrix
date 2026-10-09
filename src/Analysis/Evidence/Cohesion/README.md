@@ -130,7 +130,12 @@ normalized name that
 matches no precomputed Method-kind declaration. Functions and property hooks do
 not witness a method; partial runs make no project-wide absence claim. Its project
 magnitude is 1, its occurrence identifies the normalized name, and it explicitly
-declines the producer's configured warning boundary. The primary 3/5 LCOM band,
+declines the producer's configured warning boundary. Selected accounting judges
+every normalized configured name, including a healthy match. When the method
+universe is not judged, each configured selector belongs to the declared
+`method-universe` absence group without enumerating callables or inventing
+unmatched findings. The full secondary declaration owns the same scope gate
+for direct, unselected and selected execution. The primary 3/5 LCOM band,
 LCOM4 graph algorithm and lifecycle are unchanged.
 
 DoD includes typed snapshot handoff, case-insensitive matching with original

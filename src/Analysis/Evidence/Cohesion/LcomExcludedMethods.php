@@ -5,12 +5,19 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Cohesion;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
+use Qualimetrix\Analysis\Finding\Contract\Population\ContextGuard;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /** Reports authored method exclusions absent from a whole-project method universe. */
@@ -21,23 +28,51 @@ final class LcomExcludedMethods
      */
     public static function findings(AnalysisContext $context, LcomOptions $options): array
     {
-        if (!$context->projectScope->judgesNamespaceClaims() || $options->excludeMethods === null || $options->excludeMethods === []) {
+        if ($options->excludeMethods === null || $options->excludeMethods === []) {
             return [];
         }
 
-        $methods = self::declaredMethods($context);
+        $scopeJudged = $context->projectScope->judgesNamespaceClaims();
+        $methods = $scopeJudged ? self::declaredMethods($context) : [];
+        $declaration = LcomRule::channelDeclarations()['cohesion.unmatched-exclude-method'];
         $findings = [];
         $seen = [];
         foreach ($options->excludeMethods as $authored) {
             $normalized = strtolower($authored);
-            if (isset($methods[$normalized]) || isset($seen[$normalized])) {
+            if (isset($seen[$normalized])) {
                 continue;
             }
             $seen[$normalized] = true;
+            if (!$context->admit(
+                LcomRule::NAME,
+                new FindingChannel('cohesion.unmatched-exclude-method'),
+                SymbolLevel::Project,
+                PopulationIdentity::selector($normalized, 'configured-method-selector'),
+                $declaration,
+                [GateInput::context('namespaceClaimsJudged', $scopeJudged)],
+            )) {
+                continue;
+            }
+            if (isset($methods[$normalized])) {
+                continue;
+            }
             $findings[] = self::unmatchedFinding($authored, $normalized);
         }
 
         return $findings;
+    }
+
+    /** @return list<PopulationGate> */
+    public static function populationGates(): array
+    {
+        return [new PopulationGate(
+            'method-universe',
+            new FindingChannel('cohesion.unmatched-exclude-method'),
+            SymbolLevel::Project,
+            'configured-method-selector',
+            new ContextGuard('namespaceClaimsJudged'),
+            'The project method universe is not judged.',
+        )];
     }
 
     /** @return array<string, true> */
