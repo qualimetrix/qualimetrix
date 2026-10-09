@@ -7,6 +7,7 @@ namespace QmxFindingGateControls;
 use QmxFindingGate\CaseOutcome;
 use QmxFindingGate\Corpus;
 use QmxFindingGate\Declarations;
+use QmxFindingGate\DeclarationTable;
 use QmxFindingGate\DeclaredFields;
 use QmxFindingGate\DeclaredValues;
 use QmxFindingGate\EquivalenceTuple;
@@ -126,8 +127,8 @@ final class TupleControls
         $root = \dirname(__DIR__, 2) . '/finding-gate';
         $fields = DeclaredFields::load($root);
         $changes = $fields->changes('json', 'ranking');
-        $intents = Tsv::rows($root . '/' . DeclaredFields::INDEX, DeclaredFields::COLUMNS);
-        $derived = Tsv::rows($root . '/' . DeclaredFields::DERIVED, DeclaredFields::DERIVED_COLUMNS);
+        $intents = DeclarationTable::rows($root, DeclaredFields::INDEX, DeclaredFields::COLUMNS);
+        $derived = DeclarationTable::rows($root, DeclaredFields::DERIVED, DeclaredFields::DERIVED_COLUMNS);
         $retainedIntents = array_values(array_filter($intents, static fn(array $row): bool =>
             $row['report'] !== 'json' || $row['view'] !== 'ranking' || !isset($changes[$row['field']])));
         $retainedDerived = array_values(array_filter($derived, static fn(array $row): bool =>
