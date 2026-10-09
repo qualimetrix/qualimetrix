@@ -120,14 +120,21 @@ final class DependencyRecorder
     /** @param callable(DeclarationPath, LogicalClassPath, DependencyLocation): Dependency $factory */
     private function add(string $target, callable $factory, int $line): void
     {
-        if ($target === $this->currentClass->logical->toString()) {
-            return;
-        }
-
-        $this->dependencies[] = $factory(
+        $dependency = $factory(
             $this->currentClass,
             new LogicalClassPath(SymbolPath::fromClassFqn($target)),
             new DependencyLocation($this->file, $line),
         );
+        if ($target === $this->currentClass->logical->toString() && !$this->isNamedClassSelfExtends($dependency)) {
+            return;
+        }
+        $this->dependencies[] = $dependency;
+    }
+
+    private function isNamedClassSelfExtends(Dependency $dependency): bool
+    {
+        return $dependency->type === DependencyType::Extends
+            && !$dependency->describesNestedAnonymousClass && !$dependency->interfaceExtends
+            && $this->classLikeDeclaration?->type === \Qualimetrix\Core\Symbol\ClassType::Class_;
     }
 }

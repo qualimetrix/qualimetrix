@@ -1,22 +1,24 @@
 --- candidate
 +++ reference (mapped)
-@@ -1,1 +1,1 @@
--visible 2795
-+visible 2810
-@@ -11,3 +11,3 @@
--::error title=size.class-count::Corpus\Design\Anonymous: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces
--::error title=size.class-count::Corpus\Design\Hierarchy: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces
--::warning title=size.class-count::Corpus\Design\Model: Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces
-+::error file=src/Anonymous/AnonTrait.php,title=size.class-count::Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces
-+::error file=src/Hierarchy/Base.php,title=size.class-count::Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces
-+::warning file=src/Model/Order.php,title=size.class-count::Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces
-@@ -19,1 +19,1 @@
--invocation-format:github 2795
-+invocation-format:github 2810
-@@ -29,3 +29,3 @@
--::error title=size.class-count::Corpus\Design\Anonymous: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces
--::error title=size.class-count::Corpus\Design\Hierarchy: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces
--::warning title=size.class-count::Corpus\Design\Model: Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces
-+::error file=src/Anonymous/AnonTrait.php,title=size.class-count::Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces
-+::error file=src/Hierarchy/Base.php,title=size.class-count::Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces
-+::warning file=src/Model/Order.php,title=size.class-count::Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces
+@@ -1,5 +1,5 @@
+-visible 2971
+-::warning file=src/Model/Product.php,line=5,title=design.data-class::Data Class detected: only 0%25 of the public interface is behavior (WOC, threshold 50%25) and complexity is low (WMC=8, threshold 10). Consider encapsulating behavior or using a DTO pattern
+-::warning file=src/Model/Untyped.php,line=5,title=design.data-class::Data Class detected: only 50%25 of the public interface is behavior (WOC, threshold 50%25) and complexity is low (WMC=2, threshold 10). Consider encapsulating behavior or using a DTO pattern
+-::error file=src/Model/Order.php,line=5,title=design.god-class::God Class detected (4/4 criteria): high WMC (4 >= 4), high LCOM (2 >= 1), low TCC (0.33 < 0.90), large size (27 >= 10 LOC)
+-::warning file=src/Hierarchy/ExceptionGrandchild.php,line=5,title=design.dit::DIT (Depth of Inheritance) is 3, reaches threshold of 3. Prefer composition over deep inheritance
++visible 3070
++::warning file=src/Hierarchy/ExceptionGrandchild.php,line=5,title=design.data-class::Data Class detected: only 0%25 of the public interface is behavior (WOC, threshold 50%25) and complexity is low (WMC=2, threshold 10). Consider encapsulating behavior or using a DTO pattern
++::warning file=src/Model/Product.php,line=5,title=design.data-class::Data Class detected: only 0%25 of the public interface is behavior (WOC, threshold 50%25) and complexity is low (WMC=8, threshold 10). Consider encapsulating behavior or using a DTO pattern
++::warning file=src/Model/Untyped.php,line=5,title=design.data-class::Data Class detected: only 50%25 of the public interface is behavior (WOC, threshold 50%25) and complexity is low (WMC=2, threshold 10). Consider encapsulating behavior or using a DTO pattern
++::error file=src/Model/Order.php,line=5,title=design.god-class::God Class detected (4/4 criteria): high WMC (4 >= 4), high LCOM (2 >= 1), low TCC (0.33 < 0.90), large size (27 >= 10 LOC)
+@@ -20,5 +20,5 @@
+-invocation-format:github 2971
+-::warning file=src/Model/Product.php,line=5,title=design.data-class::Data Class detected: only 0%25 of the public interface is behavior (WOC, threshold 50%25) and complexity is low (WMC=8, threshold 10). Consider encapsulating behavior or using a DTO pattern
+-::warning file=src/Model/Untyped.php,line=5,title=design.data-class::Data Class detected: only 50%25 of the public interface is behavior (WOC, threshold 50%25) and complexity is low (WMC=2, threshold 10). Consider encapsulating behavior or using a DTO pattern
+-::error file=src/Model/Order.php,line=5,title=design.god-class::God Class detected (4/4 criteria): high WMC (4 >= 4), high LCOM (2 >= 1), low TCC (0.33 < 0.90), large size (27 >= 10 LOC)
+-::warning file=src/Hierarchy/ExceptionGrandchild.php,line=5,title=design.dit::DIT (Depth of Inheritance) is 3, reaches threshold of 3. Prefer composition over deep inheritance
++invocation-format:github 3070
++::warning file=src/Hierarchy/ExceptionGrandchild.php,line=5,title=design.data-class::Data Class detected: only 0%25 of the public interface is behavior (WOC, threshold 50%25) and complexity is low (WMC=2, threshold 10). Consider encapsulating behavior or using a DTO pattern
++::warning file=src/Model/Product.php,line=5,title=design.data-class::Data Class detected: only 0%25 of the public interface is behavior (WOC, threshold 50%25) and complexity is low (WMC=8, threshold 10). Consider encapsulating behavior or using a DTO pattern
++::warning file=src/Model/Untyped.php,line=5,title=design.data-class::Data Class detected: only 50%25 of the public interface is behavior (WOC, threshold 50%25) and complexity is low (WMC=2, threshold 10). Consider encapsulating behavior or using a DTO pattern
++::error file=src/Model/Order.php,line=5,title=design.god-class::God Class detected (4/4 criteria): high WMC (4 >= 4), high LCOM (2 >= 1), low TCC (0.33 < 0.90), large size (27 >= 10 LOC)

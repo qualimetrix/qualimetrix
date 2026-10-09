@@ -1,17 +1,24 @@
 --- candidate
 +++ reference (mapped)
 @@ -1,1 +1,1 @@
--visible 9915
-+visible 9867
-@@ -236,6 +236,5 @@
--            "file": "src/Child.php",
--            "metrics": {
--                "size.method-count": 0,
--                "size.property-count": 0,
--                "coupling.cbo": 1,
--                "complexity.wmc": 0
-+            "file": null,
-+            "metrics": {
-+                "size.method-count": 0,
-+                "size.property-count": 0,
-+                "coupling.cbo": 1
+-visible 9909
++visible 9915
+@@ -270,2 +270,2 @@
+-            "message": "DIT is at least 1, reaches threshold of 1. Prefer composition over deep inheritance",
+-            "recommendation": "DIT is at least 1 (threshold: 1) \u2014 deep inheritance, fragile hierarchy",
++            "message": "DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance",
++            "recommendation": "DIT: 1 (threshold: 1) \u2014 deep inheritance, fragile hierarchy",
+@@ -293,2 +293,2 @@
+-            "message": "DIT is at least 1, reaches threshold of 1. Prefer composition over deep inheritance",
+-            "recommendation": "DIT is at least 1 (threshold: 1) \u2014 deep inheritance, fragile hierarchy",
++            "message": "DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance",
++            "recommendation": "DIT: 1 (threshold: 1) \u2014 deep inheritance, fragile hierarchy",
+@@ -313,4 +313,4 @@
+-physical-records 677
+-["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"design.dit\",\"code\":\"design.dit\",\"edge\":null,\"file\":\"src/Child.php\",\"line\":7,\"message\":\"DIT is at least 1, reaches threshold of 1. Prefer composition over deep inheritance\",\"metricValue\":1,\"namespace\":\"Corpus\\\\StderrWarning\",\"occurrence\":null,\"recommendation\":\"DIT is at least 1 (threshold: 1) \\u2014 deep inheritance, fragile hierarchy\",\"rule\":\"design.dit\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\StderrWarning\\\\Child@src/Child.php\",\"symbol\":\"Corpus\\\\StderrWarning\\\\Child\",\"techDebtMinutes\":30,\"threshold\":1}"]
+-ranking-records 741
+-["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"design.dit\",\"code\":\"design.dit\",\"coupling.class-rank\":1,\"debtMinutes\":30,\"edge\":null,\"file\":\"src/Child.php\",\"impactScore\":30,\"line\":7,\"message\":\"DIT is at least 1, reaches threshold of 1. Prefer composition over deep inheritance\",\"metricValue\":1,\"namespace\":\"Corpus\\\\StderrWarning\",\"occurrence\":null,\"recommendation\":\"DIT is at least 1 (threshold: 1) \\u2014 deep inheritance, fragile hierarchy\",\"rule\":\"design.dit\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\StderrWarning\\\\Child@src/Child.php\",\"symbol\":\"Corpus\\\\StderrWarning\\\\Child\",\"techDebtMinutes\":30,\"threshold\":1}"]
++physical-records 680
++["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"design.dit\",\"code\":\"design.dit\",\"edge\":null,\"file\":\"src/Child.php\",\"line\":7,\"message\":\"DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance\",\"metricValue\":1,\"namespace\":\"Corpus\\\\StderrWarning\",\"occurrence\":null,\"recommendation\":\"DIT: 1 (threshold: 1) \\u2014 deep inheritance, fragile hierarchy\",\"rule\":\"design.dit\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\StderrWarning\\\\Child@src/Child.php\",\"symbol\":\"Corpus\\\\StderrWarning\\\\Child\",\"techDebtMinutes\":30,\"threshold\":1}"]
++ranking-records 744
++["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"design.dit\",\"code\":\"design.dit\",\"coupling.class-rank\":1,\"debtMinutes\":30,\"edge\":null,\"file\":\"src/Child.php\",\"impactScore\":30,\"line\":7,\"message\":\"DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance\",\"metricValue\":1,\"namespace\":\"Corpus\\\\StderrWarning\",\"occurrence\":null,\"recommendation\":\"DIT: 1 (threshold: 1) \\u2014 deep inheritance, fragile hierarchy\",\"rule\":\"design.dit\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\StderrWarning\\\\Child@src/Child.php\",\"symbol\":\"Corpus\\\\StderrWarning\\\\Child\",\"techDebtMinutes\":30,\"threshold\":1}"]

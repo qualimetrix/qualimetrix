@@ -26,6 +26,51 @@ use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 #[CoversClass(InheritanceOptions::class)]
 final class InheritanceRuleTest extends TestCase
 {
+    /** @return iterable<string, array{list<?int>, bool}> */
+    public static function incompleteCases(): iterable
+    {
+        yield 'floor' => [[5, 6], true];
+        yield 'loop' => [[null, null], true];
+        yield 'mixed' => [[5, null], true];
+        yield 'disabled' => [[5, null], false];
+    }
+
+    /** @param list<?int> $depths */
+    #[Test]
+    #[DataProvider('incompleteCases')]
+    public function itWarnsOncePerEnabledInvocationAndQualifiesFloorFindings(array $depths, bool $enabled): void
+    {
+        $logger = new \Qualimetrix\Tests\TestSupport\Logging\Support\RecordingLogger();
+        $rule = new InheritanceRule(new InheritanceOptions(enabled: $enabled), $logger);
+        $infos = [];
+        $bags = [];
+        foreach ($depths as $i => $depth) {
+            $info = self::subjectInfo(SymbolPath::fromClassFqn('App\\C' . $i), RelativePath::fromString('classes.php'), $i + 1);
+            $infos[] = $info;
+            self::assertNotNull($info->subject);
+            $bag = (new MetricBag())->with('design.dit-unresolved', 1);
+            $bags[$info->subject->toCanonical()] = $depth === null ? $bag : $bag->with('design.dit', $depth);
+        }
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn($infos);
+        $repository->method('getSubject')->willReturnCallback(static fn(MetricSubject $subject): MetricBag => $bags[$subject->toCanonical()]);
+        $findings = $rule->analyze(new AnalysisContext($repository));
+        self::assertCount($enabled ? 1 : 0, $logger->records);
+        self::assertCount($enabled ? \count(array_filter($depths, static fn(?int $depth): bool => $depth !== null)) : 0, $findings);
+        foreach ($findings as $finding) {
+            self::assertStringContainsString('DIT is at least ', $finding->message);
+            self::assertStringContainsString('DIT is at least ', $finding->recommendation ?? '');
+        }
+        if ($enabled) {
+            $message = $logger->records[0]['message'];
+            self::assertSame('warning', $logger->records[0]['level']);
+            self::assertSame(\in_array(null, $depths, true), str_contains($message, 'no numeric DIT'));
+            self::assertSame(\count(array_filter($depths, static fn(?int $depth): bool => $depth !== null)) > 0, str_contains($message, 'lower bounds'));
+        }
+        $rule->analyze(new AnalysisContext($repository));
+        self::assertCount($enabled ? 2 : 0, $logger->records);
+    }
+
     #[Test]
     public function itGetsName(): void
     {

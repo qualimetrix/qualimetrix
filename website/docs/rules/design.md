@@ -82,35 +82,18 @@ class CreateOrderHandler extends BaseHandler { /* ... */ }
 <!-- llms:skip-begin -->
 ### Implementation notes
 
-A parent outside the analysed path is resolved by reading its file, not by
-loading it. The file is located through the analysed project's own composer
-install --- its `composer.json`, the psr-4 sections of
-`vendor/composer/installed.json`, and composer's generated classmap --- and its
-`extends` clause is parsed. Nothing from the analysed project is executed.
+NOC counts distinct logical child names from the analysed dependency graph,
+not `extends` occurrences. A subclass declared twice counts once. Every named
+class declaration, including an abstract class or a root with no edges,
+receives a count, including 0. Interfaces, traits and enums receive no
+`design.noc`; `interface B extends A` does not make `B` a child of `A`.
+Anonymous classes do not contribute their own parent edges to their named
+owner. Canonical self edges are absent from the graph NOC reads.
 
-So the depth beyond your own code is the depth your project's install declares.
-When dependencies are not installed, or the class sits in a package the install
-does not place, the chain stops there and the reported depth is what was
-actually walked --- a floor, not a measurement. A chain that stops early and a
-class that genuinely has no parent still report the same number.
-
-DIT is reported for classes. Interfaces, traits and enums do not receive one,
-and they are not part of the population the namespace and project aggregates
-average over. That population is the named classes of the analysed path, which
-is what `size.class-count` counts wherever each class name is declared once.
-
-The aggregates summarise the per-class depths the same report publishes,
-including chains that cross files: a class whose parent is declared in another
-file is resolved from the dependency graph, and `design.dit.avg`, `.max` and
-`.p95` are computed from the resolved depths.
-
-A subclass declared in more than one file counts once: NOC counts distinct
-child names, not `extends` edges.
-
-NOC is published for the same population as DIT -- named classes -- so the two
-aggregates divide by the same count. An interface, a trait or an enum carries no
-`design.noc`, not even 0, and `interface B extends A` does not make `B` a child
-of `A`: an interface hierarchy is a contract hierarchy, not subclassing.
+NOC's logical-name policy is independent of whether a class has a numeric DIT.
+A class whose ancestry loops still receives NOC. Namespace and project samples
+retain the existing exact-declaration aggregation: duplicate parent declarations
+publish the same logical child count on each declaration.
 
 <!-- llms:skip-end -->
 
@@ -242,72 +225,53 @@ To understand `UserEntity`, you need to read all 7 classes in the chain.
 
 ### Implementation notes
 
-A parent outside the analysed path is resolved by reading its file, not by
-loading it. The file is located through **your** project's composer install ---
-its `composer.json`, the psr-4 sections of `vendor/composer/installed.json`, and
-composer's generated classmap --- and its `extends` clause is parsed. Nothing
-from the analysed project is executed, and the answer comes from your install
-rather than from whichever packages happen to sit beside `qmx`.
+DIT is resolved once from the named-class declaration facts and declaration
+`extends` edges, including abstract classes and roots with depth 0. Each exact
+declaration keeps its own parent, even when the same name is declared more than
+once in a file. Interfaces, traits, enums and anonymous classes receive no DIT.
+An anonymous class's own parent never becomes its enclosing class's parent.
 
-So the depth beyond your own code is the depth your install declares. Where the
-walk cannot reach a root --- the dependencies are not installed, the package
-carrying an ancestor is absent, its file cannot be parsed --- the value reported
-is what was actually walked. Usually that is a floor, and a class whose walk
-stopped early reports the same kind of value as one that genuinely has no
-parent.
+Registered PHP builtin parents are followed transitively through a static
+hierarchy, even without a Composer install: a class extending
+`\RuntimeException` has DIT 2, and one extending `\ArgumentCountError` has DIT
+3. Names such as `App\Exception` and `App\Error` are project names, not PHP
+builtin classes. Unregistered extension classes need readable source evidence;
+the analysing machine's loaded extensions do not change the measurement.
 
-The report does not distinguish them, but the run says so. `qmx` writes one
-warning naming how many chains were not followed to a root and where the walk
-stopped:
+Other parents outside the analysed path are followed by reading their files
+through **your** project's Composer source map. Analysed code is never loaded.
+The 64-visit limit applies to each consecutive external segment. If its last
+allowed parent link reaches an already analysed name, graph facts continue the
+chain without an extra external read; an external name still beyond the limit
+leaves a floor.
+The result separates three outcomes:
 
-```
-[12:34:56] [WARNING] DIT: 2 inheritance chain(s) leaving the analysed path were
-not followed to a root -- the walk stopped at:
-Symfony\Component\Config\Loader\FileLoader. The depth published for the classes
-below them is what this run did follow.
-```
+- **Exact:** the chain reaches a root; `design.dit-unresolved` is 0.
+- **Floor:** a source cannot be placed or read, no install supplies it, or the
+  external walk reaches its 64-step cap. `design.dit` retains the known lower
+  bound and `design.dit-unresolved` is 1. Findings and recommendations say
+  "DIT is at least N" when this lower bound reaches a configured threshold.
+- **Loop:** the chain reaches a canonical inheritance cycle, including a
+  class extending itself. No numeric `design.dit` is published, and
+  `design.dit-unresolved` is 1. The class and its descendants have no numeric
+  DIT finding. A loop length is not an inheritance depth.
 
-The wording is deliberately narrow, because "a floor" is not true of every case.
-An inheritance loop between two external classes publishes the length of the
-loop, which is not a depth at all, and the walk also gives up after 64 steps.
-The warning therefore says where the walk stopped and leaves the interpretation
-to you.
+A parent name can have several declarations, including a root alongside one
+with a parent. All alternatives participate: finite depths merge by maximum,
+any floor makes the answer a floor, and any loop removes numeric depth. This
+policy is independent of encounter order. Each class record and finding retains
+its exact declaration identity. This also applies when a chain leaves the
+analysed path and returns: all known declarations of the reached name participate,
+rather than only the source body selected by Composer. The known external prefix
+is counted once, and a mixed cycle still removes numeric depth.
 
-It goes to the error stream, so `--format=json` and the other machine formats
-stay parseable. `-q` silences it, and so does `--log-level=error`, with or
-without `-v`; without `-v` a written level can only make the console quieter
-than `WARNING`, never louder. It is a statement about what this run could
-follow, not about your code: analysing a project without running
-`composer install` is a normal thing to do, and this is what it costs.
+DIT aggregates use the published numeric values, including roots and floors; loop declarations contribute no numeric
+sample.
 
-Depth derived from the analysed path itself is unaffected: when the whole chain
-is inside what you analysed, the value does not depend on the install.
-
-DIT is reported for classes. Interfaces, traits and enums do not receive one,
-and they are not part of the population the namespace and project aggregates
-average over. That population is the named classes of the analysed path, which
-is what `size.class-count` counts wherever each class name is declared once.
-
-The aggregates summarise the per-class depths the same report publishes,
-including chains that cross files: a class whose parent is declared in another
-file is resolved from the dependency graph, and `design.dit.avg`, `.max` and
-`.p95` are computed from the resolved depths.
-
-An anonymous class's own `extends` is not counted toward the enclosing named
-class's DIT. `class Host { public function make() { return new class extends
-Base {}; } }` reports `Host.design.dit = 0`: the anonymous class's parent
-chain belongs to an anonymous class, which has no declaration identity of its
-own, not to `Host`. This holds however deeply the anonymous class is nested.
-
-One name declared in more than one file -- the shape a `class_exists()`-guarded
-polyfill produces -- gets one depth per declaration, so two findings on that
-name can report two different depths, each measured from the parent its own
-declaration extends. A parent named by `extends` stays a name: when its
-declarations disagree about depth, the deepest is used, both for a child's
-depth and for the single value the class carries in `--format=metrics`, in the
-HTML tree and in the aggregates. Two declarations of one name inside a single
-file are measured as one -- only the last is -- and the depth follows that
-measurement, so those files report exactly what they reported before.
+The enabled `design.dit` rule writes at most one warning per execution,
+distinguishing floors, loops, or both. Disabling the rule silences the warning
+while metrics remain collected. Warnings go to the error stream; `-q` and
+`--log-level=error` silence them, and machine-format payloads remain parseable.
 
 <!-- llms:skip-end -->
 
@@ -677,6 +641,15 @@ readonly class UserDTO
 
 <!-- llms:skip-end -->
 
+Exception exclusion follows resolved ancestry to PHP's `Throwable`, including
+project descendants and readable external parents; it does not match a parent's
+short name. `design.is-exception` is 1 for proven exceptions, 0 for proven
+non-exceptions, and absent for unknown ancestry. Duplicate parent alternatives
+must agree; a known depth can still have unknown exception status.
+With `exclude_exceptions: true` (the default), both proven exceptions and
+unknown status are skipped. With `false`, the rule judges the remaining WOC,
+WMC and member criteria without consulting exception classification.
+
 ### Configuration
 
 ```yaml
@@ -688,7 +661,7 @@ rules:
     min_members: 3
     exclude_readonly: true
     exclude_promoted_only: true
-    exclude_exceptions: true   # default: exception classes are never flagged
+    exclude_exceptions: true   # skip proven exceptions and unknown ancestry
 ```
 
 ```bash

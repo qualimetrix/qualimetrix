@@ -1,0 +1,19 @@
+--- candidate
++++ reference (mapped)
+@@ -1,8 +1,8 @@
+-visible 138
+-::warning file=src/Child.php,line=7,title=design.dit::DIT is at least 1, reaches threshold of 1. Prefer composition over deep inheritance
+-
+-invocation-format:github 138
+-::warning file=src/Child.php,line=7,title=design.dit::DIT is at least 1, reaches threshold of 1. Prefer composition over deep inheritance
+-
+-invocation-stderr 90
+-[<normalized>] [WARNING] DIT: 1 incomplete inheritance chain(s) publish DIT lower bounds.
++visible 152
++::warning file=src/Child.php,line=7,title=design.dit::DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance
++
++invocation-format:github 152
++::warning file=src/Child.php,line=7,title=design.dit::DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance
++
++invocation-stderr 253
++[<normalized>] [WARNING] DIT: 1 inheritance chain(s) leaving the analysed path were not followed to a root -- the walk stopped at: Corpus\StderrWarning\External\ExternalParent. The depth published for the classes below them is what this run did follow.

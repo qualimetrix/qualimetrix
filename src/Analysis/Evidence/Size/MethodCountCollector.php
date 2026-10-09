@@ -82,7 +82,6 @@ final class MethodCountCollector extends AbstractCollector implements Declaratio
             MetricName::DESIGN_IS_DATA_CLASS,
             MetricName::DESIGN_IS_ABSTRACT,
             MetricName::DESIGN_IS_INTERFACE,
-            MetricName::DESIGN_IS_EXCEPTION,
             MetricName::DESIGN_WOC,
         ];
     }
@@ -153,7 +152,6 @@ final class MethodCountCollector extends AbstractCollector implements Declaratio
             MetricName::DESIGN_IS_DATA_CLASS => $metrics->isDataClass() ? 1 : 0,
             MetricName::DESIGN_IS_ABSTRACT => $metrics->isAbstract ? 1 : 0,
             MetricName::DESIGN_IS_INTERFACE => $metrics->isInterface ? 1 : 0,
-            MetricName::DESIGN_IS_EXCEPTION => $metrics->isException ? 1 : 0,
             MetricName::DESIGN_WOC => $metrics->woc(),
         ];
     }
@@ -276,14 +274,6 @@ final class MethodCountCollector extends AbstractCollector implements Declaratio
             ),
             new MetricDefinition(
                 name: MetricName::DESIGN_IS_INTERFACE,
-                collectedAt: SymbolLevel::Class_,
-                aggregations: [
-                    SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
-                    SymbolLevel::Project->value => [AggregationStrategy::Sum],
-                ],
-            ),
-            new MetricDefinition(
-                name: MetricName::DESIGN_IS_EXCEPTION,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],

@@ -1,0 +1,23 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 2544
++visible 2547
+@@ -29,2 +29,2 @@
+-         design.dit: DIT is at least 1, reaches threshold of 1. Prefer composition over deep inheritance
+-         Recommendation: DIT is at least 1 (threshold: 1) — deep inheritance, fragile hierarchy
++         design.dit: DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance
++         Recommendation: DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy
+@@ -36,1 +36,1 @@
+-invocation-format:summary 2544
++invocation-format:summary 2547
+@@ -64,2 +64,2 @@
+-         design.dit: DIT is at least 1, reaches threshold of 1. Prefer composition over deep inheritance
+-         Recommendation: DIT is at least 1 (threshold: 1) — deep inheritance, fragile hierarchy
++         design.dit: DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance
++         Recommendation: DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy
+@@ -71,2 +71,2 @@
+-invocation-stderr 90
+-[<normalized>] [WARNING] DIT: 1 incomplete inheritance chain(s) publish DIT lower bounds.
++invocation-stderr 253
++[<normalized>] [WARNING] DIT: 1 inheritance chain(s) leaving the analysed path were not followed to a root -- the walk stopped at: Corpus\StderrWarning\External\ExternalParent. The depth published for the classes below them is what this run did follow.

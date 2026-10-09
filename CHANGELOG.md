@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- `design.dit` now follows registered PHP builtin ancestry transitively instead of stopping at the first builtin. Recheck DIT limits and accepted baseline values for builtin descendants; a `RuntimeException` subclass reports 2, and an `ArgumentCountError` subclass reports 3.
+- Class metrics publish `design.dit-unresolved` (0 for exact depth, 1 for a floor or loop). Loops and their descendants omit numeric `design.dit` instead of publishing a loop length; handle a missing DIT as unresolved, not 0, and use the new key when consuming floors.
+- `design.is-exception` now follows ancestry to PHP `Throwable` instead of matching the immediate parent's short name; unknown status omits the key. With `design.data-class.exclude_exceptions: true`, unknown status is skipped rather than treated as non-exception. Set it to `false` to judge the remaining criteria regardless of ancestry, and recheck accepted DataClass findings.
+- External ancestry returning to an already analysed parent now uses all known declarations instead of the single Composer-placed body. Recheck DIT limits, exception status and accepted baseline findings for these mixed chains; an alternative may increase depth, make exception status unknown, or remove numeric DIT when it reaches a cycle.
+- Floor DIT findings and recommendations now say "DIT is at least N"; inheritance warnings distinguish floors and loops and run only while `design.dit` is enabled. Consumers parsing message text or stderr must accept the new wording; metrics remain available with the rule disabled.
+
 - `MetricDefinition::publicationLevels()` now declares direct base-key output levels independently of aggregate suffixes. Custom definitions must declare every direct level in `directPublicationLevels`; duplicate levels refuse, and direct Class publication requires a class area.
 
 - Callable measurement records and `SymbolInfo` preserve explicit anonymous-class context; named methods and property hooks without exact owner metadata are refused during class finding attribution.

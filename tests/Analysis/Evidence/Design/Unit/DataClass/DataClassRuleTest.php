@@ -57,6 +57,19 @@ final class DataClassRuleTest extends TestCase
     }
 
     #[Test]
+    public function itAbstainsOnUnknownExceptionOnlyWhenExclusionIsEnabled(): void
+    {
+        $metrics = $this->makeMetricBag(['design.is-exception' => null]);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allClassDeclarations')->willReturn([
+            self::subjectInfo(SymbolPath::fromClassFqn('App\\Unknown'), RelativePath::fromString('unknown.php'), 1),
+        ]);
+        $repository->method('getSubject')->willReturn($metrics);
+        self::assertSame([], (new DataClassRule(new DataClassOptions(excludeExceptions: true)))->analyze(new AnalysisContext($repository)));
+        self::assertCount(1, (new DataClassRule(new DataClassOptions(excludeExceptions: false)))->analyze(new AnalysisContext($repository)));
+    }
+
+    #[Test]
     public function itGetsName(): void
     {
         $rule = new DataClassRule(new DataClassOptions());

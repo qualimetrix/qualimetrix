@@ -47,7 +47,7 @@ final readonly class DependencyIdentityCanonicalizer
         usort($mixed, static fn(MixedSpelling $left, MixedSpelling $right): int => [$left->kind, $left->canonical] <=> [$right->kind, $right->canonical]);
 
         return new CanonicalGraphInput(
-            $this->canonicalDependencies($dependencies, $canonicalByFold),
+            $this->canonicalDependencies($dependencies, $canonicalByFold, $declarations),
             $canonicalDeclarations,
             $mixed,
         );
@@ -144,18 +144,20 @@ final readonly class DependencyIdentityCanonicalizer
     /**
      * @param list<Dependency> $dependencies
      * @param array<string, string> $canonicalByFold
+     * @param list<ClassLikeDeclaration> $declarations
      *
      * @return list<Dependency>
      */
-    private function canonicalDependencies(array $dependencies, array $canonicalByFold): array
+    private function canonicalDependencies(array $dependencies, array $canonicalByFold, array $declarations): array
     {
+        $namedClasses = $this->namedClassIndex($declarations);
         $canonicalDependencies = [];
         foreach ($dependencies as $dependency) {
             $sourceSpelling = $dependency->sourceLogical()->toString();
             $targetSpelling = $dependency->targetLogical()->toString();
             $source = $canonicalByFold[ClassNameSpelling::fold($sourceSpelling)];
             $target = $canonicalByFold[ClassNameSpelling::fold($targetSpelling)];
-            if ($source === $target) {
+            if ($source === $target && !$this->isNamedClassSelfExtends($dependency, $namedClasses)) {
                 continue;
             }
             $canonicalDependencies[] = $sourceSpelling === $source && $targetSpelling === $target
@@ -167,5 +169,30 @@ final readonly class DependencyIdentityCanonicalizer
         }
 
         return $canonicalDependencies;
+    }
+
+    /**
+     * @param list<ClassLikeDeclaration> $declarations
+     *
+     * @return array<string, true>
+     */
+    private function namedClassIndex(array $declarations): array
+    {
+        $namedClasses = [];
+        foreach ($declarations as $declaration) {
+            if ($declaration->type === \Qualimetrix\Core\Symbol\ClassType::Class_) {
+                $namedClasses[$declaration->declaration->toCanonical()] = true;
+            }
+        }
+
+        return $namedClasses;
+    }
+
+    /** @param array<string, true> $namedClasses */
+    private function isNamedClassSelfExtends(Dependency $dependency, array $namedClasses): bool
+    {
+        return $dependency->type === \Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType::Extends
+            && !$dependency->interfaceExtends && !$dependency->describesNestedAnonymousClass
+            && isset($namedClasses[$dependency->source->toCanonical()]);
     }
 }

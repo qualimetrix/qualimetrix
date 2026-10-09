@@ -1,0 +1,7 @@
+--- candidate
++++ reference (mapped)
+@@ -71,2 +71,2 @@
+-invocation-stderr 90
+-[<normalized>] [WARNING] DIT: 1 incomplete inheritance chain(s) publish DIT lower bounds.
++invocation-stderr 253
++[<normalized>] [WARNING] DIT: 1 inheritance chain(s) leaving the analysed path were not followed to a root -- the walk stopped at: Corpus\StderrWarning\External\ExternalParent. The depth published for the classes below them is what this run did follow.

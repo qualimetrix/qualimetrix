@@ -1,0 +1,39 @@
+--- candidate
++++ reference (mapped)
+@@ -1,18 +1,18 @@
+-visible 279
+-<?xml version="1.0" encoding="UTF-8"?>
+-<checkstyle version="3.0">
+-  <file name="src/Child.php">
+-    <error line="7" severity="warning" message="DIT is at least 1, reaches threshold of 1. Prefer composition over deep inheritance" source="qmx.design.dit"/>
+-  </file>
+-</checkstyle>
+-
+-invocation-format:checkstyle 279
+-<?xml version="1.0" encoding="UTF-8"?>
+-<checkstyle version="3.0">
+-  <file name="src/Child.php">
+-    <error line="7" severity="warning" message="DIT is at least 1, reaches threshold of 1. Prefer composition over deep inheritance" source="qmx.design.dit"/>
+-  </file>
+-</checkstyle>
+-
+-invocation-stderr 90
+-[<normalized>] [WARNING] DIT: 1 incomplete inheritance chain(s) publish DIT lower bounds.
++visible 293
++<?xml version="1.0" encoding="UTF-8"?>
++<checkstyle version="3.0">
++  <file name="src/Child.php">
++    <error line="7" severity="warning" message="DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance" source="qmx.design.dit"/>
++  </file>
++</checkstyle>
++
++invocation-format:checkstyle 293
++<?xml version="1.0" encoding="UTF-8"?>
++<checkstyle version="3.0">
++  <file name="src/Child.php">
++    <error line="7" severity="warning" message="DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance" source="qmx.design.dit"/>
++  </file>
++</checkstyle>
++
++invocation-stderr 253
++[<normalized>] [WARNING] DIT: 1 inheritance chain(s) leaving the analysed path were not followed to a root -- the walk stopped at: Corpus\StderrWarning\External\ExternalParent. The depth published for the classes below them is what this run did follow.

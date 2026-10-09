@@ -33,7 +33,8 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * (the composite gate's other criterion), `size.method-count.total` and
  * `size.property-count` (minMembers gate), and `design.is-readonly`,
  * `design.is-promoted-properties-only`, `design.is-abstract`,
- * `design.is-interface`, `design.is-exception` (exclusion gates).
+ * `design.is-interface`, `design.is-exception` (exclusion gates). An unknown
+ * exception classifier prevents judgement only when exception exclusion is enabled.
  */
 #[CliAlias('data-class-woc-threshold', 'wocThreshold')]
 #[CliAlias('data-class-wmc-threshold', 'wmcThreshold')]

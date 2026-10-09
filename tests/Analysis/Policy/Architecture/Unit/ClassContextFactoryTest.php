@@ -51,6 +51,30 @@ final class ClassContextFactoryTest extends TestCase
     private const bool INTERFACE_EXTENDS = true;
 
     #[Test]
+    public function itReadsDirectSelfInheritanceAsABoundedDeclarationFactWithoutCoupling(): void
+    {
+        $ast = (new ParserFactory())->createForNewestSupportedVersion()->parse('<?php namespace App; class A extends a implements \\JsonSerializable {}');
+        self::assertNotNull($ast);
+        NameResolution::resolve($ast);
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $visitor = new DependencyVisitor();
+        $visitor->beginFile(RelativePath::fromString('test.php'), $registrar->index());
+        (new NodeTraverser($registrar, $visitor))->traverse($ast);
+        $graph = (new DependencyGraphBuilder(new UnplacedExternalClassSpelling()))->build($visitor->dependencies(), $visitor->classLikeDeclarations())->graph;
+        $klass = SymbolPath::fromClassFqn('App\\A');
+        $factory = new ClassContextFactory();
+        $factory->bindGraph($graph, [$klass]);
+        $context = $factory->build($klass);
+        self::assertCount(2, $graph->getDeclarationDependencies());
+        self::assertSame(['App\\A'], $context->parentClasses);
+        self::assertContains('JsonSerializable', $context->interfaces);
+        self::assertTrue($context->graphBacked);
+        self::assertSame([], $graph->getAllDependencies());
+        self::assertSame(0, $graph->getClassCe($klass));
+        self::assertSame(0, $graph->getClassCa($klass));
+    }
+
+    #[Test]
     public function itBuildsAMinimalContextWithoutABoundGraph(): void
     {
         $factory = new ClassContextFactory();

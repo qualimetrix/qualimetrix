@@ -32,10 +32,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * Chidamber & Kemerer (1994) definition, where NOC counts the immediate
  * subclasses of a class; interface hierarchies are contracts, not subclassing.
  *
- * NOC is measured on the population DIT is -- the named classes the per-file
- * pass measured, recognised by the `design.dit` it left on them -- so the two
- * metrics that read one inheritance tree from opposite ends share their
- * denominators. An interface, a trait or an enum gets no NOC, not even 0.
+ * NOC is measured on the graph's positive named-class declaration roster.
+ * Interfaces, traits and enums receive no NOC, including no synthetic zero.
  *
  * Anonymous classes never contribute to NOC: they have no declaration
  * identity a named class could `extends`, and their own `extends` edge is
@@ -107,20 +105,13 @@ final class NocCollector implements GlobalContextCollectorInterface
             $repository->addSubjectScalar(\Qualimetrix\Core\Symbol\MetricSubject::logicalClass(new \Qualimetrix\Core\Symbol\LogicalClassPath($parentPath)), MetricName::DESIGN_NOC, $noc);
         }
 
-        // Step 3: every measured class without children gets NOC = 0
-        foreach ($repository->allClassDeclarations() as $classSymbol) {
-            if ($classSymbol->subject === null || !$repository->hasSubject($classSymbol->subject)) {
+        foreach ($graph->getClassLikeDeclarations() as $fact) {
+            if ($fact->type !== \Qualimetrix\Core\Symbol\ClassType::Class_) {
                 continue;
             }
-
-            $metrics = $repository->getSubject($classSymbol->subject);
-
-            if ($metrics->has(MetricName::DESIGN_DIT) && !$metrics->has(MetricName::DESIGN_NOC)) {
-                $repository->addSubjectScalar(
-                    \Qualimetrix\Core\Symbol\MetricSubject::logicalClass(new \Qualimetrix\Core\Symbol\LogicalClassPath($classSymbol->symbolPath)),
-                    MetricName::DESIGN_NOC,
-                    0,
-                );
+            $subject = \Qualimetrix\Core\Symbol\MetricSubject::logicalClass($fact->logical);
+            if ($repository->hasSubject($subject) && !$repository->getSubject($subject)->has(MetricName::DESIGN_NOC)) {
+                $repository->addSubjectScalar($subject, MetricName::DESIGN_NOC, 0);
             }
         }
     }

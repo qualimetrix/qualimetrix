@@ -1,0 +1,7 @@
+--- candidate
++++ reference (mapped)
+@@ -1,2 +1,2 @@
+-visible 90
+-[<normalized>] [WARNING] DIT: 1 incomplete inheritance chain(s) publish DIT lower bounds.
++visible 253
++[<normalized>] [WARNING] DIT: 1 inheritance chain(s) leaving the analysed path were not followed to a root -- the walk stopped at: Corpus\StderrWarning\External\ExternalParent. The depth published for the classes below them is what this run did follow.

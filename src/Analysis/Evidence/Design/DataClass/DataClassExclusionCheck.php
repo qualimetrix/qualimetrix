@@ -45,7 +45,7 @@ final class DataClassExclusionCheck
             static fn(MetricBag $metrics): bool => (int) ($metrics->get(MetricName::SIZE_PROPERTY_COUNT) ?? 0) === 0,
             // Exception classes are DTOs by design — they hold error context, not behavior
             static fn(MetricBag $metrics): bool => $options->excludeExceptions
-                && $metrics->get(MetricName::DESIGN_IS_EXCEPTION) === 1,
+                && $metrics->get(MetricName::DESIGN_IS_EXCEPTION) !== 0,
             // Skip readonly classes if configured
             static fn(MetricBag $metrics): bool => $options->excludeReadonly
                 && $metrics->get(MetricName::DESIGN_IS_READONLY) === 1,

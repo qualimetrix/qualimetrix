@@ -18,14 +18,8 @@ use Symfony\Component\Process\Process;
  * recorded the edge with `Host` as source, so `Host` appeared to extend `L1`
  * itself.
  *
- * `InheritanceDepthCollector` cannot witness this: its own docblock says it
- * does not publish `design.dit` (the value the report ships comes from
- * {@see DitGlobalCollector}, which reads the dependency graph), and its
- * per-file visitor only ever tracks named classes, so it never saw the
- * anonymous edge either. Only the path that actually publishes the value --
- * extraction, the dependency graph, the global collectors, and aggregation --
- * can prove the defect is gone. Hence a real `bin/qmx check` run, not a
- * collector unit test.
+ * The production extraction, graph, global collectors and aggregation must
+ * agree that the flagged edge describes the anonymous body, not its owner.
  *
  * The run happens in an empty directory with the binary addressed absolutely,
  * so this repository's own `qmx.yaml` cannot contribute unrelated findings to

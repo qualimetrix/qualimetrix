@@ -5,81 +5,83 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Design\Inheritance;
 
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\Contract\ExternalParentSourceInterface;
+use Qualimetrix\Core\Symbol\ClassNameSpelling;
+use Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 
-/**
- * The part of an inheritance chain that leaves the analysed path.
- *
- * It is followed by reading the analysed project's sources, never by loading
- * them. `class_exists($fqcn, true)` is not a test: it includes the file and
- * runs its top-level code, and because this tool can run as a dependency of the
- * project it analyses, that meant executing an arbitrary repository's code in
- * this process, with no bound on time or memory and no catch that reaches an
- * `exit`.
- *
- * Reading also answers from the right tree. The autoloader consulted before was
- * this tool's own, so an analysed name resolved against this tool's
- * dependencies -- measured across ten benchmark projects, 170 of 172 resolved
- * answers came from there rather than from the project being measured.
- *
- * What counts as a depth stays here; placing a class and reading its
- * declaration is delivery and lives behind the port.
- */
+/** Follows external ancestry by reading sources and static PHP facts, never by loading analysed classes. */
 final class ExternalAncestry
 {
     private const int VISIT_CAP = 64;
 
     public function __construct(private readonly ExternalParentSourceInterface $parents) {}
 
-    /**
-     * Not memoised here on purpose: the source behind the port already caches
-     * each parent lookup, which is the part that reads a file, and a second
-     * cache would be a second thing to invalidate when a run is re-aimed.
-     */
-    public function depthOf(string $fqcn): ExternalDepth
+    /** @param array<string, true> $analysedNames folded positive class identities */
+    public function depthOf(string $fqcn, array $analysedNames = []): ExternalDepth
     {
-        return $this->walk(ltrim($fqcn, '\\'));
-    }
-
-    private function walk(string $fqcn): ExternalDepth
-    {
-        if (!$this->parents->isConfigured()) {
-            return ExternalDepth::noMap();
-        }
-
-        $current = $fqcn;
+        $current = ltrim($fqcn, '\\');
         $depth = 0;
         $seen = [];
+        $throwable = null;
 
         for ($step = 0; $step < self::VISIT_CAP; ++$step) {
-            if (isset($seen[$current])) {
-                // A cycle is not a depth: reporting the steps walked would be
-                // reporting the length of a loop.
-                return ExternalDepth::brokeAt($depth, $current);
+            $identity = ClassNameSpelling::fold($current);
+            if (isset($analysedNames[$identity])) {
+                return ExternalDepth::reachedAnalysedName($depth, $current, $throwable);
             }
-            $seen[$current] = true;
-
-            $lookup = $this->parents->parentOf($current);
-
-            if (!$lookup->placed) {
-                return ExternalDepth::brokeAt($depth, $current);
+            if (isset($seen[$identity])) {
+                return ExternalDepth::loop($current, $throwable);
             }
+            $seen[$identity] = true;
 
-            if ($lookup->parent === null) {
-                return ExternalDepth::reachedRoot($depth);
+            $builtin = PhpBuiltinClassRegistry::canonicalName($current);
+            if ($builtin !== null) {
+                $throwable = $throwable === true || $this->builtinReachesThrowable($builtin);
+                $next = $this->builtinStep($builtin, $depth);
+            } else {
+                $next = $this->sourceStep($current, $depth);
             }
-
+            if ($next instanceof ExternalDepth) {
+                return $next;
+            }
+            $current = $next;
             ++$depth;
-
-            // PHP's own classes are the floor: their depth is not the analysed
-            // project's to report.
-            if (PhpBuiltinClassRegistry::isBuiltin($lookup->parent)) {
-                return ExternalDepth::reachedRoot($depth);
-            }
-
-            $current = $lookup->parent;
         }
 
-        return ExternalDepth::brokeAt($depth, $current);
+        // The last permitted edge can reach graph evidence without another source visit.
+        return isset($analysedNames[ClassNameSpelling::fold($current)])
+            ? ExternalDepth::reachedAnalysedName($depth, $current, $throwable)
+            : ExternalDepth::brokeAt($depth, $current, $throwable);
+    }
+
+    private function builtinStep(string $builtin, int $depth): ExternalDepth|string
+    {
+        $parents = PhpBuiltinClassHierarchy::extendsOf($builtin) ?? [];
+
+        return $parents === []
+            ? ExternalDepth::reachedRoot($depth, $this->builtinReachesThrowable($builtin))
+            : $parents[0];
+    }
+
+    private function builtinReachesThrowable(string $builtin): bool
+    {
+        return $builtin === 'Throwable'
+            || \in_array('Throwable', PhpBuiltinClassHierarchy::interfacesOf($builtin) ?? [], true);
+    }
+
+    private function sourceStep(string $current, int $depth): ExternalDepth|string
+    {
+        if (!$this->parents->isConfigured()) {
+            return ExternalDepth::noMap($depth);
+        }
+        $lookup = $this->parents->parentOf($current);
+        if (!$lookup->placed) {
+            return ExternalDepth::brokeAt($depth, $current);
+        }
+        if ($lookup->parent === null) {
+            return ExternalDepth::reachedRoot($depth);
+        }
+
+        return ltrim($lookup->parent, '\\');
     }
 }
