@@ -202,6 +202,10 @@ final class HarnessSelfTest
                 $originalSource = Shell::read($root . '/' . $producer);
                 $originalTuple = EquivalenceTuple::derive($root);
                 $originalTables = [$index => $snapshot($root . '/' . $index)[1], $derived => $snapshot($root . '/' . $derived)[1]];
+                $originalRows = [
+                    $index => DeclarationTable::rows($root . '/finding-gate', DeclaredFields::INDEX, DeclaredFields::COLUMNS),
+                    $derived => DeclarationTable::rows($root . '/finding-gate', DeclaredFields::DERIVED, DeclaredFields::DERIVED_COLUMNS),
+                ];
                 $stage = static function (array $tables) use ($root): void {
                     foreach ($tables as $path => $contents) {
                         if ($contents !== null) {
@@ -261,8 +265,13 @@ final class HarnessSelfTest
                             }
                             $beforeIntents = DeclarationTable::rows($target->path('finding-gate'), DeclaredFields::INDEX, DeclaredFields::COLUMNS);
                             $beforeDerived = DeclarationTable::rows($target->path('finding-gate'), DeclaredFields::DERIVED, DeclaredFields::DERIVED_COLUMNS);
-                            $check($name === 'paired' ? 3 : 0, count($beforeIntents), $name . ': the field intention pre-count is concrete');
-                            $check($name === 'paired' ? 3 : 0, count($beforeDerived), $name . ': the field measurement pre-count is concrete');
+                            if ($name === 'current') {
+                                $check($originalRows[$index], $beforeIntents, 'current: every field intention enters the private tree');
+                                $check($originalRows[$derived], $beforeDerived, 'current: every field measurement enters the private tree');
+                            } else {
+                                $check($name === 'paired' ? 3 : 0, count($beforeIntents), $name . ': the field intention pre-count is concrete');
+                                $check($name === 'paired' ? 3 : 0, count($beforeDerived), $name . ': the field measurement pre-count is concrete');
+                            }
                             $check($name === 'paired' ? [$index, $derived] : [], array_values(array_intersect($mutation->relativePaths(), [$index, $derived])), $name . ': field cleanup is composed only for the nonempty pair');
                             $mutation->apply($target, $root);
                             $mutatedTuple = EquivalenceTuple::derive($tree);
@@ -276,8 +285,13 @@ final class HarnessSelfTest
                             }
                             $afterIntents = DeclarationTable::rows($target->path('finding-gate'), DeclaredFields::INDEX, DeclaredFields::COLUMNS);
                             $afterDerived = DeclarationTable::rows($target->path('finding-gate'), DeclaredFields::DERIVED, DeclaredFields::DERIVED_COLUMNS);
-                            $check($name === 'paired' ? 2 : 0, count($afterIntents), $name . ': exactly the retained field intentions remain');
-                            $check($name === 'paired' ? 2 : 0, count($afterDerived), $name . ': exactly the retained field measurements remain');
+                            if ($name === 'current') {
+                                $check($originalRows[$index], $afterIntents, 'current: every field intention survives the private tuple plant');
+                                $check($originalRows[$derived], $afterDerived, 'current: every field measurement survives the private tuple plant');
+                            } else {
+                                $check($name === 'paired' ? 2 : 0, count($afterIntents), $name . ': exactly the retained field intentions remain');
+                                $check($name === 'paired' ? 2 : 0, count($afterDerived), $name . ': exactly the retained field measurements remain');
+                            }
                             $check(count($afterIntents) < count($beforeIntents), count($afterDerived) < count($beforeDerived), $name . ': ranking field intentions and measurements are paired, including an empty pair');
                             $fields = DeclaredFields::load($target->path('finding-gate'));
                             $check([], $fields->changes('json', 'ranking'), $name . ': the private tuple plant leaves no unmeasurable ranking field obligations');
