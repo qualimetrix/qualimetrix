@@ -29,7 +29,7 @@ final class TupleControls
             [new Expectation(FailureClass::TUPLE_FIELD_DRIFT, EquivalenceTuple::TRACKED_PATH),
                 new Expectation(FailureClass::RUN_FAILED, 'candidate-2 / annotations', exactScope: true),
                 ...self::recordExpectations('candidate')],
-            self::invalidCaptureBaselineFailures(),
+            self::invalidCaptureBaselineFailures('candidate'),
         );
     }
 
@@ -44,6 +44,7 @@ final class TupleControls
                 'the tracked candidate tuple includes the unannounced member',
             ))->and(self::unavailableFindingValueMeasurements())->and(self::unavailableRankingFieldMeasurements()),
             self::recordExpectations('reference'),
+            self::invalidCaptureBaselineFailures('reference'),
         );
     }
 
@@ -149,22 +150,39 @@ final class TupleControls
     }
 
     /** @return list<Expectation> */
-    private static function invalidCaptureBaselineFailures(): array
+    private static function invalidCaptureBaselineFailures(string $brokenSide): array
     {
         $root = \dirname(__DIR__, 2);
         $exact = array_fill_keys(Declarations::load($root)->exactSurfaces->keys(), true);
         $failures = [];
 
         foreach (Corpus::load($root)->cases as $case) {
-            if (CaseOutcome::of($case, 'reference') !== CaseOutcome::REFUSAL
-                || !CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($case, 'candidate'))) {
+            $scope = 'case:' . $case->id . '|baseline-file';
+            if ($case->channels === [] || !isset($exact[$scope])) {
                 continue;
             }
 
-            $scope = 'case:' . $case->id . '|baseline-file';
-            if (isset($exact[$scope])) {
-                $failures[] = new Expectation(FailureClass::SURFACE_MISMATCH, $scope, exactScope: true);
+            $source = $case->baselineSource() === null ? 'format:json' : 'check:baseline-source';
+            if (ReportViews::reportOf($source) !== 'json'
+                || !CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($case, $brokenSide))) {
+                continue;
             }
+
+            $candidate = CaseOutcome::of($case, 'candidate');
+            $reference = CaseOutcome::of($case, 'reference');
+            if ($brokenSide === 'candidate' && $reference === CaseOutcome::REFUSAL) {
+                $failures[] = new Expectation(FailureClass::SURFACE_MISMATCH, $scope, exactScope: true);
+                continue;
+            }
+
+            // The exact baseline trial requires physical JSON records on both sides.
+            foreach ([$candidate, $reference] as $outcome) {
+                if (!CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, $outcome)
+                    || !CaseOutcome::applies(CaseOutcome::CHECK_BASELINE_FILE, $outcome)) {
+                    continue 2;
+                }
+            }
+            $failures[] = new Expectation(FailureClass::SURFACE_MISMATCH, $scope, exactScope: true);
         }
 
         return $failures;
