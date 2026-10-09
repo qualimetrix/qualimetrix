@@ -302,18 +302,18 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         self::assertFalse($cboOverridden->enabled, 'CBO: enabled must be preserved');
         self::assertSame('application', $cboOverridden->scope, 'CBO: scope must be preserved');
 
-        // DistanceOptions — has includeNamespaces, minClassCount
+        // DistanceOptions — has includeNamespaces, minTypeCount
         $dist = new DistanceOptions(
             enabled: false,
             maxDistanceWarning: 0.4,
             maxDistanceError: 0.6,
             includeNamespaces: [new NamespacePattern(new SelectorDefinition(SelectorKind::Subtree, 'App\\Domain'))],
-            minClassCount: 5,
+            minTypeCount: 5,
         );
         $distOverridden = $dist->withOverride(0.5, 0.7);
         self::assertFalse($distOverridden->enabled, 'Distance: enabled must be preserved');
         self::assertSame($dist->includeNamespaces, $distOverridden->includeNamespaces, 'Distance: includeNamespaces must be preserved');
-        self::assertSame(5, $distOverridden->minClassCount, 'Distance: minClassCount must be preserved');
+        self::assertSame(5, $distOverridden->minTypeCount, 'Distance: minTypeCount must be preserved');
 
         // NamespaceInstabilityOptions — has minClassCount
         $nsi = new NamespaceInstabilityOptions(
