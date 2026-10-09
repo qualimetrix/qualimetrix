@@ -3783,6 +3783,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"the right side of and"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"the right side of ||"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itMissesExactlyTheAbsentKeysTheFormulaWouldReadAsNull"two bare reads, one absent"
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itPreservesOneNativeControlRunAndReachedGetAttrStages
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itPreservesStrictClampOperandsOutsideTheNullableMeanResult
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itReadsNoKeyOutOfAnIndexOnSomethingOtherThanTheLookup
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itReadsOnlyComputedMetricReferences

@@ -32,7 +32,7 @@ code-smell.unreachable-code	channel	?		6	52	0	1	0	31	0	609	0	0	0	0
 code-smell.unused-private	channel	?		3	10	0	0	0	16	0	749	0	0	0	0
 cohesion.lcom	channel	?		40	211	2	2	0	45	0	2129	0	0	0	0
 cohesion.unmatched-exclude-method	channel	?		8	15	0	0	0	7	0	13	0	0	0	0
-complexity.ccn	channel	?		77	1578	2	3	17	200	0	2147	0	0	0	0
+complexity.ccn	channel	?		77	1581	2	3	17	200	0	2147	0	0	0	0
 complexity.cognitive	channel	?		21	106	2	2	9	55	0	814	0	0	0	0
 complexity.npath	channel	?		18	123	2	2	3	51	0	784	0	0	0	0
 complexity.wmc	channel	?		27	180	2	2	2	39	0	1922	0	0	0	0
@@ -74,7 +74,7 @@ cohesion.lcc	metric-key	?		9	51	0	0	0	6	0	230	0	0	0	0
 cohesion.lcom	metric-key	?		40	211	2	2	0	45	0	2129	0	0	0	0
 cohesion.pure-method-count	metric-key	?		6	13	0	0	0	2	0	86	0	0	0	0
 cohesion.tcc	metric-key	?		29	142	0	0	0	16	0	377	0	0	0	0
-complexity.ccn	metric-key	?		77	1578	2	3	17	200	0	2147	0	0	0	0
+complexity.ccn	metric-key	?		77	1581	2	3	17	200	0	2147	0	0	0	0
 complexity.cognitive	metric-key	?		21	106	2	2	9	55	0	814	0	0	0	0
 complexity.npath	metric-key	?		18	123	2	2	3	51	0	784	0	0	0	0
 complexity.wmc	metric-key	?		27	180	2	2	2	39	0	1922	0	0	0	0
@@ -136,7 +136,7 @@ size.getter-count	metric-key	?		14	13	0	0	0	0	0	1754	0	0	0	0
 size.implementing-enum-count	metric-key	?		16	11	0	0	0	0	0	914	0	0	0	0
 size.interface-count	metric-key	?		16	19	0	0	0	0	0	914	0	0	0	0
 size.lloc	metric-key	?		11	23	0	0	0	10	0	914	0	0	0	0
-size.loc	metric-key	?		15	253	0	0	0	20	0	914	0	0	0	0
+size.loc	metric-key	?		15	255	0	0	0	20	0	914	0	0	0	0
 size.method-count	metric-key	?		28	245	2	2	0	58	0	1934	0	0	0	0
 size.method-count.private	metric-key	?		11	6	0	0	0	0	0	1754	0	0	0	0
 size.method-count.protected	metric-key	?		11	6	0	0	0	0	0	1754	0	0	0	0
@@ -174,11 +174,11 @@ code-smell.superglobals	producer	?		2	7	1	0	0	12	0	415	0	0	0	0
 code-smell.unreachable-code	producer	?		6	52	0	1	0	31	0	609	0	0	0	0
 code-smell.unused-private	producer	?		3	10	0	0	0	16	0	749	0	0	0	0
 cohesion.lcom	producer	?		40	211	2	2	0	45	0	2129	0	0	0	0
-complexity.ccn	producer	?		77	1578	2	3	17	200	0	2147	0	0	0	0
+complexity.ccn	producer	?		77	1581	2	3	17	200	0	2147	0	0	0	0
 complexity.cognitive	producer	?		21	106	2	2	9	55	0	814	0	0	0	0
 complexity.npath	producer	?		18	123	2	2	3	51	0	784	0	0	0	0
 complexity.wmc	producer	?		27	180	2	2	2	39	0	1922	0	0	0	0
-computed	producer	?		139	169	0	1	0	63	0	76	0	0	0	0
+computed	producer	?		138	169	0	1	0	63	0	76	0	0	0	0
 coupling.cbo	producer	?		67	389	2	6	7	132	0	2741	0	0	0	0
 coupling.class-rank	producer	?		25	135	0	2	1	42	0	2063	0	0	0	0
 coupling.distance	producer	?		41	124	2	2	0	51	0	1105	0	0	0	0
