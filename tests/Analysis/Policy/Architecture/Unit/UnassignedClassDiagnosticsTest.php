@@ -299,10 +299,12 @@ final class UnassignedClassDiagnosticsTest extends TestCase
         $rule = new UnassignedClassRule($options, new LayerEvidenceCollector(new LayerViolationOptions(enabled: false), $options, new LayerDeclarationOptions(enabled: false), $this->processor));
         $architecture = $this->buildArchitecture(CoverageMode::Ignore);
         $repository = new InMemoryMetricRepository();
-        foreach (['src/First.php', 'src/Second.php'] as $file) {
+        foreach (['src/First.php', 'src/Second.php', 'src/Third.php'] as $file) {
             $repository->addSubject(\Qualimetrix\Core\Symbol\MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\Controller', 'Owned'), RelativePath::fromString($file), DeclarationOrdinal::fromRank(0))), new MetricBag(), RelativePath::fromString($file), 1);
         }
         $repository->add(SymbolPath::forClass('App\Unowned', 'Lonely'), new MetricBag(), RelativePath::fromString('src/Lonely.php'), 1);
+        self::assertCount(3, iterator_to_array($repository->allClassDeclarations()));
+        self::assertCount(2, iterator_to_array($repository->allLogicalClasses()));
         $graph = $this->buildGraph([]);
         ProcessorBuilder::prepared($architecture, $graph, $repository, $this->processor);
         $session = new PopulationSession(new ChannelPublication(new RuleEnablement([
