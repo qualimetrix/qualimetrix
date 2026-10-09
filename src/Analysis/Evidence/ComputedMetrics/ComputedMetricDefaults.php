@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricApplicability;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 final class ComputedMetricDefaults
@@ -65,7 +66,7 @@ final class ComputedMetricDefaults
                     SymbolLevel::Namespace_->value => 'clamp(weighted_mean((m["cohesion.tcc.avg"] ?? null) === null ? null : m["cohesion.tcc.avg"] ** 0.5 * 100, 0.5, (m["cohesion.lcom.avg"] ?? null) === null ? null : (1 - clamp((m["cohesion.lcom.avg"] - 1) / 2, 0, 1)) * 100, 0.5), 0, 100)',
                 ],
                 applicability: [
-                    'class' => ComputedMetricApplicability::anyPresent(['cohesion.tcc', 'cohesion.lcom']),
+                    'class' => ComputedMetricApplicability::anyPresent(['cohesion.tcc', MetricName::COHESION_LCOM]),
                     'namespace' => ComputedMetricApplicability::anyPresent(['cohesion.tcc.avg', 'cohesion.lcom.avg']),
                 ],
                 description: 'Cohesion health score (0-100, higher is better)',
@@ -104,7 +105,7 @@ final class ComputedMetricDefaults
                 ],
                 applicability: [
                     'class' => ComputedMetricApplicability::always(),
-                    'namespace' => ComputedMetricApplicability::anyPresent(['coupling.distance', 'coupling.ce-packages.avg', 'coupling.ce.avg', 'coupling.ce.max', 'coupling.ce']),
+                    'namespace' => ComputedMetricApplicability::anyPresent([MetricName::COUPLING_DISTANCE, 'coupling.ce-packages.avg', 'coupling.ce.avg', 'coupling.ce.max', 'coupling.ce']),
                     'project' => ComputedMetricApplicability::anyPresent(['coupling.distance-own.avg', 'coupling.cbo.avg', 'coupling.cbo.p95', 'coupling.cbo.max']),
                 ],
                 description: 'Coupling health score (0-100, higher is better)',

@@ -4,24 +4,28 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition;
 
+use Closure;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricAuthorship;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricsSection;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /** Immutable computed-metric definitions resolved for one configuration run. */
 final readonly class ResolvedComputedMetricDefinitions implements ComputedMetricDefinitionCatalogInterface
 {
-    /** @param list<ComputedMetricDefinition> $definitions */
+    /**
+     * @param list<ComputedMetricDefinition> $definitions
+     * @param (Closure(ComputedMetricDefinition, SymbolLevel, string): ConfigurationRefusal)|null $refuseFormula
+     */
     public function __construct(
         private array $definitions,
-        private ?ComputedMetricAuthorship $authorship = null,
+        private ?Closure $refuseFormula = null,
     ) {}
 
     public function refuseFormula(ComputedMetricDefinition $definition, SymbolLevel $level, string $summary): ConfigurationRefusal
     {
-        return $this->authorship?->refuseFormula($definition, $level->value, $summary)
-            ?? ConfigurationRefusal::atResolvedKey(ComputedMetricsSection::position($definition->name), $summary);
+        return $this->refuseFormula !== null
+            ? ($this->refuseFormula)($definition, $level, $summary)
+            : ConfigurationRefusal::atResolvedKey(RefusedPosition::open(['computed_metrics', $definition->name], $definition->name), $summary);
     }
 
     public function all(): array

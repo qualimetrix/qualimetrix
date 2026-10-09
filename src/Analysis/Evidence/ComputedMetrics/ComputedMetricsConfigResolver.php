@@ -21,6 +21,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\HealthF
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * Lays the resolved `computed_metrics` and `exclude_health` sections over the
@@ -82,7 +83,10 @@ final class ComputedMetricsConfigResolver
 
         $this->formulaValidator->validate($result, $authorship);
 
-        return new ResolvedComputedMetricDefinitions($result, $authorship);
+        return new ResolvedComputedMetricDefinitions(
+            $result,
+            static fn(ComputedMetricDefinition $definition, SymbolLevel $level, string $summary): ConfigurationRefusal => $authorship->refuseFormula($definition, $level->value, $summary),
+        );
     }
 
     /**

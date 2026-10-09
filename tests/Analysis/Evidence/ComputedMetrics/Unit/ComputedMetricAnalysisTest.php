@@ -55,13 +55,30 @@ final class ComputedMetricAnalysisTest extends TestCase
             '',
             [\Qualimetrix\Core\Symbol\SymbolLevel::Project],
         );
+        $authorship = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricAuthorship();
         $token = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions(
             [$definition],
-            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricAuthorship(),
+            static fn(\Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition $selected, \Qualimetrix\Core\Symbol\SymbolLevel $level, string $summary): ConfigurationRefusal => $authorship->refuseFormula($selected, $level->value, $summary),
         );
         $refusal = $token->refuseFormula($definition, \Qualimetrix\Core\Symbol\SymbolLevel::Project, 'Runtime failure');
         self::assertStringContainsString('authored formula source is unavailable', $refusal->summary());
         self::assertSame(ConfigurationSource::Resolved, $refusal->sources()[0]->source());
+    }
+
+    #[Test]
+    public function itPreservesTheResolvedCoordinateForSyntheticDefinitionsWithoutARefusalCallback(): void
+    {
+        $definition = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition(
+            'computed.x',
+            ['project' => 'sqrt(-1)'],
+            '',
+            [\Qualimetrix\Core\Symbol\SymbolLevel::Project],
+        );
+        $token = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions([$definition]);
+        $refusal = $token->refuseFormula($definition, \Qualimetrix\Core\Symbol\SymbolLevel::Project, 'Runtime failure');
+        self::assertSame(ConfigurationSource::Resolved, $refusal->sources()[0]->source());
+        self::assertSame(['computed_metrics', 'computed.x'], $refusal->position()?->segments);
+        self::assertSame('Runtime failure', $refusal->summary());
     }
 
     #[Test]
