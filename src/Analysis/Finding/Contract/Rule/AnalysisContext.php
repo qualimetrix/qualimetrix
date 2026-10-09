@@ -42,10 +42,10 @@ final readonly class AnalysisContext
         return new self($this->metrics, $this->dependencyGraph, $this->namespaceTree, $this->thresholdOverrides, $this->projectScope, $session);
     }
 
-    /** @param list<GateInput> $inputs */
-    public function admit(string $producer, FindingChannel $channel, SymbolLevel $level, PopulationIdentity $identity, ChannelDeclaration $declaration, array $inputs): bool
+    /** @param iterable<GateInput> $inputs */
+    public function admit(string $producer, FindingChannel $channel, SymbolLevel $level, PopulationIdentity $identity, ChannelDeclaration $declaration, iterable $inputs): bool
     {
-        $failed = $declaration->populationFailure($channel, $level, $inputs);
+        $failed = $declaration->populationFailure($channel, $level, $identity, $inputs);
         $this->populationSession?->record($producer, $channel, $level, $identity, $declaration, $failed['gate'] ?? null, $failed['reason'] ?? null);
         return $failed === null;
     }

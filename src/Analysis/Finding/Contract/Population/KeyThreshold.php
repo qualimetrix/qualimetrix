@@ -30,12 +30,14 @@ final readonly class KeyThreshold implements GatePredicate
         $input->requireVariant('metrics', $this->source);
         $bag = $input->bag ?? throw new LogicException('Metrics input has no bag.');
         $sum = 0;
+        $firstMissing = null;
         foreach ($this->keys as $key) {
             $value = $bag->get($key);
             if ($value === null) {
                 if ($this->missing === 'exclude') {
                     return 'Missing metric "' . $key . '".';
                 }
+                $firstMissing ??= $key;
                 $value = $this->missing === 'refuse' ? $bag->require($key) : 0;
             }
             if (!is_finite((float) $value) || ($this->nonnegative && $value < 0)) {
@@ -46,7 +48,10 @@ final readonly class KeyThreshold implements GatePredicate
         if (!is_finite((float) $sum)) {
             throw new LogicException('Population sum is not finite.');
         }
-        return self::compare($sum, $this->comparison, $input->effectiveBoundary($this->boundary)) ? null : 'Metric population boundary was not met.';
+        if (self::compare($sum, $this->comparison, $input->effectiveBoundary($this->boundary))) {
+            return null;
+        }
+        return $firstMissing === null ? 'Metric population boundary was not met.' : 'Missing metric "' . $firstMissing . '".';
     }
 
     public static function compare(int|float $value, string $comparison, int|float $boundary): bool

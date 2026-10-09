@@ -33,7 +33,7 @@ final readonly class JudgedPopulation
         return new self([['token' => new stdClass(), ...$summary]]);
     }
 
-    /** @param iterable<array{identity: PopulationIdentity, inputs: list<GateInput>}> $members */
+    /** @param iterable<array{identity: PopulationIdentity, inputs: iterable<GateInput>}> $members */
     public static function measure(
         ChannelPublication $publication,
         string $producer,
@@ -48,9 +48,10 @@ final readonly class JudgedPopulation
         }
         $session = new PopulationSession($publication, $addressedProducer);
         foreach ($members as $member) {
-            $failed = $declaration->populationFailure($channel, $level, $member['inputs']);
+            $failed = $declaration->populationFailure($channel, $level, $member['identity'], $member['inputs']);
             $session->record($producer, $channel, $level, $member['identity'], $declaration, $failed['gate'] ?? null, $failed['reason'] ?? null);
         }
+        unset($member, $members);
         return $session->freeze();
     }
 

@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
@@ -229,11 +230,17 @@ final readonly class ChannelDeclaration
     public function withGates(PopulationGate ...$gates): self
     {
         $seen = [];
+        $units = [];
         foreach ($gates as $gate) {
             $key = $gate->channel->code . ':' . $gate->level->value . ':' . $gate->id;
             if (!\in_array($gate->level, $this->levels, true) || isset($seen[$key])) {
                 throw new LogicException('A population gate repeats or addresses an undeclared level.');
             }
+            $coordinate = $gate->channel->code . ':' . $gate->level->value;
+            if (isset($units[$coordinate]) && $units[$coordinate] !== $gate->unit) {
+                throw new LogicException('Population gates in one coordinate require one ordinary member unit.');
+            }
+            $units[$coordinate] = $gate->unit;
             $seen[$key] = true;
         }
         return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $this->description, $this->usesProducerWarningBoundary, $this->selectionRole, $this->readsRunEvidence, array_values($gates));
@@ -254,21 +261,33 @@ final readonly class ChannelDeclaration
     }
 
     /**
-     * @param list<GateInput> $inputs
+     * @param iterable<GateInput> $inputs
      *
      * @return array{gate: string, reason: string}|null
      */
-    public function populationFailure(FindingChannel $channel, SymbolLevel $level, array $inputs): ?array
+    public function populationFailure(FindingChannel $channel, SymbolLevel $level, PopulationIdentity $identity, iterable $inputs): ?array
     {
         $gates = $this->gatesFor($channel, $level);
-        if (\count($gates) !== \count($inputs)) {
-            throw new LogicException('Population inputs must cover the declared ordered gates.');
-        }
-        foreach ($gates as $index => $gate) {
-            $reason = $gate->evaluate($inputs[$index]);
+        $index = 0;
+        foreach ($inputs as $input) {
+            $gate = $gates[$index] ?? throw new LogicException('Population inputs exceed the declared ordered gates.');
+            if (!$input instanceof GateInput) {
+                throw new LogicException('A reached population input must be a GateInput.');
+            }
+            $reason = $gate->evaluate($input);
             if ($reason !== null) {
+                if ($identity->unit !== ($gate->failureUnit ?? $gate->unit)) {
+                    throw new LogicException('Population failure identity has the wrong declared unit.');
+                }
                 return ['gate' => $gate->id, 'reason' => $reason];
             }
+            ++$index;
+        }
+        if ($index !== \count($gates)) {
+            throw new LogicException('Population inputs ended before the declared ordered gates.');
+        }
+        if ($gates !== [] && $identity->unit !== $gates[0]->unit) {
+            throw new LogicException('Healthy population identity has the wrong declared member unit.');
         }
         return null;
     }

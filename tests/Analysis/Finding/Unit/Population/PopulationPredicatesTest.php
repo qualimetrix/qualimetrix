@@ -42,6 +42,15 @@ final class PopulationPredicatesTest extends TestCase
     }
 
     #[Test]
+    public function itKeepsZeroSubstitutionEligibilityButNamesTheFirstMissingFailedOperand(): void
+    {
+        $gate = new KeyThreshold('members', ['methods', 'properties'], '>=', 2, 'zero');
+        self::assertSame('Missing metric "methods".', $gate->evaluate(GateInput::metrics('members', new MetricBag())));
+        self::assertSame('Metric population boundary was not met.', $gate->evaluate(GateInput::metrics('members', MetricBag::fromArray(['methods' => 0, 'properties' => 0]))));
+        self::assertNull($gate->evaluate(GateInput::metrics('members', MetricBag::fromArray(['properties' => 2]))));
+    }
+
+    #[Test]
     public function itSelectsOnlyTheDeclaredMetricAlternative(): void
     {
         $gate = new KeyPresent('scope', ['all' => 'cbo', 'application' => 'cbo-app']);
