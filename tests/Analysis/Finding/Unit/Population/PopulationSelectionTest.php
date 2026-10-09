@@ -190,8 +190,19 @@ final class PopulationSelectionTest extends TestCase
         } catch (LogicException $failure) {
             self::assertStringContainsString('ordinary member unit', $failure->getMessage());
         }
-        $this->expectException(LogicException::class);
-        new PopulationGate('value', $channel, SymbolLevel::Project, 'occurrence', new KeyPresent('value', ['value']), 'Missing.', 'invocation');
+        foreach ([
+            ['occurrence', new KeyPresent('value', ['value']), 'invocation'],
+            ['occurrence', new ContextGuard('graphAvailable'), 'declaration'],
+            ['invocation', new ContextGuard('graphAvailable'), 'invocation'],
+            ['occurrence', new ContextGuard('namespaceClaimsJudged'), 'invocation'],
+        ] as [$unit, $predicate, $failureUnit]) {
+            try {
+                new PopulationGate('value', $channel, SymbolLevel::Project, $unit, $predicate, 'Missing.', $failureUnit);
+                self::fail('Only unavailable graph or prepared evidence can change a native member to invocation.');
+            } catch (LogicException $failure) {
+                self::assertStringContainsString('Only graph or prepared-evidence absence', $failure->getMessage());
+            }
+        }
     }
 
     private function publication(bool $selected = true): ChannelPublication
