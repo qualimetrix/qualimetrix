@@ -151,7 +151,7 @@ size.property-count.public	metric-key	?		13	11	0	0	0	0	0	1754	0	0	0	0
 size.setter-count	metric-key	?		12	11	0	0	0	0	0	1754	0	0	0	0
 size.symbol-class-count	metric-key	?		12	21	0	0	0	2	0	782	0	0	0	0
 size.symbol-declaring-namespace-count	metric-key	?		6	11	0	0	0	3	0	168	0	0	0	0
-size.symbol-method-count	metric-key	?		23	22	0	0	0	2	0	2092	0	0	0	0
+size.symbol-method-count	metric-key	?		23	24	0	0	0	2	0	2092	0	0	0	0
 size.trait-count	metric-key	?		14	15	0	0	0	0	0	914	0	0	0	0
 annotation.directive	producer	?		6	12	0	0	0	33	0	11	0	0	0	0
 architecture.circular-dependency	producer	?		15	54	0	2	1	39	0	43	0	0	0	0
@@ -194,7 +194,7 @@ design.type-coverage.return	producer	?		12	35	2	1	0	29	0	1470	0	0	0	0
 discovery.unmatched-exclude	producer	?		8	14	0	0	0	24	0	15	0	0	0	0
 duplication.clone	producer	?		21	155	0	2	6	71	0	188	0	0	0	0
 health.cohesion	producer	?		57	215	0	3	8	41	0	1447	0	0	0	0
-health.complexity	producer	?		69	266	0	1	0	28	0	1261	0	0	0	0
+health.complexity	producer	?		69	268	0	1	0	28	0	1261	0	0	0	0
 health.coupling	producer	?		69	78	0	0	1	21	0	1444	0	0	0	0
 health.maintainability	producer	?		30	52	0	0	4	21	0	1541	0	0	0	0
 health.overall	producer	?		123	199	0	0	0	29	0	2731	0	0	0	0
