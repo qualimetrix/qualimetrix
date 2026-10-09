@@ -85,7 +85,9 @@ final class HealthSummaryBuilderTest extends TestCase
         self::assertSame('complexity', $complexity->name);
         self::assertSame(65.0, $complexity->score);
         self::assertSame('Fair', $complexity->label);
-        self::assertCount(2, $complexity->decomposition);
+        self::assertCount(5, $complexity->decomposition);
+        self::assertNull($complexity->decomposition[2]->value);
+        self::assertSame(0, $complexity->decomposition[2]->coverage->measured);
         self::assertSame('complexity.ccn.avg', $complexity->decomposition[0]->metricKey);
         self::assertSame('complexity.cognitive.avg', $complexity->decomposition[1]->metricKey);
         self::assertCount(1, $complexity->worstContributors);
@@ -189,4 +191,33 @@ final class HealthSummaryBuilderTest extends TestCase
         self::assertSame([1, 0], array_map(static fn($offender): int => $offender->violationCount, $summary->worstClasses));
         self::assertSame([2.0, 0.0], array_map(static fn($offender): ?float => $offender->violationDensity, $summary->worstClasses));
     }
+
+    #[Test]
+    public function itKeepsExpectedMissingInputsNullableWithoutWritingRepositoryScalars(): void
+    {
+        $bag = MetricBag::fromArray([
+            'health.cohesion' => 80.0, 'cohesion.lcom.avg' => 0, 'cohesion.lcom.count' => 2,
+            'health.coupling' => 60.0, 'coupling.cbo.avg' => 0, 'coupling.cbo.count' => 2,
+            'size.symbol-class-count' => 2, 'size.symbol-declaring-namespace-count' => 4,
+        ]);
+        $repository = new InMemoryMetricRepository();
+        $repository->add(SymbolPath::forProject(), $bag, null, null);
+        $before = $repository->get(SymbolPath::forProject())->all();
+        $scores = (new HealthSummaryBuilder(new HealthMetricCatalog(), self::createStub(ComputedMetricDefinitionCatalogInterface::class)))
+            ->build($repository, new NamespaceTree([]), [])->healthScores;
+        foreach (['cohesion' => ['cohesion.tcc.avg', 2], 'coupling' => ['coupling.distance-own.avg', 4]] as $dimension => [$key, $eligible]) {
+            $missing = $scores[$dimension]->decomposition[0];
+            self::assertSame($key, $missing->metricKey);
+            self::assertNull($missing->value);
+            self::assertSame('not-measured', $missing->coverage->state);
+            self::assertSame(0, $missing->coverage->measured);
+            self::assertSame($eligible, $missing->coverage->eligible);
+            self::assertSame(0.0, $scores[$dimension]->decomposition[1]->value);
+            self::assertSame('measured', $scores[$dimension]->decomposition[1]->coverage->state);
+        }
+        self::assertSame($before, $repository->get(SymbolPath::forProject())->all());
+        self::assertFalse($repository->get(SymbolPath::forProject())->has('cohesion.tcc.avg'));
+        self::assertFalse($repository->get(SymbolPath::forProject())->has('coupling.distance-own.avg'));
+    }
+
 }

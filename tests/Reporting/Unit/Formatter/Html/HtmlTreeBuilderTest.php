@@ -1145,4 +1145,32 @@ final class HtmlTreeBuilderTest extends TestCase
         return new Finding(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, code: $code, message: $message, severity: $severity, metricValue: $metricValue, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
     }
 
+    #[Test]
+    public function itCarriesPreparedNullableDecompositionToTheViewer(): void
+    {
+        $coverage = \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage::over(
+            0,
+            2,
+            \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\CoverageUnit::Classes,
+            'cohesion.tcc.count',
+        );
+        $score = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore(
+            'cohesion',
+            null,
+            'Not measured',
+            50.0,
+            25.0,
+            $coverage,
+            [
+                new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem('cohesion.tcc.avg', 'TCC', null, '> 0.5', 'higher', '', coverage: $coverage),
+            ],
+        );
+        $payload = $this->builder->build(new \Qualimetrix\Reporting\Report([], 1, 0, 0.0, 0, 0, healthScores: ['cohesion' => $score]), new FormatterContext());
+        $data = json_decode(json_encode($payload, \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR);
+        self::assertArrayHasKey('health.cohesion', $data['summary']['healthScores']);
+        self::assertNull($data['summary']['healthScores']['health.cohesion']);
+        self::assertNull($data['summary']['healthDecomposition']['health.cohesion'][0]['value']);
+        self::assertSame('not-measured', $data['summary']['healthDecomposition']['health.cohesion'][0]['coverage']['state']);
+    }
+
 }

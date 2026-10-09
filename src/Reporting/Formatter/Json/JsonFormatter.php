@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter\Json;
 
 use LogicException;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -58,6 +59,14 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
             'coverage' => $report->coverage?->toArray(),
             'projectScope' => $report->projectScope?->toArray(),
             'configurationDiagnostics' => $report->configurationDiagnostics,
+            'computedMetricOutcomes' => array_map(static fn(ComputedMetricValueAbsence $absence): array => [
+                'metric' => $absence->metricName,
+                'level' => $absence->level->value,
+                'missingKeysCount' => $absence->missingKeysCount,
+                'noValueCount' => $absence->noValueCount,
+                'missingKeys' => $absence->missingKeys,
+                'subjects' => array_map(static fn($subject): string => $subject->toCanonical(), $absence->subjects),
+            ], $report->computedMetricEvaluation->absences),
             'health' => $this->healthSection->format($report, $context),
             'worstNamespaces' => $this->offenderSection->formatNamespaces(
                 $report->worstNamespaces,

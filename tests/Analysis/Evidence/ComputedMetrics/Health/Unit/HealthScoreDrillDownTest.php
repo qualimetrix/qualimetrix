@@ -365,4 +365,29 @@ final class HealthScoreDrillDownTest extends TestCase
         self::assertArrayHasKey('overall', $result);
         self::assertEqualsWithDelta(50.0, $result['overall']->score, 0.01);
     }
+
+    #[Test]
+    public function itDoesNotBorrowBuiltinContributorsForAnAuthoredNamespaceScore(): void
+    {
+        $definition = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition(
+            'health.cohesion',
+            ['namespace' => '80'],
+            'Authored',
+            [SymbolLevel::Namespace_, SymbolLevel::Project],
+        );
+        $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
+        $catalog->method('find')->willReturnCallback(static fn(string $name) => $name === 'health.cohesion' ? $definition : null);
+        $subject = self::exactClassSubject(SymbolPath::forClass('App', 'One'), 'src/One.php');
+        $repository = $this->createMetricRepository(
+            new MetricBag(),
+            namespaces: [new SymbolInfo(SymbolPath::forNamespace('App'), null, null)],
+            namespaceMetrics: ['ns:App' => MetricBag::fromArray(['health.cohesion' => 80.0, 'size.class-count.sum' => 1])],
+            classes: [new SymbolInfo($subject, RelativePath::fromString('src/One.php'), 1)],
+            classMetrics: [$subject->toCanonical() => MetricBag::fromArray(['cohesion.tcc' => 0.1, 'cohesion.lcom' => 5])],
+        );
+        $score = (new HealthScoreDrillDown($catalog))->buildSubtreeHealthScores($repository, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App'))['cohesion'];
+        self::assertSame(80.0, $score->score);
+        self::assertSame([], $score->worstContributors);
+    }
+
 }

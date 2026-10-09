@@ -218,6 +218,11 @@ final readonly class HealthScoreDrillDown
      */
     private function classInputs(string $dimension): array
     {
+        $definition = $this->definitionCatalog->find($dimension);
+        if ($definition !== null && !$definition->isBuiltinFormulaForLevel(SymbolLevel::Namespace_)) {
+            return [];
+        }
+
         return array_map(static fn(array $input): array => [
             'classKey' => $input['classKey'],
             'direction' => $input['direction'],
@@ -228,7 +233,7 @@ final readonly class HealthScoreDrillDown
      * @param iterable<SymbolInfo> $classSymbols
      * @param list<array{classKey: string, direction: string}> $inputs
      *
-     * @return Generator<array{symbol: SymbolInfo, primaryValue: float|null, contributorMetrics: array<string, int|float>}>
+     * @return Generator<array{symbol: SymbolInfo, primaryValue: float|null, contributorMetrics: array<string, int|float>, primaryDirection: string}>
      */
     private function contributorCandidates(
         MetricRepositoryInterface $repository,
@@ -243,6 +248,8 @@ final readonly class HealthScoreDrillDown
                 'symbol' => $symbol,
                 'primaryValue' => $selection['primaryValue'],
                 'contributorMetrics' => $selection['contributorMetrics'],
+                'primaryDirection' => ($inputs[0]['classKey'] ?? null) === 'cohesion.tcc'
+                    && $metrics->get('cohesion.tcc') === null ? 'lower' : $inputs[0]['direction'],
             ];
         }
     }

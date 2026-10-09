@@ -292,6 +292,8 @@ final class HealthContributorTest extends TestCase
 
             if (isset($spec['cohesion.lcom'])) {
                 $bag['cohesion.lcom'] = $spec['cohesion.lcom'];
+                $dimensionMetrics['health.cohesion'] ??= 50.0;
+                $dimensionMetrics['cohesion.lcom.avg'] ??= 3.0;
             }
 
             if (isset($spec['coupling.ce'])) {
@@ -328,6 +330,20 @@ final class HealthContributorTest extends TestCase
             warningCount: 0,
             metrics: $metrics,
         );
+    }
+
+    #[Test]
+    public function itRanksExactlyTwoLcomOnlyContributorsWorstFirst(): void
+    {
+        $report = $this->buildReportWithClasses([
+            ['ns' => 'App', 'name' => 'Connected', 'cohesion.lcom' => 1],
+            ['ns' => 'App', 'name' => 'Disconnected', 'cohesion.lcom' => 5],
+        ]);
+        $contributors = $this->summarize($report)->healthScores['cohesion']->worstContributors;
+
+        self::assertCount(2, $contributors);
+        self::assertSame(['Disconnected', 'Connected'], array_column($contributors, 'className'));
+        self::assertSame(['cohesion.lcom' => 5], $contributors[0]->metricValues);
     }
 
 }

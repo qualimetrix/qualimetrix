@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Health;
 
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthContributor;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
@@ -62,6 +63,8 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
             $lines[] = '';
         }
 
+        array_push($lines, ...self::computedAbsenceLines($report));
+
         $healthScores = $this->healthScoreResolver->resolve($report, $context);
 
         if ($healthScores === []) {
@@ -93,6 +96,23 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
         $this->appendPointer($color, $lines);
 
         return new FormattedReport(implode("\n", $lines) . "\n");
+    }
+
+    /** @return list<string> */
+    private static function computedAbsenceLines(Report $report): array
+    {
+        return array_map(static function (ComputedMetricValueAbsence $absence): string {
+            $reasons = [];
+            if ($absence->missingKeysCount > 0) {
+                $reasons[] = \sprintf('missing keys [%s] for %d subject(s)', implode(', ', $absence->missingKeys), $absence->missingKeysCount);
+            }
+            if ($absence->noValueCount > 0) {
+                $reasons[] = \sprintf('no value for %d subject(s)', $absence->noValueCount);
+            }
+            $examples = array_map(static fn($subject): string => $subject->toCanonical(), $absence->subjects);
+
+            return \sprintf('Computed metric %s (%s): not measured — %s%s', $absence->metricName, $absence->level->value, implode('; ', $reasons), $examples === [] ? '' : '; examples: ' . implode(', ', $examples));
+        }, $report->computedMetricEvaluation->absences);
     }
 
     public function publicationKind(): PublicationKind
@@ -311,6 +331,10 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
 
     private function renderDecompositionItem(DecompositionItem $item, AnsiColor $color): string
     {
+        if ($item->value === null) {
+            return \sprintf('%s%s: not measured %s', '    ', $item->humanName, $item->coverage->applicable ? \sprintf('%d/%d', $item->coverage->measured, $item->coverage->eligible) : '—');
+        }
+
         $value = $this->formatValue($item->value);
         $boldValue = $color->bold($value);
         $paddedValue = $this->ansiRightPad($boldValue, 8);

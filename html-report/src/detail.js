@@ -64,6 +64,10 @@ export function coverageRecordFor(node, summary, metric) {
 export function formatHealthCoverage(record) {
   if (!record || typeof record !== 'object') return null;
 
+  if (record.state === 'not-measured') {
+    return { short: `not measured ${record.measured}/${record.eligible}`, full: `Coverage: not measured ${record.measured}/${record.eligible} ${record.unit ?? 'symbols'}` };
+  }
+
   if (record.state !== 'measured') {
     return {
       short: 'n/a',
@@ -115,7 +119,7 @@ function renderHealthBars(node, summary) {
 
   for (const metric of healthMetrics) {
     const value = source?.[metric];
-    if (value == null) continue;
+    if (value == null && (node.type !== 'project' || !Object.hasOwn(summary?.healthCoverage ?? {}, metric))) continue;
 
     const label = metric.replace('health.', '');
     const row = document.createElement('div');
@@ -130,12 +134,12 @@ function renderHealthBars(node, summary) {
 
     const barInner = document.createElement('div');
     barInner.className = 'health-bar-inner';
-    barInner.style.width = `${Math.max(0, Math.min(100, value))}%`;
-    barInner.setAttribute('data-score', Math.round(value));
+    barInner.style.width = value == null ? '0%' : `${Math.max(0, Math.min(100, value))}%`;
+    if (value != null) barInner.setAttribute('data-score', Math.round(value));
 
     const valueEl = document.createElement('span');
     valueEl.className = 'health-bar-value';
-    valueEl.textContent = Math.round(value);
+    valueEl.textContent = value == null ? 'not measured' : Math.round(value);
 
     barOuter.appendChild(barInner);
     row.appendChild(nameEl);
@@ -158,7 +162,7 @@ function renderHealthBars(node, summary) {
     // For project nodes, health scores live in summary.healthScores, not node.metrics
     // `type` travels with the metrics: the decomposition is chosen by the
     // node's level, and a project node reads its scores from the summary.
-    const hintNode = source === node.metrics ? node : { type: node.type, metrics: { ...node.metrics, ...source } };
+    const hintNode = source === node.metrics ? node : { type: node.type, metrics: { ...node.metrics, ...source }, preparedDecomposition: summary.healthDecomposition, preparedCoverage: summary.healthCoverage };
     const hint = getHealthHint(metric, hintNode);
     if (hint || coverage) {
       // The coverage sentence rides in the same tooltip as the decomposition:

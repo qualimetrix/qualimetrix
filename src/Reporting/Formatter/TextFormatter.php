@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter;
 
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -44,7 +45,24 @@ final class TextFormatter implements FormatterInterface
 
         $color = new AnsiColor($context->useColor);
 
-        return new FormattedReport($formatted . $color->dim(ProductIdentity::pointerText()) . "\n");
+        return new FormattedReport($formatted . implode("\n", self::computedAbsenceLines($report)) . ($report->computedMetricEvaluation->absences === [] ? '' : "\n") . $color->dim(ProductIdentity::pointerText()) . "\n");
+    }
+
+    /** @return list<string> */
+    private static function computedAbsenceLines(Report $report): array
+    {
+        return array_map(static function (ComputedMetricValueAbsence $absence): string {
+            $reasons = [];
+            if ($absence->missingKeysCount > 0) {
+                $reasons[] = \sprintf('missing keys [%s] for %d subject(s)', implode(', ', $absence->missingKeys), $absence->missingKeysCount);
+            }
+            if ($absence->noValueCount > 0) {
+                $reasons[] = \sprintf('no value for %d subject(s)', $absence->noValueCount);
+            }
+            $examples = array_map(static fn($subject): string => $subject->toCanonical(), $absence->subjects);
+
+            return \sprintf('Computed metric %s (%s): not measured — %s%s', $absence->metricName, $absence->level->value, implode('; ', $reasons), $examples === [] ? '' : '; examples: ' . implode(', ', $examples));
+        }, $report->computedMetricEvaluation->absences);
     }
 
     public function publicationKind(): PublicationKind

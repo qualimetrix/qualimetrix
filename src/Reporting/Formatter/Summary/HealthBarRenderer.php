@@ -93,8 +93,11 @@ final class HealthBarRenderer
         int $terminalWidth,
         AnsiColor $color,
     ): ?string {
-        if ($overall === null || $overall->score === null) {
+        if ($overall === null) {
             return null;
+        }
+        if ($overall->score === null) {
+            return $color->bold('Health') . $this->buildHeaderSuffix($context, $color) . ' ' . $color->dim('Not measured');
         }
 
         $headerSuffix = $this->buildHeaderSuffix($context, $color);
@@ -283,6 +286,10 @@ final class HealthBarRenderer
 
     private function renderDecompositionItem(DecompositionItem $item, AnsiColor $color, string $indent): string
     {
+        if ($item->value === null) {
+            return \sprintf('%s%s: not measured %s', $indent, $item->humanName, $item->coverage->applicable ? \sprintf('%d/%d', $item->coverage->measured, $item->coverage->eligible) : '—');
+        }
+
         $value = $this->formatValue($item->value);
         $explanation = $item->explanation !== '' ? " — {$item->explanation}" : '';
 

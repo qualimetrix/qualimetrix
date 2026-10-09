@@ -84,36 +84,42 @@ final readonly class HealthSummaryBuilder
         foreach (HealthDimension::all() as $dim) {
             $score = $projectMetrics->get($dim->value);
 
-            if ($score === null) {
+            $definition = $this->definitionCatalog->find($dim->value);
+            if ($score === null && ($definition === null || !$definition->hasLevel(SymbolLevel::Project) || !$definition->isBuiltinFormulaForLevel(SymbolLevel::Project))) {
                 continue;
             }
 
-            $scoreValue = (float) $score;
+            $scoreValue = $score === null ? null : (float) $score;
             [$warnThreshold, $errThreshold] = $this->thresholds($dim);
-
+            $inputs = $this->decomposition->inputsForFormula($dim->value, SymbolLevel::Project, $projectMetrics->get(...), $definition);
             $decomposition = $this->buildDecomposition($dim->value, $projectMetrics);
-            $contributors = $this->rankContributors($dim->value, $metrics);
+            $contributors = $scoreValue === null || ($definition !== null && !$definition->isBuiltinFormulaForLevel(SymbolLevel::Project))
+                ? [] : $this->rankContributors($dim->value, $metrics);
             $dimensionName = $dim->shortName();
             $healthScores[$dimensionName] = new HealthScore(
                 name: $dimensionName,
                 score: $scoreValue,
-                label: $this->hintProvider->getScoreLabel($scoreValue, $warnThreshold, $errThreshold),
+                label: $scoreValue === null ? 'Not measured' : $this->hintProvider->getScoreLabel($scoreValue, $warnThreshold, $errThreshold),
                 warningThreshold: $warnThreshold,
                 errorThreshold: $errThreshold,
-                coverage: $this->coverage->read($dim->value, $projectMetrics->get(...)),
+                coverage: $inputs === [] && $definition !== null && !$definition->isBuiltinFormulaForLevel(SymbolLevel::Project)
+                    ? \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage::notApplicable('the authored formula has no identifiable symbol population')
+                    : $this->coverage->read($dim->value, $projectMetrics->get(...), $inputs),
                 decomposition: $decomposition,
                 worstContributors: $contributors,
             );
         }
 
-        // Show typing dimension with "0 classes analyzed" when other dimensions exist but typing doesn't,
+        // Show the absent typing dimension when other dimensions exist,
         // unless typing was explicitly excluded via --exclude-health
-        if ($healthScores !== [] && !isset($healthScores['typing']) && !$this->isDefinitionExcluded(HealthDimension::Typing->value)) {
+        $typingDefinition = $this->definitionCatalog->find(HealthDimension::Typing->value);
+        if ($healthScores !== [] && !isset($healthScores['typing']) && !$this->isDefinitionExcluded(HealthDimension::Typing->value)
+            && ($typingDefinition === null || $typingDefinition->isBuiltinFormulaForLevel(SymbolLevel::Project))) {
             [$typingWarning, $typingError] = $this->thresholds(HealthDimension::Typing);
             $healthScores['typing'] = new HealthScore(
                 name: 'typing',
                 score: null,
-                label: '0 classes analyzed',
+                label: 'Not measured',
                 warningThreshold: $typingWarning,
                 errorThreshold: $typingError,
                 coverage: $this->coverage->read(HealthDimension::Typing->value, $projectMetrics->get(...)),
@@ -138,15 +144,19 @@ final readonly class HealthSummaryBuilder
 
         return $this->contributorRanker->rank(
             array_map(function ($symbol) use ($metrics, $inputs): array {
+                $subject = $symbol->subject ?? throw new LogicException('Class contributor requires an exact subject');
                 $selection = $this->decomposition->selectContributorMetrics(
                     $inputs,
-                    $metrics->getSubject($symbol->subject ?? throw new LogicException('Class contributor requires an exact subject'))->get(...),
+                    $metrics->getSubject($subject)->get(...),
                 );
 
                 return [
                     'symbol' => $symbol,
                     'primaryValue' => $selection['primaryValue'],
                     'contributorMetrics' => $selection['contributorMetrics'],
+                    'primaryDirection' => ($inputs[0]['classKey'] ?? null) === MetricName::COHESION_TCC
+                        && $metrics->getSubject($subject)->get(MetricName::COHESION_TCC) === null
+                        ? 'lower' : $inputs[0]['direction'],
                 ];
             }, iterator_to_array($metrics->allClassDeclarations(), false)),
             $inputs[0]['direction'],
@@ -167,24 +177,29 @@ final readonly class HealthSummaryBuilder
     ): array {
         // Typing dimension needs special handling: compute percentages from raw sums
         if ($dimension === HealthDimension::Typing->value) {
+            $definition = $this->definitionCatalog->find($dimension);
+            if ($definition !== null && !$definition->isBuiltinFormulaForLevel(SymbolLevel::Project)) {
+                return [];
+            }
+
             return $this->buildTypingDecomposition($projectMetrics);
         }
 
-        $metricKeys = $this->hintProvider->getDecomposition($dimension, SymbolLevel::Project);
+        $definition = $this->definitionCatalog->find($dimension);
+        $inputs = $definition !== null && !$definition->isBuiltinFormulaForLevel(SymbolLevel::Project)
+            ? $this->decomposition->inputsForFormula($dimension, SymbolLevel::Project, $projectMetrics->get(...), $definition)
+            : $this->decomposition->inputsFor($dimension, SymbolLevel::Project);
+        $metricKeys = array_column($inputs, 'key');
         $items = [];
 
         foreach ($metricKeys as $metricKey) {
             $value = $projectMetrics->get($metricKey);
 
-            if ($value === null) {
-                continue;
-            }
-
-            $floatValue = (float) $value;
+            $floatValue = $value === null ? null : (float) $value;
             $label = $this->hintProvider->getLabel($metricKey) ?? $metricKey;
             $goodValue = $this->hintProvider->getGoodValue($metricKey) ?? '';
             $direction = $this->hintProvider->getDirection($metricKey) ?? 'lower_is_better';
-            $explanation = $this->hintProvider->getExplanation($metricKey, $floatValue);
+            $explanation = $floatValue === null ? '' : $this->hintProvider->getExplanation($metricKey, $floatValue);
 
             $items[] = new DecompositionItem(
                 metricKey: $metricKey,
@@ -193,6 +208,7 @@ final readonly class HealthSummaryBuilder
                 goodValue: $goodValue,
                 direction: $direction,
                 explanation: $explanation,
+                coverage: $this->coverage->forInput($dimension, $metricKey, $projectMetrics->get(...)),
             );
         }
 

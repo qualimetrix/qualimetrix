@@ -34,7 +34,7 @@ final class HealthScoreResolver
         if ($context->class !== null) {
             $classScores = $this->namespaceDrillDown->buildClassHealthScores($report->metrics, $context->class);
 
-            return $classScores !== [] ? $classScores : $report->healthScores;
+            return $classScores;
         }
 
         if ($context->namespace !== null) {

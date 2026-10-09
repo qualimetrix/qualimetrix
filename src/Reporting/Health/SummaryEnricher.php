@@ -70,6 +70,7 @@ final readonly class SummaryEnricher
             outOfScope: $report->outOfScope,
             projectScope: $report->projectScope,
             configurationDiagnostics: $report->configurationDiagnostics,
+            computedMetricEvaluation: $report->computedMetricEvaluation,
         );
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Summary;
 
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence;
 use Qualimetrix\Core\Version;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
 use Qualimetrix\Reporting\Formatter\CoverageNarrator;
@@ -48,6 +49,8 @@ final class SummaryFormatter implements FormatterInterface, FormatOptionKeysInte
             $lines[] = '';
         }
 
+        array_push($lines, ...self::computedAbsenceLines($report));
+
         $this->healthBarRenderer->render($report, $context, $color, $terminalWidth, $lines);
         $this->offenderListRenderer->renderWorstNamespaces($report, $color, $context, $lines);
         $this->offenderListRenderer->renderWorstClasses($report, $color, $context, $lines);
@@ -64,6 +67,23 @@ final class SummaryFormatter implements FormatterInterface, FormatOptionKeysInte
         }
 
         return new FormattedReport(implode("\n", $lines) . "\n");
+    }
+
+    /** @return list<string> */
+    private static function computedAbsenceLines(Report $report): array
+    {
+        return array_map(static function (ComputedMetricValueAbsence $absence): string {
+            $reasons = [];
+            if ($absence->missingKeysCount > 0) {
+                $reasons[] = \sprintf('missing keys [%s] for %d subject(s)', implode(', ', $absence->missingKeys), $absence->missingKeysCount);
+            }
+            if ($absence->noValueCount > 0) {
+                $reasons[] = \sprintf('no value for %d subject(s)', $absence->noValueCount);
+            }
+            $examples = array_map(static fn($subject): string => $subject->toCanonical(), $absence->subjects);
+
+            return \sprintf('Computed metric %s (%s): not measured — %s%s', $absence->metricName, $absence->level->value, implode('; ', $reasons), $examples === [] ? '' : '; examples: ' . implode(', ', $examples));
+        }, $report->computedMetricEvaluation->absences);
     }
 
     public function publicationKind(): PublicationKind

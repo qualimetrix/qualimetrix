@@ -20,7 +20,7 @@ final readonly class ContributorRanker
     public const int MAX_CONTRIBUTORS = 10;
 
     /**
-     * @param iterable<array{symbol: SymbolInfo, primaryValue: float|null, contributorMetrics: array<string, int|float>}> $candidates
+     * @param iterable<array{symbol: SymbolInfo, primaryValue: float|null, contributorMetrics: array<string, int|float>, primaryDirection?: string}> $candidates
      * @param string $direction Exact Health direction: `higher` or `lower`.
      *
      * @return list<HealthContributor>
@@ -48,9 +48,9 @@ final readonly class ContributorRanker
         }
 
         usort($ranked, static function (array $a, array $b) use ($direction): int {
-            $cmp = $direction === 'higher'
-                ? $a['primaryValue'] <=> $b['primaryValue']
-                : $b['primaryValue'] <=> $a['primaryValue'];
+            $left = ($a['primaryDirection'] ?? $direction) === 'lower' ? -$a['primaryValue'] : $a['primaryValue'];
+            $right = ($b['primaryDirection'] ?? $direction) === 'lower' ? -$b['primaryValue'] : $b['primaryValue'];
+            $cmp = $left <=> $right;
 
             return $cmp !== 0
                 ? $cmp

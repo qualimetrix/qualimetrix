@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata;
 
+use ArrayAccess;
+use Closure;
 use LogicException;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\CoverageUnit;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -305,6 +309,80 @@ final class HealthDecompositionCatalog
             ?? ($level === SymbolLevel::Project ? ($perLevel[SymbolLevel::Namespace_->value] ?? []) : []);
     }
 
+    /**
+     * @param callable(string): (int|float|null) $readMetric
+     *
+     * @return list<array{key: string, sources: list<string>, label: string, direction: string, coverage: array{count: string, unit: CoverageUnit}|null}>
+     */
+    public function inputsForFormula(string $dimension, SymbolLevel $level, callable $readMetric, ?ComputedMetricDefinition $definition): array
+    {
+        $inputs = $this->inputsFor($dimension, $level);
+        if ($definition !== null && !$definition->isBuiltinFormulaForLevel($level)) {
+            $formula = $definition->getFormulaForLevel($level);
+            $keys = $formula === null ? [] : $this->participatingKeys($formula, $readMetric);
+
+            return array_values(array_filter($inputs, static fn(array $input): bool => \in_array($input['key'], $keys, true) || array_diff($input['sources'], $keys) === []));
+        }
+        if ($dimension === 'health.cohesion') {
+            $participating = array_values(array_filter($inputs, static fn(array $input): bool => $readMetric($input['key']) !== null));
+
+            return $participating !== [] ? $participating : $inputs;
+        }
+
+        return $inputs;
+    }
+
+    /**
+     * @param callable(string): (int|float|null) $readMetric
+     *
+     * @return list<string>
+     */
+    private function participatingKeys(string $formula, callable $readMetric): array
+    {
+        /** @implements ArrayAccess<string, int|float|null> */
+        $lookup = new class (Closure::fromCallable($readMetric)) implements ArrayAccess {
+            /** @var array<string, true> */
+            private array $participating = [];
+
+            /** @param Closure(string): (int|float|null) $read */
+            public function __construct(private readonly Closure $read) {}
+
+            public function offsetExists(mixed $offset): bool
+            {
+                return $this->offsetGet($offset) !== null;
+            }
+
+            public function offsetGet(mixed $offset): int|float|null
+            {
+                $value = ($this->read)($offset);
+                if ($value !== null) {
+                    $this->participating[$offset] = true;
+                }
+
+                return $value;
+            }
+
+            public function offsetSet(mixed $offset, mixed $value): void
+            {
+                throw new LogicException('Health formula inputs are read-only.');
+            }
+
+            public function offsetUnset(mixed $offset): void
+            {
+                throw new LogicException('Health formula inputs are read-only.');
+            }
+
+            /** @return list<string> */
+            public function keys(): array
+            {
+                return array_keys($this->participating);
+            }
+        };
+        (new ComputedMetricExpression())->evaluate($formula, ['m' => $lookup]);
+
+        return $lookup->keys();
+    }
+
     /** @return list<string> */
     public function getDecomposition(string $dimension, SymbolLevel $level): array
     {
@@ -329,6 +407,13 @@ final class HealthDecompositionCatalog
     public function selectContributorMetrics(array $inputs, callable $readMetric): array
     {
         $primaryValue = isset($inputs[0]) ? $readMetric($inputs[0]['classKey']) : null;
+        if ($primaryValue === null && ($inputs[0]['classKey'] ?? null) === 'cohesion.tcc') {
+            foreach ($inputs as $input) {
+                if ($input['classKey'] === MetricName::COHESION_LCOM) {
+                    $primaryValue = $readMetric($input['classKey']);
+                }
+            }
+        }
         $contributorMetrics = [];
         foreach ($inputs as $input) {
             $value = $readMetric($input['classKey']);

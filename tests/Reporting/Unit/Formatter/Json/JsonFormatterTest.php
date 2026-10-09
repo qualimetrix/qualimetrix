@@ -1899,4 +1899,27 @@ final class JsonFormatterTest extends TestCase
         );
     }
 
+    #[Test]
+    public function itPublishesAStableEmptyAndNonfailureComputedOutcomeField(): void
+    {
+        $empty = json_decode($this->formatter->format(ReportBuilder::create()->build(), new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
+        self::assertSame([], $empty['computedMetricOutcomes']);
+        $report = ReportBuilder::create()->computedMetricEvaluation(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence(
+                'computed.custom',
+                \Qualimetrix\Core\Symbol\SymbolLevel::Project,
+                2,
+                1,
+                ['missing.input'],
+                [\Qualimetrix\Core\Symbol\MetricSubject::aggregate(\Qualimetrix\Core\Symbol\SymbolPath::forProject())],
+            ),
+        ]))->build();
+        $data = json_decode($this->formatter->format($report, new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
+        self::assertSame([[
+            'metric' => 'computed.custom', 'level' => 'project', 'missingKeysCount' => 2,
+            'noValueCount' => 1, 'missingKeys' => ['missing.input'], 'subjects' => ['project:'],
+        ]], $data['computedMetricOutcomes']);
+        self::assertSame(0, $data['summary']['errorCount']);
+    }
+
 }

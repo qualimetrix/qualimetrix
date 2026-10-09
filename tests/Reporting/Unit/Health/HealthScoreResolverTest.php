@@ -183,7 +183,7 @@ final class HealthScoreResolverTest extends TestCase
     }
 
     #[Test]
-    public function itClassFilterFallsBackToProjectWhenClassNotFound(): void
+    public function itClassFilterDoesNotBorrowProjectWhenClassNotFound(): void
     {
         $projectScores = [
             'complexity' => new HealthScore('complexity', 80.0, 'Good', 50.0, 25.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
@@ -206,6 +206,22 @@ final class HealthScoreResolverTest extends TestCase
 
         $result = $this->resolver->resolve($report, $context);
 
-        self::assertSame($projectScores, $result);
+        self::assertSame([], $result);
     }
+
+    #[Test]
+    public function itKeepsAnExistingClassWithNoScoreLocal(): void
+    {
+        $subject = self::exactClassSubject(SymbolPath::forClass('App', 'Bare'), 'src/Bare.php');
+        $repository = $this->createMetricRepository(
+            new MetricBag(),
+            classes: [new SymbolInfo($subject, RelativePath::fromString('src/Bare.php'), 1)],
+            classMetrics: [$subject->toCanonical() => new MetricBag()],
+        );
+        $report = new Report([], 1, 0, 0.0, 0, 0, metrics: $repository, healthScores: [
+            'overall' => new HealthScore('overall', 80.0, 'Good', 50.0, 25.0, HealthCoverage::notApplicable('project')),
+        ]);
+        self::assertSame([], $this->resolver->resolve($report, new FormatterContext(class: 'App\\Bare')));
+    }
+
 }
