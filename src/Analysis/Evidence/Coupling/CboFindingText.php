@@ -136,14 +136,32 @@ final class CboFindingText
         foreach ($dependencies as $dep) {
             $targetKey = $dep->targetLogical()->toCanonical();
             $counts[$targetKey] = ($counts[$targetKey] ?? 0) + 1;
-            $targetNames[$targetKey] = $dep->targetLogical()->type ?? $targetKey;
+            $targetNames[$targetKey] = $dep->targetLogical()->toString();
         }
 
         // Sort by occurrence count descending
         arsort($counts);
 
         $topKeys = \array_slice(array_keys($counts), 0, 5);
-        $topNames = array_map(static fn(string $targetKey): string => $targetNames[$targetKey], $topKeys);
+        $selected = array_map(static fn(string $targetKey): array => explode('\\', $targetNames[$targetKey]), $topKeys);
+        $topNames = [];
+        foreach ($selected as $index => $components) {
+            $suffix = implode('\\', $components);
+            for ($depth = 1; $depth <= \count($components); $depth++) {
+                $suffix = implode('\\', \array_slice($components, -$depth));
+                $unique = true;
+                foreach ($selected as $otherIndex => $other) {
+                    if ($index !== $otherIndex && implode('\\', \array_slice($other, -$depth)) === $suffix) {
+                        $unique = false;
+                        break;
+                    }
+                }
+                if ($unique) {
+                    break;
+                }
+            }
+            $topNames[] = $suffix;
+        }
 
         return 'Top dependencies: ' . implode(', ', $topNames);
     }

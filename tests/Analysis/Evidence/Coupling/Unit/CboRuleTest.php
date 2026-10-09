@@ -803,6 +803,57 @@ final class CboRuleTest extends TestCase
     }
 
     #[Test]
+    public function itKeepsCollidingDependencyIdentitiesDistinctUsingTheirShortestNamespaceSuffix(): void
+    {
+        $rule = new CboRule(new CboOptions());
+
+        $symbolPath = SymbolPath::forClass('App\Service', 'GodService');
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/GodService.php'), 10);
+
+        // CBO = 25, Ce = 22 — efferent dominant
+        $metricBag = (new MetricBag())
+            ->with('coupling.cbo', 25)
+            ->with('coupling.ca', 3)
+            ->with('coupling.ce', 22);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allClassDeclarations')
+            ->willReturn([$classInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
+
+        $location = new Location(RelativePath::fromString('src/Service/GodService.php'), 10);
+
+        // Create mock dependencies — 7 unique targets with varying occurrence counts
+        $deps = [
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Repository', 'C'), DependencyType::TypeHint, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Repository', 'C'), DependencyType::New_, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Repository', 'C'), DependencyType::TypeHint, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Service', 'C'), DependencyType::TypeHint, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Service', 'C'), DependencyType::TypeHint, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Dto', 'UserDto'), DependencyType::New_, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Event', 'UserCreated'), DependencyType::New_, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Contract', 'EventDispatcher'), DependencyType::TypeHint, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Validator', 'EmailValidator'), DependencyType::New_, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Cache', 'CacheManager'), DependencyType::TypeHint, $location),
+        ];
+
+        $graph = self::createStub(DependencyGraphInterface::class);
+        $graph->method('getClassDependencies')
+            ->willReturn($deps);
+
+        $context = new AnalysisContext($repository, dependencyGraph: $graph);
+        $findings = $rule->analyzeLevel(SymbolLevel::Class_, $context);
+
+        self::assertCount(1, $findings);
+        self::assertNotNull($findings[0]->recommendation);
+        // UserRepository has 3 occurrences, Logger has 2, rest have 1
+        self::assertStringContainsString('Top dependencies: Repository\\C, Service\\C', $findings[0]->recommendation);
+        // Should also contain the base recommendation
+        self::assertStringContainsString('extract dependencies to reduce outbound coupling', $findings[0]->recommendation);
+    }
+
+    #[Test]
     public function itLimitsRecommendationToFiveDependencies(): void
     {
         $rule = new CboRule(new CboOptions());
