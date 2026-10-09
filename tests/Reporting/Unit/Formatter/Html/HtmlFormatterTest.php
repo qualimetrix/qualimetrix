@@ -48,6 +48,51 @@ final class HtmlFormatterTest extends TestCase
     }
 
     #[Test]
+    public function itRepairsMalformedPopulationExamplesWithoutLosingTheBanner(): void
+    {
+        $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
+        $trace->record(
+            'complexity.ccn',
+            new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.ccn'),
+            \Qualimetrix\Core\Symbol\SymbolLevel::Callable,
+            \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::selector("missing\xFF", 'callable'),
+            'callable-value',
+            'Callable complexity was not published.',
+        );
+        $formatted = $this->formatter->format(ReportBuilder::create()->population($trace->freeze())->build(), new FormatterContext());
+        $payload = self::payload($formatted->body);
+        self::assertStringContainsString('data-qmx-population="incomplete"', $formatted->body);
+        self::assertSame(['missing%FF'], $payload['abstentions'][0]['examples']);
+        self::assertSame(1, $formatted->escapedStrings);
+        self::assertSame($formatted->escapedStrings, $payload['invalidUtf8Replaced']);
+        self::assertStringContainsString('1 published string(s) contained invalid UTF-8', $formatted->body);
+    }
+
+    #[Test]
+    public function itPublishesUnjudgedPopulationOnAnEmptyFindingReportWithoutAFailure(): void
+    {
+        $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
+        $channel = new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.ccn');
+        $trace->record(
+            'complexity.ccn',
+            $channel,
+            \Qualimetrix\Core\Symbol\SymbolLevel::Callable,
+            \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::occurrence('missing<&>', 0, 'callable'),
+            'callable-value',
+            'Missing <value> & publication.',
+        );
+        $report = ReportBuilder::create()->population($trace->freeze())->build();
+        $output = $this->formatter->format($report, new FormatterContext())->body;
+        self::assertStringContainsString('data-qmx-population="incomplete"', $output);
+        self::assertStringContainsString('Missing &lt;value&gt; &amp; publication.', $output);
+        $payload = self::payload($output);
+        self::assertSame(1, $payload['abstentions'][0]['count']);
+        self::assertSame('Missing <value> & publication.', $payload['abstentions'][0]['reason']);
+        self::assertSame([], $report->findings);
+        self::assertSame(0, $report->errorCount);
+    }
+
+    #[Test]
     public function itEmbedsRepositoryMetricsForTheGlobalNamespaceAndClass(): void
     {
         $metrics = new InMemoryMetricRepository([new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition('size.class-loc', \Qualimetrix\Core\Symbol\SymbolLevel::Class_)]);

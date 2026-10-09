@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting;
 
 use InvalidArgumentException;
+
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
@@ -37,6 +39,13 @@ final class ReportBuilder
     private array $configurationDiagnostics = [];
 
     private ComputedMetricEvaluationSummary $computedMetricEvaluation;
+    private JudgedPopulation $population;
+
+    public function population(JudgedPopulation $population): self
+    {
+        $this->population = $population;
+        return $this;
+    }
 
     public function computedMetricEvaluation(ComputedMetricEvaluationSummary $summary): self
     {
@@ -228,6 +237,7 @@ final class ReportBuilder
             projectScope: $this->projectScope,
             configurationDiagnostics: $this->configurationDiagnostics,
             computedMetricEvaluation: $this->computedMetricEvaluation ?? new ComputedMetricEvaluationSummary(),
+            population: $this->population ?? JudgedPopulation::empty(),
         );
     }
 }

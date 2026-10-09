@@ -20,6 +20,35 @@ use Qualimetrix\Reporting\ReportBuilder;
 final class ReportBuilderTest extends TestCase
 {
     #[Test]
+    public function itCarriesPopulationWithoutReplacingComputedAbsencesOrFindingCounts(): void
+    {
+        $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
+        $trace->record(
+            'complexity.ccn',
+            new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.ccn'),
+            \Qualimetrix\Core\Symbol\SymbolLevel::Callable,
+            \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::occurrence('missing', 0, 'callable'),
+            'callable-value',
+            'Callable complexity was not published.',
+        );
+        $population = $trace->freeze();
+        $summary = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence(
+                'computed.custom',
+                \Qualimetrix\Core\Symbol\SymbolLevel::Project,
+                noValueCount: 1,
+            ),
+        ]);
+        $report = ReportBuilder::create()->population($population)->computedMetricEvaluation($summary)->build();
+        self::assertSame($population, $report->population);
+        self::assertSame($summary, $report->computedMetricEvaluation);
+        self::assertSame(1, $report->population->abstentions()[0]->count);
+        self::assertSame([], $report->findings);
+        self::assertSame(0, $report->errorCount);
+        self::assertSame([], ReportBuilder::create()->build()->population->abstentions());
+    }
+
+    #[Test]
     public function itCreatesNewInstance(): void
     {
         $builder = ReportBuilder::create();

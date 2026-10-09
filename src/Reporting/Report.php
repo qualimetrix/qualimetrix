@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary;
+
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
 
@@ -32,6 +34,7 @@ use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
  */
 final readonly class Report
 {
+    public JudgedPopulation $population;
     /**
      * @param list<Finding> $findings
      * @param array<string, HealthScore> $healthScores
@@ -80,7 +83,10 @@ final readonly class Report
         public ?ReportProjectScope $projectScope = null,
         public array $configurationDiagnostics = [],
         public ComputedMetricEvaluationSummary $computedMetricEvaluation = new ComputedMetricEvaluationSummary(),
-    ) {}
+        ?JudgedPopulation $population = null,
+    ) {
+        $this->population = $population ?? JudgedPopulation::empty();
+    }
 
     /**
      * Checks if report has no findings.

@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter\Json;
 
 use LogicException;
+
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\SourceText\SourceBytes;
@@ -59,6 +61,7 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
             'coverage' => $report->coverage?->toArray(),
             'projectScope' => $report->projectScope?->toArray(),
             'configurationDiagnostics' => $report->configurationDiagnostics,
+            'abstentions' => $this->populationDocument($report->population),
             'computedMetricOutcomes' => array_map(static fn(ComputedMetricValueAbsence $absence): array => [
                 'metric' => $absence->metricName,
                 'level' => $absence->level->value,
@@ -100,6 +103,16 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
         $body = PublishedUtf8::encodeJsonObject($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES, $repairs);
 
         return new FormattedReport($body, $repairs);
+    }
+
+    /** @return list<array{producer: string, channel: string, level: string, gate: string, reason: string, unit: string, count: int, examples: list<string>}> */
+    private function populationDocument(JudgedPopulation $population): array
+    {
+        return array_map(static fn($absence): array => [
+            'producer' => $absence->producer, 'channel' => $absence->channel->code,
+            'level' => $absence->level->value, 'gate' => $absence->gate, 'reason' => $absence->reason,
+            'unit' => $absence->unit, 'count' => $absence->count, 'examples' => $absence->examples,
+        ], $population->abstentions());
     }
 
     public function publicationKind(): PublicationKind

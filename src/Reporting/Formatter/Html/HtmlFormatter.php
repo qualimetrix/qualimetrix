@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Html;
 
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
+
 use Qualimetrix\Reporting\Formatter\CoverageNarrator;
 use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
 use Qualimetrix\Reporting\Formatter\FormattedReport;
@@ -33,12 +35,18 @@ final class HtmlFormatter implements FormatterInterface, FormatOptionKeysInterfa
         $data = $this->treeBuilder->build($report, $context, $context->scopedReporting);
         $data['hints'] = $this->hintProjector->project();
         $data['coverage'] = $report->coverage?->toArray();
+        $data['abstentions'] = array_map(static fn($absence): array => [
+            'producer' => $absence->producer, 'channel' => $absence->channel->code,
+            'level' => $absence->level->value, 'gate' => $absence->gate, 'reason' => $absence->reason,
+            'unit' => $absence->unit, 'count' => $absence->count, 'examples' => $absence->examples,
+        ], $report->population->abstentions());
 
         $repairs = 0;
         $projectScope = $report->projectScope?->describe();
         if ($projectScope !== null) {
             $projectScope = PublishedUtf8::repair($projectScope, $repairs);
         }
+        $populationBanner = $this->populationBanner($report->population, $repairs);
         $json = PublishedUtf8::encodeJson(
             $data,
             \JSON_HEX_TAG | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES,
@@ -68,6 +76,7 @@ final class HtmlFormatter implements FormatterInterface, FormatOptionKeysInterfa
         ]);
 
         $rendered = $this->withRunBanners($rendered, $report);
+        $rendered = str_replace('<body>', '<body>' . $populationBanner, $rendered);
 
         if ($projectScope !== null) {
             $rendered = str_replace('<body>', '<body>' . \sprintf(
@@ -85,6 +94,16 @@ final class HtmlFormatter implements FormatterInterface, FormatOptionKeysInterfa
         }
 
         return new FormattedReport($rendered, $repairs);
+    }
+
+    private function populationBanner(JudgedPopulation $population, int &$repairs): string
+    {
+        if ($population->unjudgedCount() === 0) {
+            return '';
+        }
+        $description = 'Selected judgement incomplete: ' . implode('; ', array_map(static fn($absence): string => \sprintf('%s (%s): %d unjudged %s; %s', $absence->channel->code, $absence->level->value, $absence->count, $absence->unit, $absence->reason), $population->abstentions()));
+        $description = PublishedUtf8::repair($description, $repairs);
+        return '<div role="status" data-qmx-population="incomplete" style="padding:12px;background:#78350f;color:#fff">' . htmlspecialchars($description, \ENT_QUOTES) . '</div>';
     }
 
     private function withRunBanners(string $rendered, Report $report): string

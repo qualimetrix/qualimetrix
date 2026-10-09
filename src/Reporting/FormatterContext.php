@@ -43,6 +43,7 @@ final readonly class FormatterContext
         public ?int $detailLimit = null,
         public bool $isGroupByExplicit = false,
         public int $topIssuesLimit = self::DEFAULT_TOP_ISSUES_LIMIT,
+        public bool $verbose = false,
     ) {}
 
     /**
@@ -87,6 +88,7 @@ final readonly class FormatterContext
             detailLimit: $detailLimit,
             isGroupByExplicit: $this->isGroupByExplicit,
             topIssuesLimit: $this->topIssuesLimit,
+            verbose: $this->verbose,
         );
     }
 

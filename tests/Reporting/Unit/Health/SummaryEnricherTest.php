@@ -50,6 +50,51 @@ final class SummaryEnricherTest extends TestCase
     }
 
     #[Test]
+    public function itPreservesPopulationAndComputedAbsencesOnBothEnrichmentBranches(): void
+    {
+        $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
+        $trace->record(
+            'complexity.ccn',
+            new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.ccn'),
+            \Qualimetrix\Core\Symbol\SymbolLevel::Callable,
+            \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::occurrence('missing', 0, 'callable'),
+            'callable-value',
+            'Callable complexity was not published.',
+        );
+        $population = $trace->freeze();
+        $summary = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence(
+                'computed.custom',
+                \Qualimetrix\Core\Symbol\SymbolLevel::Project,
+                noValueCount: 1,
+            ),
+        ]);
+        foreach ([null, $this->createMetricRepository(projectMetrics: MetricBag::fromArray(['size.loc.sum' => 10]))] as $metrics) {
+            $report = new Report(
+                [],
+                1,
+                0,
+                0.1,
+                0,
+                0,
+                metrics: $metrics,
+                computedMetricEvaluation: $summary,
+                population: $population,
+            );
+            $result = $this->enricher->enrich($report);
+            self::assertSame($population, $result->population);
+            self::assertSame($summary, $result->computedMetricEvaluation);
+            self::assertSame(1, $result->population->abstentions()[0]->count);
+            self::assertSame([], $result->findings);
+            if ($metrics === null) {
+                self::assertSame($report, $result);
+            } else {
+                self::assertNotSame($report, $result);
+            }
+        }
+    }
+
+    #[Test]
     public function itReturnsUnchangedReportWhenNoMetrics(): void
     {
         $report = new Report(

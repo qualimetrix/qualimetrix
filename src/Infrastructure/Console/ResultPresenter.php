@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -119,6 +121,7 @@ final class ResultPresenter
             ->coverage($coverage)
             ->configurationDiagnostics($configurationDiagnostics);
         $reportBuilder->computedMetricEvaluation($analysisResult->computedMetricEvaluation);
+        $reportBuilder->population($this->mergedPopulation($analysisResult, $filterResult));
 
         if ($context->namespace !== null || $context->class !== null) {
             $reportBuilder->outOfScope(OutOfScopeFindings::between($findings, $filteredFindings));
@@ -145,6 +148,11 @@ final class ResultPresenter
         $profiler->stop('reporting');
 
         return $this->exitCodeResolver->resolve($findings, $coverage, $exitPolicy);
+    }
+
+    private function mergedPopulation(AnalysisResult $analysisResult, ?FindingProjectionResult $filterResult): JudgedPopulation
+    {
+        return $analysisResult->population->merge($filterResult->population ?? JudgedPopulation::empty());
     }
 
     /**

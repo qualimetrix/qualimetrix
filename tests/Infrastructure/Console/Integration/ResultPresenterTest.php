@@ -67,6 +67,77 @@ require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
 final class ResultPresenterTest extends TestCase
 {
     #[Test]
+    public function itMergesIndependentRunAndFilterPopulationsWithoutDoubleAdoption(): void
+    {
+        $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
+        $trace->record(
+            'complexity.ccn',
+            new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.ccn'),
+            \Qualimetrix\Core\Symbol\SymbolLevel::Callable,
+            \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::occurrence('missing', 0, 'callable'),
+            'callable-value',
+            'Callable complexity was not published.',
+        );
+        $population = $trace->freeze();
+        $summary = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence(
+                'computed.custom',
+                \Qualimetrix\Core\Symbol\SymbolLevel::Project,
+                noValueCount: 1,
+            ),
+        ]);
+        $otherTrace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
+        $otherTrace->record(
+            'complexity.ccn',
+            new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.ccn'),
+            \Qualimetrix\Core\Symbol\SymbolLevel::Callable,
+            \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::occurrence('missing', 0, 'callable'),
+            'callable-value',
+            'Callable complexity was not published.',
+        );
+        $filtered = new \Qualimetrix\Reporting\FindingProjection\FindingProjectionResult(
+            [],
+            new \Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionResult([], [], []),
+            population: $population->merge($otherTrace->freeze()),
+        );
+        $result = AnalysisResult::fromRun(
+            $this->analysisResult()->measured,
+            new DirectiveObservations([], []),
+            null,
+            [],
+            computedMetricEvaluation: $summary,
+            population: $population,
+        );
+        $formatter = $this->createMock(FormatterInterface::class);
+        $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
+        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Formatter\PublicationKind::JsonDocument);
+        $formatter->expects(self::once())->method('format')->with(
+            self::callback(static function (Report $report) use ($summary): bool {
+                self::assertSame($summary, $report->computedMetricEvaluation);
+                self::assertSame(2, $report->population->abstentions()[0]->count);
+                self::assertSame(['["missing",0]'], $report->population->abstentions()[0]->examples);
+                self::assertSame([], $report->findings);
+                return true;
+            }),
+            self::callback(static fn(\Qualimetrix\Reporting\FormatterContext $context): bool => $context->verbose),
+        )->willReturn(new FormattedReport('{}'));
+        $registry = self::createStub(FormatterRegistryInterface::class);
+        $registry->method('get')->willReturn($formatter);
+        $exit = $this->presenter($registry)->presentResults(
+            [],
+            $result,
+            $this->input(),
+            new BufferedOutput(\Symfony\Component\Console\Output\OutputInterface::VERBOSITY_VERBOSE),
+            AbsolutePath::fromString('/project'),
+            $this->targets(),
+            new OutputFormat('json'),
+            new ExitPolicy(),
+            filterResult: $filtered,
+        );
+        self::assertSame(0, $exit);
+    }
+
+    #[Test]
     #[DataProvider('provideSerializedPayloads')]
     public function itWritesSerializedPayloadsByteForByte(string $payload): void
     {
