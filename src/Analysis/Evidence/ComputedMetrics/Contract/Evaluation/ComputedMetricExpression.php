@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation;
 
+use Closure;
+use InvalidArgumentException;
+use LogicException;
 use Symfony\Component\ExpressionLanguage\ExpressionFunction;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
+use Symfony\Component\ExpressionLanguage\Node\FunctionNode;
 use Symfony\Component\ExpressionLanguage\Node\NameNode;
 use Symfony\Component\ExpressionLanguage\Node\Node;
 use Symfony\Component\ExpressionLanguage\ParsedExpression;
@@ -61,6 +65,12 @@ final class ComputedMetricExpression
         $this->expressionLanguage->addFunction(ExpressionFunction::fromPhp('log10'));
 
         $this->expressionLanguage->addFunction(new ExpressionFunction(
+            'weighted_mean',
+            static fn(string ...$arguments): string => throw new LogicException('Computed formulas are evaluated, not compiled.'),
+            static fn(array $variables, mixed ...$arguments): ?float => self::weightedMean(array_values($arguments)),
+        ));
+
+        $this->expressionLanguage->addFunction(new ExpressionFunction(
             'clamp',
             static fn(string $value, string $min, string $max): string => \sprintf(
                 'max(%s, min(%s, %s))',
@@ -68,8 +78,50 @@ final class ComputedMetricExpression
                 $max,
                 $value,
             ),
-            static fn(array $arguments, float $value, float $min, float $max): float => max($min, min($max, $value)),
+            static fn(array $arguments, float $value, float $min, float $max): float => self::clamp($value, $min, $max),
         ));
+    }
+
+    /** @param list<mixed> $arguments */
+    private static function weightedMean(array $arguments): ?float
+    {
+        if ($arguments === [] || \count($arguments) % 2 !== 0) {
+            throw new InvalidArgumentException('weighted_mean requires ordered value/weight pairs.');
+        }
+        $sum = 0.0;
+        $weights = 0.0;
+        for ($index = 0; $index < \count($arguments); $index += 2) {
+            $value = $arguments[$index];
+            $weight = self::positiveWeight($arguments[$index + 1]);
+            if ($value === null) {
+                continue;
+            }
+            $sum += self::measuredValue($value) * $weight;
+            $weights += $weight;
+        }
+        if (!is_finite($sum) || !is_finite($weights)) {
+            throw new InvalidArgumentException('weighted_mean accumulation must remain finite.');
+        }
+
+        return $weights === 0.0 ? null : $sum / $weights;
+    }
+
+    private static function measuredValue(mixed $value): int|float
+    {
+        if ((!\is_int($value) && !\is_float($value)) || !is_finite((float) $value)) {
+            throw new InvalidArgumentException('weighted_mean values must be finite numbers or null.');
+        }
+
+        return $value;
+    }
+
+    private static function positiveWeight(mixed $weight): int|float
+    {
+        if ((!\is_int($weight) && !\is_float($weight)) || !is_finite((float) $weight) || $weight <= 0) {
+            throw new InvalidArgumentException('weighted_mean weights must be strictly positive finite numbers.');
+        }
+
+        return $weight;
     }
 
     /**
@@ -85,7 +137,67 @@ final class ComputedMetricExpression
      */
     public function evaluate(string $formula, array $variables): mixed
     {
-        return $this->expressionLanguage->evaluate($formula, $variables);
+        return $this->evaluateParsed($this->expressionLanguage->parse($formula, array_keys($variables)), $variables);
+    }
+
+    private static function clamp(float $value, float $min, float $max): float
+    {
+        return max($min, min($max, $value));
+    }
+
+    /** @param array<string, mixed> $variables */
+    private function evaluateParsed(ParsedExpression $formula, array $variables): mixed
+    {
+        $root = self::nullableMeanClamps($formula->getNodes());
+
+        return $this->expressionLanguage->evaluate(new ParsedExpression((string) $formula, $root), $variables);
+    }
+
+    private static function nullableMeanClamps(Node $node): Node
+    {
+        $copy = clone $node;
+        foreach ($node->nodes as $name => $child) {
+            if ($child instanceof Node) {
+                $copy->nodes[$name] = self::nullableMeanClamps($child);
+            }
+        }
+        if (!self::isMeanClamp($node)) {
+            return $copy;
+        }
+
+        $evaluate = static fn(?float $value, float $min, float $max): ?float => $value === null ? null : self::clamp($value, $min, $max);
+
+        return new class ($copy->nodes['arguments'], $evaluate) extends Node {
+            /** @param Closure(?float, float, float): ?float $evaluate */
+            public function __construct(Node $arguments, private readonly Closure $evaluate)
+            {
+                parent::__construct(['arguments' => $arguments]);
+            }
+
+            /**
+             * @param array<mixed> $functions
+             * @param array<mixed> $values
+             */
+            public function evaluate(array $functions, array $values): mixed
+            {
+                $arguments = [];
+                foreach (array_values($this->nodes['arguments']->nodes) as $argument) {
+                    $arguments[] = $argument->evaluate($functions, $values);
+                }
+
+                return ($this->evaluate)(...$arguments);
+            }
+        };
+    }
+
+    private static function isMeanClamp(Node $node): bool
+    {
+        if (!$node instanceof FunctionNode || $node->attributes['name'] !== 'clamp') {
+            return false;
+        }
+        $arguments = array_values($node->nodes['arguments']->nodes);
+
+        return \count($arguments) === 3 && ComputedMetricReads::hasNullableValues($arguments[0]);
     }
 
     /**
@@ -223,7 +335,7 @@ final class ComputedMetricExpression
         $trace->start($isPresent);
 
         try {
-            $value = $this->expressionLanguage->evaluate(new ParsedExpression($formula, $trace->traced), $variables);
+            $value = $this->evaluateParsed(new ParsedExpression($formula, $trace->traced), $variables);
         } catch (Throwable $failure) {
             $missing = $trace->missingInRun();
 

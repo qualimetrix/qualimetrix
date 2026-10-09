@@ -5,34 +5,15 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
-use Symfony\Component\ExpressionLanguage\Node\BinaryNode;
 use Symfony\Component\ExpressionLanguage\Node\ConstantNode;
 use Symfony\Component\ExpressionLanguage\Node\FunctionNode;
 use Symfony\Component\ExpressionLanguage\Node\Node;
-use Symfony\Component\ExpressionLanguage\Node\NullCoalesceNode;
 use Symfony\Component\ExpressionLanguage\SyntaxError;
 
-/**
- * The one formula shape `--exclude-health` knows how to rebuild.
- *
- * `clamp((m["health.a"] ?? f) * w + …, 0, 100)`. This is a fact about the health
- * score, not about the formula language, which is why it reads the tree the
- * language hands it rather than living beside the language: the language accepts
- * any expression, and only this shape can have a dimension taken out of it and
- * the rest renormalised.
- *
- * Read off the tree rather than matched in text. The pattern that stood here was
- * narrower than the language the product accepts — it missed a space in
- * `m ["health.a"]` and a fractional fallback — and it reported a PARTIAL read as
- * a successful one, so a term it could not see was silently dropped and the
- * remaining weights renormalised around it. Every term is read, or the answer is
- * null; there is no half-read.
- */
+/** The complete ordered health mean that exclusion can rebuild. */
 final class WeightedHealthFormula
 {
-    /**
-     * @return array<string, array{weight: float, fallback: float}>|null
-     */
+    /** @return array<string, array{weight: float}>|null */
     public static function termsOf(ComputedMetricExpression $expression, string $formula): ?array
     {
         try {
@@ -40,94 +21,63 @@ final class WeightedHealthFormula
         } catch (SyntaxError) {
             return null;
         }
-
-        $sum = self::clampedSum($node);
-
-        if ($sum === null) {
+        $mean = self::clampedMean($node);
+        if (!$mean instanceof FunctionNode || $mean->attributes['name'] !== 'weighted_mean') {
             return null;
         }
-
+        $arguments = array_values($mean->nodes['arguments']->nodes);
+        if ($arguments === [] || \count($arguments) % 2 !== 0) {
+            return null;
+        }
         $terms = [];
-
-        foreach (self::addends($sum) as $addend) {
-            $term = self::weightedTerm($addend);
-
-            if ($term === null) {
+        for ($index = 0; $index < \count($arguments); $index += 2) {
+            $term = self::termOf($arguments[$index], $arguments[$index + 1]);
+            if ($term === null || isset($terms[$term['key']])) {
                 return null;
             }
-
-            [$key, $weight, $fallback] = $term;
-            $terms[$key] = ['weight' => $weight, 'fallback' => $fallback];
+            $terms[$term['key']] = ['weight' => $term['weight']];
         }
 
-        return $terms === [] ? null : $terms;
+        return $terms;
     }
 
-    /** The sum inside `clamp(<sum>, …)`, or the node itself when it is one. */
-    private static function clampedSum(Node $node): ?Node
+    /** @return array{key: string, weight: float}|null */
+    private static function termOf(Node $value, Node $weightNode): ?array
+    {
+        $key = ComputedMetricExpression::keyReadFrom($value);
+        $weight = self::weightOf($weightNode);
+
+        return $key !== null && str_starts_with($key, 'health.') && $weight !== null
+            ? ['key' => $key, 'weight' => $weight]
+            : null;
+    }
+
+    private static function clampedMean(Node $node): ?Node
     {
         if (!$node instanceof FunctionNode || $node->attributes['name'] !== 'clamp') {
             return $node;
         }
+        $arguments = array_values($node->nodes['arguments']->nodes);
+        if (\count($arguments) !== 3 || !self::isConstant($arguments[1], 0) || !self::isConstant($arguments[2], 100)) {
+            return null;
+        }
 
-        $arguments = $node->nodes['arguments'] ?? null;
-
-        return $arguments instanceof Node ? (array_values($arguments->nodes)[0] ?? null) : null;
+        return $arguments[0];
     }
 
-    /**
-     * @return list<Node>
-     */
-    private static function addends(Node $node): array
+    private static function isConstant(Node $node, int $value): bool
     {
-        if ($node instanceof BinaryNode && $node->attributes['operator'] === '+') {
-            return [
-                ...self::addends($node->nodes['left']),
-                ...self::addends($node->nodes['right']),
-            ];
-        }
-
-        return [$node];
+        return $node instanceof ConstantNode && $node->attributes['value'] === $value;
     }
 
-    /**
-     * `(m["health.x"] ?? <fallback>) * <weight>`, in either factor order.
-     *
-     * @return array{0: string, 1: float, 2: float}|null
-     */
-    private static function weightedTerm(Node $node): ?array
+    private static function weightOf(Node $node): ?float
     {
-        if (!$node instanceof BinaryNode || $node->attributes['operator'] !== '*') {
+        if (!$node instanceof ConstantNode) {
             return null;
         }
+        $weight = $node->attributes['value'];
 
-        return self::guardedTimesConstant($node->nodes['left'], $node->nodes['right'])
-            ?? self::guardedTimesConstant($node->nodes['right'], $node->nodes['left']);
-    }
-
-    /**
-     * One orientation of that product, read or refused.
-     *
-     * @return array{0: string, 1: float, 2: float}|null
-     */
-    private static function guardedTimesConstant(Node $guard, Node $weight): ?array
-    {
-        if (!$guard instanceof NullCoalesceNode || !$weight instanceof ConstantNode) {
-            return null;
-        }
-
-        $key = ComputedMetricExpression::keyReadFrom($guard->nodes['expr1'] ?? null);
-        $fallback = $guard->nodes['expr2'] ?? null;
-
-        if ($key === null || !$fallback instanceof ConstantNode) {
-            return null;
-        }
-
-        if (!is_numeric($fallback->attributes['value']) || !is_numeric($weight->attributes['value'])) {
-            return null;
-        }
-
-        return [$key, (float) $weight->attributes['value'], (float) $fallback->attributes['value']];
+        return (\is_int($weight) || \is_float($weight)) && is_finite((float) $weight) && $weight > 0 ? (float) $weight : null;
     }
 
     private function __construct() {}

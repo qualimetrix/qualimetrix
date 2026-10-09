@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit;
 
+use ArrayAccess;
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricReads;
 
 /**
  * The reader that replaced a pattern over formula text.
@@ -19,6 +22,12 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMe
  * looked correct while `m .offsetGet("k")` and `m ["k"]` walked past it: both
  * were found by review, not by a green test over a list.
  */
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricOutcome;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricReads;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricSubjectEvaluation;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\MetricLookup;
+use Qualimetrix\Core\Symbol\SymbolLevel;
+
 #[CoversClass(ComputedMetricExpression::class)]
 #[CoversClass(ComputedMetricReads::class)]
 final class ComputedMetricExpressionTest extends TestCase
@@ -197,4 +206,185 @@ final class ComputedMetricExpressionTest extends TestCase
     {
         return $this->expression->missingKeysOf($formula, static fn(string $key): bool => \in_array($key, $present, true));
     }
+    #[Test]
+    public function itEvaluatesOrderedNullableMeansWithoutDroppingZero(): void
+    {
+        foreach ([
+            ['weighted_mean(m["a"], 1, m["b"], 3)', [], null],
+            ['weighted_mean(m["a"], 1, m["b"], 3)', ['a' => 0], 0.0],
+            ['weighted_mean(m["a"], 1, m["b"], 3)', ['b' => 80], 80.0],
+            ['weighted_mean(m["a"], 1, m["b"], 3)', ['a' => 0, 'b' => 80], 60.0],
+            ['weighted_mean(m["a"] ?? m["b"], 1)', [], null],
+            ['weighted_mean(m["flag"] > 0 ? m["a"] : m["b"], 1)', ['flag' => 1], null],
+            ['weighted_mean(m["flag"] > 0 ? m["a"] : m["b"], 1)', ['flag' => 0, 'b' => 0], 0.0],
+            ['weighted_mean(m["flag"] > 0 ? (m["a"] ?? 20) : m["b"], 1)', ['flag' => 1], 20.0],
+            ['weighted_mean((m["flag"] > 0 and m["a"] > 0) ? 10 : m["b"], 1)', ['flag' => 0], null],
+        ] as [$formula, $values, $expected]) {
+            self::assertSame([[], $expected], $this->expression->evaluateOn($formula, new MetricLookup($values)), $formula);
+        }
+        $ordered = 'weighted_mean(m["a"], 1, m["b"], 1, m["c"], 1)';
+        self::assertSame([[], 1.0 / 3.0], $this->expression->evaluateOn($ordered, new MetricLookup(['a' => 1e16, 'b' => -1e16, 'c' => 1])));
+    }
+
+    #[Test]
+    public function itKeepsStrictReadsInsideNullableMeanValuesAndWeights(): void
+    {
+        foreach ([
+            ['weighted_mean(m["a"] + 1, 1)', ['a']],
+            ['weighted_mean(max(m["a"], 1), 1)', ['a']],
+            ['weighted_mean(m["a"], m["w"])', ['w']],
+            ['weighted_mean(m["flag"] > 0 ? m["a"] * 2 : m["b"], 1)', ['a']],
+            ['weighted_mean(m["flag"] > 0 ? m["a"] : m["b"], m["w"])', ['w']],
+            ['weighted_mean(m["flag"] > 0 ? m["a"] : m["b"], 1)', ['flag']],
+        ] as [$formula, $missing]) {
+            $values = str_contains($formula, 'flag') && $missing !== ['flag'] ? ['flag' => 1] : [];
+            self::assertSame([$missing, null], $this->expression->evaluateOn($formula, new MetricLookup($values)), $formula);
+        }
+        self::assertSame(['a'], $this->expression->missingKeysOf('weighted_mean(m["a"] * 2, 1)', static fn(string $key): bool => false));
+        self::assertSame([], $this->expression->missingKeysOf('weighted_mean(m["a"], 1)', static fn(string $key): bool => false));
+    }
+
+    #[Test]
+    public function itValidatesWeightsEvenForAbsentValues(): void
+    {
+        $evaluation = new ComputedMetricSubjectEvaluation($this->expression);
+        foreach (['0', '-1', 'null', 'true', '"1"', '1e999'] as $weight) {
+            $definition = self::customFormula('weighted_mean(m["a"], ' . $weight . ')');
+            self::assertSame(ComputedMetricOutcome::FAILURE, $evaluation->evaluate($definition, SymbolLevel::Class_, [])->kind, $weight);
+        }
+        foreach (['weighted_mean()', 'weighted_mean(1)', 'weighted_mean(1e308, 1e308)'] as $formula) {
+            self::assertSame(ComputedMetricOutcome::FAILURE, $evaluation->evaluate(self::customFormula($formula), SymbolLevel::Class_, [])->kind, $formula);
+        }
+    }
+
+    #[Test]
+    public function itReturnsTheClosedSubjectOutcomesWithoutNumericCoercion(): void
+    {
+        $evaluation = new ComputedMetricSubjectEvaluation();
+        foreach ([
+            ['80', [], ComputedMetricOutcome::VALUE, 80],
+            ['0', [], ComputedMetricOutcome::VALUE, 0],
+            ['null', [], ComputedMetricOutcome::NO_VALUE, null],
+            ['weighted_mean(m["a"], 1)', [], ComputedMetricOutcome::NO_VALUE, null],
+            ['m["a"] + 1', [], ComputedMetricOutcome::MISSING_KEYS, null],
+            ['true', [], ComputedMetricOutcome::FAILURE, null],
+            ['"80"', [], ComputedMetricOutcome::FAILURE, null],
+            ['1e999', [], ComputedMetricOutcome::FAILURE, null],
+            ['sqrt(-1)', [], ComputedMetricOutcome::FAILURE, null],
+            ['log(-1)', [], ComputedMetricOutcome::FAILURE, null],
+            ['1 / 0', [], ComputedMetricOutcome::FAILURE, null],
+        ] as [$formula, $values, $kind, $value]) {
+            $outcome = $evaluation->evaluate(self::customFormula($formula), SymbolLevel::Class_, $values);
+            self::assertSame($kind, $outcome->kind, $formula);
+            self::assertSame($value, $outcome->value, $formula);
+            if ($kind === ComputedMetricOutcome::MISSING_KEYS) {
+                self::assertSame(['a'], $outcome->missingKeys);
+            }
+            if ($kind === ComputedMetricOutcome::FAILURE) {
+                self::assertNotEmpty($outcome->reason);
+            }
+        }
+    }
+
+    #[Test]
+    public function itReturnsNoValueForExactCopiedNullableBuiltinFormulas(): void
+    {
+        $evaluation = new ComputedMetricSubjectEvaluation();
+        $defaults = ComputedMetricDefaults::getDefaults();
+        foreach (['health.cohesion', 'health.overall'] as $name) {
+            $builtin = $defaults[$name];
+            $copied = new ComputedMetricDefinition($builtin->name, $builtin->formulas, $builtin->description, $builtin->levels);
+            foreach ([SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project] as $level) {
+                self::assertSame(ComputedMetricOutcome::NOT_APPLICABLE, $evaluation->evaluate($builtin, $level, [])->kind);
+                $outcome = $evaluation->evaluate($copied, $level, []);
+                self::assertSame(ComputedMetricOutcome::NO_VALUE, $outcome->kind, $name . ' ' . $level->value);
+                self::assertNull($outcome->value);
+                self::assertNull($outcome->reason);
+            }
+        }
+    }
+
+    #[Test]
+    public function itPreservesStrictClampOperandsOutsideTheNullableMeanResult(): void
+    {
+        $evaluation = new ComputedMetricSubjectEvaluation();
+        foreach ([
+            ['clamp(weighted_mean(m["a"], 1), 0, 100)', [], ComputedMetricOutcome::NO_VALUE, null],
+            ['clamp(weighted_mean(m["a"], 1), 0, 100)', ['a' => 0], ComputedMetricOutcome::VALUE, 0.0],
+            ['clamp(weighted_mean(m["a"], 1), 0, 100)', ['a' => 150], ComputedMetricOutcome::VALUE, 100.0],
+            ['clamp(weighted_mean(m["a"], 1), 0, 100)', ['a' => -10], ComputedMetricOutcome::VALUE, 0.0],
+            ['weighted_mean(clamp(weighted_mean(m["a"], 1), 0, 100), 1, m["b"], 1)', ['b' => 80], ComputedMetricOutcome::VALUE, 80.0],
+            ['weighted_mean(m["flag"] > 0 ? clamp(weighted_mean(m["a"], 1), 0, 100) : m["b"], 1)', ['flag' => 1], ComputedMetricOutcome::NO_VALUE, null],
+            ['weighted_mean(m["flag"] > 0 ? clamp(weighted_mean(m["a"], 1), 0, 100) : m["b"], 1)', ['flag' => 0, 'b' => 0], ComputedMetricOutcome::VALUE, 0.0],
+            ['weighted_mean(m["flag"] > 0 ? clamp(weighted_mean(m["a"] + 1, 1), 0, 100) : m["b"], 1)', ['flag' => 1], ComputedMetricOutcome::MISSING_KEYS, null],
+            ['max(clamp(weighted_mean(m["a"], 1), 0, 100), 1)', [], ComputedMetricOutcome::VALUE, 1],
+            ['clamp(weighted_mean(m["a"] + 1, 1), 0, 100)', [], ComputedMetricOutcome::MISSING_KEYS, null],
+            ['clamp(weighted_mean(abs(m["a"]), 1), 0, 100)', [], ComputedMetricOutcome::MISSING_KEYS, null],
+            ['clamp(weighted_mean(m["a"], m["w"]), 0, 100)', [], ComputedMetricOutcome::MISSING_KEYS, null],
+            ['clamp(weighted_mean(m["a"], 1), m["min"], 100)', [], ComputedMetricOutcome::MISSING_KEYS, null],
+            ['clamp(weighted_mean(m["a"], 0), 0, 100)', [], ComputedMetricOutcome::FAILURE, null],
+            ['clamp(weighted_mean(m["a"], 1), null, 100)', [], ComputedMetricOutcome::FAILURE, null],
+            ['clamp(weighted_mean(m["a"], 1), 0, "100")', [], ComputedMetricOutcome::FAILURE, null],
+            ['clamp(null, 0, 100)', [], ComputedMetricOutcome::FAILURE, null],
+            ['clamp(m["a"], 0, 100)', [], ComputedMetricOutcome::MISSING_KEYS, null],
+        ] as [$formula, $values, $kind, $value]) {
+            $outcome = $evaluation->evaluate(self::customFormula($formula), SymbolLevel::Class_, $values);
+            self::assertSame($kind, $outcome->kind, $formula);
+            self::assertSame($value, $outcome->value, $formula);
+        }
+    }
+
+    #[Test]
+    public function itEvaluatesNullableMeanClampArgumentsOnceInNativeOrder(): void
+    {
+        foreach ([null, 0, 40] as $value) {
+            /** @implements ArrayAccess<string, int|null> */
+            $metrics = new class ($value) implements ArrayAccess {
+                /** @var list<string> */
+                public array $reads = [];
+
+                public function __construct(private readonly ?int $value) {}
+
+                public function offsetExists(mixed $offset): bool
+                {
+                    return \is_string($offset) && \in_array($offset, ['value', 'weight', 'min', 'max'], true);
+                }
+
+                public function offsetGet(mixed $offset): ?int
+                {
+                    if (!\is_string($offset)) {
+                        return null;
+                    }
+                    $this->reads[] = $offset;
+
+                    return match ($offset) {
+                        'value' => $this->value,
+                        'weight' => 1,
+                        'min' => 0,
+                        'max' => 100,
+                        default => null,
+                    };
+                }
+
+                public function offsetSet(mixed $offset, mixed $value): void
+                {
+                    throw new LogicException('Formula inputs are immutable.');
+                }
+
+                public function offsetUnset(mixed $offset): void
+                {
+                    throw new LogicException('Formula inputs are immutable.');
+                }
+            };
+            $result = $this->expression->evaluate('clamp(weighted_mean(m["value"], m["weight"]), m["min"], m["max"])', ['m' => $metrics]);
+            self::assertSame($value === null ? null : (float) $value, $result);
+            self::assertSame(['value', 'weight', 'min', 'max'], $metrics->reads);
+        }
+    }
+
+    private static function customFormula(string $formula): ComputedMetricDefinition
+    {
+        return new ComputedMetricDefinition('computed.test', ['class' => $formula], '', [SymbolLevel::Class_]);
+    }
+
 }

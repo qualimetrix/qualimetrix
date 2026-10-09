@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation;
 use Symfony\Component\ExpressionLanguage\Node\BinaryNode;
 use Symfony\Component\ExpressionLanguage\Node\ConditionalNode;
 use Symfony\Component\ExpressionLanguage\Node\ConstantNode;
+use Symfony\Component\ExpressionLanguage\Node\FunctionNode;
 use Symfony\Component\ExpressionLanguage\Node\GetAttrNode;
 use Symfony\Component\ExpressionLanguage\Node\NameNode;
 use Symfony\Component\ExpressionLanguage\Node\Node;
@@ -97,8 +98,31 @@ final class ComputedMetricReads
             $key !== null => [[], $isPresent($key) ? [] : [$key]],
             $node instanceof NullCoalesceNode => self::absentReadsOfFallback($node, $isPresent, $entered),
             $node instanceof ConditionalNode => self::absentReadsOfBranches($node, $isPresent, $entered),
+            self::hasNullableValues($node) => [self::absentReadsOfWeightedMean($node, $isPresent, $entered), []],
             default => [self::absentReadsOfOperands($node, $isPresent, $entered), []],
         };
+    }
+
+    public static function hasNullableValues(Node $node): bool
+    {
+        return $node instanceof FunctionNode && $node->attributes['name'] === 'weighted_mean';
+    }
+
+    /**
+     * @param callable(string): bool $isPresent
+     * @param ?callable(Node, string): bool $entered
+     *
+     * @return list<string>
+     */
+    private static function absentReadsOfWeightedMean(Node $node, callable $isPresent, ?callable $entered): array
+    {
+        $missing = [];
+        foreach (array_values($node->nodes['arguments']->nodes) as $index => $argument) {
+            [$consumed, $value] = self::absentReads($argument, $isPresent, $entered);
+            $missing = [...$missing, ...$consumed, ...($index % 2 === 0 ? [] : $value)];
+        }
+
+        return $missing;
     }
 
     /**

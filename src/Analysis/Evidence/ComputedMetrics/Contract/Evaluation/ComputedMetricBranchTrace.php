@@ -98,15 +98,20 @@ final class ComputedMetricBranchTrace
      * another evaluation. A node appearing twice — `a ?: b` reuses `a` — gets
      * a copy per position, because its `null` goes somewhere else in each.
      *
-     * @param ?NullCoalesceNode $catcher the `??` whose left side receives this node's `null`, if any
+     * @param ?Node $catcher the fallback or nullable mean receiving this node's `null`, if any
      */
-    private function copyOf(Node $node, ?NullCoalesceNode $catcher): Node
+    private function copyOf(Node $node, ?Node $catcher): Node
     {
         $copy = clone $node;
         $conditional = ComputedMetricReads::conditionalOperands($node);
 
         foreach ($node->nodes as $name => $child) {
             if (!$child instanceof Node) {
+                continue;
+            }
+
+            if (ComputedMetricReads::hasNullableValues($node) && $name === 'arguments') {
+                $copy->nodes[$name] = $this->copyNullableArguments($child, $node);
                 continue;
             }
 
@@ -127,10 +132,20 @@ final class ComputedMetricBranchTrace
         return $copy;
     }
 
+    private function copyNullableArguments(Node $arguments, Node $function): Node
+    {
+        $copy = clone $arguments;
+        foreach (array_values($arguments->nodes) as $index => $argument) {
+            $copy->nodes[$index] = $this->copyOf($argument, $index % 2 === 0 ? $function : null);
+        }
+
+        return $copy;
+    }
+
     /**
      * @throws LogicException to stop the run: {@see missingInRun()} names why
      */
-    private function enter(Node $node, string $operand, ?NullCoalesceNode $catcher): void
+    private function enter(Node $node, string $operand, ?Node $catcher): void
     {
         $this->entered[self::operandId($node, $operand)] = true;
 

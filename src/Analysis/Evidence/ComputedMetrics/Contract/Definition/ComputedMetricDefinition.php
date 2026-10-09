@@ -17,6 +17,7 @@ final readonly class ComputedMetricDefinition
     /**
      * @param array<string, string> $formulas Keys: 'class', 'namespace', 'project'
      * @param list<SymbolLevel> $levels
+     * @param array<string, ComputedMetricApplicability> $applicability Builtin policy by stored formula level; absent means authored/synthetic Always
      */
     public function __construct(
         public string $name,
@@ -26,6 +27,7 @@ final readonly class ComputedMetricDefinition
         public bool $inverted = false,
         public ?float $warningThreshold = null,
         public ?float $errorThreshold = null,
+        public array $applicability = [],
     ) {
         $this->validateName();
         $this->validateLevels();
@@ -84,6 +86,20 @@ final readonly class ComputedMetricDefinition
         }
 
         return null;
+    }
+
+    public function getApplicabilityForLevel(SymbolLevel $level): ComputedMetricApplicability
+    {
+        $key = $this->formulaLevelFor($level);
+
+        return $key === null ? ComputedMetricApplicability::always() : ($this->applicability[$key] ?? ComputedMetricApplicability::always());
+    }
+
+    public function isBuiltinFormulaForLevel(SymbolLevel $level): bool
+    {
+        $key = $this->formulaLevelFor($level);
+
+        return $key !== null && isset($this->applicability[$key]);
     }
 
     /**

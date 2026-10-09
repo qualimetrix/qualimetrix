@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricApplicability;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -35,6 +36,11 @@ final class ComputedMetricDefaults
                     // Project: same structure as namespace, explicit to avoid inherited formula drift.
                     SymbolLevel::Project->value => 'clamp(100 - max((m["complexity.ccn.sum"] ?? 0) / max(m["size.symbol-method-count"], 1) - 2, 0) * 5.0 - max((m["complexity.cognitive.sum"] ?? 0) / max(m["size.symbol-method-count"], 1) - 1, 0) * 4.0 - max((m["complexity.ccn.p95"] ?? 0) - 5, 0) ** 0.5 * 3.0 - max((m["complexity.cognitive.p95"] ?? 0) - 6, 0) ** 0.5 * 3.0 - max((m["complexity.ccn.max"] ?? 0) - 20, 0) ** 0.5 * 0.8, 0, 100)',
                 ],
+                applicability: [
+                    'class' => ComputedMetricApplicability::anyPresent(['complexity.ccn.avg', 'complexity.cognitive.avg', 'complexity.ccn.max', 'complexity.cognitive.max']),
+                    'namespace' => ComputedMetricApplicability::anyPresent(['complexity.ccn.sum', 'complexity.cognitive.sum', 'complexity.ccn.p95', 'complexity.cognitive.p95', 'complexity.ccn.max']),
+                    'project' => ComputedMetricApplicability::anyPresent(['complexity.ccn.sum', 'complexity.cognitive.sum', 'complexity.ccn.p95', 'complexity.cognitive.p95', 'complexity.ccn.max']),
+                ],
                 description: 'Complexity health score (0-100, higher is better)',
                 levels: [SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project],
                 inverted: true,
@@ -52,11 +58,15 @@ final class ComputedMetricDefaults
                     // its median is 1 across the benchmark corpus (2026-09-14), so saturating at 3
                     // moves only the lower quartile while pushing classes below a namespace parent
                     // that is already penalised on the same evidence.
-                    SymbolLevel::Class_->value => 'clamp((((m["size.method-count"] ?? 0) < 6 ? (m["cohesion.tcc"] ?? 0.5) : (m["cohesion.tcc"] ?? 0)) + (1 - ((m["size.method-count"] ?? 0) < 6 ? (m["cohesion.tcc"] ?? 0.5) : (m["cohesion.tcc"] ?? 0))) * ((m["cohesion.pure-method-count"] ?? 0) / max(m["size.method-count"] ?? 1, 1)) * 0.4) ** 0.5 * 50 + (1 - clamp((max((m["cohesion.lcom"] ?? 0) - (m["cohesion.pure-method-count"] ?? 0) * 0.7, 1) - 1) / 5, 0, 1)) * 50, 0, 100)',
+                    SymbolLevel::Class_->value => 'clamp(weighted_mean((m["cohesion.tcc"] ?? null) === null ? null : (m["cohesion.tcc"] + (1 - m["cohesion.tcc"]) * ((m["cohesion.pure-method-count"] ?? 0) / max(m["size.method-count"] ?? 1, 1)) * 0.4) ** 0.5 * 100, 0.5, (m["cohesion.lcom"] ?? null) === null ? null : (1 - clamp((max(m["cohesion.lcom"] - (m["cohesion.pure-method-count"] ?? 0) * 0.7, 1) - 1) / 5, 0, 1)) * 100, 0.5), 0, 100)',
                     // LCOM4 half: no penalty at 1.0 (the average class is one connected
                     // component) and saturated at 3.0 (it decomposes into three). The span was 5,
                     // which put saturation at LCOM4 6.0 — beyond anything measured.
-                    SymbolLevel::Namespace_->value => 'clamp((m["cohesion.tcc.avg"] ?? 0.5) ** 0.5 * 50 + (1 - clamp(((m["cohesion.lcom.avg"] ?? 0) - 1) / 2, 0, 1)) * 50, 0, 100)',
+                    SymbolLevel::Namespace_->value => 'clamp(weighted_mean((m["cohesion.tcc.avg"] ?? null) === null ? null : m["cohesion.tcc.avg"] ** 0.5 * 100, 0.5, (m["cohesion.lcom.avg"] ?? null) === null ? null : (1 - clamp((m["cohesion.lcom.avg"] - 1) / 2, 0, 1)) * 100, 0.5), 0, 100)',
+                ],
+                applicability: [
+                    'class' => ComputedMetricApplicability::anyPresent(['cohesion.tcc', 'cohesion.lcom']),
+                    'namespace' => ComputedMetricApplicability::anyPresent(['cohesion.tcc.avg', 'cohesion.lcom.avg']),
                 ],
                 description: 'Cohesion health score (0-100, higher is better)',
                 levels: [SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project],
@@ -92,6 +102,11 @@ final class ComputedMetricDefaults
                     // (Guzzle→92, Sf Console→64, Qualimetrix→53, Laravel→53, Composer→32).
                     SymbolLevel::Project->value => 'clamp(100 * 18 / (18 + (m["coupling.distance-own.avg"] ?? 0) * 6 + max((m["coupling.cbo.avg"] ?? 0) - 8, 0) * 3 + max((m["coupling.cbo.p95"] ?? 0) - 15, 0) * 0.4 + max((m["coupling.cbo.max"] ?? 0) - 30, 0) ** 0.5 * 0.8), 0, 100)',
                 ],
+                applicability: [
+                    'class' => ComputedMetricApplicability::always(),
+                    'namespace' => ComputedMetricApplicability::anyPresent(['coupling.distance', 'coupling.ce-packages.avg', 'coupling.ce.avg', 'coupling.ce.max', 'coupling.ce']),
+                    'project' => ComputedMetricApplicability::anyPresent(['coupling.distance-own.avg', 'coupling.cbo.avg', 'coupling.cbo.p95', 'coupling.cbo.max']),
+                ],
                 description: 'Coupling health score (0-100, higher is better)',
                 levels: [SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project],
                 inverted: true,
@@ -102,12 +117,11 @@ final class ComputedMetricDefaults
                 name: HealthDimension::Typing->value,
                 formulas: [
                     SymbolLevel::Class_->value => 'clamp(m["design.type-coverage.all"] ?? 0, 0, 100)',
-                    // Vacuous truth: a namespace with no typeable declarations (e.g. marker
-                    // interfaces) is fully typed by definition. Mirrors class-level behavior
-                    // where TypeCoveragePercentCollector returns 100 when totalAll == 0,
-                    // and aligns with the convention in sibling formulas where an empty
-                    // namespace yields a high (no-problem) score.
-                    SymbolLevel::Namespace_->value => '(((m["design.type-coverage.param.total.sum"] ?? 0) + (m["design.type-coverage.return.total.sum"] ?? 0) + (m["design.type-coverage.property.total.sum"] ?? 0)) == 0) ? 100 : clamp(((m["design.type-coverage.param.typed.sum"] ?? 0) + (m["design.type-coverage.return.typed.sum"] ?? 0) + (m["design.type-coverage.property.typed.sum"] ?? 0)) / ((m["design.type-coverage.param.total.sum"] ?? 0) + (m["design.type-coverage.return.total.sum"] ?? 0) + (m["design.type-coverage.property.total.sum"] ?? 0)) * 100, 0, 100)',
+                    SymbolLevel::Namespace_->value => 'clamp(((m["design.type-coverage.param.typed.sum"] ?? 0) + (m["design.type-coverage.return.typed.sum"] ?? 0) + (m["design.type-coverage.property.typed.sum"] ?? 0)) / ((m["design.type-coverage.param.total.sum"] ?? 0) + (m["design.type-coverage.return.total.sum"] ?? 0) + (m["design.type-coverage.property.total.sum"] ?? 0)) * 100, 0, 100)',
+                ],
+                applicability: [
+                    'class' => ComputedMetricApplicability::anyPresent(['design.type-coverage.all']),
+                    'namespace' => ComputedMetricApplicability::positiveSum(['design.type-coverage.param.total.sum', 'design.type-coverage.return.total.sum', 'design.type-coverage.property.total.sum']),
                 ],
                 description: 'Type coverage health score (0-100, higher is better)',
                 levels: [SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project],
@@ -135,6 +149,11 @@ final class ComputedMetricDefaults
                     // Project: same structure as namespace, explicit to avoid inherited formula drift.
                     SymbolLevel::Project->value => 'clamp(100 - max(85 - (m["maintainability.mi.avg"] ?? 75), 0) * 2.5 - max(65 - (m["maintainability.mi.p5"] ?? 65), 0) ** 0.5 * 4.5 - max(5 - (m["maintainability.mi.min"] ?? 5), 0) ** 0.4 * 1.5, 0, 100)',
                 ],
+                applicability: [
+                    'class' => ComputedMetricApplicability::anyPresent(['maintainability.mi.avg', 'maintainability.mi.min']),
+                    'namespace' => ComputedMetricApplicability::anyPresent(['maintainability.mi.avg', 'maintainability.mi.p5', 'maintainability.mi.min']),
+                    'project' => ComputedMetricApplicability::anyPresent(['maintainability.mi.avg', 'maintainability.mi.p5', 'maintainability.mi.min']),
+                ],
                 description: 'Maintainability health score (0-100, higher is better)',
                 levels: [SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project],
                 inverted: true,
@@ -147,8 +166,12 @@ final class ComputedMetricDefaults
                     // Maintainability excluded at class level: MI is callable-level,
                     // and its signal is already captured by complexity and cohesion sub-scores.
                     // Typing weight reduced from 0.20→0.15 (inflates legacy code scores).
-                    SymbolLevel::Class_->value => 'clamp((m["health.complexity"] ?? 75) * 0.35 + (m["health.cohesion"] ?? 75) * 0.25 + (m["health.coupling"] ?? 75) * 0.25 + (m["health.typing"] ?? 75) * 0.15, 0, 100)',
-                    SymbolLevel::Namespace_->value => 'clamp((m["health.complexity"] ?? 75) * 0.30 + (m["health.cohesion"] ?? 75) * 0.20 + (m["health.coupling"] ?? 75) * 0.20 + (m["health.typing"] ?? 75) * 0.10 + (m["health.maintainability"] ?? 75) * 0.20, 0, 100)',
+                    SymbolLevel::Class_->value => 'clamp(weighted_mean(m["health.complexity"], 0.35, m["health.cohesion"], 0.25, m["health.coupling"], 0.25, m["health.typing"], 0.15), 0, 100)',
+                    SymbolLevel::Namespace_->value => 'clamp(weighted_mean(m["health.complexity"], 0.30, m["health.cohesion"], 0.20, m["health.coupling"], 0.20, m["health.typing"], 0.10, m["health.maintainability"], 0.20), 0, 100)',
+                ],
+                applicability: [
+                    'class' => ComputedMetricApplicability::anyPresent(['health.complexity', 'health.cohesion', 'health.coupling', 'health.typing']),
+                    'namespace' => ComputedMetricApplicability::anyPresent(['health.complexity', 'health.cohesion', 'health.coupling', 'health.typing', 'health.maintainability']),
                 ],
                 description: 'Overall health score (0-100, higher is better)',
                 levels: [SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project],

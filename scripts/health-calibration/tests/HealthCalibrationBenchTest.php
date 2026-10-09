@@ -8,11 +8,16 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricsSection;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ExcludeHealthSection;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricOutcome;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricSubjectEvaluation;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\MetricLookup;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\HealthCalibration\AggregationScheme;
@@ -197,6 +202,19 @@ final class HealthCalibrationBenchTest extends TestCase
     {
         $definitions = self::defaultDefinitions();
         $capture = self::distanceCapture(publishedAggregate: 0.4);
+        $project = $capture->project();
+        self::assertNotNull($project);
+        $capture = new Capture($capture->id, [
+            new Subject($project->name, $project->level, $project->inputs + [
+                'size.symbol-method-count' => 1.0,
+                'cohesion.tcc.avg' => 0.5,
+                'cohesion.lcom4.avg' => 1.0,
+                'design.type-coverage.param.total.sum' => 1.0,
+                'design.type-coverage.param.typed.sum' => 1.0,
+                'maintainability.mi.avg' => 85.0,
+            ], $project->published, $project->loc),
+            ...\array_slice($capture->symbols, 1),
+        ]);
 
         $bench = new Bench();
         $current = $bench->run($capture, $definitions, [SymbolLevel::Project], AggregationScheme::current());
@@ -756,4 +774,100 @@ final class HealthCalibrationBenchTest extends TestCase
     {
         return array_map(static fn(Subject $subject): string => $subject->name, $subjects);
     }
+    /** The accepted formulas before nullable participation, over fully measured subjects. */
+    #[Test]
+    public function itPreservesAllApplicableScoresWithStrictFloatingPointEquality(): void
+    {
+        $before = json_decode(<<<'JSON'
+{
+    "health.complexity": {
+        "class": "clamp(100 - max((m[\"complexity.ccn.avg\"] ?? 1) - 2, 0) * 2.0 - max((m[\"complexity.cognitive.avg\"] ?? 0) - 1, 0) * 2.0 - max((m[\"complexity.ccn.max\"] ?? 0) - 10, 0) ** 0.5 * 2.0 - max((m[\"complexity.cognitive.max\"] ?? 0) - 15, 0) ** 0.5 * 2.0, 0, 100)",
+        "namespace": "clamp(100 - max((m[\"complexity.ccn.sum\"] ?? 0) \/ max(m[\"size.symbol-method-count\"], 1) - 2, 0) * 5.0 - max((m[\"complexity.cognitive.sum\"] ?? 0) \/ max(m[\"size.symbol-method-count\"], 1) - 1, 0) * 4.0 - max((m[\"complexity.ccn.p95\"] ?? 0) - 5, 0) ** 0.5 * 3.0 - max((m[\"complexity.cognitive.p95\"] ?? 0) - 6, 0) ** 0.5 * 3.0 - max((m[\"complexity.ccn.max\"] ?? 0) - 20, 0) ** 0.5 * 0.8, 0, 100)",
+        "project": "clamp(100 - max((m[\"complexity.ccn.sum\"] ?? 0) \/ max(m[\"size.symbol-method-count\"], 1) - 2, 0) * 5.0 - max((m[\"complexity.cognitive.sum\"] ?? 0) \/ max(m[\"size.symbol-method-count\"], 1) - 1, 0) * 4.0 - max((m[\"complexity.ccn.p95\"] ?? 0) - 5, 0) ** 0.5 * 3.0 - max((m[\"complexity.cognitive.p95\"] ?? 0) - 6, 0) ** 0.5 * 3.0 - max((m[\"complexity.ccn.max\"] ?? 0) - 20, 0) ** 0.5 * 0.8, 0, 100)"
+    },
+    "health.cohesion": {
+        "class": "clamp((((m[\"size.method-count\"] ?? 0) < 6 ? (m[\"cohesion.tcc\"] ?? 0.5) : (m[\"cohesion.tcc\"] ?? 0)) + (1 - ((m[\"size.method-count\"] ?? 0) < 6 ? (m[\"cohesion.tcc\"] ?? 0.5) : (m[\"cohesion.tcc\"] ?? 0))) * ((m[\"cohesion.pure-method-count\"] ?? 0) \/ max(m[\"size.method-count\"] ?? 1, 1)) * 0.4) ** 0.5 * 50 + (1 - clamp((max((m[\"cohesion.lcom\"] ?? 0) - (m[\"cohesion.pure-method-count\"] ?? 0) * 0.7, 1) - 1) \/ 5, 0, 1)) * 50, 0, 100)",
+        "namespace": "clamp((m[\"cohesion.tcc.avg\"] ?? 0.5) ** 0.5 * 50 + (1 - clamp(((m[\"cohesion.lcom.avg\"] ?? 0) - 1) \/ 2, 0, 1)) * 50, 0, 100)",
+        "project": "clamp((m[\"cohesion.tcc.avg\"] ?? 0.5) ** 0.5 * 50 + (1 - clamp(((m[\"cohesion.lcom.avg\"] ?? 0) - 1) \/ 2, 0, 1)) * 50, 0, 100)"
+    },
+    "health.coupling": {
+        "class": "clamp(100 * 15 \/ (15 + max((m[\"coupling.ce-packages\"] ?? 0) * 3.0 + (m[\"coupling.ce\"] ?? 0) ** 0.5 * 0.5 - 5, 0)), 0, 100)",
+        "namespace": "clamp(100 * 18 \/ (18 + (m[\"coupling.distance\"] ?? 0) * 6 + max((m[\"coupling.ce-packages.avg\"] ?? 0) * 3.0 + (m[\"coupling.ce.avg\"] ?? 0) ** 0.5 * 0.5 - 4, 0) * 4 + max((m[\"coupling.ce.max\"] ?? 0) - 30, 0) ** 0.5 * 0.8 + max((m[\"coupling.ce\"] ?? 0) - 50, 0) ** 0.5 * 0.6), 0, 100)",
+        "project": "clamp(100 * 18 \/ (18 + (m[\"coupling.distance-own.avg\"] ?? 0) * 6 + max((m[\"coupling.cbo.avg\"] ?? 0) - 8, 0) * 3 + max((m[\"coupling.cbo.p95\"] ?? 0) - 15, 0) * 0.4 + max((m[\"coupling.cbo.max\"] ?? 0) - 30, 0) ** 0.5 * 0.8), 0, 100)"
+    },
+    "health.typing": {
+        "class": "clamp(m[\"design.type-coverage.all\"] ?? 0, 0, 100)",
+        "namespace": "(((m[\"design.type-coverage.param.total.sum\"] ?? 0) + (m[\"design.type-coverage.return.total.sum\"] ?? 0) + (m[\"design.type-coverage.property.total.sum\"] ?? 0)) == 0) ? 100 : clamp(((m[\"design.type-coverage.param.typed.sum\"] ?? 0) + (m[\"design.type-coverage.return.typed.sum\"] ?? 0) + (m[\"design.type-coverage.property.typed.sum\"] ?? 0)) \/ ((m[\"design.type-coverage.param.total.sum\"] ?? 0) + (m[\"design.type-coverage.return.total.sum\"] ?? 0) + (m[\"design.type-coverage.property.total.sum\"] ?? 0)) * 100, 0, 100)",
+        "project": "(((m[\"design.type-coverage.param.total.sum\"] ?? 0) + (m[\"design.type-coverage.return.total.sum\"] ?? 0) + (m[\"design.type-coverage.property.total.sum\"] ?? 0)) == 0) ? 100 : clamp(((m[\"design.type-coverage.param.typed.sum\"] ?? 0) + (m[\"design.type-coverage.return.typed.sum\"] ?? 0) + (m[\"design.type-coverage.property.typed.sum\"] ?? 0)) \/ ((m[\"design.type-coverage.param.total.sum\"] ?? 0) + (m[\"design.type-coverage.return.total.sum\"] ?? 0) + (m[\"design.type-coverage.property.total.sum\"] ?? 0)) * 100, 0, 100)"
+    },
+    "health.maintainability": {
+        "class": "clamp(100 - max(85 - (m[\"maintainability.mi.avg\"] ?? 75), 0) * 1.5 - max(65 - (m[\"maintainability.mi.min\"] ?? 65), 0) ** 0.5 * 3.0, 0, 100)",
+        "namespace": "clamp(100 - max(85 - (m[\"maintainability.mi.avg\"] ?? 75), 0) * 2.5 - max(65 - (m[\"maintainability.mi.p5\"] ?? 65), 0) ** 0.5 * 4.5 - max(5 - (m[\"maintainability.mi.min\"] ?? 5), 0) ** 0.4 * 1.5, 0, 100)",
+        "project": "clamp(100 - max(85 - (m[\"maintainability.mi.avg\"] ?? 75), 0) * 2.5 - max(65 - (m[\"maintainability.mi.p5\"] ?? 65), 0) ** 0.5 * 4.5 - max(5 - (m[\"maintainability.mi.min\"] ?? 5), 0) ** 0.4 * 1.5, 0, 100)"
+    },
+    "health.overall": {
+        "class": "clamp((m[\"health.complexity\"] ?? 75) * 0.35 + (m[\"health.cohesion\"] ?? 75) * 0.25 + (m[\"health.coupling\"] ?? 75) * 0.25 + (m[\"health.typing\"] ?? 75) * 0.15, 0, 100)",
+        "namespace": "clamp((m[\"health.complexity\"] ?? 75) * 0.30 + (m[\"health.cohesion\"] ?? 75) * 0.20 + (m[\"health.coupling\"] ?? 75) * 0.20 + (m[\"health.typing\"] ?? 75) * 0.10 + (m[\"health.maintainability\"] ?? 75) * 0.20, 0, 100)",
+        "project": "clamp((m[\"health.complexity\"] ?? 75) * 0.30 + (m[\"health.cohesion\"] ?? 75) * 0.20 + (m[\"health.coupling\"] ?? 75) * 0.20 + (m[\"health.typing\"] ?? 75) * 0.10 + (m[\"health.maintainability\"] ?? 75) * 0.20, 0, 100)"
+    }
+}
+JSON, true, flags: \JSON_THROW_ON_ERROR);
+        $expression = new ComputedMetricExpression();
+        $evaluation = new ComputedMetricSubjectEvaluation($expression);
+        $defaults = ComputedMetricDefaults::getDefaults();
+        $measured = [];
+        foreach ($before as $formulas) {
+            foreach ($formulas as $formula) {
+                foreach ($expression->keysOf($formula) as $key) {
+                    if (!ComputedMetricExpression::isComputedReference($key)) {
+                        $measured[$key] = 0;
+                    }
+                }
+            }
+        }
+        foreach ([
+            [
+                'size.symbol-method-count' => 10, 'size.method-count' => 8,
+                'cohesion.tcc' => 1, 'cohesion.lcom' => 1, 'cohesion.tcc.avg' => 1, 'cohesion.lcom.avg' => 1,
+                'maintainability.mi.avg' => 100, 'maintainability.mi.min' => 100, 'maintainability.mi.p5' => 100,
+                'design.type-coverage.param.total.sum' => 1, 'design.type-coverage.param.typed.sum' => 1, 'design.type-coverage.all' => 100,
+            ],
+            [
+                'size.symbol-method-count' => 10, 'size.method-count' => 8, 'cohesion.pure-method-count' => 2,
+                'cohesion.tcc' => 0.49, 'cohesion.lcom' => 3, 'cohesion.tcc.avg' => 0.49, 'cohesion.lcom.avg' => 2,
+                'complexity.ccn.avg' => 3, 'complexity.cognitive.avg' => 2, 'complexity.ccn.max' => 8, 'complexity.cognitive.max' => 20,
+                'complexity.ccn.sum' => 30, 'complexity.cognitive.sum' => 20, 'complexity.ccn.p95' => 5, 'complexity.cognitive.p95' => 6,
+                'coupling.ce-packages' => 2, 'coupling.ce' => 10, 'coupling.distance' => 0.5, 'coupling.distance-own.avg' => 0.4,
+                'coupling.ce-packages.avg' => 2, 'coupling.ce.avg' => 10, 'coupling.ce.max' => 40,
+                'coupling.cbo.avg' => 10, 'coupling.cbo.p95' => 18, 'coupling.cbo.max' => 40,
+                'maintainability.mi.avg' => 75, 'maintainability.mi.min' => 30, 'maintainability.mi.p5' => 60,
+                'design.type-coverage.param.total.sum' => 3, 'design.type-coverage.param.typed.sum' => 2,
+                'design.type-coverage.return.total.sum' => 2, 'design.type-coverage.return.typed.sum' => 1,
+                'design.type-coverage.property.total.sum' => 1, 'design.type-coverage.property.typed.sum' => 1, 'design.type-coverage.all' => 80,
+            ],
+            [
+                'size.symbol-method-count' => 10, 'size.method-count' => 2, 'cohesion.pure-method-count' => 1,
+                'cohesion.tcc' => 0, 'cohesion.lcom' => 8, 'cohesion.tcc.avg' => 0, 'cohesion.lcom.avg' => 4,
+                'complexity.ccn.avg' => 10, 'complexity.cognitive.avg' => 15, 'complexity.ccn.max' => 100, 'complexity.cognitive.max' => 200,
+                'complexity.ccn.sum' => 100, 'complexity.cognitive.sum' => 150, 'complexity.ccn.p95' => 20, 'complexity.cognitive.p95' => 30,
+                'coupling.ce-packages' => 10, 'coupling.ce' => 100, 'coupling.distance' => 1, 'coupling.distance-own.avg' => 1,
+                'coupling.ce-packages.avg' => 10, 'coupling.ce.avg' => 100, 'coupling.ce.max' => 100,
+                'coupling.cbo.avg' => 100, 'coupling.cbo.p95' => 200, 'coupling.cbo.max' => 300,
+                'design.type-coverage.param.total.sum' => 1,
+            ],
+        ] as $point => $facts) {
+            foreach ([SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project] as $level) {
+                $values = [...$measured, ...$facts];
+                foreach ($before as $name => $formulas) {
+                    $expected = $expression->evaluate($formulas[$level->value], ['m' => new MetricLookup($values)]);
+                    $actual = $evaluation->evaluate($defaults[$name], $level, $values);
+                    $context = $name . ':' . $level->value . ':' . $point;
+                    self::assertSame(ComputedMetricOutcome::VALUE, $actual->kind, $context);
+                    self::assertSame($expected, $actual->value, $context);
+                    $values[$name] = $actual->value;
+                }
+            }
+        }
+    }
+
 }

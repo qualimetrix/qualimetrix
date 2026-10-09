@@ -14,7 +14,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMe
 
 /**
  * Filters out excluded health dimensions and rebuilds the health.overall
- * formula with normalized weights when dimensions are excluded.
+ * formula while retaining authored weights for runtime renormalization.
  */
 final readonly class HealthFormulaExcluder implements HealthFormulaExclusionInterface
 {
@@ -27,7 +27,7 @@ final readonly class HealthFormulaExcluder implements HealthFormulaExclusionInte
 
     /**
      * Filters out excluded health dimensions and rebuilds health.overall formula
-     * with normalized weights when dimensions are excluded.
+     * while retaining authored weights for runtime renormalization.
      *
      * @param list<ComputedMetricDefinition> $definitions
      * @param list<string> $excludedDimensions
@@ -146,7 +146,7 @@ final readonly class HealthFormulaExcluder implements HealthFormulaExclusionInte
 
     /**
      * Rebuilds the health.overall formula by removing excluded dimensions
-     * and normalizing remaining weights proportionally.
+     * while preserving the remaining order and weights.
      *
      * @param array<string, int> $excludedSet
      * @param Closure(string, string): ConfigurationRefusal $refuseOverall
@@ -159,22 +159,15 @@ final readonly class HealthFormulaExcluder implements HealthFormulaExclusionInte
         foreach ($formulas as $level => $formula) {
             $terms = WeightedHealthFormula::termsOf($this->expression, $formula);
 
-            // Auto-renormalization works only on the canonical weighted-sum shape
-            // `(m["health.dim"] ?? 75) * 0.NN + ...`. If a user has overridden
-            // `health.overall` with a non-canonical formula (e.g. `min(...)`,
-            // a conditional, a custom aggregator), parsing yields no weights and
-            // silently dropping the level would lose the user's intent. Refuse
-            // explicitly so the user can either drop the exclusion or rewrite
-            // their custom formula to handle the missing dimension via `??`.
             if ($terms === null) {
                 throw $refuseOverall(
                     (string) $level,
                     \sprintf(
                         'Cannot auto-renormalize "health.overall" at level "%s" after excluding '
                         . 'health dimensions: the custom formula does not match the canonical '
-                        . 'weighted-sum shape `(m["health.dimension"] ?? fallback) * weight`. '
+                        . 'ordered weighted_mean shape `weighted_mean(m["health.dimension"], weight, ...)`. '
                         . 'Either rewrite the custom formula to reference disabled dimensions '
-                        . 'via `??` fallbacks, or remove the exclusion. Formula: %s',
+                        . 'through weighted_mean, or remove the exclusion. Formula: %s',
                         $level,
                         $formula,
                     ),
@@ -203,78 +196,28 @@ final readonly class HealthFormulaExcluder implements HealthFormulaExclusionInte
             inverted: $overall->inverted,
             warningThreshold: $overall->warningThreshold,
             errorThreshold: $overall->errorThreshold,
+            applicability: $overall->applicability,
         );
     }
 
     /**
-     * Rebuilds the weighted sum over the dimensions that remain, each keeping
-     * the fallback it was written with.
+     * Keep authored order and weights: weighted_mean renormalizes only the
+     * participating values, so pre-normalizing changes floating-point results.
      *
-     * The fallback used to be re-emitted as a literal 75 whatever the formula
-     * said, so a user's own default was replaced by ours on the way through.
-     *
-     * @param array<string, array{weight: float, fallback: float}> $terms
+     * @param array<string, array{weight: float}> $terms
      * @param array<string, int> $excludedSet
      */
     private static function buildWeightedFormula(array $terms, array $excludedSet): ?string
     {
         $remaining = array_diff_key($terms, $excludedSet);
-
         if ($remaining === []) {
             return null;
         }
-
-        $weights = self::normalizedWeights(array_column($remaining, 'weight'));
         $rebuilt = [];
-
-        foreach (array_keys($remaining) as $index => $dimension) {
-            $rebuilt[] = \sprintf(
-                '(m["%s"] ?? %s) * %s',
-                $dimension,
-                self::number($remaining[$dimension]['fallback']),
-                self::number($weights[$index]),
-            );
+        foreach ($remaining as $dimension => $term) {
+            $rebuilt[] = \sprintf('m["%s"], %s', $dimension, json_encode($term['weight'], \JSON_THROW_ON_ERROR | \JSON_PRESERVE_ZERO_FRACTION));
         }
 
-        return \sprintf('clamp(%s, 0, 100)', implode(' + ', $rebuilt));
-    }
-
-    /**
-     * Shares that sum to exactly one at the precision they are printed with.
-     *
-     * Rounding each share on its own leaves the scale short: dropping typing
-     * from the namespace formula gives 0.3333 + 0.2222 * 3 = 0.9999, and a
-     * subject scoring 100 on every remaining dimension then publishes 99.99.
-     * The rounding remainder goes to the widest share, where it is the smallest
-     * relative distortion, instead of being dropped.
-     *
-     * @param list<float> $weights
-     *
-     * @return list<float>
-     */
-    private static function normalizedWeights(array $weights): array
-    {
-        $total = array_sum($weights);
-        $shares = array_map(static fn(float $weight): float => round($weight / $total, 4), $weights);
-
-        $widest = 0;
-
-        foreach ($shares as $index => $share) {
-            if ($share > $shares[$widest]) {
-                $widest = $index;
-            }
-        }
-
-        $shares[$widest] = round($shares[$widest] + (1.0 - array_sum($shares)), 4);
-
-        return array_values($shares);
-    }
-
-    /** A float printed the way a formula reads it, without a trailing `.0`. */
-    private static function number(float $value): string
-    {
-        $trimmed = rtrim(rtrim(\sprintf('%.4F', $value), '0'), '.');
-
-        return $trimmed === '' || $trimmed === '-' ? '0' : $trimmed;
+        return \sprintf('clamp(weighted_mean(%s), 0, 100)', implode(', ', $rebuilt));
     }
 }
