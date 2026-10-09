@@ -8,9 +8,13 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMe
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Finding\ComputedMetricFindingBuilder;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
@@ -83,8 +87,13 @@ final class ComputedMetricRule extends AbstractRule
             $spanName = 'rule.' . $producer . '.' . $definition->name;
             $profiler->start($spanName, 'rule.' . $producer);
 
+            $declaration = ComputedMetricChannelFamily::declarationForDefinition($definition);
+            if ($declaration === null) {
+                $profiler->stop($spanName);
+                continue;
+            }
             foreach ($definition->levels as $level) {
-                $this->checkLevel($context, $definition, $level, $findings);
+                $this->checkLevel($context, $definition, $level, $findings, $declaration);
             }
 
             $profiler->stop($spanName);
@@ -101,16 +110,33 @@ final class ComputedMetricRule extends AbstractRule
         ComputedMetricDefinition $definition,
         SymbolLevel $level,
         array &$findings,
+        ChannelDeclaration $declaration,
     ): void {
         $symbols = $this->getSymbolsForLevel($context, $level);
 
         foreach ($symbols as [$subject, $symbolPath, $location]) {
-            $metrics = $context->metrics->getSubject($subject);
-            $value = $metrics->get($definition->name);
-
-            if ($value === null) {
+            $identity = $level === SymbolLevel::Class_ ? PopulationIdentity::subject($subject) : PopulationIdentity::aggregate($symbolPath);
+            $producer = $definition->producerRuleName();
+            $channel = new FindingChannel($definition->name);
+            if ($level === SymbolLevel::Class_ && $symbolPath->getType() !== SymbolType::Class_) {
+                $context->admit($producer, $channel, $level, $identity, $declaration, (static function () use ($symbolPath): iterable {
+                    yield GateInput::kind('class-coordinate', $symbolPath->getType());
+                })());
                 continue;
             }
+            $metrics = $context->metrics->getSubject($subject);
+            if (!$definition->getApplicabilityForLevel($level)->appliesTo($metrics->all())) {
+                continue;
+            }
+            if (!$context->admit($producer, $channel, $level, $identity, $declaration, (static function () use ($level, $symbolPath, $metrics): iterable {
+                if ($level === SymbolLevel::Class_) {
+                    yield GateInput::kind('class-coordinate', $symbolPath->getType());
+                }
+                yield GateInput::metrics('published-value', $metrics);
+            })())) {
+                continue;
+            }
+            $value = $metrics->get($definition->name);
 
             $finding = $this->findingBuilder->build(
                 $definition,
@@ -150,7 +176,7 @@ final class ComputedMetricRule extends AbstractRule
         $symbols = [];
         foreach ($context->metrics->allClassDeclarations() as $declarationInfo) {
             $declaration = $declarationInfo->subject?->declarationPath();
-            if ($declaration?->logical->getType() !== SymbolType::Class_) {
+            if ($declaration === null) {
                 continue;
             }
 

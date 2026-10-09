@@ -74,9 +74,20 @@ final class HardcodedCredentialsRuleTest extends TestCase
                 ->withEntry('security.hardcoded-credentials', ['subjectKind' => 'file', 'line' => 15, 'pattern' => 'variable']),
         );
 
+        $decisions = [];
+        foreach (HardcodedCredentialsRule::channelDeclarations() as $channel => $declaration) {
+            foreach ($declaration->levels as $level) {
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(HardcodedCredentialsRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
+            }
+        }
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)));
+        $context = $context->withPopulationTrace($session);
         $findings = $rule->analyze($context);
 
         self::assertCount(1, $findings);
+        self::assertSame(1, $session->freeze()->judgedCount());
+        self::assertSame(0, $session->freeze()->unjudgedCount());
+        self::assertSame(\Qualimetrix\Core\Symbol\SymbolLevel::File, $session->freeze()->judgedCounts()[0]['level']);
         self::assertSame(15, $findings[0]->location->line);
         self::assertSame(Severity::Error, $findings[0]->severity);
         self::assertSame('security.hardcoded-credentials', $findings[0]->ruleName);

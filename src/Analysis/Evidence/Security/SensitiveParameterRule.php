@@ -9,8 +9,10 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Core\Symbol\MetricSubjectCodec;
@@ -66,6 +68,7 @@ final class SensitiveParameterRule extends AbstractRule
         }
 
         $findings = [];
+        $declaration = self::channelDeclarations()[self::NAME];
 
         foreach ($context->metrics->all(SymbolLevel::File) as $fileInfo) {
             $metrics = $context->metrics->get($fileInfo->symbolPath);
@@ -75,8 +78,8 @@ final class SensitiveParameterRule extends AbstractRule
                 continue;
             }
 
-            foreach ($entries as $entry) {
-                $finding = $this->findingForEntry($fileInfo, $entry, $context);
+            foreach ($entries as $entryOrdinal => $entry) {
+                $finding = $this->findingForEntry($fileInfo, $entry, $context, $entryOrdinal, $declaration);
                 if ($finding !== null) {
                     $findings[] = $finding;
                 }
@@ -89,12 +92,13 @@ final class SensitiveParameterRule extends AbstractRule
     /**
      * @param array<string, bool|float|int|string> $entry
      */
-    private function findingForEntry(SymbolInfo $fileInfo, array $entry, AnalysisContext $context): ?Finding
+    private function findingForEntry(SymbolInfo $fileInfo, array $entry, AnalysisContext $context, int $entryOrdinal, ChannelDeclaration $declaration): ?Finding
     {
         \assert($this->options instanceof SensitiveParameterOptions);
         $file = $fileInfo->file ?? throw new LogicException('File symbol must carry a relative path');
         $line = (int) $entry['line'];
         $subject = MetricSubjectCodec::decodeEntry($entry, $file);
+        $context->admit(self::NAME, new FindingChannel(self::NAME), $subject::levelOfCanonical($subject->toCanonical()), PopulationIdentity::occurrence($subject->toCanonical(), $entryOrdinal), $declaration, []);
         $severity = $this->getEffectiveSeverity($context, $this->options, $subject, 1);
         if ($severity === null) {
             return null;

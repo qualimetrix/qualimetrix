@@ -71,7 +71,17 @@ final class CodeDuplicationRuleTest extends TestCase
             $copies,
         );
 
-        $findings = $this->createRule()->analyze($this->contextWithBlocks(self::createStub(MetricRepositoryInterface::class), $blocks));
+        $decisions = [];
+        foreach (CodeDuplicationRule::channelDeclarations() as $channel => $declaration) {
+            foreach ($declaration->levels as $level) {
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(CodeDuplicationRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
+            }
+        }
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)));
+        $findings = $this->createRule()->analyze($this->contextWithBlocks(self::createStub(MetricRepositoryInterface::class), $blocks)->withPopulationTrace($session));
+        self::assertSame(\count($findings), $session->freeze()->judgedCount());
+        self::assertSame(0, $session->freeze()->unjudgedCount());
+        self::assertSame('copy-occurrence', $session->freeze()->judgedCounts()[0]['unit']);
         $keys = [];
         $fingerprints = [];
         $reportedValues = [];

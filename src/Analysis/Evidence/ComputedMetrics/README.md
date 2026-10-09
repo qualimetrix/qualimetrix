@@ -352,3 +352,12 @@ A Run-dependent input in any branch makes the formula Run-dependent, even when
 that branch does not execute for current values. Project-level baseline subjects
 always require the whole region. Baseline owns comparability; this capability
 provides formula evidence rather than another run lifecycle port.
+
+The rule obtains one full `ComputedMetricChannelFamily` declaration per
+definition and uses it for pure eligibility and optional selected accounting.
+The runtime roster is the actual class, namespace or project roster. Applicable
+subjects are judged on the published definition value; non-applicable subjects
+remain outside that population. An empty project is still the native project
+coordinate. Rule execution never evaluates a formula to reconstruct a missing
+value. Computed-value absence summaries remain independent of rule-population
+abstentions and survive report/result copies independently.

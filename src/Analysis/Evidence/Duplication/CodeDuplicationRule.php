@@ -9,8 +9,10 @@ use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateLocation;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -81,9 +83,10 @@ final class CodeDuplicationRule extends AbstractRule
 
         $findings = [];
         $fileSubjects = [];
+        $declaration = self::channelDeclarations()[self::NAME];
 
-        foreach ($this->resultProvider->all() as $block) {
-            array_push($findings, ...$this->copyFindings($block, $fileSubjects));
+        foreach ($this->resultProvider->all() as $blockOrdinal => $block) {
+            array_push($findings, ...$this->copyFindings($block, $fileSubjects, $context, $blockOrdinal, $declaration));
         }
 
         return $findings;
@@ -123,7 +126,7 @@ final class CodeDuplicationRule extends AbstractRule
      *
      * @return list<Finding>
      */
-    private function copyFindings(DuplicateBlock $block, array &$fileSubjects): array
+    private function copyFindings(DuplicateBlock $block, array &$fileSubjects, AnalysisContext $context, int $blockOrdinal, ChannelDeclaration $declaration): array
     {
         $locations = array_map(
             static fn(DuplicateLocation $copy): Location => new Location($copy->file, $copy->startLine, precise: true),
@@ -141,6 +144,7 @@ final class CodeDuplicationRule extends AbstractRule
             $lines = $copy->codeLines;
             $hintPart = $copy->hint !== null ? \sprintf(': "%s"', $copy->hint) : '';
             $copyInFile = $copiesInFile[$file] = ($copiesInFile[$file] ?? -1) + 1;
+            $context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::File, PopulationIdentity::occurrence(json_encode([$blockOrdinal, $block->contentHash, $file, $copyInFile], \JSON_THROW_ON_ERROR), $index, 'copy-occurrence'), $declaration, []);
             $named = self::namedOthers($block->occurrences(), $index);
             $unnamed = $block->occurrences() - 1 - \count($named);
 
