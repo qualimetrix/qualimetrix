@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance;
 
 use InvalidArgumentException;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -14,12 +15,23 @@ use Qualimetrix\Analysis\Evidence\Design\Inheritance\NocOptions;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\NocRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
+use Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch;
+use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
@@ -27,6 +39,50 @@ use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 #[CoversClass(NocOptions::class)]
 final class NocRuleTest extends TestCase
 {
+    #[Test]
+    public function itAccountsForWrongLogicalKindsBeforeReadingClassMetrics(): void
+    {
+        $info = self::subjectInfo(SymbolPath::forMethod('App', 'Service', 'run'), RelativePath::fromString('service.php'), 1);
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->expects(self::once())->method('allClassDeclarations')->willReturn([$info]);
+        $repository->expects(self::never())->method('getSubject');
+        $session = self::populationSession(NocRule::NAME);
+        self::assertSame([], (new NocRule(new NocOptions()))->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
+        self::assertSame(0, $session->freeze()->judgedCount());
+        self::assertSame(1, $session->freeze()->unjudgedCount());
+        self::assertSame('logical-class-kind', $session->freeze()->abstentions()[0]->gate);
+    }
+
+    #[Test]
+    public function itSeparatesMissingZeroAndHealthyChildCounts(): void
+    {
+        $info = self::subjectInfo(SymbolPath::fromClassFqn('App\\ParentClass'), RelativePath::fromString('parent.php'), 1);
+        foreach ([[null, 'noc-present'], [0, 'noc-positive'], [1, null]] as [$count, $gate]) {
+            $repository = self::createStub(MetricRepositoryInterface::class);
+            $repository->method('allClassDeclarations')->willReturn([$info]);
+            $repository->method('getSubject')->willReturn($count === null ? new MetricBag() : MetricBag::fromArray(['design.noc' => $count]));
+            $session = self::populationSession(NocRule::NAME);
+            self::assertSame([], (new NocRule(new NocOptions()))->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
+            self::assertSame($gate === null ? 1 : 0, $session->freeze()->judgedCount());
+            self::assertSame($gate === null ? 0 : 1, $session->freeze()->unjudgedCount());
+            if ($gate !== null) {
+                self::assertSame($gate, $session->freeze()->abstentions()[0]->gate);
+            }
+        }
+    }
+
+    #[Test]
+    public function itRefusesNegativeChildCountsEvenWithoutAccounting(): void
+    {
+        $info = self::subjectInfo(SymbolPath::fromClassFqn('App\\InvalidParent'), RelativePath::fromString('invalid.php'), 1);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allClassDeclarations')->willReturn([$info]);
+        $repository->method('getSubject')->willReturn(MetricBag::fromArray(['design.noc' => -1]));
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('Invalid measured population count.');
+        (new NocRule(new NocOptions()))->analyze(new AnalysisContext($repository));
+    }
+
     #[Test]
     public function itGetsName(): void
     {
@@ -357,6 +413,14 @@ final class NocRuleTest extends TestCase
             'declaration:class:App\\Service\\Twin@src/A.php',
             'declaration:class:App\\Service\\Twin@src/B.php',
         ], $subjects);
+    }
+
+    private static function populationSession(string $producer, bool $selected = true): PopulationSession
+    {
+        return new PopulationSession(new ChannelPublication(new RuleEnablement([new EnablementDecision(
+            new SelectionCellAddress($producer, new FindingChannel($producer), SymbolLevel::Class_, ChannelSelectionRole::Selectable),
+            new AuthoredCellDecision($selected ? CellSwitch::On : CellSwitch::Off, CellAdmission::Direct),
+        )], null)));
     }
 
     private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo

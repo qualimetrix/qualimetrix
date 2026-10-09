@@ -9,8 +9,15 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyThreshold;
+use Qualimetrix\Analysis\Finding\Contract\Population\KindIn;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
@@ -75,12 +82,15 @@ final class NocRule extends AbstractRule
     private function findingForClass(SymbolInfo $classInfo, AnalysisContext $context, NocOptions $options): ?Finding
     {
         $subject = $classInfo->subject ?? throw new LogicException('NOC findings require an exact class declaration subject');
-        if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
-            return null;
-        }
-
-        $noc = $context->metrics->getSubject($subject)->get(MetricName::DESIGN_NOC);
-        if ($noc === null || $noc === 0) {
+        $noc = null;
+        $inputs = (static function () use ($subject, $context, &$noc): iterable {
+            yield GateInput::kind('logicalKind', $subject->toSymbolPath()->getType());
+            $metrics = $context->metrics->getSubject($subject);
+            $noc = $metrics->get(MetricName::DESIGN_NOC);
+            yield GateInput::metrics('noc-present', $metrics);
+            yield GateInput::metrics('noc-positive', $metrics);
+        })();
+        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), self::channelDeclarations()[self::NAME], $inputs)) {
             return null;
         }
 
@@ -135,6 +145,10 @@ final class NocRule extends AbstractRule
                 WorseDirection::Higher,
                 JudgedMetrics::of(MetricName::DESIGN_NOC),
                 SymbolLevel::Class_,
+            )->withGates(
+                new PopulationGate('logical-class-kind', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KindIn('logicalKind', [SymbolType::Class_]), 'Only class declarations are judged.'),
+                new PopulationGate('noc-present', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KeyPresent('noc-present', [MetricName::DESIGN_NOC]), 'The direct-child count was not published.'),
+                new PopulationGate('noc-positive', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KeyThreshold('noc-positive', [MetricName::DESIGN_NOC], '>', 0, nonnegative: true), 'A class with no children is outside the NOC population.'),
             ),
         ];
     }

@@ -9,8 +9,14 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
+use Qualimetrix\Analysis\Finding\Contract\Population\KindIn;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
@@ -80,7 +86,7 @@ final class DataClassRule extends AbstractRule
         $findings = [];
 
         foreach ($context->metrics->allClassDeclarations() as $classInfo) {
-            if ($classInfo->subject?->toSymbolPath()->getType() !== SymbolType::Class_) {
+            if ($classInfo->subject === null) {
                 continue;
             }
             $finding = $this->evaluateClass($context, $classInfo);
@@ -95,29 +101,23 @@ final class DataClassRule extends AbstractRule
     private function evaluateClass(AnalysisContext $context, SymbolInfo $classInfo): ?Finding
     {
         $subject = $classInfo->subject ?? throw new LogicException('Data class findings require an exact class declaration subject');
-        $metrics = $context->metrics->getSubject($subject);
-
-        // Apply `@qmx-threshold` overrides for this class
-        $effectiveOptions = $this->getEffectiveOptions(
-            $context,
-            $this->options,
-            $subject,
-        );
-        \assert($effectiveOptions instanceof DataClassOptions);
-
-        if (DataClassExclusionCheck::isExcluded($metrics, $effectiveOptions)) {
+        $metrics = null;
+        $effectiveOptions = null;
+        $inputs = (function () use ($subject, $context, &$metrics, &$effectiveOptions): iterable {
+            yield GateInput::kind('logicalKind', $subject->toSymbolPath()->getType());
+            $metrics = $context->metrics->getSubject($subject);
+            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $subject);
+            \assert($effectiveOptions instanceof DataClassOptions);
+            yield from DataClassExclusionCheck::populationInputs($metrics, $effectiveOptions);
+            yield GateInput::metrics('woc-present', $metrics);
+        })();
+        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), self::channelDeclarations()[self::NAME], $inputs)) {
             return null;
         }
 
-        $woc = $metrics->get(MetricName::DESIGN_WOC);
-        if ($woc === null) {
-            return null;
-        }
-
-        $wocValue = (int) $woc;
+        $wocValue = (int) $metrics->require(MetricName::DESIGN_WOC);
         $wmcValue = (int) ($metrics->get(MetricName::COMPLEXITY_WMC) ?? 0);
 
-        // Data Class: high WOC (public surface) + low WMC (complexity)
         if ($wocValue > $effectiveOptions->wocThreshold || $wmcValue > $effectiveOptions->wmcThreshold) {
             return null;
         }
@@ -172,6 +172,9 @@ final class DataClassRule extends AbstractRule
                 WorseDirection::Lower,
                 JudgedMetrics::of(MetricName::DESIGN_WOC),
                 SymbolLevel::Class_,
+            )->withGates(
+                new PopulationGate('logical-class-kind', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KindIn('logicalKind', [SymbolType::Class_]), 'Only class declarations are judged.'),
+                ...[...DataClassExclusionCheck::populationGates(), new PopulationGate('woc-present', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KeyPresent('woc-present', [MetricName::DESIGN_WOC]), 'WOC was not published.')],
             ),
         ];
     }

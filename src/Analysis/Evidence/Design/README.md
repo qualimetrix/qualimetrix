@@ -171,6 +171,28 @@ unknown exception status when duplicate parent declarations disagree.
   `excludeExceptions=true`, proven exceptions and unknown exception status
   cannot be judged; `false` ignores that classification and applies the
   remaining criteria. Readonly and promoted-only exclusions remain configurable.
+- Each rule's full channel declaration owns its ordered population gates. The
+  same declaration evaluates eligibility in direct calls and during traced
+  execution; publication selection controls accounting only. Admitted classes
+  count as judged even when their substantive thresholds produce no finding.
+  Inputs are yielded in source order and stop at the first failed gate.
+- Data-class population gates retain interface, abstract, property, exception,
+  readonly, promoted-only and member-floor order before WOC presence.
+  `DataClassExclusionCheck::populationGates()` declares the class-shape portion;
+  `populationInputs()` supplies its current metric bag and effective options.
+  Disabled exception exclusion bypasses both presence and nonzero checks;
+  unconditional interface and abstract flags exclude only the integer value 1.
+- God-class population requires a class declaration, an admitted readonly flag,
+  the method floor and enough evaluable criteria. Criteria are evaluated once
+  after the earlier gates, and their results are reused for the finding. Enough
+  evaluable but unmatched criteria is a healthy judgement, not an abstention.
+- DIT zero is a judged root depth; missing DIT is an abstention and retains the
+  independently published exact/floor/loop diagnostic. NOC absence and measured
+  zero have separate gates; negative direct-child counts refuse judgement.
+- Each type-coverage dimension distinguishes a missing total from a measured
+  nonpositive total. A positive total admits judgement even when coverage is
+  absent, preserving the substantive 0% fallback. Parameter, return and property
+  totals are never substituted for each other.
 - Per-file visitors implement Measurement reset semantics. Global collectors
   are stateless across runs; the worker wire payload remains Measurement-owned.
 
@@ -224,7 +246,8 @@ survived it. The tests cover type-coverage
 projection and scale, data/god-class criteria, local/imported/external
 inheritance floors and loops, static builtin ancestry, duplicate-parent merges,
 exception classification, DIT/NOC global graph behavior, thresholds, and finding
-identity. Shared container, worker, and cross-capability integration tests stay
+identity, healthy population accounting, conditional bypasses, missing-versus-zero
+reasons, and reached-input timing. Shared container, worker, and cross-capability integration tests stay
 with their owning integration subjects.
 
 ## Change recipe

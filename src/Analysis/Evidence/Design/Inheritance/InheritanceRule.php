@@ -10,8 +10,14 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
+use Qualimetrix\Analysis\Finding\Contract\Population\KindIn;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
@@ -82,14 +88,16 @@ final class InheritanceRule extends AbstractRule
     /** @return array{?Finding, InheritanceOutcome} */
     private function analyzeDeclaration(MetricSubject $subject, Location $location, AnalysisContext $context, InheritanceOptions $options): array
     {
-        if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
-            return [null, InheritanceOutcome::Exact];
-        }
-        // One logical name can have different parents in different bodies.
-        $metrics = $context->metrics->getSubject($subject);
-        $dit = $metrics->get(MetricName::DESIGN_DIT);
-        $outcome = $this->publishedOutcome($dit, $metrics->get(MetricName::DESIGN_DIT_UNRESOLVED));
-        if ($dit === null) {
+        $dit = null;
+        $outcome = InheritanceOutcome::Exact;
+        $inputs = (function () use ($subject, $context, &$dit, &$outcome): iterable {
+            yield GateInput::kind('logicalKind', $subject->toSymbolPath()->getType());
+            $metrics = $context->metrics->getSubject($subject);
+            $dit = $metrics->get(MetricName::DESIGN_DIT);
+            $outcome = $this->publishedOutcome($dit, $metrics->get(MetricName::DESIGN_DIT_UNRESOLVED));
+            yield GateInput::metrics('dit-present', $metrics);
+        })();
+        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), self::channelDeclarations()[self::NAME], $inputs)) {
             return [null, $outcome];
         }
         /** @var InheritanceOptions $effectiveOptions */
@@ -179,6 +187,9 @@ final class InheritanceRule extends AbstractRule
                 WorseDirection::Higher,
                 JudgedMetrics::of(MetricName::DESIGN_DIT),
                 SymbolLevel::Class_,
+            )->withGates(
+                new PopulationGate('logical-class-kind', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KindIn('logicalKind', [SymbolType::Class_]), 'Only class declarations are judged.'),
+                new PopulationGate('dit-present', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KeyPresent('dit-present', [MetricName::DESIGN_DIT]), 'Numeric inheritance depth was not published.'),
             ),
         ];
     }
