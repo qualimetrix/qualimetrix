@@ -12,9 +12,21 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
+use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
+use Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch;
+use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
@@ -26,8 +38,10 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\NamedType;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\UnmatchedTypeOccurrence;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationRule;
 use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\UnmatchedTypeDiagnostic;
 use Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidence;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(UnmatchedTypeDiagnostic::class)]
@@ -48,7 +62,7 @@ final class UnmatchedTypeDiagnosticTest extends TestCase
         );
         $evidence = $this->evidence([new LayerDefinition('typed', $membership)], [SymbolPath::forClass('App', 'Known')]);
 
-        $findings = UnmatchedTypeDiagnostic::forEvidence($evidence, new ProjectScopeJudgement());
+        $findings = UnmatchedTypeDiagnostic::forEvidence($evidence, new ProjectScopeJudgement(), new AnalysisContext(new InMemoryMetricRepository()));
 
         self::assertCount(2, $findings);
         self::assertStringContainsString('architecture.layers[0].implements[1]:17', $findings[0]->message);
@@ -74,7 +88,7 @@ final class UnmatchedTypeDiagnosticTest extends TestCase
             new LayerDefinition('other', new MembershipSpec(extends: [$second->fqn], namedTypes: [$second])),
         ]);
 
-        $findings = UnmatchedTypeDiagnostic::forEvidence($evidence, new ProjectScopeJudgement());
+        $findings = UnmatchedTypeDiagnostic::forEvidence($evidence, new ProjectScopeJudgement(), new AnalysisContext(new InMemoryMetricRepository()));
 
         self::assertCount(2, $findings);
         self::assertNotEquals($findings[0]->occurrenceKey, $findings[1]->occurrenceKey);
@@ -102,7 +116,7 @@ final class UnmatchedTypeDiagnosticTest extends TestCase
         ));
         $evidence = $this->evidence([], entries: [$entry]);
 
-        $findings = UnmatchedTypeDiagnostic::forEvidence($evidence, new ProjectScopeJudgement());
+        $findings = UnmatchedTypeDiagnostic::forEvidence($evidence, new ProjectScopeJudgement(), new AnalysisContext(new InMemoryMetricRepository()));
 
         self::assertCount(1, $findings);
         self::assertStringContainsString('Vendor\Missing', $findings[0]->message);
@@ -118,7 +132,7 @@ final class UnmatchedTypeDiagnosticTest extends TestCase
             new LayerDefinition('typed', new MembershipSpec(extends: [$type->fqn], namedTypes: [$type])),
         ], install: $install);
 
-        self::assertSame([], UnmatchedTypeDiagnostic::forEvidence($evidence, new ProjectScopeJudgement($doors)));
+        self::assertSame([], UnmatchedTypeDiagnostic::forEvidence($evidence, new ProjectScopeJudgement($doors), new AnalysisContext(new InMemoryMetricRepository())));
     }
 
     /** @return iterable<string, array{list<ProjectScopeDoor>, bool}> */
@@ -140,12 +154,34 @@ final class UnmatchedTypeDiagnosticTest extends TestCase
             new LayerDefinition('two', new MembershipSpec(extends: [$two->fqn], namedTypes: [$two])),
         ]);
 
-        $findings = UnmatchedTypeDiagnostic::forEvidence($evidence, new ProjectScopeJudgement());
+        $findings = UnmatchedTypeDiagnostic::forEvidence($evidence, new ProjectScopeJudgement(), new AnalysisContext(new InMemoryMetricRepository()));
 
         self::assertCount(2, $findings);
         self::assertNotEquals($findings[0]->occurrenceKey, $findings[1]->occurrenceKey);
         self::assertStringContainsString('imported by configuration file "one.yaml"', $findings[0]->message);
         self::assertStringContainsString('imported by configuration file "two.yaml"', $findings[1]->message);
+    }
+
+    #[Test]
+    public function itAccountsKnownAuthoredTypesBesideMissingTypesAndWithholdsEveryOccurrenceTogether(): void
+    {
+        $known = self::type('App\Known', ['architecture', 'layers', '0', 'extends', '0']);
+        $missing = self::type('App\Missing', ['architecture', 'layers', '0', 'extends', '1']);
+        $evidence = $this->evidence([new LayerDefinition('typed', new MembershipSpec(extends: [$known->fqn, $missing->fqn], namedTypes: [$known, $missing]))], [SymbolPath::forClass('App', 'Known')]);
+        foreach ([[], [ProjectScopeDoor::Paths]] as $doors) {
+            $session = new PopulationSession(new ChannelPublication(new RuleEnablement([
+                new EnablementDecision(
+                    new SelectionCellAddress(LayerDeclarationRule::NAME, new FindingChannel('architecture.unmatched-type'), SymbolLevel::Project, ChannelSelectionRole::Selectable),
+                    new AuthoredCellDecision(CellSwitch::On, CellAdmission::Direct),
+                ),
+            ], null)));
+            $scope = new ProjectScopeJudgement($doors);
+            $context = (new AnalysisContext(new InMemoryMetricRepository(), projectScope: $scope))->withPopulationTrace($session);
+            $findings = UnmatchedTypeDiagnostic::forEvidence($evidence, $scope, $context);
+            self::assertCount($doors === [] ? 1 : 0, $findings);
+            self::assertSame($doors === [] ? 2 : 0, $session->freeze()->judgedCount());
+            self::assertSame($doors === [] ? 0 : 2, $session->freeze()->unjudgedCount());
+        }
     }
 
     /** @param list<string> $path */

@@ -402,7 +402,15 @@ and `ShadowedClass` retain their exact dependency and criterion facts.
 `DiagnosticSampleList` formats bounded samples without policy semantics.
 The collector reads three independent enabled gates through `RuleOptionsInterface`
 and returns no evidence when all three are off or no layers are declared.
-It has no dependency on any of the verdict folders.
+The edge walk takes its complete population declaration from
+`LayerViolationRule::channelDeclarations()`. Its `populationGates()` supplies
+only the ordered graph/source/target predicates attached by that authority.
+Both endpoints are resolved and tallied before source and target admission.
+Every native dependency-list event is one judgement attempt, even when repeated
+events share the same logical source, target and type. The canonical triple
+identifies bounded examples; it does not collapse judgement counts. Allowed
+edges and forbidden edges both complete judgement; unassigned endpoints
+withhold it. A memoized collection does not account those edges again.
 
 `LayerAssignmentProjection` turns the prepared configuration and the observed
 class context into the public debug value's assignment, contender and typed
@@ -518,3 +526,38 @@ full authored provenance of malformed options.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+## Rule populations
+
+Every ordinary channel declares and executes its ordered population predicates
+through the same full `ChannelDeclaration`, including unbound rule calls and
+channels omitted by publication selection. Selection affects accounting only.
+The shared `LayerEvidenceCollector` memo remains keyed by the run's exact
+`AnalysisContext`; rules and helpers reuse that context rather than deriving a
+new context for each coordinate.
+
+Missing prepared evidence yields one invocation abstention for layer violation,
+layer overlap, doubted assignment and unassigned class at their own collection
+sites. An unprepared `ArchitecturePolicy` still refuses. A missing graph after
+prepared evidence yields one layer-violation invocation abstention; a known
+empty edge roster yields zero members. Successful checks never add an invocation
+preflight. Doubted assignment is itself one actual invocation summary. Overlap
+accounts native precedence pairs, including pairs that produce no warning;
+unassigned class accounts logical class-like identities, including assigned
+classes and collapsing duplicate exact declarations through the repository's
+native logical roster.
+
+`UnmatchedExcludeDiagnostic::forInertClauses(evidence, channelName, context)`
+aggregates expanded instances before one admission per authored exclude clause.
+`clauses(evidence, context)` tests namespace scope before pending lifecycle; an
+inactive pending clause is unjudged, while an absent exclude is outside the
+roster. Its `populationGates()` contributes the lifecycle predicate to the
+producer's complete declaration. The matched/excluded/unanswered comparison
+remains the finding decision after admission.
+
+`UnmatchedTypeDiagnostic::forEvidence(evidence, scope, context)` judges the full
+native authored-type roster once, including met types that emit no finding.
+`populationGates()` contributes the complete-scope-and-consulted-install
+predicate. Authored provenance distinguishes equal FQNs at separate positions;
+expanded copies retain the native coalescing. The five configuration-validator
+channels stay outside ordinary rule population accounting.

@@ -4,10 +4,19 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Observation;
 
+use Generator;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Population\ContextGuard;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /** Collects dependency-edge layer evidence from one prepared run. */
 final readonly class EdgeEvidenceWalk
@@ -16,6 +25,17 @@ final readonly class EdgeEvidenceWalk
         private ArchitectureConfiguration $architecture,
         private AnalysisContext $context,
     ) {}
+
+    /** @return list<PopulationGate> */
+    public static function populationGates(): array
+    {
+        $channel = new FindingChannel(LayerViolationRule::NAME);
+        return [
+            new PopulationGate('graph-available', $channel, SymbolLevel::Class_, 'dependency-edge', new ContextGuard('graphAvailable'), 'The dependency graph is unavailable.', 'invocation'),
+            new PopulationGate('source-assigned', $channel, SymbolLevel::Class_, 'dependency-edge', new ContextGuard('edgeSourceAssigned'), 'The source has no assigned layer.'),
+            new PopulationGate('target-assigned', $channel, SymbolLevel::Class_, 'dependency-edge', new ContextGuard('edgeTargetAssigned'), 'The target has no assigned layer.'),
+        ];
+    }
 
     public function collect(): EdgeWalkEvidence
     {
@@ -34,8 +54,13 @@ final readonly class EdgeEvidenceWalk
         $contendedSymbols = [];
         $ownsIfExcludedSymbols = [];
 
+        $declaration = LayerViolationRule::channelDeclarations()[LayerViolationRule::NAME];
         $graph = $this->context->dependencyGraph;
         if ($graph === null) {
+            $this->context->admit(LayerViolationRule::NAME, new FindingChannel(LayerViolationRule::NAME), SymbolLevel::Class_, PopulationIdentity::invocation(LayerViolationRule::NAME), $declaration, (static function (): Generator {
+                yield GateInput::context('preparedEvidenceAvailable', true);
+                yield GateInput::context('graphAvailable', false);
+            })());
             return new EdgeWalkEvidence(
                 forbiddenEdges: [],
                 coverageState: ['sourceEdges' => 0, 'targetEdges' => 0, 'classes' => [], 'undecidable' => [], 'doubted' => []],
@@ -117,7 +142,7 @@ final readonly class EdgeEvidenceWalk
                 );
             }
 
-            $forbiddenEdge = $this->forbiddenEdge($dependency, $fromMatch, $toMatch);
+            $forbiddenEdge = $this->forbiddenEdge($dependency, $fromMatch, $toMatch, $declaration);
             if ($forbiddenEdge !== null) {
                 $forbidden[] = $forbiddenEdge;
             }
@@ -149,10 +174,23 @@ final readonly class EdgeEvidenceWalk
         Dependency $dependency,
         ?LayerMatch $from,
         ?LayerMatch $to,
+        ChannelDeclaration $declaration,
     ): ?ForbiddenEdge {
-        if ($from === null
-            || $to === null
-            || $this->architecture->policy()->isAllowed($from->layerName, $to->layerName, $dependency->type)) {
+        $identity = PopulationIdentity::selector(json_encode([
+            $dependency->sourceLogical()->toCanonical(),
+            $dependency->targetLogical()->toCanonical(),
+            $dependency->type->value,
+        ], \JSON_THROW_ON_ERROR), 'dependency-edge');
+        if (!$this->context->admit(LayerViolationRule::NAME, new FindingChannel(LayerViolationRule::NAME), SymbolLevel::Class_, $identity, $declaration, (static function () use ($from, $to): Generator {
+            yield GateInput::context('preparedEvidenceAvailable', true);
+            yield GateInput::context('graphAvailable', true);
+            yield GateInput::context('edgeSourceAssigned', $from !== null);
+            yield GateInput::context('edgeTargetAssigned', $to !== null);
+        })())) {
+            return null;
+        }
+        \assert($from !== null && $to !== null);
+        if ($this->architecture->policy()->isAllowed($from->layerName, $to->layerName, $dependency->type)) {
             return null;
         }
 

@@ -7,12 +7,18 @@ namespace Qualimetrix\Analysis\Policy\Architecture\UnassignedClass;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Population\ContextGuard;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidenceCollector;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * How much of the analysed code no declared layer claims.
@@ -85,7 +91,9 @@ final class UnassignedClassRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => UnassignedClassSummary::unassignedClassChannel(),
+            self::NAME => UnassignedClassSummary::unassignedClassChannel()->withGates(
+                new PopulationGate('prepared-evidence', new FindingChannel(self::NAME), SymbolLevel::Project, 'logical-class', new ContextGuard('preparedEvidenceAvailable'), 'Prepared layer evidence is unavailable.', 'invocation'),
+            ),
         ];
     }
 
@@ -105,8 +113,14 @@ final class UnassignedClassRule extends AbstractRule
 
         $evidence = $this->evidence->collect($context);
 
+        $declaration = self::channelDeclarations()[self::NAME];
+        $channel = new FindingChannel(self::NAME);
         if ($evidence === null) {
+            $context->admit(self::NAME, $channel, SymbolLevel::Project, PopulationIdentity::invocation(self::NAME), $declaration, [GateInput::context('preparedEvidenceAvailable', false)]);
             return [];
+        }
+        foreach ($context->metrics->allLogicalClasses() as $class) {
+            $context->admit(self::NAME, $channel, SymbolLevel::Project, PopulationIdentity::selector($class->symbolPath->toCanonical(), 'logical-class'), $declaration, [GateInput::context('preparedEvidenceAvailable', true)]);
         }
 
         return UnassignedClassSummary::unassignedClasses(
