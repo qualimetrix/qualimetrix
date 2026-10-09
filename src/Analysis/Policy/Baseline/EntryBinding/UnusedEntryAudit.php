@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Baseline\EntryBinding;
 
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
+
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineAuditChannels;
@@ -14,17 +19,24 @@ use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
 use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 final readonly class UnusedEntryAudit
 {
     public function __construct(private RuleExecutionInterface $execution) {}
 
-    /** @return list<Finding> */
-    public function findings(CeilingOutcome $outcome, string $baselinePath): array
+    /** @return array{findings: list<Finding>, population: JudgedPopulation} */
+    public function auditResult(CeilingOutcome $outcome, string $baselinePath, ChannelPublication $publication): array
     {
+        $channel = new FindingChannel(BaselineAuditChannels::UNUSED_ENTRY);
+        if (!$publication->publishes(UnusedEntryRule::NAME, $channel, SymbolLevel::Project)) {
+            return ['findings' => [], 'population' => JudgedPopulation::empty()];
+        }
         $findings = [];
+        $members = [];
         foreach ($outcome->staleEntries as $entry) {
+            $members[] = ['identity' => PopulationIdentity::occurrence('stale:' . $entry->identity->key() . ':' . $entry->selector()->value, \count($members), 'baseline-diagnostic-record'), 'inputs' => []];
             $findings[] = self::finding(
                 'stale',
                 $entry->selector()->value,
@@ -46,6 +58,7 @@ final readonly class UnusedEntryAudit
                 $reportedDuplicates[$key][$selector] = true;
                 $reason .= '; ' . $duplicateCounts[$key][$selector] . ' contenders share this identity';
             }
+            $members[] = ['identity' => PopulationIdentity::occurrence('inert:' . $entry->describe() . ':' . $entry->selector->value, \count($members), 'baseline-diagnostic-record'), 'inputs' => []];
             $findings[] = self::finding(
                 'inert',
                 $entry->selector->value,
@@ -55,7 +68,7 @@ final readonly class UnusedEntryAudit
             );
         }
 
-        return $this->execution->publishable($findings);
+        return ['findings' => $this->execution->publishable($findings), 'population' => JudgedPopulation::measure($publication, UnusedEntryRule::NAME, $channel, SymbolLevel::Project, UnusedEntryRule::channelDeclarations()[BaselineAuditChannels::UNUSED_ENTRY], $members)];
     }
 
     /**

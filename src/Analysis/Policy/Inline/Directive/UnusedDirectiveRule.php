@@ -7,6 +7,10 @@ namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Population\ContextGuard;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -84,7 +88,8 @@ final class UnusedDirectiveRule extends AbstractRule
 
         return [
             $name => ChannelDeclaration::occurrence(SymbolLevel::File)->readingRunEvidence()
-                ->describedAs('Reports a valid inline directive that suppressed or overrode nothing in this run.'),
+                ->describedAs('Reports a valid inline directive that suppressed or overrode nothing in this run.')
+                ->withGates(new PopulationGate('directive-scope', new FindingChannel($name), SymbolLevel::File, 'directive-site', new ContextGuard('directiveScopeMeasured'), 'The addressed directive population was not measured.')),
         ];
     }
 

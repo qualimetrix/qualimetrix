@@ -22,6 +22,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricsS
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ExcludeHealthSection;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
 use Qualimetrix\Core\Path\AbsolutePath;
+use WeakReference;
 
 #[CoversClass(ComputedMetricAnalysis::class)]
 final class ComputedMetricAnalysisTest extends TestCase
@@ -123,6 +124,21 @@ final class ComputedMetricAnalysisTest extends TestCase
         $analysis->replace($analysis->resolve($this->document(['computed_metrics' => ['computed.second' => ['formula' => '2']]])));
         self::assertNull($analysis->find('computed.first'));
         self::assertNotNull($analysis->find('computed.second'));
+    }
+
+    #[Test]
+    public function itReusesOneResolvedValueWithoutRetainingItsDocument(): void
+    {
+        $analysis = $this->analysis();
+        $document = $this->document([]);
+        $reference = WeakReference::create($document);
+        $resolved = $analysis->resolve($document);
+        self::assertSame($resolved, $analysis->resolve($document));
+        self::assertNotSame($resolved, $analysis->resolve($this->document([])));
+        unset($document);
+        gc_collect_cycles();
+        self::assertNull($reference->get());
+        self::assertCount(6, $resolved->all());
     }
 
     private function analysis(): ComputedMetricAnalysis

@@ -4,9 +4,15 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\SuppressionBinding;
 
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -16,6 +22,7 @@ use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
@@ -95,32 +102,49 @@ final readonly class UnboundSuppressionAudit
      * @param ?list<string> $declaredNamespaces every namespace the run declared, or `null` if it built no tree
      * @param ValueScopeJudgement $scope the run's shape, asked of every value before it is judged
      *
-     * @return list<Finding>
+     * @return array{findings: list<Finding>, population: JudgedPopulation}
      */
-    public function findings(
+    public function auditResult(
         array $suppressPaths,
         array $suppressNamespaces,
         array $analyzedFiles,
         ?array $declaredNamespaces,
         ValueScopeJudgement $scope,
+        ChannelPublication $publication,
     ): array {
         if (!$this->ruleConfiguration->resolvedOptions()->for(UnboundSuppressionRule::NAME)->isEnabled()) {
-            return [];
+            return ['findings' => [], 'population' => JudgedPopulation::empty()];
         }
 
         $findings = [];
+        $members = [];
 
-        foreach ($this->configuredValues($suppressPaths, $suppressNamespaces) as $value) {
-            if ($this->judges($value, $declaredNamespaces, $scope) && !self::binds($value, $analyzedFiles, $declaredNamespaces)) {
+        foreach ($this->configuredValues($suppressPaths, $suppressNamespaces) as $ordinal => $value) {
+            $channel = new FindingChannel($value['channel']);
+            if (!$publication->publishes(UnboundSuppressionRule::NAME, $channel, SymbolLevel::Project)) {
+                continue;
+            }
+            $judged = $this->judges($value, $declaredNamespaces, $scope);
+            $input = GateInput::context($value['pattern'] instanceof PathPattern ? 'suppressionPathJudged' : 'suppressionNamespaceJudged', $judged);
+            $members[$channel->code][] = [
+                'identity' => PopulationIdentity::occurrence(json_encode([$value['channel'], $value['rule'], $value['option'], $value['pattern']->definition->display()], \JSON_THROW_ON_ERROR), $ordinal, 'configured-suppression-value-occurrence'),
+                'inputs' => $channel->code === UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER ? [$input, $input] : [$input],
+            ];
+            if ($judged && !self::binds($value, $analyzedFiles, $declaredNamespaces)) {
                 $findings[] = self::unboundFinding($value);
             }
         }
 
-        return $this->ruleExecution->publishable($findings);
+        $population = JudgedPopulation::empty();
+        $declarations = UnboundSuppressionRule::channelDeclarations();
+        foreach ($members as $code => $roster) {
+            $population = $population->merge(JudgedPopulation::measure($publication, UnboundSuppressionRule::NAME, new FindingChannel($code), SymbolLevel::Project, $declarations[$code], $roster));
+        }
+        return ['findings' => $this->ruleExecution->publishable($findings), 'population' => $population];
     }
 
     /**
-     * Every configured value {@see findings()} skipped without judging it,
+     * Every configured value {@see auditResult()} skipped without judging it,
      * under the channel that would have reported it — the other half of the
      * same enumeration, so the two cannot disagree about which values exist.
      *

@@ -6,7 +6,10 @@ namespace Qualimetrix\Reporting\FindingProjection;
 
 use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
@@ -24,9 +27,9 @@ final readonly class BaselineFindingProjection
     /**
      * @param list<Finding> $findings
      *
-     * @return array{ceiling: CeilingOutcome, audit: list<Finding>, scope: list<string>, auditPublished: bool}
+     * @return array{ceiling: CeilingOutcome, audit: list<Finding>, scope: list<string>, auditPublished: bool, population: JudgedPopulation}
      */
-    public function project(array $findings, FindingProjectionOptions $options): array
+    public function project(array $findings, FindingProjectionOptions $options, ChannelPublication $publication): array
     {
         $coverage = $options->runCoverage ?? throw new LogicException('Baseline projection requires current run coverage');
         $ruleCoverage = $options->ruleCoverage ?? throw new LogicException('Baseline projection requires rule publication');
@@ -39,13 +42,14 @@ final readonly class BaselineFindingProjection
             $ruleCoverage->classify(array_map(static fn($entry) => $entry->identity, $baseline->entries)),
         );
         $ceiling = $stage->judgeAll($findings);
-        $audit = $this->audit->findings($ceiling, $document->path);
+        $audit = $this->audit->auditResult($ceiling, $document->path, $publication);
 
         return [
             'ceiling' => $ceiling,
-            'audit' => $audit,
+            'audit' => $audit['findings'],
+            'population' => $audit['population'],
             'scope' => $stage->baselineScope(),
-            'auditPublished' => $audit !== [] || ($ceiling->staleEntries === [] && $ceiling->inertEntries === []),
+            'auditPublished' => $audit['findings'] !== [] || ($ceiling->staleEntries === [] && $ceiling->inertEntries === []),
         ];
     }
 }

@@ -6,8 +6,14 @@ namespace Qualimetrix\Analysis\Policy\Inline\Directive\Audit;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -16,15 +22,17 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Directive\RefusedDirectives;
+use Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * The post-execution half of the inline-directive subject: what each authored
  * suppression did this run.
  *
  * The answer is a {@see DirectiveVerdict} per authored site, and the stale
- * findings {@see stale()} returns are one projection of it. Two computations
+ * findings {@see usageResult()} returns are one projection of it. Two computations
  * would be two chances to disagree about one directive, which is why the
  * projection reads the verdicts rather than repeating the accounting.
  *
@@ -74,7 +82,7 @@ final class DirectiveUsage
     /**
      * What each authored suppression did this run.
      *
-     * The single computation behind both answers this class gives: `stale()`
+     * The single computation behind both answers this class gives: `usageResult()`
      * is its projection into findings, and a report that lists directives
      * reads it directly. Two computations would be two chances to disagree
      * about the same directive.
@@ -99,24 +107,35 @@ final class DirectiveUsage
      * @param array<string, list<Suppression>> $suppressionsByFile file => directives, as prepared
      * @param list<Finding> $findings everything the rules produced this run
      *
-     * @return list<Finding>
+     * @return array{findings: list<Finding>, population: JudgedPopulation}
      */
-    public function stale(
+    public function usageResult(
         array $suppressionsByFile,
         array $findings,
         Severity $severity,
         LevelActivity $activity,
         SubjectCoverageFacts $subjectCoverage,
+        ChannelPublication $publication,
     ): array {
         $stale = [];
+        $members = [];
 
+        $channel = new FindingChannel(\Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy::UNUSED_DIRECTIVE_NAME);
+        if (!$publication->publishes(UnusedDirectiveRule::NAME, $channel, SymbolLevel::File)) {
+            return ['findings' => [], 'population' => JudgedPopulation::empty()];
+        }
         foreach ($this->evaluate($suppressionsByFile, $findings, $activity, $subjectCoverage) as $pair) {
+            $site = $pair['verdict']->site;
+            $members[] = [
+                'identity' => PopulationIdentity::selector(json_encode([$site->file->value(), $site->line, $site->position, $site->form, $site->target], \JSON_THROW_ON_ERROR), 'directive-site'),
+                'inputs' => [GateInput::context('directiveScopeMeasured', $pair['verdict']->reason === null)],
+            ];
             if ($pair['verdict']->effect === DirectiveEffect::Inert) {
                 $stale[] = StaleDirectiveFinding::of($pair['verdict']->site->file, $pair['directive'], $severity);
             }
         }
 
-        return $stale;
+        return ['findings' => $stale, 'population' => JudgedPopulation::measure($publication, UnusedDirectiveRule::NAME, $channel, SymbolLevel::File, UnusedDirectiveRule::channelDeclarations()[$channel->code], $members)];
     }
 
     /**

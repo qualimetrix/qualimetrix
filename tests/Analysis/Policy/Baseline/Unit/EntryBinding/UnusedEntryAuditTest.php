@@ -42,11 +42,11 @@ final class UnusedEntryAuditTest extends TestCase
         $execution = self::createMock(RuleExecutionInterface::class);
         $execution->expects(self::once())->method('publishable')->willReturnCallback(static fn(array $findings): array => $findings);
 
-        $findings = (new UnusedEntryAudit($execution))->findings(new CeilingOutcome(
+        $findings = (new UnusedEntryAudit($execution))->auditResult(new CeilingOutcome(
             new FindingFilterStageResult(FindingFilterStage::Baseline, [], []),
             [],
             [$first, $second],
-        ), 'baseline.json');
+        ), 'baseline.json', self::populationPublication())['findings'];
 
         self::assertCount(1, $findings);
         self::assertStringContainsString($identity->describe(), $findings[0]->message);
@@ -64,14 +64,14 @@ final class UnusedEntryAuditTest extends TestCase
         $uncompared = self::entry('project:');
         $execution = self::createMock(RuleExecutionInterface::class);
         $execution->expects(self::once())->method('publishable')->willReturnCallback(static fn(array $findings): array => $findings);
-        $findings = (new UnusedEntryAudit($execution))->findings(new CeilingOutcome(
+        $findings = (new UnusedEntryAudit($execution))->auditResult(new CeilingOutcome(
             new FindingFilterStageResult(FindingFilterStage::Baseline, [], []),
             [$stale],
             [$inert],
             [$unmeasured],
             [$outside],
             [$uncompared],
-        ), "baseline's file.json");
+        ), "baseline's file.json", self::populationPublication())['findings'];
 
         self::assertCount(2, $findings);
         foreach ($findings as $finding) {
@@ -98,11 +98,11 @@ final class UnusedEntryAuditTest extends TestCase
     {
         $execution = self::createMock(RuleExecutionInterface::class);
         $execution->expects(self::once())->method('publishable')->with(self::callback(static fn(array $findings): bool => \count($findings) === 1))->willReturn([]);
-        self::assertSame([], (new UnusedEntryAudit($execution))->findings(new CeilingOutcome(
+        self::assertSame([], (new UnusedEntryAudit($execution))->auditResult(new CeilingOutcome(
             new FindingFilterStageResult(FindingFilterStage::Baseline, [], []),
             [self::entry('file:src/Gone.php')],
             [],
-        ), 'baseline.json'));
+        ), 'baseline.json', self::populationPublication())['findings']);
     }
 
     #[Test]
@@ -124,5 +124,19 @@ final class UnusedEntryAuditTest extends TestCase
     private static function entry(string $subject): BaselineEntry
     {
         return new BaselineEntry(new BaselineIdentity($subject, new FindingChannel('code-smell.goto')), null, 1);
+    }
+
+    private static function populationPublication(): \Qualimetrix\Analysis\Finding\Contract\ChannelPublication
+    {
+        $decisions = [];
+        foreach (\Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule::channelDeclarations() as $name => $declaration) {
+            foreach ($declaration->levels as $level) {
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
+                    new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(\Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($name), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable),
+                    new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
+                );
+            }
+        }
+        return new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null));
     }
 }

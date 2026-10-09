@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Rule;
 
 use InvalidArgumentException;
+
 use LogicException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
@@ -15,7 +17,6 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
 use Qualimetrix\Analysis\Finding\Contract\ValueReach;
-use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 
@@ -91,21 +92,7 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
             return null;
         }
 
-        // Six health dimensions report at three levels under one name, which is
-        // why no static map could hold this half of the universe.
-        $levels = $definition->reportingLevels();
-
-        if ($levels === []) {
-            // `levels: []` is accepted by the resolver and makes the metric
-            // emit nothing at all, so there is no channel to declare — the same
-            // answer an unknown name gets.
-            return null;
-        }
-
-        return ChannelDeclaration::magnitude(
-            $definition->inverted ? WorseDirection::Lower : WorseDirection::Higher,
-            ...$levels,
-        );
+        return ComputedMetricChannelFamily::declarationForDefinition($definition);
     }
 
     public function reachAt(FindingChannel $channel, SymbolLevel $level): ValueReach

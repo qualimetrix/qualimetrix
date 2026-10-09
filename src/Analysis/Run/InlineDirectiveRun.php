@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run;
 
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
@@ -45,11 +48,11 @@ final readonly class InlineDirectiveRun
     /**
      * @param list<Finding> $produced
      *
-     * @return list<Finding>
+     * @return array{findings: list<Finding>, population: JudgedPopulation}
      */
-    public function usageFindings(array $produced, LevelActivity $activity, SubjectCoverageFacts $subjectCoverage): array
+    public function usageResult(array $produced, LevelActivity $activity, SubjectCoverageFacts $subjectCoverage, ChannelPublication $publication): array
     {
-        return $this->policy->auditDirectiveUsage($produced, $activity, $subjectCoverage);
+        return $this->policy->auditDirectiveUsage($produced, $activity, $subjectCoverage, $publication);
     }
 
     /**

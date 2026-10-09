@@ -4,8 +4,18 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding;
 
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
+use Qualimetrix\Analysis\Finding\Contract\Population\KindIn;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
+use Qualimetrix\Core\Observation\WorseDirection;
+
+use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
  * Every fact the rest of the system reads off "the class named by this
@@ -46,6 +56,27 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
  */
 final class ComputedMetricChannelFamily
 {
+    public static function declarationForDefinition(ComputedMetricDefinition $definition): ?ChannelDeclaration
+    {
+        $levels = $definition->reportingLevels();
+        if ($levels === []) {
+            return null;
+        }
+        $channel = new FindingChannel($definition->name);
+        $gates = [];
+        foreach ($levels as $level) {
+            $unit = match ($level) {
+                SymbolLevel::Class_ => 'declaration', SymbolLevel::Namespace_ => 'namespace',
+                SymbolLevel::Project => 'project', default => 'callable',
+            };
+            if ($level === SymbolLevel::Class_) {
+                $gates[] = new PopulationGate('class-coordinate', $channel, $level, $unit, new KindIn('class-coordinate', [SymbolType::Class_]), 'Computed class judgement requires a class declaration.');
+            }
+            $gates[] = new PopulationGate('published-value', $channel, $level, $unit, new KeyPresent('published-value', [$definition->name]), 'Applicable computed metric requires its published value.');
+        }
+        return ChannelDeclaration::magnitude($definition->inverted ? WorseDirection::Lower : WorseDirection::Higher, ...$levels)->withGates(...$gates);
+    }
+
     /**
      * The producer of every user-defined computed metric, and the `NAME` of
      * {@see \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule} —

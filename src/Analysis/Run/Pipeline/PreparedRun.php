@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Run\Pipeline;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary;
-
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
+
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
@@ -51,6 +54,8 @@ final readonly class PreparedRun
         public AnalysisCoverage $coverage,
         public SubjectCoverageFacts $subjectCoverage,
         public array $unmatchedExcludeFindings,
+        public JudgedPopulation $discoveryPopulation,
+        public ChannelPublication $populationPublication,
         public ComputedMetricEvaluationSummary $computedMetricEvaluation = new ComputedMetricEvaluationSummary(),
     ) {}
 }

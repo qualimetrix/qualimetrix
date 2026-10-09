@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use LogicException;
+
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorOutcome;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
@@ -98,11 +100,15 @@ final readonly class FindingFilterOrchestrator
         $scopeResolution = $resolvedScope->scope;
         $output = $this->errorStream->writer($output);
         $options = $this->baselineCoverage->withRunCoverage($options, $result, $configuration);
+        $publication = $result->populationPublication ?? throw new LogicException('Late finding projection requires captured channel publication');
+        $suppression = $this->unboundSuppressions($result, $options, $this->valueScope($result, $resolvedScope));
         $filterResult = $this->findingProjector->project(
-            [...$result->findings(), ...$this->unboundSuppressions($result, $options, $this->valueScope($result, $resolvedScope))],
+            [...$result->findings(), ...$suppression['findings']],
             $result->directives->suppressions,
             $options,
+            $publication,
         );
+        $filterResult = $filterResult->withPopulation($filterResult->population->merge($suppression['population']));
 
         (new BaselineFilterReporter(
             $output,
@@ -209,19 +215,20 @@ final readonly class FindingFilterOrchestrator
      * compare, so a finding about `suppress_paths: [Gone]` cannot be removed
      * by that very pattern.
      *
-     * @return list<Finding>
+     * @return array{findings: list<Finding>, population: JudgedPopulation}
      */
     private function unboundSuppressions(
         AnalysisResult $result,
         FindingProjectionOptions $options,
         ValueScopeJudgement $valueScope,
     ): array {
-        return $this->unboundSuppressionAudit->findings(
+        return $this->unboundSuppressionAudit->auditResult(
             $options->suppressPaths,
             $options->suppressNamespaces,
             $result->measured->coverage->analyzedFiles,
             $result->measured->namespaceTree?->getAllNamespaces(),
             $valueScope,
+            $result->populationPublication ?? throw new LogicException('Suppression accounting requires captured channel publication'),
         );
     }
 

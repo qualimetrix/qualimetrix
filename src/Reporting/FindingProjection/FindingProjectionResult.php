@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\FindingProjection;
 
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
+
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
 use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
@@ -34,6 +36,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionResult;
  */
 final readonly class FindingProjectionResult
 {
+    public JudgedPopulation $population;
     /**
      * @param list<Finding> $findings what the run reports, after every stage
      * @param AnnotationSuppressionResult $annotationSuppression the Inline-owned result carrying exact directive attribution
@@ -58,7 +61,15 @@ final readonly class FindingProjectionResult
         public ?array $baselineScope = null,
         public ?CeilingOutcome $ceilingOutcome = null,
         private bool $unusedAuditPublished = true,
-    ) {}
+        ?JudgedPopulation $population = null,
+    ) {
+        $this->population = $population ?? JudgedPopulation::empty();
+    }
+
+    public function withPopulation(JudgedPopulation $population): self
+    {
+        return new self($this->findings, $this->annotationSuppression, $this->measuredFindings, $this->removedByStage, $this->staleEntries, $this->inertEntries, $this->baselineScope, $this->ceilingOutcome, $this->unusedAuditPublished, $population);
+    }
 
     /**
      * What the given stage took out of the run, in the order it saw it.

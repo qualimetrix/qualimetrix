@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Run\Pipeline;
 use LogicException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
@@ -14,6 +15,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInt
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
@@ -34,6 +37,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\MeasuredRunResult;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
+use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeRule;
 use Qualimetrix\Analysis\Run\InlineDirectiveRun;
 use Qualimetrix\Analysis\Run\RuleProducerPreparation;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -82,7 +86,8 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
     {
         $startTime = hrtime(true);
         [$prepared, $measuredScope] = $this->preparedRun($configuration);
-        $latePublished = $this->latePublishedFindings($prepared);
+        $late = $this->latePublishedResult($prepared);
+        $latePublished = $late['findings'];
         $duration = (hrtime(true) - $startTime) / 1e9;
 
         $this->logger->info('Analysis complete', [
@@ -108,6 +113,8 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             ruleExecution: $prepared->ruleExecution,
             latePublished: $latePublished,
             computedMetricEvaluation: $prepared->computedMetricEvaluation,
+            population: $prepared->discoveryPopulation->merge($late['population']),
+            populationPublication: $prepared->populationPublication,
         );
     }
 
@@ -176,11 +183,18 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             'paths' => array_map(static fn(AbsolutePath $p): string => $p->value(), $pathList),
         ]);
 
+        $populationPublication = $this->ruleExecutor->publication();
         $repository = $this->repositoryFactory->create();
         // Phase 1: Discovery
         $profiler->start('discovery', 'pipeline');
         $discoveredFiles = $this->projectFiles->discover($configuration);
         $measuredScope = $configuration->projectScope->withDiscoveredFiles($discoveredFiles);
+        $discoveryPopulation = $this->unmatchedExcludeAudit->population(
+            $measuredScope->judgement(),
+            $populationPublication,
+            new FindingChannel(UnmatchedExcludeRule::NAME),
+            UnmatchedExcludeRule::channelDeclarations()[UnmatchedExcludeRule::NAME],
+        );
         $files = $discoveredFiles->eligibleFiles;
         $generatedExcludedFiles = $discoveredFiles->generatedExcludedFiles;
 
@@ -332,6 +346,8 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             subjectCoverage: $subjectCoverage,
             unmatchedExcludeFindings: $this->unmatchedExcludeAudit->findings($measuredScope->judgement(), $configuration->projectRoot),
             computedMetricEvaluation: $computedMetricEvaluation,
+            discoveryPopulation: $discoveryPopulation,
+            populationPublication: $populationPublication,
         ), $measuredScope];
     }
 
@@ -368,27 +384,21 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
      * `--disable-rule annotation.unused-directive` inert and let an
      * `--only-rule` naming a sibling channel publish this one.
      *
-     * @return list<Finding>
+     * @return array{findings: list<Finding>, population: JudgedPopulation}
      */
-    private function latePublishedFindings(PreparedRun $prepared): array
+    private function latePublishedResult(PreparedRun $prepared): array
     {
         $ruleExecution = $prepared->ruleExecution;
-
-        return $this->ruleExecutor->publishable([
-            ...$this->inlineDirectiveRun->usageFindings(
-                $ruleExecution->produced,
-                $ruleExecution->levelActivity,
-                $prepared->subjectCoverage,
-            ),
-            // The second channel assembled outside `execute()`, and through
-            // the same `publishable()` for the same reason: an exclude pattern
-            // that removed nothing is a fact about this run's own input, which
-            // no rule can see, but the report it lands in obeys
-            // `--disable-rule`, `--only-rule`, the baseline and `--fail-on`
-            // like every other finding.
-            ...$prepared->unmatchedExcludeFindings,
-        ]);
-
+        $inline = $this->inlineDirectiveRun->usageResult(
+            $ruleExecution->produced,
+            $ruleExecution->levelActivity,
+            $prepared->subjectCoverage,
+            $prepared->populationPublication,
+        );
+        return [
+            'findings' => $this->ruleExecutor->publishable([...$inline['findings'], ...$prepared->unmatchedExcludeFindings]),
+            'population' => $inline['population'],
+        ];
     }
 
     /**

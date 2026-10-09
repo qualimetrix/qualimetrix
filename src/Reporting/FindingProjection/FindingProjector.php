@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\FindingProjection;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+
 use Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Filter\PredicateFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
@@ -42,7 +45,7 @@ final readonly class FindingProjector
      * @param list<Finding> $findings
      * @param array<string, list<Suppression>> $suppressions
      */
-    public function project(array $findings, array $suppressions, FindingProjectionOptions $options): FindingProjectionResult
+    public function project(array $findings, array $suppressions, FindingProjectionOptions $options, ChannelPublication $publication): FindingProjectionResult
     {
         $unfilterable = $this->configurationErrors($findings);
         $findings = $this->filterableFindings($findings);
@@ -72,9 +75,11 @@ final readonly class FindingProjector
         $baselineScope = null;
         $ceiling = null;
         $unusedAuditPublished = true;
+        $population = JudgedPopulation::empty();
         if ($options->baselineDocument !== null) {
-            $baseline = $this->baselineProjection->project($findings, $options);
+            $baseline = $this->baselineProjection->project($findings, $options, $publication);
             $ceiling = $baseline['ceiling'];
+            $population = $baseline['population'];
             $findings = $ceiling->result->findings;
             $removed[FindingFilterStage::Baseline->value] = $ceiling->result->removed;
             $stale = $ceiling->staleEntries;
@@ -113,6 +118,7 @@ final readonly class FindingProjector
             baselineScope: $baselineScope,
             ceilingOutcome: $ceiling,
             unusedAuditPublished: $unusedAuditPublished,
+            population: $population,
         );
     }
 

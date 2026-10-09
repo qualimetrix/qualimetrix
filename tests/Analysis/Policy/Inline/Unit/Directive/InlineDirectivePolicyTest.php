@@ -60,7 +60,7 @@ final class InlineDirectivePolicyTest extends TestCase
         $policy->prepare([self::FILE => [self::symbolDirective()]], [], []);
         $policy->enableUsageReporting(Severity::Info);
 
-        $findings = $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage());
+        $findings = $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage(), self::populationPublication())['findings'];
 
         self::assertCount(1, $findings);
         self::assertSame(InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME, $findings[0]->code);
@@ -74,7 +74,7 @@ final class InlineDirectivePolicyTest extends TestCase
         $policy->prepare([self::FILE => [self::symbolDirective()]], [], []);
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertSame([], $policy->auditDirectiveUsage([self::finding(self::declarationSubject(), 42)], LevelActivity::empty(), self::coverage()));
+        self::assertSame([], $policy->auditDirectiveUsage([self::finding(self::declarationSubject(), 42)], LevelActivity::empty(), self::coverage(), self::populationPublication())['findings']);
     }
 
     #[Test]
@@ -88,8 +88,8 @@ final class InlineDirectivePolicyTest extends TestCase
         );
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertCount(1, $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage()));
-        self::assertSame([], $policy->auditDirectiveUsage([self::finding(self::fileSubject(), 99)], LevelActivity::empty(), self::coverage()));
+        self::assertCount(1, $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage(), self::populationPublication())['findings']);
+        self::assertSame([], $policy->auditDirectiveUsage([self::finding(self::fileSubject(), 99)], LevelActivity::empty(), self::coverage(), self::populationPublication())['findings']);
     }
 
     #[Test]
@@ -105,10 +105,10 @@ final class InlineDirectivePolicyTest extends TestCase
 
         self::assertCount(
             1,
-            $policy->auditDirectiveUsage([self::finding(self::fileSubject(), 12)], LevelActivity::empty(), self::coverage()),
+            $policy->auditDirectiveUsage([self::finding(self::fileSubject(), 12)], LevelActivity::empty(), self::coverage(), self::populationPublication())['findings'],
             'A finding two lines down is not the next line, so the directive did nothing.',
         );
-        self::assertSame([], $policy->auditDirectiveUsage([self::finding(self::fileSubject(), 11)], LevelActivity::empty(), self::coverage()));
+        self::assertSame([], $policy->auditDirectiveUsage([self::finding(self::fileSubject(), 11)], LevelActivity::empty(), self::coverage(), self::populationPublication())['findings']);
     }
 
     /**
@@ -129,7 +129,7 @@ final class InlineDirectivePolicyTest extends TestCase
         );
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage()));
+        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage(), self::populationPublication())['findings']);
     }
 
     /**
@@ -152,7 +152,7 @@ final class InlineDirectivePolicyTest extends TestCase
         );
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertSame([], $policy->auditDirectiveUsage([], self::gotoDidNotRun(), self::coverage()));
+        self::assertSame([], $policy->auditDirectiveUsage([], self::gotoDidNotRun(), self::coverage(), self::populationPublication())['findings']);
     }
 
     /** A live rule is still accounted for — the guard above is not a blanket. */
@@ -169,7 +169,7 @@ final class InlineDirectivePolicyTest extends TestCase
         );
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertCount(1, $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage()));
+        self::assertCount(1, $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage(), self::populationPublication())['findings']);
     }
 
     /**
@@ -189,7 +189,7 @@ final class InlineDirectivePolicyTest extends TestCase
         );
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage()));
+        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage(), self::populationPublication())['findings']);
     }
 
     /**
@@ -204,7 +204,7 @@ final class InlineDirectivePolicyTest extends TestCase
         $policy->prepare([], [], []);
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage()));
+        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage(), self::populationPublication())['findings']);
     }
 
     /**
@@ -227,7 +227,7 @@ final class InlineDirectivePolicyTest extends TestCase
         );
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage()));
+        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage(), self::populationPublication())['findings']);
     }
 
     /** The bare file form is judged by the findings it actually silenced. */
@@ -238,7 +238,7 @@ final class InlineDirectivePolicyTest extends TestCase
         $policy->prepare([self::FILE => [new Suppression('*', null, 1, SuppressionType::File, position: 0)]], [], []);
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertCount(1, $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage()));
+        self::assertCount(1, $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage(), self::populationPublication())['findings']);
     }
 
     /** Without the owning rule having run, the post-execution half says nothing. */
@@ -248,7 +248,7 @@ final class InlineDirectivePolicyTest extends TestCase
         $policy = self::policy();
         $policy->prepare([self::FILE => [self::symbolDirective()]], [], []);
 
-        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage()));
+        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage(), self::populationPublication())['findings']);
     }
 
     /**
@@ -262,10 +262,10 @@ final class InlineDirectivePolicyTest extends TestCase
         $policy = self::policy();
         $policy->prepare([self::FILE => [self::symbolDirective()]], [], []);
         $policy->enableUsageReporting(Severity::Info);
-        self::assertCount(1, $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage()));
+        self::assertCount(1, $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage(), self::populationPublication())['findings']);
 
         $policy->prepare([self::FILE => [self::symbolDirective()]], [], []);
-        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage()));
+        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage(), self::populationPublication())['findings']);
     }
 
     #[Test]
@@ -396,4 +396,17 @@ final class InlineDirectivePolicyTest extends TestCase
         );
     }
 
+    private static function populationPublication(): \Qualimetrix\Analysis\Finding\Contract\ChannelPublication
+    {
+        $decisions = [];
+        foreach (\Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule::channelDeclarations() as $name => $declaration) {
+            foreach ($declaration->levels as $level) {
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
+                    new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(\Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($name), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable),
+                    new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
+                );
+            }
+        }
+        return new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null));
+    }
 }

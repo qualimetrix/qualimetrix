@@ -580,7 +580,7 @@ final class UnusedDirectiveRuleTest extends TestCase
             $policy,
             self::productionUniverse(),
         ));
-        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage()));
+        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage(), self::populationPublication())['findings']);
     }
 
     /**
@@ -761,7 +761,7 @@ final class UnusedDirectiveRuleTest extends TestCase
         $produced = self::analyzeFamily($options ?? new InlineDirectiveOptions(), $policy, $identity);
 
         return $auditUsage
-            ? [...$produced, ...$policy->auditDirectiveUsage($produced, LevelActivity::empty(), self::coverage())]
+            ? [...$produced, ...$policy->auditDirectiveUsage($produced, LevelActivity::empty(), self::coverage(), self::populationPublication())['findings']]
             : $produced;
     }
 
@@ -886,4 +886,17 @@ final class UnusedDirectiveRuleTest extends TestCase
         );
     }
 
+    private static function populationPublication(): \Qualimetrix\Analysis\Finding\Contract\ChannelPublication
+    {
+        $decisions = [];
+        foreach (\Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule::channelDeclarations() as $name => $declaration) {
+            foreach ($declaration->levels as $level) {
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
+                    new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(\Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($name), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable),
+                    new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
+                );
+            }
+        }
+        return new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null));
+    }
 }
