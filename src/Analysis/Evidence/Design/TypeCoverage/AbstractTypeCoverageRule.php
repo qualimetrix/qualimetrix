@@ -92,6 +92,8 @@ abstract class AbstractTypeCoverageRule extends AbstractRule
             return [];
         }
 
+        $name = static::channelName();
+        $declaration = static::channelDeclarations()[$name];
         $findings = [];
 
         foreach ($context->metrics->allClassDeclarations() as $classInfo) {
@@ -103,8 +105,7 @@ abstract class AbstractTypeCoverageRule extends AbstractRule
                 $metrics = $context->metrics->getSubject($subject);
                 yield GateInput::metrics($this->totalMetric(), $metrics);
             })();
-            $name = static::channelName();
-            if (!$context->admit($name, new FindingChannel($name), SymbolLevel::Class_, PopulationIdentity::subject($subject), static::channelDeclarations()[$name], $inputs)) {
+            if (!$context->admit($name, new FindingChannel($name), SymbolLevel::Class_, PopulationIdentity::subject($subject), $declaration, $inputs)) {
                 continue;
             }
             $finding = $this->judge($context, $subject, $classInfo, $metrics);

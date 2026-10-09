@@ -72,10 +72,11 @@ final class GodClassRule extends AbstractRule
             return [];
         }
 
+        $declaration = self::channelDeclarations()[self::NAME];
         $findings = [];
 
         foreach ($context->metrics->allClassDeclarations() as $classInfo) {
-            $finding = $this->evaluateClass($context, $classInfo);
+            $finding = $this->evaluateClass($context, $classInfo, $declaration);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -84,7 +85,7 @@ final class GodClassRule extends AbstractRule
         return $findings;
     }
 
-    private function evaluateClass(AnalysisContext $context, SymbolInfo $classInfo): ?Finding
+    private function evaluateClass(AnalysisContext $context, SymbolInfo $classInfo, ChannelDeclaration $declaration): ?Finding
     {
         $subject = $classInfo->subject;
         if ($subject === null) {
@@ -102,7 +103,7 @@ final class GodClassRule extends AbstractRule
             $results = GodClassCriteriaEvaluator::evaluate($metrics, $effectiveOptions);
             yield GateInput::ruleNumber('minCriteria', \count($results), $effectiveOptions->minCriteria);
         })();
-        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), self::channelDeclarations()[self::NAME], $inputs)) {
+        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), $declaration, $inputs)) {
             return null;
         }
         $evaluableCount = \count($results);

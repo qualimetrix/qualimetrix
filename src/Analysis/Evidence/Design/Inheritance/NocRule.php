@@ -67,10 +67,11 @@ final class NocRule extends AbstractRule
             return [];
         }
 
+        $declaration = self::channelDeclarations()[self::NAME];
         $findings = [];
 
         foreach ($context->metrics->allClassDeclarations() as $classInfo) {
-            $finding = $this->findingForClass($classInfo, $context, $this->options);
+            $finding = $this->findingForClass($classInfo, $context, $this->options, $declaration);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -79,7 +80,7 @@ final class NocRule extends AbstractRule
         return $findings;
     }
 
-    private function findingForClass(SymbolInfo $classInfo, AnalysisContext $context, NocOptions $options): ?Finding
+    private function findingForClass(SymbolInfo $classInfo, AnalysisContext $context, NocOptions $options, ChannelDeclaration $declaration): ?Finding
     {
         $subject = $classInfo->subject ?? throw new LogicException('NOC findings require an exact class declaration subject');
         $noc = null;
@@ -90,7 +91,7 @@ final class NocRule extends AbstractRule
             yield GateInput::metrics('noc-present', $metrics);
             yield GateInput::metrics('noc-positive', $metrics);
         })();
-        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), self::channelDeclarations()[self::NAME], $inputs)) {
+        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), $declaration, $inputs)) {
             return null;
         }
 

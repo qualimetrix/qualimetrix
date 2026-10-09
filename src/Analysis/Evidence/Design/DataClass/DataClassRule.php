@@ -83,13 +83,14 @@ final class DataClassRule extends AbstractRule
             return [];
         }
 
+        $declaration = self::channelDeclarations()[self::NAME];
         $findings = [];
 
         foreach ($context->metrics->allClassDeclarations() as $classInfo) {
             if ($classInfo->subject === null) {
                 continue;
             }
-            $finding = $this->evaluateClass($context, $classInfo);
+            $finding = $this->evaluateClass($context, $classInfo, $declaration);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -98,7 +99,7 @@ final class DataClassRule extends AbstractRule
         return $findings;
     }
 
-    private function evaluateClass(AnalysisContext $context, SymbolInfo $classInfo): ?Finding
+    private function evaluateClass(AnalysisContext $context, SymbolInfo $classInfo, ChannelDeclaration $declaration): ?Finding
     {
         $subject = $classInfo->subject ?? throw new LogicException('Data class findings require an exact class declaration subject');
         $metrics = null;
@@ -111,7 +112,7 @@ final class DataClassRule extends AbstractRule
             yield from DataClassExclusionCheck::populationInputs($metrics, $effectiveOptions);
             yield GateInput::metrics('woc-present', $metrics);
         })();
-        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), self::channelDeclarations()[self::NAME], $inputs)) {
+        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), $declaration, $inputs)) {
             return null;
         }
 

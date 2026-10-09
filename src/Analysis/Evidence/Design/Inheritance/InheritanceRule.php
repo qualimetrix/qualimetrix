@@ -70,11 +70,12 @@ final class InheritanceRule extends AbstractRule
             return [];
         }
 
+        $declaration = self::channelDeclarations()[self::NAME];
         $findings = [];
         $outcomes = [InheritanceOutcome::Exact->name => 0, InheritanceOutcome::Floor->name => 0, InheritanceOutcome::Loop->name => 0];
         foreach ($context->metrics->allDeclarations() as $classInfo) {
             $subject = $classInfo->subject ?? throw new LogicException('Inheritance findings require an exact class declaration subject');
-            [$finding, $outcome] = $this->analyzeDeclaration($subject, new Location($classInfo->file, $classInfo->line), $context, $this->options);
+            [$finding, $outcome] = $this->analyzeDeclaration($subject, new Location($classInfo->file, $classInfo->line), $context, $this->options, $declaration);
             ++$outcomes[$outcome->name];
             if ($finding !== null) {
                 $findings[] = $finding;
@@ -86,7 +87,7 @@ final class InheritanceRule extends AbstractRule
     }
 
     /** @return array{?Finding, InheritanceOutcome} */
-    private function analyzeDeclaration(MetricSubject $subject, Location $location, AnalysisContext $context, InheritanceOptions $options): array
+    private function analyzeDeclaration(MetricSubject $subject, Location $location, AnalysisContext $context, InheritanceOptions $options, ChannelDeclaration $declaration): array
     {
         $dit = null;
         $outcome = InheritanceOutcome::Exact;
@@ -97,7 +98,7 @@ final class InheritanceRule extends AbstractRule
             $outcome = $this->publishedOutcome($dit, $metrics->get(MetricName::DESIGN_DIT_UNRESOLVED));
             yield GateInput::metrics('dit-present', $metrics);
         })();
-        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), self::channelDeclarations()[self::NAME], $inputs)) {
+        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), $declaration, $inputs)) {
             return [null, $outcome];
         }
         /** @var InheritanceOptions $effectiveOptions */
