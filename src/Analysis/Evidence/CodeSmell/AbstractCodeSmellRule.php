@@ -8,9 +8,16 @@ use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\NameMatches;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Core\Symbol\MetricSubjectCodec;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
@@ -105,11 +112,17 @@ abstract class AbstractCodeSmellRule extends AbstractRule
      */
     public static function channelDeclarations(): array
     {
-        return [
-            static::NAME => static::FILE_OCCURRENCES
-                ? ChannelDeclaration::occurrence(SymbolLevel::Callable, SymbolLevel::File)
-                : ChannelDeclaration::occurrence(SymbolLevel::Callable),
-        ];
+        $declaration = static::FILE_OCCURRENCES
+            ? ChannelDeclaration::occurrence(SymbolLevel::Callable, SymbolLevel::File)
+            : ChannelDeclaration::occurrence(SymbolLevel::Callable);
+        if (is_a(static::getOptionsClass(), EntryFilteringOptionsInterface::class, true)) {
+            $gates = [];
+            foreach ($declaration->levels as $level) {
+                $gates[] = new PopulationGate('allowed-extra', new FindingChannel(static::NAME), $level, 'occurrence', new NameMatches('allowed-extra'), 'The configured entry matcher allows this occurrence.');
+            }
+            $declaration = $declaration->withGates(...$gates);
+        }
+        return [static::NAME => $declaration];
     }
 
     /**
@@ -123,17 +136,18 @@ abstract class AbstractCodeSmellRule extends AbstractRule
 
         $findings = [];
         $type = static::SMELL_TYPE;
+        $declaration = static::channelDeclarations()[static::NAME];
 
         foreach ($context->metrics->all(SymbolLevel::File) as $fileInfo) {
             $metrics = $context->metrics->get($fileInfo->symbolPath);
             $entries = $metrics->entries("codeSmell.{$type}");
 
-            foreach ($entries as $entry) {
-                if (!$this->shouldIncludeEntry($entry)) {
+            foreach ($entries as $entryOrdinal => $entry) {
+                $file = $fileInfo->file ?? throw new LogicException('File symbol must carry a relative path');
+                $subject = MetricSubjectCodec::decodeEntry($entry, $file);
+                if (!$context->admit(static::NAME, new FindingChannel(static::NAME), $subject::levelOfCanonical($subject->toCanonical()), PopulationIdentity::occurrence($subject->toCanonical(), $entryOrdinal), $declaration, $this->populationInputs($entry))) {
                     continue;
                 }
-
-                $file = $fileInfo->file ?? throw new LogicException('File symbol must carry a relative path');
                 $findings[] = CodeSmellFinding::fromEntry($entry, $file)->toFinding(
                     static::NAME,
                     static::SMELL_TYPE,
@@ -147,26 +161,17 @@ abstract class AbstractCodeSmellRule extends AbstractRule
         return $findings;
     }
 
-    /**
-     * Filters entries before finding creation.
-     *
-     * Default behaviour: when the options class implements
-     * {@see EntryFilteringOptionsInterface}, the entry's `extra` value is
-     * routed through it. Otherwise every entry is kept.
-     *
-     * @param array<string, mixed> $entry
+    /** @param array<string, mixed> $entry
+     * @return iterable<GateInput>
      */
-    protected function shouldIncludeEntry(array $entry): bool
+    protected function populationInputs(array $entry): iterable
     {
-        $options = $this->options;
-
-        if (!$options instanceof EntryFilteringOptionsInterface) {
-            return true;
+        if (!is_a(static::getOptionsClass(), EntryFilteringOptionsInterface::class, true)) {
+            return;
         }
-
+        $options = $this->options;
         $extra = $entry['extra'] ?? null;
-
-        return !\is_string($extra) || !$options->isExtraAllowed($extra);
+        yield GateInput::boundName('allowed-extra', !$options instanceof EntryFilteringOptionsInterface || !\is_string($extra) || !$options->isExtraAllowed($extra));
     }
 
     /**

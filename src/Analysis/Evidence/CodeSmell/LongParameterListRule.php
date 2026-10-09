@@ -9,8 +9,15 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
+use Qualimetrix\Analysis\Finding\Contract\Population\KindIn;
+
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
@@ -83,6 +90,9 @@ final class LongParameterListRule extends AbstractRule
                 WorseDirection::Higher,
                 JudgedMetrics::of(MetricName::CODE_SMELL_PARAMETER_COUNT),
                 SymbolLevel::Callable,
+            )->withGates(
+                new PopulationGate('callable-coordinate', new FindingChannel(self::NAME), SymbolLevel::Callable, 'callable', new KindIn('callable-coordinate', [SymbolType::Method, SymbolType::Function_]), 'The subject is outside the declared symbol coordinate.'),
+                new PopulationGate('published-value', new FindingChannel(self::NAME), SymbolLevel::Callable, 'callable', new KeyPresent('published-value', [MetricName::CODE_SMELL_PARAMETER_COUNT]), 'The rule metric was not published.'),
             ),
         ];
     }
@@ -107,21 +117,22 @@ final class LongParameterListRule extends AbstractRule
         \assert($this->options instanceof LongParameterListOptions);
         $options = $this->options;
         $findings = [];
+        $populationDeclaration = self::channelDeclarations()[self::NAME];
 
         foreach ($context->metrics->allCallables() as $symbolInfo) {
             $subject = $symbolInfo->subject ?? throw new LogicException('Long parameter list findings require an exact callable subject');
             $declaration = $subject->declarationPath() ?? throw new LogicException('Long parameter list findings require a declaration subject');
             $symbolType = $declaration->logical->getType();
 
-            if ($symbolType !== SymbolType::Method && $symbolType !== SymbolType::Function_) {
+            $metrics = null;
+            if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Callable, PopulationIdentity::subject($subject, 'callable'), $populationDeclaration, (static function () use ($context, $subject, $declaration, &$metrics): iterable {
+                yield GateInput::kind('callable-coordinate', $declaration->logical->getType());
+                $metrics = $context->metrics->getSubject($subject);
+                yield GateInput::metrics('published-value', $metrics);
+            })())) {
                 continue;
             }
-
-            $metrics = $context->metrics->getSubject($subject);
             $parameterCount = $metrics->get(MetricName::CODE_SMELL_PARAMETER_COUNT);
-            if ($parameterCount === null) {
-                continue;
-            }
 
             $parameterCountValue = (int) $parameterCount;
             $isVoConstructor = $metrics->get(MetricName::CODE_SMELL_IS_VO_CONSTRUCTOR) === 1;

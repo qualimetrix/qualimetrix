@@ -9,8 +9,15 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
+use Qualimetrix\Analysis\Finding\Contract\Population\KindIn;
+
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
@@ -71,6 +78,9 @@ final class UnreachableCodeRule extends AbstractRule
                 WorseDirection::Higher,
                 JudgedMetrics::of(MetricName::CODE_SMELL_UNREACHABLE_CODE),
                 SymbolLevel::Callable,
+            )->withGates(
+                new PopulationGate('callable-coordinate', new FindingChannel(self::NAME), SymbolLevel::Callable, 'callable', new KindIn('callable-coordinate', [SymbolType::Method, SymbolType::Function_]), 'The subject is outside the declared symbol coordinate.'),
+                new PopulationGate('published-value', new FindingChannel(self::NAME), SymbolLevel::Callable, 'callable', new KeyPresent('published-value', [MetricName::CODE_SMELL_UNREACHABLE_CODE]), 'The rule metric was not published.'),
             ),
         ];
     }
@@ -94,19 +104,20 @@ final class UnreachableCodeRule extends AbstractRule
     {
         \assert($this->options instanceof UnreachableCodeOptions);
         $findings = [];
+        $populationDeclaration = self::channelDeclarations()[self::NAME];
 
         foreach ($context->metrics->allCallables() as $symbolInfo) {
             $subject = $symbolInfo->subject ?? throw new LogicException('Unreachable code findings require an exact callable subject');
             $declaration = $subject->declarationPath() ?? throw new LogicException('Unreachable code findings require a declaration subject');
-            if (!\in_array($declaration->logical->getType(), [SymbolType::Method, SymbolType::Function_], true)) {
+            $metrics = null;
+            if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Callable, PopulationIdentity::subject($subject, 'callable'), $populationDeclaration, (static function () use ($context, $subject, $declaration, &$metrics): iterable {
+                yield GateInput::kind('callable-coordinate', $declaration->logical->getType());
+                $metrics = $context->metrics->getSubject($subject);
+                yield GateInput::metrics('published-value', $metrics);
+            })())) {
                 continue;
             }
-
-            $metrics = $context->metrics->getSubject($subject);
             $unreachableCount = $metrics->get(MetricName::CODE_SMELL_UNREACHABLE_CODE);
-            if ($unreachableCount === null) {
-                continue;
-            }
 
             $unreachableCountValue = (int) $unreachableCount;
             $severity = $this->getEffectiveSeverity($context, $this->options, $subject, $unreachableCountValue);

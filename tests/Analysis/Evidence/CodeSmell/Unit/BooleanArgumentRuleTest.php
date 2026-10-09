@@ -25,6 +25,33 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class BooleanArgumentRuleTest extends TestCase
 {
     #[Test]
+    public function itAccountsAllowedNamesAndStrictPromotedFlagsBeforeBuildingFindings(): void
+    {
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
+        $file = RelativePath::fromString('src/Population.php');
+        $bag = new MetricBag();
+        foreach ([['extra' => 'isActive'], ['extra' => ''], ['extra' => 42], ['promoted' => true], ['promoted' => 1]] as $ordinal => $entry) {
+            $bag = $bag->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => $ordinal + 1, ...$entry]);
+        }
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')->willReturn([new SymbolInfo(SymbolPath::forFile($file), $file, 1)]);
+        $repository->method('get')->willReturn($bag);
+        $decisions = [];
+        foreach (BooleanArgumentRule::channelDeclarations() as $channel => $declaration) {
+            foreach ($declaration->levels as $level) {
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(BooleanArgumentRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
+            }
+        }
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)));
+        $context = (new AnalysisContext($repository))->withPopulationTrace($session);
+        self::assertCount(3, $rule->analyze($context));
+        self::assertSame(3, $session->freeze()->judgedCount());
+        self::assertSame(2, $session->freeze()->unjudgedCount());
+        self::assertSame(['allowed-extra', 'flag-promoted-properties'], array_column($session->freeze()->abstentions(), 'gate'));
+        self::assertCount(1, $session->freeze()->abstentions()[0]->examples);
+    }
+
+    #[Test]
     public function itReportsItsNameAndDescription(): void
     {
         $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
@@ -105,6 +132,11 @@ final class BooleanArgumentRuleTest extends TestCase
         $repository->method('get')->willReturn(
             (new MetricBag())->withEntry('codeSmell.boolean_argument', $entry),
         );
+
+        if (($entry['logicalKind'] ?? null) === 'class') {
+            self::expectException(LogicException::class);
+            self::expectExceptionMessage('Population coordinate has an undeclared level.');
+        }
 
         $findings = (new BooleanArgumentRule(new BooleanArgumentOptions(allowedPrefixes: [])))
             ->analyze(new AnalysisContext($repository));
