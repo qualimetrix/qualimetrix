@@ -7,10 +7,16 @@ namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 final readonly class AnalysisContext
 {
@@ -27,7 +33,22 @@ final readonly class AnalysisContext
         public ?NamespaceTree $namespaceTree = null,
         public array $thresholdOverrides = [],
         public ProjectScopeJudgement $projectScope = new ProjectScopeJudgement(),
+        private ?PopulationSession $populationSession = null,
     ) {}
+
+    /** @internal Finding execution binds a fresh accounting session. */
+    public function withPopulationTrace(PopulationSession $session): self
+    {
+        return new self($this->metrics, $this->dependencyGraph, $this->namespaceTree, $this->thresholdOverrides, $this->projectScope, $session);
+    }
+
+    /** @param list<GateInput> $inputs */
+    public function admit(string $producer, FindingChannel $channel, SymbolLevel $level, PopulationIdentity $identity, ChannelDeclaration $declaration, array $inputs): bool
+    {
+        $failed = $declaration->populationFailure($channel, $level, $inputs);
+        $this->populationSession?->record($producer, $channel, $level, $identity, $declaration, $failed['gate'] ?? null, $failed['reason'] ?? null);
+        return $failed === null;
+    }
 
     /**
      * Finds the most specific threshold override bound to an exact subject.
