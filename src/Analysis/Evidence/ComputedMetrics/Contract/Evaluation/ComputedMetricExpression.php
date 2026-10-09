@@ -44,13 +44,6 @@ final class ComputedMetricExpression
 
     private readonly ExpressionLanguage $expressionLanguage;
 
-    /**
-     * Per formula, its branch trace, or null where every operand always runs.
-     *
-     * @var array<string, ?ComputedMetricBranchTrace>
-     */
-    private array $traces = [];
-
     public function __construct()
     {
         $this->expressionLanguage = new ExpressionLanguage();
@@ -262,24 +255,19 @@ final class ComputedMetricExpression
      */
     public function evaluateOn(string $formula, MetricLookup $metrics): array
     {
-        $isPresent = static fn(string $key): bool => isset($metrics[$key]);
-
-        $missing = $this->missingKeysOf($formula, $isPresent);
-        if ($missing !== []) {
-            return [$missing, null];
-        }
-
         $variables = [self::VARIABLE => $metrics];
-        $trace = $this->traceOf($formula);
-        if ($trace === null) {
-            return [[], $this->evaluate($formula, $variables)];
-        }
-
-        $trace->start($isPresent);
+        $root = ComputedMetricBranchTrace::nullableMeanClamps(
+            $this->parse($formula)->getNodes(),
+            static fn(?float $value, float $min, float $max): ?float => $value === null ? null : self::clamp($value, $min, $max),
+        );
+        $trace = ComputedMetricBranchTrace::of($root, $metrics);
 
         try {
-            $value = $this->evaluateParsed(new ParsedExpression($formula, $trace->traced), $variables);
+            $value = $this->expressionLanguage->evaluate(new ParsedExpression($formula, $trace->traced), $variables);
         } catch (Throwable $failure) {
+            if (!$trace->isMissing($failure)) {
+                throw $failure;
+            }
             $missing = $trace->missingInRun();
 
             return $missing !== [] ? [$missing, null] : throw $failure;
@@ -288,15 +276,6 @@ final class ComputedMetricExpression
         $missing = $trace->missingInRun();
 
         return $missing !== [] ? [$missing, null] : [[], $value];
-    }
-
-    private function traceOf(string $formula): ?ComputedMetricBranchTrace
-    {
-        if (!\array_key_exists($formula, $this->traces)) {
-            $this->traces[$formula] = ComputedMetricBranchTrace::of($this->parse($formula)->getNodes());
-        }
-
-        return $this->traces[$formula];
     }
 
     /**

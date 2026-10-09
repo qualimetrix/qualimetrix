@@ -28,6 +28,55 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMe
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\MetricLookup;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
+enum ComputedMetricExpressionControlCase
+{
+    case A;
+
+    public function tick(): bool
+    {
+        return ComputedMetricExpressionControlCounter::tick();
+    }
+
+    public function key(): int
+    {
+        return ComputedMetricExpressionControlCounter::key();
+    }
+}
+
+final class ComputedMetricExpressionControlCounter
+{
+    private static int $ticks = 0;
+    private static int $keys = 0;
+
+    public static function reset(): void
+    {
+        self::$ticks = 0;
+        self::$keys = 0;
+    }
+
+    public static function tick(): bool
+    {
+        return ++self::$ticks % 2 === 1;
+    }
+
+    public static function key(): int
+    {
+        ++self::$keys;
+
+        return 1;
+    }
+
+    public static function ticks(): int
+    {
+        return self::$ticks;
+    }
+
+    public static function keys(): int
+    {
+        return self::$keys;
+    }
+}
+
 #[CoversClass(ComputedMetricExpression::class)]
 #[CoversClass(ComputedMetricReads::class)]
 final class ComputedMetricExpressionTest extends TestCase
@@ -262,33 +311,56 @@ final class ComputedMetricExpressionTest extends TestCase
     {
         $evaluation = new ComputedMetricSubjectEvaluation();
         foreach ([
-            ['80', [], ComputedMetricOutcome::VALUE, 80],
-            ['0', [], ComputedMetricOutcome::VALUE, 0],
-            ['null', [], ComputedMetricOutcome::NO_VALUE, null],
-            ['weighted_mean(m["a"], 1)', [], ComputedMetricOutcome::NO_VALUE, null],
-            ['m["a"] + 1', [], ComputedMetricOutcome::MISSING_KEYS, null],
-            ['m["a"] ?? 80', [], ComputedMetricOutcome::VALUE, 80],
-            ['m["a"] ?? 80', ['a' => null], ComputedMetricOutcome::VALUE, 80],
-            ['m["a"] ?? 80', ['a' => 0], ComputedMetricOutcome::VALUE, 0],
-            ['m["a"] ?? 80', ['a' => true], ComputedMetricOutcome::FAILURE, null],
-            ['m["a"] ?? 80', ['a' => '42'], ComputedMetricOutcome::FAILURE, null],
-            ['clamp(m["a"], 0, 100)', ['a' => \NAN], ComputedMetricOutcome::FAILURE, null],
-            ['clamp(m["a"], 0, 100)', ['a' => \INF], ComputedMetricOutcome::FAILURE, null],
-            ['clamp(m["a"], 0, 100)', ['a' => -\INF], ComputedMetricOutcome::FAILURE, null],
-            ['m["flag"] > 0 ? m["a"] : 80', ['flag' => 0, 'a' => \NAN], ComputedMetricOutcome::VALUE, 80],
-            ['true', [], ComputedMetricOutcome::FAILURE, null],
-            ['"80"', [], ComputedMetricOutcome::FAILURE, null],
-            ['1e999', [], ComputedMetricOutcome::FAILURE, null],
-            ['sqrt(-1)', [], ComputedMetricOutcome::FAILURE, null],
-            ['log(-1)', [], ComputedMetricOutcome::FAILURE, null],
-            ['1 / 0', [], ComputedMetricOutcome::FAILURE, null],
-        ] as [$formula, $values, $kind, $value]) {
+            ['80', [], ComputedMetricOutcome::VALUE, 80, []],
+            ['0', [], ComputedMetricOutcome::VALUE, 0, []],
+            ['null', [], ComputedMetricOutcome::NO_VALUE, null, []],
+            ['weighted_mean(m["a"], 1)', [], ComputedMetricOutcome::NO_VALUE, null, []],
+            ['m["a"] + 1', [], ComputedMetricOutcome::MISSING_KEYS, null, ['a']],
+            ['m["a"] ?? 80', [], ComputedMetricOutcome::VALUE, 80, []],
+            ['m["a"] ?? 80', ['a' => null], ComputedMetricOutcome::VALUE, 80, []],
+            ['m["a"] ?? 80', ['a' => 0], ComputedMetricOutcome::VALUE, 0, []],
+            ['m["a"] ?? 80', ['a' => true], ComputedMetricOutcome::FAILURE, null, []],
+            ['m["a"] ?? 80', ['a' => '42'], ComputedMetricOutcome::FAILURE, null, []],
+            ['clamp(m["a"], 0, 100)', ['a' => \NAN], ComputedMetricOutcome::FAILURE, null, []],
+            ['clamp(m["a"], 0, 100)', ['a' => \INF], ComputedMetricOutcome::FAILURE, null, []],
+            ['clamp(m["a"], 0, 100)', ['a' => -\INF], ComputedMetricOutcome::FAILURE, null, []],
+            ['m["flag"] > 0 ? m["a"] : 80', ['flag' => 0, 'a' => \NAN], ComputedMetricOutcome::VALUE, 80, []],
+            ['m["bad"] + m["missing"]', ['bad' => \NAN], ComputedMetricOutcome::FAILURE, null, []],
+            ['m["missing"] + m["bad"]', ['bad' => \NAN], ComputedMetricOutcome::FAILURE, null, []],
+            ['(m["bad"] ?? 80) + m["missing"]', ['bad' => \NAN], ComputedMetricOutcome::FAILURE, null, []],
+            ['(m["optional"] ?? 80) + m["missing"]', ['optional' => null], ComputedMetricOutcome::MISSING_KEYS, null, ['missing']],
+            ['weighted_mean(m["bad"], m["weight"])', ['bad' => \NAN], ComputedMetricOutcome::FAILURE, null, []],
+            ['weighted_mean(m["optional"], m["weight"])', ['optional' => null], ComputedMetricOutcome::MISSING_KEYS, null, ['weight']],
+            ['m["flag"] > 0 ? m["bad"] + m["missing"] : 80', ['flag' => 1, 'bad' => \NAN], ComputedMetricOutcome::FAILURE, null, []],
+            ['m["flag"] > 0 ? m["bad"] + m["missing"] : 80', ['flag' => 0, 'bad' => \NAN], ComputedMetricOutcome::VALUE, 80, []],
+            ['m["flag"] > 0 ? 80 : m["bad"] + m["missing"]', ['bad' => \NAN], ComputedMetricOutcome::MISSING_KEYS, null, ['flag']],
+            ['(m["flag"] > 0 and m["bad"] > 0) ? 1 : 0', ['flag' => 0, 'bad' => \NAN], ComputedMetricOutcome::VALUE, 0, []],
+            ['(m["flag"] > 0 and m["bad"] > 0) ? 1 : 0', ['flag' => 1, 'bad' => \NAN], ComputedMetricOutcome::FAILURE, null, []],
+            ['m["present"] ?? (m["bad"] + m["missing"])', ['present' => 0, 'bad' => \NAN], ComputedMetricOutcome::VALUE, 0, []],
+            ['m["present"] ?? (m["bad"] + m["missing"])', ['present' => null, 'bad' => \NAN], ComputedMetricOutcome::FAILURE, null, []],
+            ['(m["optional"] ?? m["bad"]) + m["missing"]', ['optional' => null, 'bad' => \NAN], ComputedMetricOutcome::FAILURE, null, []],
+            ['(m["optional"] ?? m["bad"]) + m["missing"]', ['optional' => 3, 'bad' => \NAN], ComputedMetricOutcome::MISSING_KEYS, null, ['missing']],
+            ['(weighted_mean(m["optional"], 1) ?? m["bad"]) + m["missing"]', ['optional' => null, 'bad' => \NAN], ComputedMetricOutcome::FAILURE, null, []],
+            ['(weighted_mean(m["optional"], 1) ?? m["bad"]) + m["missing"]', ['optional' => 3, 'bad' => \NAN], ComputedMetricOutcome::MISSING_KEYS, null, ['missing']],
+            ['(clamp(weighted_mean(m["optional"], 1), 0, 100) ?? m["bad"]) + m["missing"]', ['optional' => null, 'bad' => \NAN], ComputedMetricOutcome::FAILURE, null, []],
+            ['(clamp(weighted_mean(m["optional"], 1), 0, 100) ?? m["bad"]) + m["missing"]', ['optional' => 3, 'bad' => \NAN], ComputedMetricOutcome::MISSING_KEYS, null, ['missing']],
+            ['m["optional"]["x"] ?? 80', [], ComputedMetricOutcome::MISSING_KEYS, null, ['optional']],
+            ['m["optional"]["x"] ?? 80', ['optional' => \NAN], ComputedMetricOutcome::FAILURE, null, []],
+            ['weighted_mean(m["flag"] > 0 ? m["optional"] : 0, 1)', ['optional' => \NAN], ComputedMetricOutcome::MISSING_KEYS, null, ['flag']],
+            ['m["optional"][m["index"]] ?? 80', [], ComputedMetricOutcome::MISSING_KEYS, null, ['optional']],
+            ['m["optional"][m["index"]] ?? 80', ['index' => \NAN], ComputedMetricOutcome::MISSING_KEYS, null, ['optional']],
+            ['m["optional"][m["index"]] ?? 80', ['optional' => \NAN], ComputedMetricOutcome::FAILURE, null, []],
+            ['true', [], ComputedMetricOutcome::FAILURE, null, []],
+            ['"80"', [], ComputedMetricOutcome::FAILURE, null, []],
+            ['1e999', [], ComputedMetricOutcome::FAILURE, null, []],
+            ['sqrt(-1)', [], ComputedMetricOutcome::FAILURE, null, []],
+            ['log(-1)', [], ComputedMetricOutcome::FAILURE, null, []],
+            ['1 / 0', [], ComputedMetricOutcome::FAILURE, null, []],
+        ] as [$formula, $values, $kind, $value, $missingKeys]) {
             $outcome = $evaluation->evaluate(self::customFormula($formula), SymbolLevel::Class_, $values);
             self::assertSame($kind, $outcome->kind, $formula);
             self::assertSame($value, $outcome->value, $formula);
-            if ($kind === ComputedMetricOutcome::MISSING_KEYS) {
-                self::assertSame(['a'], $outcome->missingKeys);
-            }
+            self::assertSame($missingKeys, $outcome->missingKeys, $formula);
             if ($kind === ComputedMetricOutcome::FAILURE) {
                 self::assertNotEmpty($outcome->reason);
             }
@@ -299,6 +371,75 @@ final class ComputedMetricExpressionTest extends TestCase
             ComputedMetricOutcome::NOT_APPLICABLE,
             $evaluation->evaluate($complexity, SymbolLevel::Project, ['size.symbol-method-count' => \NAN])->kind,
         );
+    }
+
+    #[Test]
+    public function itPreservesOneNativeControlRunAndReachedGetAttrStages(): void
+    {
+        $evaluation = new ComputedMetricSubjectEvaluation();
+        $control = 'enum("' . str_replace('\\', '\\\\', ComputedMetricExpressionControlCase::class) . '::A")';
+
+        ComputedMetricExpressionControlCounter::reset();
+        $formula = $control . '.tick() ? 11 : 22';
+        self::assertSame(11, $evaluation->evaluate(self::customFormula($formula), SymbolLevel::Class_, [])->value);
+        self::assertSame(1, ComputedMetricExpressionControlCounter::ticks());
+        self::assertSame(22, $evaluation->evaluate(self::customFormula($formula), SymbolLevel::Class_, [])->value);
+        self::assertSame(2, ComputedMetricExpressionControlCounter::ticks());
+
+        ComputedMetricExpressionControlCounter::reset();
+        $formula = $control . '.tick() ? m["bad"] + m["missing"] : 80';
+        self::assertSame(
+            ComputedMetricOutcome::FAILURE,
+            $evaluation->evaluate(self::customFormula($formula), SymbolLevel::Class_, ['bad' => \NAN])->kind,
+        );
+        self::assertSame(1, ComputedMetricExpressionControlCounter::ticks());
+        self::assertSame(
+            ComputedMetricOutcome::VALUE,
+            $evaluation->evaluate(self::customFormula($formula), SymbolLevel::Class_, ['bad' => \NAN])->kind,
+        );
+        self::assertSame(2, ComputedMetricExpressionControlCounter::ticks());
+
+        ComputedMetricExpressionControlCounter::reset();
+        $outcome = $evaluation->evaluate(
+            self::customFormula('m["missing"] + (' . $control . '.tick() ? 1 : 2)'),
+            SymbolLevel::Class_,
+            [],
+        );
+        self::assertSame(ComputedMetricOutcome::MISSING_KEYS, $outcome->kind);
+        self::assertSame(['missing'], $outcome->missingKeys);
+        self::assertSame(1, ComputedMetricExpressionControlCounter::ticks());
+
+        ComputedMetricExpressionControlCounter::reset();
+        $outcome = $evaluation->evaluate(
+            self::customFormula('m["optional"].nonexistent(' . $control . '.key()) ?? 80'),
+            SymbolLevel::Class_,
+            [],
+        );
+        self::assertSame(ComputedMetricOutcome::MISSING_KEYS, $outcome->kind);
+        self::assertSame(['optional'], $outcome->missingKeys);
+        self::assertSame(0, ComputedMetricExpressionControlCounter::keys());
+
+        ComputedMetricExpressionControlCounter::reset();
+        $formula = '[10, 20][m["flag"] > 0 ? 0 : ' . $control . '.tick()] ?? 80';
+        $outcome = $evaluation->evaluate(self::customFormula($formula), SymbolLevel::Class_, []);
+        self::assertSame(ComputedMetricOutcome::MISSING_KEYS, $outcome->kind);
+        self::assertSame(['flag'], $outcome->missingKeys);
+        self::assertSame(0, ComputedMetricExpressionControlCounter::ticks());
+        $outcome = $evaluation->evaluate(self::customFormula($formula), SymbolLevel::Class_, ['flag' => 1]);
+        self::assertSame(ComputedMetricOutcome::VALUE, $outcome->kind);
+        self::assertSame(10, $outcome->value);
+        self::assertSame(0, ComputedMetricExpressionControlCounter::ticks());
+
+        foreach ([0, \NAN] as $base) {
+            ComputedMetricExpressionControlCounter::reset();
+            $outcome = $evaluation->evaluate(
+                self::customFormula('m["optional"][m["flag"] > 0 ? 0 : ' . $control . '.tick()] ?? 80'),
+                SymbolLevel::Class_,
+                ['optional' => $base],
+            );
+            self::assertSame(ComputedMetricOutcome::FAILURE, $outcome->kind);
+            self::assertSame(0, ComputedMetricExpressionControlCounter::ticks());
+        }
     }
 
     #[Test]

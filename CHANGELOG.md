@@ -1641,6 +1641,9 @@ What changes for a configuration you already have:
 
 ### Fixed
 
+- Formula evaluation no longer lets an independent missing key hide a reached
+  invalid non-null metric input. Unselected branches and later chained-access
+  stages remain unjudged, and each stateful condition runs once.
 - Namespace LOC contributions preserve integer sums and compute subtree
   averages and counts from each file contribution exactly once.
 - Promoted constructor properties retain their names in get/set hook subjects.

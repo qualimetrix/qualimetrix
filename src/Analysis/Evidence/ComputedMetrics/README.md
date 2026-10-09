@@ -135,7 +135,7 @@ ComputedMetrics/
 │   │   ├── ComputedMetricEvaluationSummary.php # bounded successful absence groups
 │   │   ├── ComputedMetricValueAbsence.php      # reason counts, keys, and exact samples
 │   │   ├── ComputedMetricReads.php            # strict and nullable input reads
-│   │   └── ComputedMetricBranchTrace.php      # native nullable AST copies and entered operands
+│   │   └── ComputedMetricBranchTrace.php      # one native run's reached reads and entered operands
 │   └── Finding/                      # computed finding channel family
 ├── Configuration/
 │   ├── ComputedMetricsSection.php            # the `computed_metrics:` section declared to the document, and where an entry sits in it
@@ -204,20 +204,20 @@ of `??` counts only where its left side is absent. Every non-null raw input the
 selected evaluation actually reads must be a finite number; booleans, numeric
 strings and nonfinite values refuse before fallback, coercion or clamping.
 
-A ternary branch and the right side of `and`/`or` run only on a value the
-symbol carries, so before a run only a key every path reads counts; the
-condition always runs and counts in full. Per symbol, `ComputedMetricBranchTrace`
-runs the formula as a copy whose conditional operands report their entry, and
-the operands the evaluation entered decide. Entering one that would read an
-absent strict input prevents a fabricated numeric result before `null` reaches
-arithmetic or a PHP function. Invalid inputs in operands the evaluation never
-enters remain unjudged. Only nullable value positions of `weighted_mean`
-permit absence; weights and strict nested operands still require their inputs.
-The exact enclosing `clamp(weighted_mean(...), bounds)` preserves an empty mean's
-null result, whereas ordinary clamp of null fails. Arguments are evaluated once.
-Which branch runs is taken from the evaluation itself and never computed beside it; the trace relies only on
-Expression Language evaluating one branch of `?:` and short-circuiting
-`and`/`or`, not on how it marks the left side of `??`.
+A ternary branch, the right side of `and`/`or`, and a fallback run only on a
+value the symbol carries. Per symbol, `ComputedMetricBranchTrace` records the
+reads and conditional operands reached by one native Expression Language run.
+An absent strict read stops before `null` reaches arithmetic or a PHP function;
+the remaining unconditional sibling operands are then visited once so a reached
+invalid value outranks independent absence. This recovery never enters a branch
+the native evaluator skipped or a later index or argument after a failed
+`GetAttr` base. The reached-read ledger classifies absence after that same run.
+Invalid inputs in operands the evaluation never enters remain unjudged. Only
+nullable value positions of `weighted_mean` permit absence; weights and strict
+nested operands still require their inputs. The exact enclosing
+`clamp(weighted_mean(...), bounds)` preserves an empty mean's null result,
+whereas ordinary clamp of null fails. Arguments and stateful conditions are
+evaluated once; branch selection is never computed beside the native run.
 
 ## Public contracts and named consumers
 

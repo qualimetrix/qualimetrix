@@ -174,6 +174,38 @@ final class ComputedMetricEvaluatorTest extends TestCase
                 self::assertNull($repo->getSubject(MetricSubject::aggregate(SymbolPath::forProject()))->get($definition->name));
             }
         }
+
+        $repo = $this->repository();
+        $invalid = SymbolPath::forClass('App', 'Invalid');
+        $carrier = SymbolPath::forClass('App', 'Carrier');
+        $this->addFixture(
+            $repo,
+            $invalid,
+            MetricBag::fromArray(['complexity.ccn' => \NAN]),
+            RelativePath::fromString('Invalid.php'),
+            1,
+        );
+        $this->addFixture(
+            $repo,
+            $carrier,
+            MetricBag::fromArray(['complexity.ccn' => 1, 'size.loc' => 1]),
+            RelativePath::fromString('Carrier.php'),
+            1,
+        );
+        $definition = new ComputedMetricDefinition(
+            'computed.test',
+            ['class' => 'm["complexity.ccn"] + m["size.loc"]'],
+            '',
+            [SymbolLevel::Class_],
+        );
+        try {
+            $this->evaluate($repo, [$definition]);
+            self::fail('A reached invalid class input must not become an authored missing-key summary.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString('Computed metric "computed.test" failed at level "class"', $refusal->summary());
+            self::assertSame('the merged configuration', $refusal->sources()[0]->describe());
+            self::assertNull($this->readFixture($repo, $invalid)->get('computed.test'));
+        }
     }
 
     #[Test]
