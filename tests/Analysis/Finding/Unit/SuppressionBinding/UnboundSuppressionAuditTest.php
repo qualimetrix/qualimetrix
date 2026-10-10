@@ -339,6 +339,40 @@ final class UnboundSuppressionAuditTest extends TestCase
     }
 
     #[Test]
+    public function itJudgesBinarySuppressionSelectorsWithoutCollapsingLiteralEscapes(): void
+    {
+        $populations = [];
+        foreach (["\xFF", '%FF'] as $index => $spelling) {
+            $path = $this->path(SelectorKind::Exact, 'src/' . $spelling . '.php');
+            $namespace = $this->namespace(SelectorKind::Exact, 'Sample\\' . $spelling);
+            $result = $this->audit(
+                pathLedger: ['code-smell.goto' => [$path]],
+                namespaceLedger: ['code-smell.goto' => [$namespace]],
+            )->auditResult(
+                [$path],
+                [$namespace],
+                [RelativePath::fromString("src/\xFF.php")],
+                null,
+                $this->scope(new ProjectScopeJudgement()),
+                self::populationPublication(),
+            );
+            self::assertSame(2, $result['population']->judgedCount());
+            self::assertSame(2, $result['population']->unjudgedCount());
+            self::assertCount($index === 0 ? 0 : 2, $result['findings']);
+            $populations[] = $result['population'];
+        }
+        $merged = $populations[0]->merge($populations[1]);
+        self::assertSame(4, $merged->unjudgedCount());
+        foreach ($merged->abstentions() as $absence) {
+            self::assertCount(2, $absence->examples);
+            self::assertNotSame($absence->examples[0], $absence->examples[1]);
+            foreach ($absence->examples as $example) {
+                self::assertTrue(mb_check_encoding($example, 'UTF-8'));
+            }
+        }
+    }
+
+    #[Test]
     public function itReadsEachInvocationSnapshotFromTheSameAuditInstance(): void
     {
         $registry = new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry();

@@ -516,6 +516,8 @@ together under the captured `ChannelPublication`. It accounts each configured
 value occurrence, including duplicates and values that bind successfully, and
 freezes one session after the whole native audit. Unknown namespace evidence
 withholds namespace values while leaving independently judged paths measurable.
+Selector displays are reversibly byte-framed before internal JSON identity
+encoding; a CLI source byte and its literal percent spelling stay distinct.
 
 ## Locality
 

@@ -19,6 +19,7 @@ use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\SourceText\SourceBytes;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
@@ -115,7 +116,7 @@ final readonly class UnboundSuppressionAudit
             }
             $judged = $this->judges($value, $declaredNamespaces, $scope);
             $input = GateInput::context($value['pattern'] instanceof PathPattern ? 'suppressionPathJudged' : 'suppressionNamespaceJudged', $judged);
-            $identity = PopulationIdentity::occurrence(json_encode([$value['channel'], $value['rule'], $value['option'], $value['pattern']->definition->display()], \JSON_THROW_ON_ERROR), $ordinal, 'configured-suppression-value-occurrence');
+            $identity = PopulationIdentity::occurrence(json_encode([$value['channel'], $value['rule'], $value['option'], SourceBytes::framed($value['pattern']->definition->display())], \JSON_THROW_ON_ERROR), $ordinal, 'configured-suppression-value-occurrence');
             $declaration = $declarations[$channel->code];
             self::record($session, $channel, $declaration, $identity, $input);
             unset($identity, $input);
