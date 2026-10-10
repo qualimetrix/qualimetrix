@@ -28,7 +28,9 @@ final class RfcCollectorTest extends TestCase
         self::assertSame($local->provides(), $global->requires());
         self::assertSame(['coupling.rfc', 'coupling.rfc-own', 'coupling.rfc-external'], $global->provides());
         self::assertNotContains(\Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface::class, class_implements($local));
-        foreach ($global->getMetricDefinitions() as $definition) {
+        $definitions = $global->getMetricDefinitions();
+        self::assertSame($global->provides(), array_map(static fn($definition): string => $definition->name, $definitions));
+        foreach ($definitions as $definition) {
             self::assertSame(SymbolLevel::Class_, $definition->collectedAt);
             foreach ([SymbolLevel::Namespace_, SymbolLevel::Project] as $level) {
                 self::assertSame([AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max, AggregationStrategy::Percentile95], $definition->getStrategiesForLevel($level));
