@@ -9,9 +9,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\Population\ContextGuard;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
-use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -79,10 +77,7 @@ final class LayerViolationRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Class_)->readingRunEvidence()->withGates(
-                new PopulationGate('prepared-evidence', new FindingChannel(self::NAME), SymbolLevel::Class_, 'dependency-edge', new ContextGuard('preparedEvidenceAvailable'), 'Prepared layer evidence is unavailable.', 'invocation'),
-                ...EdgeEvidenceWalk::populationGates(),
-            ),
+            self::NAME => EdgeEvidenceWalk::channelDeclaration(),
 
         ];
     }

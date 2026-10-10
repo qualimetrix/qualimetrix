@@ -547,7 +547,7 @@ unassigned class accounts logical class-like identities, including assigned
 classes and collapsing duplicate exact declarations through the repository's
 native logical roster.
 
-`UnmatchedExcludeDiagnostic::forInertClauses(evidence, channelName, context)`
+`UnmatchedExcludeDiagnostic::forInertClauses(evidence, channelName, context, populationDeclaration)`
 aggregates expanded instances before one admission per authored exclude clause.
 `clauses(evidence, context)` tests namespace scope before pending lifecycle; an
 inactive pending clause is unjudged, while an absent exclude is outside the

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration;
 
 use Generator;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -112,11 +113,11 @@ final class UnmatchedExcludeDiagnostic
      *
      * @return list<Finding>
      */
-    public static function forInertClauses(LayerEvidence $evidence, string $channelName, AnalysisContext $context): array
+    public static function forInertClauses(LayerEvidence $evidence, string $channelName, AnalysisContext $context, ChannelDeclaration $populationDeclaration): array
     {
         $findings = [];
 
-        foreach (self::clauses($evidence, $context) as $declaration => $clause) {
+        foreach (self::clauses($evidence, $context, $populationDeclaration) as $declaration => $clause) {
             if (!self::isInert($clause)) {
                 continue;
             }
@@ -133,7 +134,7 @@ final class UnmatchedExcludeDiagnostic
      *
      * @return array<string, array{definition: LayerDefinition, matched: int, excluded: int, unanswered: int, instances: int}>
      */
-    private static function clauses(LayerEvidence $evidence, AnalysisContext $context): array
+    private static function clauses(LayerEvidence $evidence, AnalysisContext $context, ChannelDeclaration $populationDeclaration): array
     {
         $matchedCounts = $evidence->matchedCounts();
         $excludedCounts = $evidence->excludedCounts();
@@ -157,9 +158,8 @@ final class UnmatchedExcludeDiagnostic
             ++$clauses[$declaration]['instances'];
         }
 
-        $declaration = LayerDeclarationRule::channelDeclarations()[ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME];
         foreach ($clauses as $name => $clause) {
-            if (!$context->admit(LayerDeclarationRule::NAME, new FindingChannel(ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME), SymbolLevel::Project, PopulationIdentity::clause($name), $declaration, (static function () use ($context, $clause): Generator {
+            if (!$context->admit(ArchitectureChannels::LAYER_DECLARATION_PRODUCER_NAME, new FindingChannel(ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME), SymbolLevel::Project, PopulationIdentity::clause($name), $populationDeclaration, (static function () use ($context, $clause): Generator {
                 yield GateInput::context('namespaceClaimsJudged', $context->projectScope->judgesNamespaceClaims());
                 yield GateInput::context('excludeClauseActive', !$clause['definition']->lifecycle->isPending());
             })())) {

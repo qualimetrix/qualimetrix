@@ -87,7 +87,7 @@ final class LayerDeclarationRule extends AbstractRule
         return [
             ...LayerOverlapDiagnostic::forPrecedence($evidence),
             ...UnmatchedTypeDiagnostic::forEvidence($evidence, $context->projectScope, $context),
-            ...UnmatchedExcludeDiagnostic::forInertClauses($evidence, ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME, $context),
+            ...UnmatchedExcludeDiagnostic::forInertClauses($evidence, ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME, $context, $declarations[ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME]),
             ...DoubtedAssignmentDiagnostic::forDoubts(
                 $evidence->coverageState,
                 $evidence->undecidedSymbolsByLayer(),
