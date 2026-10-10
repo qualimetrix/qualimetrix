@@ -26,7 +26,7 @@ final class JsonEncodingPopulationTest extends TestCase
     /** @var array<class-string, string> */
     private const array OWNERS = [
         \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder::class => 'Only finite positive float weights from native ConstantNode values checked by WeightedHealthFormula::weightOf are encoded, preserving the JSON fraction.',
-        \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule::class => 'Native copy ordinals and content hashes identify the copy; raw file bytes are framed before encoding.',
+        \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule::class => 'Native copy ordinals and content hashes identify the copy; its existing canonical file subject escapes invalid source bytes.',
         \Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation::class => 'Group keys contain validated producer/channel metadata, declared gate reasons and closed units; source examples remain outside the encoded key.',
         \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::class => 'Source authority, cycle member and edge endpoint strings are framed; symbol canonicals already escape invalid source bytes.',
         \Qualimetrix\Analysis\Finding\Population\PopulationTrace::class => 'Group keys contain validated producer/channel metadata, declared gate reasons and closed units; native source identity examples are stored separately.',
