@@ -88,7 +88,7 @@ final class CyclomaticComplexityCollector extends AbstractCollector implements C
             $wmc = 0;
             foreach ($callables as $callable) {
                 if ($callable->kind === CallableKind::Method
-                    && $callable->classAggregationOwnerDeclaration?->toCanonical() === $class->declarationPath->toCanonical()) {
+                    && $callable->classAggregationOwner?->toCanonical() === $class->declarationPath->toCanonical()) {
                     $wmc += $callable->metrics->get(MetricName::COMPLEXITY_CCN) ?? 0;
                 }
             }

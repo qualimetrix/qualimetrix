@@ -18,7 +18,7 @@ rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Analy
 rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Analysis\Run\Contract\Pipeline	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Analysis\Run\Pipeline	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Core\Path	error	1
-rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Core\Pattern	error	1
+rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Core\Pattern	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Core\Symbol	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Infrastructure\Console	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Infrastructure\Console\Command	error	1
@@ -81,6 +81,7 @@ rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualime
 rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualimetrix\Analysis\Configuration\Contract\Document\Schema	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualimetrix\Analysis\Configuration\Contract\Refusal	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualimetrix\Analysis\Configuration\Document\Resolved	warning	1
+rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualimetrix\Analysis\Evidence\Duplication\Index	warning	1

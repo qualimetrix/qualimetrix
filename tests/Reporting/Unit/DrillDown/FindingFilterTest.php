@@ -436,8 +436,7 @@ final class FindingFilterTest extends TestCase
     private function createOffender(string $namespace, string $class): WorstOffender
     {
         return new WorstOffender(
-            symbolPath: SymbolPath::forClass($namespace, $class),
-            file: RelativePath::fromString('src/test.php'),
+            subject: \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass($namespace, $class), RelativePath::fromString('src/test.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
             healthOverall: 50.0,
             label: 'Warning',
             reason: 'test reason',
@@ -445,6 +444,7 @@ final class FindingFilterTest extends TestCase
                 violationCount: 0,
                 classCount: 0,
             ),
+            overallThresholds: [50.0, 30.0],
         );
     }
 }

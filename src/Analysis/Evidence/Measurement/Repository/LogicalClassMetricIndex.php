@@ -85,7 +85,7 @@ final class LogicalClassMetricIndex
         $owner = $exact->classAggregationOwner;
 
         return $owner !== null
-            ? $this->addLogicalClass($owner->symbolPath, new MetricBag(), null, null)
+            ? $this->addLogicalClass($owner->logical, new MetricBag(), null, null)
             : null;
     }
 
@@ -140,7 +140,6 @@ final class LogicalClassMetricIndex
             $info->line,
             $info->callableKind,
             $info->classAggregationOwner,
-            $info->classAggregationOwnerDeclaration,
             $info->anonymousClassContext,
         );
         return RepositoryMerge::store($canonical, $canonicalInfo, $metrics, $this->metrics, $this->infos);
@@ -179,7 +178,6 @@ final class LogicalClassMetricIndex
                 $previousInfo->line,
                 $previousInfo->callableKind,
                 $previousInfo->classAggregationOwner,
-                $previousInfo->classAggregationOwnerDeclaration,
                 $previousInfo->anonymousClassContext,
             );
         }

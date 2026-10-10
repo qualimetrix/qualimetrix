@@ -149,6 +149,29 @@ final class HealthCoverageAgreesWithCountsTest extends TestCase
         self::assertLessThan(1.0, $cohesion['ratio']);
     }
 
+    #[Test]
+    public function itRanksMeasuredNamespacesDeclaringOnlyInterfacesTraitsOrEnums(): void
+    {
+        $written = file_put_contents($this->fixtureDirectory . '/Fixture.php', <<<'PHP'
+            <?php
+            namespace Types\Interfaces;
+            interface Contract { public function run(): int; }
+            namespace Types\Traits;
+            trait Reusable { public function run(): int { return 1; } }
+            namespace Types\Enums;
+            enum Choice: string { case One = 'one'; public function run(): int { return 1; } }
+            PHP);
+        self::assertIsInt($written);
+        $report = $this->analyze('json');
+        $names = array_column($report['worstNamespaces'] ?? [], 'symbolPath');
+        sort($names);
+        self::assertSame(['Types\\Enums', 'Types\\Interfaces', 'Types\\Traits'], $names);
+        foreach ($report['worstNamespaces'] as $offender) {
+            self::assertIsNumeric($offender['healthOverall']);
+            self::assertSame(0, $offender['size.class-count.sum']);
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */

@@ -25,7 +25,6 @@ use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -304,10 +303,9 @@ final class GlobalFunctionAggregationTest extends TestCase
             $class === null ? CallableKind::Function : CallableKind::Method,
             null,
             $class,
-            $class === null ? null : new LogicalClassPath($class->logical),
+            $class,
             $metrics,
             null,
-            $class,
         ));
     }
 

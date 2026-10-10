@@ -319,7 +319,8 @@ final class FormatterContextFactoryTest extends TestCase
         yield 'top fraction' => ['top=2.9', 'expected a whole number, 1 or more.'];
         yield 'top zero' => ['top=0', 'expected a whole number, 1 or more.'];
         yield 'limit word' => ['limit=many', 'expected a whole number, 0 or more, or "all".'];
-        yield 'rank-by typo' => ['rank-by=dnesity', 'expected one of: count, density.'];
+        yield 'retired count' => ['rank-by=count', 'expected one of: score, density.'];
+        yield 'rank-by typo' => ['rank-by=dnesity', 'expected one of: score, density.'];
         yield 'empty project name' => ['project-name=', 'expected a non-empty name.'];
         yield 'contributors negative' => ['contributors=-1', 'expected a whole number, 0 or more.'];
     }

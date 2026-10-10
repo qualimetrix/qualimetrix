@@ -103,7 +103,6 @@ SOURCE,
         self::assertCount(2, $named);
         self::assertCount(1, $anonymous);
         self::assertNull($anonymous[0]->classAggregationOwner);
-        self::assertNull($anonymous[0]->classAggregationOwnerDeclaration);
         self::assertSame(2, $repository->getSubject($this->classSubject('App', 'Outer', 'src/Outer.php'))->get('complexity.wmc'));
     }
 

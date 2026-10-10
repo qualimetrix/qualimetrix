@@ -44,7 +44,6 @@ final class MetricSubjectIndex
             $callable->sourceLine,
             $callable->kind,
             $callable->classAggregationOwner,
-            $callable->classAggregationOwnerDeclaration,
             $callable->anonymousClassContext,
         ), $callable->metrics);
     }

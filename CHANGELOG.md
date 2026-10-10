@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- `WorstOffender` and `WorstOffender::fromEvidence()` take six arguments: exact `MetricSubject`, overall score, label, reason, evidence and overall thresholds. Remove independent symbol/file arguments; both values derive from the required subject, including null files for namespace aggregates. See ADR 0110.
+- Worst-offender ranking now accepts `rank-by=score|density`, defaulting to `score`; `count` refuses with exit 3. JSON and summary select from the complete captured population before ranking and limiting it. Replace `worstNamespaces[].size.class-count` with `size.class-count.sum`, and read the composite only from `healthOverall`, not `healthScores.overall`. Namespace eligibility includes own interfaces, traits and enums. Reasons and console colors follow resolved catalog thresholds; remaining-count advice names the actual total. See ADR 0110.
+- `CallableWithMetrics::classAggregationOwner` and `SymbolInfo::classAggregationOwner` now carry one exact `DeclarationPath`; `classAggregationOwnerDeclaration` is removed. Supply the exact owner once and derive its logical name from `owner->logical`. Named method/property-hook ownership and anonymous-class context are checked during construction; repository membership and producer joins retain their own checks. See ADR 0106.
 - Finding records in JSON violations, JSON top issues and HTML now publish `namespaces` as the captured namespace membership. `namespace` is the sole name, including `""` for global, or `null` for multiple names and project findings. File findings use namespaces of measured exact declarations and logical classes consistently with namespace selection and grouping; blocks without those declarations are absent, and empty membership uses a global reporting fallback. Preserve the captured `FileNamespaceIndex` when constructing or copying a `Report`; see ADR 0106.
 - `Finding::getDisplayMessage()` is removed. Consume `message` and `recommendation` separately; suppressed findings retain their original diagnostic. Invalid `QMX_ASCII` values now identify their source as `environment` instead of `input`, while retaining exit 3.
 - `scripts/benchmark-regression.php` now exits 2 for infrastructure failures in the project loop, including missing project paths and failed or timed-out child analyses, instead of reporting them as regressions with exit 1. Measured regressions, expected metrics left unmeasured and incomplete coverage in a valid analysis document retain exit 1; incomplete corpora still block the whole baseline update.
@@ -37,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `MetricDefinition::publicationLevels()` now declares direct base-key output levels independently of aggregate suffixes. Custom definitions must declare every direct level in `directPublicationLevels`; duplicate levels refuse, and direct Class publication requires a class area.
 
-- Callable measurement records and `SymbolInfo` preserve explicit anonymous-class context; named methods and property hooks without exact owner metadata are refused during class finding attribution.
+- Callable measurement records and `SymbolInfo` preserve explicit anonymous-class context; named methods and property hooks without exact owner metadata refuse during construction.
 
 - `MetricRepositoryFactoryInterface::create()` now accepts a finite optional list of metric definitions; native store factories apply it, while configured composition factories add their resolved catalogs.
 
@@ -64,8 +67,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `MetricRepositoryInterface::get()/has()` refuse class and callable logical
   paths, including unambiguous names; `all(Class_)` refuses. Use `getSubject()`
   and `allClassDeclarations()` for values, or `allLogicalClasses()` for graph
-  names. Carry both logical and exact callable aggregation owners through
-  custom collection and merge code.
+  names. Carry the exact callable aggregation owner through custom collection
+  and merge code; derive its logical name from that declaration.
 - Exportable class writes require owning metric definitions and their declared
   class areas. Supply definitions when creating standalone metric repositories;
   undeclared or wrong-area class scalars and conflicting merged areas refuse.

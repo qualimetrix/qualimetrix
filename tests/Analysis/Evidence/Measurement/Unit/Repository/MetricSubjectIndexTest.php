@@ -38,7 +38,7 @@ final class MetricSubjectIndexTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            $owner,
+            DeclarationPath::of($owner->symbolPath, $first->file, DeclarationOrdinal::fromRank(0)),
             MetricBag::fromArray(['complexity.ccn' => 3]),
             10,
         ));
@@ -48,7 +48,7 @@ final class MetricSubjectIndexTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            $owner,
+            DeclarationPath::of($owner->symbolPath, $second->file, DeclarationOrdinal::fromRank(0)),
             MetricBag::fromArray(['complexity.ccn' => 5]),
             20,
         ));
@@ -56,6 +56,27 @@ final class MetricSubjectIndexTest extends TestCase
         self::assertSame(3, $index->get(MetricSubject::declaration($first))->get('complexity.ccn'));
         self::assertSame(5, $index->get(MetricSubject::declaration($second))->get('complexity.ccn'));
         self::assertCount(2, iterator_to_array($index->allCallables(), false));
+    }
+
+    #[Test]
+    public function itKeepsSameFileOrdinalsAndTheirExactOwnersSeparate(): void
+    {
+        $index = new MetricSubjectIndex();
+        $projection = new LogicalClassMetricIndex();
+        $file = RelativePath::fromString('src/Duplicate.php');
+        foreach ([0, 1] as $ordinal) {
+            $owner = DeclarationPath::of(SymbolPath::forClass('App', 'Service'), $file, DeclarationOrdinal::fromRank($ordinal));
+            $declaration = DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'run'), $file, DeclarationOrdinal::fromRank($ordinal));
+            $info = $index->addCallable(new CallableWithMetrics($declaration, $ordinal * 100, CallableKind::Method, null, $owner, $owner, MetricBag::fromArray(['complexity.ccn' => $ordinal])));
+            self::assertSame($owner, $info->classAggregationOwner);
+            self::assertSame($declaration->toCanonical(), $info->subject?->toCanonical());
+            self::assertSame($ordinal, $index->get(MetricSubject::declaration($declaration))->get('complexity.ccn'));
+            self::assertNull($index->get(MetricSubject::declaration($declaration))->get('missing'));
+            $logical = $projection->project($info, new MetricBag());
+            self::assertSame('App\Service', $logical?->symbolPath->toString());
+        }
+        self::assertCount(2, iterator_to_array($index->allCallables(), false));
+        self::assertCount(1, iterator_to_array($projection->allLogicalClasses(), false));
     }
 
     #[Test]

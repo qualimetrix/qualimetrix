@@ -175,6 +175,53 @@ final class ContainerFactoryTest extends TestCase
     }
 
     #[Test]
+    public function itCapturesFreshOffenderDefinitionsInOneConfiguredContainer(): void
+    {
+        $container = new \Symfony\Component\DependencyInjection\ContainerBuilder();
+        (new \Qualimetrix\Infrastructure\DependencyInjection\Configurator\ComputedMetricsConfigurator())->configure($container);
+        $builderType = \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummaryBuilder::class;
+        $selectorType = \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown::class;
+        $rankingType = \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\OffenderRanking::class;
+        foreach ([$builderType, $selectorType, $rankingType] as $type) {
+            $container->getDefinition($type)->setPublic(true);
+        }
+        self::assertSame([], $container->getDefinition($selectorType)->getArguments());
+        $container->compile();
+        $catalog = $container->get(ComputedMetricDefinitionCatalogInterface::class);
+        self::assertInstanceOf(ComputedMetricAnalysis::class, $catalog);
+        $builder = $container->get($builderType);
+        self::assertInstanceOf($builderType, $builder);
+        self::assertSame($container->get($rankingType), (new ReflectionProperty($builder, 'ranking'))->getValue($builder));
+        $definitions = \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults::getDefaults();
+        $catalog->replace(new ResolvedComputedMetricDefinitions(array_values($definitions)));
+        $file = RelativePath::fromString('src/Type.php');
+        $subject = MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'Type'), $file, DeclarationOrdinal::fromRank(0)));
+        $repository = new \Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository([
+            new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition('health.overall', SymbolLevel::Class_),
+            new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition('health.complexity', SymbolLevel::Class_),
+        ]);
+        $repository->addSubject($subject, MetricBag::fromArray(['health.overall' => 82.8, 'health.complexity' => 55.0]), $file, 1);
+        $tree = new \Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree(['App']);
+        $first = $builder->build($repository, $tree, []);
+        foreach (['health.overall' => [90.0, 85.0], 'health.complexity' => [60.0, 40.0]] as $name => [$warning, $error]) {
+            $old = $definitions[$name];
+            $definitions[$name] = new ComputedMetricDefinition($name, $old->formulas, $old->description, $old->levels, $old->inverted, $warning, $error, $old->applicability);
+        }
+        $catalog->replace(new ResolvedComputedMetricDefinitions(array_values($definitions)));
+        $selector = $container->get($selectorType);
+        self::assertInstanceOf($selectorType, $selector);
+        $selection = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\OffenderNamespaceSelection([\Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact('App')]);
+        self::assertSame($first->worstClasses, $selector->buildWorstClasses($first->worstClasses, $selection));
+        self::assertSame([50.0, 30.0], $first->worstClasses[0]->overallThresholds);
+        self::assertSame('', $first->worstClasses[0]->reason);
+        $second = $builder->build($repository, $tree, []);
+        self::assertNotSame($first->worstClasses[0], $second->worstClasses[0]);
+        self::assertSame([90.0, 85.0], $second->worstClasses[0]->overallThresholds);
+        self::assertSame('Critical', $second->worstClasses[0]->label);
+        self::assertSame('high complexity', $second->worstClasses[0]->reason);
+    }
+
+    #[Test]
     public function itSharesTheManifestReaderWithTheInvocationControl(): void
     {
         $container = $this->factory->create();

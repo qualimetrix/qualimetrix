@@ -21,6 +21,8 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
+use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -488,6 +490,9 @@ final class ComputedMetricFindingBuilderTest extends TestCase
             $file,
             $line,
             $kind,
+            $kind === \Qualimetrix\Core\Symbol\CallableKind::Method
+                ? DeclarationPath::of(SymbolPath::forClass($symbolPath->namespace ?? '', $symbolPath->type ?? ''), $file, DeclarationOrdinal::fromRank(0))
+                : null,
         );
     }
 }

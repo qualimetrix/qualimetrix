@@ -97,7 +97,7 @@ final class NpathSaturationCeilingTest extends TestCase
         $metrics = (new MetricBag())->with(MetricName::COMPLEXITY_NPATH, $npath);
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([
-            new SymbolInfo($subject, RelativePath::fromString('src/Subject.php'), 8, CallableKind::Method),
+            new SymbolInfo($subject, RelativePath::fromString('src/Subject.php'), 8, CallableKind::Method, \Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forClass(($subject)->toSymbolPath()->namespace ?? '', ($subject)->toSymbolPath()->type ?? ''), RelativePath::fromString('src/Subject.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
         ]);
         $repository->method('getSubject')->willReturn($metrics);
 

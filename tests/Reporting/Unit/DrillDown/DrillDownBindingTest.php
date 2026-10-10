@@ -225,7 +225,7 @@ final class DrillDownBindingTest extends TestCase
             kind: CallableKind::Method,
             anonymousSyntax: null,
             lexicalClassContext: null,
-            classAggregationOwner: null,
+            classAggregationOwner: DeclarationPath::of(SymbolPath::forClass('Demo\\Alpha', 'Widget'), RelativePath::fromString('src/Alpha/Widget.php'), DeclarationOrdinal::fromRank(0)),
             metrics: new MetricBag(),
         ));
 

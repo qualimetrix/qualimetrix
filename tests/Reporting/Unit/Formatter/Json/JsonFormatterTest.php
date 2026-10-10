@@ -52,7 +52,7 @@ final class JsonFormatterTest extends TestCase
         $hintProvider = new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
         $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
         $namespaceDrillDown = new HealthScoreDrillDown($definitionCatalog, new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
-        $worstClassDrillDown = new WorstClassDrillDown($definitionCatalog, new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
+        $worstClassDrillDown = new WorstClassDrillDown();
         $sanitizer = new JsonSanitizer();
         $findingFilter = new FindingFilter();
         $remediationTimeRegistry = new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues());
@@ -535,8 +535,7 @@ final class JsonFormatterTest extends TestCase
             warningCount: 0,
             worstNamespaces: [
                 new WorstOffender(
-                    symbolPath: SymbolPath::forNamespace('App\Payment'),
-                    file: null,
+                    subject: \Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\Payment')),
                     healthOverall: 31.0,
                     label: 'Critical',
                     reason: 'low cohesion, high complexity',
@@ -546,6 +545,7 @@ final class JsonFormatterTest extends TestCase
                         metrics: ['coupling.cbo.avg' => 8.5],
                         healthScores: ['complexity' => 28.0, 'cohesion' => 25.0],
                     ),
+                    overallThresholds: [50.0, 30.0],
                 ),
             ],
         );
@@ -560,7 +560,8 @@ final class JsonFormatterTest extends TestCase
         self::assertSame('Critical', $ns['label']);
         self::assertSame('low cohesion, high complexity', $ns['reason']);
         self::assertSame(12, $ns['violationCount']);
-        self::assertSame(4, $ns['size.class-count']);
+        self::assertSame(4, $ns['size.class-count.sum']);
+        self::assertArrayNotHasKey('size.class-count', $ns);
         self::assertArrayNotHasKey('file', $ns);
         self::assertArrayNotHasKey('metrics', $ns);
         self::assertEquals(['complexity' => 28.0, 'cohesion' => 25.0], $ns['healthScores']);
@@ -579,8 +580,7 @@ final class JsonFormatterTest extends TestCase
             warningCount: 0,
             worstClasses: [
                 new WorstOffender(
-                    symbolPath: SymbolPath::forClass('App\Payment', 'PaymentService'),
-                    file: RelativePath::fromString('src/Payment/PaymentService.php'),
+                    subject: \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App\Payment', 'PaymentService'), RelativePath::fromString('src/Payment/PaymentService.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
                     healthOverall: 28.0,
                     label: 'Critical',
                     reason: '32 methods, high coupling',
@@ -590,6 +590,7 @@ final class JsonFormatterTest extends TestCase
                         metrics: ['size.method-count' => 32, 'coupling.cbo' => 18],
                         healthScores: ['complexity' => 12.0, 'cohesion' => 8.0],
                     ),
+                    overallThresholds: [50.0, 30.0],
                 ),
             ],
         );
@@ -1169,9 +1170,9 @@ final class JsonFormatterTest extends TestCase
             errorCount: 0,
             warningCount: 0,
             worstNamespaces: [
-                new WorstOffender(SymbolPath::forNamespace('App\A'), null, 20.0, 'Critical', 'bad', new WorstOffenderEvidence(5, 3)),
-                new WorstOffender(SymbolPath::forNamespace('App\B'), null, 25.0, 'Critical', 'bad', new WorstOffenderEvidence(3, 2)),
-                new WorstOffender(SymbolPath::forNamespace('App\C'), null, 30.0, 'Critical', 'bad', new WorstOffenderEvidence(2, 1)),
+                new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\A')), 20.0, 'Critical', 'bad', new WorstOffenderEvidence(5, 3), [50.0, 30.0]),
+                new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\B')), 25.0, 'Critical', 'bad', new WorstOffenderEvidence(3, 2), [50.0, 30.0]),
+                new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\C')), 30.0, 'Critical', 'bad', new WorstOffenderEvidence(2, 1), [50.0, 30.0]),
             ],
         );
 
@@ -1239,9 +1240,9 @@ final class JsonFormatterTest extends TestCase
             errorCount: 0,
             warningCount: 0,
             worstNamespaces: [
-                new WorstOffender(SymbolPath::forNamespace('App\Payment'), null, 30.0, 'Critical', 'bad', new WorstOffenderEvidence(5, 3)),
-                new WorstOffender(SymbolPath::forNamespace('App\Payment\Gateway'), null, 25.0, 'Critical', 'bad', new WorstOffenderEvidence(3, 2)),
-                new WorstOffender(SymbolPath::forNamespace('App\User'), null, 35.0, 'Critical', 'bad', new WorstOffenderEvidence(2, 1)),
+                new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\Payment')), 30.0, 'Critical', 'bad', new WorstOffenderEvidence(5, 3), [50.0, 30.0]),
+                new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\Payment\Gateway')), 25.0, 'Critical', 'bad', new WorstOffenderEvidence(3, 2), [50.0, 30.0]),
+                new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\User')), 35.0, 'Critical', 'bad', new WorstOffenderEvidence(2, 1), [50.0, 30.0]),
             ],
         );
 
@@ -1250,8 +1251,8 @@ final class JsonFormatterTest extends TestCase
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(2, $data['worstNamespaces']);
-        self::assertSame('App\Payment', $data['worstNamespaces'][0]['symbolPath']);
-        self::assertSame('App\Payment\Gateway', $data['worstNamespaces'][1]['symbolPath']);
+        self::assertSame('App\Payment\Gateway', $data['worstNamespaces'][0]['symbolPath']);
+        self::assertSame('App\Payment', $data['worstNamespaces'][1]['symbolPath']);
     }
 
     #[Test]
@@ -1296,10 +1297,10 @@ final class JsonFormatterTest extends TestCase
             errorCount: 0,
             warningCount: 0,
             worstNamespaces: [
-                new WorstOffender(SymbolPath::forNamespace('App'), null, 30.0, 'Critical', 'bad', new WorstOffenderEvidence(5, 3)),
+                new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App')), 30.0, 'Critical', 'bad', new WorstOffenderEvidence(5, 3), [50.0, 30.0]),
             ],
             worstClasses: [
-                new WorstOffender(SymbolPath::forClass('App', 'Foo'), RelativePath::fromString('src/Foo.php'), 20.0, 'Critical', 'bad', new WorstOffenderEvidence(1, 0)),
+                new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App', 'Foo'), RelativePath::fromString('src/Foo.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))), 20.0, 'Critical', 'bad', new WorstOffenderEvidence(1, 0), [50.0, 30.0]),
             ],
         );
 
@@ -1404,7 +1405,7 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itBuildsWorstClassesFromMetricsWithNamespaceFilter(): void
+    public function itSelectsReportWorstClassesWithoutRebuildingFromMetrics(): void
     {
         $classPath = SymbolPath::forClass('App\Service', 'UserService');
         $classMetrics = \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag::fromArray([
@@ -1447,17 +1448,25 @@ final class JsonFormatterTest extends TestCase
             healthScores: [
                 'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
-            worstClasses: [],
+            worstClasses: [new WorstOffender(
+                $subject,
+                42.0,
+                'Poor',
+                'carried reason',
+                new WorstOffenderEvidence(2, 0, ['size.method-count' => 32], ['complexity' => 20.0, 'cohesion' => 15.0]),
+                [50.0, 30.0],
+            )],
         );
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'));
         $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
-        // Should build worst classes from namespace classes
+        // The report snapshot wins over the repository value (25).
         self::assertCount(1, $data['worstClasses']);
         self::assertSame('App\Service\UserService', $data['worstClasses'][0]['symbolPath']);
-        self::assertEquals(25.0, $data['worstClasses'][0]['healthOverall']);
+        self::assertEquals(42.0, $data['worstClasses'][0]['healthOverall']);
+        self::assertSame('carried reason', $data['worstClasses'][0]['reason']);
         self::assertSame('src/Service/UserService.php', $data['worstClasses'][0]['file']);
         self::assertSame(32, $data['worstClasses'][0]['metrics']['size.method-count']);
     }

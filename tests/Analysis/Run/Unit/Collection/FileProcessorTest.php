@@ -206,7 +206,7 @@ final class FileProcessorTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            new LogicalClassPath(SymbolPath::forClass('App', 'Service')),
+            DeclarationPath::of(SymbolPath::forClass('App', 'Service'), DeclarationPath::of($symbolPath, RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0))->file, DeclarationOrdinal::fromRank(0)),
             $methodBag,
         );
 
@@ -340,7 +340,7 @@ final class FileProcessorTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            $owner,
+            DeclarationPath::of($owner->symbolPath, $declaration->file, DeclarationOrdinal::fromRank(0)),
             MetricBag::fromArray(['complexity.ccn' => 3]),
             $method->getStartLine(),
         );
@@ -350,7 +350,7 @@ final class FileProcessorTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            $owner,
+            DeclarationPath::of($owner->symbolPath, $declaration->file, DeclarationOrdinal::fromRank(0)),
             MetricBag::fromArray(['complexity.npath' => 5]),
             $method->getStartLine(),
         );
@@ -367,6 +367,27 @@ final class FileProcessorTest extends TestCase
         self::assertNotSame($callable->startFilePos, $callable->sourceLine);
         self::assertSame(3, $callable->metrics->get('complexity.ccn'));
         self::assertSame(5, $callable->metrics->get('complexity.npath'));
+    }
+
+    #[Test]
+    public function itRejectsCollectorDisagreementOnAnExactClassOwner(): void
+    {
+        $ast = $this->parseLiteral('<?php class Service { public function run(): void {} }');
+        $method = $this->singleNode($ast, Node\Stmt\ClassMethod::class);
+        $this->parser->method('parseContent')->willReturn($ast);
+        $file = RelativePath::fromString('test.php');
+        $declaration = DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'run'), $file, DeclarationOrdinal::fromRank(0));
+        $firstOwner = DeclarationPath::of(SymbolPath::forClass('App', 'Service'), $file, DeclarationOrdinal::fromRank(0));
+        $secondOwner = DeclarationPath::of($firstOwner->logical, $file, DeclarationOrdinal::fromRank(1));
+        $first = new CallableWithMetrics($declaration, $method->getStartFilePos(), CallableKind::Method, null, $firstOwner, $firstOwner, new MetricBag());
+        $second = new CallableWithMetrics($declaration, $method->getStartFilePos(), CallableKind::Method, null, $firstOwner, $secondOwner, new MetricBag());
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('Callable collectors disagree on class owner');
+        $this->makeProcessor(new CompositeCollector([
+            $this->createMockCollectorWithMethodMetrics([$first]),
+            $this->createMockCollectorWithMethodMetrics([$second]),
+        ], new DeclarationRegistrarFactory()))->process(new SplFileInfo($this->root . '/test.php'));
     }
 
     #[Test]
@@ -450,7 +471,7 @@ final class FileProcessorTest extends TestCase
             CallableKind::Method,
             null,
             $classPath,
-            new LogicalClassPath(SymbolPath::forClass('', 'MyClass')),
+            $classPath,
             new MetricBag(),
             10,
         );
@@ -559,7 +580,7 @@ final class FileProcessorTest extends TestCase
             CallableKind::Method,
             null,
             $classDeclaration,
-            new LogicalClassPath(SymbolPath::forClass('App', 'Record')),
+            $classDeclaration,
             new MetricBag(),
             $constructor->getStartLine(),
         );
@@ -620,7 +641,7 @@ final class FileProcessorTest extends TestCase
         $closureDeclaration = DeclarationPath::of(SymbolPath::forGlobalFunction('App', '{closure#1}'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
         $arrowDeclaration = DeclarationPath::of(SymbolPath::forGlobalFunction('App', '{closure#2}'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
         $metrics = [
-            new CallableWithMetrics($methodDeclaration, $method->getStartFilePos(), CallableKind::Method, null, $classDeclaration, new LogicalClassPath(SymbolPath::forClass('App', 'Record')), new MetricBag(), $method->getStartLine()),
+            new CallableWithMetrics($methodDeclaration, $method->getStartFilePos(), CallableKind::Method, null, $classDeclaration, $classDeclaration, new MetricBag(), $method->getStartLine()),
             new CallableWithMetrics($closureDeclaration, $closure->getStartFilePos(), CallableKind::AnonymousCallable, 'closure', $classDeclaration, null, new MetricBag(), $closure->getStartLine()),
             new CallableWithMetrics($arrowDeclaration, $arrow->getStartFilePos(), CallableKind::AnonymousCallable, 'arrow', $classDeclaration, null, new MetricBag(), $arrow->getStartLine()),
         ];
@@ -678,9 +699,19 @@ final class FileProcessorTest extends TestCase
             $ast,
             [new ClassWithMetrics($outerDeclaration, $outer->getStartFilePos(), $outer->getStartLine(), new MetricBag())],
             [
-                new CallableWithMetrics($methodDeclaration, $method->getStartFilePos(), CallableKind::Method, null, $outerDeclaration, new LogicalClassPath(SymbolPath::forClass('App', 'Outer')), new MetricBag(), $method->getStartLine()),
+                new CallableWithMetrics($methodDeclaration, $method->getStartFilePos(), CallableKind::Method, null, $outerDeclaration, $outerDeclaration, new MetricBag(), $method->getStartLine()),
                 new CallableWithMetrics($closureDeclaration, $closure->getStartFilePos(), CallableKind::AnonymousCallable, 'closure', $outerDeclaration, null, new MetricBag(), $closure->getStartLine()),
-                new CallableWithMetrics($nestedDeclaration, $nestedMethod->getStartFilePos(), CallableKind::Method, null, $anonymousDeclaration, null, new MetricBag(), $nestedMethod->getStartLine()),
+                new CallableWithMetrics(
+                    $nestedDeclaration,
+                    $nestedMethod->getStartFilePos(),
+                    CallableKind::Method,
+                    null,
+                    $anonymousDeclaration,
+                    null,
+                    new MetricBag(),
+                    $nestedMethod->getStartLine(),
+                    anonymousClassContext: true,
+                ),
             ],
         );
 

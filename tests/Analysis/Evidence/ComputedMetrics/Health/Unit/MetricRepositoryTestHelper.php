@@ -32,6 +32,21 @@ use Qualimetrix\Core\Symbol\SymbolType;
  */
 trait MetricRepositoryTestHelper
 {
+    private ?MetricBag $fixtureProjectMetrics = null;
+
+    private function defaultDefinitionCatalog(): \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface
+    {
+        $catalog = self::createStub(\Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface::class);
+        $catalog->method('all')->willReturnCallback(function (): array {
+            $defaults = \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults::getDefaults();
+            if ($this->fixtureProjectMetrics === null) {
+                return array_values($defaults);
+            }
+            return array_values(array_filter($defaults, fn($definition): bool => $definition->name === 'health.overall' || $this->fixtureProjectMetrics->has($definition->name)));
+        });
+        return $catalog;
+    }
+
     private static function exactClassSubject(SymbolPath $symbol, string $file): MetricSubject
     {
         return MetricSubject::declaration(DeclarationPath::of(
@@ -56,6 +71,7 @@ trait MetricRepositoryTestHelper
         array $classMetrics = [],
         array $callables = [],
     ): MetricRepositoryInterface {
+        $this->fixtureProjectMetrics = $projectMetrics;
         $exactClasses = [];
         foreach ($classes as $class) {
             if ($class->symbolPath->getType() !== SymbolType::Class_ || $class->subject?->declarationPath() === null) {

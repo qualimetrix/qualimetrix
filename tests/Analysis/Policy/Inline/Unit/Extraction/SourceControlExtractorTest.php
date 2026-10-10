@@ -70,8 +70,8 @@ final class SourceControlExtractorTest extends TestCase
         $invalid = DeclarationPath::of(SymbolPath::forMethod('App', 'Named', 'invalid'), $file, DeclarationOrdinal::fromRank(0));
         $classMetrics = new ClassWithMetrics($classDeclaration, $class->getStartFilePos(), $class->getStartLine(), new MetricBag());
         $callables = [
-            new CallableWithMetrics($run, $methods[0]->getStartFilePos(), CallableKind::Method, null, $classDeclaration, $owner, new MetricBag()),
-            new CallableWithMetrics($invalid, $methods[1]->getStartFilePos(), CallableKind::Method, null, $classDeclaration, $owner, new MetricBag()),
+            new CallableWithMetrics($run, $methods[0]->getStartFilePos(), CallableKind::Method, null, $classDeclaration, $classDeclaration, new MetricBag()),
+            new CallableWithMetrics($invalid, $methods[1]->getStartFilePos(), CallableKind::Method, null, $classDeclaration, $classDeclaration, new MetricBag()),
         ];
         $classes = [
             $classMetrics->subject->toCanonical() => [
@@ -944,7 +944,7 @@ final class SourceControlExtractorTest extends TestCase
                     CallableKind::Method,
                     null,
                     $classDeclaration,
-                    new LogicalClassPath(SymbolPath::forClass('App', $className)),
+                    $classDeclaration,
                     new MetricBag(),
                 );
             }

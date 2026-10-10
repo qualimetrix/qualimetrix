@@ -2458,6 +2458,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0107-inheritance-chain-outcomes.md' => 'Analysis.Evidence.Design',
         'docs/adr/0108-health-score-applicability-and-evaluation.md' => 'Analysis.Evidence.ComputedMetrics',
         'docs/adr/0109-rule-populations-and-coupling-units.md' => 'Analysis.Finding',
+        'docs/adr/0110-complete-offender-ranking-and-catalog-thresholds.md' => 'Analysis.Evidence.ComputedMetrics.Health',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/ProjectManifest/README.md' => 'Analysis.ProjectManifest',

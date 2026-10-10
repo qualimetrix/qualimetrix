@@ -561,7 +561,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            new LogicalClassPath(SymbolPath::forClass('App', 'Service')),
+            DeclarationPath::of(SymbolPath::forClass('App', 'Service'), $declaration->file, DeclarationOrdinal::fromRank(0)),
             MetricBag::fromArray(['complexity.ccn' => 3]),
             17,
         );
@@ -605,7 +605,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            new LogicalClassPath(SymbolPath::forClass('App', 'Service')),
+            DeclarationPath::of(SymbolPath::forClass('App', 'Service'), $declaration->file, DeclarationOrdinal::fromRank(0)),
             MetricBag::fromArray(['complexity.ccn' => 3]),
             17,
         ));
@@ -637,7 +637,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            $owner,
+            DeclarationPath::of($owner->symbolPath, $declaration->file, DeclarationOrdinal::fromRank(0)),
             new MetricBag(),
             17,
         ));
@@ -649,7 +649,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            $owner,
+            DeclarationPath::of($owner->symbolPath, $declaration->file, DeclarationOrdinal::fromRank(0)),
             new MetricBag(),
             18,
         ));
@@ -805,7 +805,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            new LogicalClassPath(SymbolPath::forClass('App\\Foo', 'Example')),
+            DeclarationPath::of(SymbolPath::forClass('App\\Foo', 'Example'), DeclarationPath::of($method, RelativePath::fromString('src/Example.php'), DeclarationOrdinal::fromRank(0))->file, DeclarationOrdinal::fromRank(0)),
             MetricBag::fromArray(['complexity.ccn' => 2]),
             4,
         ));
@@ -951,7 +951,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            $owner,
+            DeclarationPath::of($owner->symbolPath, DeclarationPath::of($method, RelativePath::fromString('src/A.php'), DeclarationOrdinal::fromRank(0))->file, DeclarationOrdinal::fromRank(0)),
             MetricBag::fromArray(['complexity.ccn' => 3]),
             11,
         );
@@ -961,7 +961,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            $owner,
+            DeclarationPath::of($owner->symbolPath, DeclarationPath::of($method, RelativePath::fromString('src/B.php'), DeclarationOrdinal::fromRank(0))->file, DeclarationOrdinal::fromRank(0)),
             MetricBag::fromArray(['complexity.ccn' => 5]),
             22,
         );
@@ -1335,7 +1335,6 @@ final class InMemoryMetricRepositoryTest extends TestCase
             null,
             new MetricBag(),
             2,
-            null,
             true,
         ));
         $second->addCallable(new CallableWithMetrics(
@@ -1344,10 +1343,9 @@ final class InMemoryMetricRepositoryTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            null,
+            DeclarationPath::of(SymbolPath::forClass($method->logical->namespace ?? '', $method->logical->type ?? ''), $method->file, DeclarationOrdinal::fromRank(0)),
             new MetricBag(),
             2,
-            null,
             false,
         ));
 
@@ -1406,9 +1404,8 @@ final class InMemoryMetricRepositoryTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            new LogicalClassPath(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? '')),
+            $ownerDeclaration,
             $metrics,
-            classAggregationOwnerDeclaration: $ownerDeclaration,
         ));
     }
 }

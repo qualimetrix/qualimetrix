@@ -18,7 +18,6 @@ use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -57,7 +56,6 @@ final class CallableToClassAggregatorTest extends TestCase
                 $file,
                 10,
                 CallableKind::Method,
-                new LogicalClassPath(SymbolPath::forClass('App', 'Service')),
                 $ownerDeclaration,
             );
             self::assertSame($expectedSubject, $callable->subject);

@@ -888,8 +888,8 @@ $report->errorCount       // int
 $report->warningCount     // int
 $report->duration         // float (seconds)
 $report->healthScores     // array<string, HealthScore> — per-dimension health scores
-$report->worstNamespaces  // list<WorstOffender> — worst namespaces by health
-$report->worstClasses     // list<WorstOffender> — worst classes by health
+$report->worstNamespaces  // list<WorstOffender> — complete captured namespace offenders
+$report->worstClasses     // list<WorstOffender> — complete captured exact-class offenders
 $report->techDebtMinutes  // int — total remediation time
 $report->debtPer1kLoc     // ?float — debt density (minutes per 1K LOC)
 $report->topIssues        // list<RankedIssue> — top findings by impact score
@@ -1127,3 +1127,23 @@ each group. These are judgement counts, not globally unique symbol counts.
 The formatter context carries console verbosity through copied contexts;
 quiet, silent and file publication retain the normal output policy. Native
 prose publication repairs invalid source bytes after narration.
+
+## Offender selection and display limits
+
+Reports retain complete namespace and exact-class offender lists from one
+Health snapshot. JSON and summary select candidates from those lists, apply
+the shared score/density comparator, then apply `top`. Namespace selectors
+form a union and a logical class selection preserves every matching exact
+declaration. Class drill-down reuses captured records without rebuilding or
+intersecting them with a later finding filter.
+
+Offender symbol and file derive from the required exact subject. Namespace
+aggregate records have no file; class records retain their declaration file.
+
+`rank-by=score` is the default; `density` sorts findings per 100 LOC descending.
+`count` refuses with exit 3. Summary colors consume each record's resolved
+overall threshold pair. Remaining-count advice uses the full selected total
+and `--format-opt=top=<total>`. Namespace class counts are subtree counts,
+published as `size.class-count.sum`; component `healthScores` excludes overall.
+HTML orders its local children by score, name and exact node ID, displays up
+to ten and names the full local available population. See ADR 0110.

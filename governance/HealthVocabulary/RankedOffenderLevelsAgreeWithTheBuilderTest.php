@@ -24,7 +24,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final class RankedOffenderLevelsAgreeWithTheBuilderTest extends TestCase
 {
     private const string BUILDER =
-        '/src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php';
+        '/src/Analysis/Evidence/ComputedMetrics/Health/Offender/OffenderRanking.php';
 
     #[Test]
     public function itRanksOffendersForExactlyTheLevelsTheUniverseTrustsWithACanonicalName(): void
@@ -38,7 +38,7 @@ final class RankedOffenderLevelsAgreeWithTheBuilderTest extends TestCase
         self::assertSame(
             array_map(static fn(SymbolLevel $level): string => $level->name, RankedOffenderLevels::LEVELS),
             $matches[1],
-            'HealthSummaryBuilder ranks a different set of levels than RankedOffenderLevels names.',
+            'OffenderRanking ranks a different set of levels than RankedOffenderLevels names.',
         );
     }
 }

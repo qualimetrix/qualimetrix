@@ -39,7 +39,7 @@ final class HintRendererTest extends TestCase
     protected function setUp(): void
     {
         $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $offenderList = new OffenderListRenderer(new FindingFilter(), new WorstClassDrillDown($definitionCatalog, new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())));
+        $offenderList = new OffenderListRenderer(new FindingFilter(), new WorstClassDrillDown());
         $this->renderer = new HintRenderer($offenderList);
         $this->color = new AnsiColor(false);
     }
@@ -56,7 +56,7 @@ final class HintRendererTest extends TestCase
     #[DataProvider('shellNamespaceCases')]
     public function itProducesAPasteableNamespaceHint(string $namespace, string $selector): void
     {
-        $offender = new WorstOffender(SymbolPath::forNamespace($namespace), null, 40.0, 'Needs work', 'Fixture', new WorstOffenderEvidence(1, 1, [], [], null));
+        $offender = new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace($namespace)), 40.0, 'Needs work', 'Fixture', new WorstOffenderEvidence(1, 1, [], [], null), [50.0, 30.0]);
         $score = new HealthScore('overall', 40.0, 'Needs work', 60.0, 30.0, HealthCoverage::notApplicable('fixture'));
         $report = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 1, 0, 0, 0, 0, healthScores: ['overall' => $score], worstNamespaces: [$offender]);
         $lines = [];
@@ -155,8 +155,7 @@ final class HintRendererTest extends TestCase
     public function itShowsProjectLevelDrillDownHint(): void
     {
         $worstNs = new WorstOffender(
-            symbolPath: SymbolPath::forNamespace('App\\Service'),
-            file: null,
+            subject: \Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\\Service')),
             healthOverall: 40.0,
             label: 'Poor',
             reason: 'Many violations',
@@ -164,6 +163,7 @@ final class HintRendererTest extends TestCase
                 violationCount: 10,
                 classCount: 5,
             ),
+            overallThresholds: [50.0, 30.0],
         );
 
         $report = new Report(
@@ -194,8 +194,7 @@ final class HintRendererTest extends TestCase
     public function itShowsClassDrillDownHintInNamespaceScope(): void
     {
         $worstClass = new WorstOffender(
-            symbolPath: SymbolPath::forClass('App\\Service', 'PaymentService'),
-            file: null,
+            subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Service', 'PaymentService'), RelativePath::fromString('src/PaymentService.php'), DeclarationOrdinal::fromRank(0))),
             healthOverall: 35.0,
             label: 'Poor',
             reason: 'Low cohesion',
@@ -203,6 +202,7 @@ final class HintRendererTest extends TestCase
                 violationCount: 4,
                 classCount: 0,
             ),
+            overallThresholds: [50.0, 30.0],
         );
 
         $report = new Report(
@@ -248,8 +248,7 @@ final class HintRendererTest extends TestCase
     public function itEscapesBackslashesInNamespaceHint(): void
     {
         $worstNs = new WorstOffender(
-            symbolPath: SymbolPath::forNamespace('App\\Service\\Payment'),
-            file: null,
+            subject: \Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\\Service\\Payment')),
             healthOverall: 40.0,
             label: 'Poor',
             reason: 'Issues',
@@ -257,6 +256,7 @@ final class HintRendererTest extends TestCase
                 violationCount: 5,
                 classCount: 3,
             ),
+            overallThresholds: [50.0, 30.0],
         );
 
         $report = new Report(

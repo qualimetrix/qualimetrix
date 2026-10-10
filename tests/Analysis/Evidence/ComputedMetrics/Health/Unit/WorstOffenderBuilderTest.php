@@ -19,7 +19,6 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -50,12 +49,11 @@ final class WorstOffenderBuilderTest extends TestCase
             CallableKind::Method,
             null,
             $classDeclaration,
-            new LogicalClassPath($classDeclaration->logical),
+            $classDeclaration,
             new MetricBag(),
             1,
-            $classDeclaration,
         ));
-        $offenders = (new WorstOffenderBuilder())->buildWorstClasses(
+        $offenders = $this->buildClassList(
             $repository,
             [$this->snapshot('App\\Service', "K\xFF")],
             \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'),
@@ -87,10 +85,9 @@ final class WorstOffenderBuilderTest extends TestCase
             CallableKind::Method,
             null,
             $first,
-            new LogicalClassPath($class),
+            $first,
             new MetricBag(),
             2,
-            $first,
         ));
         $finding = new Finding(
             Location::none(),
@@ -102,7 +99,7 @@ final class WorstOffenderBuilderTest extends TestCase
             Severity::Warning,
         );
 
-        $offenders = (new WorstOffenderBuilder())->buildWorstClasses(
+        $offenders = $this->buildClassList(
             $repository,
             [$this->snapshot('App', 'Twin', 'src/First.php', 50), $this->snapshot('App', 'Twin', 'src/Second.php', 200)],
             \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App'),
@@ -147,7 +144,7 @@ final class WorstOffenderBuilderTest extends TestCase
             Severity::Warning,
         );
 
-        $offenders = (new WorstOffenderBuilder())->buildWorstClasses(
+        $offenders = $this->buildClassList(
             new InMemoryMetricRepository(),
             [$this->snapshot('App', 'Twin', 'src/Twins.php', 50), $this->snapshot('App', 'Twin', 'src/Twins.php', 200, 1)],
             \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App'),
@@ -178,10 +175,9 @@ final class WorstOffenderBuilderTest extends TestCase
             CallableKind::PropertyHook,
             null,
             $first,
-            new LogicalClassPath($class),
+            $first,
             new MetricBag(),
             10,
-            $first,
         ));
         $finding = new Finding(
             Location::none(),
@@ -218,10 +214,9 @@ final class WorstOffenderBuilderTest extends TestCase
                 CallableKind::Method,
                 null,
                 $owner,
-                new LogicalClassPath($class),
+                $owner,
                 new MetricBag(),
                 $position,
-                $owner,
             ));
         }
 
@@ -257,10 +252,9 @@ final class WorstOffenderBuilderTest extends TestCase
             CallableKind::Method,
             null,
             $class,
-            new LogicalClassPath($class->logical),
+            $class,
             new MetricBag(),
             2,
-            $class,
         ));
         $finding = new Finding(
             Location::none(),
@@ -273,54 +267,8 @@ final class WorstOffenderBuilderTest extends TestCase
         );
 
         self::expectException(LogicException::class);
-        self::expectExceptionMessage('Missing or mismatched named-owner declaration');
+        self::expectExceptionMessage('Missing named-owner declaration');
         (new WorstOffenderBuilder())->countClassFindings($repository, [$finding]);
-    }
-
-    #[Test]
-    public function itRefusesEitherIncompleteOrMismatchedOwnerPair(): void
-    {
-        $file = RelativePath::fromString('src/Twin.php');
-        $class = DeclarationPath::of(SymbolPath::forClass('App', 'Twin'), $file, DeclarationOrdinal::fromRank(0));
-        $other = DeclarationPath::of(SymbolPath::forClass('App', 'Other'), $file, DeclarationOrdinal::fromRank(0));
-        $method = DeclarationPath::of(SymbolPath::forMethod('App', 'Twin', 'run'), $file, DeclarationOrdinal::fromRank(0));
-        $finding = new Finding(
-            Location::none(),
-            MetricSubject::declaration($method),
-            $method->logical,
-            'complexity.ccn',
-            'complexity.ccn',
-            'Method finding',
-            Severity::Warning,
-        );
-        $pairs = [
-            [new LogicalClassPath($class->logical), null],
-            [null, $class],
-            [new LogicalClassPath($class->logical), $other],
-        ];
-        foreach ($pairs as [$logicalOwner, $exactOwner]) {
-            $repository = new InMemoryMetricRepository();
-            $repository->addSubject(MetricSubject::declaration($class), new MetricBag(), $file, 1);
-            $repository->addSubject(MetricSubject::declaration($other), new MetricBag(), $file, 20);
-            $repository->addCallable(new CallableWithMetrics(
-                $method,
-                10,
-                CallableKind::Method,
-                null,
-                $class,
-                $logicalOwner,
-                new MetricBag(),
-                2,
-                $exactOwner,
-            ));
-
-            try {
-                (new WorstOffenderBuilder())->countClassFindings($repository, [$finding]);
-                self::fail('Incomplete or mismatched owner metadata must be refused');
-            } catch (LogicException $e) {
-                self::assertMatchesRegularExpression('/Invalid paired|Missing or mismatched/', $e->getMessage());
-            }
-        }
     }
 
     #[Test]
@@ -339,7 +287,6 @@ final class WorstOffenderBuilderTest extends TestCase
             null,
             new MetricBag(),
             2,
-            null,
             true,
         ));
         $finding = new Finding(
@@ -356,79 +303,9 @@ final class WorstOffenderBuilderTest extends TestCase
     }
 
     #[Test]
-    public function itRefusesANamedMethodWithNoOwnerPair(): void
-    {
-        $file = RelativePath::fromString('src/Named.php');
-        $class = DeclarationPath::of(SymbolPath::forClass('App', 'Named'), $file, DeclarationOrdinal::fromRank(0));
-        $method = DeclarationPath::of(SymbolPath::forMethod('App', 'Named', 'run'), $file, DeclarationOrdinal::fromRank(0));
-        $repository = new InMemoryMetricRepository();
-        $repository->addSubject(MetricSubject::declaration($class), new MetricBag(), $file, 1);
-        $repository->addCallable(new CallableWithMetrics(
-            $method,
-            10,
-            CallableKind::Method,
-            null,
-            $class,
-            null,
-            new MetricBag(),
-            2,
-            null,
-            false,
-        ));
-        $finding = new Finding(
-            Location::none(),
-            MetricSubject::declaration($method),
-            $method->logical,
-            'complexity.ccn',
-            'complexity.ccn',
-            'Named method finding',
-            Severity::Warning,
-        );
-
-        self::expectException(LogicException::class);
-        self::expectExceptionMessage('Named callable requires paired class owner metadata');
-        (new WorstOffenderBuilder())->countClassFindings($repository, [$finding]);
-    }
-
-    #[Test]
-    public function itRefusesAnAnonymousClassMethodWithANamedOwner(): void
-    {
-        $file = RelativePath::fromString('src/Anonymous.php');
-        $class = DeclarationPath::of(SymbolPath::forClass('App', 'Anonymous'), $file, DeclarationOrdinal::fromRank(0));
-        $method = DeclarationPath::of(SymbolPath::forMethod('App', 'Anonymous', 'run'), $file, DeclarationOrdinal::fromRank(0));
-        $repository = new InMemoryMetricRepository();
-        $repository->addSubject(MetricSubject::declaration($class), new MetricBag(), $file, 1);
-        $repository->addCallable(new CallableWithMetrics(
-            $method,
-            10,
-            CallableKind::Method,
-            null,
-            $class,
-            new LogicalClassPath($class->logical),
-            new MetricBag(),
-            2,
-            $class,
-            true,
-        ));
-        $finding = new Finding(
-            Location::none(),
-            MetricSubject::declaration($method),
-            $method->logical,
-            'complexity.ccn',
-            'complexity.ccn',
-            'Anonymous method finding',
-            Severity::Warning,
-        );
-
-        self::expectException(LogicException::class);
-        self::expectExceptionMessage('Anonymous-class callable cannot have a named class owner');
-        (new WorstOffenderBuilder())->countClassFindings($repository, [$finding]);
-    }
-
-    #[Test]
     public function itSelectsClassesByNamespaceBoundary(): void
     {
-        $offenders = (new WorstOffenderBuilder())->buildWorstClasses(
+        $offenders = $this->buildClassList(
             new InMemoryMetricRepository(),
             $this->snapshots(),
             \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'),
@@ -443,7 +320,7 @@ final class WorstOffenderBuilderTest extends TestCase
     #[Test]
     public function itSupportsAnExactSelector(): void
     {
-        $offenders = (new WorstOffenderBuilder())->buildWorstClasses(
+        $offenders = $this->buildClassList(
             new InMemoryMetricRepository(),
             $this->snapshots(),
             \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact('App\\Service'),
@@ -458,7 +335,7 @@ final class WorstOffenderBuilderTest extends TestCase
     #[Test]
     public function itMatchesRegexSelectors(): void
     {
-        $offenders = (new WorstOffenderBuilder())->buildWorstClasses(
+        $offenders = $this->buildClassList(
             new InMemoryMetricRepository(),
             $this->snapshots(),
             \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::regex('App\\\\[^\\\\]+'),
@@ -510,4 +387,31 @@ final class WorstOffenderBuilderTest extends TestCase
     {
         return array_map(static fn($offender): ?string => $offender->symbolPath->type, $offenders);
     }
+    /**
+     * @param list<array{symbol: SymbolInfo, overall: float|null, dimensionScores: array<string, float>, loc: int|float|null, notableMetrics: array<string, int|float>}> $snapshots
+     * @param list<Finding> $findings
+     *
+     * @return list<\Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender>
+     */
+    private function buildClassList(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface $repository, array $snapshots, \Qualimetrix\Core\Pattern\NamespacePattern $namespace, array $findings, float $warning, float $error): array
+    {
+        $definitions = \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults::getDefaults();
+        $base = $definitions['health.overall'];
+        $definitions['health.overall'] = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition($base->name, $base->formulas, $base->description, $base->levels, $base->inverted, $warning, $error, $base->applicability);
+        $catalog = self::createStub(\Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface::class);
+        $catalog->method('all')->willReturn(array_values($definitions));
+        $thresholds = \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\OffenderThresholds::fromCatalog($catalog);
+        $builder = new WorstOffenderBuilder();
+        $counts = $builder->countClassFindings($repository, $findings);
+        $offenders = [];
+        foreach ($snapshots as $snapshot) {
+            $subject = $snapshot['symbol']->subject ?? throw new LogicException('Exact class subject required');
+            $offender = $builder->build($snapshot, new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence($counts[$subject->toCanonical()] ?? 0, 0), $thresholds);
+            if ($offender !== null) {
+                $offenders[] = $offender;
+            }
+        }
+        return (new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown())->buildWorstClasses($offenders, new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\OffenderNamespaceSelection([$namespace]));
+    }
+
 }

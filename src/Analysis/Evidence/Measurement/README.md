@@ -189,9 +189,12 @@ namespace provider acquire Namespace publication once; provider class
 definitions retain their own levels. Class-area registration recognizes both
 direct Class publication and class aggregation suffixes.
 
-Callable registration and merge preserve the logical/exact class-owner pair.
+Callable registration and merge preserve one exact class aggregation owner.
 Methods and property hooks belonging to named classes carry their exact owner
-declaration; lexical context alone does not make an anonymous callable a member.
+declaration; its logical name is derived rather than stored independently.
+Construction checks callable kind, owner and anonymous-class context together.
+Repository membership and contradictory producer joins retain their checks;
+lexical context alone does not make an anonymous callable a member.
 
 ## Collection and worker reconstruction
 

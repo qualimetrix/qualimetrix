@@ -281,12 +281,12 @@ that set one value are refused the same way: `violations` beside `limit`, or
 
 **JSON format options:**
 
-| Option                   | Default | Description                                                                                                 |
-| ------------------------ | ------- | ----------------------------------------------------------------------------------------------------------- |
-| `violations=N\|all`      | all     | Max violations in output (0=none)                                                                           |
-| `limit=N\|all`           | all     | The same value as `violations`, except that `0` means no limit; write one of the two                        |
-| `top=N`                  | 10      | Number of worst offenders to include                                                                        |
-| `rank-by=count\|density` | count   | Reorder worst-offender lists by violation count (default) or by [violation density](output-formats.md#json) |
+| Option                   | Default | Description                                                                                                              |
+| ------------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `violations=N\|all`      | all     | Max violations in output (0=none)                                                                                        |
+| `limit=N\|all`           | all     | The same value as `violations`, except that `0` means no limit; write one of the two                                     |
+| `top=N`                  | 10      | Number of worst offenders to include                                                                                     |
+| `rank-by=score\|density` | score   | Order worst-offender lists by ascending health score (default) or descending [violation density](output-formats.md#json) |
 
 ```bash
 bin/qmx check src/ --format=json --format-opt=limit=100
@@ -296,14 +296,17 @@ bin/qmx check src/ --format=json --format-opt=rank-by=density
 
 **Summary format options:**
 
-| Option                   | Default | Description                                                                       |
-| ------------------------ | ------- | --------------------------------------------------------------------------------- |
-| `top=N`                  | 3       | Number of worst offenders to include                                              |
-| `rank-by=count\|density` | count   | Reorder worst-offender lists by violation count (default) or by violation density |
+| Option                   | Default | Description                                                                                    |
+| ------------------------ | ------- | ---------------------------------------------------------------------------------------------- |
+| `top=N`                  | 3       | Number of worst offenders to include                                                           |
+| `rank-by=score\|density` | score   | Order worst-offender lists by ascending health score (default) or descending violation density |
 
 ```bash
 bin/qmx check src/ --format-opt=rank-by=density
 ```
+
+
+Offender selection uses the complete captured population before ranking and `top`. Namespace selectors form a union; class selection retains every matching exact declaration. `rank-by=count` is refused with exit 3; use `score` or `density`. Summary shows the true remaining count and advises `--format-opt=top=<total>`.
 
 !!! note "Two unrelated options named `top`"
     `--format-opt=top=N` (JSON and summary formats) caps the worst-namespace/worst-class

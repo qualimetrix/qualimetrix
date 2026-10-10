@@ -107,9 +107,31 @@ describe('getWorstOffenders', () => {
 
   it('returns worst N classes sorted ASC by health score', () => {
     const worst = getWorstOffenders(tree, 2);
-    expect(worst).toHaveLength(2);
-    expect(worst[0].name).toBe('C');
-    expect(worst[1].name).toBe('A');
+    expect(worst.visible).toHaveLength(2);
+    expect(worst.visible[0].name).toBe('C');
+    expect(worst.visible[1].name).toBe('A');
+  });
+
+  it('counts every scored class before truncating and resolves score ties by path and exact id', () => {
+    const children = Array.from({ length: 13 }, (_, index) => ({
+      name: `C${index}`, path: `App\\N${index}\\C`, id: `declaration:${index}`,
+      type: 'class', metrics: { 'health.overall': index < 3 ? 1 : index + 1 },
+    }));
+    children.push(
+      { name: 'A', path: 'App\\A', id: 'declaration:first', type: 'class', metrics: { 'health.overall': 0 } },
+      { name: 'A', path: 'App\\A', id: 'declaration:second', type: 'class', metrics: { 'health.overall': 0 } },
+      { name: 'Absent', path: 'App\\Absent', type: 'class', metrics: { 'health.overall': null } },
+    );
+    const local = { type: 'namespace', children: [...children].reverse() };
+    const ranked = getWorstOffenders(local);
+    expect(ranked.available).toBe(15);
+    expect(ranked.visible).toHaveLength(10);
+    expect(ranked.visible.slice(0, 2).map(node => node.id)).toEqual(['declaration:first', 'declaration:second']);
+    expect(ranked.visible[2].path).toBe('App\\N0\\C');
+    expect(getWorstOffenders({ type: 'project', children: [local, {
+      type: 'namespace', children: [{ name: 'Outside', path: 'Outside', id: 'outside', type: 'class', metrics: { 'health.overall': -1 } }],
+    }] }).available).toBe(16);
+    expect(getWorstOffenders(local, 20).visible).toHaveLength(15);
   });
 
   it('excludes non-class nodes', () => {
@@ -122,8 +144,8 @@ describe('getWorstOffenders', () => {
       ],
     };
     const worst = getWorstOffenders(mixed);
-    expect(worst).toHaveLength(1);
-    expect(worst[0].name).toBe('A');
+    expect(worst.visible).toHaveLength(1);
+    expect(worst.visible[0].name).toBe('A');
   });
 });
 

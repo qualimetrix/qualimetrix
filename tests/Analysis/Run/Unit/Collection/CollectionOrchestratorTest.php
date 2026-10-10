@@ -1193,7 +1193,7 @@ final class CollectionOrchestratorTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            new LogicalClassPath(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? '')),
+            DeclarationPath::of(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? ''), DeclarationPath::of($symbol, RelativePath::fromString($file), DeclarationOrdinal::fromRank(0))->file, DeclarationOrdinal::fromRank(0)),
             $metrics,
         );
     }

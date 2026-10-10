@@ -296,7 +296,7 @@ function renderWorstClasses(node, metric) {
 
   container.style.display = '';
 
-  const worst = getWorstOffenders(node, 10, metric);
+  const { visible: worst, available } = getWorstOffenders(node, 10, metric);
   if (worst.length === 0) {
     container.innerHTML = '<p class="empty-state">No classes with health scores</p>';
     return;
@@ -306,7 +306,7 @@ function renderWorstClasses(node, metric) {
   details.className = 'worst-classes-toggle';
 
   const summary = document.createElement('summary');
-  summary.textContent = `Worst Classes (${worst.length})`;
+  summary.textContent = `Worst Classes (${worst.length} of ${available} in subtree)`;
   details.appendChild(summary);
 
   const table = document.createElement('table');

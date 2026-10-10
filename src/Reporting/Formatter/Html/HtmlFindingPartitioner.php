@@ -117,8 +117,8 @@ final readonly class HtmlFindingPartitioner
         }
         $owners = [];
         foreach ($metrics->allCallables() as $info) {
-            if ($info->subject !== null && $info->classAggregationOwnerDeclaration !== null) {
-                $owners[$info->subject->toCanonical()] = \Qualimetrix\Core\Symbol\MetricSubject::declaration($info->classAggregationOwnerDeclaration)->toCanonical();
+            if ($info->subject !== null && $info->classAggregationOwner !== null) {
+                $owners[$info->subject->toCanonical()] = \Qualimetrix\Core\Symbol\MetricSubject::declaration($info->classAggregationOwner)->toCanonical();
             }
         }
 

@@ -215,7 +215,7 @@ final class HealthScoreCoverageTest extends TestCase
     {
         $builder = new HealthSummaryBuilder(
             new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())),
-            self::createStub(ComputedMetricDefinitionCatalogInterface::class),
+            $this->defaultDefinitionCatalog(),
         );
 
         return $builder->build(
@@ -255,9 +255,11 @@ final class HealthScoreCoverageTest extends TestCase
             ['project' => '80'],
             'Authored',
             [\Qualimetrix\Core\Symbol\SymbolLevel::Project],
+            warningThreshold: 50.0,
+            errorThreshold: 25.0,
         );
         $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $catalog->method('find')->willReturnCallback(static fn(string $name) => $name === 'health.cohesion' ? $definition : null);
+        $catalog->method('all')->willReturn([$definition]);
         $score = (new HealthSummaryBuilder(new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())), $catalog))->build(
             $this->createMetricRepository(MetricBag::fromArray([
                 'health.cohesion' => 80.0, 'cohesion.tcc.avg' => 0.2, 'cohesion.tcc.count' => 2,
@@ -280,9 +282,11 @@ final class HealthScoreCoverageTest extends TestCase
             ['namespace' => "m['cohesion.lcom.avg']"],
             'Authored',
             [\Qualimetrix\Core\Symbol\SymbolLevel::Namespace_, \Qualimetrix\Core\Symbol\SymbolLevel::Project],
+            warningThreshold: 50.0,
+            errorThreshold: 25.0,
         );
         $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $catalog->method('find')->willReturnCallback(static fn(string $name) => $name === 'health.cohesion' ? $definition : null);
+        $catalog->method('all')->willReturn([$definition]);
         $score = (new HealthSummaryBuilder(new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())), $catalog))->build(
             $this->createMetricRepository(MetricBag::fromArray([
                 'health.cohesion' => 2.0, 'cohesion.lcom.avg' => 2.0, 'cohesion.lcom.count' => 2,
@@ -322,10 +326,12 @@ final class HealthScoreCoverageTest extends TestCase
             ['namespace' => '80'],
             'Builtin',
             [\Qualimetrix\Core\Symbol\SymbolLevel::Namespace_, \Qualimetrix\Core\Symbol\SymbolLevel::Project],
+            warningThreshold: 50.0,
+            errorThreshold: 25.0,
             applicability: ['namespace' => \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricApplicability::always()],
         );
         $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $catalog->method('find')->willReturnCallback(static fn(string $name) => $name === 'health.cohesion' ? $definition : null);
+        $catalog->method('all')->willReturn([$definition]);
         $score = (new HealthSummaryBuilder(new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())), $catalog))->build(
             $this->createMetricRepository(MetricBag::fromArray(['size.symbol-class-count' => 2])),
             new NamespaceTree([]),
@@ -347,10 +353,12 @@ final class HealthScoreCoverageTest extends TestCase
             ['namespace' => '80'],
             'Builtin',
             [\Qualimetrix\Core\Symbol\SymbolLevel::Namespace_, \Qualimetrix\Core\Symbol\SymbolLevel::Project],
+            warningThreshold: 50.0,
+            errorThreshold: 25.0,
             applicability: ['namespace' => \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricApplicability::always()],
         );
         $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $catalog->method('find')->willReturnCallback(static fn(string $name) => $name === 'health.cohesion' ? $definition : null);
+        $catalog->method('all')->willReturn([$definition]);
         $scores = (new HealthSummaryBuilder(new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())), $catalog))->build(
             $this->createMetricRepository(new MetricBag()),
             new NamespaceTree([]),
@@ -375,9 +383,11 @@ final class HealthScoreCoverageTest extends TestCase
             ['project' => 'm["cohesion.lcom.avg"] > 0 ? 80 : m["cohesion.tcc.avg"]'],
             'Authored',
             [\Qualimetrix\Core\Symbol\SymbolLevel::Project],
+            warningThreshold: 50.0,
+            errorThreshold: 25.0,
         );
         $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $catalog->method('find')->willReturnCallback(static fn(string $name) => $name === 'health.cohesion' ? $definition : null);
+        $catalog->method('all')->willReturn([$definition]);
         $score = (new HealthSummaryBuilder(new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())), $catalog))->build(
             $this->createMetricRepository(MetricBag::fromArray([
                 'health.cohesion' => 80.0, 'cohesion.lcom.avg' => 2.0, 'cohesion.lcom.count' => 2,
@@ -400,9 +410,11 @@ final class HealthScoreCoverageTest extends TestCase
             ['project' => 'clamp(weighted_mean(m["cohesion.tcc.avg"] ?? null, 2, m["cohesion.lcom.avg"] ?? null, 1), 0, 100)'],
             'Authored',
             [\Qualimetrix\Core\Symbol\SymbolLevel::Project],
+            warningThreshold: 50.0,
+            errorThreshold: 25.0,
         );
         $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $catalog->method('find')->willReturnCallback(static fn(string $name) => $name === 'health.cohesion' ? $definition : null);
+        $catalog->method('all')->willReturn([$definition]);
         $score = (new HealthSummaryBuilder(new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())), $catalog))->build(
             $this->createMetricRepository(MetricBag::fromArray([
                 'health.cohesion' => 2.0, 'cohesion.lcom.avg' => 2.0, 'cohesion.lcom.count' => 2, 'size.symbol-class-count' => 3,
@@ -423,9 +435,11 @@ final class HealthScoreCoverageTest extends TestCase
             ['project' => 'null'],
             'Authored',
             [\Qualimetrix\Core\Symbol\SymbolLevel::Project],
+            warningThreshold: 50.0,
+            errorThreshold: 25.0,
         );
         $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $catalog->method('find')->willReturnCallback(static fn(string $name) => $name === 'health.typing' ? $definition : null);
+        $catalog->method('all')->willReturn([$definition, \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults::getDefaults()['health.overall']]);
         $scores = (new HealthSummaryBuilder(new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())), $catalog))->build(
             $this->createMetricRepository(MetricBag::fromArray(['health.overall' => 80.0])),
             new NamespaceTree([]),

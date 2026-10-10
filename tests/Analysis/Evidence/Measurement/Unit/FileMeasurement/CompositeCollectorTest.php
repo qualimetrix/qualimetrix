@@ -28,7 +28,6 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use ReflectionMethod;
@@ -638,7 +637,7 @@ final class CompositeCollectorTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            new LogicalClassPath($classPath),
+            DeclarationPath::of($classPath, DeclarationPath::of(SymbolPath::forMethod($namespace, $class, $method), RelativePath::fromString('CompositeCollectorTest.php'), DeclarationOrdinal::fromRank(0))->file, DeclarationOrdinal::fromRank(0)),
             $metrics,
         );
     }

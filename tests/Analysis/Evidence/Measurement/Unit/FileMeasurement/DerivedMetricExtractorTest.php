@@ -81,7 +81,7 @@ final class DerivedMetricExtractorTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            new LogicalClassPath(SymbolPath::forClass('App', 'Service')),
+            DeclarationPath::of(SymbolPath::forClass('App', 'Service'), DeclarationPath::of($symbol, $file, DeclarationOrdinal::fromRank(0))->file, DeclarationOrdinal::fromRank(0)),
             MetricBag::fromArray(['complexity.ccn' => 3]),
             23,
         );
@@ -124,7 +124,7 @@ final class DerivedMetricExtractorTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            new LogicalClassPath(SymbolPath::forClass('App', 'Service')),
+            DeclarationPath::of(SymbolPath::forClass('App', 'Service'), DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'run'), $file, DeclarationOrdinal::fromRank(0))->file, DeclarationOrdinal::fromRank(0)),
             MetricBag::fromArray(['complexity.ccn' => 3]),
         );
         $class = new ClassWithMetrics(
@@ -418,10 +418,9 @@ final class DerivedMetricExtractorTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            $owner,
+            $firstOwner,
             MetricBag::fromArray(['complexity.ccn' => 3]),
             17,
-            $firstOwner,
         );
         $second = new CallableWithMetrics(
             DeclarationPath::of($symbol, RelativePath::fromString('src/Second.php'), DeclarationOrdinal::fromRank(0)),
@@ -429,10 +428,9 @@ final class DerivedMetricExtractorTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            $owner,
+            $secondOwner,
             MetricBag::fromArray(['complexity.ccn' => 5]),
             31,
-            $secondOwner,
         );
         $repository->addCallable($first);
         $repository->addCallable($second);
@@ -491,7 +489,7 @@ final class DerivedMetricExtractorTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            new LogicalClassPath(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? '')),
+            DeclarationPath::of(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? ''), DeclarationPath::of($symbol, $file, DeclarationOrdinal::fromRank(1))->file, DeclarationOrdinal::fromRank(0)),
             $metrics,
         );
     }

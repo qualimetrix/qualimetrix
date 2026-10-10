@@ -246,10 +246,10 @@ targets and other formats retain their existing output behavior.
     "health": {
         "complexity": {
             "score": 78.0,
-            "label": "Excellent",
+            "label": "Good",
             "threshold": {
                 "warning": 50,
-                "error": 25
+                "error": 30
             },
             "coverage": {
                 "state": "measured",
@@ -290,10 +290,10 @@ targets and other formats retain their existing output behavior.
         },
         "overall": {
             "score": 72.0,
-            "label": "Fair",
+            "label": "Good",
             "threshold": {
                 "warning": 50,
-                "error": 25
+                "error": 30
             },
             "coverage": {
                 "state": "not-applicable",
@@ -312,10 +312,11 @@ targets and other formats retain their existing output behavior.
         {
             "symbolPath": "App\\Service",
             "healthOverall": 52.0,
-            "label": "Poor",
+            "label": "Fair",
             "reason": "high coupling",
             "violationCount": 15,
-            "size.class-count": 8,
+            "violationDensity": 7.5,
+            "size.class-count.sum": 8,
             "healthScores": {}
         }
     ],
@@ -326,6 +327,7 @@ targets and other formats retain their existing output behavior.
             "label": "Poor",
             "reason": "low cohesion",
             "violationCount": 8,
+            "violationDensity": 4.0,
             "file": "src/Service/UserService.php",
             "metrics": {},
             "healthScores": {}
@@ -398,7 +400,11 @@ targets and other formats retain their existing output behavior.
 ```
 <!-- llms:skip-end -->
 
-The `worstNamespaces` and `worstClasses` entries include a `violationDensity` field -- violations per 100 lines of code -- providing a size-normalized view of code quality.
+`worstNamespaces` includes namespaces declaring at least one own class, interface, trait or enum; containers with only child declarations are excluded. Every numeric field in a namespace record describes its subtree, including `healthOverall`, `healthScores`, `violationCount`, `violationDensity` and `size.class-count.sum`. A class record describes its own exact declaration. `violationDensity` is findings per 100 LOC; it is null when findings exist but LOC is absent or zero.
+
+`healthScores` contains available complexity, cohesion, coupling, typing and maintainability dimensions; it never contains `overall`. The composite is `healthOverall`. Reasons, labels and summary colors follow the effective computed-metric thresholds.
+
+JSON and summary select from the complete population before ranking and limiting it. `--format-opt=rank-by=score` is the default ascending health order; `density` orders density descending. `count` is refused with exit 3. Summary reports the true remaining population, for example `+12 more (use --format-opt=top=15)` after showing three of fifteen candidates. Namespace class counts read "N classes in subtree". HTML displays at most ten local children and names the full local available count; its list is not the global JSON ranking.
 
 `topIssues` is the same ranked list the `summary` format prints as "Top issues
 by impact"; no other format renders it. Each entry names the rule-specific

@@ -647,9 +647,8 @@ final class ClassToNamespaceAggregatorTest extends TestCase
             $symbol->getType() === \Qualimetrix\Core\Symbol\SymbolType::Method ? CallableKind::Method : CallableKind::Function,
             null,
             null,
-            $owner,
+            $ownerDeclaration,
             $metrics,
-            classAggregationOwnerDeclaration: $ownerDeclaration,
         ));
     }
 }

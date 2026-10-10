@@ -143,8 +143,9 @@ final readonly class DerivedCollectorRunner
     private static function mergeCallable(CallableWithMetrics $existing, CallableWithMetrics $callable, string $key): CallableWithMetrics
     {
         self::assertOneDeclarationPerKey($key, $existing->startFilePos, $callable->startFilePos);
-        if ($existing->classAggregationOwner?->toCanonical() !== $callable->classAggregationOwner?->toCanonical()
-            || $existing->classAggregationOwnerDeclaration?->toCanonical() !== $callable->classAggregationOwnerDeclaration?->toCanonical()
+        if ($existing->anonymousSyntax !== $callable->anonymousSyntax
+            || $existing->lexicalClassContext?->toCanonical() !== $callable->lexicalClassContext?->toCanonical()
+            || $existing->classAggregationOwner?->toCanonical() !== $callable->classAggregationOwner?->toCanonical()
             || $existing->anonymousClassContext !== $callable->anonymousClassContext) {
             throw new LogicException(\sprintf('Collectors disagree on class owner for %s', $key));
         }
@@ -158,7 +159,6 @@ final readonly class DerivedCollectorRunner
             $existing->classAggregationOwner,
             $existing->metrics->merge($callable->metrics),
             $existing->sourceLine,
-            $existing->classAggregationOwnerDeclaration,
             $existing->anonymousClassContext,
         );
     }

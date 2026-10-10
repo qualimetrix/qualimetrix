@@ -54,7 +54,7 @@ final class SummaryFormatterTest extends TestCase
         $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
         $namespaceDrillDown = new HealthScoreDrillDown($definitionCatalog, new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
         $findingFilter = new FindingFilter();
-        $offenderListRenderer = new OffenderListRenderer($findingFilter, new WorstClassDrillDown($definitionCatalog, new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())));
+        $offenderListRenderer = new OffenderListRenderer($findingFilter, new WorstClassDrillDown());
         $this->formatter = new SummaryFormatter(
             new DetailedFindingRenderer($debtCalculator),
             new HealthBarRenderer(new HealthScoreResolver($namespaceDrillDown)),
@@ -156,8 +156,7 @@ final class SummaryFormatterTest extends TestCase
             duration: 0.1,
             worstNamespaces: [
                 new WorstOffender(
-                    symbolPath: SymbolPath::forNamespace('App'),
-                    file: null,
+                    subject: \Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App')),
                     healthOverall: 30.0,
                     label: 'Poor',
                     reason: 'test',
@@ -165,12 +164,12 @@ final class SummaryFormatterTest extends TestCase
                         violationCount: 1,
                         classCount: 1,
                     ),
+                    overallThresholds: [50.0, 30.0],
                 ),
             ],
             worstClasses: [
                 new WorstOffender(
-                    symbolPath: SymbolPath::forClass('App', 'Foo'),
-                    file: RelativePath::fromString('src/Foo.php'),
+                    subject: \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App', 'Foo'), RelativePath::fromString('src/Foo.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
                     healthOverall: 30.0,
                     label: 'Poor',
                     reason: 'test',
@@ -178,6 +177,7 @@ final class SummaryFormatterTest extends TestCase
                         violationCount: 1,
                         classCount: 0,
                     ),
+                    overallThresholds: [50.0, 30.0],
                 ),
             ],
         );
@@ -239,8 +239,7 @@ final class SummaryFormatterTest extends TestCase
             duration: 2.0,
             worstNamespaces: [
                 new WorstOffender(
-                    symbolPath: SymbolPath::forNamespace('App\Service'),
-                    file: null,
+                    subject: \Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\Service')),
                     healthOverall: 35.0,
                     label: 'Poor',
                     reason: 'high complexity, low cohesion',
@@ -248,12 +247,12 @@ final class SummaryFormatterTest extends TestCase
                         violationCount: 15,
                         classCount: 8,
                     ),
+                    overallThresholds: [50.0, 30.0],
                 ),
             ],
             worstClasses: [
                 new WorstOffender(
-                    symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
-                    file: RelativePath::fromString('src/Service/UserService.php'),
+                    subject: \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App\Service', 'UserService'), RelativePath::fromString('src/Service/UserService.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
                     healthOverall: 22.0,
                     label: 'Critical',
                     reason: 'high coupling',
@@ -261,6 +260,7 @@ final class SummaryFormatterTest extends TestCase
                         violationCount: 5,
                         classCount: 0,
                     ),
+                    overallThresholds: [50.0, 30.0],
                 ),
             ],
         );
@@ -269,7 +269,7 @@ final class SummaryFormatterTest extends TestCase
 
         self::assertStringContainsString('Worst namespaces', $output);
         self::assertStringContainsString('App\Service', $output);
-        self::assertStringContainsString('8 classes', $output);
+        self::assertStringContainsString('8 classes in subtree', $output);
         self::assertStringContainsString('15 violations', $output);
 
         self::assertStringContainsString('Worst classes', $output);
@@ -472,8 +472,7 @@ final class SummaryFormatterTest extends TestCase
             ],
             worstNamespaces: [
                 new WorstOffender(
-                    symbolPath: SymbolPath::forNamespace('App\Service'),
-                    file: null,
+                    subject: \Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\Service')),
                     healthOverall: 35.0,
                     label: 'Poor',
                     reason: 'high complexity',
@@ -481,6 +480,7 @@ final class SummaryFormatterTest extends TestCase
                         violationCount: 5,
                         classCount: 3,
                     ),
+                    overallThresholds: [50.0, 30.0],
                 ),
             ],
         );
@@ -495,8 +495,7 @@ final class SummaryFormatterTest extends TestCase
     public function itAppliesNamespaceFilterBoundaryAware(): void
     {
         $offenderMatch = new WorstOffender(
-            symbolPath: SymbolPath::forNamespace('App\Payment\Gateway'),
-            file: null,
+            subject: \Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\Payment\Gateway')),
             healthOverall: 30.0,
             label: 'Poor',
             reason: 'test',
@@ -504,11 +503,11 @@ final class SummaryFormatterTest extends TestCase
                 violationCount: 3,
                 classCount: 2,
             ),
+            overallThresholds: [50.0, 30.0],
         );
 
         $offenderNoMatch = new WorstOffender(
-            symbolPath: SymbolPath::forNamespace('App\PaymentGateway'),
-            file: null,
+            subject: \Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\PaymentGateway')),
             healthOverall: 25.0,
             label: 'Critical',
             reason: 'test',
@@ -516,6 +515,7 @@ final class SummaryFormatterTest extends TestCase
                 violationCount: 5,
                 classCount: 4,
             ),
+            overallThresholds: [50.0, 30.0],
         );
 
         $report = $this->createReport(
@@ -630,8 +630,7 @@ final class SummaryFormatterTest extends TestCase
     public function itAppliesClassFilterWithExactMatch(): void
     {
         $offenderMatch = new WorstOffender(
-            symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
-            file: RelativePath::fromString('src/Service/UserService.php'),
+            subject: \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App\Service', 'UserService'), RelativePath::fromString('src/Service/UserService.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
             healthOverall: 22.0,
             label: 'Critical',
             reason: 'test',
@@ -639,11 +638,11 @@ final class SummaryFormatterTest extends TestCase
                 violationCount: 5,
                 classCount: 0,
             ),
+            overallThresholds: [50.0, 30.0],
         );
 
         $offenderNoMatch = new WorstOffender(
-            symbolPath: SymbolPath::forClass('App\Service', 'OrderService'),
-            file: RelativePath::fromString('src/Service/OrderService.php'),
+            subject: \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App\Service', 'OrderService'), RelativePath::fromString('src/Service/OrderService.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
             healthOverall: 30.0,
             label: 'Poor',
             reason: 'test',
@@ -651,6 +650,7 @@ final class SummaryFormatterTest extends TestCase
                 violationCount: 3,
                 classCount: 0,
             ),
+            overallThresholds: [50.0, 30.0],
         );
 
         $report = $this->createReport(
@@ -677,8 +677,7 @@ final class SummaryFormatterTest extends TestCase
         $offenders = [];
         for ($i = 0; $i < 5; $i++) {
             $offenders[] = new WorstOffender(
-                symbolPath: SymbolPath::forNamespace('App\Ns' . $i),
-                file: null,
+                subject: \Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\Ns' . $i)),
                 healthOverall: 20.0 + $i * 5,
                 label: 'Poor',
                 reason: 'test',
@@ -686,6 +685,7 @@ final class SummaryFormatterTest extends TestCase
                     violationCount: $i + 1,
                     classCount: $i + 2,
                 ),
+                overallThresholds: [50.0, 30.0],
             );
         }
 
@@ -718,8 +718,7 @@ final class SummaryFormatterTest extends TestCase
         $offenders = [];
         for ($i = 0; $i < 3; $i++) {
             $offenders[] = new WorstOffender(
-                symbolPath: SymbolPath::forNamespace('App\Ns' . $i),
-                file: null,
+                subject: \Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\Ns' . $i)),
                 healthOverall: 20.0 + $i * 5,
                 label: 'Poor',
                 reason: 'test',
@@ -727,6 +726,7 @@ final class SummaryFormatterTest extends TestCase
                     violationCount: 1,
                     classCount: 1,
                 ),
+                overallThresholds: [50.0, 30.0],
             );
         }
 
@@ -1144,7 +1144,7 @@ final class SummaryFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itBuildsWorstClassesFromMetricsWhenFilteringByNamespace(): void
+    public function itSelectsReportWorstClassesWithoutRebuildingFromMetrics(): void
     {
         $classPath = SymbolPath::forClass('App\Service', 'UserService');
         $classMetrics = \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag::fromArray([
@@ -1186,13 +1186,20 @@ final class SummaryFormatterTest extends TestCase
             healthScores: [
                 'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
-            worstClasses: [],
+            worstClasses: [new WorstOffender(
+                $subject,
+                42.0,
+                'Poor',
+                'carried reason',
+                new WorstOffenderEvidence(2, 0, ['size.method-count' => 32], ['complexity' => 20.0, 'cohesion' => 15.0]),
+                [50.0, 30.0],
+            )],
         );
 
         $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'), terminalWidth: 120);
         $output = $this->formatter->format($report, $context)->body;
 
-        // Should show UserService as worst class even though it's not in global top
+        // Namespace selection reads the complete report snapshot.
         self::assertStringContainsString('UserService', $output);
         self::assertStringContainsString('Worst classes', $output);
     }

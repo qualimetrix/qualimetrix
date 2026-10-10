@@ -462,6 +462,7 @@ final class LcomRuleTest extends TestCase
             $hookSubject->file,
             $hookSubject->line,
             \Qualimetrix\Core\Symbol\CallableKind::PropertyHook,
+            $hookSubject->classAggregationOwner,
         );
         $repository->method('allCallables')->willReturn([$method, $function, $hook]);
         $rule = new LcomRule(new LcomOptions(excludeMethods: ['BRIDGE', 'brigde', 'BRIGDE', 'helper', 'hookOnly']));
@@ -546,6 +547,7 @@ final class LcomRuleTest extends TestCase
             $file,
             $line,
             $kind,
+            $kind === \Qualimetrix\Core\Symbol\CallableKind::Method ? \Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forClass($symbolPath->namespace ?? '', $symbolPath->type ?? ''), $file, \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)) : null,
         );
     }
 }

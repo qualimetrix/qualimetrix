@@ -161,6 +161,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             RelativePath::fromString('src/Service/BigService.php'),
             20,
             CallableKind::Method,
+            \Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forClass(($subject)->toSymbolPath()->namespace ?? '', ($subject)->toSymbolPath()->type ?? ''), RelativePath::fromString('src/Service/BigService.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)),
         );
 
         $repository = self::createStub(MetricRepositoryInterface::class);
@@ -203,6 +204,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             RelativePath::fromString('src/Service/Service.php'),
             20,
             CallableKind::Method,
+            \Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forClass(($method1Subject)->toSymbolPath()->namespace ?? '', ($method1Subject)->toSymbolPath()->type ?? ''), RelativePath::fromString('src/Service/Service.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)),
         );
 
         $method2Path = SymbolPath::forMethod('App\\Service', 'Service', 'otherMethod');
@@ -212,6 +214,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             RelativePath::fromString('src/Service/Service.php'),
             60,
             CallableKind::Method,
+            \Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forClass(($method2Subject)->toSymbolPath()->namespace ?? '', ($method2Subject)->toSymbolPath()->type ?? ''), RelativePath::fromString('src/Service/Service.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)),
         );
 
         $repository = self::createStub(MetricRepositoryInterface::class);
@@ -484,6 +487,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             RelativePath::fromString('src/Service/BigService.php'),
             20,
             CallableKind::Method,
+            \Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forClass(($subject)->toSymbolPath()->namespace ?? '', ($subject)->toSymbolPath()->type ?? ''), RelativePath::fromString('src/Service/BigService.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)),
         );
 
         $repository = self::createStub(MetricRepositoryInterface::class);

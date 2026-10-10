@@ -80,6 +80,7 @@ final class ComputedMetricsConfigurator implements ContainerConfiguratorInterfac
         $healthSummaryBuilder = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Summary\\HealthSummaryBuilder';
         $healthScoreDrillDown = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\HealthScoreDrillDown';
         $worstClassDrillDown = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\WorstClassDrillDown';
+        $offenderRanking = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\OffenderRanking';
         $worstOffenderBuilder = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\WorstOffenderBuilder';
 
         $container->register($metricHintCatalog);
@@ -94,17 +95,15 @@ final class ComputedMetricsConfigurator implements ContainerConfiguratorInterfac
         $container->register($healthSummaryBuilder)->setArguments([
             new Reference($healthMetricCatalog),
             new Reference(self::CATALOG),
+            new Reference($offenderRanking),
         ]);
         $container->register($healthScoreDrillDown)->setArguments([
             new Reference(self::CATALOG),
             new Reference($healthDecompositionCatalog),
         ]);
         $container->register($worstOffenderBuilder);
-        $container->register($worstClassDrillDown)->setArguments([
-            new Reference(self::CATALOG),
-            new Reference($healthDecompositionCatalog),
-            new Reference($worstOffenderBuilder),
-        ]);
+        $container->register($offenderRanking)->setArguments([new Reference($worstOffenderBuilder)]);
+        $container->register($worstClassDrillDown);
     }
 
     /** Registers producer-specific lookups into the ready invocation snapshot. */

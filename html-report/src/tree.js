@@ -53,15 +53,25 @@ export function collectLeaves(node) {
  * @param {object} node - Tree node to search within
  * @param {number} n - Number of worst classes to return
  * @param {string} metric - Metric key to sort by
- * @returns {object[]} Worst classes sorted by metric ASC
+ * @returns {{visible: object[], available: number}} Selected subtree classes sorted by score, path and exact id
  */
 export function getWorstOffenders(node, n = 10, metric = 'health.overall') {
   const leaves = collectLeaves(node).filter(l => l.type === 'class');
 
-  return leaves
+  const ranked = leaves
     .filter(l => l.metrics && l.metrics[metric] != null)
-    .sort((a, b) => (a.metrics[metric] ?? 100) - (b.metrics[metric] ?? 100))
-    .slice(0, n);
+    .sort((a, b) => {
+      const score = a.metrics[metric] - b.metrics[metric];
+      if (score !== 0) return score;
+      const path = compareText(a.path, b.path);
+      return path !== 0 ? path : compareText(a.id ?? a.path, b.id ?? b.path);
+    });
+
+  return { visible: ranked.slice(0, n), available: ranked.length };
+}
+
+function compareText(a, b) {
+  return a < b ? -1 : a > b ? 1 : 0;
 }
 
 /**
