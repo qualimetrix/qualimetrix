@@ -28,8 +28,8 @@ Coupling/
 ## Metrics
 
 Coupling metrics measure dependencies between components. Graph collectors use
-`GlobalContextCollectorInterface`; RFC is collected from each named class
-declaration. Same-name declarations retain independent RFC evidence, including
+`GlobalContextCollectorInterface`; RFC first collects raw facts from each named
+class declaration, then resolves responses globally. Same-name declarations retain independent RFC evidence, including
 when they occur in one file. Graph values remain logical-name measurements and
 appear in every exact declaration view. Class-derived aggregates sample those
 views once each; the logical graph record is not an extra sample.
@@ -208,6 +208,84 @@ rules:
 
 `scope` is a recognized rule-level option. It selects the class-level CBO metric;
 namespace CBO configuration remains under `namespace:`.
+
+---
+
+## RFC — Response for a Class
+
+`RfcCollector` provides entry-only `coupling.rfc-facts` on exact declarations.
+Its file bag and numeric definitions are empty. `RfcVisitor` extracts each
+`RfcClassFacts`; `RfcBodyResponses` retains scalar response rows per method or
+property hook, with `RfcReceiverTypes` for declared/local type recognition and `RfcLocalFlow`
+for conservative invalidation across uncertain flow. Metric-bag entries
+survive worker serialization, repository merge and AST cache reuse.
+
+`RfcGlobalCollector` alone declares and publishes `coupling.rfc`,
+`coupling.rfc-own`, and `coupling.rfc-external`. It requires the raw entry key
+and consumes exact callable owners and declaration-level inheritance edges.
+`RfcDeclarationFacts` decodes the rows. `RfcDeclarationIndex` owns the exact
+roster, folded lookup candidates, callable joins and declaration parent edges.
+`RfcEffectiveMembers` owns trait composition and original body/property
+sources. `RfcPropertyTypes` resolves declared property types in their original
+class or consuming-trait context. `RfcResponseResolver` resolves direct targets
+and response membership. Namespace and project
+sum/average/max/p95/count aggregates sample the final declarations once.
+
+```text
+Coupling/
+├── RfcCollector.php          # entry-only per-file facts
+├── RfcVisitor.php            # exact named declaration traversal
+├── RfcClassFacts.php         # scalar row extraction
+├── RfcBodyResponses.php      # invocation traversal
+├── RfcReceiverTypes.php      # declared/local receiver type evidence
+├── RfcLocalFlow.php          # local invalidation across uncertain control flow
+├── RfcDeclarationFacts.php   # global row decoding
+├── RfcDeclarationIndex.php   # exact declaration/name/parent index
+├── RfcEffectiveMembers.php   # trait members, hook and property sources
+├── RfcPropertyTypes.php      # declared property type context and ancestry
+├── RfcResponseResolver.php   # declared targets and response membership
+└── RfcGlobalCollector.php    # sole final metric publisher
+```
+
+These internal subjects change for different reasons: type recognition when
+supported receiver evidence changes; local flow when invalidation changes;
+the index when exact collection joins change; composition when effective
+member selection changes; property types when declaring context or property
+lookup changes; response resolution when target membership changes.
+They share no generic run port, type engine or cross-capability state.
+
+RFC is `|M| + |Ri outside M|`. M contains all declared methods, including
+abstract methods, and effective imported trait methods. Aliases contribute
+separate exposed names; calls to their shared original body remain inside M.
+Class overrides and trait precedence exclude discarded bodies. Inherited
+methods enter Ri only when invoked; their own bodies are not scanned for the
+consumer. Effective imported trait bodies resolve `this/self/static/parent`
+in the consuming declaration's context. Hooks keep their property spelling:
+`p::get` and `P::get` are distinct members. Trait property hooks are imported
+separately from method adaptations; conflicting property sources are omitted,
+without attempting PHP property-compatibility validation.
+
+Class-name aliases, fully qualified names and letter-case variants collapse
+through Core name resolution and PHP class-name folding. A known receiver
+without a declared method retains its class and method identity when ancestry
+and trait composition are readable. Missing, ambiguous or cyclic ancestry
+or unread trait composition uses the method-name
+fallback; a directly named external class retains its resolved class name.
+Unknown receivers share a lowercased method response. Typed non-variadic parameters,
+properties, promoted properties, explicit construction, local assignment and
+a direct positive `instanceof` branch supply narrow evidence. Reassignment
+and compound write targets invalidate it. Alternative control-flow paths keep
+independent local evidence; uncertain regions invalidate their written variables.
+Return chains, array
+contents and PHPDoc do not supply receiver types.
+
+> **Note:** Global functions contribute separate response identities; property
+> hooks contribute members. These adapt the original C&K class metric to PHP.
+> First-class callables and dynamic method names are excluded, as are nested
+> anonymous-class bodies and expressions outside methods. Unread traits add
+> no invented methods; unresolved invocation targets retain their known
+> receiver or the documented fallback. This is static evidence, not complete
+> runtime dispatch resolution.
 
 ---
 

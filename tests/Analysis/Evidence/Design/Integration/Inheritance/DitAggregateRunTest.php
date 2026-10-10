@@ -147,6 +147,50 @@ final class DitAggregateRunTest extends TestCase
         }
     }
 
+    #[Test]
+    public function itUsesResolvedParentNamesForTheExactDeclarationDepth(): void
+    {
+        $this->write('ResolvedNames.php', <<<'PHP'
+namespace Client;
+use Chain\Middle as ParentAlias;
+use Chain as Parents;
+class AliasChild extends parentalias {}
+class FullyQualifiedChild extends \Chain\Middle {}
+class CaseChild extends \cHaIn\mIdDlE {}
+class QualifiedPrefixChild extends Parents\Middle {}
+namespace Chain;
+class RelativeChild extends namespace\Middle {}
+namespace Other;
+class Middle {}
+namespace Choice;
+use Other\Middle;
+class ForeignChild extends Middle {}
+PHP);
+        $process = new Process([
+            \PHP_BINARY, \dirname(__DIR__, 6) . '/bin/qmx', 'check', $this->analysedDirectory,
+            '--workers=0', '--no-cache', '--no-progress', '--format=metrics', '--fail-on=none',
+        ], $this->workingDirectory);
+        $process->run();
+        self::assertSame(0, $process->getExitCode(), $process->getErrorOutput());
+        /** @var array{symbols: list<array{name: string, metrics: array<string, int|float>}>} $report */
+        $report = json_decode($process->getOutput(), true, flags: \JSON_THROW_ON_ERROR);
+        $metricsByName = [];
+        foreach ($report['symbols'] as $symbol) {
+            $metricsByName[$symbol['name']] = $symbol['metrics'];
+        }
+        foreach ([
+            'Client\AliasChild' => 2,
+            'Client\FullyQualifiedChild' => 2,
+            'Client\CaseChild' => 2,
+            'Client\QualifiedPrefixChild' => 2,
+            'Chain\RelativeChild' => 2,
+            'Choice\ForeignChild' => 1,
+        ] as $name => $depth) {
+            self::assertSame($depth, $metricsByName[$name]['design.dit'], $name);
+            self::assertSame(0, $metricsByName[$name]['design.dit-unresolved'], $name);
+        }
+    }
+
     /**
      * The metrics of the one symbol published at `$level`.
      *

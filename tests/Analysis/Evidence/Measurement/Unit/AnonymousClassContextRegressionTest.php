@@ -41,6 +41,7 @@ final class AnonymousClassContextRegressionTest extends TestCase
     {
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($this->getFixtureCode()) ?? [];
+        NameResolution::resolve($ast);
 
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
         $traverser = new NodeTraverser();

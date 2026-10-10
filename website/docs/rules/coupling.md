@@ -302,6 +302,104 @@ the case that keeps it out of the refusal path.
 
 ---
 
+## RFC -- Response for a Class
+
+**Metrics:** `coupling.rfc`, `coupling.rfc-own`, `coupling.rfc-external`
+
+RFC measures the size of a class's response set, using Chidamber and Kemerer's
+union of its methods and the targets directly invoked by those methods:
+
+```text
+RFC = |M ∪ R₁ ∪ R₂ ∪ ...|
+```
+
+`M` contains every declared method, including abstract methods, plus the
+methods effectively imported from traits. A trait alias adds its exposed name;
+a visibility-only adaptation does not add another method. Class methods
+override trait methods, and trait conflicts follow `insteadof`. This applies to
+named classes, traits, interfaces and enums. Methods inherited from a parent
+do not enter `M`; a direct call to an inherited or parent method enters the
+response set. Calls made inside a method's closure are included. Nested
+anonymous-class methods and expressions outside methods are excluded.
+Unread traits contribute no guessed methods to `M`; unresolved invoked targets
+use the fallback described below.
+
+- `coupling.rfc-own` is the size of `M`.
+- `coupling.rfc-external` counts distinct directly invoked responses outside
+  `M`, including directly called inherited methods. “External” here means
+  outside the measured declaration's effective method set, not outside the
+  analysed project.
+- `coupling.rfc` is their sum. Repeated calls and calls to an already owned
+  method do not increase it.
+
+A statically known class response uses the resolved class name and method
+name, compared without regard to letter case. Aliases, fully qualified names
+and namespace-relative spellings of the same target count once. An imported
+trait alias refers to its original method body when deciding whether a called
+response is already owned. Responses in effective imported trait bodies use
+the consuming class's `this`/`self`/`static`/`parent` context.
+A named target outside the collected class roster retains its resolved class
+and method identity. A known receiver whose readable hierarchy has no
+matching method retains that receiver and method identity. An inherited target reached through unread ancestry
+cannot identify its declaring body and uses the method-name fallback.
+
+### Which calls contribute
+
+| Form                                                                                    | Response identity                                                                     |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Own method via `$this`, `self` or `static`                                              | Already in `M`                                                                        |
+| Inherited or `parent` method                                                            | Resolved declaring class and method, where readable                                   |
+| Imported trait method or alias                                                          | Effective exposed method in `M`; invoked body resolved to its source                  |
+| Typed non-variadic parameter, property or promoted-property receiver                    | Resolved class and method, when the declared type identifies one class                |
+| Assignment of a known receiver to a local variable; direct positive `instanceof` branch | The retained class and method, within that supported local scope                      |
+| Named static call; `new ClassName()`                                                    | Resolved class and method; construction uses `__construct`                            |
+| Nullsafe call                                                                           | The same target as the ordinary method call                                           |
+| Chained return, array element, variadic parameter or untyped receiver                   | Method-name fallback, shared by repeated calls to that name                           |
+| Variable-class static call (`$class::method()`)                                         | Resolved class and method for a known object receiver; otherwise method-name fallback |
+| Global function                                                                         | A separate function response, independent of method responses                         |
+| First-class callable or dynamic method name                                             | Excluded                                                                              |
+
+The fallback also applies when ancestry or a trait is unreadable, or method
+lookup is ambiguous. Declared types provide static evidence; RFC does not
+follow runtime dispatch, infer return types or perform general flow or PHPDoc
+type analysis. Distinct unknown receivers calling the same method name can
+therefore share one response. These are metric values, with no separate RFC
+rule or configurable finding threshold.
+
+!!! info "Deviation from original spec"
+    - Global functions contribute responses, and PHP 8.4 property hooks contribute
+      to `M`; the original class metric has no corresponding PHP constructs. Hook
+      property names remain case-sensitive. Imported hooks with conflicting
+      property sources are omitted; PHP property compatibility is not validated.
+    - Trait methods and adaptations use PHP composition rules, including nested
+      traits, aliases, visibility changes and `insteadof`.
+    - First-class callables are not invocations; dynamic method names are not
+      resolved and do not contribute a response.
+    - An unresolved receiver, unread trait or ancestor outside the analysed paths
+      falls back to the method name. The result does not claim complete runtime
+      dispatch resolution.
+
+<!-- llms:skip-begin -->
+### Example
+
+```php
+class InvoiceService
+{
+    public function issue(Gateway $gateway): void
+    {
+        $gateway->send();
+        $gateway->send();
+    }
+}
+// rfc-own: 1 (issue); rfc-external: 1 (Gateway::send); rfc: 2
+```
+
+A larger response set means more behaviour to understand and test. Split
+responsibilities when one class reaches too many unrelated operations.
+<!-- llms:skip-end -->
+
+---
+
 ## Instability
 
 **Rule ID:** `coupling.instability`

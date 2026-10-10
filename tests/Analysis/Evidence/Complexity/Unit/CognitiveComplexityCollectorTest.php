@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
+use Qualimetrix\Core\Ast\NameResolution;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use SplFileInfo;
 
@@ -300,6 +301,7 @@ PHP;
     {
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();

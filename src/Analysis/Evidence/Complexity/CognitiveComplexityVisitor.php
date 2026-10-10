@@ -42,6 +42,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorCallableScope;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrait;
+use Qualimetrix\Core\Ast\ResolvedName;
 use Qualimetrix\Core\Path\RelativePath;
 use SplObjectStorage;
 
@@ -78,8 +79,9 @@ use SplObjectStorage;
  *   (B2) nests it one level inside the enclosing structure and adds its body
  *   to the enclosing method.
  * - Recursion is detected only as a direct self-call: `$this->m()` or
- *   `$this?->m()`, `self::`/`static::` or the own class name, or a function
- *   calling itself by its short, fully qualified or namespace-relative name.
+ *   `$this?->m()`, `self::`/`static::` or a class name resolved to the own class
+ *   (including aliases and namespace-relative names), or a function calling
+ *   itself by its short, fully qualified or namespace-relative name.
  *   A cycle through other methods, and a call through a variable or a
  *   callable, is not detected.
  *
@@ -529,9 +531,10 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements De
             return false;
         }
 
-        return $class->isFullyQualified()
-            ? $lower === strtolower($this->qualify($scope->namespace, $scope->class))
-            : $class->isUnqualified() && $lower === strtolower($scope->class);
+        $resolved = ResolvedName::className($class);
+
+        return $resolved !== null
+            && ResolvedName::sameClass($resolved, $this->qualify($scope->namespace, $scope->class));
     }
 
     private function namesOwnFunction(Name $function, VisitorCallableScope $scope): bool

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- `coupling.rfc`, `coupling.rfc-own` and `coupling.rfc-external` now use resolved response targets on exact declarations. Inherited and `parent` calls, effective trait methods and aliases, abstract methods and property hooks contribute; class/method spelling variants share one response. Re-evaluate saved RFC expectations and consumers of the old file-collector values; final definitions now belong to `RfcGlobalCollector`. See ADR 0111.
 - `WorstOffender` and `WorstOffender::fromEvidence()` take six arguments: exact `MetricSubject`, overall score, label, reason, evidence and overall thresholds. Remove independent symbol/file arguments; both values derive from the required subject, including null files for namespace aggregates. See ADR 0110.
 - Worst-offender ranking now accepts `rank-by=score|density`, defaulting to `score`; `count` refuses with exit 3. JSON and summary select from the complete captured population before ranking and limiting it. Replace `worstNamespaces[].size.class-count` with `size.class-count.sum`, and read the composite only from `healthOverall`, not `healthScores.overall`. Namespace eligibility includes own interfaces, traits and enums. Reasons and console colors follow resolved catalog thresholds; remaining-count advice names the actual total. See ADR 0110.
 - `CallableWithMetrics::classAggregationOwner` and `SymbolInfo::classAggregationOwner` now carry one exact `DeclarationPath`; `classAggregationOwnerDeclaration` is removed. Supply the exact owner once and derive its logical name from `owner->logical`. Named method/property-hook ownership and anonymous-class context are checked during construction; repository membership and producer joins retain their own checks. See ADR 0106.
@@ -1667,6 +1668,7 @@ What changes for a configuration you already have:
 
 ### Fixed
 
+- Cognitive recursion now follows resolved class names, including aliases and namespace-relative names. Re-evaluate `complexity.cognitive` values and accepted findings for affected recursive methods; imported foreign targets no longer count as own recursion. See ADR 0111.
 - Global namespace offender counts and density include its own findings, without treating named namespaces as descendants.
 - Formula evaluation no longer lets an independent missing key hide a reached
   invalid non-null metric input. Unselected branches and later chained-access

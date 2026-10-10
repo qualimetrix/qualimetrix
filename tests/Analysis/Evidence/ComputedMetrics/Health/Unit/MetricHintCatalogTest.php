@@ -73,6 +73,21 @@ final class MetricHintCatalogTest extends TestCase
         self::assertSame(['max' => 5, 'text' => 'At most hotspot share'], $ranges[1]);
     }
 
+    #[Test]
+    public function itDescribesRfcAsAResponseSetRatherThanAnInterface(): void
+    {
+        $hint = $this->provider->metricHints()['coupling.rfc'];
+        self::assertSame('Response for a Class', $hint['label']);
+        self::assertSame([
+            ['max' => 20, 'text' => 'Small response set'],
+            ['max' => 50, 'text' => 'Moderate response set'],
+            ['max' => 100, 'text' => 'Large response set'],
+            ['above' => true, 'text' => 'Very large response set'],
+        ], $hint['ranges']);
+        self::assertSame('large response set', $this->provider->getExplanation('coupling.rfc', 51));
+        self::assertSame('limited response set', $this->provider->getExplanation('coupling.rfc', 10));
+    }
+
     // --- getExplanation ---
 
     #[Test]
