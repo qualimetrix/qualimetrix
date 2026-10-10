@@ -10,12 +10,24 @@ use Qualimetrix\Reporting\Report;
 final readonly class RuleAbstentionNarrator
 {
     /** @return list<string> */
-    public static function lines(Report $report, bool $verbose = false): array
+    public static function lines(Report $report): array
     {
         $abstentions = $report->population->abstentions();
         if ($abstentions === []) {
             return [];
         }
+        return [self::counts($report)];
+    }
+
+    /** @return list<string> */
+    public static function verboseLines(Report $report): array
+    {
+        return [...self::lines($report), ...array_map(self::group(...), $report->population->abstentions())];
+    }
+
+    private static function counts(Report $report): string
+    {
+        $abstentions = $report->population->abstentions();
         $units = [];
         foreach ($report->population->judgedCounts() as $judged) {
             $units[$judged['unit']] = ['judged' => ($units[$judged['unit']]['judged'] ?? 0) + $judged['count'], 'unjudged' => 0];
@@ -28,13 +40,7 @@ final readonly class RuleAbstentionNarrator
         foreach ($units as $unit => $count) {
             $counts[] = \sprintf('%s: %d judged, %d not judged', $unit, $count['judged'], $count['unjudged']);
         }
-        $lines = ['Rule population incomplete — ' . implode('; ', $counts) . '.'];
-        if ($verbose) {
-            foreach ($abstentions as $absence) {
-                $lines[] = self::group($absence);
-            }
-        }
-        return $lines;
+        return 'Rule population incomplete — ' . implode('; ', $counts) . '.';
     }
 
     private static function group(RuleAbstention $absence): string

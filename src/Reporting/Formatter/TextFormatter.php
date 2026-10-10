@@ -46,7 +46,7 @@ final class TextFormatter implements FormatterInterface
 
         $color = new AnsiColor($context->useColor);
 
-        $populationLines = RuleAbstentionNarrator::lines($report, $context->verbose);
+        $populationLines = ($context->verbose ? RuleAbstentionNarrator::verboseLines($report) : RuleAbstentionNarrator::lines($report));
         $absenceLines = [...$populationLines, ...ComputedMetricAbsenceNarrator::lines($report)];
 
         return new FormattedReport($formatted . implode("\n", $absenceLines) . ($absenceLines === [] ? '' : "\n") . $color->dim(ProductIdentity::pointerText()) . "\n");

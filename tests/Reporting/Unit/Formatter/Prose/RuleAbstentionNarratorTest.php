@@ -31,7 +31,7 @@ final class RuleAbstentionNarratorTest extends TestCase
         $trace->record('fixture.rule', $channel, SymbolLevel::Class_, PopulationIdentity::invocation('fixture.rule'), 'graph', 'Graph unavailable.');
         $report = new Report([], 0, 0, 0, 0, 0, population: $trace->freeze());
         self::assertSame(['Rule population incomplete — declaration: 1 judged, 7 not judged; invocation: 0 judged, 1 not judged.'], RuleAbstentionNarrator::lines($report));
-        $verbose = RuleAbstentionNarrator::lines($report, true);
+        $verbose = RuleAbstentionNarrator::verboseLines($report);
         self::assertCount(3, $verbose);
         self::assertSame('  fixture.rule / fixture.channel (class), gate graph: Graph unavailable. — 1 invocation judgement(s) not judged; examples: fixture.rule', $verbose[1]);
         self::assertSame('  fixture.rule / fixture.channel (class), gate published: Value absent. — 7 declaration judgement(s) not judged; examples: class:0, class:1, class:2, class:3, class:4', $verbose[2]);
@@ -41,15 +41,15 @@ final class RuleAbstentionNarratorTest extends TestCase
     #[Test]
     public function itLeavesEmptyAndHealthyReportsQuietAndUsesNativeProseByteEscaping(): void
     {
-        self::assertSame([], RuleAbstentionNarrator::lines(new Report([], 0, 0, 0, 0, 0), true));
+        self::assertSame([], RuleAbstentionNarrator::verboseLines(new Report([], 0, 0, 0, 0, 0)));
         $trace = new PopulationTrace();
         $channel = new FindingChannel('fixture.channel');
         $trace->record('fixture.rule', $channel, SymbolLevel::Project, PopulationIdentity::selector('project', 'project'), null, null);
-        self::assertSame([], RuleAbstentionNarrator::lines(new Report([], 0, 0, 0, 0, 0, population: $trace->freeze()), true));
+        self::assertSame([], RuleAbstentionNarrator::verboseLines(new Report([], 0, 0, 0, 0, 0, population: $trace->freeze())));
         $unknown = new PopulationTrace();
         $unknown->record('fixture.rule', $channel, SymbolLevel::Project, PopulationIdentity::selector("project:\xFF", 'project'), 'published', 'Value absent.');
         $report = new Report([], 0, 0, 0, 0, 0, population: $unknown->freeze());
-        $published = ProseText::publish(implode("\n", RuleAbstentionNarrator::lines($report, true)), GlyphMode::Unicode);
+        $published = ProseText::publish(implode("\n", RuleAbstentionNarrator::verboseLines($report)), GlyphMode::Unicode);
         self::assertSame(1, $published->escapedStrings);
         self::assertStringContainsString('project:%FF', $published->body);
         self::assertTrue(mb_check_encoding($published->body, 'UTF-8'));

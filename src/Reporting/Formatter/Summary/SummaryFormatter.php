@@ -50,7 +50,7 @@ final class SummaryFormatter implements FormatterInterface, FormatOptionKeysInte
             $lines[] = '';
         }
 
-        array_push($lines, ...RuleAbstentionNarrator::lines($report, $context->verbose));
+        array_push($lines, ...($context->verbose ? RuleAbstentionNarrator::verboseLines($report) : RuleAbstentionNarrator::lines($report)));
         array_push($lines, ...ComputedMetricAbsenceNarrator::lines($report));
 
         $this->healthBarRenderer->render($report, $context, $color, $terminalWidth, $lines);

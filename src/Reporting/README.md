@@ -1086,8 +1086,8 @@ longer retains that provenance. Unicode mode preserves such valid characters.
 Other Unicode letters, such as Café, remain intact in either mode. Structured
 formatters keep their own encoders and canonical identities.
 
-`RuleAbstentionNarrator::lines(Report, bool $verbose = false)` is the shared
-Text, Summary and Health route for incomplete rule populations, including an
+`RuleAbstentionNarrator::lines(Report)` and `verboseLines(Report)` are the shared
+Text, Summary and Health routes for incomplete rule populations, including an
 empty findings or health-data report. Normal prose publishes one indication
 with judged and unjudged counts separated by unit. Verbose prose adds the
 producer, channel, level, first failed gate, reason and bounded examples of
