@@ -170,6 +170,7 @@ Available tests:
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAnUnknownCaseDefinitionKey
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesBothSpellingsOfATrackedBaselineInput
  - QmxFindingGate\Tests\CaseDefinitionTest::itStillRequiresTheChannelsListOnAnAuxiliaryRefusal
+ - QmxFindingGate\Tests\CaseInputTranslationTest::itBuildsControlExpectationsFromTheCurrentComparisonDeclarations
  - QmxFindingGate\Tests\CaseInputTranslationTest::itCarriesActualWorkerStructuralCreditsIntoTheParentAndPublicVerdict
  - QmxFindingGate\Tests\CaseInputTranslationTest::itCarriesPresetArgumentsThroughTheRealComputedChannelProbe
  - QmxFindingGate\Tests\CaseInputTranslationTest::itKeepsNamespaceSuppressionWhenTheControlRenamesItsDeclaredRoot
