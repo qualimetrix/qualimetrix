@@ -31,6 +31,8 @@ final class RenameControls
                     'case:complexity|format:json', 'case:complexity|check:output:file',
                     'case:detectors|format:json', 'case:detectors|check:output:file',
                 ]),
+                new Expectation(FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:complexity|baseline-file', exactScope: true),
+                new Expectation(FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:detectors|baseline-file', exactScope: true),
                 new Expectation(FailureClass::COVERAGE_SHORTFALL, 'corpus', exactScope: true),
                 new Expectation(FailureClass::COVERAGE_SURPLUS, 'corpus', exactScope: true),
                 new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:complexity', exactScope: true),
