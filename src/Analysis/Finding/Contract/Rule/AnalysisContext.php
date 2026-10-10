@@ -18,9 +18,6 @@ use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
-/**
- * @qmx-threshold health.cohesion warning=30 -- The immutable execution snapshot holds independent metric, graph, scope and population facts; splitting their lookups only moves the same field-cohesion signal to additional carriers.
- */
 final readonly class AnalysisContext
 {
     /** @var array<string, array<string, ThresholdOverride>> */

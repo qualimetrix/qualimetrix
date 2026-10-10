@@ -40,8 +40,6 @@ use Qualimetrix\Core\Symbol\SymbolType;
  *
  * Provides common functionality and protected access to options.
  * Validates that the options instance matches the expected class from getOptionsClass().
- *
- * @qmx-threshold health.cohesion warning=40 -- Shared rule assembly combines stateless population declarations and threshold finding construction; extracting their field-free methods would transfer this field-cohesion signal to another utility.
  */
 abstract class AbstractRule implements RuleInterface
 {
