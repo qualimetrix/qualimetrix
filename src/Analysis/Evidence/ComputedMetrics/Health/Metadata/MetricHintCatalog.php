@@ -538,7 +538,7 @@ final class MetricHintCatalog
         ],
         MetricName::COUPLING_CLASS_RANK_SHARE => [
             ['max' => 1, 'text' => 'At most uniform share'],
-            ['max' => 5, 'text' => 'Below hotspot share'],
+            ['max' => 5, 'text' => 'At most hotspot share'],
             ['max' => 10, 'text' => 'Important hub'],
             ['above' => true, 'text' => 'Critical coupling point'],
         ],

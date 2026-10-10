@@ -66,6 +66,13 @@ final class MetricHintCatalogTest extends TestCase
         self::assertArrayHasKey('coupling.cbo-own', $this->provider->metricHints());
     }
 
+    #[Test]
+    public function itDescribesTheInclusiveClassRankHotspotHintBoundaryTruthfully(): void
+    {
+        $ranges = $this->provider->metricHints()['coupling.class-rank-share']['ranges'];
+        self::assertSame(['max' => 5, 'text' => 'At most hotspot share'], $ranges[1]);
+    }
+
     // --- getExplanation ---
 
     #[Test]
