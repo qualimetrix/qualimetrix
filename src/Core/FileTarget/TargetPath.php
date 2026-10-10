@@ -8,7 +8,7 @@ final class TargetPath
 {
     public static function resolve(string $spelling, ?PrivateGroupMembership $membership = null): ResolvedTarget
     {
-        $membership ??= new NativePrivateGroupMembership();
+        $membership ??= NativePrivateGroupMembership::forProcess();
         $descriptor = self::schemeDescriptor($spelling);
         if ($descriptor !== null) {
             return new ResolvedTarget($spelling, TargetKind::Descriptor, null, $descriptor, null, new PathInspection([], []), $membership);
@@ -24,6 +24,12 @@ final class TargetPath
         }
 
         return (new PathWalk($spelling, $path, static fn(string $candidate): ?int => self::descriptorPrefix($candidate), $membership))->resolve();
+    }
+
+    /** Retain a newly created private directory's ownership while its facts remain unchanged. */
+    public static function rememberCreatedDirectory(string $directory): void
+    {
+        PathWalk::rememberCreatedDirectory($directory);
     }
 
     private static function descriptorPrefix(string $path): ?int

@@ -9,6 +9,10 @@ use Qualimetrix\Core\Path\AbsolutePath;
 
 final class PathWalk
 {
+    /** @var array<string, array{stat: array<string|int, int>, uid: int}> */
+    private static array $createdDirectories = [];
+    private static int|false|null $directoryOwnerPid = null;
+
     /** @var list<string> */
     private array $todo;
 
@@ -27,6 +31,34 @@ final class PathWalk
     ) {
         $this->todo = explode('/', ltrim($absolutePath, '/'));
         $this->inspection = new PathInspection([], []);
+    }
+
+    public static function rememberCreatedDirectory(string $directory): void
+    {
+        self::resetCreatedDirectoriesAfterFork();
+        $canonical = realpath($directory);
+        if ($canonical === false) {
+            return;
+        }
+        $directory = $canonical;
+        clearstatcache(true, $directory);
+        [$stat] = NativeCall::attempt(static fn() => lstat($directory));
+        if ($stat === false || ($stat['mode'] & 0170000) !== 0040000 || ($stat['mode'] & 0022) !== 0) {
+            return;
+        }
+        $uid = ProcessOwner::effectiveUid($directory);
+        if ($stat['uid'] === $uid) {
+            self::$createdDirectories[$directory] = ['stat' => $stat, 'uid' => $uid];
+        }
+    }
+
+    private static function resetCreatedDirectoriesAfterFork(): void
+    {
+        $pid = getmypid();
+        if (self::$directoryOwnerPid !== $pid) {
+            self::$createdDirectories = [];
+            self::$directoryOwnerPid = $pid;
+        }
     }
 
     public function resolve(): ResolvedTarget
@@ -116,6 +148,18 @@ final class PathWalk
         if ($parentStat === false) {
             throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $this->spelling, 'a parent directory changed during inspection', $parent);
         }
+
+        self::resetCreatedDirectoriesAfterFork();
+        $created = self::$createdDirectories[$parent] ?? null;
+        if ($created !== null
+            && (\function_exists('posix_geteuid') ? posix_geteuid() : ProcessOwner::effectiveUid($parent)) === $created['uid']
+            && FileIdentity::fromStat($created['stat'])->sameAs(FileIdentity::fromStat($parentStat))
+            && $created['stat']['mode'] === $parentStat['mode']
+            && $created['stat']['uid'] === $parentStat['uid']
+            && $created['stat']['gid'] === $parentStat['gid']) {
+            return [$parent, EntryControl::privateDirectory(), $created['uid']];
+        }
+        unset(self::$createdDirectories[$parent]);
 
         $effectiveUid = $parentStat['uid'] === 0 && ($parentStat['mode'] & 0022) === 0
             ? 0

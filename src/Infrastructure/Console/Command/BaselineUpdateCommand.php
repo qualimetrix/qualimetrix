@@ -91,11 +91,11 @@ final class BaselineUpdateCommand extends BaselineCommand
 
         return $this->withPreparedTarget(
             $document->target,
-            fn(PreparedTarget $prepared, StagedSignalGuard $guard): int => $this->updatePrepared($input, $output, $baselinePath, $invocation, $prepared, $guard),
+            fn(PreparedTarget $prepared, ?StagedSignalGuard $guard): int => $this->updatePrepared($input, $output, $baselinePath, $invocation, $prepared, $guard),
         );
     }
 
-    private function updatePrepared(InputInterface $input, OutputInterface $output, string $baselinePath, BaselineUpdateInvocation $invocation, PreparedTarget $prepared, StagedSignalGuard $guard): int
+    private function updatePrepared(InputInterface $input, OutputInterface $output, string $baselinePath, BaselineUpdateInvocation $invocation, PreparedTarget $prepared, ?StagedSignalGuard $guard): int
     {
         $measured = $invocation->recordsExclusions()
             ? new LoadedBaselineRun($this->baselineRun->measure($input, $output), $this->loader->load($invocation->document))
@@ -121,7 +121,7 @@ final class BaselineUpdateCommand extends BaselineCommand
             return self::SUCCESS;
         }
 
-        $this->writer->write($result->baseline, $invocation->document->target, $context->projectRoot, $prepared, $guard->assertNotInterrupted(...));
+        $this->writer->write($result->baseline, $invocation->document->target, $context->projectRoot, $prepared, $guard === null ? null : $guard->assertNotInterrupted(...));
 
         $output->writeln(\sprintf('<info>Baseline updated: %s</info>', $baselinePath));
 

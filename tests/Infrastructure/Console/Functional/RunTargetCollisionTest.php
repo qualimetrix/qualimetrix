@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
@@ -115,16 +116,25 @@ final class RunTargetCollisionTest extends TestCase
     }
 
     #[Test]
-    public function itAllowsAnExplicitStderrReportWhenShellRedirectsStderrToStdout(): void
+    #[DataProvider('stderrOutputs')]
+    public function itAllowsAnExplicitStderrReportWhenShellRedirectsStderrToStdout(string $option): void
     {
         $command = escapeshellarg(\PHP_BINARY)
             . ' ' . escapeshellarg(\dirname(__DIR__, 4) . '/bin/qmx')
-            . ' check Source.php --format=json --workers=0 --no-cache --output=/dev/stderr 2>&1';
+            . ' check Source.php --format=json --workers=0 --no-cache ' . $option . '=/dev/stderr 2>&1';
         $run = ChildProcess::run(['sh', '-c', $command], $this->directory);
 
         self::assertSame(0, $run['exitCode'], $run['stdout'] . $run['stderr']);
         self::assertStringContainsString('"summary"', $run['stdout']);
         self::assertStringNotContainsString('same output target', $run['stdout']);
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function stderrOutputs(): iterable
+    {
+        foreach (['--output', '--log-file', '--profile'] as $option) {
+            yield $option => [$option];
+        }
     }
 
     /** @param array<string, mixed> $options */

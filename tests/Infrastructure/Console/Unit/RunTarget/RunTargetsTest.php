@@ -204,7 +204,7 @@ PHP;
     }
 
     #[Test]
-    public function itRefusesAForeignSignalHandlerBeforePreparingAFile(): void
+    public function itPreservesAForeignSignalHandlerAndPublishesAFile(): void
     {
         if (!\function_exists('pcntl_signal_get_handler')) {
             self::markTestSkipped('Signal handlers are unavailable.');
@@ -212,85 +212,62 @@ PHP;
         $previous = pcntl_signal_get_handler(\SIGTERM);
         $handler = static function (): void {};
         pcntl_signal(\SIGTERM, $handler);
+        $targets = self::targets();
         try {
-            $targets = self::targets();
             $targets->judge('--output', $this->directory . '/report.json');
-            try {
-                $targets->claim();
-                self::fail('A foreign handler must refuse staged output.');
-            } catch (\Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal $refusal) {
-                self::assertStringContainsString('existing signal handler', $refusal->getMessage());
-            }
+            $targets->claim();
             self::assertSame($handler, pcntl_signal_get_handler(\SIGTERM));
-            self::assertSame([], $this->entries());
+            $targets->write('--output', 'COMPLETE');
+            self::assertSame('COMPLETE', file_get_contents($this->directory . '/report.json'));
         } finally {
+            $targets->abandon();
             pcntl_signal(\SIGTERM, $previous);
         }
     }
 
     #[Test]
-    public function itRefusesAPendingEventLoopSignalWatcherBeforePreparingAFile(): void
+    public function itPreservesAPendingEventLoopSignalWatcherAndPublishesAFile(): void
     {
         if (!\function_exists('pcntl_signal_get_handler')) {
             self::markTestSkipped('Signal handlers are unavailable.');
         }
         $watcher = \Revolt\EventLoop::onSignal(\SIGTERM, static function (): void {});
+        $targets = self::targets();
         try {
-            $targets = self::targets();
             $targets->judge('--output', $this->directory . '/report.json');
-            try {
-                $targets->claim();
-                self::fail('A pending event-loop signal watcher must refuse staged output.');
-            } catch (EnvironmentRefusal $refusal) {
-                self::assertStringContainsString('event-loop signal watcher', $refusal->getMessage());
-            }
+            $targets->claim();
             self::assertContains($watcher, \Revolt\EventLoop::getIdentifiers());
-            self::assertSame([], $this->entries());
+            $targets->write('--output', 'COMPLETE');
+            self::assertSame('COMPLETE', file_get_contents($this->directory . '/report.json'));
         } finally {
+            $targets->abandon();
             \Revolt\EventLoop::cancel($watcher);
         }
     }
 
     #[Test]
-    public function itRefusesRegularStagingWithoutPcntlButAllowsDescriptorAndLog(): void
+    public function itPublishesRegularTargetsWithoutPcntl(): void
     {
         $script = <<<'PHP'
 require $argv[1];
 $directory = $argv[2];
-$factory = new \Qualimetrix\Infrastructure\Logging\LoggerFactory();
-$regular = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets($factory);
-$regular->judge('--output', $directory . '/report.json');
-try {
-    $regular->claim();
-    exit(5);
-} catch (\Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal $refusal) {
-    if (!str_contains($refusal->getMessage(), 'pcntl_signal')) {
-        exit(6);
-    }
-}
-$stream = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets(new \Qualimetrix\Infrastructure\Logging\LoggerFactory());
-$stream->judge('--output', 'php://stdout');
-$stream->claim();
-$stream->write('--output', 'STREAM');
-$stream->abandon();
-$log = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets(new \Qualimetrix\Infrastructure\Logging\LoggerFactory());
-$log->judge('--log-file', $directory . '/run.log');
-$log->claim();
-$log->abandon();
-exit(0);
+$targets = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets(new \Qualimetrix\Infrastructure\Logging\LoggerFactory());
+$targets->judge('--output', $directory . '/report.json');
+$targets->judge('--profile', $directory . '/profile.json');
+$targets->claim();
+if (file_exists($directory . '/report.json') || file_exists($directory . '/profile.json')) { exit(6); }
+$targets->write('--output', 'COMPLETE REPORT');
+$targets->write('--profile', 'COMPLETE PROFILE');
+$targets->abandon();
 PHP;
         $run = ChildProcess::run([
-            \PHP_BINARY,
-            '-d',
-            'disable_functions=pcntl_signal,pcntl_signal_get_handler,pcntl_async_signals',
-            '-r',
-            $script,
-            \dirname(__DIR__, 5) . '/vendor/autoload.php',
-            $this->directory,
+            \PHP_BINARY, '-d', 'disable_functions=pcntl_signal,pcntl_signal_get_handler,pcntl_async_signals',
+            '-r', $script, \dirname(__DIR__, 5) . '/vendor/autoload.php', $this->directory,
         ]);
         self::assertSame(0, $run['exitCode'], $run['stderr']);
-        self::assertSame('STREAM', $run['stdout']);
-        self::assertSame(['run.log'], $this->entries());
+        self::assertSame('COMPLETE REPORT', file_get_contents($this->directory . '/report.json'));
+        self::assertSame('COMPLETE PROFILE', file_get_contents($this->directory . '/profile.json'));
+        self::assertSame(['profile.json', 'report.json'], $this->entries());
     }
 
     #[Test]

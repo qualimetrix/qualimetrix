@@ -9,6 +9,22 @@ use Throwable;
 
 final class NativePrivateGroupMembership implements PrivateGroupMembership
 {
+    /** @var array<int, array<int, bool>> */
+    private array $answers = [];
+
+    public static function forProcess(): self
+    {
+        static $owner = null;
+        static $membership = null;
+        $pid = getmypid();
+        if ($owner !== $pid || $membership === null) {
+            $owner = $pid;
+            $membership = new self();
+        }
+
+        return $membership;
+    }
+
     /** @var Closure(): (string|false) */
     private Closure $readConfiguration;
 
@@ -40,6 +56,11 @@ final class NativePrivateGroupMembership implements PrivateGroupMembership
     }
 
     public function isPrivatePrimaryGroup(int $effectiveUid, int $groupId): bool
+    {
+        return $this->answers[$effectiveUid][$groupId] ??= $this->prove($effectiveUid, $groupId);
+    }
+
+    private function prove(int $effectiveUid, int $groupId): bool
     {
         if ($effectiveUid < 0 || $groupId < 0) {
             return false;

@@ -46,7 +46,7 @@ final class HeldLock
             usleep(10_000);
         } while (hrtime(true) / 1e9 < $deadline);
 
-        throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $lockFile->spelling, 'timed out waiting for lock');
+        throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $lockFile->spelling, \sprintf('could not acquire the exclusive lock within %g seconds; another process may hold it', $timeoutSeconds));
     }
 
     private static function lockPath(ResolvedTarget $judged, ResolvedTarget $now): string

@@ -27,13 +27,106 @@ final class FileCacheTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->cacheDir = sys_get_temp_dir() . '/qmx-cache-test-' . bin2hex(random_bytes(6));
+        $this->cacheDir = realpath(sys_get_temp_dir()) . '/qmx-cache-test-' . bin2hex(random_bytes(6));
         $this->cache = new FileCache(AbsolutePath::fromString($this->cacheDir));
     }
 
     protected function tearDown(): void
     {
         $this->removeDirectory($this->cacheDir);
+    }
+
+    #[Test]
+    public function itReusesOwnershipOfDirectoriesItCreatedForRepeatedEntries(): void
+    {
+        if (!\function_exists('posix_geteuid')) {
+            self::markTestSkipped('POSIX owner lookup is unavailable');
+        }
+        $root = \dirname(__DIR__, 4);
+        $script = <<<'PHP'
+            namespace Qualimetrix\Core\FileTarget {
+                function posix_geteuid(): int {
+                    foreach (debug_backtrace(0) as $frame) {
+                        if (($frame['function'] ?? '') === 'effectiveUid') {
+                            $directory = $frame['args'][0];
+                            if (str_starts_with($directory, $GLOBALS['cacheDirectory'])) {
+                                ++$GLOBALS['ownerCalls'];
+                            }
+                        }
+                    }
+                    return \posix_geteuid();
+                }
+            }
+            namespace {
+                require $argv[1];
+                $GLOBALS['cacheDirectory'] = $argv[2];
+                $GLOBALS['ownerCalls'] = 0;
+                $cache = new \Qualimetrix\Infrastructure\Cache\FileCache(
+                    \Qualimetrix\Core\Path\AbsolutePath::fromString($argv[2]),
+                    new \Qualimetrix\Infrastructure\Serializer\PhpSerializer(),
+                );
+                $cache->set('aa-first', 'first');
+                $first = $GLOBALS['ownerCalls'];
+                $cache->set('aa-second', 'second');
+                $cache->set('aa-first', 'replacement');
+                echo json_encode([$first, $GLOBALS['ownerCalls'], $cache->get('aa-first'), $cache->get('aa-second')], JSON_THROW_ON_ERROR);
+            }
+            PHP;
+        $result = ChildProcess::run([\PHP_BINARY, '-r', $script, $root . '/vendor/autoload.php', $this->cacheDir]);
+        self::assertSame(0, $result['exitCode'], $result['stderr']);
+        [$first, $last, $replacement, $second] = json_decode($result['stdout'], true, flags: \JSON_THROW_ON_ERROR);
+        self::assertGreaterThan(0, $first);
+        self::assertSame($first, $last);
+        self::assertSame('replacement', $replacement);
+        self::assertSame('second', $second);
+    }
+
+    #[Test]
+    public function itEnumeratesThePrivateParentGroupOnceAcrossCacheEntries(): void
+    {
+        if (!\function_exists('posix_geteuid') || !\function_exists('posix_getegid')) {
+            self::markTestSkipped('POSIX group facts are unavailable');
+        }
+        mkdir($this->cacheDir, 0775);
+        chmod($this->cacheDir, 0775);
+        $root = \dirname(__DIR__, 4);
+        $script = <<<'PHP'
+            require $argv[1];
+            $uid = posix_geteuid();
+            $gid = posix_getegid();
+            $queries = [];
+            $records = [
+                'files:passwd' => "owner:x:$uid:$gid::/:/bin/sh\n",
+                'systemd:passwd' => '',
+                'files:group' => "owner:x:$gid:\n",
+                'systemd:group' => '',
+            ];
+            $membership = \Qualimetrix\Core\FileTarget\NativePrivateGroupMembership::forProcess();
+            foreach ([
+                'readConfiguration' => static fn(): string => "passwd: files systemd\ngroup: files systemd\n",
+                'enumerate' => static function (string $source, string $database) use (&$queries, $records): array {
+                    $queries[] = "$source:$database";
+                    return ['exitCode' => 0, 'output' => $records["$source:$database"]];
+                },
+                'userByUid' => static fn(int $id): array => ['name' => 'owner', 'uid' => $id, 'gid' => $gid],
+                'groupByGid' => static fn(int $id): array => ['name' => 'owner', 'gid' => $id, 'members' => []],
+            ] as $property => $value) {
+                (new \ReflectionProperty($membership, $property))->setValue($membership, $value);
+            }
+            $cache = new \Qualimetrix\Infrastructure\Cache\FileCache(
+                \Qualimetrix\Core\Path\AbsolutePath::fromString($argv[2]),
+                new \Qualimetrix\Infrastructure\Serializer\PhpSerializer(),
+            );
+            $cache->set('aa-first', 'first');
+            $cache->set('aa-second', 'second');
+            $cache->set('bb-third', 'third');
+            echo json_encode([$queries, $cache->get('aa-first'), $cache->get('aa-second'), $cache->get('bb-third')], JSON_THROW_ON_ERROR);
+            PHP;
+        $result = ChildProcess::run([\PHP_BINARY, '-r', $script, $root . '/vendor/autoload.php', $this->cacheDir]);
+        self::assertSame(0, $result['exitCode'], $result['stderr']);
+        [$queries, $first, $second, $third] = json_decode($result['stdout'], true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(['files:passwd', 'systemd:passwd', 'files:group', 'systemd:group'], $queries);
+        self::assertSame(['first', 'second', 'third'], [$first, $second, $third]);
     }
 
     #[Test]

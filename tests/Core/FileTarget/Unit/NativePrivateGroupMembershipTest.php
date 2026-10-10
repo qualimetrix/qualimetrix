@@ -200,6 +200,28 @@ final class NativePrivateGroupMembershipTest extends TestCase
         );
     }
 
+    #[Test]
+    public function itEnumeratesEachMembershipOnlyOnceIncludingAConservativeRefusal(): void
+    {
+        foreach ([self::ownerPasswd(), self::ownerPasswd() . "other:x:1001:1000::/:/bin/sh\n"] as $passwd) {
+            $queries = [];
+            $membership = self::membership(
+                records: ['files:passwd' => $passwd],
+                observe: static function (string $source, string $database) use (&$queries): void {
+                    $queries[] = $source . ':' . $database;
+                },
+            );
+            $expected = $passwd === self::ownerPasswd();
+            self::assertSame($expected, $membership->isPrivatePrimaryGroup(1000, 1000));
+            $first = $queries;
+            self::assertNotEmpty($first);
+            self::assertSame($expected, $membership->isPrivatePrimaryGroup(1000, 1000));
+            self::assertSame($first, $queries, 'The same membership proof must not enumerate NSS again.');
+            self::assertFalse($membership->isPrivatePrimaryGroup(1001, 1000));
+            self::assertFalse($membership->isPrivatePrimaryGroup(1000, 1001));
+        }
+    }
+
     private static function ownerPasswd(): string
     {
         return "owner:x:1000:1000::/srv/owner:/bin/sh\n";

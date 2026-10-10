@@ -100,30 +100,30 @@ abstract class BaselineCommand extends Command
 
     abstract protected function doExecute(InputInterface $input, OutputInterface $output): int;
 
-    /** @param callable(PreparedTarget, StagedSignalGuard): int $action */
+    /** @param callable(PreparedTarget, ?StagedSignalGuard): int $action */
     protected function withPreparedTarget(ResolvedTarget $target, callable $action): int
     {
-        $guard = StagedSignalGuard::start($target->spelling);
+        $guard = StagedSignalGuard::start();
         $prepared = null;
         try {
             $prepared = PreparedTarget::prepare($target);
             $result = $action($prepared, $guard);
-            $signal = $guard->interruptedSignal();
+            $signal = $guard?->interruptedSignal();
 
             return $signal === null ? $result : 128 + $signal;
         } catch (Throwable $failure) {
-            $signal = $guard->interruptedSignal();
+            $signal = $guard?->interruptedSignal();
             if ($signal !== null) {
                 return 128 + $signal;
             }
 
             throw $failure;
         } finally {
-            $guard->beginCleanup();
+            $guard?->beginCleanup();
             try {
                 $prepared?->discard();
             } finally {
-                $guard->close();
+                $guard?->close();
             }
         }
     }

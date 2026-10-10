@@ -138,7 +138,7 @@ final class BaselineGenerateCommand extends BaselineCommand
                 $destination['target'],
                 $context->projectRoot,
                 $prepared,
-                $guard->assertNotInterrupted(...),
+                $guard === null ? null : $guard->assertNotInterrupted(...),
             );
 
             $output->writeln(\sprintf(
