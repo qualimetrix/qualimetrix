@@ -38,13 +38,18 @@ final class SummaryEnricherTest extends TestCase
 
     protected function setUp(): void
     {
+        $this->configureEnricher($this->defaultDefinitionCatalog());
+    }
+
+    private function configureEnricher(ComputedMetricDefinitionCatalogInterface $catalog): void
+    {
         $registry = new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues());
         $this->enricher = new SummaryEnricher(
             new DebtCalculator($registry),
             new ImpactCalculator(new ClassRankResolver(), $registry),
             new HealthSummaryBuilder(
                 new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())),
-                self::createStub(ComputedMetricDefinitionCatalogInterface::class),
+                $catalog,
             ),
         );
     }
@@ -173,6 +178,9 @@ final class SummaryEnricherTest extends TestCase
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray([
                 'health.overall' => 72.0,
+                'size.symbol-method-count' => 0,
+                'size.symbol-class-count' => 4,
+                'size.symbol-declaring-namespace-count' => 1,
             ]),
             namespaces: [
                 new SymbolInfo($nsSymbol, RelativePath::fromString('src/Payment'), null),
@@ -180,7 +188,10 @@ final class SummaryEnricherTest extends TestCase
             namespaceMetrics: [
                 'ns:App\\Payment' => $nsMetrics,
             ],
+            classes: array_map(static fn(string $name): SymbolInfo => new SymbolInfo(self::exactClassSubject(SymbolPath::forClass('App\\Payment', $name), 'src/Payment/' . $name . '.php'), RelativePath::fromString('src/Payment/' . $name . '.php'), 1), ['PaymentService', 'Second', 'Third', 'Fourth']),
         );
+
+        $this->configureEnricher(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions(array_values(\Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults::getDefaults())));
 
         $finding = new Finding(
             location: new Location(RelativePath::fromString('src/Payment/PaymentService.php'), 42),
@@ -369,6 +380,7 @@ final class SummaryEnricherTest extends TestCase
             metrics: $metrics,
         );
 
+        $this->configureEnricher(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions([]));
         $result = $this->enricher->enrich($report);
 
         self::assertSame([], $result->healthScores);
@@ -532,6 +544,8 @@ final class SummaryEnricherTest extends TestCase
                 // The population every run writes from its symbol list, and
                 // what the complexity coverage divides by.
                 'size.symbol-method-count' => 8,
+                'size.symbol-class-count' => 0,
+                'size.symbol-declaring-namespace-count' => 0,
             ]),
         );
 
@@ -546,6 +560,7 @@ final class SummaryEnricherTest extends TestCase
             metrics: $metrics,
         );
 
+        $this->configureEnricher(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions(array_values(\Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults::getDefaults())));
         $result = $this->enricher->enrich($report);
 
         self::assertArrayHasKey('typing', $result->healthScores);
@@ -602,6 +617,80 @@ final class SummaryEnricherTest extends TestCase
         $enriched = $this->enricher->enrich($report);
         self::assertNotSame($report, $enriched);
         self::assertSame($summary, $enriched->computedMetricEvaluation);
+    }
+
+    #[Test]
+    public function itKeepsTheMeasuredReportSnapshotThroughBothPresentationsAfterCatalogReplacement(): void
+    {
+        $container = (new \Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory())->create();
+        $catalog = $container->get(ComputedMetricDefinitionCatalogInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricAnalysis::class, $catalog);
+        $definitions = \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults::getDefaults();
+        $catalog->replace(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions(array_values($definitions)));
+        $catalogReads = 0;
+        $trackedCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
+        $trackedCatalog->method('all')->willReturnCallback(static function () use ($catalog, &$catalogReads): array {
+            ++$catalogReads;
+            return $catalog->all();
+        });
+        $this->configureEnricher($trackedCatalog);
+        $repository = new \Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository([
+            new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition('health.overall', \Qualimetrix\Core\Symbol\SymbolLevel::Class_),
+            new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition('health.complexity', \Qualimetrix\Core\Symbol\SymbolLevel::Class_),
+        ]);
+        $path = SymbolPath::forClass('App', 'Type');
+        $file = RelativePath::fromString('src/Type.php');
+        $subject = MetricSubject::declaration(DeclarationPath::of($path, $file, DeclarationOrdinal::fromRank(0)));
+        $repository->addSubject($subject, MetricBag::fromArray(['health.overall' => 82.8, 'health.complexity' => 55.0]), $file, 1);
+        $repositoryReads = [];
+        $trackedRepository = self::createStub(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface::class);
+        foreach ([
+            'get' => $repository->get(...),
+            'getNamespaces' => $repository->getNamespaces(...),
+            'all' => $repository->all(...),
+            'allClassDeclarations' => $repository->allClassDeclarations(...),
+            'getSubject' => $repository->getSubject(...),
+            'allCallables' => $repository->allCallables(...),
+            'allDeclarations' => $repository->allDeclarations(...),
+            'allLogicalClasses' => $repository->allLogicalClasses(...),
+        ] as $method => $read) {
+            $repositoryReads[$method] = 0;
+            $trackedRepository->method($method)->willReturnCallback(static function (...$arguments) use ($read, $method, &$repositoryReads) {
+                ++$repositoryReads[$method];
+                return $read(...$arguments);
+            });
+        }
+        $raw = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($repository), [], 2, 0, 0.0, 0, 0, metrics: $trackedRepository);
+        $report = $this->enricher->enrich($raw);
+        $record = $report->worstClasses[0];
+        $readsAtPublication = $repositoryReads;
+        $catalogReadsAtPublication = $catalogReads;
+        foreach (['health.overall' => [90.0, 85.0], 'health.complexity' => [60.0, 40.0]] as $name => [$warning, $error]) {
+            $old = $definitions[$name];
+            $definitions[$name] = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition($name, $old->formulas, $old->description, $old->levels, $old->inverted, $warning, $error, $old->applicability);
+        }
+        $catalog->replace(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions(array_values($definitions)));
+        $filter = new \Qualimetrix\Reporting\DrillDown\FindingFilter();
+        $selector = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown();
+        $summary = new \Qualimetrix\Reporting\Formatter\Summary\OffenderListRenderer($filter, $selector);
+        $json = new \Qualimetrix\Reporting\Formatter\Json\JsonOffenderSection($selector, $filter, new \Qualimetrix\Reporting\Formatter\Json\JsonSanitizer());
+        $context = new \Qualimetrix\Reporting\FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact('App'));
+        self::assertSame([$record], $summary->resolveWorstClasses($report, $context));
+        $lines = [];
+        $summary->renderWorstClasses($report, new \Qualimetrix\Reporting\Formatter\Ansi\AnsiColor(true), $context, $lines);
+        self::assertStringContainsString("\033[32m82.8\033[0m", implode("\n", $lines));
+        $selected = $json->formatClasses($report, $context, 20);
+        self::assertSame('', $selected[0]['reason']);
+        self::assertSame('Excellent', $selected[0]['label']);
+        self::assertSame([$record], $report->worstClasses);
+        self::assertSame([50.0, 30.0], $record->overallThresholds);
+        self::assertSame($readsAtPublication, $repositoryReads);
+        self::assertSame($catalogReadsAtPublication, $catalogReads);
+        $next = $this->enricher->enrich($raw);
+        self::assertNotSame($record, $next->worstClasses[0]);
+        self::assertSame([90.0, 85.0], $next->worstClasses[0]->overallThresholds);
+        self::assertSame('high complexity', $next->worstClasses[0]->reason);
+        self::assertSame('Critical', $next->worstClasses[0]->label);
     }
 
 }

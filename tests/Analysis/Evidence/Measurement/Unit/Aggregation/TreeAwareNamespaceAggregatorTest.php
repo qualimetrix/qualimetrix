@@ -21,7 +21,6 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -292,9 +291,8 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            new LogicalClassPath(SymbolPath::forClass('App\\Service', 'Svc1')),
+            DeclarationPath::of(SymbolPath::forClass('App\\Service', 'Svc1'), RelativePath::fromString('src/S/Svc1.php'), DeclarationOrdinal::fromRank(0)),
             new MetricBag(),
-            classAggregationOwnerDeclaration: DeclarationPath::of(SymbolPath::forClass('App\\Service', 'Svc1'), RelativePath::fromString('src/S/Svc1.php'), DeclarationOrdinal::fromRank(0)),
         ));
         $this->addNamespaceBag($repository, 'App\\Service', []);
 
@@ -348,9 +346,8 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            new LogicalClassPath(SymbolPath::forClass($namespace, $class)),
+            DeclarationPath::of(SymbolPath::forClass($namespace, $class), RelativePath::fromString($file), DeclarationOrdinal::fromRank(0)),
             (new MetricBag())->with($metric, $value),
-            classAggregationOwnerDeclaration: DeclarationPath::of(SymbolPath::forClass($namespace, $class), RelativePath::fromString($file), DeclarationOrdinal::fromRank(0)),
         ));
     }
 

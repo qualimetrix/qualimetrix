@@ -1,22 +1,16 @@
 --- candidate
 +++ reference (mapped)
 @@ -1,1 +1,1 @@
--visible 20129
-+visible 19963
-@@ -512,3 +512,0 @@
--            "namespaces": [
--                "Corpus\\BaselineCycle"
--            ],
-@@ -542,3 +539,0 @@
--            "namespaces": [
--                "Corpus\\BaselineCycle"
--            ],
-@@ -572,4 +566,4 @@
--physical-records 919
--["{\"acceptedLevel\":{\"count\":1,\"describe\":\"2\",\"shape\":\"magnitude\"},\"baselineReason\":null,\"baselineVerdict\":\"breached\",\"channel\":\"complexity.ccn\",\"code\":\"complexity.ccn\",\"edge\":null,\"file\":\"src/Breach.php\",\"line\":9,\"message\":\"Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions\",\"metricValue\":4,\"namespace\":\"Corpus\\\\BaselineCycle\",\"namespaces\":[\"Corpus\\\\BaselineCycle\"],\"occurrence\":null,\"recommendation\":\"Cyclomatic complexity: 4 (threshold: 2) \\u2014 high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.\",\"rule\":\"complexity.ccn\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\BaselineCycle\\\\Breach::run@src/Breach.php\",\"symbol\":\"Corpus\\\\BaselineCycle\\\\Breach::run\",\"techDebtMinutes\":30,\"threshold\":2}"]
--ranking-records 989
--["{\"acceptedLevel\":{\"count\":1,\"describe\":\"2\",\"shape\":\"magnitude\"},\"baselineReason\":null,\"baselineVerdict\":\"breached\",\"channel\":\"complexity.ccn\",\"code\":\"complexity.ccn\",\"coupling.class-rank-share\":1,\"debtMinutes\":30,\"edge\":null,\"file\":\"src/Breach.php\",\"impactScore\":90,\"line\":9,\"message\":\"Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions\",\"metricValue\":4,\"namespace\":\"Corpus\\\\BaselineCycle\",\"namespaces\":[\"Corpus\\\\BaselineCycle\"],\"occurrence\":null,\"recommendation\":\"Cyclomatic complexity: 4 (threshold: 2) \\u2014 high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.\",\"rule\":\"complexity.ccn\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\BaselineCycle\\\\Breach::run@src/Breach.php\",\"symbol\":\"Corpus\\\\BaselineCycle\\\\Breach::run\",\"techDebtMinutes\":30,\"threshold\":2}"]
-+physical-records 874
-+["{\"acceptedLevel\":{\"count\":1,\"describe\":\"2\",\"shape\":\"magnitude\"},\"baselineReason\":null,\"baselineVerdict\":\"breached\",\"channel\":\"complexity.ccn\",\"code\":\"complexity.ccn\",\"edge\":null,\"file\":\"src/Breach.php\",\"line\":9,\"message\":\"Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions\",\"metricValue\":4,\"namespace\":\"Corpus\\\\BaselineCycle\",\"occurrence\":null,\"recommendation\":\"Cyclomatic complexity: 4 (threshold: 2) \\u2014 high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.\",\"rule\":\"complexity.ccn\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\BaselineCycle\\\\Breach::run@src/Breach.php\",\"symbol\":\"Corpus\\\\BaselineCycle\\\\Breach::run\",\"techDebtMinutes\":30,\"threshold\":2}"]
-+ranking-records 944
-+["{\"acceptedLevel\":{\"count\":1,\"describe\":\"2\",\"shape\":\"magnitude\"},\"baselineReason\":null,\"baselineVerdict\":\"breached\",\"channel\":\"complexity.ccn\",\"code\":\"complexity.ccn\",\"coupling.class-rank-share\":1,\"debtMinutes\":30,\"edge\":null,\"file\":\"src/Breach.php\",\"impactScore\":90,\"line\":9,\"message\":\"Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions\",\"metricValue\":4,\"namespace\":\"Corpus\\\\BaselineCycle\",\"occurrence\":null,\"recommendation\":\"Cyclomatic complexity: 4 (threshold: 2) \\u2014 high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.\",\"rule\":\"complexity.ccn\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\BaselineCycle\\\\Breach::run@src/Breach.php\",\"symbol\":\"Corpus\\\\BaselineCycle\\\\Breach::run\",\"techDebtMinutes\":30,\"threshold\":2}"]
+-visible 20041
++visible 20129
+@@ -460,1 +460,1 @@
+-            "size.class-count.sum": 1,
++            "size.class-count": 1,
+@@ -466,1 +466,2 @@
+-                "maintainability": 53.61744328167159
++                "maintainability": 53.61744328167159,
++                "overall": 80.32348865633432
+@@ -492,1 +493,2 @@
+-                "maintainability": 72.17046596900295
++                "maintainability": 72.17046596900295,
++                "overall": 97.19999999999999

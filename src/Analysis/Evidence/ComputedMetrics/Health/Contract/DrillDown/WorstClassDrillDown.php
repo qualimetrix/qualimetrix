@@ -4,128 +4,18 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown;
 
-use LogicException;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\OffenderNamespaceSelection;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderBuilder;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Core\Pattern\NamespacePattern;
-use Qualimetrix\Core\Symbol\SymbolInfo;
 
-/**
- * Shared logic for namespace-level drill-down: health scores and worst classes.
- *
- * Used by SummaryFormatter and JsonFormatter when --namespace filter is active.
- */
 final readonly class WorstClassDrillDown
 {
-    public function __construct(
-        private ComputedMetricDefinitionCatalogInterface $definitionCatalog,
-        private HealthDecompositionCatalog $decomposition,
-        private WorstOffenderBuilder $offenderBuilder = new WorstOffenderBuilder(),
-    ) {}
-
     /**
-     * Builds worst class offenders within a namespace subtree.
+     * @param list<WorstOffender> $offenders
      *
-     * @param list<Finding> $findings All findings (for counting per class)
-     *
-     * @return list<WorstOffender> Sorted by health score ascending (worst first).
+     * @return list<WorstOffender>
      */
-    public function buildWorstClasses(
-        MetricRepositoryInterface $metrics,
-        NamespacePattern $namespace,
-        array $findings,
-        bool $includeNotableMetrics = false,
-    ): array {
-        [$warnThreshold, $errThreshold] = $this->overallThresholds();
-        $notableMetricNames = $includeNotableMetrics
-            ? $this->decomposition->notableClassMetrics()
-            : [];
-
-        $offenders = $this->offenderBuilder->buildWorstClasses(
-            $metrics,
-            $this->snapshots($metrics, $notableMetricNames),
-            $namespace,
-            $findings,
-            $warnThreshold,
-            $errThreshold,
-        );
-
-        usort($offenders, static fn(WorstOffender $a, WorstOffender $b): int => ($a->healthOverall <=> $b->healthOverall) !== 0 ? ($a->healthOverall <=> $b->healthOverall)
-                : ($a->symbolPath->toCanonical() <=> $b->symbolPath->toCanonical()));
-
-        return $offenders;
-    }
-
-    /**
-     * @param list<string> $notableMetricNames
-     *
-     * @return iterable<array{symbol: SymbolInfo, overall: float|null, dimensionScores: array<string, float>, loc: int|float|null, notableMetrics: array<string, int|float>}>
-     */
-    private function snapshots(MetricRepositoryInterface $repository, array $notableMetricNames): iterable
+    public function buildWorstClasses(array $offenders, OffenderNamespaceSelection $selection): array
     {
-        foreach ($repository->allClassDeclarations() as $symbol) {
-            $metrics = $repository->getSubject($symbol->subject ?? throw new LogicException('Class snapshots require exact subjects'));
-            $overall = $metrics->get($this->decomposition->overallMetric());
-            yield [
-                'symbol' => $symbol,
-                'overall' => $overall === null ? null : (float) $overall,
-                'dimensionScores' => $this->dimensionScores($metrics->get(...)),
-                'loc' => $metrics->get($this->decomposition->classLocMetric()),
-                'notableMetrics' => $this->selectedMetrics($metrics->get(...), $notableMetricNames),
-            ];
-        }
-    }
-
-    /**
-     * @param callable(string): (int|float|null) $readMetric
-     *
-     * @return array<string, float>
-     */
-    private function dimensionScores(callable $readMetric): array
-    {
-        $scores = [];
-        foreach ($this->decomposition->scoreDimensions() as $shortName => $metricName) {
-            $value = $readMetric($metricName);
-            if ($value !== null) {
-                $scores[$shortName] = (float) $value;
-            }
-        }
-
-        return $scores;
-    }
-
-    /**
-     * @param callable(string): (int|float|null) $readMetric
-     * @param list<string> $metricNames
-     *
-     * @return array<string, int|float>
-     */
-    private function selectedMetrics(callable $readMetric, array $metricNames): array
-    {
-        $selected = [];
-        foreach ($metricNames as $metricName) {
-            $value = $readMetric($metricName);
-            if ($value !== null) {
-                $selected[$metricName] = $value;
-            }
-        }
-
-        return $selected;
-    }
-
-    /** @return array{float, float} */
-    private function overallThresholds(): array
-    {
-        $definition = $this->definitionCatalog->find(HealthDimension::Overall->value);
-
-        return [
-            $definition->warningThreshold ?? 50.0,
-            $definition->errorThreshold ?? 30.0,
-        ];
+        return array_values(array_filter($offenders, static fn(WorstOffender $offender): bool => $selection->matches($offender->symbolPath)));
     }
 }

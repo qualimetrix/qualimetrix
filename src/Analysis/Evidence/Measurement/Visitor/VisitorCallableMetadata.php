@@ -11,7 +11,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorCallableScope;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationPath;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /** Projects immutable callable metadata from typed traversal scopes. */
@@ -23,7 +22,7 @@ final class VisitorCallableMetadata
         $logical = self::logicalPath($scope, $namespace);
         $lexical = self::lexicalClass($scope, $namespace, $file);
         $owner = $lexical !== null && !$scope->anonymousClassContext && self::isClassMember($scope)
-            ? new LogicalClassPath($lexical->logical)
+            ? $lexical
             : null;
 
         return new CallableWithMetrics(
@@ -35,7 +34,6 @@ final class VisitorCallableMetadata
             $owner,
             $metrics,
             $scope->sourceLine,
-            $owner !== null ? $lexical : null,
             $scope->anonymousClassContext,
         );
     }

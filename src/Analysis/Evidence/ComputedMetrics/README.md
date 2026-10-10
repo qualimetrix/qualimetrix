@@ -165,12 +165,17 @@ ComputedMetrics/
     ├── Contract/                     # exact Reporting-facing surface
     │   ├── DrillDown/                # score and worst-class queries
     │   ├── Metadata/                 # immutable metadata projection
-    │   ├── Offender/                 # offender value and the levels ranked for it
+    │   ├── Offender/                 # exact offender records, rank mode and namespace selection
     │   ├── Score/                    # score, decomposition and covered-share values
     │   └── Summary/                  # summary value and concrete builder
     ├── Configuration/                # formula exclusion
     ├── Metadata/                     # metric hints, decomposition, dimension wording, facade
-    ├── Offender/                     # evidence, reasons, projection builder
+    ├── Offender/                     # complete per-report ranking and captured thresholds
+    │   ├── OffenderRanking.php       # full namespace and exact-class population
+    │   ├── RankedOffenders.php       # complete ranked namespace/class lists
+    │   ├── OffenderThresholds.php    # resolved dimension and overall threshold pairs
+    │   ├── WorstOffenderBuilder.php  # one exact record from measured evidence
+    │   └── HealthReasonBuilder.php   # component reason using captured thresholds
     └── Score/                        # project scores, nullable decomposition, contributors and coverage
         ├── ProjectHealthScoreBuilder.php    # one project dimension's selected formula and evidence
         └── HealthDecompositionBuilder.php   # nullable expected inputs and typing percentages
@@ -383,3 +388,24 @@ remain outside that population. An empty project is still the native project
 coordinate. Rule execution never evaluates a formula to reconstruct a missing
 value. Computed-value absence summaries remain independent of rule-population
 abstentions and survive report/result copies independently.
+
+## Complete offender reports
+
+`HealthSummaryBuilder` captures the current resolved health definitions for one
+report and delegates complete namespace/class ranking to `OffenderRanking`.
+Namespace candidates declare at least one own class, interface, trait or enum;
+their values and finding counts describe the subtree. Class candidates retain
+exact declaration identity and their own values. Missing health differs from a
+measured zero.
+
+Each `WorstOffender` carries its exact subject and overall threshold pair.
+Its symbol and source file derive from that subject; the six constructor
+arguments are subject, score, label, reason, evidence and thresholds.
+Reasons use the same captured catalog thresholds as labels and console colors.
+Its `healthScores` has only available component dimensions, never overall.
+`WorstClassDrillDown` selects captured records without repository access or a
+second ranking; a later report captures the newly resolved catalog again.
+Reporting selects the full offender population, ranks by `RankBy::Score` or
+`Density`, then applies a display limit. The separate class health heading
+requires a unique declaration: JSON/summary `--class` refuse duplicate logical
+names with exit 5; namespace selection retains their exact offender records. See ADR 0110.

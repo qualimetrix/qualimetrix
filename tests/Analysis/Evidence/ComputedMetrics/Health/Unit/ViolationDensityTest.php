@@ -8,7 +8,6 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummary;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummaryBuilder;
@@ -41,7 +40,7 @@ final class ViolationDensityTest extends TestCase
     {
         $this->builder = new HealthSummaryBuilder(
             new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())),
-            self::createStub(ComputedMetricDefinitionCatalogInterface::class),
+            $this->defaultDefinitionCatalog(),
         );
     }
 
@@ -101,6 +100,7 @@ final class ViolationDensityTest extends TestCase
             projectMetrics: MetricBag::fromArray(['health.overall' => 60.0]),
             namespaces: [new SymbolInfo($nsSymbol, RelativePath::fromString('src/Payment'), null)],
             namespaceMetrics: ['ns:App\\Payment' => $nsMetrics],
+            classes: [new SymbolInfo(self::exactClassSubject(SymbolPath::forClass('App\\Payment', 'PaymentService'), 'src/PaymentService.php'), RelativePath::fromString('src/PaymentService.php'), 1)],
         );
 
         $findings = $this->createFindingsForClass('App\\Payment', 'PaymentService', 5);
@@ -269,8 +269,6 @@ final class ViolationDensityTest extends TestCase
     public function itWorstOffenderDefaultDensityIsNull(): void
     {
         $offender = new WorstOffender(
-            symbolPath: SymbolPath::forClass('App', 'Test'),
-            file: null,
             healthOverall: 50.0,
             label: 'Test',
             reason: '',
@@ -278,6 +276,8 @@ final class ViolationDensityTest extends TestCase
                 violationCount: 5,
                 classCount: 0,
             ),
+            subject: self::exactClassSubject(SymbolPath::forClass('App', 'Test'), 'src/Test.php'),
+            overallThresholds: [50.0, 30.0],
         );
 
         self::assertNull($offender->violationDensity);

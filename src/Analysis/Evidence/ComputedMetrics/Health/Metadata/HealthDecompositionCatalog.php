@@ -197,7 +197,6 @@ final class HealthDecompositionCatalog
         'cohesion.tcc',
         MetricName::COMPLEXITY_WMC,
         'maintainability.mi.avg',
-        'size.loc',
     ];
 
     /** @var array<string, string> short name => the metric each dimension's score is published under */

@@ -217,8 +217,7 @@ Value Object — one concrete callable declaration with collected metrics.
 - `kind: CallableKind` — method, function, property hook, or anonymous callable
 - `anonymousSyntax: ?string` — `closure` or `arrow` for anonymous callables
 - `lexicalClassContext: ?DeclarationPath` — enclosing class declaration where applicable
-- `classAggregationOwner: ?LogicalClassPath` — explicit owner for method/property-hook class roll-up
-- `classAggregationOwnerDeclaration: ?DeclarationPath` — exact named-class owner paired with the logical owner; anonymous contexts have no aggregation owner even when lexical context exists
+- `classAggregationOwner: ?DeclarationPath` — one exact named-class owner for method/property-hook class roll-up; derive its logical name from `owner->logical`. Anonymous contexts have no aggregation owner even when lexical context exists. Construction checks kind, ownership and anonymous-class context together.
 - `metrics: MetricBag` — collected metrics
 
 ### ClassWithMetrics
@@ -1075,7 +1074,7 @@ Determines whether a namespace belongs to the project (not an external dependenc
 - `file: ?RelativePath`
 - `line: ?int`
 - `subject: ?MetricSubject` — exact declaration or aggregate identity when present
-- `classAggregationOwner: ?LogicalClassPath` and `classAggregationOwnerDeclaration: ?DeclarationPath` — paired callable owner metadata preserved during registration and merge
+- `classAggregationOwner: ?DeclarationPath` — one exact callable owner preserved during registration and merge; its logical name is derived from the declaration
 
 ---
 

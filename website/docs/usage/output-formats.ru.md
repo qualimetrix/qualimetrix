@@ -55,16 +55,16 @@ Health █████████████████████░░░�
   * Labels reflect per-dimension scales (e.g., Typing requires >80% for Acceptable)
 
 Worst namespaces
-  48.2 App\Billing\Invoice (6 classes, 11 violations, 3.8/100 LOC)
-  55.9 App\Service\Order (4 classes, 7 violations, 2.1/100 LOC)
-  61.3 App\Repository (9 classes, 5 violations, 0.9/100 LOC)
-  +5 more (use --format=html or --format-opt=top=8)
+  48.2 App\Billing\Invoice (6 classes in subtree, 11 violations, 3.8/100 LOC)
+  55.9 App\Service\Order (4 classes in subtree, 7 violations, 2.1/100 LOC)
+  61.3 App\Repository (9 classes in subtree, 5 violations, 0.9/100 LOC)
+  +5 more (use --format-opt=top=8)
 
 Worst classes
   38.4 App\Billing\Invoice\InvoiceCalculator — low cohesion
   45.1 App\Service\Order\OrderService — high coupling
   52.7 App\Repository\OrderRepository
-  +9 more (use --format=html or --format-opt=top=10)
+  +9 more (use --format-opt=top=12)
 
 
 Top issues by impact
@@ -245,10 +245,10 @@ JSON из конфигурации следует тому же пути; фай
     "health": {
         "complexity": {
             "score": 78.0,
-            "label": "Excellent",
+            "label": "Good",
             "threshold": {
                 "warning": 50,
-                "error": 25
+                "error": 30
             },
             "coverage": {
                 "state": "measured",
@@ -289,10 +289,10 @@ JSON из конфигурации следует тому же пути; фай
         },
         "overall": {
             "score": 72.0,
-            "label": "Fair",
+            "label": "Good",
             "threshold": {
                 "warning": 50,
-                "error": 25
+                "error": 30
             },
             "coverage": {
                 "state": "not-applicable",
@@ -311,10 +311,11 @@ JSON из конфигурации следует тому же пути; фай
         {
             "symbolPath": "App\\Service",
             "healthOverall": 52.0,
-            "label": "Poor",
+            "label": "Fair",
             "reason": "high coupling",
             "violationCount": 15,
-            "size.class-count": 8,
+            "violationDensity": 7.5,
+            "size.class-count.sum": 8,
             "healthScores": {}
         }
     ],
@@ -325,6 +326,7 @@ JSON из конфигурации следует тому же пути; фай
             "label": "Poor",
             "reason": "low cohesion",
             "violationCount": 8,
+            "violationDensity": 4.0,
             "file": "src/Service/UserService.php",
             "metrics": {},
             "healthScores": {}
@@ -397,7 +399,13 @@ JSON из конфигурации следует тому же пути; фай
 ```
 <!-- llms:skip-end -->
 
-Записи `worstNamespaces` и `worstClasses` включают поле `violationDensity` -- количество нарушений на 100 строк кода -- для нормализованной по размеру оценки качества кода.
+Записи `worstNamespaces` и `worstClasses` включают поле `violationDensity`: число находок на 100 строк кода. При наличии находок и отсутствующем или нулевом LOC значение равно null.
+
+`worstNamespaces` включает неймспейсы, объявляющие хотя бы один собственный класс, интерфейс, трейт или enum; контейнеры только с дочерними объявлениями исключаются. Каждое числовое поле записи неймспейса относится к его поддереву: `healthOverall`, `healthScores`, `violationCount`, `violationDensity` и `size.class-count.sum`. Запись класса относится к его точному объявлению. Глобальный неймспейс — отдельный лист; его счётчики не включают именованные неймспейсы.
+
+`healthScores` содержит доступные измерения complexity, cohesion, coupling, typing и maintainability; `overall` в нём нет. Композит — `healthOverall`. Причины, метки и цвета summary следуют действующим порогам вычисляемых метрик.
+
+JSON и summary отбирают кандидатов из полной популяции до ранжирования и ограничения. Для отдельного заголовка class health выборка `--class` в JSON/summary требует единственного точного объявления. Если логическое имя имеет несколько объявлений, команда отказывает с кодом 5; `--namespace` сохраняет все их точные записи offender. `--format-opt=rank-by=score` по умолчанию сортирует health-баллы по возрастанию; `density` — плотность по убыванию. `count` отвергается с кодом 3. Summary показывает настоящий остаток: например, `+12 more (use --format-opt=top=15)` после трёх из пятнадцати кандидатов. Счётчик классов неймспейса выводится как "N classes in subtree". HTML показывает не более десяти локальных дочерних записей и полный доступный локальный размер; его список не является глобальным ранжированием JSON.
 
 `topIssues` — тот же ранжированный список, что формат `summary` печатает как
 «Top issues by impact»; другие форматы его не выводят. Каждая запись называет

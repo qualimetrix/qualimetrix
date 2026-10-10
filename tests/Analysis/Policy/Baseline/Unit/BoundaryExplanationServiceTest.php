@@ -902,7 +902,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     private function repositoryWithCallableSubject(SymbolPath $symbol, string $file, int $line): MetricRepositoryInterface
     {
         $repository = new InMemoryMetricRepository();
-        $repository->addCallable(new CallableWithMetrics(DeclarationPath::of($symbol, RelativePath::fromString($file), DeclarationOrdinal::fromRank(0)), 0, CallableKind::Method, null, null, new LogicalClassPath(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? '')), new MetricBag(), $line));
+        $repository->addCallable(new CallableWithMetrics(DeclarationPath::of($symbol, RelativePath::fromString($file), DeclarationOrdinal::fromRank(0)), 0, CallableKind::Method, null, null, DeclarationPath::of(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? ''), DeclarationPath::of($symbol, RelativePath::fromString($file), DeclarationOrdinal::fromRank(0))->file, DeclarationOrdinal::fromRank(0)), new MetricBag(), $line));
 
         return $repository;
     }

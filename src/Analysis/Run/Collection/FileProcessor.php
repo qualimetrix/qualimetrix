@@ -176,7 +176,6 @@ final class FileProcessor implements FileProcessorInterface
             $existing->classAggregationOwner,
             $existing->metrics->merge($callable->metrics),
             $existing->sourceLine ?? $callable->sourceLine,
-            $existing->classAggregationOwnerDeclaration,
             $existing->anonymousClassContext,
         );
     }
@@ -215,12 +214,16 @@ final class FileProcessor implements FileProcessorInterface
         \Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics $second,
     ): bool {
         return [
+            $first->kind,
+            $first->anonymousSyntax,
+            $first->lexicalClassContext?->toCanonical(),
             $first->classAggregationOwner?->toCanonical(),
-            $first->classAggregationOwnerDeclaration?->toCanonical(),
             $first->anonymousClassContext,
         ] === [
+            $second->kind,
+            $second->anonymousSyntax,
+            $second->lexicalClassContext?->toCanonical(),
             $second->classAggregationOwner?->toCanonical(),
-            $second->classAggregationOwnerDeclaration?->toCanonical(),
             $second->anonymousClassContext,
         ];
     }

@@ -428,7 +428,7 @@ final class ComputedMetricRuleTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            $owner,
+            DeclarationPath::of($class, RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0)),
             new MetricBag(),
             42,
         );
@@ -566,6 +566,9 @@ final class ComputedMetricRuleTest extends TestCase
             $file,
             $line,
             $kind,
+            $kind === \Qualimetrix\Core\Symbol\CallableKind::Method
+                ? DeclarationPath::of(SymbolPath::forClass($symbolPath->namespace ?? '', $symbolPath->type ?? ''), $file, DeclarationOrdinal::fromRank(0))
+                : null,
         );
     }
 

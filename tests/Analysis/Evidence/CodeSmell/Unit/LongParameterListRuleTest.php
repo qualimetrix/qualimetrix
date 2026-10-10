@@ -49,7 +49,7 @@ final class LongParameterListRuleTest extends TestCase
         foreach (['Healthy', 'Missing'] as $name) {
             $file = \Qualimetrix\Core\Path\RelativePath::fromString('src/' . $name . '.php');
             $subject = \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forMethod('Population', $name, 'run'), $file, \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)));
-            $infos[] = new \Qualimetrix\Core\Symbol\SymbolInfo($subject, $file, 1, \Qualimetrix\Core\Symbol\CallableKind::Method);
+            $infos[] = new \Qualimetrix\Core\Symbol\SymbolInfo($subject, $file, 1, \Qualimetrix\Core\Symbol\CallableKind::Method, \Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forClass(($subject)->toSymbolPath()->namespace ?? '', ($subject)->toSymbolPath()->type ?? ''), $file, \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)));
         }
         $repository = self::createStub(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn($infos);

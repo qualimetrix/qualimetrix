@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\DrillDown;
 
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\OffenderNamespaceSelection;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingNamespace;
@@ -100,8 +101,7 @@ final class FindingFilter
                     return false;
                 }
 
-                return $context->namespace->matches($offender->symbolPath->getType() === SymbolType::Namespace_
-                    ? ($offender->symbolPath->namespace ?? '') : $canonical);
+                return (new OffenderNamespaceSelection([$context->namespace]))->matches($offender->symbolPath);
             }
 
             if ($context->class !== null) {

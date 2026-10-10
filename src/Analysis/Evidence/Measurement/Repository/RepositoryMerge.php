@@ -8,7 +8,6 @@ use InvalidArgumentException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationPath;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 
 /**
@@ -74,7 +73,6 @@ final class RepositoryMerge
             $left->line ?? $right->line,
             $left->callableKind,
             $left->classAggregationOwner,
-            $left->classAggregationOwnerDeclaration,
             $left->anonymousClassContext,
         );
     }
@@ -82,8 +80,7 @@ final class RepositoryMerge
     private static function assertSameCallableMetadata(SymbolInfo $left, SymbolInfo $right): void
     {
         if ($left->callableKind === $right->callableKind
-            && self::sameLogicalClass($left->classAggregationOwner, $right->classAggregationOwner)
-            && self::sameDeclaration($left->classAggregationOwnerDeclaration, $right->classAggregationOwnerDeclaration)
+            && self::sameDeclaration($left->classAggregationOwner, $right->classAggregationOwner)
             && $left->anonymousClassContext === $right->anonymousClassContext
             && self::sameFile($left->file, $right->file)
             && self::sameSourceLine($left->line, $right->line)
@@ -95,11 +92,6 @@ final class RepositoryMerge
             'Conflicting callable metadata for %s',
             $left->subject?->toCanonical() ?? $left->symbolPath->toCanonical(),
         ));
-    }
-
-    private static function sameLogicalClass(?LogicalClassPath $left, ?LogicalClassPath $right): bool
-    {
-        return $left?->toCanonical() === $right?->toCanonical();
     }
 
     private static function sameDeclaration(?DeclarationPath $left, ?DeclarationPath $right): bool

@@ -1,0 +1,50 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 7988
++visible 7884
+@@ -39,10 +39,10 @@
+-  72.0 Corpus\Health\Engine (3 classes in subtree, 31 violations, 20.5/100 LOC) — high complexity, low type safety
+-  74.5 CorpusHttp (1 classes in subtree, 11 violations, 34.4/100 LOC) — low type safety, high complexity
+-  77.9 Corpus\Health\Engine\Stage (1 classes in subtree, 11 violations, 39.3/100 LOC) — low type safety, hard to maintain
+-  +2 more (use --format-opt=top=5)
+-
+-Worst classes
+-  79.9 Corpus\Health\Engine\Dispatcher (6 violations, 11.3/100 LOC) — low type safety, high complexity
+-  83.9 Corpus\Health\Engine\Stage\Normalizer (5 violations, 19.2/100 LOC) — low type safety, hard to maintain
+-  85.6 Corpus\Health\Engine\Pipeline (7 violations, 12.7/100 LOC) — low type safety, hard to maintain
+-  +5 more (use --format-opt=top=8)
++  72.0 Corpus\Health\Engine (3 classes, 31 violations, 20.5/100 LOC) — low type safety
++  74.5 CorpusHttp (1 classes, 11 violations, 34.4/100 LOC) — low type safety
++  77.9 Corpus\Health\Engine\Stage (1 classes, 11 violations, 39.3/100 LOC) — low type safety
++  +2 more (use --format=html or --format-opt=top=5)
++
++Worst classes
++  79.9 Corpus\Health\Engine\Dispatcher (6 violations, 11.3/100 LOC) — low type safety
++  83.9 Corpus\Health\Engine\Stage\Normalizer (5 violations, 19.2/100 LOC) — low type safety
++  85.6 Corpus\Health\Engine\Pipeline (7 violations, 12.7/100 LOC) — low type safety
++  +5 more (use --format=html or --format-opt=top=8)
+@@ -87,1 +87,1 @@
+-invocation-format:summary 7988
++invocation-format:summary 7884
+@@ -125,10 +125,10 @@
+-  72.0 Corpus\Health\Engine (3 classes in subtree, 31 violations, 20.5/100 LOC) — high complexity, low type safety
+-  74.5 CorpusHttp (1 classes in subtree, 11 violations, 34.4/100 LOC) — low type safety, high complexity
+-  77.9 Corpus\Health\Engine\Stage (1 classes in subtree, 11 violations, 39.3/100 LOC) — low type safety, hard to maintain
+-  +2 more (use --format-opt=top=5)
+-
+-Worst classes
+-  79.9 Corpus\Health\Engine\Dispatcher (6 violations, 11.3/100 LOC) — low type safety, high complexity
+-  83.9 Corpus\Health\Engine\Stage\Normalizer (5 violations, 19.2/100 LOC) — low type safety, hard to maintain
+-  85.6 Corpus\Health\Engine\Pipeline (7 violations, 12.7/100 LOC) — low type safety, hard to maintain
+-  +5 more (use --format-opt=top=8)
++  72.0 Corpus\Health\Engine (3 classes, 31 violations, 20.5/100 LOC) — low type safety
++  74.5 CorpusHttp (1 classes, 11 violations, 34.4/100 LOC) — low type safety
++  77.9 Corpus\Health\Engine\Stage (1 classes, 11 violations, 39.3/100 LOC) — low type safety
++  +2 more (use --format=html or --format-opt=top=5)
++
++Worst classes
++  79.9 Corpus\Health\Engine\Dispatcher (6 violations, 11.3/100 LOC) — low type safety
++  83.9 Corpus\Health\Engine\Stage\Normalizer (5 violations, 19.2/100 LOC) — low type safety
++  85.6 Corpus\Health\Engine\Pipeline (7 violations, 12.7/100 LOC) — low type safety
++  +5 more (use --format=html or --format-opt=top=8)

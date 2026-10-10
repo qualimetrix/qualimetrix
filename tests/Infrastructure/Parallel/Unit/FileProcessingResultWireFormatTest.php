@@ -109,7 +109,7 @@ final class FileProcessingResultWireFormatTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            new LogicalClassPath(SymbolPath::forClass('One', 'Thing')),
+            DeclarationPath::of(SymbolPath::forClass('One', 'Thing'), DeclarationPath::of(SymbolPath::forMethod('One', 'Thing', 'run'), $path, DeclarationOrdinal::fromRank(0))->file, DeclarationOrdinal::fromRank(0)),
             MetricBag::fromArray(['complexity.ccn' => 2]),
             17,
         );

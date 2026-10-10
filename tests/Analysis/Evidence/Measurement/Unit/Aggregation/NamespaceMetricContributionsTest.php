@@ -130,7 +130,7 @@ final class NamespaceMetricContributionsTest extends TestCase
             CallableKind::Method,
             null,
             $classPath,
-            new LogicalClassPath(SymbolPath::forClass('One', 'Service')),
+            $classPath,
             MetricBag::fromArray(['callableScore' => 3]),
         ));
         $repository->addCallable(new CallableWithMetrics(

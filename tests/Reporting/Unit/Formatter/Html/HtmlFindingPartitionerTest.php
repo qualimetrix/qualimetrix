@@ -19,7 +19,6 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Formatter\Html\HtmlFindingPartitioner;
@@ -138,9 +137,8 @@ final class HtmlFindingPartitionerTest extends TestCase
             CallableKind::Method,
             null,
             $owner,
-            new LogicalClassPath($owner->logical),
+            $owner,
             new MetricBag(),
-            classAggregationOwnerDeclaration: $owner,
         ));
         $result = $this->partitioner->partition([$finding], [$classId => $classNode], $metrics);
 
@@ -329,9 +327,8 @@ final class HtmlFindingPartitionerTest extends TestCase
             CallableKind::Method,
             null,
             $classASubject->declarationPath(),
-            new LogicalClassPath($classAPath),
+            $classASubject->declarationPath(),
             new MetricBag(),
-            classAggregationOwnerDeclaration: $classASubject->declarationPath(),
         ));
 
         $result = $this->partitioner->partition([$v1, $v2, $v3], $nodes, $metrics);

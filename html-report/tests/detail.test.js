@@ -173,3 +173,24 @@ describe('prepared health rows in the mounted detail panel', () => {
     }
   });
 });
+
+
+describe('local offender count in the mounted detail panel', () => {
+  it('shows ten of fifteen scored classes in the selected subtree', () => {
+    const originalDocument = globalThis.document;
+    const { document } = parseHTML('<html><body><div id="worst-offenders"></div></body></html>');
+    globalThis.document = document;
+    try {
+      renderDetail({ type: 'namespace', name: 'App', path: 'App', metrics: {}, children:
+        Array.from({ length: 15 }, (_, index) => ({
+          type: 'class', name: `C${index}`, path: `App\\C${index}`, id: `exact:${index}`,
+          metrics: { 'health.overall': index }, violationCountTotal: 0,
+        })),
+      }, {});
+      expect(document.querySelector('#worst-offenders summary').textContent).toBe('Worst Classes (10 of 15 in subtree)');
+      expect(document.querySelectorAll('#worst-offenders tbody tr')).toHaveLength(10);
+    } finally {
+      globalThis.document = originalDocument;
+    }
+  });
+});

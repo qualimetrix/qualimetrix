@@ -77,8 +77,8 @@ final class DuplicateClassControlBindingTest extends TestCase
             $ast,
             $file,
             [
-                new CallableWithMetrics($methodPaths[0], $methods[0]->getStartFilePos(), CallableKind::Method, null, $classPaths[0], $owner, new MetricBag()),
-                new CallableWithMetrics($methodPaths[1], $methods[1]->getStartFilePos(), CallableKind::Method, null, $classPaths[1], $owner, new MetricBag()),
+                new CallableWithMetrics($methodPaths[0], $methods[0]->getStartFilePos(), CallableKind::Method, null, $classPaths[0], $classPaths[0], new MetricBag()),
+                new CallableWithMetrics($methodPaths[1], $methods[1]->getStartFilePos(), CallableKind::Method, null, $classPaths[1], $classPaths[1], new MetricBag()),
             ],
             self::classMetrics(
                 [$classPaths[0], $classes[0]->getStartFilePos()],

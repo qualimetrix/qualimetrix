@@ -90,15 +90,20 @@ an already completed child subtree is not added again.
 
 ### Exact callable ownership and finding attribution
 
-Named-class methods and property hooks carry both a logical aggregation owner
-and its exact declaration. Registration, cloning and merge preserve that pair.
-Lexical class context alone is not aggregation ownership: anonymous-class
-methods, closures and global functions can have a valid absent owner pair.
+Named-class methods and property hooks carry one exact aggregation owner,
+`classAggregationOwner: ?DeclarationPath`. Its logical name is derived from
+that declaration rather than stored independently. Callable construction
+checks kind, named ownership and anonymous-class context together. Registration,
+cloning and merge preserve the exact owner. Lexical class context alone is not
+aggregation ownership: anonymous-class methods, closures and global functions
+can have a valid absent owner.
 
 Class finding counts use the finding's exact class subject or the exact
-callable's declared owner. A missing required callable entry, an incomplete
-owner pair or mismatched logical identity refuses before partial counts are
-returned. It must not become a zero count or fan out to every same-name class.
+callable's declared owner. A missing required callable entry, an owner absent
+from the repository or contradictory producer metadata refuses before partial
+counts are returned. It must not become a zero count or fan out to every
+same-name class. Readers consume the construction invariant rather than
+rechecking a separately stored logical/exact pair.
 
 WMC belongs to Complexity. The existing shared AST traversal records named
 class-like declarations, including those without callables. Each gets WMC zero
@@ -131,6 +136,10 @@ declaration and report duplicates separately.
   `(type, name)` assumption. Regenerate saved report links.
 - Use `getSubject()` and declaration enumeration for class or callable values;
   use logical enumeration only for graph names.
+- Replace the independently supplied logical owner and
+  `classAggregationOwnerDeclaration` with one exact `classAggregationOwner`
+  in `CallableWithMetrics` and `SymbolInfo`. Derive the logical owner from
+  `classAggregationOwner->logical`; retain explicit anonymous-class context.
 - Preserve the captured namespace index when constructing or copying reports.
   Read `namespaces` for multi-namespace file findings; use `namespace` only
   when it is non-null. The metrics symbol export keeps its existing fields.

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender;
 
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDimensionCatalog;
 
 /**
@@ -21,7 +22,7 @@ final readonly class HealthReasonBuilder
      *
      * @param array<string, float> $dimensionScores Dimension name => score (e.g., ['complexity' => 35.2])
      */
-    public function buildReason(array $dimensionScores): string
+    public function buildReason(array $dimensionScores, OffenderThresholds $thresholds): string
     {
         if ($dimensionScores === []) {
             return '';
@@ -30,7 +31,11 @@ final readonly class HealthReasonBuilder
         $ranked = [];
 
         foreach ($dimensionScores as $dim => $score) {
-            $warnThreshold = $dim === 'typing' ? 80.0 : 50.0;
+            $dimension = HealthDimension::tryFrom('health.' . $dim);
+            if ($dimension === null || $dimension === HealthDimension::Overall || $thresholds->definition($dimension) === null) {
+                continue;
+            }
+            [$warnThreshold] = $thresholds->pair($dimension);
             // How far above the warning threshold (negative = bad, zero = at threshold = bad)
             $delta = $score - $warnThreshold;
             $ranked[] = ['dim' => $dim, 'delta' => $delta];

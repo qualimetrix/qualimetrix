@@ -7,7 +7,6 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Score;
 use Closure;
 use LogicException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\CoverageUnit;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
@@ -16,6 +15,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCo
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\OffenderThresholds;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -30,7 +30,6 @@ final readonly class ProjectHealthScoreBuilder
 
     public function __construct(
         private HealthMetricCatalog $hintProvider,
-        private ComputedMetricDefinitionCatalogInterface $definitionCatalog,
     ) {
         $this->decomposition = $this->hintProvider->decomposition();
         $this->coverage = new CoverageReader($this->decomposition);
@@ -39,7 +38,7 @@ final readonly class ProjectHealthScoreBuilder
     }
 
     /** @return array<string, HealthScore> */
-    public function build(MetricRepositoryInterface $metrics): array
+    public function build(MetricRepositoryInterface $metrics, OffenderThresholds $thresholds): array
     {
         $projectMetrics = $metrics->get(SymbolPath::forProject());
         // Aggregation publishes no project bag when discovery or collection
@@ -50,7 +49,7 @@ final readonly class ProjectHealthScoreBuilder
 
         $scores = [];
         foreach (HealthDimension::all() as $dimension) {
-            $score = $this->dimensionScore($dimension, $projectMetrics, $metrics);
+            $score = $this->dimensionScore($dimension, $projectMetrics, $metrics, $thresholds);
             if ($score !== null) {
                 $scores[$dimension->shortName()] = $score;
             }
@@ -59,7 +58,7 @@ final readonly class ProjectHealthScoreBuilder
         if ($scores === [] || isset($scores['typing'])) {
             return $scores;
         }
-        $typing = $this->absentTyping($projectMetrics);
+        $typing = $this->absentTyping($projectMetrics, $thresholds);
         if ($typing !== null) {
             $scores['typing'] = $typing;
         }
@@ -67,10 +66,10 @@ final readonly class ProjectHealthScoreBuilder
         return $scores;
     }
 
-    private function dimensionScore(HealthDimension $dimension, MetricBag $projectMetrics, MetricRepositoryInterface $metrics): ?HealthScore
+    private function dimensionScore(HealthDimension $dimension, MetricBag $projectMetrics, MetricRepositoryInterface $metrics, OffenderThresholds $thresholds): ?HealthScore
     {
         $value = $projectMetrics->get($dimension->value);
-        $definition = $this->definitionCatalog->find($dimension->value);
+        $definition = $thresholds->definition($dimension);
         if ($value === null && !self::includesAbsence($definition)) {
             return null;
         }
@@ -78,7 +77,7 @@ final readonly class ProjectHealthScoreBuilder
         $authored = $definition?->isBuiltinFormulaForLevel(SymbolLevel::Project) === false;
         $inputs = $this->decomposition->inputsForFormula($dimension->value, SymbolLevel::Project, $projectMetrics->get(...), $definition);
         $score = $value === null ? null : (float) $value;
-        [$warning, $error] = $this->thresholds($dimension);
+        [$warning, $error] = $thresholds->pair($dimension);
 
         return new HealthScore(
             name: $dimension->shortName(),
@@ -129,15 +128,15 @@ final readonly class ProjectHealthScoreBuilder
         return $this->decompositionBuilder->build($dimension->value, $metrics, $inputs);
     }
 
-    private function absentTyping(MetricBag $metrics): ?HealthScore
+    private function absentTyping(MetricBag $metrics, OffenderThresholds $thresholds): ?HealthScore
     {
-        $definition = $this->definitionCatalog->find(HealthDimension::Typing->value);
-        if ($this->isDefinitionExcluded(HealthDimension::Typing->value)
-            || $definition?->isBuiltinFormulaForLevel(SymbolLevel::Project) === false) {
+        $definition = $thresholds->definition(HealthDimension::Typing);
+        if ($definition === null
+            || $definition->isBuiltinFormulaForLevel(SymbolLevel::Project) === false) {
             return null;
         }
 
-        [$warning, $error] = $this->thresholds(HealthDimension::Typing);
+        [$warning, $error] = $thresholds->pair(HealthDimension::Typing);
 
         return new HealthScore(
             name: 'typing',
@@ -186,29 +185,4 @@ final readonly class ProjectHealthScoreBuilder
         );
     }
 
-    private function isDefinitionExcluded(string $name): bool
-    {
-        $definitions = $this->definitionCatalog->all();
-
-        return $definitions !== [] && !\in_array(
-            $name,
-            array_map(static fn($definition): string => $definition->name, $definitions),
-            true,
-        );
-    }
-
-    /** @return array{float, float} */
-    private function thresholds(HealthDimension $dimension): array
-    {
-        $definition = $this->definitionCatalog->find($dimension->value);
-
-        return [
-            $definition->warningThreshold ?? ($dimension === HealthDimension::Typing ? 80.0 : 50.0),
-            $definition->errorThreshold ?? match ($dimension) {
-                HealthDimension::Typing => 50.0,
-                HealthDimension::Overall => 30.0,
-                default => 25.0,
-            },
-        ];
-    }
 }

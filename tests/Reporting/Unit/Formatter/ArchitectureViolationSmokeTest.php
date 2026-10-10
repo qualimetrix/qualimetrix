@@ -138,7 +138,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
         $formatter = new JsonFormatter(
             new DebtCalculator($remediationTimeRegistry),
             new JsonHealthSection(new HealthScoreResolver($namespaceDrillDown), $sanitizer),
-            new JsonOffenderSection(new WorstClassDrillDown($definitionCatalog, new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())), $findingFilter, $sanitizer),
+            new JsonOffenderSection(new WorstClassDrillDown(), $findingFilter, $sanitizer),
             new JsonFindingSection($remediationTimeRegistry, $sanitizer),
         );
 
@@ -344,7 +344,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
         $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
         $namespaceDrillDown = new HealthScoreDrillDown($definitionCatalog, new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
         $findingFilter = new FindingFilter();
-        $offenderListRenderer = new OffenderListRenderer($findingFilter, new WorstClassDrillDown($definitionCatalog, new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())));
+        $offenderListRenderer = new OffenderListRenderer($findingFilter, new WorstClassDrillDown());
         $formatter = new SummaryFormatter(
             new DetailedFindingRenderer($debtCalculator),
             new HealthBarRenderer(new HealthScoreResolver($namespaceDrillDown)),

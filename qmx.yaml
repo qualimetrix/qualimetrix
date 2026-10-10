@@ -282,6 +282,8 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Metadata\HealthMetricMetadataCollection'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Metadata\HealthMetricMetadataProviderInterface'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\OffenderNamespaceSelection'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\RankBy'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\RankedOffenderLevels'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\CoverageUnit'
@@ -296,6 +298,10 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\MetricHintCatalog'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\HealthReasonBuilder'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\OffenderPopulation'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\OffenderRanking'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\OffenderThresholds'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\RankedOffenders'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderBuilder'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Score\ContributorRanker'
@@ -2080,6 +2086,9 @@ rules:
       # Immutable score and coverage values carry health facts through the public
       # contract; exact namespace scope leaves future child namespaces judged.
       - exact: 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score'
+      # Immutable offender records, rank modes and namespace selections form one
+      # public vocabulary consumed by report renderers.
+      - exact: 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender'
       # Concrete metadata catalogs implement a sibling Contract-owned public
       # surface. Exact-namespace abstractness therefore cannot see that port.
       - exact: 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata'
