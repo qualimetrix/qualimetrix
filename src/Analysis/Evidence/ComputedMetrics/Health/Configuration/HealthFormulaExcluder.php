@@ -10,7 +10,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\HealthFormulaExclusionInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpressionInterface;
 
 /**
  * Filters out excluded health dimensions and rebuilds the health.overall
@@ -18,12 +18,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMe
  */
 final readonly class HealthFormulaExcluder implements HealthFormulaExclusionInterface
 {
-    private ComputedMetricExpression $expression;
-
-    public function __construct()
-    {
-        $this->expression = new ComputedMetricExpression();
-    }
+    public function __construct(private ComputedMetricExpressionInterface $expression) {}
 
     /**
      * Filters out excluded health dimensions and rebuilds health.overall formula

@@ -71,7 +71,7 @@ final class HealthSummaryBuilderTest extends TestCase
         $metrics->method('allClassDeclarations')->willReturn([$classInfo]);
         $metrics->method('getSubject')->willReturn($classBag);
         $builder = new HealthSummaryBuilder(
-            new HealthMetricCatalog(),
+            new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())),
             self::createStub(ComputedMetricDefinitionCatalogInterface::class),
         );
 
@@ -131,7 +131,7 @@ final class HealthSummaryBuilderTest extends TestCase
         );
 
         $builder = new HealthSummaryBuilder(
-            new HealthMetricCatalog(),
+            new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())),
             self::createStub(ComputedMetricDefinitionCatalogInterface::class),
         );
 
@@ -184,7 +184,7 @@ final class HealthSummaryBuilderTest extends TestCase
         );
 
         $summary = (new HealthSummaryBuilder(
-            new HealthMetricCatalog(),
+            new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())),
             self::createStub(ComputedMetricDefinitionCatalogInterface::class),
         ))->build($repository, new NamespaceTree([]), [$finding]);
 
@@ -203,7 +203,7 @@ final class HealthSummaryBuilderTest extends TestCase
         $repository = new InMemoryMetricRepository();
         $repository->add(SymbolPath::forProject(), $bag, null, null);
         $before = $repository->get(SymbolPath::forProject())->all();
-        $scores = (new HealthSummaryBuilder(new HealthMetricCatalog(), self::createStub(ComputedMetricDefinitionCatalogInterface::class)))
+        $scores = (new HealthSummaryBuilder(new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())), self::createStub(ComputedMetricDefinitionCatalogInterface::class)))
             ->build($repository, new NamespaceTree([]), [])->healthScores;
         foreach (['cohesion' => ['cohesion.tcc.avg', 2], 'coupling' => ['coupling.distance-own.avg', 4]] as $dimension => [$key, $eligible]) {
             $missing = $scores[$dimension]->decomposition[0];

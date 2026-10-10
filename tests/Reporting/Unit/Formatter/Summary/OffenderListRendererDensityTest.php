@@ -28,7 +28,7 @@ final class OffenderListRendererDensityTest extends TestCase
     {
         $this->renderer = new OffenderListRenderer(
             new FindingFilter(),
-            new WorstClassDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class)),
+            new WorstClassDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class), new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())),
         );
     }
 

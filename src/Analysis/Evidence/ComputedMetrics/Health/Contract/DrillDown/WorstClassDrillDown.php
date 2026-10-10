@@ -22,14 +22,11 @@ use Qualimetrix\Core\Symbol\SymbolInfo;
  */
 final readonly class WorstClassDrillDown
 {
-    private HealthDecompositionCatalog $decomposition;
-
     public function __construct(
         private ComputedMetricDefinitionCatalogInterface $definitionCatalog,
+        private HealthDecompositionCatalog $decomposition,
         private WorstOffenderBuilder $offenderBuilder = new WorstOffenderBuilder(),
-    ) {
-        $this->decomposition = new HealthDecompositionCatalog();
-    }
+    ) {}
 
     /**
      * Builds worst class offenders within a namespace subtree.

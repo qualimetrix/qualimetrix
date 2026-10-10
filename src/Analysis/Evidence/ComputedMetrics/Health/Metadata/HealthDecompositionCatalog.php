@@ -8,7 +8,7 @@ use ArrayAccess;
 use Closure;
 use LogicException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpressionInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\CoverageUnit;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -221,7 +221,7 @@ final class HealthDecompositionCatalog
      */
     private array $decomposition;
 
-    public function __construct()
+    public function __construct(private readonly ComputedMetricExpressionInterface $expression)
     {
         $this->decomposition = [
             'inputs' => self::resolveCoverage(),
@@ -378,7 +378,7 @@ final class HealthDecompositionCatalog
                 return array_keys($this->participating);
             }
         };
-        (new ComputedMetricExpression())->evaluate($formula, ['m' => $lookup]);
+        $this->expression->evaluate($formula, ['m' => $lookup]);
 
         return $lookup->keys();
     }

@@ -26,7 +26,7 @@ final class JsonOffenderSectionDensityTest extends TestCase
     protected function setUp(): void
     {
         $this->section = new JsonOffenderSection(
-            new WorstClassDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class)),
+            new WorstClassDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class), new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())),
             new FindingFilter(),
             new JsonSanitizer(),
         );

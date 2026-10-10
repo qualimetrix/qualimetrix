@@ -14,9 +14,9 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricBranchTrace;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricBranchTrace;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
@@ -1244,7 +1244,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     #[Test]
     public function itReturnsAnEmptySummaryForTheInstalledEmptySnapshot(): void
     {
-        $analysis = new ComputedMetricAnalysis(new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator(), new HealthFormulaExcluder()));
+        $analysis = new ComputedMetricAnalysis(new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator(), new HealthFormulaExcluder(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())));
         $snapshot = new ResolvedComputedMetricDefinitions([]);
         $analysis->replace($snapshot);
         $summary = (new ComputedMetricEvaluator($analysis, self::createStub(ProfilerInterface::class)))
@@ -1257,7 +1257,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     public function itDoesNothingForZeroAnalyzedFiles(): void
     {
         $repository = $this->repository();
-        $analysis = new ComputedMetricAnalysis(new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator(), new HealthFormulaExcluder()));
+        $analysis = new ComputedMetricAnalysis(new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator(), new HealthFormulaExcluder(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())));
         $analysis->replace(new ResolvedComputedMetricDefinitions(array_values(ComputedMetricDefaults::getDefaults())));
 
         (new ComputedMetricEvaluator($analysis, self::createStub(ProfilerInterface::class)))->evaluate($repository, 0);
@@ -1283,7 +1283,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             description: 'Test',
             levels: [SymbolLevel::Project],
         );
-        $analysis = new ComputedMetricAnalysis(new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator(), new HealthFormulaExcluder()));
+        $analysis = new ComputedMetricAnalysis(new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator(), new HealthFormulaExcluder(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())));
         $analysis->replace(new ResolvedComputedMetricDefinitions([$definition]));
 
         (new ComputedMetricEvaluator($analysis, $profiler))->evaluate($this->repository(), 1);
@@ -1294,7 +1294,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     /** @param list<ComputedMetricDefinition> $definitions */
     private function evaluate(MetricRepositoryInterface $repository, array $definitions): ComputedMetricEvaluationSummary
     {
-        $analysis = new ComputedMetricAnalysis(new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator(), new HealthFormulaExcluder()));
+        $analysis = new ComputedMetricAnalysis(new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator(), new HealthFormulaExcluder(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())));
         $analysis->replace(new ResolvedComputedMetricDefinitions($definitions));
 
         return (new ComputedMetricEvaluator($analysis, self::createStub(ProfilerInterface::class)))->evaluate($repository, 1);

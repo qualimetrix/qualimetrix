@@ -10,8 +10,10 @@ use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
+use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Population\ContextGuard;
 use Qualimetrix\Analysis\Finding\Contract\Population\FlagExcludes;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
@@ -24,6 +26,7 @@ use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Population\RuleValueThreshold;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\ClassType;
@@ -134,6 +137,33 @@ abstract class AbstractRule implements RuleInterface
         $effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
 
         return $effectiveOptions->getSeverity($value);
+    }
+
+    /**
+     * @param array{warning: int|float, error: int|float} $band
+     * @param Closure(int|float, ThresholdCrossing): array{string, string} $wording
+     */
+    protected function thresholdFinding(SymbolInfo $info, int|float $value, ?Severity $severity, array $band, Closure $wording): ?Finding
+    {
+        if ($severity === null) {
+            return null;
+        }
+        $subject = $info->subject ?? throw new LogicException('Threshold findings require an exact declaration subject');
+        $threshold = $band[$severity === Severity::Error ? 'error' : 'warning'];
+        [$message, $recommendation] = $wording($threshold, ThresholdCrossing::of($value, $threshold));
+
+        return new Finding(
+            location: new Location($info->file, $info->line),
+            subject: $subject,
+            symbolPath: $subject->toSymbolPath(),
+            ruleName: $this->getName(),
+            code: $this->getName(),
+            message: $message,
+            severity: $severity,
+            metricValue: $value,
+            recommendation: $recommendation,
+            threshold: $threshold,
+        );
     }
 
     protected static function populationGate(string $id, FindingChannel|string $channel, SymbolLevel $level, string $unit, GatePredicate $predicate, string $reason, ?string $failureUnit = null): PopulationGate

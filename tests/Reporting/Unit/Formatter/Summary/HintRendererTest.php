@@ -38,7 +38,7 @@ final class HintRendererTest extends TestCase
     protected function setUp(): void
     {
         $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $offenderList = new OffenderListRenderer(new FindingFilter(), new WorstClassDrillDown($definitionCatalog));
+        $offenderList = new OffenderListRenderer(new FindingFilter(), new WorstClassDrillDown($definitionCatalog, new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())));
         $this->renderer = new HintRenderer($offenderList);
         $this->color = new AnsiColor(false);
     }

@@ -24,7 +24,7 @@ final class InheritanceDepthResolver
     private readonly array $analysedNames;
 
     /**
-     * @param array<string, string> $names exact declaration => folded name
+     * @param array<string, string> $names exact declaration => logical spelling
      * @param array<string, non-empty-list<string>> $declarationsByName
      * @param array<string, string> $parents exact declaration => parent name
      * @param array<string, true> $throwableDeclarations
@@ -57,9 +57,9 @@ final class InheritanceDepthResolver
                 continue;
             }
             $exact = $fact->declaration->toCanonical();
-            $name = ClassNameSpelling::fold($fact->logical->symbolPath->toString());
+            $name = $fact->logical->symbolPath->toString();
             $names[$exact] = $name;
-            $declarationsByName[$name][] = $exact;
+            $declarationsByName[ClassNameSpelling::fold($name)][] = $exact;
         }
 
         return [$names, $declarationsByName];
@@ -103,11 +103,12 @@ final class InheritanceDepthResolver
 
     private function resolve(string $exact): InheritanceResolution
     {
-        $name = $this->names[$exact] ?? throw new LogicException('Inheritance resolution requires a graph class declaration');
+        $displayName = $this->names[$exact] ?? throw new LogicException('Inheritance resolution requires a graph class declaration');
+        $name = ClassNameSpelling::fold($displayName);
         // A memo belongs to an exact body, but a parent names a PHP identity.
         // Check the path first: a completed alternative cannot erase a cycle.
         if (isset($this->active[$name])) {
-            return new InheritanceResolution(null, InheritanceOutcome::Loop, isset($this->throwableDeclarations[$exact]) ? true : null);
+            return new InheritanceResolution(null, InheritanceOutcome::Loop, isset($this->throwableDeclarations[$exact]) ? ThrowableReach::Yes : ThrowableReach::Unknown, [['cause' => ExternalChainOutcome::Loop->name, 'name' => $displayName]]);
         }
         if (isset($this->completed[$exact])) {
             return $this->completed[$exact];
@@ -126,14 +127,15 @@ final class InheritanceDepthResolver
     {
         $parent = $this->parents[$exact] ?? null;
         if ($parent === null) {
-            return new InheritanceResolution(0, InheritanceOutcome::Exact, isset($this->throwableDeclarations[$exact]));
+            return new InheritanceResolution(0, InheritanceOutcome::Exact, isset($this->throwableDeclarations[$exact]) ? ThrowableReach::Yes : ThrowableReach::No);
         }
         $answer = $this->parentResolution($parent);
 
         return new InheritanceResolution(
             $answer->depth === null ? null : 1 + $answer->depth,
             $answer->outcome,
-            isset($this->throwableDeclarations[$exact]) ? true : $answer->reachesThrowable,
+            isset($this->throwableDeclarations[$exact]) ? ThrowableReach::Yes : $answer->reachesThrowable,
+            $answer->obstructions,
         );
     }
 
@@ -158,7 +160,7 @@ final class InheritanceDepthResolver
             ExternalChainOutcome::ReachedRoot => InheritanceOutcome::Exact,
             ExternalChainOutcome::Loop => InheritanceOutcome::Loop,
             default => InheritanceOutcome::Floor,
-        }, $tail->reachesThrowable);
+        }, $tail->reachesThrowable, $tail->unresolved === null ? [] : [['cause' => $tail->outcome->name, 'name' => $tail->unresolved]]);
     }
 
     private function rejoinedResolution(ExternalDepth $tail): InheritanceResolution
@@ -170,7 +172,8 @@ final class InheritanceDepthResolver
         return new InheritanceResolution(
             $answer->depth === null ? null : $prefix + $answer->depth,
             $answer->outcome,
-            $tail->reachesThrowable === true ? true : $answer->reachesThrowable,
+            $tail->reachesThrowable === ThrowableReach::Yes ? ThrowableReach::Yes : $answer->reachesThrowable,
+            $answer->obstructions,
         );
     }
 
@@ -180,15 +183,19 @@ final class InheritanceDepthResolver
         $outcome = InheritanceOutcome::Exact;
         $depth = 0;
         $truth = $answers[0]->reachesThrowable;
+        $obstructions = [];
         foreach ($answers as $answer) {
+            foreach ($answer->obstructions as $obstruction) {
+                $obstructions[$obstruction['cause'] . "\0" . $obstruction['name']] = $obstruction;
+            }
             $outcome = self::dominantOutcome($outcome, $answer->outcome);
             $depth = max($depth, $answer->depth ?? 0);
             if ($truth !== $answer->reachesThrowable) {
-                $truth = null;
+                $truth = ThrowableReach::Unknown;
             }
         }
 
-        return new InheritanceResolution($outcome === InheritanceOutcome::Loop ? null : $depth, $outcome, $truth);
+        return new InheritanceResolution($outcome === InheritanceOutcome::Loop ? null : $depth, $outcome, $truth, array_values($obstructions));
     }
 
     private static function dominantOutcome(InheritanceOutcome $first, InheritanceOutcome $second): InheritanceOutcome

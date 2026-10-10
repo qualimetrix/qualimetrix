@@ -40,7 +40,7 @@ final class ViolationDensityTest extends TestCase
     protected function setUp(): void
     {
         $this->builder = new HealthSummaryBuilder(
-            new HealthMetricCatalog(),
+            new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())),
             self::createStub(ComputedMetricDefinitionCatalogInterface::class),
         );
     }

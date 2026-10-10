@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation;
+namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation;
 
 use LogicException;
 use Psr\Log\LoggerInterface;
@@ -12,6 +12,9 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDependencyGraphC
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricRefusalWording;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluatorInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
@@ -19,7 +22,7 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
-class ComputedMetricEvaluator
+class ComputedMetricEvaluator implements ComputedMetricEvaluatorInterface
 {
     private readonly ComputedMetricExpression $expression;
     private readonly ComputedMetricSubjectEvaluation $subjectEvaluation;

@@ -34,7 +34,7 @@ final class HealthBarRendererTest extends TestCase
 
     protected function setUp(): void
     {
-        $resolver = new HealthScoreResolver(new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class)));
+        $resolver = new HealthScoreResolver(new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class), new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())));
         $this->renderer = new HealthBarRenderer($resolver);
         $this->color = new AnsiColor(false);
     }
@@ -387,7 +387,7 @@ final class HealthBarRendererTest extends TestCase
     public function itColorsScoreByRange(float $score, string $expectedColor): void
     {
         $ansiColor = new AnsiColor(true);
-        $resolver = new HealthScoreResolver(new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class)));
+        $resolver = new HealthScoreResolver(new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class), new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())));
         $renderer = new HealthBarRenderer($resolver);
 
         $report = $this->createReport(healthScores: [

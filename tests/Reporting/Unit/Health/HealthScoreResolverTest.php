@@ -30,7 +30,7 @@ final class HealthScoreResolverTest extends TestCase
     protected function setUp(): void
     {
         $this->resolver = new HealthScoreResolver(
-            new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class)),
+            new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class), new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())),
         );
     }
 

@@ -24,7 +24,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final readonly class CoverageReader
 {
     public function __construct(
-        private HealthDecompositionCatalog $decomposition = new HealthDecompositionCatalog(),
+        private HealthDecompositionCatalog $decomposition,
     ) {}
 
     /**

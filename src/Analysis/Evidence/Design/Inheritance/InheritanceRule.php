@@ -11,15 +11,14 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
 
@@ -66,30 +65,36 @@ final class InheritanceRule extends AbstractRule
 
         $declaration = self::channelDeclarations()[self::NAME];
         $findings = [];
+        $obstructions = [];
         $outcomes = [InheritanceOutcome::Exact->name => 0, InheritanceOutcome::Floor->name => 0, InheritanceOutcome::Loop->name => 0];
         foreach ($context->metrics->allDeclarations() as $classInfo) {
             $subject = $classInfo->subject ?? throw new LogicException('Inheritance findings require an exact class declaration subject');
-            [$finding, $outcome] = $this->analyzeDeclaration($subject, new Location($classInfo->file, $classInfo->line), $context, $this->options, $declaration);
+            [$finding, $outcome, $diagnostics] = $this->analyzeDeclaration($subject, $classInfo, $context, $this->options, $declaration);
             ++$outcomes[$outcome->name];
+            foreach ($diagnostics as $diagnostic) {
+                $obstructions[$diagnostic['cause'] . "\0" . $diagnostic['name']] = $diagnostic;
+            }
             if ($finding !== null) {
                 $findings[] = $finding;
             }
         }
-        $this->warnAboutIncompleteChains($outcomes[InheritanceOutcome::Floor->name], $outcomes[InheritanceOutcome::Loop->name]);
+        $this->warnAboutIncompleteChains($outcomes[InheritanceOutcome::Floor->name], $outcomes[InheritanceOutcome::Loop->name], $obstructions);
 
         return $findings;
     }
 
-    /** @return array{?Finding, InheritanceOutcome} */
-    private function analyzeDeclaration(MetricSubject $subject, Location $location, AnalysisContext $context, InheritanceOptions $options, ChannelDeclaration $declaration): array
+    /** @return array{?Finding, InheritanceOutcome, list<array<string, scalar>>} */
+    private function analyzeDeclaration(MetricSubject $subject, SymbolInfo $info, AnalysisContext $context, InheritanceOptions $options, ChannelDeclaration $declaration): array
     {
         $dit = null;
         $outcome = InheritanceOutcome::Exact;
+        $diagnostics = [];
         $metrics = $this->admittedMetrics(
             $context,
             $subject,
             $declaration,
-            function (MetricBag $metrics) use (&$dit, &$outcome): iterable {
+            function (MetricBag $metrics) use (&$dit, &$outcome, &$diagnostics): iterable {
+                $diagnostics = $metrics->entries(MetricName::DESIGN_DIT_UNRESOLVED);
                 $dit = $metrics->get(MetricName::DESIGN_DIT);
                 $outcome = $this->publishedOutcome($dit, $metrics->get(MetricName::DESIGN_DIT_UNRESOLVED));
                 yield GateInput::metrics('dit-present', $metrics);
@@ -98,12 +103,12 @@ final class InheritanceRule extends AbstractRule
             level: SymbolLevel::Class_,
         );
         if ($metrics === null) {
-            return [null, $outcome];
+            return [null, $outcome, $diagnostics];
         }
         /** @var InheritanceOptions $effectiveOptions */
         $effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
 
-        return [$this->findingForClass($location, $subject, (int) $dit, $effectiveOptions, $outcome), $outcome];
+        return [$this->findingForClass($info, (int) $dit, $effectiveOptions, $outcome), $outcome, $diagnostics];
     }
 
     private function publishedOutcome(int|float|null $dit, int|float|null $unresolved): InheritanceOutcome
@@ -115,7 +120,8 @@ final class InheritanceRule extends AbstractRule
         return $dit === null ? InheritanceOutcome::Loop : InheritanceOutcome::Floor;
     }
 
-    private function warnAboutIncompleteChains(int $floors, int $loops): void
+    /** @param array<string, array<string, scalar>> $obstructions */
+    private function warnAboutIncompleteChains(int $floors, int $loops, array $obstructions): void
     {
         $parts = [];
         if ($floors !== 0) {
@@ -125,42 +131,38 @@ final class InheritanceRule extends AbstractRule
             $parts[] = \sprintf('%d cyclic inheritance chain(s) have no numeric DIT', $loops);
         }
         if ($parts !== []) {
+            ksort($obstructions, \SORT_STRING);
+            $samples = [];
+            foreach (\array_slice($obstructions, 0, 5) as $obstruction) {
+                $name = (string) $obstruction['name'];
+                $samples[] = match ($obstruction['cause']) {
+                    ExternalChainOutcome::NoMapForIt->name => $name . ' (no composer install; run composer install)',
+                    ExternalChainOutcome::Loop->name => $name . ' (cycle)',
+                    default => $name . ' (source could not be placed or read)',
+                };
+            }
+            if ($samples !== []) {
+                $parts[] = 'design.dit-unresolved: ' . implode(', ', $samples) . (\count($obstructions) > 5 ? \sprintf(', and %d more', \count($obstructions) - 5) : '');
+            }
             $this->logger?->warning('DIT: ' . implode('; ', $parts) . '.');
         }
     }
 
     private function findingForClass(
-        Location $location,
-        MetricSubject $subject,
+        SymbolInfo $info,
         int $ditValue,
         InheritanceOptions $options,
         InheritanceOutcome $outcome,
     ): ?Finding {
-        if ($ditValue >= $options->error) {
-            $severity = Severity::Error;
-            $threshold = $options->error;
-        } elseif ($ditValue >= $options->warning) {
-            $severity = Severity::Warning;
-            $threshold = $options->warning;
-        } else {
-            return null;
-        }
-
-        return new Finding(
-            location: $location,
-            subject: $subject,
-            symbolPath: $subject->toSymbolPath(),
-            ruleName: $this->getName(),
-            code: self::NAME,
-            message: \sprintf(
-                ($outcome === InheritanceOutcome::Floor ? 'DIT is at least %d, ' : 'DIT (Depth of Inheritance) is %d, ') . ThresholdCrossing::of($ditValue, $threshold)->value . ' threshold of %d. Prefer composition over deep inheritance',
-                $ditValue,
-                $threshold,
-            ),
-            severity: $severity,
-            metricValue: $ditValue,
-            recommendation: \sprintf($outcome === InheritanceOutcome::Floor ? 'DIT is at least %d (threshold: %d) — deep inheritance, fragile hierarchy' : 'DIT: %d (threshold: %d) — deep inheritance, fragile hierarchy', $ditValue, $threshold),
-            threshold: $threshold,
+        return $this->thresholdFinding(
+            $info,
+            $ditValue,
+            $options->getSeverity($ditValue),
+            ['warning' => $options->warning, 'error' => $options->error],
+            static fn(int|float $threshold, ThresholdCrossing $crossing): array => [
+                \sprintf(($outcome === InheritanceOutcome::Floor ? 'DIT is at least %d, ' : 'DIT (Depth of Inheritance) is %d, ') . '%s threshold of %d. Prefer composition over deep inheritance', $ditValue, $crossing->value, $threshold),
+                \sprintf($outcome === InheritanceOutcome::Floor ? 'DIT is at least %d (threshold: %d) — deep inheritance, fragile hierarchy' : 'DIT: %d (threshold: %d) — deep inheritance, fragile hierarchy', $ditValue, $threshold),
+            ],
         );
     }
 

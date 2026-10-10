@@ -43,7 +43,7 @@ final class SummaryEnricherTest extends TestCase
             new DebtCalculator($registry),
             new ImpactCalculator(new ClassRankResolver(), $registry),
             new HealthSummaryBuilder(
-                new HealthMetricCatalog(),
+                new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())),
                 self::createStub(ComputedMetricDefinitionCatalogInterface::class),
             ),
         );

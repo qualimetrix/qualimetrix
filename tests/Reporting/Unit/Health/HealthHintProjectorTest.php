@@ -17,7 +17,7 @@ final class HealthHintProjectorTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->projector = new HealthHintProjector(new HealthMetricCatalog());
+        $this->projector = new HealthHintProjector(new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())));
     }
 
     #[Test]

@@ -40,6 +40,7 @@ Design/
 │   ├── InheritanceOptions.php
 │   ├── InheritanceOutcome.php
 │   ├── InheritanceResolution.php
+│   ├── ThrowableReach.php
 │   ├── InheritanceRule.php
 │   ├── NocCollector.php
 │   ├── NocOptions.php
@@ -78,8 +79,10 @@ port is promised to the composer adapter in `Infrastructure\Composer`, and
 this capability imports neither a composer type nor a parser (ADR 0074).
 
 `InheritanceResolution` represents a private complete answer with
-`InheritanceOutcome`: nullable depth, `Exact`/`Floor`/`Loop`, and nullable knowledge of whether the
-chain reaches PHP's `Throwable`. `ExternalDepth` and `ExternalChainOutcome`
+`InheritanceOutcome`: nullable depth, `Exact`/`Floor`/`Loop`, and explicit
+`ThrowableReach::Yes`/`No`/`Unknown` evidence about PHP's `Throwable`.
+Obstruction causes and names travel alongside those independent facts, through
+structured entries on `design.dit-unresolved`. `ExternalDepth` and `ExternalChainOutcome`
 carry external-tail evidence, including an explicit continuation to an already
 analysed name. The same resolver resumes that continuation using every known
 declaration; Composer never chooses one body from that roster. Depth completeness
@@ -128,7 +131,10 @@ unknown exception status when duplicate parent declarations disagree.
   unknown. Proven `Throwable` evidence survives a later unread tail.
   Interfaces, traits and enums receive 0. Size does not classify exceptions.
 - `InheritanceRule` emits at most one warning per enabled `analyze()` call,
-  distinguishing floors, loops, or both. Disabling the rule silences this
+  distinguishing floors, loops, or both. Its `design.dit-unresolved` pointer
+  names at most five distinct obstruction/cause pairs and the exact remainder:
+  absent Composer installation, unread or unplaced source, or a cycle member.
+  Missing installation includes a `composer install` hint. Disabling the rule silences this
   warning while collection still publishes the metric evidence. A numeric
   floor can cross the unchanged thresholds; both its finding and recommendation
   say the DIT is at least the published value. A loop emits no numeric finding.

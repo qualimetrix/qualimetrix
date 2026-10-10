@@ -8,6 +8,7 @@ use LogicException;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
@@ -87,12 +88,17 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
                 continue;
             }
             $answer = $resolver->depthOf($fact->declaration);
+            $evidence = new MetricBag();
+            foreach ($answer->obstructions as $obstruction) {
+                $evidence = $evidence->withEntry(MetricName::DESIGN_DIT_UNRESOLVED, $obstruction);
+            }
+            $repository->addSubject($subject, $evidence, null, null);
             if ($answer->depth !== null) {
                 $repository->addSubjectScalar($subject, MetricName::DESIGN_DIT, $answer->depth);
             }
             $repository->addSubjectScalar($subject, MetricName::DESIGN_DIT_UNRESOLVED, $answer->outcome === InheritanceOutcome::Exact ? 0 : 1);
-            if ($answer->reachesThrowable !== null) {
-                $repository->addSubjectScalar($subject, MetricName::DESIGN_IS_EXCEPTION, $answer->reachesThrowable ? 1 : 0);
+            if ($answer->reachesThrowable !== ThrowableReach::Unknown) {
+                $repository->addSubjectScalar($subject, MetricName::DESIGN_IS_EXCEPTION, $answer->reachesThrowable === ThrowableReach::Yes ? 1 : 0);
             }
         }
     }

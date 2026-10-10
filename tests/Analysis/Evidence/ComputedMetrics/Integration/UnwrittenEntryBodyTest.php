@@ -98,7 +98,7 @@ final class UnwrittenEntryBodyTest extends TestCase
         $layers[] = new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml'), AuthoredNode::fromPlain(Yaml::parse($fileYaml)));
 
         $analysis = new ComputedMetricAnalysis(
-            new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator(), new HealthFormulaExcluder()),
+            new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator(), new HealthFormulaExcluder(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())),
         );
         $analysis->replace($analysis->resolve(new ConfigurationDocument(
             [],

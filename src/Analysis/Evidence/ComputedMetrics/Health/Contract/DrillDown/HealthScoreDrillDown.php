@@ -28,13 +28,12 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final readonly class HealthScoreDrillDown
 {
     private ContributorRanker $contributorRanker;
-    private HealthDecompositionCatalog $decomposition;
 
     public function __construct(
         private ComputedMetricDefinitionCatalogInterface $definitionCatalog,
+        private HealthDecompositionCatalog $decomposition,
     ) {
         $this->contributorRanker = new ContributorRanker();
-        $this->decomposition = new HealthDecompositionCatalog();
     }
 
     /**

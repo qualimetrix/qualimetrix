@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation;
+namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation;
 
 use ArrayAccess;
 use InvalidArgumentException;

@@ -22,7 +22,7 @@ final class ExternalAncestry
         $current = ltrim($fqcn, '\\');
         $depth = 0;
         $seen = [];
-        $throwable = null;
+        $throwable = ThrowableReach::Unknown;
 
         for ($step = 0; $step < self::VISIT_CAP; ++$step) {
             $identity = ClassNameSpelling::fold($current);
@@ -36,7 +36,7 @@ final class ExternalAncestry
 
             $builtin = PhpBuiltinClassRegistry::canonicalName($current);
             if ($builtin !== null) {
-                $throwable = $throwable === true || $this->builtinReachesThrowable($builtin);
+                $throwable = ($throwable === ThrowableReach::Yes || $this->builtinReachesThrowable($builtin)) ? ThrowableReach::Yes : ThrowableReach::No;
                 $next = $this->builtinStep($builtin, $depth);
             } else {
                 $next = $this->sourceStep($current, $depth);
@@ -59,7 +59,7 @@ final class ExternalAncestry
         $parents = PhpBuiltinClassHierarchy::extendsOf($builtin) ?? [];
 
         return $parents === []
-            ? ExternalDepth::reachedRoot($depth, $this->builtinReachesThrowable($builtin))
+            ? ExternalDepth::reachedRoot($depth, $this->builtinReachesThrowable($builtin) ? ThrowableReach::Yes : ThrowableReach::No)
             : $parents[0];
     }
 
@@ -72,7 +72,7 @@ final class ExternalAncestry
     private function sourceStep(string $current, int $depth): ExternalDepth|string
     {
         if (!$this->parents->isConfigured()) {
-            return ExternalDepth::noMap($depth);
+            return ExternalDepth::noMap($depth, unresolved: $current);
         }
         $lookup = $this->parents->parentOf($current);
         if (!$lookup->placed) {

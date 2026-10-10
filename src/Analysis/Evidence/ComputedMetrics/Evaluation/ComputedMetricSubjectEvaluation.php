@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation;
+namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Core\Symbol\SymbolLevel;

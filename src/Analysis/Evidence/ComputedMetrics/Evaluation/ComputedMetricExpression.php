@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation;
+namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation;
 
 use InvalidArgumentException;
 use LogicException;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpressionInterface;
 use Symfony\Component\ExpressionLanguage\ExpressionFunction;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Symfony\Component\ExpressionLanguage\Node\NameNode;
@@ -37,7 +38,7 @@ use Throwable;
  * `??` and to the operands only a runtime value lets run, and about which other
  * keys are present — never about the name alone.
  */
-final class ComputedMetricExpression
+final class ComputedMetricExpression implements ComputedMetricExpressionInterface
 {
     /** The single variable a formula sees. */
     private const string VARIABLE = ComputedMetricReads::VARIABLE;

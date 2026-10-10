@@ -27,7 +27,7 @@ final class JsonHealthSectionTest extends TestCase
 
     protected function setUp(): void
     {
-        $resolver = new HealthScoreResolver(new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class)));
+        $resolver = new HealthScoreResolver(new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class), new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())));
         $this->section = new JsonHealthSection($resolver, new JsonSanitizer());
     }
 

@@ -33,8 +33,8 @@ final class HealthTextFormatterTest extends TestCase
 
     protected function setUp(): void
     {
-        $hintProvider = new HealthMetricCatalog();
-        $drillDown = new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class));
+        $hintProvider = new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
+        $drillDown = new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class), new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
         $resolver = new HealthScoreResolver($drillDown);
         $this->formatter = new HealthTextFormatter($resolver);
     }
@@ -546,7 +546,7 @@ final class HealthTextFormatterTest extends TestCase
         $analysis = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricAnalysis(
             new \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver(
                 new \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator(),
-                new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder(),
+                new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()),
             ),
         );
         $analysis->replace(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions([
@@ -557,7 +557,7 @@ final class HealthTextFormatterTest extends TestCase
                 [\Qualimetrix\Core\Symbol\SymbolLevel::Class_],
             ),
         ]));
-        $summary = (new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator(
+        $summary = (new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricEvaluator(
             $analysis,
             self::createStub(\Qualimetrix\Core\Profiler\Contract\ProfilerInterface::class),
             new \Psr\Log\NullLogger(),

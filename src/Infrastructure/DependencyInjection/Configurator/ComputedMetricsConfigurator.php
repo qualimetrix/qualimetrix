@@ -30,12 +30,12 @@ final class ComputedMetricsConfigurator implements ContainerConfiguratorInterfac
     private function registerRoot(ContainerBuilder $container): void
     {
         $reach = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricReach';
-        $expression = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricExpression';
+        $expression = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Evaluation\\ComputedMetricExpression';
         $metricReachCatalog = 'Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\MetricReachCatalogInterface';
         $formulaValidator = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricFormulaValidator';
         $configResolver = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricsConfigResolver';
         $findingBuilder = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Finding\\ComputedMetricFindingBuilder';
-        $evaluator = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluator';
+        $evaluator = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Evaluation\\ComputedMetricEvaluator';
         $analysis = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricAnalysis';
         $healthFormulaExcluder = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\HealthFormulaExcluder';
         $delegatingLogger = 'Qualimetrix\\Infrastructure\\Logging\\DelegatingLogger';
@@ -45,9 +45,10 @@ final class ComputedMetricsConfigurator implements ContainerConfiguratorInterfac
         $container->register($computedMetricsSection)->setAutoconfigured(true);
         $container->register($excludeHealthSection)->setAutoconfigured(true);
 
-        $container->register($healthFormulaExcluder);
+        $container->register($healthFormulaExcluder)->setArguments([new Reference('Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricExpressionInterface')]);
         $container->setAlias(self::HEALTH_EXCLUSION, $healthFormulaExcluder)->setPublic(true);
         $container->register($expression);
+        $container->setAlias('Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricExpressionInterface', $expression);
         $container->register($reach)->setArguments([
             new Reference($metricReachCatalog),
             new Reference($expression),
@@ -67,6 +68,7 @@ final class ComputedMetricsConfigurator implements ContainerConfiguratorInterfac
             new Reference(ProfilerInterface::class),
             new Reference($delegatingLogger),
         ]);
+        $container->setAlias('Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluatorInterface', $evaluator);
         $container->setAlias(self::CONFIGURATOR, $analysis)->setPublic(true);
         $container->setAlias(self::CATALOG, $analysis)->setPublic(true);
     }
@@ -84,11 +86,11 @@ final class ComputedMetricsConfigurator implements ContainerConfiguratorInterfac
 
         $container->register($metricHintCatalog);
         $container->register($healthDimensionCatalog);
-        $container->register($healthDecompositionCatalog);
+        $container->register($healthDecompositionCatalog)->setArguments([new Reference('Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricExpressionInterface')]);
         $container->register($healthMetricCatalog)->setArguments([
+            new Reference($healthDecompositionCatalog),
             new Reference($metricHintCatalog),
             new Reference($healthDimensionCatalog),
-            new Reference($healthDecompositionCatalog),
         ]);
         $container->setAlias(self::METADATA_PROVIDER, $healthMetricCatalog);
         $container->register($healthSummaryBuilder)->setArguments([
@@ -97,10 +99,12 @@ final class ComputedMetricsConfigurator implements ContainerConfiguratorInterfac
         ]);
         $container->register($healthScoreDrillDown)->setArguments([
             new Reference(self::CATALOG),
+            new Reference($healthDecompositionCatalog),
         ]);
         $container->register($worstOffenderBuilder);
         $container->register($worstClassDrillDown)->setArguments([
             new Reference(self::CATALOG),
+            new Reference($healthDecompositionCatalog),
             new Reference($worstOffenderBuilder),
         ]);
     }
