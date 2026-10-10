@@ -87,7 +87,7 @@ src/Reporting/Report.php	22	coupling.cbo	warning=37 error=37 -- This immutable r
 src/Analysis/Evidence/ComputedMetrics/Configuration/ComputedMetricsSection.php	25	coupling.instability	warning=0.85 -- Ca=2, Ce=11: the owned section schema
 src/Analysis/Evidence/ComputedMetrics/Evaluation/ComputedMetricReads.php	31	coupling.instability	warning=0.800001 -- Formula traversal depends on expression node kinds and has a small incoming population; splitting that traversal transfers its node dependencies.
 src/Analysis/Evidence/Coupling/RfcCollector.php	21	coupling.instability	warning=0.800001 -- The collection adapter reads exact declaration and metric transports; its small incoming population does not model that required outward composition.
-src/Analysis/Evidence/Coupling/RfcReceiverTypes.php	15	coupling.instability	warning=0.875001 -- Receiver evidence reads the supported PHP type and expression grammar; its small incoming population does not model that required outward composition.
+src/Analysis/Evidence/Coupling/RfcReceiverTypes.php	14	coupling.instability	warning=0.875001 -- Receiver evidence reads the supported PHP type and expression grammar; its small incoming population does not model that required outward composition.
 src/Analysis/Evidence/Design/DataClass/DataClassOptions.php	28	coupling.instability	warning=0.81 -- The eighth efferent edge is
 src/Analysis/Evidence/Design/GodClass/GodClassOptions.php	36	coupling.instability	warning=0.81 -- The eighth efferent edge is
 src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	26	coupling.instability	warning=0.95 error=0.95 -- A composition root depends outward on everything it assembles and is depended on by one trait; instability near one is its shape, not its defect.
