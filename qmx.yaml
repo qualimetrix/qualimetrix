@@ -138,6 +138,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule'
         - 'Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface'
         - 'Qualimetrix\Analysis\Evidence\CircularDependency\Cycle'
+        - 'Qualimetrix\Analysis\Evidence\CircularDependency\CycleFinding'
         - 'Qualimetrix\Analysis\Evidence\CircularDependency\CycleMemberLabels'
     - name: analysis-evidence-codesmell
       patterns:
@@ -327,6 +328,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Coupling\NamespaceInstabilityOptions'
         - 'Qualimetrix\Analysis\Evidence\Coupling\RfcCollector'
         - 'Qualimetrix\Analysis\Evidence\Coupling\RfcVisitor'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkFinding'
         - 'Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceOptions'
         - 'Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule'
     - name: analysis-evidence-dependencymodel
@@ -588,6 +590,19 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Location'
         - 'Qualimetrix\Analysis\Finding\Contract\OccurrenceKey'
         - 'Qualimetrix\Analysis\Finding\Contract\OptionActivity'
+        - 'Qualimetrix\Analysis\Finding\Contract\Population\ContextGuard'
+        - 'Qualimetrix\Analysis\Finding\Contract\Population\FlagExcludes'
+        - 'Qualimetrix\Analysis\Finding\Contract\Population\GateInput'
+        - 'Qualimetrix\Analysis\Finding\Contract\Population\GatePredicate'
+        - 'Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation'
+        - 'Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent'
+        - 'Qualimetrix\Analysis\Finding\Contract\Population\KeyThreshold'
+        - 'Qualimetrix\Analysis\Finding\Contract\Population\KindIn'
+        - 'Qualimetrix\Analysis\Finding\Contract\Population\NameMatches'
+        - 'Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate'
+        - 'Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity'
+        - 'Qualimetrix\Analysis\Finding\Contract\Population\RuleAbstention'
+        - 'Qualimetrix\Analysis\Finding\Contract\Population\RuleValueThreshold'
         - 'Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration'
         - 'Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorOutcome'
         - 'Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorVerdict'
@@ -674,6 +689,8 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Exclusion\RulePathExclusionProvider'
         - 'Qualimetrix\Analysis\Finding\FindingExclusionLedger'
         - 'Qualimetrix\Analysis\Finding\FindingPublication'
+        - 'Qualimetrix\Analysis\Finding\Population\PopulationSession'
+        - 'Qualimetrix\Analysis\Finding\Population\PopulationTrace'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\OptionActivityResolution'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDeclarations'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms'
@@ -704,6 +721,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Selection\SelectionRefusals'
         - 'Qualimetrix\Analysis\Finding\Selection\SelectionSpecificity'
         - 'Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit'
+        - 'Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionFinding'
         - 'Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions'
         - 'Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule'
         - 'Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement'
@@ -889,6 +907,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundary'
         - 'Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundaryBaselineSource'
         - 'Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit'
+        - 'Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryFinding'
         - 'Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryOptions'
         - 'Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule'
         - 'Qualimetrix\Analysis\Policy\Baseline\EntrySelector'
@@ -937,6 +956,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveMaskingCoalition'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveMeasurability'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsage'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsagePopulation'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\Audit\ExecutionFingerprint'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\Audit\MaskingOutcome'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\Audit\StaleDirectiveFinding'
@@ -1465,6 +1485,7 @@ architecture:
         - 'Qualimetrix\Reporting\Formatter\Prose\ComputedMetricAbsenceNarrator'
         - 'Qualimetrix\Reporting\Formatter\Prose\GlyphMode'
         - 'Qualimetrix\Reporting\Formatter\Prose\ProseText'
+        - 'Qualimetrix\Reporting\Formatter\Prose\RuleAbstentionNarrator'
         - 'Qualimetrix\Reporting\Formatter\PublicationKind'
         - 'Qualimetrix\Reporting\Formatter\PublishedFinding'
         - 'Qualimetrix\Reporting\Formatter\PublishedUtf8'
@@ -1532,7 +1553,6 @@ architecture:
     analysis-evidence-complexity:
       - analysis-evidence-measurement
       - analysis-finding
-      - core-neutral
       - core-path
       - core-symbol
       - external
@@ -1540,6 +1560,7 @@ architecture:
       - analysis-configuration
       - analysis-evidence-measurement
       - analysis-finding
+      - core-neutral
       - core-profiler
       - core-symbol
       - external
@@ -1583,7 +1604,6 @@ architecture:
     analysis-evidence-maintainability:
       - analysis-evidence-measurement
       - analysis-finding
-      - core-neutral
       - core-path
       - core-symbol
       - external
@@ -1611,7 +1631,6 @@ architecture:
     analysis-evidence-size:
       - analysis-evidence-measurement
       - analysis-finding
-      - core-neutral
       - core-path
       - core-symbol
       - external
@@ -1646,6 +1665,7 @@ architecture:
       - analysis-configuration
       - analysis-evidence-measurement
       - analysis-finding
+      - core-neutral
       - core-path
       - core-symbol
       - external
@@ -1792,7 +1812,6 @@ architecture:
       - analysis-evidence-computedmetrics
       - analysis-evidence-measurement
       - analysis-finding
-      - core-neutral
       - core-symbol
       - external
     infrastructure-serializer:
@@ -2112,22 +2131,25 @@ rules:
   # Core contracts and value objects are coupling hubs by design.
   coupling.class-rank:
     suppress_paths:
-      # The neutral source-byte primitive is shared by ten identity/publication readers; ClassRank 0.00759223.
+      # Shared document provenance is a contract hub consumed across capabilities.
+      - exact: src/Analysis/Configuration/Contract/Document/Provenance.php
+      # Shared document schema is a contract hub consumed across capabilities.
+      - exact: src/Analysis/Configuration/Contract/Document/Schema/NodeSchema.php
+      # Shared source origin is a contract hub consumed across capabilities.
+      - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationOrigin.php
+      # The provider-owned metric bag is a shared carrier for collectors and rules.
+      - exact: src/Analysis/Evidence/Measurement/Contract/MetricBag.php
+      # This neutral authored-selector value is shared by path and namespace consumers.
+      - exact: src/Core/Pattern/SelectorDefinition.php
+      # The neutral source-byte primitive preserves identities across source and publication consumers.
       - exact: src/Core/SourceText/SourceBytes.php
-      # The shared configuration-source value has rank 0.005870 from its named readers.
-      - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationSource.php
-      # The shared refusal carrier has intentional ClassRank 0.005666 from its consumers.
+      # The shared refusal carrier intentionally centralizes source-attributed refusals.
       - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php
-      # The shared read port has 29 inbound readers; ClassRank 0.00624447
-      # against 0.00607457 measures that intended contract popularity.
-      - exact: src/Analysis/Configuration/Contract/Document/ResolvedValueInterface.php
-      # Refusal position metadata has 17 inbound classes; ClassRank 0.00584299
-      # against 0.00572598 measures intended shared contract popularity.
+      # Refusal position metadata carries the same source facts to configuration consumers.
       - exact: src/Analysis/Configuration/Contract/Refusal/RefusedPosition.php
     suppress_namespaces:
       - subtree: Qualimetrix\Analysis\Finding\Contract
-      # Same reconfirmation as for the CBO channel above: the level vocabulary now
-      # lives here, so its ClassRank is unpublished too (rule-vocabulary Ш5e2b).
+      # Shared symbol and level vocabulary intentionally connects evidence and finding consumers.
       - subtree: Qualimetrix\Core\Symbol
       - subtree: Qualimetrix\Analysis\Finding\Rule
       - subtree: Qualimetrix\Core\Path
@@ -2146,6 +2168,10 @@ rules:
   # leaf, so it has its own prefix.
   coupling.distance:
     suppress_namespaces:
+      # The concrete population language is a shared contract hub for judging rules and publication consumers.
+      - exact: 'Qualimetrix\Analysis\Finding\Contract\Population'
+      # Immutable publication records share one transport purpose across formatters.
+      - exact: 'Qualimetrix\Reporting'
       # Concrete prose operations and glyph values need no abstract provider; A=0, I=1/3 gives D=2/3.
       - exact: 'Qualimetrix\Reporting\Formatter\Prose'
       # Baseline's concrete public facts form a contract hub (raw distance 0.659091).
@@ -2175,16 +2201,6 @@ rules:
       # Concrete metadata catalogs implement a sibling Contract-owned public
       # surface. Exact-namespace abstractness therefore cannot see that port.
       - exact: 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata'
-      # Internal evidence, reason projection, and offender construction are a
-      # concrete subject with no external production consumer for an abstraction.
-      # `[Q]` keeps the exclusion exact and leaves sibling Health namespaces active.
-      - exact: 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender'
-      # This navigation root owns no declaration and unites independent Debt
-      # and Impact subjects; the exact-root raw distance is 0.5294117647058824.
-      - exact: 'Qualimetrix\Analysis\Evidence\Prioritization'
-      # Finding deliberately combines a stable Contract subtree with a small
-      # internal service set; the exact-root aggregate distance is 0.6641604010025063.
-      - exact: 'Qualimetrix\Analysis\Finding'
       # This public-surface root unions independently consumed Finding
       # contracts; its exact-root aggregate distance is 0.6209039548022599.
       - exact: 'Qualimetrix\Analysis\Finding\Contract'
@@ -2210,18 +2226,6 @@ rules:
       # override on the file the finding is attributed to left the violation
       # standing and the audit reported that directive inert.
       - exact: 'Qualimetrix\Analysis\Configuration'
-      # Two exact roots the line above deliberately leaves measured, and X15
-      # moved both. `Contract` holds the configuration document and its
-      # contracts; the refusal carrier's four value types were added beneath
-      # it (ADR 0050), which lowers the parent's abstractness by four concrete
-      # classes: 0.60 against a 0.5 ceiling. The child root is the extreme case
-      # of the same shape — a final exception plus three `final readonly`
-      # values, A=0 by construction, and every capability owner now names it,
-      # so I approaches 1 and D = |A + I - 1| approaches 1 with it: 0.98. There
-      # is no refactoring that lowers it while the type stays a contract; an
-      # abstract seam in front of an exception's factory methods would buy the
-      # number and cost the reader.
-      - exact: 'Qualimetrix\Analysis\Configuration\Contract'
       - exact: 'Qualimetrix\Analysis\Configuration\Contract\Refusal'
       # The section declaration language has one port, a concrete builder,
       # value types and enums. Moving its two internal helpers computes to
@@ -2229,15 +2233,9 @@ rules:
       # and makes the contract depend on the engine. Its parent with the
       # resolved shape interfaces measures 0.486.
       - exact: 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema'
-      # The shared document port has A=0.40, I=0.09524 and Distance 0.50476;
-      # its stable owner readership is intentional, with no new concrete types.
-      - exact: 'Qualimetrix\Analysis\Configuration\Contract\Document'
       # Shared manifest ports and immutable facts form a stable concrete hub;
       # exact Contract distance is 0.604167 (A=0.333333, I=0.062500).
       - exact: 'Qualimetrix\Analysis\ProjectManifest\Contract'
-      # The parent contains the same eight Contract declarations and no own
-      # implementation; its aggregate distance is also 0.604167.
-      - exact: 'Qualimetrix\Analysis\ProjectManifest'
       # Shared run policies and scope records deliberately have many consumers;
       # exact Contract configuration distance is 0.684615 (A=0.20, I=0.115385).
       - exact: 'Qualimetrix\Analysis\Run\Contract\Configuration'
@@ -2709,8 +2707,6 @@ rules:
         - exact: 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata'
         # Stateless serializer alternatives have no measured TCC; LCOM 8/3 gives 16.7 after removing invented TCC.
         - exact: 'Qualimetrix\Infrastructure\Serializer'
-        # One audit, immutable options and rule metadata form a coherent three-class leaf (41.7).
-        - exact: 'Qualimetrix\Analysis\Policy\Baseline\EntryBinding'
         # Stateless expansion algorithms and their immutable result do not share
         # fields; cohesion is structurally inapplicable only to this exact root.
         - exact: 'Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion'

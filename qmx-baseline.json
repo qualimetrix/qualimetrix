@@ -29,18 +29,12 @@
       {"channel":"complexity.ccn","magnitudes":[10]},
       {"channel":"complexity.cognitive","magnitudes":[20]}
     ],
-    "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityRule::analyzeNamespaceLevel@src/Analysis/Evidence/Coupling/InstabilityRule.php": [
-      {"channel":"complexity.ccn","magnitudes":[12]}
-    ],
     "declaration:callable:Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyType::description@src/Analysis/Evidence/DependencyModel/Contract/DependencyType.php": [
       {"channel":"complexity.ccn","magnitudes":[15]}
     ],
     "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassOptions::__construct@src/Analysis/Evidence/Design/GodClass/GodClassOptions.php": [
       {"channel":"code-smell.constructor-overinjection","magnitudes":[8]},
       {"channel":"code-smell.long-parameter-list","magnitudes":[8]}
-    ],
-    "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Maintainability\\MaintainabilityRule::analyze@src/Analysis/Evidence/Maintainability/MaintainabilityRule.php": [
-      {"channel":"complexity.ccn","magnitudes":[11]}
     ],
     "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Measurement\\Aggregation\\GlobalCollectorSorter::sort@src/Analysis/Evidence/Measurement/Aggregation/GlobalCollectorSorter.php": [
       {"channel":"complexity.ccn","magnitudes":[12]},
@@ -169,9 +163,6 @@
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\RuleValidatorMapFactory@src/Analysis/Policy/Inline/Contract/RuleValidatorMapFactory.php": [
       {"channel":"health.maintainability","magnitudes":[45.7]}
     ],
-    "declaration:class:Qualimetrix\\Core\\Observation\\WorseDirection@src/Core/Observation/WorseDirection.php": [
-      {"channel":"coupling.cbo","magnitudes":[28]}
-    ],
     "declaration:class:Qualimetrix\\Core\\Profiler\\Contract\\ProfilerInterface@src/Core/Profiler/Contract/ProfilerInterface.php": [
       {"channel":"coupling.cbo","magnitudes":[22]}
     ],
@@ -229,7 +220,7 @@
       {"channel":"coupling.cbo","magnitudes":[20]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Design": [
-      {"channel":"coupling.instability","magnitudes":[0.970149]}
+      {"channel":"coupling.instability","magnitudes":[0.972603]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance": [
       {"channel":"coupling.instability","magnitudes":[0.962264]}
@@ -258,6 +249,9 @@
     "ns:Qualimetrix\\Analysis\\Policy\\Architecture\\Layer": [
       {"channel":"size.class-count","magnitudes":[23]}
     ],
+    "ns:Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit": [
+      {"channel":"coupling.instability","magnitudes":[0.95122]}
+    ],
     "ns:Qualimetrix\\Core\\Ast": [
       {"channel":"coupling.cbo","magnitudes":[17]}
     ],
@@ -281,7 +275,7 @@
     ],
     "project:": [
       {"channel":"architecture.circular-dependency","occurrence":"366eed4cdda70adf","magnitudes":[3]},
-      {"channel":"health.coupling","magnitudes":[47.6]}
+      {"channel":"health.coupling","magnitudes":[45.9]}
     ]
   }
 }
