@@ -147,7 +147,7 @@ PHP);
         $process = new Process([\PHP_BINARY, 'scripts/benchmark-regression.php', '--update-baselines'], $fixtureRoot);
         $process->run();
 
-        self::assertSame(1, $process->getExitCode());
+        self::assertSame(2, $process->getExitCode());
         self::assertStringContainsString('missing: benchmark path not found', $process->getErrorOutput());
         self::assertSame($originalBaseline, file_get_contents($baselinePath));
     }

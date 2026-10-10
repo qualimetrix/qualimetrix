@@ -15,8 +15,9 @@ declare(strict_types=1);
  *   0 — all scores within expected ranges (or --update-baselines wrote successfully and
  *       every expected metric was measured)
  *   1 — regression detected (an expectation mismatch, or an expected metric that was
- *       not measured — see below). Both apply under --update-baselines too: a write
- *       that left a stale expectation standing exits 1, or the operator commits a
+ *       not measured — see below, or incomplete analysis coverage). These apply under
+ *       --update-baselines too: a write that left a stale expectation standing exits 1,
+ *       or the operator commits a
  *       baseline the next `benchmark:check` reddens and no further update can clean.
  *   2 — infrastructure error (missing deps, invalid baseline, a benchmark path not
  *       found, an analysis that failed to run or produced unreadable output, etc.)
@@ -173,8 +174,8 @@ if (!is_array($baselines) || !isset($baselines['projects']) || !is_array($baseli
 
 $projects = $baselines['projects'];
 
-// $failures drives the exit code (1 if anything is wrong at all); $infrastructureFailures is
-// the narrower list that blocks --update-baselines from writing (see the docblock above).
+// Infrastructure failures exit 2; measured regressions and incomplete coverage exit 1.
+// A partial corpus always blocks --update-baselines from writing.
 $failures = [];
 $infrastructureFailures = [];
 // The list that outlives a successful write: an expectation the analysis did not
@@ -202,6 +203,8 @@ fprintf(STDERR, "Benchmark regression check (%d projects)\n", count($projects));
 fprintf(STDERR, "%s\n", str_repeat('=', 80));
 
 foreach ($projects as $id => $config) {
+    // Raw and decoded report buffers together can fill the parent's memory budget.
+    unset($result, $json, $data, $symbolsForDistribution, $symbol, $projectMetrics);
     // Without the key, the concatenation below would silently make $path the repository
     // root — a directory that exists, analyses (vendor/ included) and seeds as this
     // project's baseline.
@@ -304,7 +307,6 @@ foreach ($projects as $id => $config) {
         fprintf(STDERR, "FAILED (analysis coverage incomplete or missing, %.1fs)\n", $elapsed);
         $message = sprintf('%s: analysis coverage is not complete', $id);
         $failures[] = $message;
-        $infrastructureFailures[] = $message;
 
         continue;
     }
@@ -500,13 +502,13 @@ if ($updateBaselines && $infrastructureFailures === [] && count($results) === co
 }
 
 if (count($failures) > 0) {
-    fprintf(STDERR, "\nREGRESSION DETECTED (%d failures):\n", count($failures));
+    fprintf(STDERR, "\n%s (%d failures):\n", $infrastructureFailures !== [] ? 'INFRASTRUCTURE FAILURE' : 'REGRESSION DETECTED', count($failures));
 
     foreach ($failures as $failure) {
         fprintf(STDERR, "  - %s\n", $failure);
     }
 
-    exit(1);
+    exit($infrastructureFailures !== [] ? 2 : 1);
 }
 
 fprintf(STDERR, "\nAll %d projects within expected ranges.\n", count($results));
