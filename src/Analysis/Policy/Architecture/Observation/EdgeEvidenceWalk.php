@@ -18,7 +18,11 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
-/** Collects dependency-edge layer evidence from one prepared run. */
+/**
+ * Collects dependency-edge layer evidence from one prepared run.
+ *
+ * @qmx-threshold coupling.instability warning=0.89 -- The policy walk joins graph, assignment and population evidence for its owning collector; its few callers are intentional.
+ */
 final readonly class EdgeEvidenceWalk
 {
     public function __construct(

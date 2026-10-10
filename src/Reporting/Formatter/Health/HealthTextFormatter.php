@@ -30,8 +30,8 @@ use Qualimetrix\Reporting\Report;
  * Renders a table of health dimensions with scores, status labels,
  * and threshold info, followed by decomposition details for each dimension.
  *
- * @qmx-threshold complexity.wmc warning=61 -- WMC 60 spans twenty related rendering methods,
- * with maximum CCN 7 after sharing absence prose; moving another renderer only transfers its branches.
+ * @qmx-threshold complexity.wmc warning=62 -- The health view intentionally selects compact or verbose
+ * population prose alongside its dimension rendering; moving another renderer only transfers its branches.
  */
 final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysInterface
 {

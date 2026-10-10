@@ -52,6 +52,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * both are compared surfaces, so widening it is a step of its own.
  *
  * **Statelessness:** trivially — `analyze()` does nothing at all.
+ *
+ * @qmx-threshold coupling.instability warning=0.82 -- Discovery diagnostic metadata is composed through its owner and registered rule metadata consumers.
  */
 final class UnmatchedExcludeRule extends AbstractRule
 {

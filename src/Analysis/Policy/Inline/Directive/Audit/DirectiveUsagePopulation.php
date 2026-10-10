@@ -16,7 +16,11 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
-/** Selected judgement of the native authored suppression-site verdicts. */
+/**
+ * Selected judgement of the native authored suppression-site verdicts.
+ *
+ * @qmx-threshold coupling.instability warning=0.84 -- The captured directive-site projection joins verdict and publication contracts for its owning audit.
+ */
 final class DirectiveUsagePopulation
 {
     public static function declaration(): ChannelDeclaration
