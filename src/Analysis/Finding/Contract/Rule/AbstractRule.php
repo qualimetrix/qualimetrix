@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
 use Closure;
 use InvalidArgumentException;
+use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
@@ -27,6 +28,7 @@ use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
 
@@ -216,18 +218,61 @@ abstract class AbstractRule implements RuleInterface
     protected function admittedMetrics(AnalysisContext $context, MetricSubject $subject, ChannelDeclaration $declaration, Closure $inputs, iterable $before = [], string $unit = 'declaration', ?SymbolLevel $level = null): ?MetricBag
     {
         $metrics = null;
-        $admitted = $context->admit(
-            $this->getName(),
-            new FindingChannel($this->getName()),
-            $level ?? MetricSubject::levelOfCanonical($subject->toCanonical()),
-            PopulationIdentity::subject($subject, $unit),
+        $admitted = $this->admitSubject(
+            $context,
+            $subject,
             $declaration,
             (static function () use ($context, $subject, $inputs, $before, &$metrics): iterable {
                 yield from $before;
                 $metrics = $context->metrics->getSubject($subject);
                 yield from $inputs($metrics);
             })(),
+            $level ?? MetricSubject::levelOfCanonical($subject->toCanonical()),
+            $unit,
         );
         return $admitted ? $metrics : null;
+    }
+
+    /** @param iterable<GateInput> $inputs */
+    protected function admitSubject(AnalysisContext $context, MetricSubject $subject, ChannelDeclaration $declaration, iterable $inputs, SymbolLevel $level, string $unit = 'declaration'): bool
+    {
+        return $context->admit(
+            $this->getName(),
+            new FindingChannel($this->getName()),
+            $level,
+            PopulationIdentity::subject($subject, $unit),
+            $declaration,
+            $inputs,
+        );
+    }
+
+    /** @param iterable<GateInput> $inputs */
+    protected function admitOccurrence(AnalysisContext $context, MetricSubject $subject, int $ordinal, ChannelDeclaration $declaration, iterable $inputs): bool
+    {
+        return $context->admit(
+            $this->getName(),
+            new FindingChannel($this->getName()),
+            MetricSubject::levelOfCanonical($subject->toCanonical()),
+            PopulationIdentity::occurrence($subject->toCanonical(), $ordinal),
+            $declaration,
+            $inputs,
+        );
+    }
+
+    /**
+     * @param iterable<SymbolInfo> $roster
+     *
+     * @return iterable<array{SymbolInfo, MetricSubject, MetricBag}>
+     */
+    protected function admittedDeclarations(AnalysisContext $context, ChannelDeclaration $declaration, iterable $roster, SymbolLevel $level, string $valueSource, ?string $kindSource = null, string $unit = 'declaration'): iterable
+    {
+        foreach ($roster as $info) {
+            $subject = $info->subject ?? throw new LogicException('Metric judgement requires an exact declaration subject');
+            $before = $kindSource === null ? [] : [GateInput::kind($kindSource, $subject->toSymbolPath()->getType())];
+            $metrics = $this->admittedMetrics($context, $subject, $declaration, static fn(MetricBag $metrics): array => [GateInput::metrics($valueSource, $metrics)], $before, $unit, $level);
+            if ($metrics !== null) {
+                yield [$info, $subject, $metrics];
+            }
+        }
     }
 }

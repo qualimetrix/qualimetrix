@@ -483,7 +483,13 @@ subclasses. `judgingHigher()` and `judgingLower()` bind raw metric keys to their
 declared direction. `admittedMetrics()` consumes source-owned preconditions
 before acquiring the exact subject bag, then supplies that bag to the remaining
 lazy operands. Callers state their native roster level explicitly when it can
-differ from the subject kind.
+differ from the subject kind. `admittedDeclarations()` streams the admitted
+roster with its exact subject and bag, while `admitSubject()` and
+`admitOccurrence()` preserve their distinct accounting identities.
+
+`FindingPublication::populationSession()` creates a fresh accounting session from
+the resolved channel publication for each execution. Its lifetime follows the
+execution, alongside the publication and exclusion ledger.
 
 `ChannelPublication::measure()` streams a hosted audit through the captured
 selection into one private session. The session receives the captured publication

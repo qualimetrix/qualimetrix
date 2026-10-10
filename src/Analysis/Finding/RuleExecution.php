@@ -17,7 +17,6 @@ use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
-use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 
@@ -63,7 +62,7 @@ final class RuleExecution implements RuleExecutionInterface
         $this->publication->begin();
 
         $enablement = $this->readyEnablement();
-        $population = new PopulationSession((new ChannelPublication($enablement))->publishes(...), $restrictToProducer);
+        $population = $this->publication->populationSession($enablement, $restrictToProducer);
         $context = $context->withPopulationTrace($population);
         $removed = [];
         foreach ($this->materialization->activeRules($enablement, $restrictToProducer) as $rule) {

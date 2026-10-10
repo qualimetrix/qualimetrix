@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding;
 
 use LogicException;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
@@ -12,6 +13,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\SelectionTrace;
+use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 
 /** Projects produced findings through the existing exclusion ledger and selection. */
 final readonly class FindingPublication
@@ -21,6 +23,11 @@ final readonly class FindingPublication
     public function __construct(private RuleConfigurationInterface $ruleConfiguration)
     {
         $this->exclusions = new FindingExclusionLedger($ruleConfiguration);
+    }
+
+    public function populationSession(RuleEnablement $enablement, ?string $restrictToProducer): PopulationSession
+    {
+        return new PopulationSession((new ChannelPublication($enablement))->publishes(...), $restrictToProducer);
     }
 
     public function begin(): void
