@@ -461,8 +461,11 @@ HTML readers must use `rule/code/symbol` instead of
 shown separately; a configured cap alone is not a measured breach.
 
 `namespaces` contains the same namespace population used for selection and
-grouping. A declaration keeps its own namespace; a file finding carries all
-namespaces declared in that file, or `[""]` when none is declared. Project
+grouping. A declaration keeps its own namespace; a file finding carries the
+namespaces of measured exact declarations and logical classes in that file.
+Namespace blocks without those declarations are absent from the index. Empty
+membership uses `[""]` as a global reporting fallback, even when the source
+contains a namespace block. Project
 findings carry `[]`. `namespace` is the sole name (including `""` for global),
 or `null` for multiple names and project findings. A multi-namespace file
 finding belongs to one sorted group and is not duplicated.

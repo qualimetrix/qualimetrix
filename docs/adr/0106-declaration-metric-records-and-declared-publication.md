@@ -109,10 +109,13 @@ anonymous-class methods do not contribute to that named declaration's WMC.
 
 Reports retain one captured `FileNamespaceIndex`. Namespace selection,
 grouping and finding records use that same index: declarations keep their own
-namespace, file findings carry every namespace declared in the file (global
-when none is declared), and project findings carry none. A multi-namespace
+namespace, file findings carry the namespaces of measured exact declarations
+and logical classes in the file, and project findings carry none. Namespace
+blocks without those declarations are absent from the index. Empty membership
+uses the global reporting fallback and does not establish that the source has
+no namespace block. A multi-namespace
 file finding appears once in a sorted group rather than once per namespace.
-JSON violations, top issues and HTML publish `namespaces` as the full list;
+JSON violations, top issues and HTML publish `namespaces` as that captured list;
 `namespace` is its sole member or null. The global namespace is the empty
 string, not its display label `(global)`.
 

@@ -146,11 +146,13 @@ and report assembly; enrichment preserves it. A standalone `ReportBuilder`
 creates it once from its own metrics when no prepared index was supplied.
 `FindingFilter`, `FindingSorter`, detail rendering and `FindingRecord` require
 that index explicitly. `FindingNamespaces` gives declarations their own
-namespace, file aggregates all declared namespaces in their physical file
-(sorted for publication), and projects no namespace. A file without declarations
-uses the real global namespace, the empty string. `namespace` is that string
+namespace, file aggregates the namespaces of measured exact declarations and
+logical classes in their physical file (sorted for publication), and projects
+no namespace. Namespace blocks without such declarations are absent from this
+index. An empty file membership uses the empty string as a global reporting
+fallback; it does not prove that the source has no namespace block. `namespace` is that string
 when exactly one namespace applies (including `''`); it is null for multiple
-namespaces or a project finding. `namespaces` always carries the complete list.
+namespaces or a project finding. `namespaces` carries the complete captured membership.
 Namespace grouping joins multiple displayed names in one group and keeps each
 finding once; `(global)` is a display label, and `[project]` names project scope.
 Global drill-down uses `regex:^$`; selectors naming `(global)` are refused.
@@ -561,9 +563,10 @@ Decode a key with `rawurldecode`; `file` remains display text.
 
 **`outOfScope`:** always present. `null` without `--namespace`/`--class`; under a selection, `{violationCount, errorCount, warningCount, infoCount, identities}` of the run's findings the selection left out, zeroes when it left none. The exit code is resolved over `summary` and `outOfScope` together. `metrics` publishes the same count names and identities; `sarif`, `github` and `html` add one diagnostic entry under `drill-down.out-of-scope` only when something lies outside (see `DrillDown\OutOfScopeFindings`). `gitlab` and `checkstyle` have no entry that is not a finding to their consumer, so `OutOfScopeFindings::FORMATS_WITHOUT_A_PLACE` names them and the command line refuses a selection under them. `suppressed` describes the whole run and refuses either selector before analysis.
 
-Namespace drill-down selects a file finding when any namespace declared in its
-physical file matches the selector. Files without declarations use the global
-namespace; a missing repository has the same reporting fallback. A declaration
+Namespace drill-down selects a file finding when any namespace in its captured
+file membership matches the selector. A namespace block without a measured
+exact declaration or logical class does not select that file finding. Empty
+membership and a missing repository use the same global reporting fallback. A declaration
 finding keeps its declared namespace even in a multi-namespace file. Class
 selection never selects a file aggregate. Binding counts retain their existing
 namespace and ranked-offender universe.
