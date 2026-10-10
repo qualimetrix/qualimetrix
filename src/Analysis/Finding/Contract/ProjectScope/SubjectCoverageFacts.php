@@ -39,17 +39,18 @@ final readonly class SubjectCoverageFacts
 
     public function covers(ValueReach $reach, SymbolLevel $level, SubjectCoverageObservation $observation): bool
     {
-        $localLevel = $level !== SymbolLevel::Namespace_ && $level !== SymbolLevel::Project;
+        $nonlocalLevel = \in_array($level, [SymbolLevel::Namespace_, SymbolLevel::Project], true);
         if ($observation->kind === 'verified-absent-file') {
-            return $localLevel && $observation->file !== null;
+            return !$nonlocalLevel && $observation->file !== null;
         }
-        if ($reach === ValueReach::Members && $localLevel && $observation->kind === 'analyzed-file') {
+        if ($nonlocalLevel) {
+            return $this->scope->judgesNamespaceClaims() && $this->failed === [];
+        }
+        if ($reach === ValueReach::Members && $observation->kind === 'analyzed-file') {
             return $observation->file !== null && isset($this->analyzed[$observation->file->value()]);
         }
 
-        $judged = $localLevel ? $this->scope->judgesSelectedUniverse() : $this->scope->judgesNamespaceClaims();
-
-        return $judged && $this->failed === [];
+        return $this->scope->judgesSelectedUniverse() && $this->failed === [];
     }
 
     public function analyzed(RelativePath $file): bool
