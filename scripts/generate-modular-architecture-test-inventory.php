@@ -132,6 +132,7 @@ const TOOLING_TEST_ROOT_OWNERS = [
     'scripts/subprocess/tests/' => 'Tooling/Subprocess',
     'scripts/cross-tool-comparison/tests/' => 'Tooling/CrossToolComparison',
     'scripts/phpunit-aggregate/tests/' => 'Tooling/PhpunitAggregate',
+    'scripts/check-code-parallel/tests/' => 'Tooling/CheckCodeParallel',
     // A root-level, non-PSR-4 npm project outside both scripts/ and tools/, so
     // it is outside actualToolingTestRootsOnDisk()'s glob the same way
     // governance/ is — assertToolingTestRootRegistrationIsComplete() checks
