@@ -453,6 +453,12 @@ view and never imports file-to-namespace attribution from reporting selection.
 
 ## Selected rule populations
 
+`JudgedMetrics` remains exposed through `ChannelDeclaration.judges`. Assembly
+validates its catalog keys and the runtime channel registry reads their reach;
+the manifest records these exact readers through the declaration surface. Rule
+authors construct those keys through `AbstractRule` without a direct value-type
+import.
+
 `GatePredicate` is exposed through the public `PopulationGate.predicate` field.
 The manifest records that surface for each exact external consumer of
 `PopulationGate`; those consumers do not need a direct interface import.

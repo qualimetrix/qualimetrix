@@ -8141,7 +8141,20 @@
       "kind": "class",
       "owner": "Analysis.Finding",
       "visibility": "contract",
-      "consumers": []
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\JudgedMetricDeclarationGuard",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\ChannelDeclaration"
+        },
+        {
+          "owner": "Infrastructure.Rule",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\ChannelDeclaration"
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Finding\\Contract\\LevelActivity": {
       "path": "src/Analysis/Finding/Contract/LevelActivity.php",
