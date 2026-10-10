@@ -616,6 +616,10 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 $sourceRoot . '/scripts/phpunit-aggregate/tests',
                 $projectRoot . '/scripts/phpunit-aggregate/tests',
             );
+            $this->copyDirectory(
+                $sourceRoot . '/scripts/check-code-parallel/tests',
+                $projectRoot . '/scripts/check-code-parallel/tests',
+            );
             // Not a test root and not scanned: this is the one path
             // NON_SCANNED_TEST_DIRECTORIES excuses, and
             // assertEveryTestDirectoryIsScanned() refuses an excuse whose path

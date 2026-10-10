@@ -113,7 +113,8 @@
         "test:cross-tool": [
             "python3 --version",
             "python3 -m unittest discover -s scripts/cross-tool-comparison/tests -p 'test_*.py'",
-            "python3 -m unittest discover -s scripts/phpunit-aggregate/tests -p 'test_*.py'"
+            "python3 -m unittest discover -s scripts/phpunit-aggregate/tests -p 'test_*.py'",
+            "python3 -m unittest discover -s scripts/check-code-parallel/tests -p 'test_*.py'"
         ],
         "dangling-names": "python3 scripts/dangling-test-names.py",
         "build:js": "cd html-report && npm run build",
@@ -238,11 +239,14 @@
         ],
         "check:code": [
             "@cs-check",
-            "@phpstan",
-            "@test:aggregate",
+            "@check:code:parallel",
             "@dangling-names",
             "@test:js",
             "@test:cross-tool"
+        ],
+        "check:code:parallel": [
+            "Composer\\Config::disableProcessTimeout",
+            "python3 scripts/check-code-parallel/check-code-parallel.py"
         ],
         "check:docs": [
             "@docs:check"
@@ -276,7 +280,7 @@
         "test:coverage": "Run PHPUnit tests with HTML and clover coverage reports (needs an active coverage driver)",
         "phpstan": "Run PHPStan static analysis (level 8)",
         "test:js": "Run JS tests for HTML report (vitest)",
-        "test:cross-tool": "Run deterministic cross-tool methodology tests (Python 3, no external analyzers)",
+        "test:cross-tool": "Run Python tests for cross-tool comparison and check coordinators",
         "dangling-names": "Report every Qualimetrix\\Tests name the tree spells and no file declares; 0 exactly the pinned census, 1 a name nobody pinned, 2 an unreadable input, 3 a pin that no longer dangles",
         "build:js": "Rebuild HTML report JS bundle (vite)",
         "phar": "Build build/qmx.phar with a pinned, checksum-verified box",
@@ -301,6 +305,7 @@
         "selfcheck:analysis": "Run Qualimetrix on its own source code after governance freshness has already been checked",
         "check": "Everything below, in the order a failure is cheapest to read",
         "check:code": "What a code change invalidates: style, the dangling-name census, static analysis, tests",
+        "check:code:parallel": "Run the existing PHPStan and verified PHPUnit aggregate checks concurrently, collecting both results",
         "check:docs": "What a website change invalidates: a strict mkdocs build",
         "configuration:merge-table": "Regenerate the table of how each configuration key combines across layers in website/docs/getting-started/configuration.md (EN and RU) from the section declarations",
         "configuration:merge-table:check": "Fail if that table differs from what the section declarations generate",

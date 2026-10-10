@@ -56,11 +56,22 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
             'php bin/qmx check src/ --baseline=qmx-baseline.json --fail-on=warning --memory-limit=512M',
             $scripts['selfcheck:analysis'],
         );
-        self::assertSame('@test:aggregate', $this->scriptSteps($scripts, 'check:code')[2]);
+        self::assertSame(
+            ['Composer\\Config::disableProcessTimeout', 'python3 scripts/check-code-parallel/check-code-parallel.py'],
+            $scripts['check:code:parallel'],
+        );
+        self::assertSame(
+            ['@cs-check', '@check:code:parallel', '@dangling-names', '@test:js', '@test:cross-tool'],
+            $this->scriptSteps($scripts, 'check:code'),
+        );
         self::assertContains('@architecture:check', $this->scriptSteps($scripts, 'check:artifacts'));
         self::assertContains('@suppression-snapshot:check', $this->scriptSteps($scripts, 'check:artifacts'));
         self::assertContains(
             "python3 -m unittest discover -s scripts/phpunit-aggregate/tests -p 'test_*.py'",
+            $this->scriptSteps($scripts, 'test:cross-tool'),
+        );
+        self::assertContains(
+            "python3 -m unittest discover -s scripts/check-code-parallel/tests -p 'test_*.py'",
             $this->scriptSteps($scripts, 'test:cross-tool'),
         );
         self::assertSame(['@selfcheck:analysis', '@directives:audit'], $scripts['check:self']);
