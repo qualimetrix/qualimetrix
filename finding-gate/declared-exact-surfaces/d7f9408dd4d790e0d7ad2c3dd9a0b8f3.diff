@@ -1,0 +1,126 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 3064
++visible 2923
+@@ -6,1 +6,0 @@
+-Rule population incomplete — declaration: 54 judged, 65 not judged; invocation: 0 judged, 3 not judged; namespace: 2 judged, 6 not judged.
+@@ -11,28 +10,28 @@
+-  1. [WRN] 46.7  src/Base.php  [22min]
+-         design.noc: NOC (Number of Children) is 3, exceeds threshold of 1. Consider using interfaces instead of inheritance
+-         Recommendation: NOC: 3 (threshold: 1) — too many direct subclasses
+-  2. [WRN] 28.3  src/ShimNative.php  [30min]
+-         design.dit: DIT (Depth of Inheritance) is 2, exceeds threshold of 1. Prefer composition over deep inheritance
+-         Recommendation: DIT: 2 (threshold: 1) — deep inheritance, fragile hierarchy
+-  3. [WRN] 28.3  src/ShimPolyfill.php  [30min]
+-         design.dit: DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance
+-         Recommendation: DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy
+-  4. [WRN] 27.4  src/Middle.php  [30min]
+-         design.dit: DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance
+-         Recommendation: DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy
+-  5. [WRN] 18.9  src/ShimNative.php  [20min]
+-         design.noc: NOC (Number of Children) is 1, reaches threshold of 1. Consider using interfaces instead of inheritance
+-         Recommendation: NOC: 1 (threshold: 1) — too many direct subclasses
+-  6. [WRN] 18.9  src/ShimPolyfill.php  [20min]
+-         design.noc: NOC (Number of Children) is 1, reaches threshold of 1. Consider using interfaces instead of inheritance
+-         Recommendation: NOC: 1 (threshold: 1) — too many direct subclasses
+-  7. [WRN] 18.2  src/Middle.php  [20min]
+-         design.noc: NOC (Number of Children) is 1, reaches threshold of 1. Consider using interfaces instead of inheritance
+-         Recommendation: NOC: 1 (threshold: 1) — too many direct subclasses
+-  8. [WRN] 16.9  src/Consumer.php  [33min]
+-         design.dit: DIT (Depth of Inheritance) is 3, exceeds threshold of 1. Prefer composition over deep inheritance
+-         Recommendation: DIT: 3 (threshold: 1) — deep inheritance, fragile hierarchy
+-  9. [WRN] 15.3  src/TwinA.php  [30min]
+-         design.dit: DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance
+-         Recommendation: DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy
+-  10. [WRN] 15.3  src/TwinB.php  [30min]
++  1. [WRN] 9.34  src/Base.php  [22min]
++         design.noc: NOC (Number of Children) is 3, exceeds threshold of 1. Consider using interfaces instead of inheritance
++         Recommendation: NOC: 3 (threshold: 1) — too many direct subclasses
++  2. [WRN] 5.67  src/ShimNative.php  [30min]
++         design.dit: DIT (Depth of Inheritance) is 2, exceeds threshold of 1. Prefer composition over deep inheritance
++         Recommendation: DIT: 2 (threshold: 1) — deep inheritance, fragile hierarchy
++  3. [WRN] 5.67  src/ShimPolyfill.php  [30min]
++         design.dit: DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance
++         Recommendation: DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy
++  4. [WRN] 5.47  src/Middle.php  [30min]
++         design.dit: DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance
++         Recommendation: DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy
++  5. [WRN] 3.78  src/ShimNative.php  [20min]
++         design.noc: NOC (Number of Children) is 1, reaches threshold of 1. Consider using interfaces instead of inheritance
++         Recommendation: NOC: 1 (threshold: 1) — too many direct subclasses
++  6. [WRN] 3.78  src/ShimPolyfill.php  [20min]
++         design.noc: NOC (Number of Children) is 1, reaches threshold of 1. Consider using interfaces instead of inheritance
++         Recommendation: NOC: 1 (threshold: 1) — too many direct subclasses
++  7. [WRN] 3.65  src/Middle.php  [20min]
++         design.noc: NOC (Number of Children) is 1, reaches threshold of 1. Consider using interfaces instead of inheritance
++         Recommendation: NOC: 1 (threshold: 1) — too many direct subclasses
++  8. [WRN] 3.37  src/Consumer.php  [33min]
++         design.dit: DIT (Depth of Inheritance) is 3, exceeds threshold of 1. Prefer composition over deep inheritance
++         Recommendation: DIT: 3 (threshold: 1) — deep inheritance, fragile hierarchy
++  9. [WRN] 3.06  src/TwinA.php  [30min]
++         design.dit: DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance
++         Recommendation: DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy
++  10. [WRN] 3.06  src/TwinB.php  [30min]
+@@ -46,1 +45,1 @@
+-invocation-format:summary 3064
++invocation-format:summary 2923
+@@ -51,1 +50,0 @@
+-Rule population incomplete — declaration: 54 judged, 65 not judged; invocation: 0 judged, 3 not judged; namespace: 2 judged, 6 not judged.
+@@ -56,28 +54,28 @@
+-  1. [WRN] 46.7  src/Base.php  [22min]
+-         design.noc: NOC (Number of Children) is 3, exceeds threshold of 1. Consider using interfaces instead of inheritance
+-         Recommendation: NOC: 3 (threshold: 1) — too many direct subclasses
+-  2. [WRN] 28.3  src/ShimNative.php  [30min]
+-         design.dit: DIT (Depth of Inheritance) is 2, exceeds threshold of 1. Prefer composition over deep inheritance
+-         Recommendation: DIT: 2 (threshold: 1) — deep inheritance, fragile hierarchy
+-  3. [WRN] 28.3  src/ShimPolyfill.php  [30min]
+-         design.dit: DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance
+-         Recommendation: DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy
+-  4. [WRN] 27.4  src/Middle.php  [30min]
+-         design.dit: DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance
+-         Recommendation: DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy
+-  5. [WRN] 18.9  src/ShimNative.php  [20min]
+-         design.noc: NOC (Number of Children) is 1, reaches threshold of 1. Consider using interfaces instead of inheritance
+-         Recommendation: NOC: 1 (threshold: 1) — too many direct subclasses
+-  6. [WRN] 18.9  src/ShimPolyfill.php  [20min]
+-         design.noc: NOC (Number of Children) is 1, reaches threshold of 1. Consider using interfaces instead of inheritance
+-         Recommendation: NOC: 1 (threshold: 1) — too many direct subclasses
+-  7. [WRN] 18.2  src/Middle.php  [20min]
+-         design.noc: NOC (Number of Children) is 1, reaches threshold of 1. Consider using interfaces instead of inheritance
+-         Recommendation: NOC: 1 (threshold: 1) — too many direct subclasses
+-  8. [WRN] 16.9  src/Consumer.php  [33min]
+-         design.dit: DIT (Depth of Inheritance) is 3, exceeds threshold of 1. Prefer composition over deep inheritance
+-         Recommendation: DIT: 3 (threshold: 1) — deep inheritance, fragile hierarchy
+-  9. [WRN] 15.3  src/TwinA.php  [30min]
+-         design.dit: DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance
+-         Recommendation: DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy
+-  10. [WRN] 15.3  src/TwinB.php  [30min]
++  1. [WRN] 9.34  src/Base.php  [22min]
++         design.noc: NOC (Number of Children) is 3, exceeds threshold of 1. Consider using interfaces instead of inheritance
++         Recommendation: NOC: 3 (threshold: 1) — too many direct subclasses
++  2. [WRN] 5.67  src/ShimNative.php  [30min]
++         design.dit: DIT (Depth of Inheritance) is 2, exceeds threshold of 1. Prefer composition over deep inheritance
++         Recommendation: DIT: 2 (threshold: 1) — deep inheritance, fragile hierarchy
++  3. [WRN] 5.67  src/ShimPolyfill.php  [30min]
++         design.dit: DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance
++         Recommendation: DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy
++  4. [WRN] 5.47  src/Middle.php  [30min]
++         design.dit: DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance
++         Recommendation: DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy
++  5. [WRN] 3.78  src/ShimNative.php  [20min]
++         design.noc: NOC (Number of Children) is 1, reaches threshold of 1. Consider using interfaces instead of inheritance
++         Recommendation: NOC: 1 (threshold: 1) — too many direct subclasses
++  6. [WRN] 3.78  src/ShimPolyfill.php  [20min]
++         design.noc: NOC (Number of Children) is 1, reaches threshold of 1. Consider using interfaces instead of inheritance
++         Recommendation: NOC: 1 (threshold: 1) — too many direct subclasses
++  7. [WRN] 3.65  src/Middle.php  [20min]
++         design.noc: NOC (Number of Children) is 1, reaches threshold of 1. Consider using interfaces instead of inheritance
++         Recommendation: NOC: 1 (threshold: 1) — too many direct subclasses
++  8. [WRN] 3.37  src/Consumer.php  [33min]
++         design.dit: DIT (Depth of Inheritance) is 3, exceeds threshold of 1. Prefer composition over deep inheritance
++         Recommendation: DIT: 3 (threshold: 1) — deep inheritance, fragile hierarchy
++  9. [WRN] 3.06  src/TwinA.php  [30min]
++         design.dit: DIT (Depth of Inheritance) is 1, reaches threshold of 1. Prefer composition over deep inheritance
++         Recommendation: DIT: 1 (threshold: 1) — deep inheritance, fragile hierarchy
++  10. [WRN] 3.06  src/TwinB.php  [30min]

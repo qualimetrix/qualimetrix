@@ -1,0 +1,23 @@
+--- candidate
++++ reference (mapped)
+@@ -1,11 +1,9 @@
+-visible 922
+-::warning file=src/Raised.php,line=16,title=complexity.ccn::Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions
+-::warning file=src/Design.php,line=29,title=design.data-class::Data Class detected: only 25%25 of the public interface is behavior (WOC, threshold 50%25) and complexity is low (WMC=3, threshold 10). Consider encapsulating behavior or using a DTO pattern
+-::warning file=src/Design.php,line=17,title=design.god-class::God Class detected (3/4 criteria): high WMC (3 >= 1), high LCOM (3 >= 1), low TCC (0.00 < 0.50)
+-::notice title=rule-population.incomplete::Selected judgement incomplete: design.data-class (class): 1 unjudged declaration; Data classes require properties. Metric population boundary was not met.; design.god-class (class): 3 unjudged declaration; The class has too few methods for god-class judgement. Metric population boundary was not met.
+-
+-invocation-format:github 922
+-::warning file=src/Raised.php,line=16,title=complexity.ccn::Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions
+-::warning file=src/Design.php,line=29,title=design.data-class::Data Class detected: only 25%25 of the public interface is behavior (WOC, threshold 50%25) and complexity is low (WMC=3, threshold 10). Consider encapsulating behavior or using a DTO pattern
+-::warning file=src/Design.php,line=17,title=design.god-class::God Class detected (3/4 criteria): high WMC (3 >= 1), high LCOM (3 >= 1), low TCC (0.00 < 0.50)
+-::notice title=rule-population.incomplete::Selected judgement incomplete: design.data-class (class): 1 unjudged declaration; Data classes require properties. Metric population boundary was not met.; design.god-class (class): 3 unjudged declaration; The class has too few methods for god-class judgement. Metric population boundary was not met.
++visible 578
++::warning file=src/Raised.php,line=16,title=complexity.ccn::Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions
++::warning file=src/Design.php,line=29,title=design.data-class::Data Class detected: only 25%25 of the public interface is behavior (WOC, threshold 50%25) and complexity is low (WMC=3, threshold 10). Consider encapsulating behavior or using a DTO pattern
++::warning file=src/Design.php,line=17,title=design.god-class::God Class detected (3/4 criteria): high WMC (3 >= 1), high LCOM (3 >= 1), low TCC (0.00 < 0.50)
++
++invocation-format:github 578
++::warning file=src/Raised.php,line=16,title=complexity.ccn::Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions
++::warning file=src/Design.php,line=29,title=design.data-class::Data Class detected: only 25%25 of the public interface is behavior (WOC, threshold 50%25) and complexity is low (WMC=3, threshold 10). Consider encapsulating behavior or using a DTO pattern
++::warning file=src/Design.php,line=17,title=design.god-class::God Class detected (3/4 criteria): high WMC (3 >= 1), high LCOM (3 >= 1), low TCC (0.00 < 0.50)

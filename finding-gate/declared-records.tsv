@@ -1,17 +1,1 @@
 change	case	report	view	selector	reason
-withdrawn	*	json	format:json	"{""rule"":""coupling.class-rank""}"	Coupling findings follow class-only uniform-share eligibility and own namespace type populations
-introduced	*	json	format:json	"{""rule"":""coupling.class-rank""}"	Coupling findings follow class-only uniform-share eligibility and own namespace type populations
-withdrawn	*	json	format:json	"{""rule"":""coupling.distance""}"	Coupling findings follow class-only uniform-share eligibility and own namespace type populations
-introduced	*	json	format:json	"{""rule"":""coupling.distance""}"	Coupling findings follow class-only uniform-share eligibility and own namespace type populations
-withdrawn	*	json	check:baseline-source	"{""rule"":""coupling.class-rank""}"	Coupling findings follow class-only uniform-share eligibility and own namespace type populations
-introduced	*	json	check:baseline-source	"{""rule"":""coupling.class-rank""}"	Coupling findings follow class-only uniform-share eligibility and own namespace type populations
-withdrawn	*	json	check:baseline-source	"{""rule"":""coupling.distance""}"	Coupling findings follow class-only uniform-share eligibility and own namespace type populations
-introduced	*	json	check:baseline-source	"{""rule"":""coupling.distance""}"	Coupling findings follow class-only uniform-share eligibility and own namespace type populations
-withdrawn	*	json	check:baseline	"{""rule"":""coupling.class-rank""}"	Coupling findings follow class-only uniform-share eligibility and own namespace type populations
-introduced	*	json	check:baseline	"{""rule"":""coupling.class-rank""}"	Coupling findings follow class-only uniform-share eligibility and own namespace type populations
-withdrawn	*	json	check:baseline	"{""rule"":""coupling.distance""}"	Coupling findings follow class-only uniform-share eligibility and own namespace type populations
-introduced	*	json	check:baseline	"{""rule"":""coupling.distance""}"	Coupling findings follow class-only uniform-share eligibility and own namespace type populations
-withdrawn	*	suppressed	format:suppressed	"{""rule"":""coupling.class-rank""}"	Coupling findings follow class-only uniform-share eligibility and own namespace type populations
-introduced	*	suppressed	format:suppressed	"{""rule"":""coupling.class-rank""}"	Coupling findings follow class-only uniform-share eligibility and own namespace type populations
-withdrawn	*	suppressed	format:suppressed	"{""rule"":""coupling.distance""}"	Coupling findings follow class-only uniform-share eligibility and own namespace type populations
-introduced	*	suppressed	format:suppressed	"{""rule"":""coupling.distance""}"	Coupling findings follow class-only uniform-share eligibility and own namespace type populations

@@ -1,0 +1,430 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 176852
++visible 164602
+@@ -3579,209 +3579,1 @@
+-                    "toolExecutionNotifications": [
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: architecture.doubted-assignment (project), 1 unjudged invocation; Prepared layer evidence is unavailable. Required population context was not judged."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: architecture.layer-overlap (project), 1 unjudged invocation; Prepared layer evidence is unavailable. Required population context was not judged."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: architecture.layer-violation (class), 1 unjudged invocation; Prepared layer evidence is unavailable. Required population context was not judged."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: code-smell.constructor-overinjection (callable), 118 unjudged callable; Only constructors are judged. Name is outside the declared population."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: cohesion.lcom (class), 51 unjudged declaration; Methods are below the configured minimum. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: complexity.ccn (class), 48 unjudged declaration; Maximum method complexity was not published. Missing metric \"complexity.ccn.max\"."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: complexity.cognitive (class), 48 unjudged declaration; Maximum method complexity was not published. Missing metric \"complexity.cognitive.max\"."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: coupling.cbo (namespace), 22 unjudged namespace; Own classes are below the configured minimum. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: coupling.class-rank (class), 76 unjudged declaration; A class with no dependents is outside hotspot judgement. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: coupling.distance (namespace), 3 unjudged namespace; The own namespace has no coupling. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: coupling.distance (namespace), 22 unjudged namespace; The own type population is below its minimum. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: coupling.instability (class), 76 unjudged declaration; Class afferent coupling is below its minimum. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: coupling.instability (namespace), 3 unjudged namespace; Namespace afferent coupling is below its minimum. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: coupling.instability (namespace), 22 unjudged namespace; Subtree classes are below the configured minimum. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: design.data-class (class), 57 unjudged declaration; Data classes require properties. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: design.dit (class), 118 unjudged declaration; Only class declarations are judged. Declaration kind is outside the declared population."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: design.god-class (class), 51 unjudged declaration; The class has too few methods for god-class judgement. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: design.noc (class), 76 unjudged declaration; A class with no children is outside the NOC population. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: design.type-coverage.param (class), 66 unjudged declaration; This type-coverage dimension requires a positive declaration total. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: design.type-coverage.property (class), 57 unjudged declaration; This type-coverage dimension requires a positive declaration total. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: design.type-coverage.return (class), 48 unjudged declaration; This type-coverage dimension requires a positive declaration total. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: maintainability.mi (callable), 116 unjudged callable; Statement count is below the configured minimum. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: size.class-count (namespace), 1 unjudged namespace; The namespace has no own classes. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        }
+-                    ]
++                    "toolExecutionNotifications": []
+@@ -3798,1 +3590,1 @@
+-invocation-format:sarif 176852
++invocation-format:sarif 164602
+@@ -7376,209 +7168,1 @@
+-                    "toolExecutionNotifications": [
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: architecture.doubted-assignment (project), 1 unjudged invocation; Prepared layer evidence is unavailable. Required population context was not judged."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: architecture.layer-overlap (project), 1 unjudged invocation; Prepared layer evidence is unavailable. Required population context was not judged."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: architecture.layer-violation (class), 1 unjudged invocation; Prepared layer evidence is unavailable. Required population context was not judged."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: code-smell.constructor-overinjection (callable), 118 unjudged callable; Only constructors are judged. Name is outside the declared population."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: cohesion.lcom (class), 51 unjudged declaration; Methods are below the configured minimum. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: complexity.ccn (class), 48 unjudged declaration; Maximum method complexity was not published. Missing metric \"complexity.ccn.max\"."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: complexity.cognitive (class), 48 unjudged declaration; Maximum method complexity was not published. Missing metric \"complexity.cognitive.max\"."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: coupling.cbo (namespace), 22 unjudged namespace; Own classes are below the configured minimum. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: coupling.class-rank (class), 76 unjudged declaration; A class with no dependents is outside hotspot judgement. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: coupling.distance (namespace), 3 unjudged namespace; The own namespace has no coupling. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: coupling.distance (namespace), 22 unjudged namespace; The own type population is below its minimum. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: coupling.instability (class), 76 unjudged declaration; Class afferent coupling is below its minimum. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: coupling.instability (namespace), 3 unjudged namespace; Namespace afferent coupling is below its minimum. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: coupling.instability (namespace), 22 unjudged namespace; Subtree classes are below the configured minimum. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: design.data-class (class), 57 unjudged declaration; Data classes require properties. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: design.dit (class), 118 unjudged declaration; Only class declarations are judged. Declaration kind is outside the declared population."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: design.god-class (class), 51 unjudged declaration; The class has too few methods for god-class judgement. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: design.noc (class), 76 unjudged declaration; A class with no children is outside the NOC population. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: design.type-coverage.param (class), 66 unjudged declaration; This type-coverage dimension requires a positive declaration total. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: design.type-coverage.property (class), 57 unjudged declaration; This type-coverage dimension requires a positive declaration total. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: design.type-coverage.return (class), 48 unjudged declaration; This type-coverage dimension requires a positive declaration total. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: maintainability.mi (callable), 116 unjudged callable; Statement count is below the configured minimum. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        },
+-                        {
+-                            "level": "note",
+-                            "message": {
+-                                "text": "Selected judgement incomplete: size.class-count (namespace), 1 unjudged namespace; The namespace has no own classes. Metric population boundary was not met."
+-                            },
+-                            "descriptor": {
+-                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
+-                            }
+-                        }
+-                    ]
++                    "toolExecutionNotifications": []

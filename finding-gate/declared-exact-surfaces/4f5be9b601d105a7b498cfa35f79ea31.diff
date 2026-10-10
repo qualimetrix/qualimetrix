@@ -1,0 +1,344 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 47959
++visible 35322
+@@ -39,283 +39,0 @@
+-    "abstentions": [
+-        {
+-            "producer": "architecture.layer-declaration",
+-            "channel": "architecture.doubted-assignment",
+-            "level": "project",
+-            "gate": "prepared-evidence",
+-            "reason": "Prepared layer evidence is unavailable. Required population context was not judged.",
+-            "unit": "invocation",
+-            "count": 1,
+-            "examples": [
+-                "architecture.layer-declaration"
+-            ]
+-        },
+-        {
+-            "producer": "architecture.layer-declaration",
+-            "channel": "architecture.layer-overlap",
+-            "level": "project",
+-            "gate": "prepared-evidence",
+-            "reason": "Prepared layer evidence is unavailable. Required population context was not judged.",
+-            "unit": "invocation",
+-            "count": 1,
+-            "examples": [
+-                "architecture.layer-declaration"
+-            ]
+-        },
+-        {
+-            "producer": "architecture.layer-violation",
+-            "channel": "architecture.layer-violation",
+-            "level": "class",
+-            "gate": "prepared-evidence",
+-            "reason": "Prepared layer evidence is unavailable. Required population context was not judged.",
+-            "unit": "invocation",
+-            "count": 1,
+-            "examples": [
+-                "architecture.layer-violation"
+-            ]
+-        },
+-        {
+-            "producer": "code-smell.constructor-overinjection",
+-            "channel": "code-smell.constructor-overinjection",
+-            "level": "callable",
+-            "gate": "constructor-name",
+-            "reason": "Only constructors are judged. Name is outside the declared population.",
+-            "unit": "callable",
+-            "count": 8,
+-            "examples": [
+-                "declaration:callable:Corpus\\Security\\Credentials::fingerprint@src/Credentials.php",
+-                "declaration:callable:Corpus\\Security\\Login::authenticate@src/Login.php",
+-                "declaration:callable:Corpus\\Security\\Output::greet@src/Output.php",
+-                "declaration:callable:Corpus\\Security\\Queries::byId@src/Queries.php",
+-                "declaration:callable:Corpus\\Security\\Queries::byName@src/Queries.php"
+-            ]
+-        },
+-        {
+-            "producer": "cohesion.lcom",
+-            "channel": "cohesion.lcom",
+-            "level": "class",
+-            "gate": "minimum-methods",
+-            "reason": "Methods are below the configured minimum. Metric population boundary was not met.",
+-            "unit": "declaration",
+-            "count": 5,
+-            "examples": [
+-                "declaration:class:Corpus\\Security\\Credentials@src/Credentials.php",
+-                "declaration:class:Corpus\\Security\\Login@src/Login.php",
+-                "declaration:class:Corpus\\Security\\Output@src/Output.php",
+-                "declaration:class:Corpus\\Security\\Queries@src/Queries.php",
+-                "declaration:class:Corpus\\Security\\Shell@src/Shell.php"
+-            ]
+-        },
+-        {
+-            "producer": "coupling.cbo",
+-            "channel": "coupling.cbo",
+-            "level": "namespace",
+-            "gate": "own-classes",
+-            "reason": "Own classes are below the configured minimum. Missing metric \"size.class-count\".",
+-            "unit": "namespace",
+-            "count": 1,
+-            "examples": [
+-                "ns:Corpus"
+-            ]
+-        },
+-        {
+-            "producer": "coupling.class-rank",
+-            "channel": "coupling.class-rank",
+-            "level": "class",
+-            "gate": "dependents",
+-            "reason": "A class with no dependents is outside hotspot judgement. Metric population boundary was not met.",
+-            "unit": "declaration",
+-            "count": 5,
+-            "examples": [
+-                "declaration:class:Corpus\\Security\\Credentials@src/Credentials.php",
+-                "declaration:class:Corpus\\Security\\Login@src/Login.php",
+-                "declaration:class:Corpus\\Security\\Output@src/Output.php",
+-                "declaration:class:Corpus\\Security\\Queries@src/Queries.php",
+-                "declaration:class:Corpus\\Security\\Shell@src/Shell.php"
+-            ]
+-        },
+-        {
+-            "producer": "coupling.distance",
+-            "channel": "coupling.distance",
+-            "level": "namespace",
+-            "gate": "namespace-selected",
+-            "reason": "The namespace is outside the configured project selection. Name is outside the declared population.",
+-            "unit": "namespace",
+-            "count": 1,
+-            "examples": [
+-                "ns:Corpus"
+-            ]
+-        },
+-        {
+-            "producer": "coupling.distance",
+-            "channel": "coupling.distance",
+-            "level": "namespace",
+-            "gate": "own-coupling",
+-            "reason": "The own namespace has no coupling. Metric population boundary was not met.",
+-            "unit": "namespace",
+-            "count": 1,
+-            "examples": [
+-                "ns:Corpus\\Security"
+-            ]
+-        },
+-        {
+-            "producer": "coupling.instability",
+-            "channel": "coupling.instability",
+-            "level": "class",
+-            "gate": "class-afferent",
+-            "reason": "Class afferent coupling is below its minimum. Metric population boundary was not met.",
+-            "unit": "declaration",
+-            "count": 5,
+-            "examples": [
+-                "declaration:class:Corpus\\Security\\Credentials@src/Credentials.php",
+-                "declaration:class:Corpus\\Security\\Login@src/Login.php",
+-                "declaration:class:Corpus\\Security\\Output@src/Output.php",
+-                "declaration:class:Corpus\\Security\\Queries@src/Queries.php",
+-                "declaration:class:Corpus\\Security\\Shell@src/Shell.php"
+-            ]
+-        },
+-        {
+-            "producer": "coupling.instability",
+-            "channel": "coupling.instability",
+-            "level": "namespace",
+-            "gate": "namespace-afferent",
+-            "reason": "Namespace afferent coupling is below its minimum. Metric population boundary was not met.",
+-            "unit": "namespace",
+-            "count": 2,
+-            "examples": [
+-                "ns:Corpus",
+-                "ns:Corpus\\Security"
+-            ]
+-        },
+-        {
+-            "producer": "design.data-class",
+-            "channel": "design.data-class",
+-            "level": "class",
+-            "gate": "class-properties",
+-            "reason": "Data classes require properties. Metric population boundary was not met.",
+-            "unit": "declaration",
+-            "count": 4,
+-            "examples": [
+-                "declaration:class:Corpus\\Security\\Login@src/Login.php",
+-                "declaration:class:Corpus\\Security\\Output@src/Output.php",
+-                "declaration:class:Corpus\\Security\\Queries@src/Queries.php",
+-                "declaration:class:Corpus\\Security\\Shell@src/Shell.php"
+-            ]
+-        },
+-        {
+-            "producer": "design.data-class",
+-            "channel": "design.data-class",
+-            "level": "class",
+-            "gate": "member-floor",
+-            "reason": "The class has too few members for data-class judgement. Metric population boundary was not met.",
+-            "unit": "declaration",
+-            "count": 1,
+-            "examples": [
+-                "declaration:class:Corpus\\Security\\Credentials@src/Credentials.php"
+-            ]
+-        },
+-        {
+-            "producer": "design.dit",
+-            "channel": "design.dit",
+-            "level": "class",
+-            "gate": "logical-class-kind",
+-            "reason": "Only class declarations are judged. Declaration kind is outside the declared population.",
+-            "unit": "declaration",
+-            "count": 8,
+-            "examples": [
+-                "declaration:callable:Corpus\\Security\\Credentials::fingerprint@src/Credentials.php",
+-                "declaration:callable:Corpus\\Security\\Login::authenticate@src/Login.php",
+-                "declaration:callable:Corpus\\Security\\Output::greet@src/Output.php",
+-                "declaration:callable:Corpus\\Security\\Queries::byId@src/Queries.php",
+-                "declaration:callable:Corpus\\Security\\Queries::byName@src/Queries.php"
+-            ]
+-        },
+-        {
+-            "producer": "design.god-class",
+-            "channel": "design.god-class",
+-            "level": "class",
+-            "gate": "method-floor",
+-            "reason": "The class has too few methods for god-class judgement. Metric population boundary was not met.",
+-            "unit": "declaration",
+-            "count": 5,
+-            "examples": [
+-                "declaration:class:Corpus\\Security\\Credentials@src/Credentials.php",
+-                "declaration:class:Corpus\\Security\\Login@src/Login.php",
+-                "declaration:class:Corpus\\Security\\Output@src/Output.php",
+-                "declaration:class:Corpus\\Security\\Queries@src/Queries.php",
+-                "declaration:class:Corpus\\Security\\Shell@src/Shell.php"
+-            ]
+-        },
+-        {
+-            "producer": "design.noc",
+-            "channel": "design.noc",
+-            "level": "class",
+-            "gate": "noc-positive",
+-            "reason": "A class with no children is outside the NOC population. Metric population boundary was not met.",
+-            "unit": "declaration",
+-            "count": 5,
+-            "examples": [
+-                "declaration:class:Corpus\\Security\\Credentials@src/Credentials.php",
+-                "declaration:class:Corpus\\Security\\Login@src/Login.php",
+-                "declaration:class:Corpus\\Security\\Output@src/Output.php",
+-                "declaration:class:Corpus\\Security\\Queries@src/Queries.php",
+-                "declaration:class:Corpus\\Security\\Shell@src/Shell.php"
+-            ]
+-        },
+-        {
+-            "producer": "design.type-coverage.param",
+-            "channel": "design.type-coverage.param",
+-            "level": "class",
+-            "gate": "typeable-total",
+-            "reason": "This type-coverage dimension requires a positive declaration total. Metric population boundary was not met.",
+-            "unit": "declaration",
+-            "count": 3,
+-            "examples": [
+-                "declaration:class:Corpus\\Security\\Credentials@src/Credentials.php",
+-                "declaration:class:Corpus\\Security\\Output@src/Output.php",
+-                "declaration:class:Corpus\\Security\\Shell@src/Shell.php"
+-            ]
+-        },
+-        {
+-            "producer": "design.type-coverage.property",
+-            "channel": "design.type-coverage.property",
+-            "level": "class",
+-            "gate": "typeable-total",
+-            "reason": "This type-coverage dimension requires a positive declaration total. Metric population boundary was not met.",
+-            "unit": "declaration",
+-            "count": 4,
+-            "examples": [
+-                "declaration:class:Corpus\\Security\\Login@src/Login.php",
+-                "declaration:class:Corpus\\Security\\Output@src/Output.php",
+-                "declaration:class:Corpus\\Security\\Queries@src/Queries.php",
+-                "declaration:class:Corpus\\Security\\Shell@src/Shell.php"
+-            ]
+-        },
+-        {
+-            "producer": "maintainability.mi",
+-            "channel": "maintainability.mi",
+-            "level": "callable",
+-            "gate": "minimum-statements",
+-            "reason": "Statement count is below the configured minimum. Metric population boundary was not met.",
+-            "unit": "callable",
+-            "count": 8,
+-            "examples": [
+-                "declaration:callable:Corpus\\Security\\Credentials::fingerprint@src/Credentials.php",
+-                "declaration:callable:Corpus\\Security\\Login::authenticate@src/Login.php",
+-                "declaration:callable:Corpus\\Security\\Output::greet@src/Output.php",
+-                "declaration:callable:Corpus\\Security\\Queries::byId@src/Queries.php",
+-                "declaration:callable:Corpus\\Security\\Queries::byName@src/Queries.php"
+-            ]
+-        },
+-        {
+-            "producer": "size.class-count",
+-            "channel": "size.class-count",
+-            "level": "namespace",
+-            "gate": "own-count",
+-            "reason": "The own class count was not published. Missing metric \"size.class-count\".",
+-            "unit": "namespace",
+-            "count": 1,
+-            "examples": [
+-                "ns:Corpus"
+-            ]
+-        }
+-    ],
+@@ -329,2 +46,2 @@
+-            "impactScore": 180,
+-            "coupling.class-rank-share": null,
++            "impactScore": 36,
++            "coupling.class-rank": null,
+@@ -354,2 +71,2 @@
+-            "impactScore": 180,
+-            "coupling.class-rank-share": null,
++            "impactScore": 36,
++            "coupling.class-rank": null,
+@@ -379,2 +96,2 @@
+-            "impactScore": 180,
+-            "coupling.class-rank-share": 1,
++            "impactScore": 36,
++            "coupling.class-rank": 0.2,
+@@ -404,2 +121,2 @@
+-            "impactScore": 180,
+-            "coupling.class-rank-share": 1,
++            "impactScore": 36,
++            "coupling.class-rank": 0.2,
+@@ -429,2 +146,2 @@
+-            "impactScore": 180,
+-            "coupling.class-rank-share": 1,
++            "impactScore": 36,
++            "coupling.class-rank": 0.2,
+@@ -454,2 +171,2 @@
+-            "impactScore": 135,
+-            "coupling.class-rank-share": null,
++            "impactScore": 27,
++            "coupling.class-rank": null,
+@@ -479,2 +196,2 @@
+-            "impactScore": 135,
+-            "coupling.class-rank-share": 1,
++            "impactScore": 27,
++            "coupling.class-rank": 0.2,
+@@ -504,2 +221,2 @@
+-            "impactScore": 90,
+-            "coupling.class-rank-share": null,
++            "impactScore": 18,
++            "coupling.class-rank": null,
+@@ -529,2 +246,2 @@
+-            "impactScore": 90,
+-            "coupling.class-rank-share": null,
++            "impactScore": 18,
++            "coupling.class-rank": null,
+@@ -554,2 +271,2 @@
+-            "impactScore": 90,
+-            "coupling.class-rank-share": null,
++            "impactScore": 18,
++            "coupling.class-rank": null,
+@@ -1122,2 +839,2 @@
+-ranking-records 19756
+-["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.superglobals\",\"code\":\"code-smell.superglobals\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Output.php\",\"impactScore\":15,\"line\":9,\"message\":\"Direct superglobal access detected - use dependency injection\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"c07a29ee639052d1\",\"recommendation\":\"Use dependency injection or a request object instead of direct superglobal access.\",\"rule\":\"code-smell.superglobals\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Security\\\\Output::greet@src/Output.php\",\"symbol\":\"Corpus\\\\Security\\\\Output::greet\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.superglobals\",\"code\":\"code-smell.superglobals\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Queries.php\",\"impactScore\":15,\"line\":14,\"message\":\"Direct superglobal access detected - use dependency injection\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"027fd2fa8b3f15bd\",\"recommendation\":\"Use dependency injection or a request object instead of direct superglobal access.\",\"rule\":\"code-smell.superglobals\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Security\\\\Queries::byName@src/Queries.php\",\"symbol\":\"Corpus\\\\Security\\\\Queries::byName\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.superglobals\",\"code\":\"code-smell.superglobals\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Queries.php\",\"impactScore\":15,\"line\":18,\"message\":\"Direct superglobal access detected - use dependency injection\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"c07a29ee639052d1\",\"recommendation\":\"Use dependency injection or a request object instead of direct superglobal access.\",\"rule\":\"code-smell.superglobals\",\"severity\":\"warning\",\"subject\":\"file:src/Queries.php\",\"symbol\":\"src/Queries.php\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.superglobals\",\"code\":\"code-smell.superglobals\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Queries.php\",\"impactScore\":15,\"line\":9,\"message\":\"Direct superglobal access detected - use dependency injection\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"c07a29ee639052d1\",\"recommendation\":\"Use dependency injection or a request object instead of direct superglobal access.\",\"rule\":\"code-smell.superglobals\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Security\\\\Queries::byId@src/Queries.php\",\"symbol\":\"Corpus\\\\Security\\\\Queries::byId\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.superglobals\",\"code\":\"code-smell.superglobals\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Shell.php\",\"impactScore\":15,\"line\":9,\"message\":\"Direct superglobal access detected - use dependency injection\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"c07a29ee639052d1\",\"recommendation\":\"Use dependency injection or a request object instead of direct superglobal access.\",\"rule\":\"code-smell.superglobals\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Security\\\\Shell::listDir@src/Shell.php\",\"symbol\":\"Corpus\\\\Security\\\\Shell::listDir\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.superglobals\",\"code\":\"code-smell.superglobals\",\"coupling.class-rank-share\":null,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/FileSinks.php\",\"impactScore\":15,\"line\":7,\"message\":\"Direct superglobal access detected - use dependency injection\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"c07a29ee639052d1\",\"recommendation\":\"Use dependency injection or a request object instead of direct superglobal access.\",\"rule\":\"code-smell.superglobals\",\"severity\":\"warning\",\"subject\":\"file:src/FileSinks.php\",\"symbol\":\"src/FileSinks.php\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.superglobals\",\"code\":\"code-smell.superglobals\",\"coupling.class-rank-share\":null,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/FileSinks.php\",\"impactScore\":15,\"line\":8,\"message\":\"Direct superglobal access detected - use dependency injection\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"c07a29ee639052d1\",\"recommendation\":\"Use dependency injection or a request object instead of direct superglobal access.\",\"rule\":\"code-smell.superglobals\",\"severity\":\"warning\",\"subject\":\"file:src/FileSinks.php\",\"symbol\":\"src/FileSinks.php\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.superglobals\",\"code\":\"code-smell.superglobals\",\"coupling.class-rank-share\":null,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/FileSinks.php\",\"impactScore\":15,\"line\":9,\"message\":\"Direct superglobal access detected - use dependency injection\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"c07a29ee639052d1\",\"recommendation\":\"Use dependency injection or a request object instead of direct superglobal access.\",\"rule\":\"code-smell.superglobals\",\"severity\":\"warning\",\"subject\":\"file:src/FileSinks.php\",\"symbol\":\"src/FileSinks.php\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.command-injection\",\"code\":\"security.command-injection\",\"coupling.class-rank-share\":1,\"debtMinutes\":60,\"edge\":null,\"file\":\"src/Shell.php\",\"impactScore\":180,\"line\":9,\"message\":\"Potential command injection \\u2014 use escapeshellarg() before passing user input to shell commands ($_GET)\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"ae5ed341b4756606\",\"recommendation\":\"Use escapeshellarg() for arguments or avoid shell commands entirely.\",\"rule\":\"security.command-injection\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\Security\\\\Shell::listDir@src/Shell.php\",\"symbol\":\"Corpus\\\\Security\\\\Shell::listDir\",\"techDebtMinutes\":60,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.command-injection\",\"code\":\"security.command-injection\",\"coupling.class-rank-share\":null,\"debtMinutes\":60,\"edge\":null,\"file\":\"src/FileSinks.php\",\"impactScore\":180,\"line\":9,\"message\":\"Potential command injection \\u2014 use escapeshellarg() before passing user input to shell commands ($_GET)\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"ae5ed341b4756606\",\"recommendation\":\"Use escapeshellarg() for arguments or avoid shell commands entirely.\",\"rule\":\"security.command-injection\",\"severity\":\"error\",\"subject\":\"file:src/FileSinks.php\",\"symbol\":\"src/FileSinks.php\",\"techDebtMinutes\":60,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.hardcoded-credentials\",\"code\":\"security.hardcoded-credentials\",\"coupling.class-rank-share\":1,\"debtMinutes\":30,\"edge\":null,\"file\":\"src/Credentials.php\",\"impactScore\":90,\"line\":10,\"message\":\"Hardcoded credential in class constant \\u2014 use environment variables or a secrets manager\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"68e9ad114cb54a0d\",\"recommendation\":\"Move secrets to environment variables or a secrets manager.\",\"rule\":\"security.hardcoded-credentials\",\"severity\":\"error\",\"subject\":\"declaration:class:Corpus\\\\Security\\\\Credentials@src/Credentials.php\",\"symbol\":\"Corpus\\\\Security\\\\Credentials\",\"techDebtMinutes\":30,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.hardcoded-credentials\",\"code\":\"security.hardcoded-credentials\",\"coupling.class-rank-share\":1,\"debtMinutes\":30,\"edge\":null,\"file\":\"src/Credentials.php\",\"impactScore\":90,\"line\":7,\"message\":\"Hardcoded credential in property default \\u2014 use environment variables or a secrets manager\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"0873d959de5f19b8\",\"recommendation\":\"Move secrets to environment variables or a secrets manager.\",\"rule\":\"security.hardcoded-credentials\",\"severity\":\"error\",\"subject\":\"declaration:class:Corpus\\\\Security\\\\Credentials@src/Credentials.php\",\"symbol\":\"Corpus\\\\Security\\\\Credentials\",\"techDebtMinutes\":30,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.hardcoded-credentials\",\"code\":\"security.hardcoded-credentials\",\"coupling.class-rank-share\":null,\"debtMinutes\":30,\"edge\":null,\"file\":\"src/CredentialLevels.php\",\"impactScore\":90,\"line\":10,\"message\":\"Hardcoded credential in variable assignment \\u2014 use environment variables or a secrets manager\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"82943f8b7a6d7500\",\"recommendation\":\"Move secrets to environment variables or a secrets manager.\",\"rule\":\"security.hardcoded-credentials\",\"severity\":\"error\",\"subject\":\"file:src/CredentialLevels.php\",\"symbol\":\"src/CredentialLevels.php\",\"techDebtMinutes\":30,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.hardcoded-credentials\",\"code\":\"security.hardcoded-credentials\",\"coupling.class-rank-share\":null,\"debtMinutes\":30,\"edge\":null,\"file\":\"src/CredentialLevels.php\",\"impactScore\":90,\"line\":12,\"message\":\"Hardcoded credential in parameter default \\u2014 use environment variables or a secrets manager\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"d0bb964668a533e2\",\"recommendation\":\"Move secrets to environment variables or a secrets manager.\",\"rule\":\"security.hardcoded-credentials\",\"severity\":\"error\",\"subject\":\"declaration:func:Corpus\\\\Security::credentialDefault@src/CredentialLevels.php\",\"symbol\":\"Corpus\\\\Security\\\\credentialDefault\",\"techDebtMinutes\":30,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.hardcoded-credentials\",\"code\":\"security.hardcoded-credentials\",\"coupling.class-rank-share\":null,\"debtMinutes\":30,\"edge\":null,\"file\":\"src/CredentialLevels.php\",\"impactScore\":90,\"line\":7,\"message\":\"Hardcoded credential in file constant \\u2014 use environment variables or a secrets manager\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"b49e31ac3a1c7ec0\",\"recommendation\":\"Move secrets to environment variables or a secrets manager.\",\"rule\":\"security.hardcoded-credentials\",\"severity\":\"error\",\"subject\":\"file:src/CredentialLevels.php\",\"symbol\":\"src/CredentialLevels.php\",\"techDebtMinutes\":30,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.hardcoded-credentials\",\"code\":\"security.hardcoded-credentials\",\"coupling.class-rank-share\":null,\"debtMinutes\":30,\"edge\":null,\"file\":\"src/CredentialLevels.php\",\"impactScore\":90,\"line\":8,\"message\":\"Hardcoded credential in file constant \\u2014 use environment variables or a secrets manager\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"b49e31ac3a1c7ec0\",\"recommendation\":\"Move secrets to environment variables or a secrets manager.\",\"rule\":\"security.hardcoded-credentials\",\"severity\":\"error\",\"subject\":\"file:src/CredentialLevels.php\",\"symbol\":\"src/CredentialLevels.php\",\"techDebtMinutes\":30,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.sensitive-parameter\",\"code\":\"security.sensitive-parameter\",\"coupling.class-rank-share\":1,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Login.php\",\"impactScore\":10,\"line\":7,\"message\":\"Sensitive parameter missing #[\\\\SensitiveParameter] attribute \\u2014 add it to prevent credential leakage in stack traces\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"9477b3c7e0459483\",\"recommendation\":\"Add #[\\\\SensitiveParameter] attribute to prevent credential leakage in stack traces.\",\"rule\":\"security.sensitive-parameter\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Security\\\\Login::authenticate@src/Login.php\",\"symbol\":\"Corpus\\\\Security\\\\Login::authenticate\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.sensitive-parameter\",\"code\":\"security.sensitive-parameter\",\"coupling.class-rank-share\":1,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Login.php\",\"impactScore\":10,\"line\":7,\"message\":\"Sensitive parameter missing #[\\\\SensitiveParameter] attribute \\u2014 add it to prevent credential leakage in stack traces\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"d8c7c1c77a1276d8\",\"recommendation\":\"Add #[\\\\SensitiveParameter] attribute to prevent credential leakage in stack traces.\",\"rule\":\"security.sensitive-parameter\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Security\\\\Login::authenticate@src/Login.php\",\"symbol\":\"Corpus\\\\Security\\\\Login::authenticate\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.sensitive-parameter\",\"code\":\"security.sensitive-parameter\",\"coupling.class-rank-share\":null,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/CredentialLevels.php\",\"impactScore\":10,\"line\":12,\"message\":\"Sensitive parameter missing #[\\\\SensitiveParameter] attribute \\u2014 add it to prevent credential leakage in stack traces\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"d8c7c1c77a1276d8\",\"recommendation\":\"Add #[\\\\SensitiveParameter] attribute to prevent credential leakage in stack traces.\",\"rule\":\"security.sensitive-parameter\",\"severity\":\"warning\",\"subject\":\"declaration:func:Corpus\\\\Security::credentialDefault@src/CredentialLevels.php\",\"symbol\":\"Corpus\\\\Security\\\\credentialDefault\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.sensitive-parameter\",\"code\":\"security.sensitive-parameter\",\"coupling.class-rank-share\":null,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/FileSinks.php\",\"impactScore\":10,\"line\":12,\"message\":\"Sensitive parameter missing #[\\\\SensitiveParameter] attribute \\u2014 add it to prevent credential leakage in stack traces\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"d8c7c1c77a1276d8\",\"recommendation\":\"Add #[\\\\SensitiveParameter] attribute to prevent credential leakage in stack traces.\",\"rule\":\"security.sensitive-parameter\",\"severity\":\"warning\",\"subject\":\"file:src/FileSinks.php\",\"symbol\":\"src/FileSinks.php\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.sql-injection\",\"code\":\"security.sql-injection\",\"coupling.class-rank-share\":1,\"debtMinutes\":60,\"edge\":null,\"file\":\"src/Queries.php\",\"impactScore\":180,\"line\":14,\"message\":\"Potential SQL injection \\u2014 use parameterized queries instead of direct superglobal interpolation ($_POST)\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"4fe88e81e65b3378\",\"recommendation\":\"Use parameterized queries or prepared statements.\",\"rule\":\"security.sql-injection\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\Security\\\\Queries::byName@src/Queries.php\",\"symbol\":\"Corpus\\\\Security\\\\Queries::byName\",\"techDebtMinutes\":60,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.sql-injection\",\"code\":\"security.sql-injection\",\"coupling.class-rank-share\":1,\"debtMinutes\":60,\"edge\":null,\"file\":\"src/Queries.php\",\"impactScore\":180,\"line\":9,\"message\":\"Potential SQL injection \\u2014 use parameterized queries instead of direct superglobal interpolation ($_GET)\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"a6b791649689b23a\",\"recommendation\":\"Use parameterized queries or prepared statements.\",\"rule\":\"security.sql-injection\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\Security\\\\Queries::byId@src/Queries.php\",\"symbol\":\"Corpus\\\\Security\\\\Queries::byId\",\"techDebtMinutes\":60,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.sql-injection\",\"code\":\"security.sql-injection\",\"coupling.class-rank-share\":null,\"debtMinutes\":60,\"edge\":null,\"file\":\"src/FileSinks.php\",\"impactScore\":180,\"line\":8,\"message\":\"Potential SQL injection \\u2014 use parameterized queries instead of direct superglobal interpolation ($_GET)\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"a6b791649689b23a\",\"recommendation\":\"Use parameterized queries or prepared statements.\",\"rule\":\"security.sql-injection\",\"severity\":\"error\",\"subject\":\"file:src/FileSinks.php\",\"symbol\":\"src/FileSinks.php\",\"techDebtMinutes\":60,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.xss\",\"code\":\"security.xss\",\"coupling.class-rank-share\":1,\"debtMinutes\":45,\"edge\":null,\"file\":\"src/Output.php\",\"impactScore\":135,\"line\":9,\"message\":\"Potential XSS \\u2014 use htmlspecialchars() or equivalent before outputting user input ($_GET)\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"a23bfca96dcca636\",\"recommendation\":\"Escape output with htmlspecialchars() or use a template engine with auto-escaping.\",\"rule\":\"security.xss\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\Security\\\\Output::greet@src/Output.php\",\"symbol\":\"Corpus\\\\Security\\\\Output::greet\",\"techDebtMinutes\":45,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.xss\",\"code\":\"security.xss\",\"coupling.class-rank-share\":null,\"debtMinutes\":45,\"edge\":null,\"file\":\"src/FileSinks.php\",\"impactScore\":135,\"line\":7,\"message\":\"Potential XSS \\u2014 use htmlspecialchars() or equivalent before outputting user input ($_GET)\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"a23bfca96dcca636\",\"recommendation\":\"Escape output with htmlspecialchars() or use a template engine with auto-escaping.\",\"rule\":\"security.xss\",\"severity\":\"error\",\"subject\":\"file:src/FileSinks.php\",\"symbol\":\"src/FileSinks.php\",\"techDebtMinutes\":45,\"threshold\":null}"]
++ranking-records 19613
++["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.superglobals\",\"code\":\"code-smell.superglobals\",\"coupling.class-rank\":0.2,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Output.php\",\"impactScore\":3,\"line\":9,\"message\":\"Direct superglobal access detected - use dependency injection\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"c07a29ee639052d1\",\"recommendation\":\"Use dependency injection or a request object instead of direct superglobal access.\",\"rule\":\"code-smell.superglobals\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Security\\\\Output::greet@src/Output.php\",\"symbol\":\"Corpus\\\\Security\\\\Output::greet\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.superglobals\",\"code\":\"code-smell.superglobals\",\"coupling.class-rank\":0.2,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Queries.php\",\"impactScore\":3,\"line\":14,\"message\":\"Direct superglobal access detected - use dependency injection\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"027fd2fa8b3f15bd\",\"recommendation\":\"Use dependency injection or a request object instead of direct superglobal access.\",\"rule\":\"code-smell.superglobals\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Security\\\\Queries::byName@src/Queries.php\",\"symbol\":\"Corpus\\\\Security\\\\Queries::byName\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.superglobals\",\"code\":\"code-smell.superglobals\",\"coupling.class-rank\":0.2,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Queries.php\",\"impactScore\":3,\"line\":18,\"message\":\"Direct superglobal access detected - use dependency injection\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"c07a29ee639052d1\",\"recommendation\":\"Use dependency injection or a request object instead of direct superglobal access.\",\"rule\":\"code-smell.superglobals\",\"severity\":\"warning\",\"subject\":\"file:src/Queries.php\",\"symbol\":\"src/Queries.php\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.superglobals\",\"code\":\"code-smell.superglobals\",\"coupling.class-rank\":0.2,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Queries.php\",\"impactScore\":3,\"line\":9,\"message\":\"Direct superglobal access detected - use dependency injection\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"c07a29ee639052d1\",\"recommendation\":\"Use dependency injection or a request object instead of direct superglobal access.\",\"rule\":\"code-smell.superglobals\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Security\\\\Queries::byId@src/Queries.php\",\"symbol\":\"Corpus\\\\Security\\\\Queries::byId\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.superglobals\",\"code\":\"code-smell.superglobals\",\"coupling.class-rank\":0.2,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Shell.php\",\"impactScore\":3,\"line\":9,\"message\":\"Direct superglobal access detected - use dependency injection\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"c07a29ee639052d1\",\"recommendation\":\"Use dependency injection or a request object instead of direct superglobal access.\",\"rule\":\"code-smell.superglobals\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Security\\\\Shell::listDir@src/Shell.php\",\"symbol\":\"Corpus\\\\Security\\\\Shell::listDir\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.superglobals\",\"code\":\"code-smell.superglobals\",\"coupling.class-rank\":null,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/FileSinks.php\",\"impactScore\":3,\"line\":7,\"message\":\"Direct superglobal access detected - use dependency injection\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"c07a29ee639052d1\",\"recommendation\":\"Use dependency injection or a request object instead of direct superglobal access.\",\"rule\":\"code-smell.superglobals\",\"severity\":\"warning\",\"subject\":\"file:src/FileSinks.php\",\"symbol\":\"src/FileSinks.php\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.superglobals\",\"code\":\"code-smell.superglobals\",\"coupling.class-rank\":null,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/FileSinks.php\",\"impactScore\":3,\"line\":8,\"message\":\"Direct superglobal access detected - use dependency injection\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"c07a29ee639052d1\",\"recommendation\":\"Use dependency injection or a request object instead of direct superglobal access.\",\"rule\":\"code-smell.superglobals\",\"severity\":\"warning\",\"subject\":\"file:src/FileSinks.php\",\"symbol\":\"src/FileSinks.php\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.superglobals\",\"code\":\"code-smell.superglobals\",\"coupling.class-rank\":null,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/FileSinks.php\",\"impactScore\":3,\"line\":9,\"message\":\"Direct superglobal access detected - use dependency injection\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"c07a29ee639052d1\",\"recommendation\":\"Use dependency injection or a request object instead of direct superglobal access.\",\"rule\":\"code-smell.superglobals\",\"severity\":\"warning\",\"subject\":\"file:src/FileSinks.php\",\"symbol\":\"src/FileSinks.php\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.command-injection\",\"code\":\"security.command-injection\",\"coupling.class-rank\":0.2,\"debtMinutes\":60,\"edge\":null,\"file\":\"src/Shell.php\",\"impactScore\":36,\"line\":9,\"message\":\"Potential command injection \\u2014 use escapeshellarg() before passing user input to shell commands ($_GET)\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"ae5ed341b4756606\",\"recommendation\":\"Use escapeshellarg() for arguments or avoid shell commands entirely.\",\"rule\":\"security.command-injection\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\Security\\\\Shell::listDir@src/Shell.php\",\"symbol\":\"Corpus\\\\Security\\\\Shell::listDir\",\"techDebtMinutes\":60,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.command-injection\",\"code\":\"security.command-injection\",\"coupling.class-rank\":null,\"debtMinutes\":60,\"edge\":null,\"file\":\"src/FileSinks.php\",\"impactScore\":36,\"line\":9,\"message\":\"Potential command injection \\u2014 use escapeshellarg() before passing user input to shell commands ($_GET)\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"ae5ed341b4756606\",\"recommendation\":\"Use escapeshellarg() for arguments or avoid shell commands entirely.\",\"rule\":\"security.command-injection\",\"severity\":\"error\",\"subject\":\"file:src/FileSinks.php\",\"symbol\":\"src/FileSinks.php\",\"techDebtMinutes\":60,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.hardcoded-credentials\",\"code\":\"security.hardcoded-credentials\",\"coupling.class-rank\":0.2,\"debtMinutes\":30,\"edge\":null,\"file\":\"src/Credentials.php\",\"impactScore\":18,\"line\":10,\"message\":\"Hardcoded credential in class constant \\u2014 use environment variables or a secrets manager\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"68e9ad114cb54a0d\",\"recommendation\":\"Move secrets to environment variables or a secrets manager.\",\"rule\":\"security.hardcoded-credentials\",\"severity\":\"error\",\"subject\":\"declaration:class:Corpus\\\\Security\\\\Credentials@src/Credentials.php\",\"symbol\":\"Corpus\\\\Security\\\\Credentials\",\"techDebtMinutes\":30,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.hardcoded-credentials\",\"code\":\"security.hardcoded-credentials\",\"coupling.class-rank\":0.2,\"debtMinutes\":30,\"edge\":null,\"file\":\"src/Credentials.php\",\"impactScore\":18,\"line\":7,\"message\":\"Hardcoded credential in property default \\u2014 use environment variables or a secrets manager\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"0873d959de5f19b8\",\"recommendation\":\"Move secrets to environment variables or a secrets manager.\",\"rule\":\"security.hardcoded-credentials\",\"severity\":\"error\",\"subject\":\"declaration:class:Corpus\\\\Security\\\\Credentials@src/Credentials.php\",\"symbol\":\"Corpus\\\\Security\\\\Credentials\",\"techDebtMinutes\":30,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.hardcoded-credentials\",\"code\":\"security.hardcoded-credentials\",\"coupling.class-rank\":null,\"debtMinutes\":30,\"edge\":null,\"file\":\"src/CredentialLevels.php\",\"impactScore\":18,\"line\":10,\"message\":\"Hardcoded credential in variable assignment \\u2014 use environment variables or a secrets manager\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"82943f8b7a6d7500\",\"recommendation\":\"Move secrets to environment variables or a secrets manager.\",\"rule\":\"security.hardcoded-credentials\",\"severity\":\"error\",\"subject\":\"file:src/CredentialLevels.php\",\"symbol\":\"src/CredentialLevels.php\",\"techDebtMinutes\":30,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.hardcoded-credentials\",\"code\":\"security.hardcoded-credentials\",\"coupling.class-rank\":null,\"debtMinutes\":30,\"edge\":null,\"file\":\"src/CredentialLevels.php\",\"impactScore\":18,\"line\":12,\"message\":\"Hardcoded credential in parameter default \\u2014 use environment variables or a secrets manager\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"d0bb964668a533e2\",\"recommendation\":\"Move secrets to environment variables or a secrets manager.\",\"rule\":\"security.hardcoded-credentials\",\"severity\":\"error\",\"subject\":\"declaration:func:Corpus\\\\Security::credentialDefault@src/CredentialLevels.php\",\"symbol\":\"Corpus\\\\Security\\\\credentialDefault\",\"techDebtMinutes\":30,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.hardcoded-credentials\",\"code\":\"security.hardcoded-credentials\",\"coupling.class-rank\":null,\"debtMinutes\":30,\"edge\":null,\"file\":\"src/CredentialLevels.php\",\"impactScore\":18,\"line\":7,\"message\":\"Hardcoded credential in file constant \\u2014 use environment variables or a secrets manager\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"b49e31ac3a1c7ec0\",\"recommendation\":\"Move secrets to environment variables or a secrets manager.\",\"rule\":\"security.hardcoded-credentials\",\"severity\":\"error\",\"subject\":\"file:src/CredentialLevels.php\",\"symbol\":\"src/CredentialLevels.php\",\"techDebtMinutes\":30,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.hardcoded-credentials\",\"code\":\"security.hardcoded-credentials\",\"coupling.class-rank\":null,\"debtMinutes\":30,\"edge\":null,\"file\":\"src/CredentialLevels.php\",\"impactScore\":18,\"line\":8,\"message\":\"Hardcoded credential in file constant \\u2014 use environment variables or a secrets manager\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"b49e31ac3a1c7ec0\",\"recommendation\":\"Move secrets to environment variables or a secrets manager.\",\"rule\":\"security.hardcoded-credentials\",\"severity\":\"error\",\"subject\":\"file:src/CredentialLevels.php\",\"symbol\":\"src/CredentialLevels.php\",\"techDebtMinutes\":30,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.sensitive-parameter\",\"code\":\"security.sensitive-parameter\",\"coupling.class-rank\":0.2,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Login.php\",\"impactScore\":2,\"line\":7,\"message\":\"Sensitive parameter missing #[\\\\SensitiveParameter] attribute \\u2014 add it to prevent credential leakage in stack traces\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"9477b3c7e0459483\",\"recommendation\":\"Add #[\\\\SensitiveParameter] attribute to prevent credential leakage in stack traces.\",\"rule\":\"security.sensitive-parameter\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Security\\\\Login::authenticate@src/Login.php\",\"symbol\":\"Corpus\\\\Security\\\\Login::authenticate\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.sensitive-parameter\",\"code\":\"security.sensitive-parameter\",\"coupling.class-rank\":0.2,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Login.php\",\"impactScore\":2,\"line\":7,\"message\":\"Sensitive parameter missing #[\\\\SensitiveParameter] attribute \\u2014 add it to prevent credential leakage in stack traces\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"d8c7c1c77a1276d8\",\"recommendation\":\"Add #[\\\\SensitiveParameter] attribute to prevent credential leakage in stack traces.\",\"rule\":\"security.sensitive-parameter\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Security\\\\Login::authenticate@src/Login.php\",\"symbol\":\"Corpus\\\\Security\\\\Login::authenticate\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.sensitive-parameter\",\"code\":\"security.sensitive-parameter\",\"coupling.class-rank\":null,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/CredentialLevels.php\",\"impactScore\":2,\"line\":12,\"message\":\"Sensitive parameter missing #[\\\\SensitiveParameter] attribute \\u2014 add it to prevent credential leakage in stack traces\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"d8c7c1c77a1276d8\",\"recommendation\":\"Add #[\\\\SensitiveParameter] attribute to prevent credential leakage in stack traces.\",\"rule\":\"security.sensitive-parameter\",\"severity\":\"warning\",\"subject\":\"declaration:func:Corpus\\\\Security::credentialDefault@src/CredentialLevels.php\",\"symbol\":\"Corpus\\\\Security\\\\credentialDefault\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.sensitive-parameter\",\"code\":\"security.sensitive-parameter\",\"coupling.class-rank\":null,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/FileSinks.php\",\"impactScore\":2,\"line\":12,\"message\":\"Sensitive parameter missing #[\\\\SensitiveParameter] attribute \\u2014 add it to prevent credential leakage in stack traces\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"d8c7c1c77a1276d8\",\"recommendation\":\"Add #[\\\\SensitiveParameter] attribute to prevent credential leakage in stack traces.\",\"rule\":\"security.sensitive-parameter\",\"severity\":\"warning\",\"subject\":\"file:src/FileSinks.php\",\"symbol\":\"src/FileSinks.php\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.sql-injection\",\"code\":\"security.sql-injection\",\"coupling.class-rank\":0.2,\"debtMinutes\":60,\"edge\":null,\"file\":\"src/Queries.php\",\"impactScore\":36,\"line\":14,\"message\":\"Potential SQL injection \\u2014 use parameterized queries instead of direct superglobal interpolation ($_POST)\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"4fe88e81e65b3378\",\"recommendation\":\"Use parameterized queries or prepared statements.\",\"rule\":\"security.sql-injection\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\Security\\\\Queries::byName@src/Queries.php\",\"symbol\":\"Corpus\\\\Security\\\\Queries::byName\",\"techDebtMinutes\":60,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.sql-injection\",\"code\":\"security.sql-injection\",\"coupling.class-rank\":0.2,\"debtMinutes\":60,\"edge\":null,\"file\":\"src/Queries.php\",\"impactScore\":36,\"line\":9,\"message\":\"Potential SQL injection \\u2014 use parameterized queries instead of direct superglobal interpolation ($_GET)\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"a6b791649689b23a\",\"recommendation\":\"Use parameterized queries or prepared statements.\",\"rule\":\"security.sql-injection\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\Security\\\\Queries::byId@src/Queries.php\",\"symbol\":\"Corpus\\\\Security\\\\Queries::byId\",\"techDebtMinutes\":60,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.sql-injection\",\"code\":\"security.sql-injection\",\"coupling.class-rank\":null,\"debtMinutes\":60,\"edge\":null,\"file\":\"src/FileSinks.php\",\"impactScore\":36,\"line\":8,\"message\":\"Potential SQL injection \\u2014 use parameterized queries instead of direct superglobal interpolation ($_GET)\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"a6b791649689b23a\",\"recommendation\":\"Use parameterized queries or prepared statements.\",\"rule\":\"security.sql-injection\",\"severity\":\"error\",\"subject\":\"file:src/FileSinks.php\",\"symbol\":\"src/FileSinks.php\",\"techDebtMinutes\":60,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.xss\",\"code\":\"security.xss\",\"coupling.class-rank\":0.2,\"debtMinutes\":45,\"edge\":null,\"file\":\"src/Output.php\",\"impactScore\":27,\"line\":9,\"message\":\"Potential XSS \\u2014 use htmlspecialchars() or equivalent before outputting user input ($_GET)\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Security\",\"occurrence\":\"a23bfca96dcca636\",\"recommendation\":\"Escape output with htmlspecialchars() or use a template engine with auto-escaping.\",\"rule\":\"security.xss\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\Security\\\\Output::greet@src/Output.php\",\"symbol\":\"Corpus\\\\Security\\\\Output::greet\",\"techDebtMinutes\":45,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"security.xss\",\"code\":\"security.xss\",\"coupling.class-rank\":null,\"debtMinutes\":45,\"edge\":null,\"file\":\"src/FileSinks.php\",\"impactScore\":27,\"line\":7,\"message\":\"Potential XSS \\u2014 use htmlspecialchars() or equivalent before outputting user input ($_GET)\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"a23bfca96dcca636\",\"recommendation\":\"Escape output with htmlspecialchars() or use a template engine with auto-escaping.\",\"rule\":\"security.xss\",\"severity\":\"error\",\"subject\":\"file:src/FileSinks.php\",\"symbol\":\"src/FileSinks.php\",\"techDebtMinutes\":45,\"threshold\":null}"]

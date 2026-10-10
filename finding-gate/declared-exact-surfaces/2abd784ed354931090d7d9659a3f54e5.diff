@@ -1,0 +1,126 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 7815
++visible 7602
+@@ -6,1 +6,0 @@
+-Rule population incomplete — callable: 96 judged, 30 not judged; declaration: 151 judged, 35 not judged; invocation: 0 judged, 3 not judged; namespace: 49 judged, 17 not judged; project: 7 judged, 0 not judged.
+@@ -52,28 +51,28 @@
+-  1. [ERR] 48.8  Corpus  [15min]
+-         health.complexity: Corpus: health.complexity = 63.2 (error threshold: below 100.0) (namespace: Corpus)
+-         Recommendation: Complexity health: 63.2 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.
+-  2. [ERR] 48.8  CorpusHttp  [15min]
+-         health.complexity: CorpusHttp: health.complexity = 66.8 (error threshold: below 100.0) (namespace: CorpusHttp)
+-         Recommendation: Complexity health: 66.8 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.
+-  3. [ERR] 48.8  Corpus\Health  [15min]
+-         health.complexity: Corpus\Health: health.complexity = 63.2 (error threshold: below 100.0) (namespace: Corpus\Health)
+-         Recommendation: Complexity health: 63.2 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.
+-  4. [ERR] 48.8  Corpus\Health\Support  [15min]
+-         health.complexity: Corpus\Health\Support: health.complexity = 87.8 (error threshold: below 100.0) (namespace: Corpus\Health\Support)
+-         Recommendation: Complexity health: 87.8 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.
+-  5. [ERR] 48.8  [project]  [15min]
+-         health.complexity: (project): health.complexity = 66.0 (error threshold: below 100.0)
+-         Recommendation: Complexity health: 66.0 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.
+-  6. [ERR] 48.8  Corpus  [15min]
+-         health.cohesion: Corpus: health.cohesion = 96.6 (error threshold: below 100.0) (namespace: Corpus)
+-         Recommendation: Cohesion health: 96.6 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.
+-  7. [ERR] 48.8  Corpus\Health  [15min]
+-         health.cohesion: Corpus\Health: health.cohesion = 96.6 (error threshold: below 100.0) (namespace: Corpus\Health)
+-         Recommendation: Cohesion health: 96.6 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.
+-  8. [ERR] 48.8  Corpus\Health\Support  [15min]
+-         health.cohesion: Corpus\Health\Support: health.cohesion = 97.1 (error threshold: below 100.0) (namespace: Corpus\Health\Support)
+-         Recommendation: Cohesion health: 97.1 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.
+-  9. [ERR] 48.8  [project]  [15min]
+-         health.cohesion: (project): health.cohesion = 97.6 (error threshold: below 100.0)
+-         Recommendation: Cohesion health: 97.6 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.
+-  10. [ERR] 48.8  CorpusHttp  [15min]
++  1. [ERR] 6.96  Corpus  [15min]
++         health.complexity: Corpus: health.complexity = 63.2 (error threshold: below 100.0) (namespace: Corpus)
++         Recommendation: Complexity health: 63.2 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.
++  2. [ERR] 6.96  CorpusHttp  [15min]
++         health.complexity: CorpusHttp: health.complexity = 66.8 (error threshold: below 100.0) (namespace: CorpusHttp)
++         Recommendation: Complexity health: 66.8 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.
++  3. [ERR] 6.96  Corpus\Health  [15min]
++         health.complexity: Corpus\Health: health.complexity = 63.2 (error threshold: below 100.0) (namespace: Corpus\Health)
++         Recommendation: Complexity health: 63.2 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.
++  4. [ERR] 6.96  Corpus\Health\Support  [15min]
++         health.complexity: Corpus\Health\Support: health.complexity = 87.8 (error threshold: below 100.0) (namespace: Corpus\Health\Support)
++         Recommendation: Complexity health: 87.8 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.
++  5. [ERR] 6.96  [project]  [15min]
++         health.complexity: (project): health.complexity = 66.0 (error threshold: below 100.0)
++         Recommendation: Complexity health: 66.0 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.
++  6. [ERR] 6.96  Corpus  [15min]
++         health.cohesion: Corpus: health.cohesion = 96.6 (error threshold: below 100.0) (namespace: Corpus)
++         Recommendation: Cohesion health: 96.6 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.
++  7. [ERR] 6.96  Corpus\Health  [15min]
++         health.cohesion: Corpus\Health: health.cohesion = 96.6 (error threshold: below 100.0) (namespace: Corpus\Health)
++         Recommendation: Cohesion health: 96.6 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.
++  8. [ERR] 6.96  Corpus\Health\Support  [15min]
++         health.cohesion: Corpus\Health\Support: health.cohesion = 97.1 (error threshold: below 100.0) (namespace: Corpus\Health\Support)
++         Recommendation: Cohesion health: 97.1 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.
++  9. [ERR] 6.96  [project]  [15min]
++         health.cohesion: (project): health.cohesion = 97.6 (error threshold: below 100.0)
++         Recommendation: Cohesion health: 97.6 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.
++  10. [ERR] 6.96  CorpusHttp  [15min]
+@@ -87,1 +86,1 @@
+-invocation-format:summary 7815
++invocation-format:summary 7602
+@@ -92,1 +91,0 @@
+-Rule population incomplete — callable: 96 judged, 30 not judged; declaration: 151 judged, 35 not judged; invocation: 0 judged, 3 not judged; namespace: 49 judged, 17 not judged; project: 7 judged, 0 not judged.
+@@ -138,28 +136,28 @@
+-  1. [ERR] 48.8  Corpus  [15min]
+-         health.complexity: Corpus: health.complexity = 63.2 (error threshold: below 100.0) (namespace: Corpus)
+-         Recommendation: Complexity health: 63.2 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.
+-  2. [ERR] 48.8  CorpusHttp  [15min]
+-         health.complexity: CorpusHttp: health.complexity = 66.8 (error threshold: below 100.0) (namespace: CorpusHttp)
+-         Recommendation: Complexity health: 66.8 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.
+-  3. [ERR] 48.8  Corpus\Health  [15min]
+-         health.complexity: Corpus\Health: health.complexity = 63.2 (error threshold: below 100.0) (namespace: Corpus\Health)
+-         Recommendation: Complexity health: 63.2 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.
+-  4. [ERR] 48.8  Corpus\Health\Support  [15min]
+-         health.complexity: Corpus\Health\Support: health.complexity = 87.8 (error threshold: below 100.0) (namespace: Corpus\Health\Support)
+-         Recommendation: Complexity health: 87.8 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.
+-  5. [ERR] 48.8  [project]  [15min]
+-         health.complexity: (project): health.complexity = 66.0 (error threshold: below 100.0)
+-         Recommendation: Complexity health: 66.0 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.
+-  6. [ERR] 48.8  Corpus  [15min]
+-         health.cohesion: Corpus: health.cohesion = 96.6 (error threshold: below 100.0) (namespace: Corpus)
+-         Recommendation: Cohesion health: 96.6 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.
+-  7. [ERR] 48.8  Corpus\Health  [15min]
+-         health.cohesion: Corpus\Health: health.cohesion = 96.6 (error threshold: below 100.0) (namespace: Corpus\Health)
+-         Recommendation: Cohesion health: 96.6 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.
+-  8. [ERR] 48.8  Corpus\Health\Support  [15min]
+-         health.cohesion: Corpus\Health\Support: health.cohesion = 97.1 (error threshold: below 100.0) (namespace: Corpus\Health\Support)
+-         Recommendation: Cohesion health: 97.1 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.
+-  9. [ERR] 48.8  [project]  [15min]
+-         health.cohesion: (project): health.cohesion = 97.6 (error threshold: below 100.0)
+-         Recommendation: Cohesion health: 97.6 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.
+-  10. [ERR] 48.8  CorpusHttp  [15min]
++  1. [ERR] 6.96  Corpus  [15min]
++         health.complexity: Corpus: health.complexity = 63.2 (error threshold: below 100.0) (namespace: Corpus)
++         Recommendation: Complexity health: 63.2 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.
++  2. [ERR] 6.96  CorpusHttp  [15min]
++         health.complexity: CorpusHttp: health.complexity = 66.8 (error threshold: below 100.0) (namespace: CorpusHttp)
++         Recommendation: Complexity health: 66.8 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.
++  3. [ERR] 6.96  Corpus\Health  [15min]
++         health.complexity: Corpus\Health: health.complexity = 63.2 (error threshold: below 100.0) (namespace: Corpus\Health)
++         Recommendation: Complexity health: 63.2 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.
++  4. [ERR] 6.96  Corpus\Health\Support  [15min]
++         health.complexity: Corpus\Health\Support: health.complexity = 87.8 (error threshold: below 100.0) (namespace: Corpus\Health\Support)
++         Recommendation: Complexity health: 87.8 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.
++  5. [ERR] 6.96  [project]  [15min]
++         health.complexity: (project): health.complexity = 66.0 (error threshold: below 100.0)
++         Recommendation: Complexity health: 66.0 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.
++  6. [ERR] 6.96  Corpus  [15min]
++         health.cohesion: Corpus: health.cohesion = 96.6 (error threshold: below 100.0) (namespace: Corpus)
++         Recommendation: Cohesion health: 96.6 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.
++  7. [ERR] 6.96  Corpus\Health  [15min]
++         health.cohesion: Corpus\Health: health.cohesion = 96.6 (error threshold: below 100.0) (namespace: Corpus\Health)
++         Recommendation: Cohesion health: 96.6 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.
++  8. [ERR] 6.96  Corpus\Health\Support  [15min]
++         health.cohesion: Corpus\Health\Support: health.cohesion = 97.1 (error threshold: below 100.0) (namespace: Corpus\Health\Support)
++         Recommendation: Cohesion health: 97.1 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.
++  9. [ERR] 6.96  [project]  [15min]
++         health.cohesion: (project): health.cohesion = 97.6 (error threshold: below 100.0)
++         Recommendation: Cohesion health: 97.6 (threshold: 100.0) — Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.
++  10. [ERR] 6.96  CorpusHttp  [15min]

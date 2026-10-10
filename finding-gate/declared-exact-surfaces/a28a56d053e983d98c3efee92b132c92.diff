@@ -1,0 +1,15 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 847
++visible 564
+@@ -12,4 +12,3 @@
+-Rule population incomplete — callable: 25 judged, 10 not judged; configured-suppression-value-occurrence: 3 judged, 0 not judged; declaration: 50 judged, 40 not judged; directive-site: 1 judged, 0 not judged; invocation: 0 judged, 3 not judged; namespace: 3 judged, 13 not judged.
+-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
+-
+-invocation-format:text-detail 847
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-format:text-detail 564
+@@ -26,1 +25,0 @@
+-Rule population incomplete — callable: 25 judged, 10 not judged; configured-suppression-value-occurrence: 3 judged, 0 not judged; declaration: 50 judged, 40 not judged; directive-site: 1 judged, 0 not judged; invocation: 0 judged, 3 not judged; namespace: 3 judged, 13 not judged.
