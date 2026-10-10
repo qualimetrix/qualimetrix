@@ -170,10 +170,15 @@ PHP;
         try {
             $corpus = Corpus::load($root);
             $report = new GateReport();
-            (new CaseOutcomeCheck($report, $corpus))->checkCase('candidate', $corpus->cases[0], CaseOutcome::REFUSAL, [
+            $forms = new \QmxFindingGate\PublicationForms(\QmxFindingGate\CapturePlan::forCorpus($corpus, \QmxFindingGate\DeclaredSurfaces::load($root . '/finding-gate')));
+            $artifacts = [
                 'case:alpha|exit:format:json' => '3', 'case:alpha|stderr:format:json' => 'Refused input',
                 'case:alpha|format:json' => $json,
-            ]);
+            ];
+            foreach (['candidate', 'reference'] as $side) {
+                $forms->supply($side, $artifacts);
+            }
+            (new CaseOutcomeCheck($report, $corpus, $forms))->checkCase('candidate', $corpus->cases[0], CaseOutcome::REFUSAL, $artifacts);
             self::assertSame(array_fill(0, $failures, FailureClass::CASE_OUTCOME_MISMATCH), array_column($report->raised(), 'class'));
         } finally {
             SyntheticTree::remove($root);
@@ -193,11 +198,15 @@ PHP;
         try {
             $corpus = Corpus::load($root);
             $report = new GateReport();
-            $check = new CaseOutcomeCheck($report, $corpus);
+            $forms = new \QmxFindingGate\PublicationForms(\QmxFindingGate\CapturePlan::forCorpus($corpus, \QmxFindingGate\DeclaredSurfaces::load($root . '/finding-gate')));
+            $check = new CaseOutcomeCheck($report, $corpus, $forms);
             $artifacts = [
                 'case:alpha|exit:format:json' => '3', 'case:alpha|stderr:format:json' => '',
                 'case:alpha|format:json' => '{"error":"Refused input","exit_code":3,"position":null,"source":null}',
             ];
+            foreach (['candidate', 'reference'] as $side) {
+                $forms->supply($side, $artifacts);
+            }
             foreach (['candidate', 'reference'] as $side) {
                 $check->checkCase($side, $corpus->cases[0], CaseOutcome::REFUSAL, $artifacts);
             }
