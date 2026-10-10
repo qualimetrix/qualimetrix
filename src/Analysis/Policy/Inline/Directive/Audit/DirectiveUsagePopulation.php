@@ -20,7 +20,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 /**
  * Selected judgement of the native authored suppression-site verdicts.
  *
- * @qmx-threshold coupling.instability warning=0.84 -- The captured directive-site projection joins verdict and publication contracts for its owning audit.
+ * @qmx-threshold coupling.instability warning=0.85 -- The captured directive-site projection joins verdict and publication contracts for its owning audit.
  */
 final class DirectiveUsagePopulation
 {
