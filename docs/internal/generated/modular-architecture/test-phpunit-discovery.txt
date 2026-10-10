@@ -3642,8 +3642,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstOffenderTest::itDerivesThePublishedSymbolAndFileFromItsExactSubject
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstOffenderTest::itKeepsAbsentDensityAfterMeasuredZeroAndSortsScoresIndependently
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstOffenderTest::itOrdersDuplicateDeclarationsByFileAndOrdinalForBothRankModes
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\HealthCoverageAgreesWithCountsTest::itFoldsMixedSpellingFindingsIntoOwnAndAncestorNamespaces
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\HealthCoverageAgreesWithCountsTest::itPublishesTheCountTheSameRunMeasured
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\HealthCoverageAgreesWithCountsTest::itRanksMeasuredNamespacesDeclaringOnlyInterfacesTraitsOrEnums
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\HealthCoverageAgreesWithCountsTest::itRanksOwnTypeNamespacesAcrossMixedSpellings
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\UnwrittenEntryBodyTest::itLeavesABuiltInDimensionAtItsDefaults"empty map"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\UnwrittenEntryBodyTest::itLeavesABuiltInDimensionAtItsDefaults"null"
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\UnwrittenEntryBodyTest::itLeavesAPresetMetricStanding"empty map"

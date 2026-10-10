@@ -26,15 +26,20 @@ while class record values describe that exact declaration.
 
 Reporting retains both complete lists. Class drill-down selects those captured
 records without measuring or ranking again. Namespace selectors form a union
-and class selection retains every matching exact declaration. Each formatter
+and the internal class selector retains every matching exact declaration.
+JSON and summary `--class` still require one exact declaration for their
+separate class health heading; duplicate logical names refuse with exit 5.
+Use a namespace selection to display all their exact offender records. Each formatter
 selects the complete population, applies the shared comparator and only then
 limits its output. Score order is ascending health; density order is descending
 findings per 100 LOC. Ties use logical spelling and then exact subject identity.
 The HTML viewer orders its local child population by score, display name and
 exact node identity; it does not promise the global JSON ranking.
 
-Each report captures resolved health definitions once. The same definitions
-supply score metadata, offender reasons and overall warning/error thresholds.
+The project/offender snapshot captures resolved health definitions once per
+report. The same definitions supply project score metadata, offender reasons
+and overall warning/error thresholds. Selected class/subtree score headings
+retain their separate `HealthScoreDrillDown` resolver.
 Offender records carry their exact subject and overall threshold pair. Their
 logical symbol and source file derive from that subject, so callers cannot
 supply contradictory identities. Console

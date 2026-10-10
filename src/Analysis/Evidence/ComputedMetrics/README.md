@@ -405,5 +405,7 @@ Reasons use the same captured catalog thresholds as labels and console colors.
 Its `healthScores` has only available component dimensions, never overall.
 `WorstClassDrillDown` selects captured records without repository access or a
 second ranking; a later report captures the newly resolved catalog again.
-Reporting selects the full population, ranks by `RankBy::Score` or `Density`,
-then applies a display limit. See ADR 0110.
+Reporting selects the full offender population, ranks by `RankBy::Score` or
+`Density`, then applies a display limit. The separate class health heading
+requires a unique declaration: JSON/summary `--class` refuse duplicate logical
+names with exit 5; namespace selection retains their exact offender records. See ADR 0110.

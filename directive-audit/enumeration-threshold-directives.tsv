@@ -84,7 +84,6 @@ src/Reporting/FormatterContext.php	15	coupling.cbo	warning=33 error=33 -- Format
 src/Reporting/Report.php	22	coupling.cbo	warning=37 error=37 -- This immutable report carries the same
 src/Analysis/Evidence/ComputedMetrics/Configuration/ComputedMetricsSection.php	25	coupling.instability	warning=0.85 -- Ca=2, Ce=11: the owned section schema
 src/Analysis/Evidence/ComputedMetrics/Evaluation/ComputedMetricReads.php	31	coupling.instability	warning=0.800001 -- Formula traversal depends on expression node kinds and has a small incoming population; splitting that traversal transfers its node dependencies.
-src/Analysis/Evidence/ComputedMetrics/Health/Offender/WorstOffenderBuilder.php	18	coupling.instability	warning=0.866667 -- Offender assembly joins metric, finding and identity vocabularies through few callers; extracting those projections transfers the same outward dependencies.
 src/Analysis/Evidence/Design/DataClass/DataClassOptions.php	28	coupling.instability	warning=0.81 -- The eighth efferent edge is
 src/Analysis/Evidence/Design/GodClass/GodClassOptions.php	36	coupling.instability	warning=0.81 -- The eighth efferent edge is
 src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	26	coupling.instability	warning=0.95 error=0.95 -- A composition root depends outward on everything it assembles and is depended on by one trait; instability near one is its shape, not its defect.

@@ -306,7 +306,7 @@ bin/qmx check src/ --format-opt=rank-by=density
 ```
 
 
-Offender selection uses the complete captured population before ranking and `top`. Namespace selectors form a union; class selection retains every matching exact declaration. `rank-by=count` is refused with exit 3; use `score` or `density`. Summary shows the true remaining count and advises `--format-opt=top=<total>`.
+Offender selection uses the complete captured population before ranking and `top`. Namespace selectors form a union. JSON/summary `--class` requires a unique exact declaration for its separate class health heading; duplicate logical names refuse with exit 5. Use `--namespace` to retain all their exact offender records. `rank-by=count` is refused with exit 3; use `score` or `density`. Summary shows the true remaining count and advises `--format-opt=top=<total>`.
 
 !!! note "Two unrelated options named `top`"
     `--format-opt=top=N` (JSON and summary formats) caps the worst-namespace/worst-class

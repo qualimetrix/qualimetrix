@@ -22,7 +22,7 @@ code-smell.count-in-loop	channel	?		1	8	0	0	0	12	0	7	0	0	1	1
 code-smell.debug-code	channel	?		1	46	0	0	0	17	0	7	0	0	1	1
 code-smell.empty-catch	channel	?		5	10	0	0	0	23	0	7	0	0	1	1
 code-smell.error-suppression	channel	?		7	15	1	2	0	20	0	7	0	0	1	1
-code-smell.eval	channel	?		4	39	0	0	0	16	0	18	0	0	1	1
+code-smell.eval	channel	?		4	40	0	0	0	16	0	18	0	0	1	1
 code-smell.exit	channel	?		1	10	0	1	0	17	0	7	0	0	1	1
 code-smell.goto	channel	?		2	212	0	0	0	12	0	9	0	0	1	1
 code-smell.identical-subexpression	channel	?		3	11	0	0	0	14	0	7	1	1	0	0
@@ -39,7 +39,7 @@ complexity.wmc	channel	?		27	183	2	2	2	39	0	12	0	0	0	0
 coupling.cbo	channel	?		70	396	2	5	9	132	0	13	0	0	0	0
 coupling.class-rank	channel	?		23	105	0	2	1	43	0	47	0	0	0	0
 coupling.distance	channel	?		41	110	2	2	1	48	0	56	0	0	0	0
-coupling.instability	channel	?		73	139	2	4	5	60	0	21	0	0	0	0
+coupling.instability	channel	?		72	139	2	4	5	60	0	21	0	0	0	0
 coupling.unmatched-framework-namespace	channel	?		5	11	0	0	0	18	0	2	0	0	0	0
 design.data-class	channel	?		17	23	1	1	6	37	0	9	0	0	0	0
 design.dit	channel	?		16	123	2	2	0	48	0	19	0	0	0	0
@@ -93,7 +93,7 @@ coupling.class-rank	metric-key	?		23	105	0	2	1	43	0	47	0	0	0	0
 coupling.class-rank-share	metric-key	?		14	24	0	0	0	14	0	0	0	0	0	0
 coupling.distance	metric-key	?		41	110	2	2	1	48	0	56	0	0	0	0
 coupling.distance-own	metric-key	?		12	36	0	0	0	11	0	0	0	0	0	0
-coupling.instability	metric-key	?		73	139	2	4	5	60	0	21	0	0	0	0
+coupling.instability	metric-key	?		72	139	2	4	5	60	0	21	0	0	0	0
 coupling.instability-own	metric-key	?		10	23	0	0	0	5	0	0	0	0	0	0
 coupling.rfc	metric-key	?		14	33	0	0	0	0	0	0	0	0	0	0
 coupling.rfc-external	metric-key	?		8	4	0	0	0	0	0	0	0	0	0	0
@@ -166,7 +166,7 @@ code-smell.count-in-loop	producer	?		1	8	0	0	0	12	0	7	0	0	0	0
 code-smell.debug-code	producer	?		1	46	0	0	0	17	0	7	0	0	0	0
 code-smell.empty-catch	producer	?		5	10	0	0	0	23	0	7	0	0	0	0
 code-smell.error-suppression	producer	?		7	15	1	2	0	20	0	7	0	0	0	0
-code-smell.eval	producer	?		4	39	0	0	0	16	0	18	0	0	0	0
+code-smell.eval	producer	?		4	40	0	0	0	16	0	18	0	0	0	0
 code-smell.exit	producer	?		1	10	0	1	0	17	0	7	0	0	0	0
 code-smell.goto	producer	?		2	212	0	0	0	12	0	9	0	0	0	0
 code-smell.identical-subexpression	producer	?		3	11	0	0	0	14	0	7	0	0	0	0
@@ -183,7 +183,7 @@ computed	producer	?		142	169	0	1	0	63	0	8	0	0	0	0
 coupling.cbo	producer	?		70	396	2	5	9	132	0	13	0	0	0	0
 coupling.class-rank	producer	?		23	105	0	2	1	43	0	47	0	0	0	0
 coupling.distance	producer	?		41	110	2	2	1	48	0	56	0	0	0	0
-coupling.instability	producer	?		73	139	2	4	5	60	0	21	0	0	0	0
+coupling.instability	producer	?		72	139	2	4	5	60	0	21	0	0	0	0
 coupling.unmatched-framework-namespace	producer	?		5	11	0	0	0	18	0	2	0	0	0	0
 design.data-class	producer	?		17	23	1	1	6	37	0	9	0	0	0	0
 design.dit	producer	?		16	123	2	2	0	48	0	19	0	0	0	0

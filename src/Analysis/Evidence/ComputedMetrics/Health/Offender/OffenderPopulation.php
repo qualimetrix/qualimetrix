@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Core\Symbol\ClassNameSpelling;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
@@ -21,7 +22,7 @@ final readonly class OffenderPopulation
         $classesByNamespace = [];
         foreach ($repository->allClassDeclarations() as $type) {
             if ($type->symbolPath->type !== null && $type->symbolPath->member === null) {
-                $classesByNamespace[$type->symbolPath->namespace ?? ''][] = $type;
+                $classesByNamespace[ClassNameSpelling::fold($type->symbolPath->namespace ?? '')][] = $type;
             }
         }
         $this->classesByNamespace = $classesByNamespace;
@@ -41,6 +42,6 @@ final readonly class OffenderPopulation
 
     public function declaresType(string $namespace): bool
     {
-        return isset($this->classesByNamespace[$namespace]);
+        return isset($this->classesByNamespace[ClassNameSpelling::fold($namespace)]);
     }
 }

@@ -366,7 +366,7 @@ Qualimetrix\Core\ProductIdentity	Core.Neutral	24	3
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	21	8
 Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	13	7
 Qualimetrix\Core\Symbol\CallableKind	Core.Symbol	9	3
-Qualimetrix\Core\Symbol\ClassNameSpelling	Core.Symbol	11	7
+Qualimetrix\Core\Symbol\ClassNameSpelling	Core.Symbol	13	8
 Qualimetrix\Core\Symbol\ClassType	Core.Symbol	15	6
 Qualimetrix\Core\Symbol\DeclarationKey	Core.Symbol	3	2
 Qualimetrix\Core\Symbol\DeclarationOrdinal	Core.Symbol	4	1

@@ -14,9 +14,6 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
 
-/**
- * @qmx-threshold coupling.instability warning=0.866667 -- Offender assembly joins metric, finding and identity vocabularies through few callers; extracting those projections transfers the same outward dependencies.
- */
 final class WorstOffenderBuilder
 {
     public function __construct(

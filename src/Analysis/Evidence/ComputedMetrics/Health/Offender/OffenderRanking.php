@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Core\Symbol\ClassNameSpelling;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -88,7 +89,9 @@ final readonly class OffenderRanking
     ): ?WorstOffender {
         $symbolInfo = $candidate['info'];
         $metrics = $candidate['metrics'];
-        $symbolCanonical = $symbolInfo->subject?->toCanonical() ?? $symbolInfo->symbolPath->toCanonical();
+        $symbolCanonical = $level === SymbolLevel::Namespace_
+            ? SymbolPath::forNamespace(ClassNameSpelling::fold($symbolInfo->symbolPath->namespace ?? ''))->toCanonical()
+            : ($symbolInfo->subject?->toCanonical() ?? $symbolInfo->symbolPath->toCanonical());
         $classCount = $level === SymbolLevel::Namespace_
             ? (int) ($metrics->get(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)) ?? 0)
             : 0;
@@ -151,6 +154,7 @@ final readonly class OffenderRanking
      */
     private function countNamespaceFindings(array $findings, NamespaceTree $tree): array
     {
+        $tree = new NamespaceTree(array_map(ClassNameSpelling::fold(...), $tree->getAllNamespaces()));
         $counts = [];
 
         foreach ($findings as $finding) {
@@ -158,6 +162,7 @@ final readonly class OffenderRanking
             if ($ns === null || $ns === '') {
                 continue;
             }
+            $ns = ClassNameSpelling::fold($ns);
             $key = SymbolPath::forNamespace($ns)->toCanonical();
             $counts[$key] = ($counts[$key] ?? 0) + 1;
 
