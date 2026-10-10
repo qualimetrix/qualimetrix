@@ -27,6 +27,23 @@ final class NamespaceMetricContributions
     /** @param list<int|float|array{total: int|float, files: int}> $values */
     public static function applyFileContributions(AggregationStrategy $strategy, array $values): int|float
     {
+        [$total, $files] = self::fileContributionTotals($values);
+
+        return match ($strategy) {
+            AggregationStrategy::Sum => $total,
+            AggregationStrategy::Count => $files,
+            AggregationStrategy::Average => $files > 0 ? $total / $files : 0,
+            default => throw new LogicException('Unsupported namespace file-contribution strategy'),
+        };
+    }
+
+    /**
+     * @param list<int|float|array{total: int|float, files: int}> $values
+     *
+     * @return array{int|float, int}
+     */
+    private static function fileContributionTotals(array $values): array
+    {
         $total = 0;
         $files = 0;
         foreach ($values as $value) {
@@ -39,16 +56,11 @@ final class NamespaceMetricContributions
             }
         }
 
-        if ($total !== 0 && $total !== 0.0 && $files === 0) {
+        if ($files === 0 && (float) $total !== 0.0) {
             throw new LogicException('Namespace contribution total requires contributing files');
         }
 
-        return match ($strategy) {
-            AggregationStrategy::Sum => $total,
-            AggregationStrategy::Count => $files,
-            AggregationStrategy::Average => $files > 0 ? $total / $files : 0,
-            default => throw new LogicException('Unsupported namespace file-contribution strategy'),
-        };
+        return [$total, $files];
     }
 
     /**

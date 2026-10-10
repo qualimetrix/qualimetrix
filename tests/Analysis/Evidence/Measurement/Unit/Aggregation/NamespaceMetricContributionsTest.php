@@ -56,6 +56,8 @@ final class NamespaceMetricContributionsTest extends TestCase
         self::assertSame(4, NamespaceMetricContributions::applyFileContributions(AggregationStrategy::Count, $values));
         self::assertSame(3.75, NamespaceMetricContributions::applyFileContributions(AggregationStrategy::Average, $values));
         self::assertSame(0, NamespaceMetricContributions::applyFileContributions(AggregationStrategy::Average, []));
+        self::assertSame(0, NamespaceMetricContributions::applyFileContributions(AggregationStrategy::Average, [['total' => 0, 'files' => 0]]));
+        self::assertSame(0, NamespaceMetricContributions::applyFileContributions(AggregationStrategy::Average, [['total' => 0.0, 'files' => 0]]));
 
         self::expectException(LogicException::class);
         self::expectExceptionMessage('Unsupported namespace file-contribution strategy');

@@ -114,15 +114,7 @@ final class MetricSubjectIndex
         }
 
         $canonical = $subject->toCanonical();
-        if (isset($this->metrics[$canonical])) {
-            $this->metrics[$canonical] = RepositoryMerge::metrics($this->metrics[$canonical], $metrics);
-            $this->infos[$canonical] = RepositoryMerge::subjectInfo($this->infos[$canonical], $info);
-        } else {
-            $this->metrics[$canonical] = $metrics;
-            $this->infos[$canonical] = $info;
-        }
-
-        return $this->infos[$canonical];
+        return RepositoryMerge::store($canonical, $info, $metrics, $this->metrics, $this->infos);
     }
 
     private function copyTo(self $target): void

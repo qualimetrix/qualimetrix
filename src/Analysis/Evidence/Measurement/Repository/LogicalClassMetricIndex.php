@@ -143,15 +143,7 @@ final class LogicalClassMetricIndex
             $info->classAggregationOwnerDeclaration,
             $info->anonymousClassContext,
         );
-        if (isset($this->metrics[$canonical])) {
-            $this->metrics[$canonical] = RepositoryMerge::metrics($this->metrics[$canonical], $metrics);
-            $this->infos[$canonical] = RepositoryMerge::subjectInfo($this->infos[$canonical], $canonicalInfo);
-        } else {
-            $this->metrics[$canonical] = $metrics;
-            $this->infos[$canonical] = $canonicalInfo;
-        }
-
-        return $this->infos[$canonical];
+        return RepositoryMerge::store($canonical, $canonicalInfo, $metrics, $this->metrics, $this->infos);
     }
 
     private function copyTo(self $target): void

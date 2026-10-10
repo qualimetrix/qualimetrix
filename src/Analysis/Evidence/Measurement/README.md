@@ -147,7 +147,9 @@ declarations and callable metadata stay in `MetricSubjectIndex`; folded class
 identity and its spelling observations stay in `LogicalClassMetricIndex`;
 project, file, and namespace aggregate bags stay in `AggregateMetricIndex`.
 `NamespaceMetricIndex` remains the attribution view over those stored facts.
-Logical class identity and graph-only metrics remain in the logical index.
+Logical class identity and graph-only metrics remain in the logical index. Both
+declaration and logical-class indexes use `RepositoryMerge::store()` for the
+same bag and source-metadata merge policy.
 Logical callable fallback lookup is absent: declaration reads and scalar writes
 require exact subjects. `addScalar(SymbolPath)` accepts aggregate paths only;
 class, method and function paths refuse. `addSubjectScalar()` refuses a missing
