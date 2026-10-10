@@ -4,16 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Complexity;
 
-use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 
 use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
@@ -159,15 +156,9 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
         \assert($this->options instanceof ComplexityOptions);
         $methodOptions = $this->options->callable;
 
-        $declaration = self::channelDeclarations()[self::NAME];
         $findings = [];
 
-        foreach ($context->metrics->allCallables() as $methodInfo) {
-            $subject = $methodInfo->subject ?? throw new LogicException('Cyclomatic complexity findings require an exact callable subject');
-            $metrics = $this->admittedMetrics($context, $subject, $declaration, static fn(MetricBag $metrics): array => [GateInput::metrics('callable-value', $metrics)], unit: 'callable', level: SymbolLevel::Callable);
-            if ($metrics === null) {
-                continue;
-            }
+        foreach ($this->admittedDeclarations($context, self::channelDeclarations()[self::NAME], $context->metrics->allCallables(), SymbolLevel::Callable, 'callable-value', unit: 'callable') as [$methodInfo, $subject, $metrics]) {
             $ccn = $metrics->get(MetricName::COMPLEXITY_CCN);
             $cognitive = $metrics->get(MetricName::COMPLEXITY_COGNITIVE);
 
@@ -233,14 +224,8 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
         $classOptions = $this->options->class;
 
         $findings = [];
-        $declaration = self::channelDeclarations()[self::NAME];
 
-        foreach ($context->metrics->allClassDeclarations() as $classInfo) {
-            $subject = $classInfo->subject ?? throw new LogicException('Cyclomatic complexity class findings require an exact declaration subject');
-            $metrics = $this->admittedMetrics($context, $subject, $declaration, static fn(MetricBag $metrics): array => [GateInput::metrics('class-maximum', $metrics)], [GateInput::kind('class-coordinate', $subject->toSymbolPath()->getType())], level: SymbolLevel::Class_);
-            if ($metrics === null) {
-                continue;
-            }
+        foreach ($this->admittedDeclarations($context, self::channelDeclarations()[self::NAME], $context->metrics->allClassDeclarations(), SymbolLevel::Class_, 'class-maximum', 'class-coordinate') as [$classInfo, $subject, $metrics]) {
             $maxCcn = $metrics->get(MetricName::agg(MetricName::COMPLEXITY_CCN, AggregationStrategy::Max));
 
             $maxCcnValue = (int) $maxCcn;

@@ -4,14 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Size;
 
-use LogicException;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -89,14 +86,8 @@ final class MethodCountRule extends AbstractRule
         }
 
         $findings = [];
-        $declaration = self::channelDeclarations()[self::NAME];
 
-        foreach ($context->metrics->allClassDeclarations() as $classInfo) {
-            $subject = $classInfo->subject ?? throw new LogicException('Method count findings require an exact class declaration subject');
-            $metrics = $this->admittedMetrics($context, $subject, $declaration, static fn(MetricBag $metrics): array => [GateInput::metrics('method-count', $metrics)], [GateInput::kind('class-coordinate', $subject->toSymbolPath()->getType())], level: SymbolLevel::Class_);
-            if ($metrics === null) {
-                continue;
-            }
+        foreach ($this->admittedDeclarations($context, self::channelDeclarations()[self::NAME], $context->metrics->allClassDeclarations(), SymbolLevel::Class_, 'method-count', 'class-coordinate') as [$classInfo, $subject, $metrics]) {
             $methodCount = $metrics->get(MetricName::SIZE_METHOD_COUNT);
 
             $methodCountValue = (int) $methodCount;

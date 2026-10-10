@@ -55,7 +55,11 @@ use Qualimetrix\Core\Symbol\SymbolType;
  */
 final class ComputedMetricChannelFamily
 {
-    /** @param list<SymbolLevel> $levels */
+    /**
+     * @param list<SymbolLevel> $levels
+     *
+     * @qmx-ignore code-smell.boolean-argument -- Inversion is an authored definition fact determining magnitude direction, not a caller-selected execution mode.
+     */
     public static function declarationFor(string $name, array $levels, bool $inverted): ?ChannelDeclaration
     {
         if ($levels === []) {
