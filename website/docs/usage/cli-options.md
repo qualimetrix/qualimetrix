@@ -1385,7 +1385,8 @@ list. For values and layer forms see [Configuration](../getting-started/configur
 
 `QMX_ASCII` is judged before any command runs. Case-insensitive
 `1/true/yes/on` enables ASCII; `0/false/no/off`, empty and absence select
-Unicode. Other values refuse with exit 3 and name the accepted values.
+Unicode. Other values refuse with exit 3 and name the accepted values;
+structured refusals identify `source.kind: environment` and `source.name: QMX_ASCII`.
 
 The mode affects the four prose analysis formats and every ErrorStream
 diagnostic, including progress, stdout reports and `--output` report files.

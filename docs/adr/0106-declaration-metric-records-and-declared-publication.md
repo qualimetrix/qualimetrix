@@ -28,6 +28,11 @@ callable records carry a canonical `subject`; `name` remains the logical name
 and may repeat. Their source file and line belong to that declaration.
 Namespace and project records have no single declaration location and publish
 `file: null` and `line: null`.
+Their findings likewise have no borrowed source location. Path suppression
+therefore cannot select these findings; namespace suppression names the actual
+namespace. GitLab Code Quality and Checkstyle omit ordinary findings without a
+source file rather than inventing a path. JSON and SARIF retain the complete
+finding population; coverage failures keep their separate format projection.
 
 The repository exposes `allClassDeclarations()` for the value population and
 `allLogicalClasses()` for the graph population. Logical `get()` and `has()`
@@ -102,6 +107,15 @@ anonymous-class methods do not contribute to that named declaration's WMC.
 
 ### Consumers
 
+Reports retain one captured `FileNamespaceIndex`. Namespace selection,
+grouping and finding records use that same index: declarations keep their own
+namespace, file findings carry every namespace declared in the file (global
+when none is declared), and project findings carry none. A multi-namespace
+file finding appears once in a sorted group rather than once per namespace.
+JSON violations, top issues and HTML publish `namespaces` as the full list;
+`namespace` is its sole member or null. The global namespace is the empty
+string, not its display label `(global)`.
+
 Metric exports, health summaries and class drill-downs use exact declaration
 subjects. HTML class IDs and links use the subject; the logical name remains
 display text. Graph and identity-only consumers explicitly choose logical
@@ -114,11 +128,17 @@ declaration and report duplicates separately.
   `(type, name)` assumption. Regenerate saved report links.
 - Use `getSubject()` and declaration enumeration for class or callable values;
   use logical enumeration only for graph names.
+- Preserve the captured namespace index when constructing or copying reports.
+  Read `namespaces` for multi-namespace file findings; use `namespace` only
+  when it is non-null. The metrics symbol export keeps its existing fields.
 - Supply the owning definitions before writing exportable class scalars into a
   standalone repository. Namespace file counts are internal contribution data,
   not undeclared `.count` metrics.
 - Expect WMC zero for named class-like declarations without methods and null
   source locations on namespace and project records.
+- Migrate namespace-finding suppressions from `suppress_paths` to
+  `suppress_namespaces`. Use JSON or SARIF when a consumer needs findings without
+  source files; GitLab Code Quality and Checkstyle carry the source-located subset.
 - Same-name declarations can have different values, finding counts and
   densities. Their graph-only values remain shared by logical name.
 

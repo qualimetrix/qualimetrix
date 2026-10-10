@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- Finding records in JSON violations, JSON top issues and HTML now publish `namespaces` as the complete namespace list. `namespace` is the sole name, including `""` for global, or `null` for multiple names and project findings. File findings use the file's declared namespaces consistently with namespace selection and grouping. Preserve the captured `FileNamespaceIndex` when constructing or copying a `Report`; see ADR 0106.
+- `Finding::getDisplayMessage()` is removed. Consume `message` and `recommendation` separately; suppressed findings retain their original diagnostic. Invalid `QMX_ASCII` values now identify their source as `environment` instead of `input`, while retaining exit 3.
+- `scripts/benchmark-regression.php` now exits 2 for infrastructure failures in the project loop, including missing project paths and failed or timed-out child analyses, instead of reporting them as regressions with exit 1. Measured regressions, expected metrics left unmeasured and incomplete coverage in a valid analysis document retain exit 1; incomplete corpora still block the whole baseline update.
+- Formula implementations move from `ComputedMetrics\Contract\Evaluation` to the internal `ComputedMetrics\Evaluation` namespace. Depend on `ComputedMetricEvaluatorInterface` for run evaluation and `ComputedMetricExpressionInterface` for Health expression operations; the summary and absence contracts remain public. Compose Health services with their expression and decomposition dependencies instead of constructing those dependencies inside the consumers. See [ADR 0108](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0108-health-score-applicability-and-evaluation.md).
+- Layer-violation occurrence identity now uses the exact source declaration, logical target and dependency kind independently of the selected target files. Multiple target declarations contribute count units to the same occurrence. Remove selected old layer entries with the cleanup-provided selectors, then accept current layer identities while preserving other channels and ceilings.
 - `coupling.class-rank` retains academic PageRank probability, while the new `coupling.class-rank-share` publishes probability multiplied by the number of logical graph vertices. The ClassRank rule now judges exact PHP class declarations, including abstract classes, with fixed share defaults 5/10 instead of graph-size-scaled probability limits. Interfaces, traits and enums still participate in the graph denominator. Recheck limits and accepted hotspot findings in the new units; duplicate declarations remain separate rule subjects.
 - `coupling.distance` now judges own namespace D/A/I/Ca/Ce instead of subtree aggregates. Its population floor is `min_type_count`, counting own classes, traits, interfaces and implementing enums. Replace `min_class_count`, `min-class-count` and `minClassCount`; all three retired spellings refuse rather than acting as aliases. CBO and Instability retain their existing class-count options.
 - Prioritization consumes ClassRank share only. Replace `RankedIssue::classRank` with `classRankShare` and JSON `topIssues[].coupling.class-rank` with `coupling.class-rank-share`. Raw-only metrics no longer provide a ranking fallback; metric exports preserve raw probability separately.
@@ -81,7 +86,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitLab and Checkstyle no longer emit synthetic `publication.invalid-utf8`
   findings. Read their repair signal from stderr.
 - Fileless namespace findings name their namespace, with `(global)` for an
-  empty namespace; `[project]` is reserved for project findings.
+  empty namespace; `[project]` is reserved for project findings. Namespace findings
+  no longer carry a synthetic source file: migrate intended namespace suppression
+  from `suppress_paths` to `suppress_namespaces`. GitLab Code Quality and Checkstyle
+  omit ordinary findings without a source `location.file`; use JSON or SARIF for
+  the complete namespace/project finding set. Coverage failures retain their
+  separate format-specific projection.
 - Text/summary detail and HTML show the diagnostic and recommendation
   separately instead of replacing the diagnostic with advice. Accepted-level
   status is separate in HTML and remains truthful about not-compared records.
@@ -146,6 +156,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   only explicitly selected old entries. Exclusions can keep valid old entries
   outside coverage; they are not automatically stale. See the website's baseline
   migration steps. Foreign ceilings/suppressions and scope/exclusions are preserved.
+- Dependency collection now records attributes on class-like declarations and
+  enum cases, typed constants, property-hook bodies, nested named functions, and
+  references to user types named `Integer`, `Double`, or `Boolean`. These formerly
+  missing edges can increase CBO/Ca/Ce/ClassRank and create layer violations.
+  Re-analyse the graph, review resulting findings, and update only the selected
+  accepted baseline ceilings after review.
 - Dependency kinds now identify position: promoted properties use `property_type`
   and typed constants `constant_type`; `union_type`/`intersection_type` are removed
   from `relations`. `type_reference` covers `type_hint`, `property_type` and
@@ -161,7 +177,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `attributes` matches the class-like declaration; use `member_attributes` for
   its own members, in membership or `exclude`. Traits, vendor ancestry and
   trait-provided Stringable are judged from declaration facts. Layer patterns and
-  public selectors reject the other's grammar with an accepted equivalent;
+  public selectors use distinct grammars; bare selectors refuse without a translated Architecture equivalent;
   `match: any` templates reject captureless patterns. Review resulting assignments.
 - Logical class/namespace case variants merge using ASCII-folded identity and
   deterministic canonical spelling while exact declarations remain distinct.
@@ -196,7 +212,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   exempt. Review new findings; the bare name `token8` remains outside default
   sensitive-name matching.
 - Debug-output calls are now reported even inside methods named `dump`, `dd`,
-  or `debug`. Add a reasoned `@qmx-ignore code-smell.debug-code` at an
+  `debug`, `dumpRawSql`, `dumpSql`, `debugInfo`, or `__debugInfo`. Add a reasoned `@qmx-ignore code-smell.debug-code` at an
   intentional call instead of relying on the containing method's name.
 
 - Inline directive migration: An exact `@qmx-*` tag in the middle of a comment
@@ -293,10 +309,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   baseline input still has to be readable. An existing writable destination
   also needs a writable/searchable parent for the replacement sibling. Baseline
   generate, update, and writing cleanup use the same preparation; a no-op
-  leaves old bytes and inode untouched. Staged regular output requires pcntl,
-  default SIGINT/SIGTERM handlers, and no registered event-loop signal
-  callbacks. Missing capability refuses with exit 3 before analysis; use a
-  descriptor/stream destination. Replacing handlers during staging is unsupported.
+  leaves old bytes and inode untouched. PCNTL with free SIGINT/SIGTERM handlers
+  and no registered event-loop signal callbacks adds interruption cleanup;
+  without safe signal ownership ordinary atomic publication still works, but
+  interruption may leave the private sibling. Replacing handlers during staging
+  is unsupported.
 
 - A replaceable FIFO or device output now refuses; use a trusted descriptor target or secure its
   parent. `--output=/dev/stdin` now refuses; supported stdout descriptor
@@ -1015,13 +1032,11 @@ the tree was not read, never that a rule fired, and it takes precedence over
 the policy codes. A reader that switches on `kind` exhaustively has to learn
 the three new values, and is better off treating an unknown one as an entry the
 run did not read than refusing the document. If exit 4 is unwanted for an entry
-you already know about, `exclude:` prunes a directory before the walk records
-anything about it, so `exclude: [{subtree: path/to/links}]` covers a directory
-symlink and an unlistable directory; `exclude:` prunes directories only, so a
-non-regular `*.php` entry has to be removed, renamed, or left outside the
-scanned paths. A path named on the command line is still followed, including a
-symbolic link to a directory: naming it is a request to analyze what is behind
-it. See
+you already know about, author an `exclude:` selector for that entry or its
+containing directory. Exclusions remove explicitly named files and directories
+as well as discovered entries before analysis, including non-regular PHP entries,
+directory symlinks and unlistable directories. An explicitly named excluded path
+is not followed; a fully excluded invocation succeeds without collection. See
 [ADR 0078](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0078-an-entry-the-run-did-not-read-makes-it-incomplete.md).
 
 **`--report=git:HEAD` in a repository with no commits, and a malformed range

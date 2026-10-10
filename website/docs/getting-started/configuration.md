@@ -131,6 +131,10 @@ suppress_paths:
 
 Also available as a CLI option: `--suppress-path` (merged with YAML config).
 
+Namespace and project findings have no borrowed source file, so path selectors
+do not suppress them. Migrate intended namespace suppression to
+`suppress_namespaces` or a specific `suppress_namespace_channels` entry.
+
 !!! warning "Declared project scope remains exempt"
     `suppress_paths` does not suppress `architecture.circular-dependency` cycles or
     declared project-scoped diagnostics. Exemption is declared per channel;
@@ -656,7 +660,9 @@ A layer and its `exclude:` accept six criterion lists: `patterns`, `attributes`,
 attributes on the class-like declaration; `member_attributes` observes its own
 members. `match: any` is the default; `all` requires each populated criterion
 kind. Layer capture patterns and public `exact | subtree | regex` selectors are
-distinct grammars; each refuses the other's form with an accepted equivalent.
+distinct grammars. Membership suggests a pattern equivalent when refusing a
+public selector form; YAML/CLI public selectors require explicit kind syntax
+and do not translate a bare Architecture pattern.
 A template with `match: any` refuses a captureless pattern, while `match: all`
 can use one beside a capturing pattern.
 

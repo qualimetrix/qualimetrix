@@ -18,6 +18,14 @@ assembly could then replace an absent class score with a project score.
 
 ## Decision
 
+Formula parsing and evaluation implementations belong to the internal
+`ComputedMetrics\Evaluation` subject, rather than its public contract surface.
+`ComputedMetricEvaluatorInterface` promises run evaluation;
+`ComputedMetricExpressionInterface` promises the expression operations consumed
+by Health. The immutable summary and absence types remain public. Composition
+supplies the expression and decomposition services explicitly, so an importing
+consumer does not depend on formula implementation or construct its dependency.
+
 **Applicability belongs to the selected builtin formula.** Each stored builtin
 formula level carries an explicit Always, AnyPresent or PositiveSum policy.
 Validation examines the raw subject values before a numeric lookup can filter
@@ -100,6 +108,11 @@ statement about all eligible symbols. Remove project fallback for a missing
 selected subject. JSON readers should consume `computedMetricOutcomes` separately
 from findings and configuration diagnostics; prose readers can rely on the same
 bounded summary without enabling a logger.
+
+Replace imports of the concrete `Contract\Evaluation\ComputedMetricEvaluator`
+and `ComputedMetricExpression` with their public interfaces in consuming
+services. Bind those interfaces to their configured implementations and supply
+expression/decomposition dependencies when constructing Health services.
 
 Custom formulas may intentionally leave a value absent or use a meaningful
 `??` fallback. To combine available values, use ordered `weighted_mean` terms

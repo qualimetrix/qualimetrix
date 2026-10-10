@@ -451,12 +451,19 @@ formats count repaired fields. These counts need not be equal across formats.
 
 
 `json.violations`, `json.topIssues` and HTML use the same finding record keys:
-`file`, `line`, `symbol`, `channel`, `subject`, `occurrence`, `edge`, `namespace`,
+`file`, `line`, `symbol`, `channel`, `subject`, `occurrence`, `edge`, `namespace`, `namespaces`,
 `rule`, `code`, `severity`, `message`, `recommendation`, `metricValue`, `threshold`,
 `techDebtMinutes`, `acceptedLevel`, `baselineVerdict`, `baselineReason`.
 HTML readers must use `rule/code/symbol` instead of
 `ruleName/violationCode/symbolPath`. Diagnostic, advice and baseline status are
 shown separately; a configured cap alone is not a measured breach.
+
+`namespaces` contains the same namespace population used for selection and
+grouping. A declaration keeps its own namespace; a file finding carries all
+namespaces declared in that file, or `[""]` when none is declared. Project
+findings carry `[]`. `namespace` is the sole name (including `""` for global),
+or `null` for multiple names and project findings. A multi-namespace file
+finding belongs to one sorted group and is not duplicated.
 
 `outOfScope` adds `identities`, an occurrence-preserving multiset of
 `channel`, `subject`, `occurrence`, `edge` and `severity`. JSON and metrics use
@@ -488,7 +495,7 @@ unchanged.
 
 When using `--group-by=class` or `--group-by=namespace`, violations are organized into a `violationGroups` object. Each group is `{count, violations}` — a violation count and the violations array; it does not carry its own `errorCount`, `warningCount`, or `violationDensity`.
 
-The group keys are not always a class FQCN or namespace. For `--group-by=class`: the key is the class FQCN for a class-scoped finding, the file path for a file-level finding with no class context, and an empty string `""` for a project-level finding (which has neither a class nor a file). For `--group-by=namespace`: the key is the namespace for a namespaced class, `(global)` for a class with no namespace, and `(project)` for a project-level finding.
+The group keys are not always a class FQCN or namespace. For `--group-by=class`: the key is the class FQCN for a class-scoped finding, the file path for a file-level finding with no class context, and an empty string `""` for a project-level finding (which has neither a class nor a file). For `--group-by=namespace`: the key joins the sorted names with `, `, displays the empty name as `(global)`, and uses `[project]` for a project-level finding.
 
 <!-- llms:skip-begin -->
 ```json
@@ -638,6 +645,10 @@ Checkstyle XML format. Widely supported by CI tools.
 
 Checkstyle 3.0 XML: `<file name="...">` with nested `<error line="" severity="error|warning|info" message="" source="qmx.<rule>"/>`.
 
+Ordinary findings require a source file. Fileless namespace and project findings
+are omitted; use JSON or SARIF for the complete finding set. Coverage failures
+retain their separate projection.
+
 A `--namespace`/`--class` selection is refused with this format (exit 3): every
 `<error>` is an error to its reader, so nothing could say the report lists only
 part of the run.
@@ -776,6 +787,10 @@ GitLab Code Quality JSON format. Shows violations directly in Merge Request diff
 **When to use:** GitLab CI/CD with Code Quality reports.
 
 Array of objects with `description`, `check_name`, `fingerprint`, `severity` (critical/major/info), `location.{path,lines.begin}`. Severity mapping: error → critical, warning → major, info → info.
+
+Ordinary findings require a source `location.path`. Fileless namespace and
+project findings are omitted; use JSON or SARIF for the complete finding set.
+Coverage failures retain their separate projection.
 
 A `--namespace`/`--class` selection is refused with this format (exit 3): every
 entry is an issue in the merge-request widget, so nothing could say the report

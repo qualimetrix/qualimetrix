@@ -95,6 +95,12 @@ A class whose ancestry loops still receives NOC. Namespace and project samples
 retain the existing exact-declaration aggregation: duplicate parent declarations
 publish the same logical child count on each declaration.
 
+!!! info "Deviation from original spec"
+    Namespace and project NOC aggregates sample physical class declarations,
+    repeating the logical child count for each declaration of a name. Their
+    sums, counts and averages are declaration-weighted, rather than counts of
+    logical graph nodes or inheritance edges.
+
 <!-- llms:skip-end -->
 
 ### Configuration
@@ -269,8 +275,12 @@ DIT aggregates use the published numeric values, including roots and floors; loo
 sample.
 
 The enabled `design.dit` rule writes at most one warning per execution,
-distinguishing floors, loops, or both. Disabling the rule silences the warning
-while metrics remain collected. Warnings go to the error stream; `-q` and
+distinguishing floors, loops, or both.
+It names `design.dit-unresolved` and up to five distinct cause/class pairs,
+including the actual unread boundary or cycle, then counts any remaining pairs.
+A missing Composer installation is distinguished from a class missing in an
+existing installation. Disabling the rule silences the warning while metrics
+remain collected. Warnings go to the error stream; `-q` and
 `--log-level=error` silence them, and machine-format payloads remain parseable.
 
 <!-- llms:skip-end -->
