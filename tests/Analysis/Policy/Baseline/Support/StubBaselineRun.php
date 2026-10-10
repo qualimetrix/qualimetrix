@@ -9,9 +9,22 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
+use Qualimetrix\Analysis\Policy\Inline\Contract\DirectiveObservations;
+use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeSnapshot;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\MeasuredRunResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Console\Command\BaselineRunContext;
@@ -64,18 +77,100 @@ final readonly class StubBaselineRun implements BaselineRunInterface
     {
         ($this->onMeasure ?? static fn(): null => null)();
 
-        $result = new AnalysisResult(
-            findings: $this->findings,
-            duration: 0.0,
-            metrics: $this->metrics ?? new InMemoryMetricRepository(),
-            coverage: new AnalysisCoverage([RelativePath::fromString('Fixture.php')], [], []),
-            thresholdOverrides: $this->thresholdOverrides,
+        $files = [RelativePath::fromString('Fixture.php')];
+        foreach ($this->findings as $finding) {
+            if ($finding->location->file !== null) {
+                $files[$finding->location->file->value()] = $finding->location->file;
+            }
+        }
+        $files = array_values($files);
+
+        $result = AnalysisResult::fromRun(
+            measured: new MeasuredRunResult(
+                repository: $this->metrics ?? new InMemoryMetricRepository(),
+                coverage: new AnalysisCoverage($files, [], []),
+                namespaceTree: null,
+                projectScope: null,
+                duration: 0.0,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), $files, []),
+            ),
+            directives: new DirectiveObservations(
+                suppressions: [],
+                thresholdOverrides: $this->thresholdOverrides,
+            ),
+            ruleExecution: null,
+            latePublished: $this->findings,
+        );
+
+        $paths = array_map(
+            fn(string $path): AbsolutePath => str_starts_with($path, '/')
+                ? AbsolutePath::fromString($path)
+                : $this->projectRoot->joinRelative(RelativePath::fromString($path)),
+            $this->scope,
+        );
+        $configuration = new RunConfiguration(
+            pathExcludes: [],
+            projectRoot: $this->projectRoot,
+            generatedFilePolicy: GeneratedFilePolicy::Exclude,
+            projectScope: new ProjectScopeMeasurement(
+                universe: new ProjectScopeUniverse(
+                    projectRoot: $this->projectRoot,
+                    pathsAuthored: true,
+                    denominator: [],
+                    prunedTargets: [],
+                    reasons: [],
+                    namespaceMapUsable: false,
+                    pathResolutions: [],
+                ),
+                paths: $paths,
+                scopeState: ProjectScopeState::Narrowed,
+                uncoveredRoots: [],
+            ),
+            authoredPathExcludes: [],
+            autoloadDevPolicy: AutoloadDevPolicy::Exclude,
+        );
+
+        $tree = new class ($files) implements ProjectTreeQueryInterface {
+            /** @param list<RelativePath> $files */
+            public function __construct(private array $files) {}
+
+            public function snapshot(ProjectScopeUniverse $universe): ProjectTreeSnapshot
+            {
+                return new ProjectTreeSnapshot($this->files, [], true);
+            }
+
+            public function hasFile(AbsolutePath $root, RelativePath $file): ProjectEntryPresence
+            {
+                foreach ($this->files as $present) {
+                    if ($present->equals($file)) {
+                        return ProjectEntryPresence::Present;
+                    }
+                }
+
+                return ProjectEntryPresence::Absent;
+            }
+
+            public function hasDirectory(AbsolutePath $directory): ProjectEntryPresence
+            {
+                return ProjectEntryPresence::Present;
+            }
+        };
+        $coverage = new RunCoverage(
+            RunScope::fromRecorded($this->scope),
+            $result->measured->coverage,
+            RecordedExclusions::fromRunConfiguration($configuration),
+            $configuration->projectScope->universe,
+            [],
+            $tree,
+            $result->measured->subjectCoverage,
         );
 
         return new BaselineRunContext(
             new MeasuredAnalysisRun($result, $this->findings),
             RunScope::fromRecorded($this->scope),
             $this->projectRoot,
+            $configuration,
+            $coverage,
         );
     }
 }

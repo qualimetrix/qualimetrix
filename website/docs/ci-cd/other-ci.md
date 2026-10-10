@@ -168,6 +168,7 @@ Qualimetrix uses standard exit codes:
 | `2`       | Errors found                   |
 | `3`       | Configuration or input error   |
 | `4`       | Analysis incomplete            |
+| `5`       | Internal tool error            |
 
 Most CI systems treat a non-zero exit code as a failure. By default, Qualimetrix uses `--fail-on=error`, so warnings are shown but don't cause failure. To also fail on warnings:
 

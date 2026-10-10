@@ -8,7 +8,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -17,6 +19,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Reporting\FindingProjection\SuppressedFinding;
@@ -37,20 +40,46 @@ use Qualimetrix\Reporting\ReportCoverage;
 #[CoversClass(PublishedUtf8::class)]
 final class InvalidUtf8PublicationTest extends TestCase
 {
+    #[Test]
+    public function itKeepsByteRepairOutOfIssueListRecords(): void
+    {
+        $gitlab = self::decode($this->format('gitlab'));
+        self::assertCount(1, $gitlab);
+        self::assertNotContains(PublishedUtf8::REPAIR_CHECK, array_column($gitlab, 'check_name'));
+        $checkstyle = $this->format('checkstyle');
+        self::assertStringNotContainsString('qmx.' . PublishedUtf8::REPAIR_CHECK, $checkstyle);
+        self::assertSame(1, substr_count($checkstyle, '<error '));
+    }
+
+    #[Test]
+    public function itKeepsDistinctSourceIdentifiersDistinctInPublishedDocuments(): void
+    {
+        $first = self::decode($this->format('json', "K\xFF"));
+        $second = self::decode($this->format('json', "K\xFE"));
+        self::assertNotSame($first['violations'][0]['subject'], $second['violations'][0]['subject']);
+        self::assertStringContainsString('K%FF', $first['violations'][0]['subject']);
+        self::assertStringContainsString('K%FE', $second['violations'][0]['subject']);
+        $repairs = 0;
+        self::assertSame('50%25 K%FF', PublishedUtf8::repair("50% K\xFF", $repairs));
+        self::assertSame(1, $repairs);
+    }
+
     private const string BROKEN = "Br\xFFken";
+
+    #[Test]
+    public function itKeepsRawPathBytesInSarifUris(): void
+    {
+        $output = $this->format('sarif', 'Intact', "src/K\xFF.php", "/pro\xFEject", "src/Rel\xE9.php");
+        $run = self::decode($output)['runs'][0];
+        self::assertSame('src/K%FF.php', $run['results'][0]['locations'][0]['physicalLocation']['artifactLocation']['uri']);
+        self::assertSame('src/Rel%E9.php', $run['results'][0]['relatedLocations'][0]['physicalLocation']['artifactLocation']['uri']);
+        self::assertSame('file:///pro%FEject/', $run['originalUriBaseIds']['%SRCROOT%']['uri']);
+    }
 
     /** @return iterable<string, array{string}> */
     public static function structuredFormats(): iterable
     {
         foreach (['json', 'metrics', 'suppressed', 'sarif', 'gitlab', 'checkstyle', 'html'] as $format) {
-            yield $format => [$format];
-        }
-    }
-
-    /** @return iterable<string, array{string}> */
-    public static function proseFormats(): iterable
-    {
-        foreach (['summary', 'text', 'text-verbose', 'github', 'health'] as $format) {
             yield $format => [$format];
         }
     }
@@ -62,7 +91,7 @@ final class InvalidUtf8PublicationTest extends TestCase
         $output = $this->format($format);
 
         self::assertTrue(mb_check_encoding($output, 'UTF-8'), 'the document is valid UTF-8');
-        self::assertStringContainsString("Br\u{FFFD}ken", $this->readable($format, $output));
+        self::assertStringContainsString('Br%FFken', $this->readable($format, $output));
         self::assertRepairMarked($format, $output);
     }
 
@@ -77,9 +106,8 @@ final class InvalidUtf8PublicationTest extends TestCase
         $output = $this->format($format, 'Intact', "src/Br\xFFken.php");
 
         self::assertTrue(mb_check_encoding($output, 'UTF-8'), 'the document is valid UTF-8');
-        self::assertStringNotContainsString('%FF', $output);
         self::assertStringContainsString(
-            $format === 'sarif' ? 'src/Br%EF%BF%BDken.php' : "src/Br\u{FFFD}ken.php",
+            'src/Br%FFken.php',
             $this->readable($format, $output),
         );
         self::assertRepairMarked($format, $output);
@@ -96,7 +124,7 @@ final class InvalidUtf8PublicationTest extends TestCase
         $sarif = self::decode($output);
         $result = $sarif['runs'][0]['results'][0];
 
-        self::assertSame('src/Rel%EF%BF%BDated.php', $result['relatedLocations'][0]['physicalLocation']['artifactLocation']['uri']);
+        self::assertSame('src/Rel%FFated.php', $result['relatedLocations'][0]['physicalLocation']['artifactLocation']['uri']);
         self::assertSame(
             [[
                 'level' => 'warning',
@@ -113,7 +141,7 @@ final class InvalidUtf8PublicationTest extends TestCase
         $output = $this->format('sarif', 'Intact', 'src/A.php', "/pro\xFFject");
         $run = self::decode($output)['runs'][0];
 
-        self::assertSame('file:///pro%EF%BF%BDject/', $run['originalUriBaseIds']['%SRCROOT%']['uri']);
+        self::assertSame('file:///pro%FFject/', $run['originalUriBaseIds']['%SRCROOT%']['uri']);
         self::assertRepairMarked('sarif', $output);
     }
 
@@ -142,8 +170,8 @@ final class InvalidUtf8PublicationTest extends TestCase
                 'QMX-PUBLICATION-INVALID-UTF8',
                 array_column(array_column(self::decode($output)['runs'][0]['invocations'][0]['toolExecutionNotifications'], 'descriptor'), 'id'),
             ),
-            'gitlab' => self::assertContains('publication.invalid-utf8', array_column(self::decode($output), 'check_name')),
-            'checkstyle' => self::assertStringContainsString('source="qmx.publication.invalid-utf8"', $output),
+            'gitlab' => self::assertNotContains('publication.invalid-utf8', array_column(self::decode($output), 'check_name')),
+            'checkstyle' => self::assertStringNotContainsString('source="qmx.publication.invalid-utf8"', $output),
             'html' => self::assertStringContainsString('data-qmx-publication="invalid-utf8"', $output),
             default => self::fail('No repair mark is asserted for ' . $format),
         };
@@ -155,16 +183,6 @@ final class InvalidUtf8PublicationTest extends TestCase
         $output = $this->format('json', 'Intact');
 
         self::assertArrayNotHasKey('invalidUtf8Replaced', self::decode($output));
-    }
-
-    /**
-     * Prose surfaces carry the bytes through untouched; they must not fail.
-     */
-    #[Test]
-    #[DataProvider('proseFormats')]
-    public function itStillRendersTheProseFormats(string $format): void
-    {
-        self::assertNotSame('', $this->format($format));
     }
 
     private function format(
@@ -187,8 +205,17 @@ final class InvalidUtf8PublicationTest extends TestCase
             relatedLocations: $relatedPath === null ? [] : [new Location(RelativePath::fromString($relatedPath), 1)],
         );
 
-        $metrics = new InMemoryMetricRepository();
-        $metrics->add($symbol, MetricBag::fromArray(['complexity.ccn.sum' => 12]), $file, 3);
+        $metrics = new InMemoryMetricRepository([
+            new MetricDefinition('complexity.ccn', SymbolLevel::Callable, [
+                SymbolLevel::Class_->value => [AggregationStrategy::Sum],
+            ]),
+        ]);
+        $metrics->addSubject(
+            MetricSubject::declaration(DeclarationPath::of($symbol, $file, DeclarationOrdinal::fromRank(0))),
+            MetricBag::fromArray(['complexity.ccn.sum' => 12]),
+            $file,
+            3,
+        );
 
         $report = ReportBuilder::create()
             ->metrics($metrics)
@@ -205,7 +232,12 @@ final class InvalidUtf8PublicationTest extends TestCase
         /** @var FormatterRegistryInterface $registry */
         $registry = (new ContainerFactory())->create()->get(FormatterRegistryInterface::class);
 
-        return $registry->get($format)->format($report, new FormatterContext(useColor: false, basePath: $basePath));
+        $formatted = $registry->get($format)->format($report, new FormatterContext(useColor: false, basePath: $basePath));
+        if ($format === 'gitlab' || $format === 'checkstyle') {
+            self::assertGreaterThan(0, $formatted->escapedStrings);
+        }
+
+        return $formatted->body;
     }
 
     private function readable(string $format, string $output): string

@@ -149,7 +149,7 @@ foreach ($projects as $project) {
     }
 
     fprintf(STDERR, "Analyzing: %s ... ", $id);
-    $start = microtime(true);
+    $start = (hrtime(true) / 1_000_000_000);
 
     // An argument-vector command needs no shell and therefore no
     // escapeshellarg(): each element reaches the child exactly as written.
@@ -178,7 +178,7 @@ foreach ($projects as $project) {
     }
     $json = $result['stdout'];
     $exitCode = $result['exitCode'];
-    $elapsed = round(microtime(true) - $start, 1);
+    $elapsed = round((hrtime(true) / 1_000_000_000) - $start, 1);
 
     if ($exitCode > 2) {
         fprintf(STDERR, "FAILED (analysis exit code %d)\n", $exitCode);
@@ -274,7 +274,7 @@ foreach ($projects as $project) {
                 'name' => $symbol['name'],
                 'coupling.cbo' => $symbol['metrics']['coupling.cbo'] ?? null,
                 'health.coupling' => $symbol['metrics']['health.coupling'] ?? null,
-                'size.loc' => $symbol['metrics']['size.loc'] ?? null,
+                'size.class-loc' => $symbol['metrics']['size.class-loc'] ?? null,
             ];
         }
     }

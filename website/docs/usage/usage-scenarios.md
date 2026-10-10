@@ -95,7 +95,7 @@ A developer (with or without an AI coding assistant) writes code, then runs Qual
 **Tips:**
 
 - Use `--format=json` if your AI tool works better with structured data
-- Use `--report=git:main..HEAD` to focus on violations in your changed files only
+- Use `--report=git:main..HEAD` to focus publication on changed files under the [Git scope rules](git-integration.md#how---report-works)
 - The text format is already optimized for terminal and IDE consumption -- no special "AI format" is needed
 
 ---
@@ -137,7 +137,8 @@ artifacts:
 
 **Scoped reporting:**
 
-To show violations only for changed files (not the entire project):
+To limit code findings to changed files while retaining relevant namespace/project
+results and project-scoped configuration diagnostics:
 
 ```bash
 vendor/bin/qmx check src/ --report=git:main..HEAD --format=github --no-progress

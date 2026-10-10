@@ -6,7 +6,7 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
 
 /**
  * What one `baseline:update` run produced: the new baseline, and what
- * happened to every entry the loaded one held (ADR 0017).
+ * happened to the identities considered by the selected mode (ADR 0017).
  *
  * Bundled the way {@see BaselineCapture} bundles a generation, so the report
  * and the file cannot be read from two different computations by accident.
@@ -14,9 +14,9 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
 final readonly class BaselineUpdateResult
 {
     /**
-     * @param list<BaselineEntryUpdateOutcome> $outcomes one per entry the loaded
-     *                                                   baseline held, in that order
-     * @param bool $changed whether $baseline's entries serialize to anything different
+     * @param list<BaselineEntryUpdateOutcome> $outcomes per considered identity, in processing order
+     * @param array<string, string> $channelNotes zero-acceptance reasons by exact channel
+     * @param bool $changed whether entries or exclusions serialize differently
      *                      from the loaded ones — an entry can carry the `Updated`
      *                      disposition while writing back the exact payload it already
      *                      held, and that is not a change {@see BaselineWriter} should
@@ -29,5 +29,7 @@ final readonly class BaselineUpdateResult
         public Baseline $baseline,
         public array $outcomes,
         public bool $changed,
+        public array $channelNotes = [],
+        public ?BaselineUpdateRefusalReason $writeRefusal = null,
     ) {}
 }

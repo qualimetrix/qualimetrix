@@ -15,8 +15,9 @@ declare(strict_types=1);
  *   0 — all scores within expected ranges (or --update-baselines wrote successfully and
  *       every expected metric was measured)
  *   1 — regression detected (an expectation mismatch, or an expected metric that was
- *       not measured — see below). Both apply under --update-baselines too: a write
- *       that left a stale expectation standing exits 1, or the operator commits a
+ *       not measured — see below, or incomplete analysis coverage). These apply under
+ *       --update-baselines too: a write that left a stale expectation standing exits 1,
+ *       or the operator commits a
  *       baseline the next `benchmark:check` reddens and no further update can clean.
  *   2 — infrastructure error (missing deps, invalid baseline, a benchmark path not
  *       found, an analysis that failed to run or produced unreadable output, etc.)
@@ -173,8 +174,8 @@ if (!is_array($baselines) || !isset($baselines['projects']) || !is_array($baseli
 
 $projects = $baselines['projects'];
 
-// $failures drives the exit code (1 if anything is wrong at all); $infrastructureFailures is
-// the narrower list that blocks --update-baselines from writing (see the docblock above).
+// Infrastructure failures exit 2; measured regressions and incomplete coverage exit 1.
+// A partial corpus always blocks --update-baselines from writing.
 $failures = [];
 $infrastructureFailures = [];
 // The list that outlives a successful write: an expectation the analysis did not
@@ -184,17 +185,17 @@ $unmeasuredAcrossRun = [];
 $results = [];
 $distributions = [];
 
-// qmx auto-discovers qmx.yaml (and composer.json) from the process working
-// directory. Running from the repo root would leak the repo's own qmx.yaml —
-// its memory_limit: 1G (overriding the -d memory_limit=2G below), its
-// Qualimetrix\** architecture layers, and its coupling framework namespaces —
-// onto every benchmark project. That is conceptually wrong and, combined with
-// a pathological duplication bucket, is what makes the doctrine-dbal run OOM.
-// A fresh, empty working directory turns auto-discovery into a no-op, while the
-// absolute $qmxBin and per-project $path keep the invocation self-contained.
-$neutralDir = sys_get_temp_dir() . '/qmx-benchmark-' . getmypid();
-if (!is_dir($neutralDir) && !mkdir($neutralDir, 0o755, true) && !is_dir($neutralDir)) {
-    fprintf(STDERR, "ERROR: Cannot create neutral working directory: %s\n", $neutralDir);
+// The CLI admits paths only inside its working directory. Each measured target
+// therefore owns the child cwd and its Composer source facts. An explicit empty
+// YAML keeps project/repository configuration out of the calibration.
+$neutralConfig = sys_get_temp_dir() . '/qmx-benchmark-' . bin2hex(random_bytes(6)) . '.yaml';
+register_shutdown_function(static function () use ($neutralConfig): void {
+    if (is_file($neutralConfig)) {
+        unlink($neutralConfig);
+    }
+});
+if (file_put_contents($neutralConfig, "{}\n") !== 3) {
+    fprintf(STDERR, "ERROR: Cannot write neutral configuration: %s\n", $neutralConfig);
     exit(2);
 }
 
@@ -202,6 +203,8 @@ fprintf(STDERR, "Benchmark regression check (%d projects)\n", count($projects));
 fprintf(STDERR, "%s\n", str_repeat('=', 80));
 
 foreach ($projects as $id => $config) {
+    // Raw and decoded report buffers together can fill the parent's memory budget.
+    unset($result, $json, $data, $symbolsForDistribution, $symbol, $projectMetrics);
     // Without the key, the concatenation below would silently make $path the repository
     // root — a directory that exists, analyses (vendor/ included) and seeds as this
     // project's baseline.
@@ -226,7 +229,7 @@ foreach ($projects as $id => $config) {
     }
 
     fprintf(STDERR, "  %-25s ", $id);
-    $start = microtime(true);
+    $start = (hrtime(true) / 1_000_000_000);
 
     // Build command with optional disable-rules. An argument-vector command
     // needs no shell and therefore no escapeshellarg(): each element reaches
@@ -241,6 +244,7 @@ foreach ($projects as $id => $config) {
         $path,
         '--format=metrics',
         '--workers=0',
+        '--config=' . $neutralConfig,
     ];
 
     if (isset($config['disable_rules']) && $config['disable_rules'] !== []) {
@@ -249,18 +253,16 @@ foreach ($projects as $id => $config) {
         }
     }
 
-    // Run from the neutral working directory so qmx does not auto-discover the
-    // repo's qmx.yaml/composer.json (see the comment above $neutralDir).
     // ChildProcess::run() always captures stderr separately; it is discarded
     // below, matching the previous `2>/dev/null` shell redirect — this script
     // never surfaced the child's own stderr.
     try {
-        $result = ChildProcess::run($cmd, $neutralDir);
+        $result = ChildProcess::run($cmd, $path);
     } catch (RuntimeException $exception) {
         fprintf(
             STDERR,
             "FAILED (analysis did not complete, %.1fs): %s\n",
-            round(microtime(true) - $start, 1),
+            round((hrtime(true) / 1_000_000_000) - $start, 1),
             $exception->getMessage(),
         );
         $message = sprintf('%s: analysis did not complete (%s)', $id, $exception->getMessage());
@@ -271,7 +273,7 @@ foreach ($projects as $id => $config) {
     }
     $json = $result['stdout'];
     $exitCode = $result['exitCode'];
-    $elapsed = round(microtime(true) - $start, 1);
+    $elapsed = round((hrtime(true) / 1_000_000_000) - $start, 1);
 
     if ($exitCode > 2) {
         fprintf(STDERR, "FAILED (analysis exit code %d, %.1fs)\n", $exitCode, $elapsed);
@@ -305,7 +307,6 @@ foreach ($projects as $id => $config) {
         fprintf(STDERR, "FAILED (analysis coverage incomplete or missing, %.1fs)\n", $elapsed);
         $message = sprintf('%s: analysis coverage is not complete', $id);
         $failures[] = $message;
-        $infrastructureFailures[] = $message;
 
         continue;
     }
@@ -501,13 +502,13 @@ if ($updateBaselines && $infrastructureFailures === [] && count($results) === co
 }
 
 if (count($failures) > 0) {
-    fprintf(STDERR, "\nREGRESSION DETECTED (%d failures):\n", count($failures));
+    fprintf(STDERR, "\n%s (%d failures):\n", $infrastructureFailures !== [] ? 'INFRASTRUCTURE FAILURE' : 'REGRESSION DETECTED', count($failures));
 
     foreach ($failures as $failure) {
         fprintf(STDERR, "  - %s\n", $failure);
     }
 
-    exit(1);
+    exit($infrastructureFailures !== [] ? 2 : 1);
 }
 
 fprintf(STDERR, "\nAll %d projects within expected ranges.\n", count($results));

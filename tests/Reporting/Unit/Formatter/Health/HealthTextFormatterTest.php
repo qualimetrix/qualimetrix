@@ -17,12 +17,14 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCo
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Reporting\CoverageFailure;
 use Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
 use Qualimetrix\Reporting\Report;
 use Qualimetrix\Reporting\ReportBuilder;
+use Qualimetrix\Reporting\ReportCoverage;
 
 #[CoversClass(HealthTextFormatter::class)]
 final class HealthTextFormatterTest extends TestCase
@@ -31,10 +33,25 @@ final class HealthTextFormatterTest extends TestCase
 
     protected function setUp(): void
     {
-        $hintProvider = new HealthMetricCatalog();
-        $drillDown = new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class));
+        $hintProvider = new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
+        $drillDown = new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class), new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
         $resolver = new HealthScoreResolver($drillDown);
         $this->formatter = new HealthTextFormatter($resolver);
+    }
+
+    #[Test]
+    public function itPublishesPopulationBeforeEmptyDataReturnsAndKeepsReasonsVerbose(): void
+    {
+        $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
+        $trace->record('fixture.rule', new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('fixture.channel'), \Qualimetrix\Core\Symbol\SymbolLevel::Project, \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::selector('project:fixture', 'project'), 'published', 'The fixture value is absent.');
+        $report = new \Qualimetrix\Reporting\Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 0, 0, 0, 0, 0, population: $trace->freeze());
+        $compact = $this->formatter->format($report, new FormatterContext(useColor: false))->body;
+        self::assertSame(1, substr_count($compact, 'Rule population incomplete'));
+        self::assertStringContainsString('project: 0 judged, 1 not judged', $compact);
+        self::assertStringNotContainsString('The fixture value is absent.', $compact);
+        $verbose = $this->formatter->format($report, (new FormatterContext(useColor: false, verbose: true))->withDetail(true))->body;
+        self::assertStringContainsString('fixture.rule / fixture.channel (project), gate published: The fixture value is absent.', $verbose);
+        self::assertStringContainsString('examples: project:fixture', $verbose);
     }
 
     #[Test]
@@ -59,12 +76,31 @@ final class HealthTextFormatterTest extends TestCase
             ->build();
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('Health Report', $output);
         self::assertStringContainsString('No health data available', $output);
         self::assertStringContainsString('computed metrics enabled', $output);
         self::assertStringContainsString(ProductIdentity::pointerText(), $output);
+    }
+
+    #[Test]
+    public function itNamesSeveralEntryFailureKindsWithoutCallingThemPhpFiles(): void
+    {
+        $coverage = new ReportCoverage(4, 1, 0, 3, [
+            new CoverageFailure('src/link', 'directory-symlink', 'Directory link'),
+            new CoverageFailure('src/closed', 'unreadable-directory', 'Cannot list directory'),
+            new CoverageFailure('src/pipe', 'not-regular-file', 'FIFO'),
+        ]);
+        $report = ReportBuilder::create()->filesAnalyzed(1)->filesSkipped(3)->coverage($coverage)->build();
+
+        $output = $this->formatter->format($report, new FormatterContext(useColor: false))->body;
+
+        self::assertStringContainsString(
+            'Analysis incomplete: 3 of 4 discovered entries failed (1 directory-symlink, 1 not-regular-file, 1 unreadable-directory); policy results are not authoritative.',
+            $output,
+        );
+        self::assertStringNotContainsString('discovered PHP file(s) failed', $output);
     }
 
     #[Test]
@@ -75,7 +111,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString(ProductIdentity::pointerText(), $output);
     }
@@ -94,7 +130,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('Health Report', $output);
         self::assertStringContainsString('Dimension', $output);
@@ -133,7 +169,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('Complexity decomposition:', $output);
         self::assertStringContainsString('Cyclomatic (avg)', $output);
@@ -152,7 +188,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('Typing', $output);
         self::assertStringContainsString('N/A', $output);
@@ -169,7 +205,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: true, terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         // Green for good score (complexity > warn threshold 60)
         self::assertStringContainsString("\e[32m", $output);
@@ -186,7 +222,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         // No ANSI escape codes
         self::assertStringNotContainsString("\e[", $output);
@@ -203,7 +239,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 50);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         // Should still show scores
         self::assertStringContainsString('Complexity', $output);
@@ -225,7 +261,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Core'), terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('[namespace: subtree:App\\Core]', $output);
     }
@@ -239,7 +275,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, class: 'App\\Service\\UserService', terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('[class: App\\Service\\UserService]', $output);
     }
@@ -253,7 +289,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: true, terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         // Red for error score (below err threshold)
         self::assertStringContainsString("\e[31m", $output);
@@ -268,7 +304,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringNotContainsString('decomposition:', $output);
     }
@@ -284,7 +320,7 @@ final class HealthTextFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         // Singular "file" for 1 file
         self::assertStringContainsString('1 file analyzed', $output);
@@ -311,7 +347,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('Worst contributors:', $output);
 
@@ -342,7 +378,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120, options: ['contributors' => '0']);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringNotContainsString('Worst contributors:', $output);
         self::assertStringNotContainsString('SomeClass', $output);
@@ -363,7 +399,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120, options: ['contributors' => '1']);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('ClassA', $output);
         self::assertStringNotContainsString('ClassB', $output);
@@ -383,7 +419,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 50);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringNotContainsString('Worst contributors:', $output);
     }
@@ -399,7 +435,7 @@ final class HealthTextFormatterTest extends TestCase
         ]);
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringNotContainsString('Worst contributors:', $output);
     }
@@ -419,7 +455,7 @@ final class HealthTextFormatterTest extends TestCase
             'overall' => new HealthScore('overall', 75.3, 'Acceptable', 50.0, 30.0, HealthCoverage::notApplicable('composes the other dimensions')),
         ]);
 
-        $output = $this->formatter->format($report, new FormatterContext(useColor: false, terminalWidth: $terminalWidth));
+        $output = $this->formatter->format($report, new FormatterContext(useColor: false, terminalWidth: $terminalWidth))->body;
 
         self::assertStringContainsString('25%', $output);
         self::assertStringContainsString('n/a', $output);
@@ -434,14 +470,23 @@ final class HealthTextFormatterTest extends TestCase
         yield 'narrow' => [50];
     }
 
-    /**
-     * @param array<string, HealthScore> $healthScores
-     */
+    #[Test]
+    public function itNamesFindingsAndTheWholeRunOutsideACleanScopeEvenWithoutScores(): void
+    {
+        $report = ReportBuilder::create()->filesAnalyzed(1)
+            ->outOfScope(new \Qualimetrix\Reporting\DrillDown\OutOfScopeFindings(1, 2, 3))->build();
+        $output = $this->formatter->format($report, new FormatterContext(useColor: false))->body;
+        self::assertStringContainsString('Findings: 0 error(s), 0 warning(s), 0 info', $output);
+        self::assertStringContainsString('Outside this scope: 1 error(s), 2 warning(s), 3 info', $output);
+    }
+
+    /** @param array<string, HealthScore> $healthScores */
     private function createReportWithHealthScores(
         array $healthScores,
         int $filesAnalyzed = 10,
     ): Report {
         return new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: $filesAnalyzed,
             filesSkipped: 0,
@@ -451,4 +496,82 @@ final class HealthTextFormatterTest extends TestCase
             healthScores: $healthScores,
         );
     }
+
+    #[Test]
+    public function itShowsBothNonfailureAbsencesBeforeReturningWithoutScores(): void
+    {
+        $summary = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence(
+                'computed.custom',
+                \Qualimetrix\Core\Symbol\SymbolLevel::Project,
+                2,
+                1,
+                ['missing.input'],
+                [\Qualimetrix\Core\Symbol\MetricSubject::aggregate(\Qualimetrix\Core\Symbol\SymbolPath::forProject())],
+            ),
+        ]);
+        $report = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 1, 0, 0.0, 0, 0, computedMetricEvaluation: $summary);
+        $body = $this->formatter->format($report, new FormatterContext(useColor: false))->body;
+        self::assertStringContainsString('Computed metric computed.custom (project): not measured', $body);
+        self::assertStringContainsString('missing keys [missing.input] for 2 subject(s)', $body);
+        self::assertStringContainsString('no value for 1 subject(s)', $body);
+        $withScores = new \Qualimetrix\Reporting\Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 1, 0, 0.0, 0, 0, healthScores: [
+            'overall' => new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore('overall', 0.0, 'Critical', 50.0, 25.0, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage::notApplicable('composes dimensions')),
+        ], computedMetricEvaluation: $summary);
+        $alongside = $this->formatter->format($withScores, new FormatterContext(useColor: false))->body;
+        self::assertStringContainsString('missing keys [missing.input] for 2 subject(s)', $alongside);
+        self::assertStringContainsString('no value for 1 subject(s)', $alongside);
+        $expected = 'Computed metric computed.custom (project): not measured — missing keys [missing.input] for 2 subject(s); no value for 1 subject(s); examples: project:';
+        self::assertContains($expected, explode("\n", $body));
+        self::assertContains($expected, explode("\n", $alongside));
+        self::assertSame(1, substr_count($body, 'Computed metric computed.custom'));
+        self::assertSame(1, substr_count($alongside, 'Computed metric computed.custom'));
+
+    }
+
+    #[Test]
+    public function itShowsActualCustomAbsencesWithNullLoggerBeforeAndBesideHealth(): void
+    {
+        $repository = new \Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository([
+            new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition('cohesion.tcc', \Qualimetrix\Core\Symbol\SymbolLevel::Class_),
+        ]);
+        foreach (['One' => [], 'Two' => [], 'Pair' => ['cohesion.tcc' => 1]] as $name => $metrics) {
+            $file = \Qualimetrix\Core\Path\RelativePath::fromString('src/' . $name . '.php');
+            $subject = \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(
+                \Qualimetrix\Core\Symbol\SymbolPath::forClass('App', $name),
+                $file,
+                \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0),
+            ));
+            $repository->addSubject($subject, \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag::fromArray($metrics), $file, 1);
+        }
+        $analysis = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricAnalysis(
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver(
+                new \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator(),
+                new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()),
+            ),
+        );
+        $analysis->replace(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition(
+                'computed.custom',
+                ['class' => 'm["cohesion.tcc"] > 0 ? null : m["coupling.cbo"]'],
+                'Custom',
+                [\Qualimetrix\Core\Symbol\SymbolLevel::Class_],
+            ),
+        ]));
+        $summary = (new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricEvaluator(
+            $analysis,
+            self::createStub(\Qualimetrix\Core\Profiler\Contract\ProfilerInterface::class),
+            new \Psr\Log\NullLogger(),
+        ))->evaluate($repository, 1);
+        self::assertCount(1, $summary->absences);
+        self::assertSame(2, $summary->absences[0]->missingKeysCount);
+        self::assertSame(1, $summary->absences[0]->noValueCount);
+        foreach ([[], ['overall' => new HealthScore('overall', 80.0, 'Good', 50.0, 25.0, HealthCoverage::notApplicable('composes dimensions'))]] as $scores) {
+            $body = $this->formatter->format(new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 1, 0, 0.0, 0, 0, healthScores: $scores, computedMetricEvaluation: $summary), new FormatterContext(useColor: false))->body;
+            self::assertSame(1, substr_count($body, 'Computed metric computed.custom (class):'));
+            self::assertStringContainsString('missing keys [cohesion.tcc] for 2 subject(s)', $body);
+            self::assertStringContainsString('no value for 1 subject(s)', $body);
+        }
+    }
+
 }

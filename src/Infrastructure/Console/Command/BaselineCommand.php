@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
+use Qualimetrix\Core\FileTarget\PreparedTarget;
+use Qualimetrix\Core\FileTarget\ResolvedTarget;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\Console\RunTarget\StagedSignalGuard;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -28,13 +32,6 @@ use Throwable;
  * exist. Left to each command those become five slightly different
  * spellings of the same three sentences, and the one that forgets a `catch`
  * answers a bad path with a stack trace.
- *
- * @qmx-ignore health.cohesion -- the final execute() / abstract doExecute()
- * split is a template-method seam: this base class carries the shared
- * ladder and none of a subcommand's own state, so it measures as low
- * cohesion by construction, not as a defect. `@qmx-threshold` cannot retune
- * this instead: `health.cohesion` is a computed metric with no per-symbol
- * override support.
  */
 abstract class BaselineCommand extends Command
 {
@@ -65,15 +62,12 @@ abstract class BaselineCommand extends Command
             // four declare no `--format` and this stays `null` for them), which
             // is exactly the guard that keeps its machine-readable branch a
             // document a script can still parse.
-            if ($format !== 'json') {
+            if ($format !== 'json' && !\in_array($exitCode, [128 + \SIGINT, 128 + \SIGTERM], true)) {
                 $output->writeln(\sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));
             }
 
             return $exitCode;
-        } catch (ConfigurationRefusal $refusal) {
-            // First clause: the carrier is a RuntimeException, and the split
-            // pair below would otherwise catch it and answer with code 1
-            // instead of 3.
+        } catch (RefusalInterface $refusal) {
             return $this->refusalPresenter->refusal($output, $format, $refusal);
         } catch (IncompleteAnalysisException $e) {
             return $this->fail($output, $e->getMessage(), $e, self::EXIT_ANALYSIS_INCOMPLETE);
@@ -85,17 +79,9 @@ abstract class BaselineCommand extends Command
             // is the user's to fix, not ours to explain with a stack.
             return $this->refusalPresenter->fallbackRefusal($output, $format, $e);
         } catch (RuntimeException $e) {
-            // The baseline loader used to report every envelope problem this
-            // way; it now uses a typed carrier, so what still reaches here is
-            // either a genuine defect or a type without a typed refusal
-            // carrier. Either way it is not a
-            // proven refusal, so it keeps the trace-on-`-v` treatment rather
-            // than the presenter's code 3.
-            return $this->fail($output, $e->getMessage(), $e);
+            return $this->refusalPresenter->unhandled($output, $format, $e);
         } catch (Throwable $e) {
-            // Anything else is a bug in this tool rather than in the user's
-            // input, and is labelled as such so the two are not confused.
-            return $this->fail($output, \sprintf('Unexpected error: %s', $e->getMessage()), $e);
+            return $this->refusalPresenter->unhandled($output, $format, $e);
         }
     }
 
@@ -113,6 +99,34 @@ abstract class BaselineCommand extends Command
     }
 
     abstract protected function doExecute(InputInterface $input, OutputInterface $output): int;
+
+    /** @param callable(PreparedTarget, ?StagedSignalGuard): int $action */
+    protected function withPreparedTarget(ResolvedTarget $target, callable $action): int
+    {
+        $guard = StagedSignalGuard::start();
+        $prepared = null;
+        try {
+            $prepared = PreparedTarget::prepare($target);
+            $result = $action($prepared, $guard);
+            $signal = $guard?->interruptedSignal();
+
+            return $signal === null ? $result : 128 + $signal;
+        } catch (Throwable $failure) {
+            $signal = $guard?->interruptedSignal();
+            if ($signal !== null) {
+                return 128 + $signal;
+            }
+
+            throw $failure;
+        } finally {
+            $guard?->beginCleanup();
+            try {
+                $prepared?->discard();
+            } finally {
+                $guard?->close();
+            }
+        }
+    }
 
     /**
      * Appends the documentation address to a command's own `--help` text, so
@@ -191,13 +205,13 @@ abstract class BaselineCommand extends Command
 
     /**
      * The preamble `baseline:cleanup` and `baseline:update` share (ADR 0017):
-     * measure before loading — a `computed.*` / `health.*` declaration only
+     * preflight grammar, then measure before loading semantic entries — a `computed.*` / `health.*` declaration only
      * exists once the run has resolved configuration, so loading the file
      * first would leave every such entry inert, and each command would
      * answer differently than the `check` applying the very same entry —
      * then refuse when the run's scope does not cover what the file records.
-     * Only the file's existence is asked before the run: it needs no
-     * declaration, and a missing file should not cost a whole analysis.
+     * Document grammar needs no declaration, and an invalid file should not
+     * cost a whole analysis.
      *
      * Returns `null` when the caller must answer with `self::FAILURE`; the
      * scope guard has already written its own message to `$output`.
@@ -207,13 +221,12 @@ abstract class BaselineCommand extends Command
         BaselineLoader $loader,
         InputInterface $input,
         OutputInterface $output,
-        string $baselinePath,
+        BaselineDocument $document,
     ): ?LoadedBaselineRun {
         $force = $input->getOption('force') === true;
 
-        BaselineLoader::assertReadable($baselinePath);
         $context = $baselineRun->measure($input, $output);
-        $baseline = $loader->load($baselinePath);
+        $baseline = $loader->load($document);
 
         if (!$this->assertScopeCovers($context->scope, $baseline->scope, $force, $output)) {
             return null;

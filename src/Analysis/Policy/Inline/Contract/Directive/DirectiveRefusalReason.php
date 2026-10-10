@@ -17,6 +17,12 @@ namespace Qualimetrix\Analysis\Policy\Inline\Contract\Directive;
  */
 enum DirectiveRefusalReason: string
 {
+    case NotAtLineStart = 'not-at-line-start';
+
+    case InsideUnclosedFence = 'inside-unclosed-fence';
+
+    case MisspelledPrefix = 'misspelled-prefix';
+
     /** The tag name is not one this tool reads (`@qmx-ignore-lines`). */
     case FormNotRecognised = 'form-not-recognised';
 
@@ -33,6 +39,12 @@ enum DirectiveRefusalReason: string
      * bound to a line and a file and are unaffected.
      */
     case NoDeclarationToBind = 'no-declaration-to-bind';
+
+    /** A callable exists below the carrier, but is not its direct declaration value. */
+    case ClosureNotDirectValue = 'closure-not-direct-value';
+
+    /** An explicit `:level` is valid for the channel but unreachable from this carrier. */
+    case LevelNotReachableHere = 'level-not-reachable-here';
 
     /** `@qmx-threshold` written in a line or block comment; only a docblock carries it. */
     case ThresholdOutsideDocblock = 'threshold-outside-docblock';

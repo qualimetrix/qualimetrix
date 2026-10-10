@@ -41,29 +41,6 @@ final class CachedFileParser implements FileParserInterface
     /**
      * @return Node[]
      */
-    public function parse(SplFileInfo $file): array
-    {
-        // A non-regular entry (directory, FIFO, dangling symlink) must never
-        // become a successfully parsed empty AST: `file_get_contents()` on a
-        // directory returns an empty string rather than `false`, so reading
-        // first and asking questions later reports a phantom analyzed file.
-        // The inner parser owns the typed refusal for that case.
-        if (!$this->cachingEnabled() || !$file->isFile() || !$file->isReadable()) {
-            return $this->inner->parse($file);
-        }
-
-        $content = @file_get_contents($file->getPathname());
-
-        if ($content === false) {
-            return $this->inner->parse($file);
-        }
-
-        return $this->parseContent($file, $content);
-    }
-
-    /**
-     * @return Node[]
-     */
     public function parseContent(SplFileInfo $file, string $content): array
     {
         if (!$this->cachingEnabled()) {

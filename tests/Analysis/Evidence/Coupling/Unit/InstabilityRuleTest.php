@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit;
 
 use InvalidArgumentException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -21,6 +22,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(InstabilityRule::class)]
 #[CoversClass(InstabilityOptions::class)]
@@ -28,6 +30,30 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 #[CoversClass(NamespaceInstabilityOptions::class)]
 final class InstabilityRuleTest extends TestCase
 {
+    #[Test]
+    public function itAccountsMeasuredZeroAndMissingSelectedPublicationBeforeSeverity(): void
+    {
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allClassDeclarations')->willReturn([
+            self::subjectInfo(SymbolPath::forClass('Population', 'Healthy'), RelativePath::fromString('src/Healthy.php'), 1),
+            self::subjectInfo(SymbolPath::forClass('Population', 'Missing'), RelativePath::fromString('src/Missing.php'), 1),
+        ]);
+        $repository->method('getSubject')->willReturnCallback(static fn(\Qualimetrix\Core\Symbol\MetricSubject $subject): MetricBag => $subject->toSymbolPath()->type === 'Healthy' ? (new MetricBag())->with('coupling.instability', 0)->with('coupling.ca', 0)->with('coupling.ce', 0) : (new MetricBag())->with('coupling.ca', 0)->with('coupling.ce', 0));
+        $decisions = [];
+        foreach (InstabilityRule::channelDeclarations() as $channel => $declaration) {
+            foreach ($declaration->levels as $level) {
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(InstabilityRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
+            }
+        }
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+        $rule = new InstabilityRule(new InstabilityOptions(class: new ClassInstabilityOptions(minAfferent: 0)));
+        self::assertSame([], $rule->analyzeLevel(\Qualimetrix\Core\Symbol\SymbolLevel::Class_, (new AnalysisContext($repository))->withPopulationTrace($session)));
+        self::assertSame(1, $session->freeze()->judgedCount());
+        self::assertSame(1, $session->freeze()->unjudgedCount());
+        self::assertStringContainsString('Missing', $session->freeze()->abstentions()[0]->examples[0]);
+        self::assertSame('declaration', $session->freeze()->abstentions()[0]->unit);
+    }
+
     #[Test]
     public function itReturnsCorrectName(): void
     {
@@ -43,7 +69,7 @@ final class InstabilityRuleTest extends TestCase
 
         self::assertSame(
             'Checks instability at class and namespace levels',
-            $rule->getDescription(),
+            $rule::getDescription(),
         );
     }
 
@@ -110,7 +136,7 @@ final class InstabilityRuleTest extends TestCase
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -129,9 +155,9 @@ final class InstabilityRuleTest extends TestCase
         $metricBag = new MetricBag();
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -154,9 +180,9 @@ final class InstabilityRuleTest extends TestCase
             ->with('coupling.ce', 12);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -185,9 +211,9 @@ final class InstabilityRuleTest extends TestCase
             ->with('coupling.ce', 32);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -213,9 +239,9 @@ final class InstabilityRuleTest extends TestCase
             ->with('coupling.ce', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -243,9 +269,9 @@ final class InstabilityRuleTest extends TestCase
             ->with('coupling.ce', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -264,8 +290,8 @@ final class InstabilityRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\\Service', 'LeafService');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/LeafService.php'), 10);
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn(
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn(
             (new MetricBag())->with('coupling.instability', 1.0),
         );
 
@@ -298,9 +324,9 @@ final class InstabilityRuleTest extends TestCase
             ->with('coupling.ce', 11);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -328,9 +354,9 @@ final class InstabilityRuleTest extends TestCase
             ->with('coupling.ce', 12);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -367,9 +393,9 @@ final class InstabilityRuleTest extends TestCase
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
-        // 0.88 is above warning (0.8), below error (0.95)
+        // 0.80 reaches warning, below error (0.95)
         $metricBag = (new MetricBag())
-            ->with('coupling.instability', 0.88)
+            ->with('coupling.instability', 0.8)
             ->with('coupling.ca', 3)
             ->with('coupling.ce', 22)
             ->with('size.class-count.sum', 5);
@@ -385,7 +411,7 @@ final class InstabilityRuleTest extends TestCase
 
         self::assertCount(1, $findings);
         self::assertSame(Severity::Warning, $findings[0]->severity);
-        self::assertStringContainsString('Instability is 0.88 (Ca=3, Ce=22), exceeds threshold of 0.80. Reduce outgoing dependencies', $findings[0]->message);
+        self::assertStringContainsString('Instability is 0.80 (Ca=3, Ce=22), reaches threshold of 0.80. Reduce outgoing dependencies', $findings[0]->message);
         self::assertSame('coupling.instability', $findings[0]->code);
     }
 
@@ -416,6 +442,7 @@ final class InstabilityRuleTest extends TestCase
         self::assertCount(1, $findings);
         self::assertSame(Severity::Error, $findings[0]->severity);
         self::assertSame(0.98, $findings[0]->metricValue);
+        self::assertStringContainsString('exceeds threshold of 0.95', $findings[0]->message);
     }
 
     #[Test]
@@ -595,13 +622,9 @@ final class InstabilityRuleTest extends TestCase
                 SymbolLevel::Namespace_ => [$nsInfo],
                 default => [],
             });
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')
-            ->willReturnCallback(fn(SymbolPath $path) => match ($path) {
-                $classPath => $classBag,
-                $nsPath => $nsBag,
-                default => new MetricBag(),
-            });
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn($classBag);
+        $repository->method('get')->willReturn($nsBag);
 
         $context = new AnalysisContext($repository);
         $findings = $rule->analyze($context);
@@ -614,11 +637,11 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itParsesClassOptionsFromArray(): void
     {
-        $options = ClassInstabilityOptions::fromArray([
+        $options = ClassInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(ClassInstabilityOptions::class, [
             'enabled' => false,
             'max_warning' => 0.7,
             'max_error' => 0.9,
-        ]);
+        ]));
 
         self::assertFalse($options->enabled);
         self::assertSame(0.7, $options->maxWarning);
@@ -628,7 +651,7 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itUsesClassOptionDefaults(): void
     {
-        $options = ClassInstabilityOptions::fromArray([]);
+        $options = ClassInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(ClassInstabilityOptions::class, []));
 
         self::assertTrue($options->enabled);
         self::assertSame(0.8, $options->maxWarning);
@@ -638,11 +661,11 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itParsesNamespaceOptionsFromArray(): void
     {
-        $options = NamespaceInstabilityOptions::fromArray([
+        $options = NamespaceInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(NamespaceInstabilityOptions::class, [
             'enabled' => false,
             'max_warning' => 0.75,
             'max_error' => 0.92,
-        ]);
+        ]));
 
         self::assertFalse($options->enabled);
         self::assertSame(0.75, $options->maxWarning);
@@ -652,7 +675,7 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itParsesInstabilityOptionsFromHierarchicalArray(): void
     {
-        $options = InstabilityOptions::fromArray([
+        $options = InstabilityOptions::fromResolved(ResolvedOptionsFixture::values(InstabilityOptions::class, [
             'class' => [
                 'max_warning' => 0.7,
                 'max_error' => 0.9,
@@ -661,7 +684,7 @@ final class InstabilityRuleTest extends TestCase
                 'max_warning' => 0.75,
                 'max_error' => 0.92,
             ],
-        ]);
+        ]));
 
         self::assertTrue($options->isEnabled());
         self::assertTrue($options->class->isEnabled());
@@ -713,9 +736,9 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itParsesNamespaceMinClassCountFromArray(): void
     {
-        $options = NamespaceInstabilityOptions::fromArray([
+        $options = NamespaceInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(NamespaceInstabilityOptions::class, [
             'min_class_count' => 5,
-        ]);
+        ]));
 
         self::assertSame(5, $options->minClassCount);
     }
@@ -723,9 +746,9 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itDefaultsNamespaceMinClassCountToThree(): void
     {
-        $options = NamespaceInstabilityOptions::fromArray([
+        $options = NamespaceInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(NamespaceInstabilityOptions::class, [
             'enabled' => true,
-        ]);
+        ]));
 
         self::assertSame(3, $options->minClassCount);
     }
@@ -733,9 +756,9 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itParsesNamespaceMinClassCountCamelCaseAlias(): void
     {
-        $options = NamespaceInstabilityOptions::fromArray([
+        $options = NamespaceInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(NamespaceInstabilityOptions::class, [
             'minClassCount' => 7,
-        ]);
+        ]));
 
         self::assertSame(7, $options->minClassCount);
     }
@@ -766,9 +789,9 @@ final class InstabilityRuleTest extends TestCase
             ->with('coupling.ce', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -779,6 +802,10 @@ final class InstabilityRuleTest extends TestCase
         } else {
             self::assertCount(1, $findings);
             self::assertSame($expectedSeverity, $findings[0]->severity);
+            $selectedThreshold = $expectedSeverity === Severity::Error ? $error : $warning;
+            self::assertStringContainsString(($instability === $selectedThreshold ? 'reaches' : 'exceeds') . ' threshold of', $findings[0]->message);
+            self::assertSame($instability, $findings[0]->metricValue);
+            self::assertEquals($selectedThreshold, $findings[0]->threshold);
         }
     }
 
@@ -789,6 +816,7 @@ final class InstabilityRuleTest extends TestCase
     {
         yield 'below warning threshold' => [0.79, 0.8, 0.95, null];
         yield 'at warning threshold' => [0.8, 0.8, 0.95, Severity::Warning];
+        yield 'raw above warning, same two-digit display' => [0.8049, 0.8, 0.95, Severity::Warning];
         yield 'above warning, below error' => [0.9, 0.8, 0.95, Severity::Warning];
         yield 'at error threshold' => [0.95, 0.8, 0.95, Severity::Error];
         yield 'above error threshold' => [1.0, 0.8, 0.95, Severity::Error];
@@ -797,9 +825,9 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itParsesClassMinAfferentFromArray(): void
     {
-        $options = ClassInstabilityOptions::fromArray([
+        $options = ClassInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(ClassInstabilityOptions::class, [
             'min_afferent' => 3,
-        ]);
+        ]));
 
         self::assertSame(3, $options->minAfferent);
     }
@@ -807,9 +835,9 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itParsesClassMinAfferentCamelCaseAlias(): void
     {
-        $options = ClassInstabilityOptions::fromArray([
+        $options = ClassInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(ClassInstabilityOptions::class, [
             'minAfferent' => 5,
-        ]);
+        ]));
 
         self::assertSame(5, $options->minAfferent);
     }
@@ -817,7 +845,7 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itDefaultsClassMinAfferentToOne(): void
     {
-        $options = ClassInstabilityOptions::fromArray([]);
+        $options = ClassInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(ClassInstabilityOptions::class, []));
 
         self::assertSame(1, $options->minAfferent);
     }
@@ -835,9 +863,9 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itParsesNamespaceMinAfferentFromArray(): void
     {
-        $options = NamespaceInstabilityOptions::fromArray([
+        $options = NamespaceInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(NamespaceInstabilityOptions::class, [
             'min_afferent' => 2,
-        ]);
+        ]));
 
         self::assertSame(2, $options->minAfferent);
     }
@@ -845,9 +873,9 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itDefaultsNamespaceMinAfferentToOne(): void
     {
-        $options = NamespaceInstabilityOptions::fromArray([
+        $options = NamespaceInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(NamespaceInstabilityOptions::class, [
             'enabled' => true,
-        ]);
+        ]));
 
         self::assertSame(1, $options->minAfferent);
     }
@@ -866,11 +894,11 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itParsesClassOptionsFromArrayWithCamelCase(): void
     {
-        $options = ClassInstabilityOptions::fromArray([
+        $options = ClassInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(ClassInstabilityOptions::class, [
             'enabled' => false,
             'maxWarning' => 0.7,
             'maxError' => 0.9,
-        ]);
+        ]));
 
         self::assertFalse($options->enabled);
         self::assertSame(0.7, $options->maxWarning);
@@ -880,11 +908,11 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itParsesNamespaceOptionsFromArrayWithCamelCase(): void
     {
-        $options = NamespaceInstabilityOptions::fromArray([
+        $options = NamespaceInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(NamespaceInstabilityOptions::class, [
             'enabled' => false,
             'maxWarning' => 0.75,
             'maxError' => 0.92,
-        ]);
+        ]));
 
         self::assertFalse($options->enabled);
         self::assertSame(0.75, $options->maxWarning);
@@ -895,11 +923,11 @@ final class InstabilityRuleTest extends TestCase
     {
         $class = SymbolPath::forClass('App\\Service', 'Twin');
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([
+        $repository->method('allClassDeclarations')->willReturn([
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn(
+        $repository->method('getSubject')->willReturn(
             (new MetricBag())->with('coupling.instability', 0.85)->with('coupling.ca', 2)->with('coupling.ce', 12),
         );
 
@@ -930,6 +958,7 @@ final class InstabilityRuleTest extends TestCase
             $file,
             $line,
             $kind,
+            $kind === \Qualimetrix\Core\Symbol\CallableKind::Method ? \Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forClass($symbolPath->namespace ?? '', $symbolPath->type ?? ''), $file, \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)) : null,
         );
     }
 }

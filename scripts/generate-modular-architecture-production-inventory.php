@@ -647,7 +647,7 @@ function lifecycleMethods(array $methods): string
 {
     $selected = array_values(array_filter(
         $methods,
-        static fn(string $method): bool => preg_match('/^(reset|clear|set|bind|prepare|execute|detect|collect|configure|build|add|register)/i', $method) === 1,
+        static fn(string $method): bool => $method === 'beginInvocation' || preg_match('/^(reset|clear|set|bind|prepare|execute|detect|collect|configure|build|add|register)/i', $method) === 1,
     ));
     sort($selected, SORT_STRING);
 
@@ -677,6 +677,9 @@ function stateScope(array $row): string
     if (str_starts_with($row['path'], 'src/Analysis/Evidence/Measurement/Repository/')) {
         return 'analysis-run repository';
     }
+    if ($row['fqcn'] === 'Qualimetrix\\Infrastructure\\Composer\\ComposerManifestReader') {
+        return 'invocation snapshot cache';
+    }
     if (str_starts_with($row['path'], 'src/Infrastructure/')) {
         return 'adapter session or cache';
     }
@@ -693,11 +696,13 @@ function stateScope(array $row): string
 function phaseParticipants(): array
 {
     return [
+        ['phase' => 'invocation metadata', 'participant' => 'ComposerManifestReaderInterface and ManifestSnapshotControlInterface', 'inputs' => 'AbsolutePath', 'outputs' => 'ComposerManifestFacts and observed issues', 'state_owner' => 'Infrastructure.Composer', 'dependency' => 'Application begins the invocation before the first canonical-root read; consumers share cached facts', 'source' => 'src/Infrastructure/Composer/ComposerManifestReader.php'],
+        ['phase' => 'namespace source binding', 'participant' => 'ProjectNamespaceSourceControlInterface', 'inputs' => 'ComposerManifestFacts', 'outputs' => 'accepted namespace prefixes', 'state_owner' => 'Analysis.Evidence.Measurement', 'dependency' => 'Console binds before collection; worker bootstrap receives captured prefixes', 'source' => 'src/Analysis/Evidence/Measurement/Contract/ProjectNamespaceSourceControlInterface.php'],
         ['phase' => 'configuration', 'participant' => '5 ConfigurationStageInterface implementations', 'inputs' => 'ConfigurationContext', 'outputs' => '?ConfigurationLayer', 'state_owner' => 'Analysis.Configuration', 'dependency' => 'priority 0,10,15,20,30; sequential merge', 'source' => 'src/Analysis/Configuration/Pipeline/Stage'],
         ['phase' => 'runtime setup', 'participant' => 'ArchitecturePolicyConfiguratorInterface', 'inputs' => 'ConfigurationDocument', 'outputs' => 'configured policy state and warnings', 'state_owner' => 'Analysis.Policy.Architecture', 'dependency' => 'Console configures after its logger is available', 'source' => 'src/Analysis/Policy/Architecture/Contract/ArchitecturePolicyConfiguratorInterface.php'],
-        ['phase' => 'discovery', 'participant' => 'FileDiscoveryInterface implementation', 'inputs' => 'AbsolutePath|list<AbsolutePath>', 'outputs' => 'iterable<AbsolutePath,SplFileInfo>', 'state_owner' => 'Analysis.Run', 'dependency' => 'first run phase; generated filter follows', 'source' => 'src/Analysis/Run/Contract/Discovery/FileDiscoveryInterface.php'],
+        ['phase' => 'discovery', 'participant' => 'ProjectFilesInterface implementation', 'inputs' => 'RunConfiguration', 'outputs' => 'DiscoveredProjectFiles', 'state_owner' => 'Analysis.Run', 'dependency' => 'one project walk captures selection and scope facts; generated policy follows before collection', 'source' => 'src/Analysis/Run/Contract/Discovery/ProjectFilesInterface.php'],
         ['phase' => 'collection', 'participant' => 'CollectionOrchestratorInterface', 'inputs' => 'list<SplFileInfo>, MetricRepositoryInterface, AbsolutePath', 'outputs' => 'CollectionPhaseOutput', 'state_owner' => 'Analysis.Run', 'dependency' => 'after discovery', 'source' => 'src/Analysis/Run/Contract/Collection/CollectionOrchestratorInterface.php'],
-        ['phase' => 'per-file measurement', 'participant' => '21 MetricCollectorInterface implementations plus DependencyTraversalParticipantInterface', 'inputs' => 'SplFileInfo, Node[]', 'outputs' => 'MetricBag, typed projections and list<Dependency>', 'state_owner' => 'Measurement and DependencyModel', 'dependency' => 'one AST traversal; reset per file', 'source' => 'src/Analysis/Evidence/Measurement/Contract/MetricCollectorInterface.php'],
+        ['phase' => 'per-file measurement', 'participant' => '21 MetricCollectorInterface implementations plus DependencyTraversalParticipantInterface', 'inputs' => 'SplFileInfo, Node[] and source bytes for SourceMeasuringCollectorInterface', 'outputs' => 'MetricBag, typed projections and list<Dependency>', 'state_owner' => 'Measurement and DependencyModel', 'dependency' => 'Run reads before parsing; reset then hand off the same source snapshot before one AST traversal', 'source' => 'src/Analysis/Evidence/Measurement/Contract/MetricCollectorInterface.php'],
         ['phase' => 'per-file derivation', 'participant' => 'TypeCoveragePercentCollector', 'inputs' => 'MetricBag', 'outputs' => 'MetricBag(typeCoveragePct)', 'state_owner' => 'Analysis.Evidence.Design', 'dependency' => 'requires collector id type-coverage', 'source' => 'src/Analysis/Evidence/Design/TypeCoverage/TypeCoveragePercentCollector.php'],
         ['phase' => 'per-file derivation', 'participant' => 'MaintainabilityIndexCollector', 'inputs' => 'MetricBag', 'outputs' => 'MetricBag(maintainabilityIndex)', 'state_owner' => 'Analysis.Evidence.Maintainability', 'dependency' => 'requires halstead, cyclomatic-complexity, method-statement-count', 'source' => 'src/Analysis/Evidence/Maintainability/MaintainabilityIndexCollector.php'],
         ['phase' => 'dependency graph', 'participant' => 'DependencyGraphBuilder', 'inputs' => 'list<Dependency>, list<LogicalClassPath>', 'outputs' => 'DependencyGraphInterface', 'state_owner' => 'Analysis.Evidence.DependencyModel', 'dependency' => 'consumes raw collection dependencies', 'source' => 'src/Analysis/Evidence/DependencyModel/DependencyGraphBuilder.php'],
@@ -710,11 +715,11 @@ function phaseParticipants(): array
         ['phase' => 'global derivation', 'participant' => 'DitGlobalCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'DIT', 'state_owner' => 'Analysis.Evidence.Design', 'dependency' => 'no global predecessor; overwrites per-file DIT', 'source' => 'src/Analysis/Evidence/Design/Inheritance/DitGlobalCollector.php'],
         ['phase' => 'global derivation', 'participant' => 'NocCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'NOC', 'state_owner' => 'Analysis.Evidence.Design', 'dependency' => 'no global predecessor', 'source' => 'src/Analysis/Evidence/Design/Inheritance/NocCollector.php'],
         ['phase' => 'global reaggregation', 'participant' => 'MeasurementAggregationService', 'inputs' => 'MetricRepositoryInterface, NamespaceTree', 'outputs' => 'namespace/project aggregates', 'state_owner' => 'Analysis.Evidence.Measurement', 'dependency' => 'after all global collectors', 'source' => 'src/Analysis/Evidence/Measurement/Aggregation/MeasurementAggregationService.php'],
-        ['phase' => 'computed derivation', 'participant' => 'Contract\\Evaluation\\ComputedMetricEvaluator', 'inputs' => 'MetricRepositoryInterface, files analyzed; one catalog snapshot', 'outputs' => 'configured computed metrics', 'state_owner' => 'Analysis.Evidence.ComputedMetrics', 'dependency' => 'definition DAG; instance-owned catalog; skipped without files/definitions', 'source' => 'src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricEvaluator.php'],
+        ['phase' => 'computed derivation', 'participant' => 'Evaluation\\ComputedMetricEvaluator', 'inputs' => 'MetricRepositoryInterface, files analyzed; one catalog snapshot', 'outputs' => 'configured computed metrics', 'state_owner' => 'Analysis.Evidence.ComputedMetrics', 'dependency' => 'definition DAG; instance-owned catalog; skipped without files/definitions', 'source' => 'src/Analysis/Evidence/ComputedMetrics/Evaluation/ComputedMetricEvaluator.php'],
         ['phase' => 'graph inspection', 'participant' => 'CircularDependencyPreparationInterface', 'inputs' => 'DependencyGraphInterface, enabled', 'outputs' => 'leaf-owned list<Cycle>', 'state_owner' => 'Analysis.Evidence.CircularDependency', 'dependency' => 'Run invokes it after graph construction; disabled preparation clears state without SCC work', 'source' => 'src/Analysis/Evidence/CircularDependency/Contract/CircularDependencyPreparationInterface.php'],
         ['phase' => 'file-set inspection', 'participant' => 'FileSetInspectionParticipantInterface implementations', 'inputs' => 'list<SplFileInfo>', 'outputs' => 'capability-owned run state', 'state_owner' => 'owning evidence capabilities', 'dependency' => 'producer-rule selection gated; lexical participant order', 'source' => 'src/Analysis/Run/Contract/FileSetInspectionParticipantInterface.php'],
         ['phase' => 'rule execution', 'participant' => 'Analysis\\Finding\\RuleExecution + 41 RuleInterface implementations', 'inputs' => 'AnalysisContext', 'outputs' => 'list<Finding> and last RuleExclusionStats', 'state_owner' => 'Analysis.Finding and feature rules', 'dependency' => 'producer selection then per-rule exclusions and channel selection', 'source' => 'src/Analysis/Finding/RuleExecution.php'],
-        ['phase' => 'finding projection', 'participant' => 'FindingProjector', 'inputs' => 'list<Finding>, suppressions, FindingProjectionOptions', 'outputs' => 'FindingProjectionResult', 'state_owner' => 'Reporting', 'dependency' => 'annotation suppression -> path -> namespace -> baseline -> annotation rejoin -> git', 'source' => 'src/Reporting/FindingProjection/FindingProjector.php'],
+        ['phase' => 'finding projection', 'participant' => 'FindingProjector', 'inputs' => 'list<Finding>, suppressions, FindingProjectionOptions', 'outputs' => 'FindingProjectionResult', 'state_owner' => 'Reporting', 'dependency' => 'annotation suppression -> path -> namespace -> baseline -> unused-entry audit -> annotation rejoin -> git', 'source' => 'src/Reporting/FindingProjection/FindingProjector.php'],
         ['phase' => 'report enrichment', 'participant' => 'SummaryEnricher', 'inputs' => 'Report', 'outputs' => 'health/debt/impact summary', 'state_owner' => 'mixed ComputedMetrics/Prioritization/Reporting seam', 'dependency' => 'cross-capability orchestration before formatters', 'source' => 'src/Reporting/Health/SummaryEnricher.php'],
         ['phase' => 'report projection', 'participant' => '11 FormatterInterface implementations', 'inputs' => 'Report, FormatterContext', 'outputs' => 'string', 'state_owner' => 'Reporting', 'dependency' => 'selected after filtering/enrichment', 'source' => 'src/Reporting/Formatter/FormatterInterface.php'],
     ];
@@ -883,6 +888,11 @@ if ($documentationProbe !== null) {
     fwrite(STDOUT, implode("\t", documentationDisposition($documentationProbe)) . "\n");
     exit(0);
 }
+$actualBindingOperations = [];
+if ($compositionProbe === null) {
+    $actualBindingOperations = classifyCompositionBindingOperations($root, $manifest, $sourceOverrides);
+    validateCompositionBindingOperations($manifest, $actualBindingOperations);
+}
 $rows = declarations($root, $sourceOverrides);
 if ($rows === []) {
     fail('no production declarations found');
@@ -992,7 +1002,6 @@ if ($compositionProbe !== null) {
     exit(0);
 }
 
-$actualBindingOperations = classifyCompositionBindingOperations($root, $manifest, $byName, $sourceOverrides);
 $authorization = validateAuthorizations($manifest, $byName, $observedPairs, $rows, $actualBindingOperations);
 $enforcement = buildEnforcementProjection($manifest, $byName, $observedPairs);
 assertDag($enforcement['allow'], 'generated qmx allow graph');
@@ -1384,12 +1393,11 @@ function failSetDifference(string $label, array $expected, array $actual): never
  * deliberately do not contribute evidence.
  *
  * @param array<string, mixed> $manifest
- * @param array<string, array<string, mixed>> $byName
  * @param array<string, string> $sourceOverrides
  *
  * @return array<string, list<string>> exact source\0target => sorted operations
  */
-function classifyCompositionBindingOperations(string $root, array $manifest, array $byName, array $sourceOverrides): array
+function classifyCompositionBindingOperations(string $root, array $manifest, array $sourceOverrides): array
 {
     $targetsBySource = [];
     foreach ($manifest['declarations'] as $target => $entry) {
@@ -1405,7 +1413,7 @@ function classifyCompositionBindingOperations(string $root, array $manifest, arr
     $finder = new NodeFinder();
     $operations = [];
     foreach ($targetsBySource as $source => $targets) {
-        $path = $byName[$source]['path'] ?? null;
+        $path = $manifest['declarations'][$source]['path'] ?? null;
         if (!is_string($path)) {
             fail("composition binding source {$source} has no production path");
         }
@@ -1469,7 +1477,8 @@ function classifyCompositionBindingOperations(string $root, array $manifest, arr
                 continue;
             }
             if ($method === 'register' && isContainerBuilderCall($call, $containerVariables)) {
-                $target = expressionFqcn($call->args[0]->value ?? null);
+                $argument = $call->args[count($call->args) > 1 ? 1 : 0] ?? null;
+                $target = $argument instanceof Node\Arg ? expressionFqcn($argument->value) : null;
                 if ($target !== null && isset($targets[$target])) {
                     $operations[$source . "\0" . $target]['service_registration'] = true;
                 }
@@ -1525,6 +1534,38 @@ function classifyCompositionBindingOperations(string $root, array $manifest, arr
     }
 
     return $result;
+}
+
+/**
+ * @param array<string, mixed> $manifest
+ * @param array<string, list<string>> $actualBindingOperations
+ */
+function validateCompositionBindingOperations(array $manifest, array $actualBindingOperations): void
+{
+    foreach ($manifest['declarations'] as $target => $entry) {
+        foreach ($entry['consumers'] as $consumer) {
+            if (($consumer['relation'] ?? 'import') !== 'composition_binding') {
+                continue;
+            }
+            $source = $consumer['source_fqcn'];
+            $declared = $consumer['operations'];
+            sort($declared, SORT_STRING);
+            $actual = $actualBindingOperations[$source . "\0" . $target] ?? [];
+            sort($actual, SORT_STRING);
+            if ($actual === []) {
+                fail("unclassified composition_binding {$source} -> {$target}: no Symfony container binding operation");
+            }
+            if ($declared !== $actual) {
+                fail(sprintf(
+                    'composition_binding operation mismatch %s -> %s: declared=[%s] actual=[%s]',
+                    $source,
+                    $target,
+                    implode(',', $declared),
+                    implode(',', $actual),
+                ));
+            }
+        }
+    }
 }
 
 function methodName(Node\Expr\MethodCall $call): ?string
@@ -1872,25 +1913,7 @@ function validateAuthorizations(array $manifest, array $byName, array $observedP
     }
     validateContractCompositions($manifest, $byName, $observedPairs, $consumerUse);
     validateContractSurfaces($manifest, $byName, $observedPairs, $consumerUse);
-    foreach ($bindings as $pair => &$binding) {
-        $declared = $binding['consumer']['operations'];
-        sort($declared, SORT_STRING);
-        $actual = $binding['actual_operations'];
-        sort($actual, SORT_STRING);
-        if ($actual === []) {
-            [$source, $target] = explode("\0", $pair, 2);
-            fail("unclassified composition_binding {$source} -> {$target}: no Symfony container binding operation");
-        }
-        if ($declared !== $actual) {
-            [$source, $target] = explode("\0", $pair, 2);
-            fail(sprintf(
-                'composition_binding operation mismatch %s -> %s: declared=[%s] actual=[%s]',
-                $source,
-                $target,
-                implode(',', $declared),
-                implode(',', $actual),
-            ));
-        }
+    foreach ($bindings as &$binding) {
         $binding['used'] = true;
     }
     unset($binding);
@@ -2411,8 +2434,34 @@ function documentationDisposition(string $path): array
         'docs/adr/0083-a-number-option-declares-its-range-in-its-form.md' => 'Analysis.Finding',
         'docs/adr/0084-a-project-scope-has-three-states-and-the-report-names-it.md' => 'Analysis.Run',
         'docs/adr/0085-a-copy-of-a-duplicate-block-is-a-finding-of-its-own.md' => 'Analysis.Evidence.Duplication',
+        'docs/adr/0086-one-configuration-document-merged-by-declared-policy.md' => 'Analysis.Configuration',
+        'docs/adr/0087-the-finding-gate-declares-measured-changes.md' => 'Architecture.Governance',
+        'docs/adr/0088-atomic-section-declarations-and-format-vocabulary.md' => 'Analysis.Configuration',
+        'docs/adr/0089-composer-manifest-facts-and-project-scope-reasons.md' => 'Analysis.ProjectManifest',
+        'docs/adr/0090-exact-finding-gate-surface-deltas.md' => 'Architecture.Governance',
+        'docs/adr/0091-declared-rule-options-and-enablement.md' => 'Analysis.Finding',
+        'docs/adr/0092-typed-document-declarations-and-option-judgement.md' => 'Analysis.Configuration',
+        'docs/adr/0093-measured-run-scope-and-project-tree-queries.md' => 'Analysis.Run',
+        'docs/adr/0094-analysis-results-publish-subject-owned-values.md' => 'Analysis.Run',
+        'docs/adr/0095-inline-directives-are-authored-sites-with-bounded-reach.md' => 'Analysis.Policy.Inline',
+        'docs/adr/0096-file-target-claims.md' => 'Core.FileTarget',
+        'docs/adr/0097-duplication-copy-evidence.md' => 'Analysis.Evidence.Duplication',
+        'docs/adr/0098-baseline-entry-comparability.md' => 'Analysis.Policy.Baseline',
+        'docs/adr/0099-rule-option-shape-is-a-declaration.md' => 'Analysis.Finding',
+        'docs/adr/0100-core-ast-name-resolution-and-superglobal-reads.md' => 'Core.Neutral',
+        'docs/adr/0101-class-count-judges-own-namespace.md' => 'Analysis.Evidence.Size',
+        'docs/adr/0102-detector-verdicts-and-finding-identity.md' => 'Analysis.Finding',
+        'docs/adr/0103-layer-policy-declaration-evidence-and-selection.md' => 'Analysis.Policy.Architecture',
+        'docs/adr/0104-source-bytes-and-prose-publication.md' => 'Reporting',
+        'docs/adr/0105-finding-publication-and-drill-down.md' => 'Reporting',
+        'docs/adr/0106-declaration-metric-records-and-declared-publication.md' => 'Analysis.Evidence.Measurement',
+        'docs/adr/0107-inheritance-chain-outcomes.md' => 'Analysis.Evidence.Design',
+        'docs/adr/0108-health-score-applicability-and-evaluation.md' => 'Analysis.Evidence.ComputedMetrics',
+        'docs/adr/0109-rule-populations-and-coupling-units.md' => 'Analysis.Finding',
+        'docs/adr/0110-complete-offender-ranking-and-catalog-thresholds.md' => 'Analysis.Evidence.ComputedMetrics.Health',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
+        'src/Analysis/ProjectManifest/README.md' => 'Analysis.ProjectManifest',
         'src/Analysis/Evidence/CircularDependency/README.md' => 'Analysis.Evidence.CircularDependency',
         'src/Analysis/Evidence/ComputedMetrics/README.md' => 'Analysis.Evidence.ComputedMetrics',
         'src/Analysis/Evidence/DependencyModel/README.md' => 'Analysis.Evidence.DependencyModel',
@@ -2434,6 +2483,7 @@ function documentationDisposition(string $path): array
         'src/Analysis/Policy/Baseline/README.md' => 'Analysis.Policy.Baseline',
         'src/Core/README.md' => 'Architecture.Governance',
         'src/Core/Profiler/README.md' => 'Core.Profiler',
+        'src/Core/SourceText/README.md' => 'Core.Neutral',
         'src/Core/Symbol/README.md' => 'Core.Symbol',
         'src/Infrastructure/Ast/README.md' => 'Infrastructure.Ast',
         'src/Infrastructure/DependencyInjection/README.md' => 'Infrastructure.DependencyInjection',
@@ -2450,6 +2500,8 @@ function documentationDisposition(string $path): array
         'website/docs/reference/health-scores.ru.md' => 'Analysis.Evidence.ComputedMetrics',
         'website/docs/reference/remediation-time.md' => 'Analysis.Evidence.Prioritization',
         'website/docs/reference/remediation-time.ru.md' => 'Analysis.Evidence.Prioritization',
+        'website/docs/rules/baseline.md' => 'Analysis.Policy.Baseline',
+        'website/docs/rules/baseline.ru.md' => 'Analysis.Policy.Baseline',
         'website/docs/rules/duplication.md' => 'Analysis.Evidence.Duplication',
         'website/docs/rules/duplication.ru.md' => 'Analysis.Evidence.Duplication',
         'website/docs/rules/architecture.md' => 'Architecture.Governance',

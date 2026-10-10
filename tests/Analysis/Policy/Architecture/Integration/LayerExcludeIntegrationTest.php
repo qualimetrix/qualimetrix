@@ -12,12 +12,14 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Analysis\Configuration\Fixtures\Document\WrittenFile;
+use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 
 /**
  * End-to-end test for Phase 2 Step F (direction 3 — exclude clause).
@@ -25,13 +27,13 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
  * Runs the real analysis pipeline against {@code tests/Analysis/Policy/Architecture/Fixtures/ExcludeSample}
  * via two complementary paths:
  *
- * 1. Programmatic config through {@see ArchitectureConfigurationFactory::fromArray()}
+ * 1. Programmatic config through {@see ArchitectureConfigurationFactory::fromResolved()}
  *    — exercises the validator + downstream membership/exclusion evaluation
  *    end-to-end without going through YAML normalization.
  * 2. YAML config through {@see YamlConfigLoader} — pins the loader-layer
  *    behavior of the {@code exclude} block (catches the Step E lesson:
  *    every YAML-surfaced feature must be tested through the loader, not just
- *    through {@code fromArray()}).
+ *    through {@code fromResolved()}).
  *
  * The fixture has every classified class depend on a shared {@code Marker}
  * (which sits in its own self-only allow-list layer). With every layer
@@ -52,7 +54,7 @@ final class LayerExcludeIntegrationTest extends TestCase
     {
         $analysis = $this->runPipelineWithConfig($this->baseConfig());
 
-        $findings = $this->filterByRule($analysis->findings, LayerViolationRule::NAME);
+        $findings = $this->filterByRule($analysis->findings(), LayerViolationRule::NAME);
         $sourceFqns = $this->collectSourceFqns($findings);
 
         // UserService sits in `service` and depends on Marker — finding
@@ -78,7 +80,7 @@ final class LayerExcludeIntegrationTest extends TestCase
     {
         $analysis = $this->runPipelineWithConfig($this->baseConfig());
 
-        $findings = $this->filterByRule($analysis->findings, LayerViolationRule::NAME);
+        $findings = $this->filterByRule($analysis->findings(), LayerViolationRule::NAME);
         $sourceFqns = $this->collectSourceFqns($findings);
 
         // Order and Stock are in `module-Order` and `module-Inventory` —
@@ -122,7 +124,7 @@ final class LayerExcludeIntegrationTest extends TestCase
 
         $cacheProxyFqn = self::FIXTURE_NAMESPACE . '\\Module\\Cache\\Domain\\Generated\\CacheProxy';
         $sourceFqns = $this->collectSourceFqns(
-            $this->filterByRule($analysis->findings, LayerViolationRule::NAME),
+            $this->filterByRule($analysis->findings(), LayerViolationRule::NAME),
         );
 
         self::assertNotContains(
@@ -133,7 +135,7 @@ final class LayerExcludeIntegrationTest extends TestCase
 
         $unreachableMessages = array_map(
             static fn(Finding $v): string => $v->message,
-            $this->filterByRule($analysis->findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME),
+            $this->filterByRule($analysis->findings(), LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME),
         );
         foreach ($unreachableMessages as $message) {
             self::assertStringNotContainsString(
@@ -173,10 +175,10 @@ final class LayerExcludeIntegrationTest extends TestCase
             YAML);
 
         try {
-            $loaded = (new YamlConfigLoader())->load($yamlPath);
-            $analysis = $this->runPipelineWithConfig($loaded['architecture']);
+            $loaded = WrittenFile::compose($yamlPath);
+            $analysis = $this->runPipelineWithConfig($loaded);
 
-            $findings = $this->filterByRule($analysis->findings, LayerViolationRule::NAME);
+            $findings = $this->filterByRule($analysis->findings(), LayerViolationRule::NAME);
             $sourceFqns = $this->collectSourceFqns($findings);
 
             // Assigned classes still produce findings.
@@ -204,24 +206,42 @@ final class LayerExcludeIntegrationTest extends TestCase
     }
 
     /**
-     * @param array<string, mixed> $configArray
+     * @param array<string, mixed>|\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument $configArray
      */
-    private function runPipelineWithConfig(array $configArray): AnalysisResult
+    private function runPipelineWithConfig(array|\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument $configArray): AnalysisResult
     {
         $factory = new ArchitectureConfigurationFactory();
-        $result = $factory->fromArray($configArray);
+        $result = $factory->fromResolved($configArray instanceof \Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument ? $configArray : ArchitectureDocument::file($configArray));
 
         $container = (new ContainerFactory())->create();
+        $execution = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class, $execution);
+        $registry = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry::class, $registry);
+        $document = $configArray instanceof \Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument
+            ? $configArray
+            : \Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::document([['source' => 'config', 'values' => ['architecture' => $configArray]]], AbsolutePath::fromString(self::FIXTURE_PATH))->resolved();
+        $catalog = $container->get(\Qualimetrix\Infrastructure\Rule\ChannelUniverse::class);
+        self::assertInstanceOf(\Qualimetrix\Infrastructure\Rule\ChannelUniverse::class, $catalog);
+        $channels = $catalog->snapshot(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions([]));
+        $registry->replace(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::ready(new \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration($document), $execution->allRules(), channels: $channels));
 
         $holder = $container->get(ArchitecturePolicyConfiguratorInterface::class);
         self::assertInstanceOf(ArchitecturePolicy::class, $holder);
-        $holder->bind($result->configuration);
+        $holder->replace($result);
 
         $pipeline = $container->get(AnalysisPipelineInterface::class);
         self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
 
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-        return $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []));
+        return $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration(
+            pathExcludes: [],
+            projectRoot: $root,
+            generatedFilePolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
+            authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
+        ));
     }
 
     /**

@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageOptions;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\InvertedOverrideValidator;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(TypeCoverageOptions::class)]
 final class TypeCoverageOptionsTest extends TestCase
@@ -18,7 +20,7 @@ final class TypeCoverageOptionsTest extends TestCase
     #[Test]
     public function itReadsTheBareThresholdPair(): void
     {
-        $options = TypeCoverageOptions::fromArray(['warning' => 90.0, 'error' => 60.0]);
+        $options = TypeCoverageOptions::fromResolved(ResolvedOptionsFixture::values(TypeCoverageOptions::class, ['warning' => 90.0, 'error' => 60.0]));
 
         self::assertSame(90.0, $options->warning);
         self::assertSame(60.0, $options->error);
@@ -29,23 +31,24 @@ final class TypeCoverageOptionsTest extends TestCase
      * carries it configures nothing here.
      */
     #[Test]
-    public function itDoesNotAnswerToTheOldPrefixedKeys(): void
+    public function itRefusesTheOldPrefixedKeys(): void
     {
-        $options = TypeCoverageOptions::fromArray(['param_warning' => 30.0, 'paramWarning' => 30.0]);
-
-        self::assertSame(80.0, $options->warning);
+        self::expectException(\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal::class);
+        self::expectExceptionMessage('Unknown key "rules.fixture.param_warning" in configuration file "/project/qmx.yaml". Accepted keys: error, warning, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.');
+        TypeCoverageOptions::fromResolved(ResolvedOptionsFixture::values(TypeCoverageOptions::class, ['param_warning' => 30.0, 'paramWarning' => 30.0]));
     }
 
     #[Test]
-    public function itDisablesOnAnEmptyConfig(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        self::assertFalse(TypeCoverageOptions::fromArray([])->isEnabled());
+        self::assertEquals(new TypeCoverageOptions(), TypeCoverageOptions::fromResolved(ResolvedOptionsFixture::values(TypeCoverageOptions::class, [])));
+        self::assertFalse(TypeCoverageOptions::fromResolved(ResolvedOptionsFixture::values(TypeCoverageOptions::class, ['enabled' => false]))->isEnabled());
     }
 
     #[Test]
     public function itDefaultsToEightyAndFifty(): void
     {
-        $options = TypeCoverageOptions::fromArray(['enabled' => true]);
+        $options = TypeCoverageOptions::fromResolved(ResolvedOptionsFixture::values(TypeCoverageOptions::class, ['enabled' => true]));
 
         self::assertTrue($options->isEnabled());
         self::assertSame(80.0, $options->warning);
@@ -67,7 +70,7 @@ final class TypeCoverageOptionsTest extends TestCase
     #[Test]
     public function itLetsTheBareThresholdShorthandSetBothBoundaries(): void
     {
-        $options = TypeCoverageOptions::fromArray(['threshold' => 90.0]);
+        $options = TypeCoverageOptions::fromResolved(ResolvedOptionsFixture::values(TypeCoverageOptions::class, ['threshold' => 90.0]));
 
         self::assertSame(90.0, $options->warning);
         self::assertSame(90.0, $options->error);
@@ -78,7 +81,7 @@ final class TypeCoverageOptionsTest extends TestCase
     {
         self::expectException(ConfigurationRefusal::class);
 
-        TypeCoverageOptions::fromArray(['threshold' => 90.0, 'warning' => 80.0]);
+        TypeCoverageOptions::fromResolved(ResolvedOptionsFixture::values(TypeCoverageOptions::class, ['threshold' => 90.0, 'warning' => 80.0]));
     }
 
     /**
@@ -104,8 +107,9 @@ final class TypeCoverageOptionsTest extends TestCase
     public function itAdvertisesOnlyTheBareShorthand(): void
     {
         self::assertSame(
-            ['enabled', 'error', 'threshold', 'warning'],
+            ['error', 'threshold', 'warning'],
             TypeCoverageOptions::acceptedOptionKeys()->acceptedForDisplay(),
         );
+        self::assertContains('enabled', \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface::of(TypeCoverageOptions::class)->writableAt(null));
     }
 }

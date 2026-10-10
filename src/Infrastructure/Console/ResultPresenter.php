@@ -5,28 +5,32 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
 use Qualimetrix\Infrastructure\Git\GitScope;
 use Qualimetrix\Reporting\Contract\OutputFormat;
-use Qualimetrix\Reporting\CoverageFailure;
 use Qualimetrix\Reporting\DrillDown\DrillDownBinding;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
 use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\SuppressionCompositionBuilder;
+use Qualimetrix\Reporting\Formatter\FormattedReport;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
+use Qualimetrix\Reporting\Formatter\Prose\ProseText;
+use Qualimetrix\Reporting\Formatter\PublicationKind;
+use Qualimetrix\Reporting\Formatter\PublishedUtf8;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
 use Qualimetrix\Reporting\ReportBuilder;
-use Qualimetrix\Reporting\ReportCoverage;
 use Qualimetrix\Reporting\ReportProjectScope;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -66,6 +70,7 @@ final class ResultPresenter
      * Outputs formatted results and returns exit code.
      *
      * @param list<Finding> $findings
+     * @param list<array{message: string, source: list<array<string, mixed>>}> $configurationDiagnostics
      */
     public function presentResults(
         array $findings,
@@ -73,6 +78,7 @@ final class ResultPresenter
         InputInterface $input,
         OutputInterface $output,
         AbsolutePath $projectRoot,
+        RunTargets $runTargets,
         OutputFormat $outputFormat,
         ExitPolicy $exitPolicy,
         ?GitScope $reportScope = null,
@@ -80,19 +86,12 @@ final class ResultPresenter
         ?FindingProjectionOptions $projectionOptions = null,
         ?NamespacePattern $namespacePattern = null,
         ?ReportProjectScope $projectScope = null,
+        array $configurationDiagnostics = [],
     ): int {
         $profiler = $this->profiler;
         $profiler->start('reporting', 'pipeline');
 
         $format = $outputFormat->value;
-
-        // Deprecation warning for text-verbose (stderr only, not in formatted output)
-        if ($format === 'text-verbose') {
-            $this->errorStream->write(
-                $output,
-                '<comment>Warning: --format=text-verbose is deprecated. Use --format=text --detail instead.</comment>',
-            );
-        }
 
         $formatter = $this->formatterRegistry->get($format);
         $context = $this->formatterContextFactory->create(
@@ -107,19 +106,24 @@ final class ResultPresenter
         $this->assertDrillDownBinds($context, $analysisResult);
 
         // Apply --namespace/--class drill-down filter centrally (all formatters benefit)
-        $filteredFindings = $this->findingFilter->filterFindings($findings, $context);
+        $fileNamespaces = FileNamespaceIndex::fromRepository($analysisResult->measured->repository);
+        $filteredFindings = $this->findingFilter->filterFindings($findings, $context, $fileNamespaces);
 
         // Build and output report with filtered findings
-        $coverage = $this->reportCoverage($analysisResult->coverage, $projectRoot);
+        $coverage = ReportCoverageProjection::of($analysisResult->measured->coverage, $projectRoot);
 
         $reportBuilder = ReportBuilder::create()
+            ->fileNamespaces($fileNamespaces)
             ->addFindings($filteredFindings)
-            ->filesAnalyzed($analysisResult->filesAnalyzed)
-            ->filesSkipped($analysisResult->filesSkipped)
-            ->duration($analysisResult->duration)
-            ->metrics($analysisResult->metrics)
-            ->namespaceTree($analysisResult->namespaceTree)
-            ->coverage($coverage);
+            ->filesAnalyzed($analysisResult->measured->coverage->analyzedFilesCount())
+            ->filesSkipped($analysisResult->measured->coverage->skippedFilesCount())
+            ->duration($analysisResult->measured->duration)
+            ->metrics($analysisResult->measured->repository)
+            ->namespaceTree($analysisResult->measured->namespaceTree)
+            ->coverage($coverage)
+            ->configurationDiagnostics($configurationDiagnostics);
+        $reportBuilder->computedMetricEvaluation($analysisResult->computedMetricEvaluation);
+        $reportBuilder->population($this->mergedPopulation($analysisResult, $filterResult));
 
         if ($context->namespace !== null || $context->class !== null) {
             $reportBuilder->outOfScope(OutOfScopeFindings::between($findings, $filteredFindings));
@@ -133,12 +137,24 @@ final class ResultPresenter
         $report = $reportBuilder->build();
         $report = $this->summaryEnricher->enrich($report);
         $formattedOutput = $formatter->format($report, $context);
+        if ($formatter->publicationKind() === PublicationKind::Prose) {
+            $published = ProseText::publish($formattedOutput->body, $this->errorStream->glyphMode());
+            $formattedOutput = new FormattedReport($published->body, $formattedOutput->escapedStrings + $published->escapedStrings);
+        }
+        if ($formattedOutput->escapedStrings > 0) {
+            $this->errorStream->write($output, PublishedUtf8::describe($formattedOutput->escapedStrings));
+        }
 
-        $this->writeOutput($formattedOutput, $format, $input, $output);
+        $this->writeOutput($formattedOutput, $format, $input, $output, $runTargets);
 
         $profiler->stop('reporting');
 
         return $this->exitCodeResolver->resolve($findings, $coverage, $exitPolicy);
+    }
+
+    private function mergedPopulation(AnalysisResult $analysisResult, ?FindingProjectionResult $filterResult): JudgedPopulation
+    {
+        return $analysisResult->population->merge($filterResult->population ?? JudgedPopulation::empty());
     }
 
     /**
@@ -166,7 +182,6 @@ final class ResultPresenter
                 $analysisResult->ruleExecution,
                 $this->ruleConfiguration,
                 $projectionOptions,
-                $analysisResult->suppressions,
             ));
         }
     }
@@ -206,16 +221,16 @@ final class ResultPresenter
     private function assertDrillDownBinds(FormatterContext $context, AnalysisResult $analysisResult): void
     {
         $binding = new DrillDownBinding();
-        $metrics = $analysisResult->metrics;
+        $metrics = $analysisResult->measured->repository;
 
         if ($context->namespace !== null
-            && $binding->namespaceBindings($context->namespace, $metrics, $analysisResult->namespaceTree) === 0
+            && $binding->namespaceBindings($context->namespace, $metrics, $analysisResult->measured->namespaceTree) === 0
         ) {
             throw ConfigurationRefusal::aboutCommandLineInput('--namespace', \sprintf(
                 'Namespace "%s" matched none of the %d analyzed namespaces and symbol names it is compared against. '
                 . 'The report would be empty because nothing was selected, not because nothing was found.',
                 $context->namespace->definition->display(),
-                $binding->namespaceUniverseSize($metrics, $analysisResult->namespaceTree),
+                $binding->namespaceUniverseSize($metrics, $analysisResult->measured->namespaceTree),
             ));
         }
 
@@ -229,49 +244,12 @@ final class ResultPresenter
         }
     }
 
-    private function reportCoverage(AnalysisCoverage $coverage, AbsolutePath $projectRoot): ReportCoverage
-    {
-        return new ReportCoverage(
-            discovered: $coverage->discoveredFiles(),
-            analyzed: $coverage->analyzedFilesCount(),
-            generatedExcluded: $coverage->generatedExcludedFilesCount(),
-            failed: $coverage->failedFilesCount(),
-            failures: array_map(
-                fn(AnalysisFailure $failure): CoverageFailure => $this->coverageFailure($failure, $projectRoot),
-                $coverage->failures,
-            ),
-        );
-    }
-
-    private function coverageFailure(AnalysisFailure $failure, AbsolutePath $projectRoot): CoverageFailure
-    {
-        return new CoverageFailure(
-            $failure->path->value(),
-            $failure->kind->value,
-            $this->relativizeFailureMessage($failure->message, $projectRoot),
-        );
-    }
-
-    private function relativizeFailureMessage(string $message, AbsolutePath $projectRoot): string
-    {
-        $prefix = rtrim($projectRoot->value(), '/');
-        if ($prefix === '') {
-            return $message;
-        }
-
-        return preg_replace(
-            '#(?<![A-Za-z0-9._~/\\-])' . preg_quote($prefix, '#') . '/#',
-            '',
-            $message,
-        ) ?? $message;
-    }
-
     /**
      * Outputs profiling results if profiling was enabled.
      */
-    public function presentProfile(InputInterface $input, OutputInterface $output): void
+    public function presentProfile(InputInterface $input, OutputInterface $output, RunTargets $runTargets): void
     {
-        $this->profilePresenter->present($input, $output);
+        $this->profilePresenter->present($input, $output, $runTargets);
     }
 
     public function writeDiagnostic(OutputInterface $output, string $message): void
@@ -281,45 +259,40 @@ final class ResultPresenter
 
     /**
      * Refuses an `--output` target the report cannot be written to, before
-     * analysis runs; {@see ArtifactFile} judges it by the write it makes.
+     * analysis runs. The run target judgement checks access without writing.
      */
-    public function assertOutputIsWritable(InputInterface $input): void
+    public function assertOutputIsWritable(InputInterface $input, RunTargets $runTargets): void
     {
-        self::outputTarget($input)?->refuseUnwritable();
-    }
-
-    private static function outputTarget(InputInterface $input): ?ArtifactFile
-    {
-        // `--output=` never reaches here: the configuration adapter refuses
-        // an option written empty before the command reads this one.
         $path = CommandLineSpelling::option($input, 'output');
-
-        return $path === null ? null : new ArtifactFile($path, '--output');
+        if ($path !== null) {
+            $runTargets->judge('--output', $path);
+        }
     }
 
     /**
      * Writes formatted output to file (--output) or stdout.
      *
      * A write that fails here, after the precheck passed, carries a
-     * {@see ConfigurationRefusal} rather than reporting success with an
+     * typed environment refusal rather than reporting success with an
      * undelivered report: the refusal beats whatever exit code the findings
      * would have produced, which is why this throws instead of returning a
      * status for the caller to reconcile with `ExitCodeResolver`.
      */
     private function writeOutput(
-        string $formattedOutput,
+        FormattedReport $formattedOutput,
         string $format,
         InputInterface $input,
         OutputInterface $output,
+        RunTargets $runTargets,
     ): void {
-        $target = self::outputTarget($input);
+        $target = CommandLineSpelling::option($input, 'output');
 
         if ($target !== null) {
-            $target->write($formattedOutput);
+            $runTargets->write('--output', $formattedOutput->body);
 
             $this->errorStream->write(
                 $output,
-                \sprintf('<info>Report written to %s</info>', $target->path),
+                \sprintf('<info>Report written to %s</info>', $target),
             );
 
             return;
@@ -333,7 +306,17 @@ final class ResultPresenter
             );
         }
 
-        OutputHelper::write($output, $formattedOutput);
+        if ($format === 'json') {
+            // The application normalizes --silent to quiet so refusals survive;
+            // a successful report still honors the original silent request.
+            if ($input->hasParameterOption('--silent', true)) {
+                return;
+            }
+
+            OutputHelper::writeJsonReport($output, $formattedOutput->body);
+        } else {
+            OutputHelper::write($output, $formattedOutput->body);
+        }
     }
 
     private function isOutputTty(OutputInterface $output): bool

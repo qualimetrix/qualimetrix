@@ -17,18 +17,18 @@ export function buildTreeData(rawTree) {
 }
 
 /**
- * Finds a node by its path in the tree.
+ * Finds a node by its published identity in the tree.
  *
  * @param {object} root - Root tree node
  * @param {string} path - Node path (e.g., "App\\Payment")
  * @returns {object|null} Found node or null
  */
-export function findNode(root, path) {
-  if (root.path === path) return root;
+export function findNode(root, id) {
+  if ((root.id ?? root.path) === id) return root;
   if (!root.children) return null;
 
   for (const child of root.children) {
-    const found = findNode(child, path);
+    const found = findNode(child, id);
     if (found) return found;
   }
   return null;
@@ -53,15 +53,25 @@ export function collectLeaves(node) {
  * @param {object} node - Tree node to search within
  * @param {number} n - Number of worst classes to return
  * @param {string} metric - Metric key to sort by
- * @returns {object[]} Worst classes sorted by metric ASC
+ * @returns {{visible: object[], available: number}} Selected subtree classes sorted by score, path and exact id
  */
 export function getWorstOffenders(node, n = 10, metric = 'health.overall') {
   const leaves = collectLeaves(node).filter(l => l.type === 'class');
 
-  return leaves
+  const ranked = leaves
     .filter(l => l.metrics && l.metrics[metric] != null)
-    .sort((a, b) => (a.metrics[metric] ?? 100) - (b.metrics[metric] ?? 100))
-    .slice(0, n);
+    .sort((a, b) => {
+      const score = a.metrics[metric] - b.metrics[metric];
+      if (score !== 0) return score;
+      const path = compareText(a.path, b.path);
+      return path !== 0 ? path : compareText(a.id ?? a.path, b.id ?? b.path);
+    });
+
+  return { visible: ranked.slice(0, n), available: ranked.length };
+}
+
+function compareText(a, b) {
+  return a < b ? -1 : a > b ? 1 : 0;
 }
 
 /**
@@ -102,7 +112,8 @@ export function aggregateSmallNodes(children, totalArea, totalValue) {
     name: `Other (${small.length} items)`,
     path: '',
     type: 'other',
-    metrics: { 'size.loc.sum': otherLoc },
+    metrics: {},
+    _loc: otherLoc,
     violations: [],
     violationCountTotal: otherViolations,
     debtMinutes: 0,
@@ -118,9 +129,10 @@ export function aggregateSmallNodes(children, totalArea, totalValue) {
  * Gets LOC value from a node's metrics.
  *
  * @param {object} node - Tree node
- * @returns {number} LOC value (minimum 1 to avoid zero-weight in treemap)
+ * @returns {number} Published LOC, or the visual group's summed area weight
  */
 export function getLoc(node) {
-  const loc = node.metrics?.['size.loc.sum'];
+  const loc = node._isOther ? node._loc : node.type === 'class'
+    ? node.metrics?.['size.class-loc'] : node.metrics?.['size.loc.sum'];
   return (loc != null && loc > 0) ? loc : 0;
 }

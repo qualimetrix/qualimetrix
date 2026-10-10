@@ -8,7 +8,16 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\DocumentRoots;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
+use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
@@ -47,8 +56,8 @@ final class ConfigSchemaEntryClosureTest extends TestCase
     }
 
     /**
-     * Regression test: generates a YAML config using ALL known keys from ENTRIES
-     * and verifies YamlConfigLoader accepts every one of them.
+     * Preserves the original full dummy document as a refusal, then accepts a lawful
+     * companion covering every ENTRIES root and sub-key in canonical form.
      *
      * This catches the exact bug we had: coupling.frameworkNamespaces was added
      * to MAPPINGS but not to ALLOWED_ROOT_KEYS, so any qmx.yaml using `coupling:`
@@ -57,27 +66,70 @@ final class ConfigSchemaEntryClosureTest extends TestCase
     #[Test]
     public function itAcceptsAConfigCoveringEverySchemaEntry(): void
     {
-        // Build a YAML config that exercises every root key from ENTRIES
         $yaml = $this->buildFullConfigYaml();
-
         $tmpFile = sys_get_temp_dir() . '/qmx_schema_test_' . bin2hex(random_bytes(6)) . '.yaml';
+        $companionFile = sys_get_temp_dir() . '/qmx_schema_companion_' . bin2hex(random_bytes(6)) . '.yaml';
         file_put_contents($tmpFile, $yaml);
+        file_put_contents($companionFile, "paths: [dummy]\nexclude: [{subtree: dummy}]\nformat: json\nrules:\n  complexity.ccn: {enabled: true}\ndisabled_rules: [complexity.cognitive]\nonly_rules: [complexity.ccn]\nsuppress_paths: [{subtree: dummy}]\nsuppress_namespaces: [{subtree: Dummy}]\nfail_on: error\ncache: {dir: dummy, enabled: true}\nparallel: {workers: 4}\ncoupling:\n  framework_namespaces: [{subtree: Dummy}]\ninclude_generated: true\ninclude_autoload_dev: true\nmemory_limit: 512M\narchitecture:\n  layers:\n    - name: dummy\n      patterns: [Dummy]\n");
 
         try {
-            $loader = new YamlConfigLoader();
-            // If any ENTRIES root key is not in allowedRootKeys(), this throws
-            $config = $loader->load($tmpFile);
+            $pipeline = new ConfigurationPipeline(LayeredDocument::standaloneSections());
+            $pipeline->addStage(new ConfigFileStage(new YamlConfigLoader()));
+            $this->assertRefusedFile($pipeline, $tmpFile, ['"exclude[0]" in configuration file "{actual_config_path}" must be a map, got string. A selector names its kind: {exact: value}, {subtree: value}, or {regex: value}.', ['exclude', '0'], '0']);
+            $document = $pipeline->resolve(new ConfigurationResolutionRequest(
+                AbsolutePath::fromString(\dirname($companionFile)),
+                configFilePath: $companionFile,
+            ));
+            $config = array_map(
+                static fn(ResolvedValueInterface $value): mixed => $value->plain(),
+                $document->resolved()->roots(),
+            );
             self::assertNotEmpty($config, 'Full config YAML should produce non-empty result');
+            self::assertSame(['paths' => ['dummy'], 'exclude' => [['subtree' => 'dummy']], 'format' => 'json', 'rules' => ['complexity.ccn' => ['enabled' => true]], 'disabled_rules' => ['complexity.cognitive'], 'only_rules' => ['complexity.ccn'], 'suppress_paths' => [['subtree' => 'dummy']], 'suppress_namespaces' => [['subtree' => 'Dummy']], 'fail_on' => 'error', 'cache' => ['dir' => 'dummy', 'enabled' => true], 'parallel' => ['workers' => 4], 'coupling' => ['framework_namespaces' => [['subtree' => 'Dummy']]], 'include_generated' => true, 'include_autoload_dev' => true, 'memory_limit' => '512M', 'architecture' => ['layers' => [['name' => 'dummy', 'patterns' => [['Dummy']]]]]], $config);
+
+            foreach (ConfigSchema::ENTRIES as [, $resultKey]) {
+                $cursor = $config;
+                foreach (DocumentRoots::pathOf($resultKey) as $segment) {
+                    self::assertIsArray($cursor);
+                    self::assertArrayHasKey($segment, $cursor, $resultKey);
+                    $cursor = $cursor[$segment];
+                }
+            }
         } finally {
             unlink($tmpFile);
+            unlink($companionFile);
         }
+    }
+
+    /** @param array{string, list<string>, string} $expected */
+    private function assertRefusedFile(ConfigurationPipeline $pipeline, string $file, array $expected): void
+    {
+        try {
+            $pipeline->resolve(new ConfigurationResolutionRequest(
+                AbsolutePath::fromString(\dirname($file)),
+                configFilePath: $file,
+            ));
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame(str_replace('{actual_config_path}', $file, $expected[0]), $refusal->summary());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
+            self::assertSame($file, $refusal->sources()[0]->locator());
+            $position = $refusal->position();
+            self::assertNotNull($position);
+            self::assertSame($expected[1], $position->segments);
+            self::assertSame($expected[2], $position->written);
+
+            return;
+        }
+
+        self::fail('The original YAML must be refused before loading its lawful companion.');
     }
 
     /**
      * Builds a YAML string that contains every root key from ConfigSchema::ENTRIES.
      *
-     * Uses realistic sub-keys for sections (derived from dotted source paths)
-     * to verify that both root keys AND their actual sub-keys are accepted.
+     * Retains the original generated dummy values and all ENTRIES sub-keys
+     * as the independently refused document.
      */
     private function buildFullConfigYaml(): string
     {

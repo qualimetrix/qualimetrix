@@ -4,18 +4,20 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Size;
 
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Core\Observation\WorseDirection;
+use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
@@ -40,7 +42,7 @@ final class ClassCountRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks number of classes per namespace';
     }
@@ -55,20 +57,21 @@ final class ClassCountRule extends AbstractRule
 
     /**
      * `size.class-count` reports the namespace's class count
-     * (`$classCount` — see the emission above) as `metricValue`, judged
+     * (`$classCount` — see the emission below) as `metricValue`, judged
      * worse the higher it goes: {@see ClassCountOptions::getSeverity()}'s
-     * `$value >= $this->error` (line 67) / `$value >= $this->warning`
-     * (line 71).
+     * `$value >= $this->error` / `$value >= $this->warning`.
      *
      * @return array<string, ChannelDeclaration>
      */
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Higher,
-                JudgedMetrics::of(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)),
+            self::NAME => self::judgingHigher(
+                [MetricName::SIZE_CLASS_COUNT],
                 SymbolLevel::Namespace_,
+            )->withGates(
+                self::populationGate('own-count', self::NAME, SymbolLevel::Namespace_, 'namespace', self::keyPresent('own-count', [MetricName::SIZE_CLASS_COUNT]), 'The own class count was not published.'),
+                self::populationGate('nonempty-count', self::NAME, SymbolLevel::Namespace_, 'namespace', self::keyThreshold('nonempty-count', [MetricName::SIZE_CLASS_COUNT], '>', 0, 'zero', true), 'The namespace has no own classes.'),
             ),
         ];
     }
@@ -82,26 +85,27 @@ final class ClassCountRule extends AbstractRule
             return [];
         }
 
+        $declaration = self::channelDeclarations()[self::NAME];
         $findings = [];
 
         foreach ($context->metrics->all(SymbolLevel::Namespace_) as $namespaceInfo) {
             $subject = $namespaceInfo->subject
                 ?? MetricSubject::aggregate($namespaceInfo->symbolPath);
-            // Skip parent namespaces — only analyze leaf namespaces
-            $namespace = $namespaceInfo->symbolPath->namespace;
-            if ($namespace !== null && $context->namespaceTree !== null && !$context->namespaceTree->isLeaf($namespace)) {
-                continue;
-            }
-
             $metrics = $context->metrics->get($namespaceInfo->symbolPath);
-
-            // Get aggregated classCount (sum from all files in namespace)
-            $classCount = (int) ($metrics->get(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)) ?? 0);
-
-            if ($classCount === 0) {
+            if (!$context->admit(
+                self::NAME,
+                new FindingChannel(self::NAME),
+                SymbolLevel::Namespace_,
+                PopulationIdentity::aggregate($namespaceInfo->symbolPath),
+                $declaration,
+                [
+                    GateInput::metrics('own-count', $metrics), GateInput::metrics('nonempty-count', $metrics),
+                ],
+            )) {
                 continue;
             }
 
+            $classCount = (int) $metrics->get(MetricName::SIZE_CLASS_COUNT);
             /** @var ClassCountOptions $effectiveOptions */
             $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $subject);
             $severity = $effectiveOptions->getSeverity($classCount);
@@ -115,7 +119,7 @@ final class ClassCountRule extends AbstractRule
                     symbolPath: $namespaceInfo->symbolPath,
                     ruleName: $this->getName(),
                     code: self::NAME,
-                    message: \sprintf('Class count is %d, exceeds threshold of %d. Consider splitting into sub-namespaces', $classCount, $threshold),
+                    message: \sprintf('Class count is %d, ' . ThresholdCrossing::of($classCount, $threshold)->value . ' threshold of %d. Consider splitting into sub-namespaces', $classCount, $threshold),
                     severity: $severity,
                     metricValue: $classCount,
                     recommendation: \sprintf('Classes: %d (threshold: %d) — too many classes in namespace', $classCount, $threshold),

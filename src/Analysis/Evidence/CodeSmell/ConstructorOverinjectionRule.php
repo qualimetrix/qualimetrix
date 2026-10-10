@@ -9,13 +9,15 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
@@ -40,7 +42,7 @@ final class ConstructorOverinjectionRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks number of constructor parameters (dependencies)';
     }
@@ -58,17 +60,20 @@ final class ConstructorOverinjectionRule extends AbstractRule
      * parameter count (`$parameterCountValue` — see the emission above) as
      * `metricValue`, judged worse the higher it goes:
      * {@see ConstructorOverinjectionOptions::getSeverity()}'s `$value >=
-     * $this->error` (line 67) and `$value >= $this->warning` (line 71).
+     * $this->error` and `$value >= $this->warning`.
      *
      * @return array<string, ChannelDeclaration>
      */
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Higher,
-                JudgedMetrics::of(MetricName::CODE_SMELL_PARAMETER_COUNT),
+            self::NAME => self::judgingHigher(
+                [MetricName::CODE_SMELL_PARAMETER_COUNT],
                 SymbolLevel::Callable,
+            )->withGates(
+                self::populationGate('constructor-name', self::NAME, SymbolLevel::Callable, 'callable', self::nameMatches('constructor-name'), 'Only constructors are judged.'),
+                self::populationGate('class-context', self::NAME, SymbolLevel::Callable, 'callable', self::contextGuard('callableHasClassContext'), 'The callable has no class context.'),
+                self::populationGate('parameter-count', self::NAME, SymbolLevel::Callable, 'callable', self::keyPresent('parameter-count', [MetricName::CODE_SMELL_PARAMETER_COUNT]), 'Parameter count was not published.'),
             ),
         ];
     }
@@ -83,9 +88,10 @@ final class ConstructorOverinjectionRule extends AbstractRule
         }
 
         $findings = [];
+        $populationDeclaration = self::channelDeclarations()[self::NAME];
 
         foreach ($context->metrics->allCallables() as $symbolInfo) {
-            $findings[] = $this->checkSymbol($symbolInfo, $context);
+            $findings[] = $this->checkSymbol($symbolInfo, $context, $populationDeclaration);
         }
 
         return array_values(array_filter(
@@ -94,7 +100,7 @@ final class ConstructorOverinjectionRule extends AbstractRule
         ));
     }
 
-    private function checkSymbol(SymbolInfo $symbolInfo, AnalysisContext $context): ?Finding
+    private function checkSymbol(SymbolInfo $symbolInfo, AnalysisContext $context, ChannelDeclaration $populationDeclaration): ?Finding
     {
         /** @var ConstructorOverinjectionOptions $options */
         $options = $this->options;
@@ -102,22 +108,16 @@ final class ConstructorOverinjectionRule extends AbstractRule
         $subject = $symbolInfo->subject ?? throw new LogicException('Constructor findings require an exact callable subject');
         $declaration = $subject->declarationPath() ?? throw new LogicException('Constructor findings require a declaration subject');
 
-        // Only constructors; PHP method names are case-insensitive, so `__Construct` is one too.
-        if (strtolower($declaration->logical->member ?? '') !== '__construct') {
+        $metrics = null;
+        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Callable, PopulationIdentity::subject($subject, 'callable'), $populationDeclaration, (static function () use ($context, $subject, $declaration, &$metrics): iterable {
+            yield GateInput::boundName('constructor-name', strtolower($declaration->logical->member ?? '') === '__construct');
+            yield GateInput::context('callableHasClassContext', $declaration->logical->type !== null);
+            $metrics = $context->metrics->getSubject($subject);
+            yield GateInput::metrics('parameter-count', $metrics);
+        })())) {
             return null;
         }
-
-        // Skip global functions (no class context)
-        if ($declaration->logical->type === null) {
-            return null;
-        }
-
-        $metrics = $context->metrics->getSubject($subject);
         $parameterCount = $metrics->get(MetricName::CODE_SMELL_PARAMETER_COUNT);
-
-        if ($parameterCount === null) {
-            return null;
-        }
 
         $parameterCountValue = (int) $parameterCount;
 

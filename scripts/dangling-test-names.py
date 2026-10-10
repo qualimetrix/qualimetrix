@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Every `Qualimetrix\\Tests\\…` name in the tree that no file declares.
+"""Unresolved test names visible to the existing lexical census.
 
 This detector has been written from scratch three times inside this stage — once
 per package that needed it, each time in a session scratchpad that then vanished
@@ -11,6 +11,10 @@ over paths and by no sweep over namespace prefixes, and a reference spelled with
 a name from an *earlier* rename is reachable by neither of those nor by a sweep
 for the name a file carries today. The only thing that finds one is asking the
 opposite question: which names in the tree resolve to no file at all.
+
+The census is lexical, not a PHP parser: its existing \\w name pattern does
+not recognize all PHP-valid byte identifiers. Every tracked file is read with
+surrogateescape, including files whose names the pattern cannot recognize.
 
 Both spellings are read. PHP source writes a fully qualified name with every
 backslash doubled, so a single-backslash sweep silently returns nothing for a
@@ -102,22 +106,31 @@ def used_as_a_class(line, match):
 
 
 def git(*arguments):
-    result = subprocess.run(["git", *arguments], cwd=REPOSITORY_ROOT, capture_output=True, text=True)
+    result = subprocess.run(["git", *arguments], cwd=REPOSITORY_ROOT, capture_output=True, text=True, errors="surrogateescape")
     if result.returncode != 0:
         raise OSError(f"git {' '.join(arguments)} failed: {result.stderr.strip()}")
     return result.stdout
 
 
+def read_source(path):
+    """Read a tracked symlink's own content, never the directory it points at."""
+    absolute = os.path.join(REPOSITORY_ROOT, path)
+    if os.path.islink(absolute):
+        return os.readlink(absolute)
+    with open(absolute, encoding="utf-8", errors="surrogateescape") as stream:
+        return stream.read()
+
+
 def declared_names():
-    """Every fully qualified name the tree actually declares."""
+    """Declarations visible to the existing lexical name pattern."""
     declared = set()
-    for path in git("ls-files", "*.php").split("\n"):
+    expected = [path for path in git("ls-files", "-z", "*.php").split("\0") if path]
+    read = set()
+    for path in expected:
         if not path:
             continue
-        try:
-            source = open(os.path.join(REPOSITORY_ROOT, path), encoding="utf-8").read()
-        except OSError:
-            continue
+        source = read_source(path)
+        read.add(path)
         namespace = re.search(r"^namespace\s+([^;]+);", source, re.M)
         if namespace is None:
             continue
@@ -126,6 +139,10 @@ def declared_names():
             r"^(?:final\s+|abstract\s+|readonly\s+)*(?:class|trait|interface|enum)\s+(\w+)", source, re.M
         ):
             declared.add(prefix + "\\" + match.group(1))
+    missing = sorted(set(expected) - read)
+    if missing:
+        raise RuntimeError("PHP files not read: " + ", ".join(missing))
+    print(f"read {len(read)} of {len(expected)} tracked PHP files")
     return declared
 
 
@@ -141,7 +158,10 @@ def main():
 
     try:
         declared = declared_names()
-        tracked = [path for path in git("ls-files").split("\n") if path]
+        tracked = [path for path in git("ls-files", "-z").split("\0") if path]
+    except RuntimeError as error:
+        print(str(error), file=sys.stderr)
+        return 1
     except OSError as error:
         print(f"cannot read the tree: {error}", file=sys.stderr)
         return 2
@@ -170,9 +190,10 @@ def main():
         if not arguments.include_history and path.startswith(history):
             continue
         try:
-            source = open(os.path.join(REPOSITORY_ROOT, path), encoding="utf-8").read()
-        except (OSError, UnicodeDecodeError):
-            continue
+            source = read_source(path)
+        except OSError as error:
+            print(f"cannot read {path}: {error}", file=sys.stderr)
+            return 2
         for line_number, line in enumerate(source.split("\n"), start=1):
             for match in NAME.finditer(line):
                 name = match.group(0).replace("\\\\", "\\")

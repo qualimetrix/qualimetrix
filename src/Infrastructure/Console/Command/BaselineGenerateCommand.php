@@ -10,8 +10,11 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -56,6 +59,7 @@ final class BaselineGenerateCommand extends BaselineCommand
         private readonly BaselineRunInterface $baselineRun,
         private readonly BaselineGenerator $generator,
         private readonly BaselineWriter $writer,
+        private readonly ErrorStream $errorStream,
     ) {
         parent::__construct();
     }
@@ -113,33 +117,55 @@ final class BaselineGenerateCommand extends BaselineCommand
             );
         }
 
-        $destination = $destinationExists
-            ? $this->writer->destinationSnapshot($baselinePath)
-            : null;
+        $destination = $this->writer->destinationSnapshot($baselinePath);
+        $this->reportExposure($destination['target'], $output);
 
-        $context = $this->baselineRun->measure($input, $output);
-        $capture = $this->generator->generate($context->findings(), $context->scope->paths());
-        $baseline = $mode === BaselineEntryMode::Suppress
-            ? self::withMode($capture->baseline, BaselineEntryMode::Suppress)
-            : $capture->baseline;
+        return $this->withPreparedTarget($destination['target'], function ($prepared, $guard) use ($input, $output, $mode, $destination, $baselinePath): int {
+            $context = $this->baselineRun->measure($input, $output);
+            $capture = $this->generator->generate(
+                $context->findings(),
+                $context->scope->paths(),
+                RecordedExclusions::fromRunConfiguration($context->configuration),
+            );
+            $baseline = $mode === BaselineEntryMode::Suppress
+                ? self::withMode($capture->baseline, BaselineEntryMode::Suppress)
+                : $capture->baseline;
 
-        $this->writer->write(
-            $destination === null
-                ? $baseline->withExpectedSourceAbsence()
-                : $baseline->withSourceContentHash($destination),
-            $baselinePath,
-            $context->projectRoot,
-        );
+            $this->writer->write(
+                $destination['hash'] === null
+                    ? $baseline->withExpectedSourceAbsence()
+                    : $baseline->withSourceContentHash($destination['hash']),
+                $destination['target'],
+                $context->projectRoot,
+                $prepared,
+                $guard === null ? null : $guard->assertNotInterrupted(...),
+            );
 
-        $output->writeln(\sprintf(
-            '<info>Baseline with %d entries written to %s</info>',
-            $baseline->count(),
-            $baselinePath,
-        ));
+            $output->writeln(\sprintf(
+                '<info>Baseline with %d entries written to %s</info>',
+                $baseline->count(),
+                $baselinePath,
+            ));
 
-        BaselineCaptureReporter::reportUncaptured($capture, $output);
+            BaselineCaptureReporter::reportUncaptured($capture, $output);
 
-        return self::SUCCESS;
+            return self::SUCCESS;
+        });
+    }
+
+    private function reportExposure(\Qualimetrix\Core\FileTarget\ResolvedTarget $target, OutputInterface $output): void
+    {
+        foreach ($target->exposure as $exposure) {
+            $this->errorStream->write($output, \sprintf(
+                '<comment>%s</comment>',
+                OutputFormatter::escape(\sprintf(
+                    'Baseline destination %s passes through %s, which can be changed by %s.',
+                    $target->spelling,
+                    $exposure->directory,
+                    $exposure->changedBy,
+                )),
+            ));
+        }
     }
 
     /**
@@ -199,6 +225,7 @@ final class BaselineGenerateCommand extends BaselineCommand
             generated: $baseline->generated,
             scope: $baseline->scope,
             entries: $entries,
+            exclusions: $baseline->exclusions,
             inertEntries: $baseline->inertEntries,
         );
     }

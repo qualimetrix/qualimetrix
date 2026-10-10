@@ -4,20 +4,23 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\SuppressionBinding;
 
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression;
+use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\PathPattern;
-use Qualimetrix\Core\Pattern\SelectorDefinition;
-use Qualimetrix\Core\Symbol\MetricSubject;
-use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\SourceText\SourceBytes;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * The question {@see UnboundSuppressionRule} names but cannot ask, and the
@@ -40,12 +43,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * counts removals; a suppressor that binds to nothing is reported here and is
  * indistinguishable from the first in that list.
  *
- * **Its Options service is the rule's own, and this service is lazy for that
- * reason.** The container builds the console command before the runtime
- * configuration has applied `rules.<name>.enabled` or `--rule-opt`, so an
- * eagerly constructed audit would capture an Options object that still reads
- * `enabled: true` after the configuration said otherwise. Declared lazy, the
- * audit is constructed at its first call, which is after the run.
+ * The shared audit reads the ready invocation snapshot when called, so it
+ * cannot retain an earlier invocation's enablement.
  *
  * **Two gates keep this quiet where it cannot judge.** The caller asks the
  * project-wide one
@@ -63,19 +62,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  */
 final readonly class UnboundSuppressionAudit
 {
-    /**
-     * What one finding on these channels is about: the value, and — for a
-     * per-rule entry — the rule and option it sits under.
-     *
-     * Without it every finding of a channel shared one baseline identity, and
-     * an accepted entry bounded their *number* rather than naming them.
-     * Accepting `src/Gone` then accepted `src/AlsoGone` in its place, silently,
-     * which is the acceptance these channels exist to end.
-     */
-    private const string OCCURRENCE_KIND = 'unbound-suppression-value';
-
     public function __construct(
-        private RuleOptionsInterface $options,
         private RuleExecutionInterface $ruleExecution,
         private RuleConfigurationInterface $ruleConfiguration,
     ) {}
@@ -101,32 +88,49 @@ final readonly class UnboundSuppressionAudit
      * @param ?list<string> $declaredNamespaces every namespace the run declared, or `null` if it built no tree
      * @param ValueScopeJudgement $scope the run's shape, asked of every value before it is judged
      *
-     * @return list<Finding>
+     * @return array{findings: list<Finding>, population: JudgedPopulation}
      */
-    public function findings(
+    public function auditResult(
         array $suppressPaths,
         array $suppressNamespaces,
         array $analyzedFiles,
         ?array $declaredNamespaces,
         ValueScopeJudgement $scope,
+        ChannelPublication $publication,
     ): array {
-        if (!$this->options->isEnabled()) {
-            return [];
+        if (!$this->ruleConfiguration->resolvedOptions()->for(UnboundSuppressionRule::NAME)->isEnabled()) {
+            return ['findings' => [], 'population' => JudgedPopulation::empty()];
         }
 
+        $declarations = UnboundSuppressionRule::channelDeclarations();
+        if (!self::hasSelectedChannel($publication, $declarations)) {
+            return ['findings' => [], 'population' => JudgedPopulation::empty()];
+        }
         $findings = [];
+        $session = new PopulationSession(($publication)->publishes(...));
 
-        foreach ($this->configuredValues($suppressPaths, $suppressNamespaces) as $value) {
-            if ($this->judges($value, $declaredNamespaces, $scope) && !self::binds($value, $analyzedFiles, $declaredNamespaces)) {
-                $findings[] = self::unboundFinding($value);
+        foreach ($this->configuredValues($suppressPaths, $suppressNamespaces) as $ordinal => $value) {
+            $channel = new FindingChannel($value['channel']);
+            if (!$publication->publishes(UnboundSuppressionRule::NAME, $channel, SymbolLevel::Project)) {
+                continue;
+            }
+            $judged = $this->judges($value, $declaredNamespaces, $scope);
+            $input = GateInput::context($value['pattern'] instanceof PathPattern ? 'suppressionPathJudged' : 'suppressionNamespaceJudged', $judged);
+            $identity = PopulationIdentity::occurrence(json_encode([$value['channel'], $value['rule'], $value['option'], SourceBytes::framed($value['pattern']->definition->display())], \JSON_THROW_ON_ERROR), $ordinal, 'configured-suppression-value-occurrence');
+            $declaration = $declarations[$channel->code];
+            self::record($session, $channel, $declaration, $identity, $input);
+            unset($identity, $input);
+            if ($judged && !self::binds($value, $analyzedFiles, $declaredNamespaces)) {
+                $findings[] = UnboundSuppressionFinding::forValue($value);
             }
         }
 
-        return $this->ruleExecution->publishable($findings);
+        unset($value);
+        return ['findings' => $this->ruleExecution->publishable($findings), 'population' => $session->freeze()];
     }
 
     /**
-     * Every configured value {@see findings()} skipped without judging it,
+     * Every configured value {@see auditResult()} skipped without judging it,
      * under the channel that would have reported it — the other half of the
      * same enumeration, so the two cannot disagree about which values exist.
      *
@@ -168,13 +172,30 @@ final readonly class UnboundSuppressionAudit
     }
 
     /**
+     * @param list<PathPattern> $suppressPaths
+     * @param list<NamespacePattern> $suppressNamespaces
+     * @param ?list<string> $declaredNamespaces
+     *
+     * @return list<string>
+     */
+    public function judgedChannels(array $suppressPaths, array $suppressNamespaces, ?array $declaredNamespaces, ValueScopeJudgement $scope): array
+    {
+        $channels = [];
+        foreach ($this->configuredValues($suppressPaths, $suppressNamespaces) as $value) {
+            if ($this->judges($value, $declaredNamespaces, $scope)) {
+                $channels[$value['channel']] = true;
+            }
+        }
+
+        return array_keys($channels);
+    }
+
+    /**
      * Every configured value, global and per-rule, with the channel that
      * reports it.
      *
-     * Per-rule entries are read through {@see ConfiguredSuppression} — the one
-     * reader {@see \Qualimetrix\Analysis\Finding\FindingExclusionLedger} also
-     * uses when it applies them, so "bound" here and "applied" there cannot
-     * mean two different pattern sets.
+     * Per-rule entries come from the current typed snapshot's suppression
+     * values, so the audit cannot re-parse a different pattern set.
      *
      * **All three per-rule options, including `suppress_namespace_channels`.**
      * That one was applied and not judged while each side enumerated the
@@ -208,18 +229,15 @@ final readonly class UnboundSuppressionAudit
             $values[] = ['channel' => UnboundSuppressionOptions::UNMATCHED_NAMESPACE, 'rule' => null, 'option' => ConfiguredSuppression::NAMESPACES, 'pattern' => $pattern];
         }
 
-        foreach ($this->ruleConfiguration->all() as $ruleName => $options) {
-            if (!\is_array($options)) {
-                continue;
-            }
-
-            $rule = (string) $ruleName;
+        $snapshot = $this->ruleConfiguration->resolvedOptions();
+        foreach ($snapshot->all() as $rule => $options) {
+            $suppression = $snapshot->suppressionFor($rule);
             $entries = [
-                ...array_map(static fn(PathPattern $p): array => [ConfiguredSuppression::PATHS, $p], $this->ruleConfiguration->pathExclusions($rule)),
-                ...array_map(static fn(NamespacePattern $p): array => [ConfiguredSuppression::NAMESPACES, $p], $this->ruleConfiguration->namespaceExclusions($rule)),
+                ...array_map(static fn(PathPattern $p): array => [ConfiguredSuppression::PATHS, $p], $suppression->paths),
+                ...array_map(static fn(NamespacePattern $p): array => [ConfiguredSuppression::NAMESPACES, $p], $suppression->namespaces),
             ];
 
-            foreach ($this->ruleConfiguration->namespaceChannelExclusions($rule) as $selector => $patterns) {
+            foreach ($suppression->namespaceChannels as $selector => $patterns) {
                 foreach ($patterns as $pattern) {
                     $entries[] = [ConfiguredSuppression::NAMESPACE_CHANNELS . '.' . $selector, $pattern];
                 }
@@ -280,110 +298,21 @@ final readonly class UnboundSuppressionAudit
         return false;
     }
 
-    /**
-     * @param array{channel: string, rule: ?string, option: string, pattern: PathPattern|NamespacePattern} $value
-     */
-    private static function unboundFinding(array $value): Finding
+    /** @param array<string, ChannelDeclaration> $declarations */
+    private static function hasSelectedChannel(ChannelPublication $publication, array $declarations): bool
     {
-        $pattern = $value['pattern'];
-
-        if ($value['rule'] !== null) {
-            return self::ledgerFinding($value['rule'], $value['option'], $pattern->definition);
+        foreach ($declarations as $code => $declaration) {
+            if ($publication->publishes(UnboundSuppressionRule::NAME, new FindingChannel($code), SymbolLevel::Project)) {
+                return true;
+            }
         }
-
-        return $pattern instanceof PathPattern ? self::pathFinding($pattern) : self::namespaceFinding($pattern);
+        return false;
     }
 
-    private static function pathFinding(PathPattern $pattern): Finding
+    private static function record(PopulationSession $session, FindingChannel $channel, ChannelDeclaration $declaration, PopulationIdentity $identity, GateInput $input): void
     {
-        return self::finding(
-            UnboundSuppressionOptions::UNMATCHED_PATH,
-            ['option' => ConfiguredSuppression::PATHS, 'pattern' => $pattern->definition->display()],
-            \sprintf(
-                'The suppress_paths pattern "%s" matched no file analysed by this run, so it suppressed nothing'
-                . ' and could not have. If the code it was written for still exists under another spelling, its'
-                . ' findings are being reported.',
-                $pattern->definition->display(),
-            ),
-            \sprintf(
-                'Check "%s" against the tree. %s Drop the entry if the code it names is gone, or correct its'
-                . ' spelling.',
-                $pattern->definition->display(),
-                self::selectorMeaning($pattern->definition, '/', 'path'),
-            ),
-        );
-    }
-
-    private static function namespaceFinding(NamespacePattern $pattern): Finding
-    {
-        return self::finding(
-            UnboundSuppressionOptions::UNMATCHED_NAMESPACE,
-            ['option' => ConfiguredSuppression::NAMESPACES, 'pattern' => $pattern->definition->display()],
-            \sprintf(
-                'The suppress_namespaces pattern "%s" matched no namespace declared in this run, so it suppressed'
-                . ' nothing and could not have. If the code it was written for still exists under another'
-                . ' spelling, its findings are being reported.',
-                $pattern->definition->display(),
-            ),
-            \sprintf(
-                'Check "%s" against the code. %s Drop the entry if the namespace is gone, or correct its spelling.',
-                $pattern->definition->display(),
-                self::selectorMeaning($pattern->definition, '\\', 'namespace'),
-            ),
-        );
-    }
-
-    private static function selectorMeaning(
-        SelectorDefinition $definition,
-        string $separator,
-        string $subject,
-    ): string {
-        return match ($definition->kind->value) {
-            'exact' => \sprintf('The "exact" selector matches only the authored %s.', $subject),
-            'subtree' => \sprintf(
-                'The "subtree" selector also includes descendants across "%s" boundaries.',
-                $separator,
-            ),
-            'regex' => 'The "regex" selector is a full-subject PCRE fragment.',
-        };
-    }
-
-    private static function ledgerFinding(string $ruleName, string $option, SelectorDefinition $pattern): Finding
-    {
-        return self::finding(
-            UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER,
-            ['rule' => $ruleName, 'option' => $option, 'pattern' => $pattern->display()],
-            \sprintf(
-                'The %s pattern "%s" configured under rule "%s" matched nothing this run analysed, so it suppressed'
-                . ' nothing and could not have.',
-                $option,
-                $pattern->display(),
-                $ruleName,
-            ),
-            \sprintf(
-                'Check "%s" under rules.%s.%s against the tree, and drop it if what it names is gone.',
-                $pattern->display(),
-                $ruleName,
-                $option,
-            ),
-        );
-    }
-
-    /**
-     * @param array<string, string> $occurrence what this finding is about, for its identity
-     */
-    private static function finding(string $channel, array $occurrence, string $message, string $recommendation): Finding
-    {
-        return new Finding(
-            location: Location::none(),
-            subject: MetricSubject::aggregate(SymbolPath::forProject()),
-            symbolPath: SymbolPath::forProject(),
-            ruleName: $channel,
-            code: $channel,
-            message: $message,
-            severity: Severity::Warning,
-            recommendation: $recommendation,
-            occurrenceKey: OccurrenceKey::semantic(self::OCCURRENCE_KIND, $occurrence),
-        );
+        $inputs = $channel->code === UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER ? [$input, $input] : [$input];
+        $failed = $declaration->populationFailure($channel, SymbolLevel::Project, $identity, $inputs);
+        $session->record(UnboundSuppressionRule::NAME, $channel, SymbolLevel::Project, $identity, $declaration, $failed['gate'] ?? null, $failed['reason'] ?? null);
     }
 }

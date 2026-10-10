@@ -8,14 +8,31 @@ classification for `coupling.cbo-app` and `coupling.ce-framework`. It consumes t
 DependencyModel, Measurement, Finding, ConfigurationDocument, and neutral Core
 contracts; it publishes one configuration contract for the runtime adapter.
 
-`CouplingAnalysis` owns the framework-prefix state for one analysis run. Each
-configuration document replaces the previous list, including an empty
-`coupling.frameworkNamespaces` contribution, so sequential runs cannot leak
-classification state.
+`CouplingAnalysis` owns the framework-prefix state for one analysis run. Its
+owner-declared `coupling` map merges key by key, so an empty map keeps lower
+values. The `framework_namespaces` list replaces as one ordered value, including
+an empty list. `FrameworkNamespaceSelectorParser` judges every written list and
+the resolved list with the same namespace-selector grammar: exactly one kind,
+a nonempty pattern, valid PCRE and the 256-selector ceiling. A later list cannot
+hide an invalid lower list. Coupling reads the resolved selector list before replacing
+its run-local matcher. Sequential runs therefore cannot leak classification
+state.
+
+```text
+Coupling/
+└── Configuration/
+    ├── CouplingSection.php # owner-declared coupling map; replaced selector list
+    └── FrameworkNamespaceSelectorParser.php # shared authored/effective grammar
+```
 
 ## Metrics
 
-Coupling metrics measure dependencies between components. All collectors in this category use `GlobalContextCollectorInterface` and work with the dependency graph.
+Coupling metrics measure dependencies between components. Graph collectors use
+`GlobalContextCollectorInterface`; RFC is collected from each named class
+declaration. Same-name declarations retain independent RFC evidence, including
+when they occur in one file. Graph values remain logical-name measurements and
+appear in every exact declaration view. Class-derived aggregates sample those
+views once each; the logical graph record is not an extra sample.
 
 ---
 
@@ -82,7 +99,9 @@ Coupling metrics measure dependencies between components. All collectors in this
 > The subtree `coupling.cbo` is still published on every namespace.
 > `CboRule` decides whether there is a finding; `CboFindingText` words it —
 > the dominant direction, the message and the recommendation with a class's
-> top dependencies.
+> top dependencies. The five selected target identities keep their occurrence
+> ordering; colliding short names expand to the shortest distinguishing
+> namespace suffix, with full names as the final fallback.
 
 > **Note:** Robert C. Martin (1994) originally defined Instability only at the **package** (namespace) level. Qualimetrix extends it to the class level for finer-grained analysis. The namespace-level instability is the canonical metric per Martin's specification.
 
@@ -138,6 +157,9 @@ name in the run falls under. Nothing was moved out of the application scope for
 it, and before the channel existed the miss and a run with no prefix at all
 produced byte-identical reports — the classification is only observable through
 `coupling.cbo-app` / `coupling.ce-framework`, never through the finding set.
+
+`UnmatchedFrameworkFinding` owns the message and stable occurrence projection;
+the rule retains selector enumeration and eligibility.
 
 Two facts about the shape, both measured rather than chosen:
 
@@ -223,7 +245,7 @@ is what keeps a pure container out of the project average.
 
 A namespace whose only declarations are bare enums therefore has `totalTypes = 0` and
 keeps the pre-existing no-type result `A = 0.0`. Downstream namespace rules already
-skip it through `minClassCount`, exactly as they skip a namespace with no declarations
+skip it through the Distance rule's own-type minimum, exactly as they skip a namespace with no declarations
 at all.
 
 The count inputs are exact discrete namespace sums. They are not fractionally distributed
@@ -259,7 +281,14 @@ distance computed from 0: a namespace declaring only functions is in the
 repository but not in the class graph, so it has no instability, and reading
 that as 0 used to publish D = 1.0 for it.
 
-`DistanceRule` does not judge a namespace with `Ca = Ce = 0`: its instability
+`DistanceRule` reads only the own-scope `coupling.distance-own`,
+`coupling.abstractness-own`, `coupling.instability-own`, `coupling.ca-own` and
+`coupling.ce-own`. Its `min-type-count` option (default 3) counts own classes,
+traits, interfaces and explicitly implementing enums; bare enums do not count.
+The retired `min-class-count` spellings are refused. CBO and Instability keep
+their existing `min-class-count` options.
+
+`DistanceRule` does not judge a namespace with own `Ca = Ce = 0`: its instability
 is 0 by convention, not by measurement, and a concrete namespace nothing
 touches would otherwise read as the worst zone of pain. The value itself is
 still published, and still enters `health.coupling` and the project average.
@@ -312,16 +341,32 @@ Ideal packages lie on the line `A + I = 1`:
 
 ## ClassRank
 
-**Collector:** `ClassRankCollector` (PageRank, damping 0.85, over project classes)
-**Provides:** `coupling.class-rank`
+**Collector:** `ClassRankCollector` (PageRank, damping 0.85)
+**Provides:** `coupling.class-rank`, `coupling.class-rank-share`
 **Level:** Class
 
-A class without outgoing project edges spreads its rank evenly over every class,
-so each class holds a floor of `(1 - d) / N + d · S / N`, where `S` is the total
-rank of such classes. On a small or loosely coupled project that floor alone
-clears the size-scaled threshold, so `ClassRankRule` never reports a class
-nothing depends on (`coupling.ca` = 0), and its recommendation names the
-measured number of dependents.
+Raw PageRank `r` remains probability mass: ranks sum to 1 over the distinct
+measured logical graph vertices. The new share is `r / (1 / N) = r * N`, where
+`N` includes graph class-like vertices with a logical subject in the metric
+repository, including isolates; unmeasured external vertices stay outside this
+analysed PageRank population. Duplicate declarations do not increase `N`. An empty graph publishes
+neither metric; a singleton publishes raw 1 and share 1. Both values are
+projected to each exact declaration and have namespace/project max, average
+and p95 aggregates.
+
+`ClassRankRule` judges the share of exact PHP classes, including abstract
+classes, with positive `coupling.ca`. Interfaces, traits and enums retain graph
+rank evidence but are outside that rule population. The fixed share defaults
+are warning 5 and error 10, in multiples of the uniform rank; equality reaches
+the boundary. Overrides use the same units, with no project-size scaling.
+Messages use the shortest common precision from two through six decimal places
+that distinguishes unequal value and threshold; a remaining collision is marked
+as rounded. The underlying comparison always uses the unrounded share.
+
+The share is relative to the current measured graph. Comparing different graph
+populations requires keeping that scope in view. Prioritization reads only the
+share, including its native measured-median fallback; raw probability is never
+substituted for absent share. JSON top issues publish `coupling.class-rank-share`.
 
 ---
 
@@ -333,6 +378,8 @@ measured number of dependents.
 new MetricDefinition(
     name: 'coupling.instability',
     collectedAt: SymbolLevel::Class_,
+    classKeyScope: ClassKeyScope::LogicalName,
+    directPublicationLevels: [SymbolLevel::Namespace_],
     aggregations: [
         SymbolLevel::Namespace_->value => [Average],
     ],
@@ -396,6 +443,37 @@ class GodClass  // Ca = 20, Ce = 0 — everything depends on it
 ```
 
 
+## Declared options and effective bands
+
+CBO and instability declare their class/namespace forms and bands. A top-level
+band shorthand spreads to both levels in its own layer before winners are chosen;
+explicit writes to the same expanded leaves conflict in that layer. Independent
+level settings such as enabled are preserved. Different layers merge leaf
+writes. `fromResolved` constructs typed options and judges each effective
+band including default halves. Direction, formulas, default numbers and the
+framework-namespace evidence model are unchanged. DoD includes lower-layer
+malformed refusal, distinct-level writes and coherent effective bands.
+
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+CBO and instability reuse their full source declarations at each native
+class or namespace invocation. Missing publications, own class minima and
+afferent minima are eligibility gates before severity selection. CBO
+retains its scope-specific metric choice; instability keeps publication
+presence before its afferent check. Framework-selector accounting first
+judges whole-project scope, then graph availability, then the actual names
+classified by coupling. An unknown graph contributes one invocation; an
+empty configured selector roster contributes none. Known selector rosters
+retain their configured-selector unit.
+
+Coupling rules use Finding’s protected population declaration factories. Their
+source-owned lazy inputs retain namespace admission before metric reads and
+exact PHP-kind checks before class bag acquisition. The ClassRank finding
+builder receives the same full declaration used by its invocation.
+
+> **Note:** `coupling.class-rank` is computed on logical class names. Namespace
+> aggregates sample physical declarations, so a logical name's graph value
+> contributes once per declaration. Namespace sums/counts/averages are
+> declaration-weighted, rather than graph-node or inheritance-edge counts.

@@ -12,28 +12,41 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
+use Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch;
+use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationOptions;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassMode;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule;
+use Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidenceCollector;
+use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassMode;
+use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassOptions;
+use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassRule;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\AllowListBuilder;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\LayerVerdicts;
@@ -279,6 +292,35 @@ final class UnassignedClassDiagnosticsTest extends TestCase
         self::assertFalse($declaration->isConfigurationError());
     }
 
+    #[Test]
+    public function itCountsTheLogicalClassRosterIncludingAssignedClassesAndCollapsedDeclarations(): void
+    {
+        $options = new UnassignedClassOptions(UnassignedClassMode::Warn);
+        $rule = new UnassignedClassRule($options, new LayerEvidenceCollector(new LayerViolationOptions(enabled: false), $options, new LayerDeclarationOptions(enabled: false), $this->processor));
+        $architecture = $this->buildArchitecture(CoverageMode::Ignore);
+        $repository = new InMemoryMetricRepository();
+        foreach (['src/First.php', 'src/Second.php', 'src/Third.php'] as $file) {
+            $repository->addSubject(\Qualimetrix\Core\Symbol\MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\Controller', 'Owned'), RelativePath::fromString($file), DeclarationOrdinal::fromRank(0))), new MetricBag(), RelativePath::fromString($file), 1);
+        }
+        $repository->add(SymbolPath::forClass('App\Unowned', 'Lonely'), new MetricBag(), RelativePath::fromString('src/Lonely.php'), 1);
+        self::assertCount(3, iterator_to_array($repository->allClassDeclarations()));
+        self::assertCount(2, iterator_to_array($repository->allLogicalClasses()));
+        $graph = $this->buildGraph([]);
+        ProcessorBuilder::prepared($architecture, $graph, $repository, $this->processor);
+        $session = new PopulationSession((new ChannelPublication(new RuleEnablement([
+            new EnablementDecision(
+                new SelectionCellAddress(UnassignedClassRule::NAME, new FindingChannel(UnassignedClassRule::NAME), SymbolLevel::Project, ChannelSelectionRole::Selectable),
+                new AuthoredCellDecision(CellSwitch::On, CellAdmission::Direct),
+            ),
+        ], null)))->publishes(...));
+        $context = (new AnalysisContext($repository, $graph))->withPopulationTrace($session);
+
+        self::assertSame(1, $rule->analyze($context)[0]->metricValue);
+        self::assertSame(2, $session->freeze()->judgedCount());
+        self::assertSame('logical-class', $session->freeze()->judgedCounts()[0]['unit']);
+        self::assertSame(0, $session->freeze()->unjudgedCount());
+    }
+
     private function buildArchitecture(CoverageMode $coverage): ArchitectureConfiguration
     {
         return new ArchitectureConfiguration(
@@ -305,7 +347,7 @@ final class UnassignedClassDiagnosticsTest extends TestCase
         string $targetNamespace,
         string $targetClass,
     ): Dependency {
-        return new Dependency(
+        return Dependency::ofKind(
             source: DeclarationPath::of(SymbolPath::forClass($sourceNamespace, $sourceClass), RelativePath::fromString('src/dummy.php'), DeclarationOrdinal::fromRank(0)),
             target: new LogicalClassPath(SymbolPath::forClass($targetNamespace, $targetClass)),
             type: DependencyType::New_,

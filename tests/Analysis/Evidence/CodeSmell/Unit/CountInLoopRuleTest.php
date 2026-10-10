@@ -28,7 +28,7 @@ final class CountInLoopRuleTest extends TestCase
         $rule = new CountInLoopRule(new CodeSmellOptions());
 
         self::assertSame('code-smell.count-in-loop', $rule->getName());
-        self::assertSame('Detects count() calls in loop conditions', $rule->getDescription());
+        self::assertSame('Detects count() calls in loop conditions', $rule::getDescription());
     }
 
     #[Test]

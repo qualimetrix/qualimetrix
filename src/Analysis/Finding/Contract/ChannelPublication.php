@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract;
 
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
+use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
@@ -21,20 +24,33 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final readonly class ChannelPublication
 {
     public function __construct(
-        private RuleSelector $selector,
-        private RuleSelection $selection,
-        private LevelActivity $activity,
+        private RuleEnablement $enablement,
     ) {}
 
-    public function publishes(string $producer, FindingChannel $channel, SymbolLevel $level): bool
+    public function publishes(string $producer, FindingChannel $channel, SymbolLevel $level, ?string $addressedProducer = null): bool
     {
-        return $this->selector->isChannelEnabled(
-            $producer,
-            $channel,
-            $level,
-            $this->selection->only,
-            $this->selection->disabled,
-        )
-            && $this->activity->ranAtAnyOf($producer, [$level]);
+        return $this->enablement->publishes($channel, $level, $addressedProducer);
     }
+    /** @param iterable<array{identity: PopulationIdentity, inputs: iterable<GateInput>}> $members */
+    public function measure(
+        string $producer,
+        FindingChannel $channel,
+        SymbolLevel $level,
+        ChannelDeclaration $declaration,
+        iterable $members,
+        ?string $addressedProducer = null,
+    ): JudgedPopulation {
+        if (!$this->publishes($producer, $channel, $level, $addressedProducer)) {
+            return JudgedPopulation::empty();
+        }
+        $session = new PopulationSession(($this)->publishes(...), $addressedProducer);
+        foreach ($members as $member) {
+            $failed = $declaration->populationFailure($channel, $level, $member['identity'], $member['inputs']);
+            $session->record($producer, $channel, $level, $member['identity'], $declaration, $failed['gate'] ?? null, $failed['reason'] ?? null);
+            unset($member);
+        }
+        unset($members);
+        return $session->freeze();
+    }
+
 }

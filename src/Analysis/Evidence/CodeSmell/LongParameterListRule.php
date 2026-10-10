@@ -5,17 +5,17 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\CodeSmell;
 
 use LogicException;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
-use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Core\Observation\WorseDirection;
+use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -48,7 +48,7 @@ final class LongParameterListRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks number of parameters per method';
     }
@@ -68,20 +68,22 @@ final class LongParameterListRule extends AbstractRule
      * report the same magnitude (`$parameterCountValue`), differing only in
      * which threshold pair gates them. Both are `higher`-is-worse:
      * {@see LongParameterListOptions::getVoSeverity()}'s `$value >=
-     * $this->voError` (line 110) / `$value >= $this->voWarning` (line 114)
+     * $this->voError` / `$value >= $this->voWarning`
      * for the VO branch, and {@see LongParameterListOptions::getSeverity()}'s
-     * `$value >= $this->error` (line 94) / `$value >= $this->warning`
-     * (line 98) for the regular branch. One declaration covers both.
+     * `$value >= $this->error` / `$value >= $this->warning`
+     * for the regular branch. One declaration covers both.
      *
      * @return array<string, ChannelDeclaration>
      */
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Higher,
-                JudgedMetrics::of(MetricName::CODE_SMELL_PARAMETER_COUNT),
+            self::NAME => self::judgingHigher(
+                [MetricName::CODE_SMELL_PARAMETER_COUNT],
                 SymbolLevel::Callable,
+            )->withGates(
+                self::populationGate('callable-coordinate', self::NAME, SymbolLevel::Callable, 'callable', self::kindIn('callable-coordinate', [SymbolType::Method, SymbolType::Function_]), 'The subject is outside the declared symbol coordinate.'),
+                self::populationGate('published-value', self::NAME, SymbolLevel::Callable, 'callable', self::keyPresent('published-value', [MetricName::CODE_SMELL_PARAMETER_COUNT]), 'The rule metric was not published.'),
             ),
         ];
     }
@@ -106,21 +108,18 @@ final class LongParameterListRule extends AbstractRule
         \assert($this->options instanceof LongParameterListOptions);
         $options = $this->options;
         $findings = [];
+        $populationDeclaration = self::channelDeclarations()[self::NAME];
 
         foreach ($context->metrics->allCallables() as $symbolInfo) {
             $subject = $symbolInfo->subject ?? throw new LogicException('Long parameter list findings require an exact callable subject');
             $declaration = $subject->declarationPath() ?? throw new LogicException('Long parameter list findings require a declaration subject');
             $symbolType = $declaration->logical->getType();
 
-            if ($symbolType !== SymbolType::Method && $symbolType !== SymbolType::Function_) {
+            $metrics = $this->admittedMetrics($context, $subject, $populationDeclaration, static fn(MetricBag $metrics): array => [GateInput::metrics('published-value', $metrics)], [GateInput::kind('callable-coordinate', $declaration->logical->getType())], unit: 'callable', level: SymbolLevel::Callable);
+            if ($metrics === null) {
                 continue;
             }
-
-            $metrics = $context->metrics->getSubject($subject);
             $parameterCount = $metrics->get(MetricName::CODE_SMELL_PARAMETER_COUNT);
-            if ($parameterCount === null) {
-                continue;
-            }
 
             $parameterCountValue = (int) $parameterCount;
             $isVoConstructor = $metrics->get(MetricName::CODE_SMELL_IS_VO_CONSTRUCTOR) === 1;
@@ -146,26 +145,16 @@ final class LongParameterListRule extends AbstractRule
     ): ?Finding {
         /** @var LongParameterListOptions $effectiveOptions */
         $effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
-        $severity = $effectiveOptions->getSeverity($parameterCountValue);
-
-        if ($severity === null) {
-            return null;
-        }
-
-        $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
         $kind = $symbolType === SymbolType::Function_ ? 'Function' : 'Method';
-
-        return new Finding(
-            location: new Location($symbolInfo->file, $symbolInfo->line),
-            subject: $subject,
-            symbolPath: $subject->toSymbolPath(),
-            ruleName: $this->getName(),
-            code: self::NAME,
-            message: \sprintf('%s has %d parameters, exceeds threshold of %d. Consider introducing a parameter object', $kind, $parameterCountValue, $threshold),
-            severity: $severity,
-            metricValue: $parameterCountValue,
-            recommendation: \sprintf('Parameters: %d (threshold: %d) — consider introducing a parameter object', $parameterCountValue, $threshold),
-            threshold: $threshold,
+        return $this->thresholdFinding(
+            $symbolInfo,
+            $parameterCountValue,
+            $effectiveOptions->getSeverity($parameterCountValue),
+            ['warning' => $effectiveOptions->warning, 'error' => $effectiveOptions->error],
+            static fn(int|float $threshold, ThresholdCrossing $crossing): array => [
+                \sprintf('%s has %d parameters, %s threshold of %d. Consider introducing a parameter object', $kind, $parameterCountValue, $crossing->value, $threshold),
+                \sprintf('Parameters: %d (threshold: %d) — consider introducing a parameter object', $parameterCountValue, $threshold),
+            ],
         );
     }
 
@@ -180,25 +169,15 @@ final class LongParameterListRule extends AbstractRule
         $effectiveOptions = $override === null
             ? $options
             : $options->withVoOverride($override->warning, $override->error);
-        $severity = $effectiveOptions->getVoSeverity($parameterCount);
-
-        if ($severity === null) {
-            return null;
-        }
-
-        $threshold = $severity === Severity::Error ? $effectiveOptions->voError : $effectiveOptions->voWarning;
-
-        return new Finding(
-            location: new Location($symbolInfo->file, $symbolInfo->line),
-            subject: $subject,
-            symbolPath: $subject->toSymbolPath(),
-            ruleName: $this->getName(),
-            code: self::NAME,
-            message: \sprintf('VO constructor has %d promoted parameters, exceeds threshold of %d. Consider splitting the value object', $parameterCount, $threshold),
-            severity: $severity,
-            metricValue: $parameterCount,
-            recommendation: \sprintf('Parameters: %d (VO threshold: %d) — consider splitting the value object', $parameterCount, $threshold),
-            threshold: $threshold,
+        return $this->thresholdFinding(
+            $symbolInfo,
+            $parameterCount,
+            $effectiveOptions->getVoSeverity($parameterCount),
+            ['warning' => $effectiveOptions->voWarning, 'error' => $effectiveOptions->voError],
+            static fn(int|float $threshold, ThresholdCrossing $crossing): array => [
+                \sprintf('VO constructor has %d promoted parameters, %s threshold of %d. Consider splitting the value object', $parameterCount, $crossing->value, $threshold),
+                \sprintf('Parameters: %d (VO threshold: %d) — consider splitting the value object', $parameterCount, $threshold),
+            ],
         );
     }
 

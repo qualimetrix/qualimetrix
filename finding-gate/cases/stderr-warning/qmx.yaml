@@ -1,0 +1,6 @@
+only_rules:
+  - design.dit
+rules:
+  design.dit:
+    warning: 1
+    error: 2

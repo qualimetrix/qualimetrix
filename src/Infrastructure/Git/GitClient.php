@@ -32,17 +32,6 @@ final class GitClient
     ) {}
 
     /**
-     * Returns true if the current directory is a git repository.
-     */
-    public function isRepository(): bool
-    {
-        // .git is a directory in regular repos, but a file in worktrees
-        $gitDir = $this->projectRoot->value() . '/.git';
-
-        return is_dir($gitDir) || is_file($gitDir);
-    }
-
-    /**
      * Returns the root directory of the git repository (the `git rev-parse
      * --show-toplevel`). May differ from the project root the client was
      * constructed with when the project sits in a strict subdirectory of
@@ -63,6 +52,7 @@ final class GitClient
     public function getChangedFiles(string $scope): array
     {
         $this->validateScope($scope);
+        $scope = self::completedRange($scope);
 
         return match (true) {
             $scope === 'staged' => $this->getStagedFiles(),
@@ -89,6 +79,7 @@ final class GitClient
     public function validateScope(string $scope): void
     {
         $this->assertInsideWorkTree();
+        $scope = self::completedRange($scope);
 
         if ($scope === 'staged') {
             return;
@@ -108,6 +99,23 @@ final class GitClient
         foreach ($references as $reference) {
             $this->assertCommitReference($reference);
         }
+    }
+
+    private static function completedRange(string $scope): string
+    {
+        $separator = str_contains($scope, '...') ? '...' : (str_contains($scope, '..') ? '..' : null);
+        if ($separator === null) {
+            return $scope;
+        }
+
+        $references = explode($separator, $scope);
+        if (\count($references) !== 2) {
+            return $scope;
+        }
+
+        return ($references[0] === '' ? 'HEAD' : $references[0])
+            . $separator
+            . ($references[1] === '' ? 'HEAD' : $references[1]);
     }
 
     private function assertCommitReference(string $reference): void
@@ -280,14 +288,19 @@ final class GitClient
      */
     private function diff(array $arguments, string $scope): string
     {
-        $process = new Process(['git', 'diff', ...$arguments], $this->projectRoot->value());
+        $process = new Process(['git', 'diff', '--no-relative', ...$arguments], $this->projectRoot->value());
 
         try {
             $process->mustRun();
 
             return $process->getOutput();
         } catch (ProcessFailedException) {
-            throw GitScopeRefusedException::commandFailed($scope, trim($process->getErrorOutput()));
+            $gitReport = trim($process->getErrorOutput());
+            if (str_contains($gitReport, 'no-relative')) {
+                throw GitScopeRefusedException::commandFailed($scope, 'Git 2.28 or newer is required for --no-relative. ' . $gitReport);
+            }
+
+            throw GitScopeRefusedException::commandFailed($scope, $gitReport);
         }
     }
 }

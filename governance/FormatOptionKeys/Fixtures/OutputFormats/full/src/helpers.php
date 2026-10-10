@@ -13,3 +13,5 @@ function describeMode(int $mode): string
 {
     return $mode > 0 ? 'on' : 'off';
 }
+
+echo $_GET['display'];

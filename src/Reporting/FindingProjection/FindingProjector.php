@@ -4,20 +4,18 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\FindingProjection;
 
-use Closure;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+
+use Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
-use Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter;
-use Qualimetrix\Analysis\Finding\Contract\Filter\PathExclusionFilter;
 use Qualimetrix\Analysis\Finding\Contract\Filter\PredicateFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
-use Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage;
+use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
-use Qualimetrix\Core\Pattern\NamespaceMatcher;
-use Qualimetrix\Core\Pattern\PathMatcher;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 
 /**
@@ -27,16 +25,27 @@ final readonly class FindingProjector
 {
     public function __construct(
         private AnnotationSuppressionInterface $annotationSuppression,
-        private BaselineLoader $baselineLoader,
+        BaselineLoader $baselineLoader,
         private ChannelDeclarationRegistryInterface $declarations,
         private GitScopeQueryInterface $gitScopeQuery,
-    ) {}
+        UnusedEntryAudit $unusedEntryAudit,
+        private ChannelFileScope $fileScope,
+    ) {
+        $this->baselineProjection = new BaselineFindingProjection($baselineLoader, $declarations, $unusedEntryAudit);
+    }
+
+    private BaselineFindingProjection $baselineProjection;
 
     /**
+     * Git keeps declared project-scoped channels, changed file locations,
+     * and non-strict namespace or unlocated project aggregates. A project
+     * subject with a file location (such as a duplication copy) is judged by
+     * that copy's own file.
+     *
      * @param list<Finding> $findings
      * @param array<string, list<Suppression>> $suppressions
      */
-    public function project(array $findings, array $suppressions, FindingProjectionOptions $options): FindingProjectionResult
+    public function project(array $findings, array $suppressions, FindingProjectionOptions $options, ChannelPublication $publication): FindingProjectionResult
     {
         $unfilterable = $this->configurationErrors($findings);
         $findings = $this->filterableFindings($findings);
@@ -46,7 +55,7 @@ final readonly class FindingProjector
         $restored = $annotation->suppressed;
         $removed = [FindingFilterStage::Suppression->value => $options->annotationSuppressionDisabled ? [] : $restored];
 
-        foreach ($this->exclusionStages($options) as $stage) {
+        foreach (ConfiguredExclusionProjection::stages($options, $this->fileScope) as $stage) {
             $outcome = $stage->apply($findings);
             $findings = $outcome->findings;
             $removed[$stage->stage()->value] = $outcome->removed;
@@ -64,14 +73,20 @@ final readonly class FindingProjector
         $stale = [];
         $inert = [];
         $baselineScope = null;
-        if ($options->baselinePath !== null && $options->baselinePath !== '') {
-            $stage = new BaselineCeilingStage($this->baselineLoader->load($options->baselinePath), $this->declarations);
-            $ceiling = $stage->judgeAll($findings);
+        $ceiling = null;
+        $unusedAuditPublished = true;
+        $population = JudgedPopulation::empty();
+        if ($options->baselineDocument !== null) {
+            $baseline = $this->baselineProjection->project($findings, $options, $publication);
+            $ceiling = $baseline['ceiling'];
+            $population = $baseline['population'];
             $findings = $ceiling->result->findings;
             $removed[FindingFilterStage::Baseline->value] = $ceiling->result->removed;
             $stale = $ceiling->staleEntries;
             $inert = $ceiling->inertEntries;
-            $baselineScope = $stage->baselineScope();
+            $baselineScope = $baseline['scope'];
+            $unusedAuditPublished = $baseline['auditPublished'];
+            $findings = [...$findings, ...$baseline['audit']];
         }
 
         if ($options->annotationSuppressionDisabled) {
@@ -82,45 +97,28 @@ final readonly class FindingProjector
             $git = $this->gitScopeQuery->resolve($options->gitScope);
             $pathSet = array_fill_keys($git->paths, true);
             $namespaceSet = array_fill_keys($git->namespaces, true);
-            // The same scope the exclusion stages read — see exclusionStages().
-            $fileScope = DeclaredChannelFileScope::create();
-            $filter = new class (
+            $filter = new GitScopeFindingFilter(
                 $pathSet,
                 $namespaceSet,
-                static fn(Finding $finding): bool => !$fileScope->isFileScoped($finding->channel()),
-            ) implements FindingFilterInterface {
-                /**
-                 * @param array<string, true> $paths
-                 * @param array<string, true> $namespaces
-                 * @param Closure(Finding): bool $isProjectScoped
-                 */
-                public function __construct(
-                    private array $paths,
-                    private array $namespaces,
-                    private Closure $isProjectScoped,
-                ) {}
-                public function shouldInclude(Finding $finding): bool
-                {
-                    if (($this->isProjectScoped)($finding)) {
-                        return true;
-                    }
-
-                    return isset($this->paths[$finding->location->pathString()])
-                        || ($finding->symbolPath->namespace !== null && isset($this->namespaces[$finding->symbolPath->namespace]));
-                }
-            };
+                $options->gitScope->includeParentNamespaces,
+                $this->fileScope,
+            );
             $outcome = (new PredicateFilterStage(FindingFilterStage::GitScope, $filter))->apply(array_values($findings));
             $findings = $outcome->findings;
             $removed[FindingFilterStage::GitScope->value] = $outcome->removed;
         }
 
         return new FindingProjectionResult(
-            array_values([...$findings, ...$unfilterable]),
-            array_values($measured),
-            array_map(array_values(...), $removed),
-            $stale,
-            $inert,
-            $baselineScope,
+            findings: array_values([...$findings, ...$unfilterable]),
+            annotationSuppression: $annotation,
+            measuredFindings: array_values($measured),
+            removedByStage: array_map(array_values(...), $removed),
+            staleEntries: $stale,
+            inertEntries: $inert,
+            baselineScope: $baselineScope,
+            ceilingOutcome: $ceiling,
+            unusedAuditPublished: $unusedAuditPublished,
+            population: $population,
         );
     }
 
@@ -176,52 +174,5 @@ final readonly class FindingProjector
     private function isConfigurationError(Finding $finding): bool
     {
         return $this->declarations->declarationFor($finding->channel())?->isConfigurationError() === true;
-    }
-
-    /**
-     * The exclusion stages, and with them the answer every narrowing stage of
-     * this projection shares: **a stage that selects findings by the file
-     * they sit in must not touch a finding that is not about a file.**
-     *
-     * Which channels those are is declared by the capabilities themselves and
-     * assembled by {@see DeclaredChannelFileScope}, so the guarantee extends
-     * to the next project-scoped channel without anyone editing this class.
-     * That one scope is what all three narrowing stages read — `suppress_paths`
-     * and `suppress_namespaces` here, and the git-range narrowing in
-     * {@see project()}. Letting each stage decide for itself is what produced
-     * two answers to one question: `architecture.unassigned-class` was exempt
-     * from the first two and silently dropped by the third, so
-     * `--report=git:staged` turned a gate the user had switched on into a
-     * green build.
-     *
-     * Deliberately not a guard on "the finding carries no location": that
-     * is an observation about one emission site, and reading scope out of it
-     * would reintroduce exactly the derived-from-a-convention rule
-     * {@see \Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope}
-     * exists to replace. A project-scoped channel that does print an example
-     * location — `architecture.layer-violation` names the offending edge's
-     * use site — is still a statement about the project, and is narrowed by
-     * none of the three.
-     *
-     * @return list<PredicateFilterStage>
-     */
-    private function exclusionStages(FindingProjectionOptions $options): array
-    {
-        $fileScope = DeclaredChannelFileScope::create();
-        $stages = [];
-        if ($options->suppressPaths !== []) {
-            $stages[] = new PredicateFilterStage(
-                FindingFilterStage::PathExclusion,
-                new PathExclusionFilter(new PathMatcher($options->suppressPaths), $fileScope),
-            );
-        }
-        $matcher = new NamespaceMatcher($options->suppressNamespaces);
-        if (!$matcher->isEmpty()) {
-            $stages[] = new PredicateFilterStage(
-                FindingFilterStage::NamespaceExclusion,
-                new NamespaceExclusionFilter($matcher, $fileScope),
-            );
-        }
-        return $stages;
     }
 }

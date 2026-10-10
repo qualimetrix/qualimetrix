@@ -6,6 +6,10 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Time\ClockInterface;
 
 /**
@@ -31,11 +35,10 @@ final readonly class BaselineCleaner
 
     /**
      * Every entry `cleanup` would offer to remove, with its reason and
-     * selector. A valid entry is offered for one of four reasons — stale,
-     * absent because this invocation did not measure its channel at its
-     * subject's level, its channel is
-     * no longer declared, or its channel reports a configuration error and
-     * may never be accepted — and every inert entry
+     * selector. A valid entry is offered when absent from a measured run,
+     * when its channel-level pair was not measured or is no longer declared,
+     * when its channel is no longer declared, or when its channel reports a
+     * configuration error and may never be accepted. Every inert entry
      * is offered too, since it already has a selector and the user is
      * entitled to delete an unreadable line (ADR 0017).
      *
@@ -47,9 +50,8 @@ final readonly class BaselineCleaner
      * and the more specific, more permanent cause is the more useful answer.
      *
      * @param list<Finding> $measured the run's measured set (ADR 0017)
-     * @param array<string, true> $unmeasuredIdentities keys of the identities
-     *                                                  this invocation would not have published, as
-     *                                                  {@see RunRuleCoverage} answers them
+     * @param array<string, RunCoverageGap> $coverageGaps identities this run
+     *                                                    could not publish, as {@see RunRuleCoverage} answers them
      *
      * @return list<BaselineCleanupCandidate>
      */
@@ -57,56 +59,20 @@ final readonly class BaselineCleaner
         Baseline $baseline,
         array $measured,
         ChannelDeclarationRegistryInterface $declarations,
-        array $unmeasuredIdentities,
+        array $coverageGaps,
+        RunCoverage $coverage,
     ): array {
-        $measuredKeys = [];
-        foreach ($measured as $finding) {
-            $measuredKeys[] = BaselineIdentity::forFinding($finding)->key();
-        }
-
-        $staleKeys = [];
-        foreach ($baseline->staleEntries($measuredKeys) as $stale) {
-            $staleKeys[$stale->identity->key()] = true;
-        }
+        $judgement = (new BaselineCeilingStage($baseline, $declarations, $coverage, $coverageGaps))->judgeAll($measured);
 
         $candidates = [];
 
         foreach ($baseline->entries as $entry) {
-            $declaration = $declarations->declarationFor($entry->identity->channel);
-
-            if ($declaration === null) {
+            $reason = self::candidateReason($entry, $baseline, $declarations, $judgement, $coverage);
+            if ($reason !== null) {
                 $candidates[] = new BaselineCleanupCandidate(
                     $entry->selector(),
                     $entry->identity->describe(),
-                    BaselineCleanupReason::ChannelNotDeclared,
-                );
-
-                continue;
-            }
-
-            // Listed on its own cause, ahead of staleness, for the same
-            // reason an undeclared channel is: the entry can never be
-            // applied, and "stale" would send the user looking for a symbol
-            // that moved rather than at a channel that may not be accepted
-            // at all. Unlike staleness, this holds even while the finding is
-            // still being measured.
-            if ($declaration->isConfigurationError()) {
-                $candidates[] = new BaselineCleanupCandidate(
-                    $entry->selector(),
-                    $entry->identity->describe(),
-                    BaselineCleanupReason::ChannelIsConfigurationError,
-                );
-
-                continue;
-            }
-
-            if (isset($staleKeys[$entry->identity->key()])) {
-                $candidates[] = new BaselineCleanupCandidate(
-                    $entry->selector(),
-                    $entry->identity->describe(),
-                    isset($unmeasuredIdentities[$entry->identity->key()])
-                        ? BaselineCleanupReason::ProducerDidNotRun
-                        : BaselineCleanupReason::Stale,
+                    $reason,
                 );
             }
         }
@@ -123,10 +89,34 @@ final readonly class BaselineCleaner
         return $candidates;
     }
 
+    private static function candidateReason(BaselineEntry $entry, Baseline $baseline, ChannelDeclarationRegistryInterface $declarations, CeilingOutcome $judgement, RunCoverage $coverage): ?BaselineCleanupReason
+    {
+        $declaration = $declarations->declarationFor($entry->identity->channel);
+        if ($declaration === null) {
+            return BaselineCleanupReason::ChannelNotDeclared;
+        }
+        if ($declaration->isConfigurationError()) {
+            return BaselineCleanupReason::ChannelIsConfigurationError;
+        }
+        if (!\in_array(MetricSubject::levelOfCanonical($entry->identity->subjectKey), $declaration->levels, true)) {
+            return BaselineCleanupReason::LevelNotDeclared;
+        }
+        if (\in_array($judgement->reasonFor($entry->identity), ['outside-coverage', 'exclusions-differ'], true)
+            && ExclusionRemovedPopulation::proves($entry, $baseline, $coverage)) {
+            return BaselineCleanupReason::ExclusionsRemovedPopulation;
+        }
+
+        return match ($judgement->statusFor($entry->identity)) {
+            'stale' => BaselineCleanupReason::Stale,
+            'unmeasured' => BaselineCleanupReason::ProducerDidNotRun,
+            default => null,
+        };
+    }
+
     /**
      * Removes exactly the named entries — valid or inert — and reports which
-     * selectors matched exactly one entry, which matched none, and which
-     * matched more than one and were therefore left alone (ADR 0017). An empty
+     * selectors matched one removable identity, which matched none, and which
+     * matched unrelated entries and were therefore left alone (ADR 0017). An empty
      * `$selectors` list changes nothing but still stamps a fresh `generated`
      * — callers implementing "no `--remove` given" as "report and change
      * nothing" (ADR 0017) do so by not calling this method at all, not by calling
@@ -160,18 +150,18 @@ final readonly class BaselineCleaner
                 continue;
             }
 
-            if (\count($matches) > 1) {
+            if (\count($matches) > 1 && !self::oneDuplicateIdentity($matches, $selector)) {
                 $ambiguous[] = $selector;
 
                 continue;
             }
 
-            $match = $matches[0];
-
-            if ($match instanceof BaselineEntry) {
-                $toRemoveEntries[] = $match;
-            } else {
-                $toRemoveInert[] = $match;
+            foreach ($matches as $match) {
+                if ($match instanceof BaselineEntry) {
+                    $toRemoveEntries[] = $match;
+                } else {
+                    $toRemoveInert[] = $match;
+                }
             }
 
             $removed[] = $selector;
@@ -191,11 +181,38 @@ final readonly class BaselineCleaner
             generated: $this->clock->now(),
             scope: $baseline->scope,
             entries: $entries,
+            exclusions: $baseline->exclusions,
             inertEntries: $inertEntries,
             sourceContentHash: $baseline->sourceContentHash,
         );
 
         return new BaselineCleanupRemoval($updated, $removed, $notFound, $ambiguous);
+    }
+
+    /** @param list<BaselineEntry|InertBaselineEntry> $matches */
+    private static function oneDuplicateIdentity(array $matches, EntrySelector $selector): bool
+    {
+        $identity = $matches[0] instanceof InertBaselineEntry ? $matches[0]->identity : null;
+        if ($identity === null || $identity->selector()->value !== $selector->value) {
+            return false;
+        }
+
+        foreach ($matches as $match) {
+            if (!self::sameDuplicateContender($match, $identity, $selector)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static function sameDuplicateContender(BaselineEntry|InertBaselineEntry $match, BaselineIdentity $identity, EntrySelector $selector): bool
+    {
+        return $match instanceof InertBaselineEntry
+            && $match->reason === InertEntryReason::DuplicateIdentity
+            && $match->identity !== null
+            && $match->identity->equals($identity)
+            && $match->selector->value === $selector->value;
     }
 
     /**
@@ -205,10 +222,8 @@ final readonly class BaselineCleaner
      * entry's identity, so it lived as pure per-run cost for callers that
      * never removed anything.
      *
-     * Returns lists, not single entries, because the digest, however unlikely
-     * to collide, is not a proof of uniqueness (see {@see EntrySelector}) —
-     * {@see remove()} reports a selector matching more than one entry as
-     * ambiguous instead of picking one.
+     * Returns lists, not single entries, because the digest is not a proof of
+     * uniqueness (see {@see EntrySelector}).
      *
      * @return array<string, list<BaselineEntry|InertBaselineEntry>>
      */

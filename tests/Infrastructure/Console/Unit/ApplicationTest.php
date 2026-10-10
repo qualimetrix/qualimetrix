@@ -12,6 +12,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Core\FileTarget\FileTargetFailure;
+use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
@@ -63,6 +65,42 @@ final class ApplicationTest extends TestCase
     {
         chdir($this->originalCwd);
         $this->restoreShellVerbosityEnvironment();
+    }
+
+    #[Test]
+    public function itBeginsANewManifestSnapshotAfterWorkingDirectorySelectionForEachInvocation(): void
+    {
+        $root = sys_get_temp_dir() . '/qmx-app-snapshot-' . bin2hex(random_bytes(6));
+        mkdir($root);
+        $reader = new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader();
+        $error = new ErrorStream();
+        $app = new Application($error, new RefusalPresenter($error), $reader);
+        $app->setAutoExit(false);
+        $app->addCommand(new class ($reader) extends Command {
+            public function __construct(private readonly \Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface $reader)
+            {
+                parent::__construct('snapshot');
+            }
+
+            protected function execute(InputInterface $input, OutputInterface $output): int
+            {
+                $output->write($this->reader->read(\Qualimetrix\Core\Path\AbsolutePath::fromString((string) getcwd()))->name ?? 'absent');
+
+                return 0;
+            }
+        });
+        try {
+            foreach (['first/project', 'second/project'] as $name) {
+                file_put_contents($root . '/composer.json', json_encode(['name' => $name], \JSON_THROW_ON_ERROR));
+                $output = new BufferedOutput();
+                self::assertSame(0, $app->doRun(new ArrayInput(['command' => 'snapshot', '--working-dir' => $root]), $output));
+                self::assertSame($name, $output->fetch());
+            }
+        } finally {
+            chdir($this->originalCwd);
+            unlink($root . '/composer.json');
+            rmdir($root);
+        }
     }
 
     #[Test]
@@ -206,6 +244,22 @@ final class ApplicationTest extends TestCase
         );
 
         self::assertSame(ConsoleExitCode::InternalError->value, $exitCode);
+    }
+
+    #[Test]
+    public function itClassifiesRawFileTargetFailureAtTheApplicationExit(): void
+    {
+        $app = self::application();
+        $app->setAutoExit(false);
+        $app->addCommand(self::commandThatThrows(new FileTargetFailure(
+            FileTargetFailureKind::Unopenable,
+            '/tmp/refusal-target',
+            'permission denied',
+        )));
+
+        $exitCode = $app->doRun(new ArrayInput(['command' => 'throws']), new NullOutput());
+
+        self::assertSame(ConsoleExitCode::Refusal->value, $exitCode);
     }
 
     /**
@@ -404,6 +458,23 @@ final class ApplicationTest extends TestCase
         self::assertStringContainsString(ProductIdentity::pointerText(), $app->get('list')->getHelp());
     }
 
+    #[Test]
+    public function itRefusesAnUnknownGlyphModeBeforeRunningTheCommand(): void
+    {
+        $old = getenv('QMX_ASCII');
+        putenv('QMX_ASCII=maybe');
+        try {
+            $app = self::application();
+            $app->setAutoExit(false);
+            $output = new BufferedOutput();
+            $exit = $app->run(new ArrayInput(['command' => 'list']), $output);
+            self::assertSame(3, $exit);
+            self::assertStringContainsString('QMX_ASCII', $output->fetch());
+        } finally {
+            putenv($old === false ? 'QMX_ASCII' : 'QMX_ASCII=' . $old);
+        }
+    }
+
     private static function application(?ErrorStream $errorStream = null): Application
     {
         $errorStream ??= new ErrorStream();
@@ -412,7 +483,7 @@ final class ApplicationTest extends TestCase
         // `ErrorStream`s would let the
         // presenter clear a progress frame Application never drew on, or
         // vice versa.
-        return new Application($errorStream, new RefusalPresenter($errorStream));
+        return new Application($errorStream, new RefusalPresenter($errorStream), new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
     }
 
     private static function commandThatThrows(Throwable $failure): Command

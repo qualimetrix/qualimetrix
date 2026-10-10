@@ -34,5 +34,5 @@ interface CacheInterface
     /**
      * Clear all cache entries.
      */
-    public function clear(): void;
+    public function clear(): CacheClearOutcome;
 }

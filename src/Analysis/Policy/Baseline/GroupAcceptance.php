@@ -15,7 +15,7 @@ use Qualimetrix\Core\Observation\WorseDirection;
  *
  * **It counts members; it never pairs them.** A rank comparison has an end to
  * align from, and each end is wrong in one direction. Stored `[100, 40]` on a
- * `higher` channel with the 40-line duplicate deleted and nothing else
+ * `higher` channel with the 40-point member removed and nothing else
  * touched: aligning from the best end reads `100` against `40` and reports a
  * breach on a symbol nobody touched — the tool answering a pure repair with a
  * red build. Aligning from the worst end assumes the opposite. Counting

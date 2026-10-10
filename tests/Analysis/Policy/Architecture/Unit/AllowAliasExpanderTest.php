@@ -10,8 +10,11 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowAliasExpander;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\LongFormAllowEntryNormalizer;
+use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 
 #[CoversClass(AllowAliasExpander::class)]
+#[CoversClass(LongFormAllowEntryNormalizer::class)]
 final class AllowAliasExpanderTest extends TestCase
 {
     // -------------------------------------------------------------------------
@@ -21,7 +24,7 @@ final class AllowAliasExpanderTest extends TestCase
     #[Test]
     public function itExpandsASingleDirectTokenToItsOwnEnumCase(): void
     {
-        $result = AllowAliasExpander::expand(['extends'], 'architecture.allow.app[0]');
+        $result = LongFormAllowEntryNormalizer::parseRelationList(ArchitectureDocument::relations(['extends']), 'architecture.allow.app[0]');
 
         self::assertSame([DependencyType::Extends], $result);
     }
@@ -29,8 +32,8 @@ final class AllowAliasExpanderTest extends TestCase
     #[Test]
     public function itPreservesInputOrderForMultipleDirectTokens(): void
     {
-        $result = AllowAliasExpander::expand(
-            ['static_call', 'extends', 'attribute'],
+        $result = LongFormAllowEntryNormalizer::parseRelationList(
+            ArchitectureDocument::relations(['static_call', 'extends', 'attribute']),
             'architecture.allow.app[0]',
         );
 
@@ -47,7 +50,7 @@ final class AllowAliasExpanderTest extends TestCase
     #[Test]
     public function itExpandsTheInheritanceAliasToExtendsImplementsAndTraitUse(): void
     {
-        $result = AllowAliasExpander::expand(['inheritance'], 'architecture.allow.app[0]');
+        $result = LongFormAllowEntryNormalizer::parseRelationList(ArchitectureDocument::relations(['inheritance']), 'architecture.allow.app[0]');
 
         self::assertSame(
             [DependencyType::Extends, DependencyType::Implements, DependencyType::TraitUse],
@@ -58,7 +61,7 @@ final class AllowAliasExpanderTest extends TestCase
     #[Test]
     public function itExpandsTheStaticAccessAliasToStaticCallStaticPropertyAndClassConst(): void
     {
-        $result = AllowAliasExpander::expand(['static_access'], 'architecture.allow.app[0]');
+        $result = LongFormAllowEntryNormalizer::parseRelationList(ArchitectureDocument::relations(['static_access']), 'architecture.allow.app[0]');
 
         self::assertSame(
             [
@@ -71,16 +74,15 @@ final class AllowAliasExpanderTest extends TestCase
     }
 
     #[Test]
-    public function itExpandsTheTypeReferenceAliasToFourTypeKinds(): void
+    public function itExpandsTheTypeReferenceAliasToEveryTypePosition(): void
     {
-        $result = AllowAliasExpander::expand(['type_reference'], 'architecture.allow.app[0]');
+        $result = LongFormAllowEntryNormalizer::parseRelationList(ArchitectureDocument::relations(['type_reference']), 'architecture.allow.app[0]');
 
         self::assertSame(
             [
                 DependencyType::TypeHint,
                 DependencyType::PropertyType,
-                DependencyType::IntersectionType,
-                DependencyType::UnionType,
+                DependencyType::ConstantType,
             ],
             $result,
         );
@@ -89,7 +91,7 @@ final class AllowAliasExpanderTest extends TestCase
     #[Test]
     public function itExpandsTheRuntimeCheckAliasToCatchAndInstanceof(): void
     {
-        $result = AllowAliasExpander::expand(['runtime_check'], 'architecture.allow.app[0]');
+        $result = LongFormAllowEntryNormalizer::parseRelationList(ArchitectureDocument::relations(['runtime_check']), 'architecture.allow.app[0]');
 
         self::assertSame(
             [DependencyType::Catch_, DependencyType::Instanceof_],
@@ -103,7 +105,7 @@ final class AllowAliasExpanderTest extends TestCase
         // `attribute` is intentionally NOT grouped under any alias — ADR 0059
         // marks it as a distinct metadata category. Confirm the token round-trips
         // through the direct-value path (no expansion).
-        $result = AllowAliasExpander::expand(['attribute'], 'architecture.allow.app[0]');
+        $result = LongFormAllowEntryNormalizer::parseRelationList(ArchitectureDocument::relations(['attribute']), 'architecture.allow.app[0]');
 
         self::assertSame([DependencyType::Attribute], $result);
     }
@@ -115,8 +117,8 @@ final class AllowAliasExpanderTest extends TestCase
     #[Test]
     public function itDedupesADirectTokenThatRepeatsAPrecedingAliasMember(): void
     {
-        $result = AllowAliasExpander::expand(
-            ['inheritance', 'extends'],
+        $result = LongFormAllowEntryNormalizer::parseRelationList(
+            ArchitectureDocument::relations(['inheritance', 'extends']),
             'architecture.allow.app[0]',
         );
 
@@ -131,8 +133,8 @@ final class AllowAliasExpanderTest extends TestCase
     #[Test]
     public function itAppendsAnUnrelatedDirectTokenAfterAliasMembers(): void
     {
-        $result = AllowAliasExpander::expand(
-            ['inheritance', 'static_call'],
+        $result = LongFormAllowEntryNormalizer::parseRelationList(
+            ArchitectureDocument::relations(['inheritance', 'static_call']),
             'architecture.allow.app[0]',
         );
 
@@ -150,8 +152,8 @@ final class AllowAliasExpanderTest extends TestCase
     #[Test]
     public function itDedupesRepeatedDirectTokens(): void
     {
-        $result = AllowAliasExpander::expand(
-            ['extends', 'extends', 'attribute', 'extends'],
+        $result = LongFormAllowEntryNormalizer::parseRelationList(
+            ArchitectureDocument::relations(['extends', 'extends', 'attribute', 'extends']),
             'architecture.allow.app[0]',
         );
 
@@ -168,11 +170,12 @@ final class AllowAliasExpanderTest extends TestCase
         // remain correct if a future alias accidentally shares a member.
         // Simulate that with two known aliases plus the shared `attribute`
         // direct value to pin the dedup invariant explicitly.
-        $result = AllowAliasExpander::expand(
-            ['inheritance', 'static_access', 'attribute', 'inheritance'],
+        $result = LongFormAllowEntryNormalizer::parseRelationList(
+            ArchitectureDocument::relations(['inheritance', 'static_access', 'attribute', 'inheritance']),
             'architecture.allow.app[0]',
         );
 
+        self::assertNotNull($result);
         $values = array_map(static fn(DependencyType $t): string => $t->value, $result);
         self::assertSame($values, array_values(array_unique($values)), 'expander must dedup across all sources');
     }
@@ -185,7 +188,7 @@ final class AllowAliasExpanderTest extends TestCase
     public function itRejectsAnUnknownTokenWithBothKnownListsInTheMessage(): void
     {
         try {
-            AllowAliasExpander::expand(['tipes'], 'architecture.allow.app[0]');
+            LongFormAllowEntryNormalizer::parseRelationList(ArchitectureDocument::relations(['tipes']), 'architecture.allow.app[0]');
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
             $message = $e->getMessage();
@@ -204,12 +207,36 @@ final class AllowAliasExpanderTest extends TestCase
     }
 
     #[Test]
+    public function itRejectsTheRemovedShapeTokensAndNamesThePositionReplacement(): void
+    {
+        foreach (['union_type', 'intersection_type'] as $removed) {
+            try {
+                LongFormAllowEntryNormalizer::parseRelationList(
+                    ArchitectureDocument::relations([$removed]),
+                    'architecture.allow.app[0]',
+                );
+                self::fail('Expected ConfigurationRefusal');
+            } catch (ConfigurationRefusal $e) {
+                self::assertStringContainsString("unknown relation kind '$removed'", $e->getMessage());
+                self::assertStringContainsString(
+                    "'$removed' names a type shape, not a relation kind",
+                    $e->getMessage(),
+                );
+                self::assertStringContainsString(
+                    "use 'type_reference' or a concrete type position; shape is graph metadata",
+                    $e->getMessage(),
+                );
+            }
+        }
+    }
+
+    #[Test]
     public function itRejectsAnEmptyStringToken(): void
     {
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('must be a non-empty string');
 
-        AllowAliasExpander::expand([''], 'architecture.allow.app[0]');
+        LongFormAllowEntryNormalizer::parseRelationList(ArchitectureDocument::relations(['']), 'architecture.allow.app[0]');
     }
 
     #[Test]
@@ -218,31 +245,19 @@ final class AllowAliasExpanderTest extends TestCase
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('must be a non-empty string');
 
-        /** @phpstan-ignore-next-line — intentional malformed input */
-        AllowAliasExpander::expand([42], 'architecture.allow.app[0]');
-    }
-
-    #[Test]
-    public function itReturnsAnEmptyListForAnEmptyTokenList(): void
-    {
-        // The caller is expected to reject `relations: []` at validator-level
-        // (with a hint to use the bare-string short form). The expander itself
-        // is the more general helper and simply returns an empty list when
-        // given no tokens — this prevents two layers of error-path branching.
-        self::assertSame([], AllowAliasExpander::expand([], 'architecture.allow.app[0]'));
+        LongFormAllowEntryNormalizer::parseRelationList(ArchitectureDocument::relations([42]), 'architecture.allow.app[0]');
     }
 
     // -------------------------------------------------------------------------
-    // parseList — high-level entry point for the `relations:` long-form key
+    // parseRelationList — high-level entry point for the `relations:` long-form key
     // -------------------------------------------------------------------------
 
     #[Test]
     public function itReturnsNullWhenTheRelationsKeyIsAbsent(): void
     {
-        // null (key absent) flows through to AllowTarget::$relations = null
-        // (= "any relation allowed"). Defensive null-guard so callers can
-        // forward raw YAML values directly.
-        self::assertNull(AllowAliasExpander::parseList(null, 'architecture.allow.app[0]'));
+        // Not written flows through to AllowTarget::$relations = null
+        // (= "any relation allowed").
+        self::assertNull(LongFormAllowEntryNormalizer::parseRelationList(ArchitectureDocument::relations(null), 'architecture.allow.app[0]'));
     }
 
     #[Test]
@@ -251,7 +266,7 @@ final class AllowAliasExpanderTest extends TestCase
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('must list at least one relation kind');
 
-        AllowAliasExpander::parseList([], 'architecture.allow.app[0]');
+        LongFormAllowEntryNormalizer::parseRelationList(ArchitectureDocument::relations([]), 'architecture.allow.app[0]');
     }
 
     #[Test]
@@ -263,7 +278,7 @@ final class AllowAliasExpanderTest extends TestCase
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('must be a list of relation kinds or aliases');
 
-        AllowAliasExpander::parseList(['foo' => 'bar'], 'architecture.allow.app[0]');
+        LongFormAllowEntryNormalizer::parseRelationList(ArchitectureDocument::relations(['foo' => 'bar']), 'architecture.allow.app[0]');
     }
 
     #[Test]
@@ -272,13 +287,13 @@ final class AllowAliasExpanderTest extends TestCase
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('must be a list of relation kinds or aliases');
 
-        AllowAliasExpander::parseList('extends', 'architecture.allow.app[0]');
+        LongFormAllowEntryNormalizer::parseRelationList(ArchitectureDocument::relations('extends'), 'architecture.allow.app[0]');
     }
 
     #[Test]
     public function itDelegatesAValidRelationsListToExpand(): void
     {
-        $result = AllowAliasExpander::parseList(['inheritance'], 'architecture.allow.app[0]');
+        $result = LongFormAllowEntryNormalizer::parseRelationList(ArchitectureDocument::relations(['inheritance']), 'architecture.allow.app[0]');
 
         self::assertSame(
             [DependencyType::Extends, DependencyType::Implements, DependencyType::TraitUse],

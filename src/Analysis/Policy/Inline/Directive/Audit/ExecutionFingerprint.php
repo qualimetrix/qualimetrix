@@ -23,15 +23,17 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
  * so a key built from the field alone would miss exactly the difference the
  * threshold audit exists to see.
  *
- * **Every other field of a finding is part of its identity, and the split is
- * checked rather than trusted.** A field this class does not read does not
+ * **Every other public report field is part of its identity, and the split is
+ * checked rather than trusted.** The internal `addressedProducer` only guides
+ * selection admission and is deliberately excluded; a separate invariant
+ * proves changing it leaves the fingerprint unchanged. A field this class does not read does not
  * exist for the audit: a difference in it reads as "nothing moved", which is
  * the verdict that tells an author to delete an annotation. Since a field added
  * to {@see Finding} with a default compiles fine everywhere, what catches the
  * omission is
  * {@see \Qualimetrix\Governance\DirectiveVocabulary\ExecutionFingerprintFieldCoverageTest},
  * which reads the constructor reflectively and fails on any parameter neither
- * list names — the same treatment {@see Finding::reportedAsBreach()} already
+ * list names or the separately guarded internal address names — the same treatment {@see Finding::reportedAsBreach()} already
  * gets.
  */
 final readonly class ExecutionFingerprint
@@ -51,7 +53,8 @@ final readonly class ExecutionFingerprint
     /**
      * The fields that say what a finding *is*. Everything not named here or in
      * {@see BOUNDARY_FIELDS} is invisible to this comparison, which is why the
-     * two lists are checked against `Finding`'s constructor by test.
+     * two lists and the separate internal-address invariant are checked against
+     * `Finding`'s constructor by test.
      *
      * @var list<string>
      */
@@ -67,6 +70,7 @@ final readonly class ExecutionFingerprint
         'dependencyTarget',
         'dependencyType',
         'acceptedLevel',
+        'uncomparedReason',
         'occurrenceKey',
     ];
 
@@ -132,6 +136,7 @@ final readonly class ExecutionFingerprint
             $finding->dependencyTarget?->toCanonical() ?? '',
             $finding->dependencyType->name ?? '',
             $finding->acceptedLevel?->describe() ?? '',
+            $finding->uncomparedReason ?? '',
             $finding->occurrenceKey->value ?? '',
         ]);
     }

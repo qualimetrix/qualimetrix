@@ -24,19 +24,24 @@ Think of it like comparing recipes: if two recipes have the exact same steps in 
 <!-- llms:skip-begin -->
 ### Thresholds
 
-| Value                  | Severity | Meaning                                                    |
-| ---------------------- | -------- | ---------------------------------------------------------- |
-| < 50 duplicated lines  | Warning  | Noticeable duplication, consider extracting shared logic   |
-| >= 50 duplicated lines | Error    | Significant duplication, refactoring is strongly recommend |
+| Value                    | Severity | Meaning                                                      |
+| ------------------------ | -------- | ------------------------------------------------------------ |
+| < 50 covered code lines  | Warning  | Noticeable duplication; consider extracting shared logic     |
+| >= 50 covered code lines | Error    | Significant duplication; refactoring is strongly recommended |
 
-Minimum block size (configurable):
+Positive minimum options:
 
-| Option       | Default | Meaning                                                                |
-| ------------ | ------- | ---------------------------------------------------------------------- |
-| `min_lines`  | 5       | Minimum number of lines a block's longest copy must span to be checked |
-| `min_tokens` | 70      | Minimum number of tokens for a block to be flagged                     |
+| Option       | Default | Meaning                                                        |
+| ------------ | ------- | -------------------------------------------------------------- |
+| `min_lines`  | 5       | Minimum covered code lines needed to admit a matching block    |
+| `min_tokens` | 70      | Minimum normalized-token count needed to admit a block         |
+| `error`      | 50      | Per-copy Error boundary; below it, an admitted copy is Warning |
 
-Each copy's finding reports the lines **that copy** spans, and its severity follows from that number. A block is checked when its longest copy spans at least `min_lines` lines, and then every copy of it is reported — a copy spanning fewer lines too, at its own value, as a warning when that value is below `warning`. Comments and blank lines are not tokens, so the copies of one block can span different numbers of lines: a comment added inside one copy changes that copy's value and no other's, unless it moves the longest copy across `min_lines`. Then the block itself appears or disappears, and with it the findings of every copy, in files nobody touched too. A copy pasted without its blank lines is still reported, in the file it was pasted into, however few lines it spans.
+The detector admits a matching block using its greatest covered-code-line
+count and token count. It then reports each admitted copy with that copy's own
+covered `codeLines`; comments, blank lines, and line breaks do not add covered
+code. Severity is Warning below `error` and Error at or above it. `warning`,
+`threshold`, and local `@qmx-threshold` overrides are not supported.
 <!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
@@ -121,53 +126,63 @@ Because function/method/class names are preserved during normalization, the dete
 
 The implementation is owned by the `Analysis.Evidence.Duplication` capability,
 which keeps detection, its per-run result and the rule together. Run
-orchestration triggers the capability through a narrow reset/inspect contract;
-this ownership change does not alter the rule id, options, algorithm or output.
+orchestration invokes it through Run's FileSet inspection participant contract.
+The rule declares only the File channel and has no public Duplication contract.
 
 !!! info "Deviation from original spec"
-    A duplicate block is identified by the full SHA-256 of its complete
-    normalized matched token sequence plus token count, and each copy of it by
-    that digest, the project-relative path of the file holding the copy, and
-    the copy's place among the block's copies in that file, counted in line
-    order. The project is the finding subject. No line number enters the
-    identity, so lines added or removed outside the matched tokens re-key
-    nothing while the detector finds the same block. The block is the longest
-    token run all of its copies agree on, and the match takes in whatever
-    context the copies share around the copied code, so a block is defined by
-    all of its copies at once. A copy that agrees with only part of the block,
-    an edit inside one copy, or code inserted between a copy and that shared
-    context — a new method above a copied one, for example — changes the
-    blocks the detector finds: each copy of a new block is a new finding, in
-    files the change never touched too, and a new fingerprint to GitLab Code
-    Quality and SARIF consumers, which tell findings apart by it; the baseline
-    entries of a block that is gone go stale. A copy moved to another file,
-    or every copy in a renamed file, is a new copy and leaves a stale baseline
-    entry behind. A copy pasted above another copy of the same block in the
-    same file takes the lower place, so the copy it displaced is the one
-    reported as new.
+    The complete normalized token sequence and token count identify a block.
+    Each copy's finding subject and `symbolPath` identify its project-relative
+    file; the occurrence uses the block digest and that copy's order in the file.
+    No line number enters the identity. A moved/renamed file, a changed block,
+    or a changed copy order can change identity, so GitLab Code Quality and SARIF
+    fingerprints and baseline entries may need a one-time rebase. The baseline
+    schema does not change for this identity migration. Lines outside the
+    matched tokens do not by themselves
+    change identity when the detector still finds the same block.
+
+    A candidate is divided into connected balanced token segments. Reportable
+    segments are retained; if no segment meets the admission minima, the whole
+    match is the fallback. Segments with the same complete normalized sequence
+    merge into one block before the second coverage pass, with distinct
+    file/offset positions and one per-file ordinal sequence. Review affected
+    baseline keys and accept newly distinct copy identities after a complete run.
+    Connected file-pair evidence is retained while
+    containment witnesses that add no reportable evidence are removed; this is
+    not a blanket removal of every contained copy. Some nested matching
+    multiplicity is known behavior and is not claimed fixed here.
+
+    PHP keyword identifiers are normalized case-insensitively; ordinary
+    identifiers and the existing non-HTML hash vocabulary are unchanged.
+    `T_INLINE_HTML` content collapses ASCII whitespace and uses an `xxh128`
+    digest. Token source rows count CR, LF and CRLF correctly, with CRLF as one
+    line break. A trailing line break in inline HTML does not cover an empty
+    following row. Each preview hint comes from that copy's byte range, starts at
+    its first substantive fragment, and is limited to 80 Unicode codepoints;
+    invalid UTF-8 uses a byte-safe fallback.
 
 !!! warning "Inline `@qmx-ignore` cannot suppress this channel"
-    Every copy of a block is the same project-level debt, so no inline
-    directive is allowed to silence it: `@qmx-ignore` binds to the declaration
-    it decorates, which the project never is, and `@qmx-ignore-file` /
-    `@qmx-ignore-next-line` would silence the one copy they are written beside
-    while every other copy still reports the block — and a copy pasted
-    together with such a directive would pass a baseline unseen. All three
-    forms are refused (`annotation.unresolved-directive`) wherever they are
-    written. Disable the rule instead — `disabled_rules: [duplication.clone]`
-    in the configuration, or `--disable-rule=duplication.clone` — or accept
-    the block, all of its copies, into the baseline. `suppress_paths` silences
-    only the copies inside its paths: the block's other copies are still
-    reported, so silencing a block means listing every file it has a copy in.
+    `duplication.clone` is a File-level channel and is not addressable by
+    `@qmx-ignore`, `@qmx-ignore-file` or `@qmx-ignore-next-line`; explicit
+    selectors are refused. A file subject has no namespace, so global or
+    per-rule `suppress_namespaces` selectors do not suppress these findings.
+    `suppress_paths` can suppress copies in the named files. Disable the rule
+    with `disabled_rules: [duplication.clone]` or
+    `--disable-rule=duplication.clone`, or accept findings into the baseline.
 
 !!! info "Constant and property arrays are always excluded"
-    A duplicate block that lies **entirely** inside a `const` declaration or a static/instance property's array-literal initializer is never reported. Rows of a lookup table (e.g. `'key' => ['a' => ..., 'b' => ...]` repeated with different values) normalize to identical token sequences, but "extract a shared method" is not actionable advice for a data table — repeating the same field shape across rows is the normal, correct form of that table. A block spanning both a data declaration and executable code (or lying entirely in a method body) is still reported. This suppression is unconditional and cannot be turned off.
+    A group is excluded only when **every copy** lies entirely inside a `const` declaration or a static/instance property's array-literal initializer. A group matching data with executable code remains reportable. Rows of a lookup table (e.g. `'key' => ['a' => ..., 'b' => ...]` repeated with different values) normalize to identical token sequences, but "extract a shared method" is not actionable advice for a data table — repeating the same field shape across rows is the normal, correct form of that table. A block spanning both a data declaration and executable code (or lying entirely in a method body) is still reported. This suppression is unconditional and cannot be turned off.
 
-!!! info "Every copy of a block is a finding of its own"
-    Each copy of a duplicated block is reported by a finding located on that copy, however many copies there are — there is no upper limit on the number of copies. The message states the number of occurrences and names up to ten other copies, followed by `and N more` when there are more; the finding's related locations are the copies its message names. Each copy has an identity of its own, so a new copy that agrees with the whole of an accepted block is a new finding — reported on the new copy alone, at its own severity, while the copies the baseline accepted stay accepted — and `--report=git:*` reports it in the file it was pasted into. A block of N copies is N findings, each carrying the rule's remediation time. When copies agree over different lengths, each longest agreeing set is reported: two copies that match for 40 lines and a third that matches them only for the first 10 give a finding on each of the two 40-line copies and one on each of the three copies over 10 lines. That is also why a copy agreeing with only part of an accepted block is not new on its own: the shorter block it forms is new on every copy.
+!!! info "Every admitted copy has its own finding"
+    Every admitted copy is reported with its own subject, covered-code-line
+    value and severity. The message names up to ten other copies and counts the
+    remainder; related locations correspond to the copies it names. A block's
+    matching group may change when the shared token sequence or its copies
+    change, so an edit can re-key findings in untouched files. Some nested
+    matching multiplicity is an acknowledged behavior. This description does
+    not claim that every apparent containment duplicate is removed.
 
 !!! info "Copies within one file"
-    Two occurrences in the same file that share a line are one repetitive structure matching itself at a shifted position, not two copies, and only the first is kept. Occurrences that merely touch — one ends on the line before the other starts — are two copies and are reported.
+    Overlapping token intervals in one file are one repetitive structure matching itself at a shifted position, so only the first is kept. Adjacent, non-overlapping token intervals are distinct copies and are reported, even when they share a physical line.
 
 !!! tip "IDE integration"
     When using SARIF output (`--format=sarif`), duplicate copies are linked via `relatedLocations`. This means duplicate copies appear as **clickable cross-references** in VS Code (SARIF Viewer extension) and JetBrains IDEs, making it easy to navigate from each copy to the others it names.
@@ -179,10 +194,10 @@ this ownership change does not alter the rule id, options, algorithm or output.
 Duplication findings include a content preview of the duplicated block. This helps you quickly identify which code is duplicated without navigating to the file:
 
 ```
-Duplicated code block (16 lines, 2 occurrences): "$total = 0.0; foreach ($order->getItems() as $item) { $price =..." — also at src/Service/InvoiceService.php:15-30
+Duplicated code block (16 code lines, 2 occurrences): "$total = 0.0; foreach ($order->getItems() as $item) { $price =..." — also at src/Service/InvoiceService.php:15-30
 ```
 
-The preview is the source text of the first copy: up to three of its first ten lines, skipping blank and brace-only lines, with whitespace collapsed and cut to about 80 characters.
+Each preview is extracted from that finding's own copy byte range. It joins up to three substantive excerpts from the first ten lines, skipping blank and brace-only lines, and collapses whitespace. The hint is limited to 80 Unicode codepoints, with a byte-safe fallback for invalid UTF-8.
 
 ### Configuration
 
@@ -193,34 +208,27 @@ rules:
     enabled: true
     min_lines: 5
     min_tokens: 70
-    warning: 5    # duplicated lines
     error: 50
 ```
 
-```bash
-# Increase minimum token threshold to reduce noise
-bin/qmx check src/ --rule-opt="duplication.clone:min_tokens=100"
+All three numeric options must be positive integers. `min_lines` and
+`min_tokens` admit a block; `error` is the per-copy severity boundary.
 
-# Increase minimum line count
+```bash
+# Increase the minimum covered code lines needed to admit a block
 bin/qmx check src/ --rule-opt="duplication.clone:min_lines=10"
 
-bin/qmx check src/ --rule-opt="duplication.clone:warning=10"
+# Increase the minimum token count
+bin/qmx check src/ --rule-opt="duplication.clone:min_tokens=100"
+
+# Set the per-copy Error boundary
 bin/qmx check src/ --rule-opt="duplication.clone:error=60"
 ```
 
-For a simple pass/fail threshold instead of separate warning/error levels
-(`threshold` cannot be combined with `warning` or `error` — mixing them is a
-configuration error and the run stops with exit code 3):
-
-```yaml
-rules:
-  duplication.clone:
-    threshold: 50   # warning=50, error=50 → all violations are errors
-```
-
-```bash
-bin/qmx check src/ --rule-opt="duplication.clone:threshold=50"
-```
+`warning` and `threshold` are retired duplication options and are refused with
+configuration exit 3. `@qmx-threshold duplication.clone` is refused with
+`annotation.unsupported-threshold` because this rule does not support local
+threshold overrides.
 
 You can also disable the rule entirely:
 
@@ -228,5 +236,9 @@ You can also disable the rule entirely:
 bin/qmx check src/ --disable-rule=duplication.clone
 ```
 
-!!! note "Memory usage"
-    Duplication detection uses the Rabin-Karp rolling hash algorithm, which requires storing normalized tokens for all files with matching hashes in memory simultaneously. On large codebases (500+ files), this can consume significant memory. Disabling the rule — `--disable-rule=duplication.clone`, or `enabled: false` under `duplication.clone` in the configuration — skips the detection phase entirely and frees the memory.
+!!! note "Memory and incomplete inspection"
+    If the detector exhausts PHP memory, it emits a short stderr hint with the failure site and the current `memory_limit`, recommends `--memory-limit` or `memory_limit` in `qmx.yaml`, and exits with code 4. A fatal OOM can interrupt report delivery, so valid or complete JSON is not promised. A late false read also clears partial Duplication output and makes the run incomplete with exit 4; an empty result from that run does not mean there are no copies.
+
+## Valid window and explicit disabling
+
+`min_lines`, `min_tokens`, and `error` are positive integers. To skip detection, disable `duplication.clone` through configuration or selection. The detector consumes the prepared immutable options snapshot and does not fall back to raw configuration.

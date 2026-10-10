@@ -15,6 +15,18 @@ use Qualimetrix\Core\Symbol\SymbolType;
 #[CoversClass(SymbolPath::class)]
 final class SymbolPathTest extends TestCase
 {
+    #[Test]
+    public function itPublishesReversibleCanonicalComponentsWithoutChangingRawSymbols(): void
+    {
+        $symbol = SymbolPath::forMethod("N\xFF", "K\xFE", "f\xE9");
+        self::assertSame('callable:N%FF\\K%FE::f%E9', $symbol->toCanonical());
+        self::assertSame("N\xFF\\K\xFE::f\xE9", $symbol->toString());
+        self::assertSame('file:src/100%25.php', SymbolPath::forFile(RelativePath::fromString('src/100%.php'))->toCanonical());
+        self::assertSame('ns:N%FF', SymbolPath::forNamespace("N\xFF")->toCanonical());
+        self::assertSame('func:N%FF::f%E9', SymbolPath::forGlobalFunction("N\xFF", "f\xE9")->toCanonical());
+        self::assertSame('class:K%FF', SymbolPath::forClass('', "K\xFF")->toCanonical());
+    }
+
     #[DataProvider('canonicalDataProvider')]
     #[Test]
     public function itToCanonical(SymbolPath $symbolPath, string $expected): void

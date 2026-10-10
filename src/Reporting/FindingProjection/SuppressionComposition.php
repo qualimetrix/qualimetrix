@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\FindingProjection;
 
+use Qualimetrix\Analysis\Finding\Contract\SelectionRecord;
+
 /**
  * Everything the `suppressed` format publishes: what was kept out of the
  * report, by what, and which configured suppressors kept nothing out at all.
@@ -18,9 +20,11 @@ final readonly class SuppressionComposition
     /**
      * @param list<SuppressedFinding> $all
      * @param list<InertSuppressor> $neverMatched
+     * @param list<SelectionRecord> $notRun
      */
     public function __construct(
         public array $all,
         public array $neverMatched = [],
+        public array $notRun = [],
     ) {}
 }

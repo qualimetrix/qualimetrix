@@ -12,12 +12,15 @@ use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\CanonicalBaselineReader;
 use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use RuntimeException;
+use stdClass;
 
 #[CoversClass(BaselineLoader::class)]
 #[CoversClass(CanonicalBaselineReader::class)]
@@ -51,11 +54,16 @@ final class BaselineLoaderTest extends TestCase
     #[Test]
     public function itLoadsTheContractOfTheCurrentVersion(): void
     {
+        $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $declarations->declare('code-smell.goto', ChannelDeclaration::occurrence(SymbolLevel::File));
+        $this->loader = new BaselineLoader(new BaselineEntryParser($declarations));
+
         $baseline = $this->loadJson(<<<'JSON'
             {
-                "version": 13,
+                "version": 14,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["src", "tests"],
+                "exclusions": {"patterns": [], "generated": "excluded"},
                 "entries": {
                     "callable:App\\OrderService::calculate": [
                         {
@@ -80,7 +88,7 @@ final class BaselineLoaderTest extends TestCase
     public function itRecordsTheContentHashOfTheFileItRead(): void
     {
         $json = <<<'JSON'
-            {"version": 13, "generated": "2026-08-05T12:00:00+03:00", "scope": [], "entries": {}}
+            {"version": 14, "generated": "2026-08-05T12:00:00+03:00", "scope": [], "exclusions": {"patterns": [], "generated": "excluded"}, "entries": {}}
             JSON;
 
         $baseline = $this->loadJson($json);
@@ -89,45 +97,58 @@ final class BaselineLoaderTest extends TestCase
     }
 
     #[Test]
-    public function itRejectsVersionTenBeforeReadingEntriesAndGivesManualV13Guidance(): void
+    public function itRejectsVersionTenBeforeReadingEntriesAndGivesManualV14Guidance(): void
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage(
             'Baseline version 10 cannot be converted automatically because declaration identity cannot be inferred '
             . 'from a logical symbol key. Run a fresh analysis, deliberately map or split accepted entries, then '
-            . 'write a new version 13 baseline (or regenerate and review the accepted state).',
+            . 'write a new version 14 baseline (or regenerate and review the accepted state).',
         );
 
         $this->loadJson('{"version": 10, "entries": "never parsed"}');
     }
 
     /**
-     * Version 11 is the immediate predecessor, not a historical format: it
-     * has exact declaration subjects already. It is still refused rather than
+     * Version 11 already has exact declaration subjects. It is still refused rather than
      * converted because there is no converter for the redundant "count" field
      * or the occurrence-key change. Baseline compatibility is not maintained.
      */
     #[Test]
-    public function itRejectsVersionElevenAndRequiresARegeneratedV13Baseline(): void
+    public function itRejectsVersionElevenAndRequiresARegeneratedV14Baseline(): void
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage(
-            'Baseline version 11 cannot be converted automatically: version 13 drops the redundant "count" field '
+            'Baseline version 11 cannot be converted automatically: version 12 drops the redundant "count" field '
             . 'and shortens the occurrence key, and there is no converter for either change. Run a fresh analysis '
-            . 'and write a new version 13 baseline (or regenerate and review the accepted state).',
+            . 'and write a new version 14 baseline (or regenerate and review the accepted state).',
         );
 
         $this->loadJson('{"version": 11, "entries": "never parsed"}');
     }
 
     #[Test]
-    public function itRejectsVersionFiveAsHistoricalAndRequiresManualV13Review(): void
+    public function itNamesVersionThirteenAsTheOrdinalIdentityBreakForVersionTwelve(): void
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage(
-            'This baseline is version 5, a historical format that cannot be loaded or converted to version 13 '
+            'Baseline version 12 cannot be converted automatically: version 13 replaces the file position in a '
+            . 'declaration key with an assigned ordinal, and no converter can recover which declaration a stored '
+            . 'position meant. Run a fresh analysis and write a new version 14 baseline (or regenerate and review '
+            . 'the accepted state).',
+        );
+
+        $this->loadJson('{"version": 12, "entries": "never parsed"}');
+    }
+
+    #[Test]
+    public function itRejectsVersionFiveAsHistoricalAndRequiresManualV14Review(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage(
+            'This baseline is version 5, a historical format that cannot be loaded or converted to version 14 '
             . 'because declaration identity cannot be inferred from a logical symbol key. Run a fresh analysis, '
-            . 'deliberately map or split accepted entries, review every mapping, then write a new version 13 '
+            . 'deliberately map or split accepted entries, review every mapping, then write a new version 14 '
             . 'baseline (or regenerate and review the accepted state).',
         );
 
@@ -143,7 +164,7 @@ final class BaselineLoaderTest extends TestCase
         $this->expectExceptionMessageMatches('/Unsupported baseline version: 9/');
 
         $this->loadJson(<<<'JSON'
-            {"version": 9, "generated": "2026-01-01T00:00:00+00:00", "scope": [], "entries": {}}
+            {"version": 9, "generated": "2026-01-01T00:00:00+00:00", "scope": [], "exclusions": {"patterns": [], "generated": "excluded"}, "entries": {}}
             JSON);
     }
 
@@ -154,7 +175,7 @@ final class BaselineLoaderTest extends TestCase
         $this->expectExceptionMessageMatches('/scope/');
 
         $this->loadJson(<<<'JSON'
-            {"version": 13, "generated": "2026-01-01T00:00:00+00:00", "entries": {}}
+            {"version": 14, "generated": "2026-01-01T00:00:00+00:00", "exclusions": {"patterns": [], "generated": "excluded"}, "entries": {}}
             JSON);
     }
 
@@ -164,7 +185,7 @@ final class BaselineLoaderTest extends TestCase
         $this->expectException(RuntimeException::class);
 
         $this->loadJson(<<<'JSON'
-            {"version": 13, "generated": "not-a-date", "scope": [], "entries": {}}
+            {"version": 14, "generated": "not-a-date", "scope": [], "exclusions": {"patterns": [], "generated": "excluded"}, "entries": {}}
             JSON);
     }
 
@@ -188,7 +209,7 @@ final class BaselineLoaderTest extends TestCase
         $this->expectExceptionMessageMatches('/ISO 8601/');
 
         $this->loadJson(\sprintf(
-            '{"version": 13, "generated": %s, "scope": [], "entries": {}}',
+            '{"version": 14, "generated": %s, "scope": [], "exclusions": {"patterns": [], "generated": "excluded"}, "entries": {}}',
             json_encode($generated, \JSON_THROW_ON_ERROR),
         ));
     }
@@ -204,7 +225,7 @@ final class BaselineLoaderTest extends TestCase
     public function itAcceptsEveryIso8601SpellingTheContractNames(string $generated, string $expectedUtc): void
     {
         $baseline = $this->loadJson(\sprintf(
-            '{"version": 13, "generated": %s, "scope": [], "entries": {}}',
+            '{"version": 14, "generated": %s, "scope": [], "exclusions": {"patterns": [], "generated": "excluded"}, "entries": {}}',
             json_encode($generated, \JSON_THROW_ON_ERROR),
         ));
 
@@ -223,9 +244,10 @@ final class BaselineLoaderTest extends TestCase
     {
         $baseline = $this->loadJson(<<<'JSON'
             {
-                "version": 13,
+                "version": 14,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["tests/", "src", "src/", "src"],
+                "exclusions": {"patterns": [], "generated": "excluded"},
                 "entries": {}
             }
             JSON);
@@ -243,9 +265,10 @@ final class BaselineLoaderTest extends TestCase
     public function itTurnsAnEntryWhoseComponentsCarryTheKeySeparatorInert(): void
     {
         $baseline = $this->loadJson((string) json_encode([
-            'version' => 13,
+            'version' => 14,
             'generated' => '2026-08-05T12:00:00+03:00',
             'scope' => [],
+            'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
             'entries' => [
                 // The separator inside the symbol key itself.
                 "class:App\u{1F}Foo" => [
@@ -283,9 +306,10 @@ final class BaselineLoaderTest extends TestCase
     {
         $baseline = $this->loadJson(<<<'JSON'
             {
-                "version": 13,
+                "version": 14,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": [],
+                "exclusions": {"patterns": [], "generated": "excluded"},
                 "entries": {
                     "class:App\\Web\\Controller": [
                         {
@@ -311,13 +335,53 @@ final class BaselineLoaderTest extends TestCase
         $this->loadJson('{ not json');
     }
 
+    /** @return iterable<string, array{string, string}> */
+    public static function provideInvalidPreflightDocuments(): iterable
+    {
+        yield 'invalid JSON' => ['{ not json', 'Invalid JSON'];
+        yield 'old version' => [str_replace('"version": 14', '"version": 13', self::canonicalDocument()), 'version 13'];
+        yield 'numeric entry object key' => [str_replace(
+            '{"channel":"complexity.ccn"',
+            '{"0":"unknown","channel":"complexity.ccn"',
+            self::canonicalDocument(),
+        ), 'Unknown baseline key "0"'];
+    }
+
+    #[Test]
+    #[DataProvider('provideInvalidPreflightDocuments')]
+    public function itPreflightsGrammarBeforeSemanticLoad(string $contents, string $reason): void
+    {
+        $path = $this->put($contents, 'preflight.json');
+
+        try {
+            (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path);
+            self::fail('Invalid document grammar was accepted before the run.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString($reason, $refusal->getMessage());
+        }
+    }
+
+    #[Test]
+    public function itLoadsOnlyThePreflightBytesAfterSourceReplacement(): void
+    {
+        $original = self::canonicalDocument();
+        $path = $this->put($original, 'held.json');
+        $document = (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path);
+        file_put_contents($path, str_replace('["src","tests"]', '["changed"]', $original));
+
+        $loaded = $this->loader->load($document);
+
+        self::assertSame(['src', 'tests'], $loaded->scope);
+        self::assertSame(hash('sha256', $original), $loaded->sourceContentHash);
+    }
+
     #[Test]
     public function itRejectsAMissingFile(): void
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessageMatches('/not found/');
 
-        $this->loader->load($this->tempDir . '/absent.json');
+        $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->tempDir . '/absent.json'));
     }
 
     /**
@@ -331,11 +395,12 @@ final class BaselineLoaderTest extends TestCase
         $path = $this->tempDir . '/absent.json';
 
         try {
-            $this->loader->load($path);
+            $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path));
             self::fail('Expected a ConfigurationRefusal.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertSame(ConfigurationSource::BaselineFile, $refusal->origin()->source());
-            self::assertSame($path, $refusal->origin()->locator());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame(ConfigurationSource::BaselineFile, $refusal->sources()[0]->source());
+            self::assertSame($path, $refusal->sources()[0]->locator());
             self::assertNull($refusal->position());
             self::assertStringContainsString('not found', $refusal->summary());
         }
@@ -349,9 +414,10 @@ final class BaselineLoaderTest extends TestCase
     {
         $baseline = $this->loadJson(<<<'JSON'
             {
-                "version": 13,
+                "version": 14,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["src"],
+                "exclusions": {"patterns": [], "generated": "excluded"},
                 "entries": {
                     "callable:App\\Good::method": [
                         {
@@ -378,18 +444,28 @@ final class BaselineLoaderTest extends TestCase
     #[Test]
     public function itTurnsAMalformedSymbolBucketInert(): void
     {
-        $baseline = $this->loadJson(<<<'JSON'
-            {
-                "version": 13,
-                "generated": "2026-08-05T12:00:00+03:00",
-                "scope": ["src"],
-                "entries": { "callable:App\\Foo::bar": { "channel": "code-smell.goto" } }
-            }
-            JSON);
+        foreach ([
+            '{"0":{"channel":"complexity.ccn","magnitudes":[25],"unknown_key":"retain me"}}',
+            '{"0":{"channel":"complexity.ccn","magnitudes":[25]}}',
+            '{"channel":"code-smell.goto"}',
+            '{}',
+        ] as $bucket) {
+            $baseline = $this->loadJson(str_replace('BUCKET', $bucket, <<<'JSON'
+                {
+                    "version": 14,
+                    "generated": "2026-08-05T12:00:00+03:00",
+                    "scope": ["src"],
+                    "exclusions": {"patterns": [], "generated": "excluded"},
+                    "entries": { "callable:App\\Foo::bar": BUCKET }
+                }
+                JSON));
 
-        self::assertSame(0, $baseline->count());
-        self::assertCount(1, $baseline->inertEntries);
-        self::assertSame(InertEntryReason::Malformed, $baseline->inertEntries[0]->reason);
+            self::assertSame(0, $baseline->count());
+            self::assertCount(1, $baseline->inertEntries);
+            self::assertSame(InertEntryReason::Malformed, $baseline->inertEntries[0]->reason);
+            self::assertInstanceOf(stdClass::class, $baseline->inertEntries[0]->raw);
+            self::assertSame($bucket, json_encode($baseline->inertEntries[0]->raw, \JSON_THROW_ON_ERROR));
+        }
     }
 
     /**
@@ -401,9 +477,10 @@ final class BaselineLoaderTest extends TestCase
     {
         $baseline = $this->loadJson(<<<'JSON'
             {
-                "version": 13,
+                "version": 14,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["src"],
+                "exclusions": {"patterns": [], "generated": "excluded"},
                 "entries": {
                     "callable:App\\Foo::bar": [
                         { "channel": "code-smell.goto", "count": 1 },
@@ -428,9 +505,10 @@ final class BaselineLoaderTest extends TestCase
     {
         $baseline = $this->loadJson(<<<'JSON'
             {
-                "version": 13,
+                "version": 14,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["src"],
+                "exclusions": {"patterns": [], "generated": "excluded"},
                 "entries": {
                     "callable:App\\Foo::bar": [
                         { "channel": "code-smell.goto", "count": 1 },
@@ -456,9 +534,10 @@ final class BaselineLoaderTest extends TestCase
     {
         $baseline = $this->loadJson(<<<'JSON'
             {
-                "version": 13,
+                "version": 14,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["src"],
+                "exclusions": {"patterns": [], "generated": "excluded"},
                 "entries": {
                     "class:App\\Web\\Controller": [
                         {
@@ -498,9 +577,8 @@ final class BaselineLoaderTest extends TestCase
             \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES,
         );
 
-        self::assertNotNull($reader->read($this->put($canonical, 'canonical.json')));
-        self::assertNull($reader->read($this->put($reflowed, 'reflowed.json')));
-        self::assertNull($reader->read($this->tempDir . '/absent.json'));
+        self::assertNotNull($reader->read((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->put($canonical, 'canonical.json'))));
+        self::assertNull($reader->read((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->put($reflowed, 'reflowed.json'))));
     }
 
     private function put(string $json, string $name): string
@@ -551,8 +629,8 @@ final class BaselineLoaderTest extends TestCase
     public function itReadsACanonicalFileWithNoEntries(): void
     {
         $baseline = $this->loadJson(
-            "{\n  \"version\": 13,\n  \"generated\": \"2026-08-05T12:00:00+03:00\",\n"
-            . "  \"scope\": [\"src\"],\n  \"entries\": {}\n}\n",
+            "{\n  \"version\": 14,\n  \"generated\": \"2026-08-05T12:00:00+03:00\",\n"
+            . "  \"scope\": [\"src\"],\n  \"exclusions\": {\"patterns\": [], \"generated\": \"excluded\"},\n  \"entries\": {}\n}\n",
             'empty.json',
         );
 
@@ -589,7 +667,7 @@ final class BaselineLoaderTest extends TestCase
         $broken = str_replace("    ],\n", "    ]\n", self::canonicalDocument());
 
         self::assertNull(json_decode($broken, true), 'the fixture must be invalid JSON, or it proves nothing');
-        self::assertNull($this->reader()->read($this->put($broken, 'no-comma.json')));
+        self::assertNull(CanonicalBaselineReader::grammarEnvelope($broken, $this->put($broken, 'no-comma.json')));
     }
 
     /**
@@ -603,7 +681,7 @@ final class BaselineLoaderTest extends TestCase
         $broken = self::replaceLast("    ]\n", "    ],\n", self::canonicalDocument());
 
         self::assertNull(json_decode($broken, true), 'the fixture must be invalid JSON, or it proves nothing');
-        self::assertNull($this->reader()->read($this->put($broken, 'extra-comma.json')));
+        self::assertNull(CanonicalBaselineReader::grammarEnvelope($broken, $this->put($broken, 'extra-comma.json')));
     }
 
     /**
@@ -615,7 +693,7 @@ final class BaselineLoaderTest extends TestCase
     {
         $broken = str_replace("    ],\n", "    } ,\n", self::canonicalDocument());
 
-        self::assertNull($this->reader()->read($this->put($broken, 'bad-closer.json')));
+        self::assertNull(CanonicalBaselineReader::grammarEnvelope($broken, $this->put($broken, 'bad-closer.json')));
     }
 
     /**
@@ -629,24 +707,50 @@ final class BaselineLoaderTest extends TestCase
             $broken = self::canonicalDocument() . $suffix;
 
             self::assertNull(json_decode($broken, true), 'the fixture must be invalid JSON, or it proves nothing');
-            self::assertNull($this->reader()->read($this->put($broken, $name)), $name);
+            self::assertNull(CanonicalBaselineReader::grammarEnvelope($broken, $this->put($broken, $name)), $name);
         }
     }
 
-    /**
-     * The divergence the guard exists for: `json_decode` keeps the last of two
-     * identical keys and yields one entry, while a streaming reader that kept
-     * both would yield two — and the second one suppresses.
-     */
+    /** @return iterable<string, array{string, list<string>}> */
+    public static function canonicalDuplicateKeys(): iterable
+    {
+        $document = self::canonicalDocument();
+        yield 'envelope' => [
+            str_replace("  \"scope\": [\"src\",\"tests\"],\n", "  \"scope\": [\"src\"],\n  \"scope\": [\"src\",\"tests\"],\n", $document),
+            ['scope'],
+        ];
+        yield 'subject bucket' => [
+            str_replace('"class:App\\\\Legacy\\\\Report"', '"callable:App\\\\OrderService::calculate"', $document),
+            ['entries', 'callable:App\OrderService::calculate'],
+        ];
+    }
+
+    /** @param list<string> $position */
+    #[Test]
+    #[DataProvider('canonicalDuplicateKeys')]
+    public function itRefusesCanonicalDuplicateJsonMembersAtTheirKeyPosition(string $document, array $position): void
+    {
+        self::assertNotNull(json_decode($document, true, 512, \JSON_THROW_ON_ERROR));
+        $path = $this->put($document, 'duplicate-canonical.json');
+        try {
+            $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path));
+            self::fail('A repeated canonical JSON member must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString('duplicate', strtolower($refusal->summary()));
+            self::assertSame($position, $refusal->position()?->segments);
+        }
+    }
+
     #[Test]
     public function itDeclinesARepeatedSubjectKeyTheWholeDocumentPathWouldCollapse(): void
     {
         $entry = '{"channel":"complexity.ccn","magnitudes":[%d]}';
 
         $repeated = "{\n"
-            . "  \"version\": 13,\n"
+            . "  \"version\": 14,\n"
             . "  \"generated\": \"2026-08-05T12:00:00+03:00\",\n"
             . "  \"scope\": [\"src\"],\n"
+            . "  \"exclusions\": {\"patterns\": [], \"generated\": \"excluded\"},\n"
             . "  \"entries\": {\n"
             . "    \"callable:App\\\\OrderService::calculate\": [\n"
             . '      ' . \sprintf($entry, 70) . "\n"
@@ -657,11 +761,12 @@ final class BaselineLoaderTest extends TestCase
             . "  }\n"
             . "}\n";
 
+        $repeated = str_replace("  \"version\":", " \"version\":", $repeated);
         $path = $this->put($repeated, 'repeated-subject.json');
 
-        self::assertNull($this->reader()->read($path));
+        self::assertNull(CanonicalBaselineReader::grammarEnvelope($repeated, $path));
 
-        $loaded = $this->loader->load($path);
+        $loaded = $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path));
 
         self::assertCount(1, $loaded->entries, 'the whole-document path keeps one of the two');
         self::assertSame(
@@ -671,12 +776,6 @@ final class BaselineLoaderTest extends TestCase
         );
     }
 
-    /**
-     * Unlike a repeated subject key, a repeated envelope field would not make
-     * the two paths disagree — both would keep the last. The guard is here so
-     * the reader never has to be the one picking a winner, and it is pinned so
-     * that intent cannot be dropped silently.
-     */
     #[Test]
     public function itDeclinesARepeatedEnvelopeField(): void
     {
@@ -686,17 +785,47 @@ final class BaselineLoaderTest extends TestCase
             self::canonicalDocument(),
         );
 
+        $repeated = str_replace("  \"version\":", " \"version\":", $repeated);
         $path = $this->put($repeated, 'repeated-envelope.json');
 
-        self::assertNull($this->reader()->read($path));
-        self::assertSame(['src', 'tests'], $this->loader->load($path)->scope);
+        self::assertNull(CanonicalBaselineReader::grammarEnvelope($repeated, $path));
+        self::assertSame(['src', 'tests'], $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path))->scope);
     }
 
-    /**
-     * An entry decoded on its own starts counting nesting from zero, while the
-     * same entry inside the document is already three containers deep. Equal
-     * budgets there would mean one path reading what the other refuses.
-     */
+    #[Test]
+    public function itRetainsTheDocumentedRepeatedKeyLimitForNoncanonicalFallback(): void
+    {
+        $document = '{"version":14,"generated":"2026-08-05T12:00:00+03:00","scope":["src"],"scope":["src","tests"],"exclusions":{"patterns":[],"generated":"excluded"},"entries":{}}';
+
+        $loaded = $this->loadJson($document, 'noncanonical-repeated-scope.json');
+
+        self::assertSame(['src', 'tests'], $loaded->scope);
+
+        $laterDecline = str_replace(
+            "  }\n}",
+            " }\n}",
+            str_replace("  \"scope\": [\"src\",\"tests\"],\n", "  \"scope\": [\"src\"],\n  \"scope\": [\"src\",\"tests\"],\n", self::canonicalDocument()),
+        );
+        self::assertSame(['src', 'tests'], $this->loadJson($laterDecline, 'late-noncanonical-repeat.json')->scope);
+    }
+
+    #[Test]
+    public function itRetainsNativeLastKeyBehaviorForCanonicalEntryObjects(): void
+    {
+        $document = str_replace(
+            '{"channel":"complexity.ccn","magnitudes":[25]}',
+            '{"channel":"invalid.first","channel":"complexity.ccn","magnitudes":[25]}',
+            self::canonicalDocument(),
+        );
+
+        $loaded = $this->loadJson($document, 'canonical-repeated-entry-member.json');
+
+        self::assertContains(
+            'complexity.ccn',
+            array_map(static fn($entry): string => $entry->identity->channel->code, $loaded->entries),
+        );
+    }
+
     #[Test]
     public function itSpendsTheSameNestingBudgetOnAnEntryAsTheWholeDocumentPath(): void
     {
@@ -705,7 +834,7 @@ final class BaselineLoaderTest extends TestCase
             $path = $this->put($document, 'deep-' . $nesting . '.json');
 
             $wholeDocument = json_decode($document, true) !== null;
-            $fastPath = $this->reader()->read($path) !== null;
+            $fastPath = CanonicalBaselineReader::grammarEnvelope($document, $path) !== null;
 
             self::assertSame($expected === 'accepted', $wholeDocument, "whole document, nesting {$nesting}");
             self::assertSame($wholeDocument, $fastPath, "the two paths must agree at nesting {$nesting}");
@@ -723,10 +852,10 @@ final class BaselineLoaderTest extends TestCase
     {
         $canonical = self::canonicalDocument();
 
-        yield 'document not opened on its own line' => ['{"version": 13}'];
+        yield 'document not opened on its own line' => ['{"version": 14}'];
         yield 'document opened with a bracket' => ["[\n" . substr($canonical, 2)];
         yield 'envelope field indented four spaces' => [str_replace("  \"version\"", "    \"version\"", $canonical)];
-        yield 'envelope field without its comma' => [str_replace("  \"version\": 13,\n", "  \"version\": 12\n", $canonical)];
+        yield 'envelope field without its comma' => [str_replace("  \"version\": 14,\n", "  \"version\": 12\n", $canonical)];
         yield 'envelope value that is not JSON' => [str_replace('"scope": ["src","tests"]', '"scope": [src]', $canonical)];
         yield 'subject key indented two spaces' => [str_replace("    \"class:", "  \"class:", $canonical)];
         yield 'subject key that is not a JSON string' => [str_replace("    \"class:App\\\\Legacy\\\\Report\":", '    class:App\Legacy\Report:', $canonical)];
@@ -743,14 +872,7 @@ final class BaselineLoaderTest extends TestCase
     #[DataProvider('provideUnrecognisedShapes')]
     public function itDeclinesEveryShapeItDoesNotRecognise(string $document): void
     {
-        self::assertNull($this->reader()->read($this->put($document, 'shape.json')));
-    }
-
-    private function reader(): CanonicalBaselineReader
-    {
-        return new CanonicalBaselineReader(
-            new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults()),
-        );
+        self::assertNull(CanonicalBaselineReader::grammarEnvelope($document, $this->put($document, 'shape.json')));
     }
 
     /**
@@ -765,9 +887,10 @@ final class BaselineLoaderTest extends TestCase
         }
 
         return "{\n"
-            . "  \"version\": 13,\n"
+            . "  \"version\": 14,\n"
             . "  \"generated\": \"2026-08-05T12:00:00+03:00\",\n"
             . "  \"scope\": [\"src\"],\n"
+            . "  \"exclusions\": {\"patterns\": [], \"generated\": \"excluded\"},\n"
             . "  \"entries\": {\n"
             . "    \"class:App\\\\Deep\": [\n"
             . "      {\"channel\":\"complexity.wmc\",\"magnitudes\":" . $magnitudes . "}\n"
@@ -790,9 +913,10 @@ final class BaselineLoaderTest extends TestCase
     private static function canonicalDocument(): string
     {
         return "{\n"
-            . "  \"version\": 13,\n"
+            . "  \"version\": 14,\n"
             . "  \"generated\": \"2026-08-05T12:00:00+03:00\",\n"
             . "  \"scope\": [\"src\",\"tests\"],\n"
+            . "  \"exclusions\": {\"patterns\": [], \"generated\": \"excluded\"},\n"
             . "  \"entries\": {\n"
             . "    \"callable:App\\\\OrderService::calculate\": [\n"
             . "      {\"channel\":\"complexity.cognitive\",\"magnitudes\":[18]},\n"
@@ -840,6 +964,6 @@ final class BaselineLoaderTest extends TestCase
         $path = $this->tempDir . '/' . $name;
         file_put_contents($path, $json);
 
-        return $this->loader->load($path);
+        return $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path));
     }
 }

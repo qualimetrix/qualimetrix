@@ -6,12 +6,15 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Exception;
 use InvalidArgumentException;
+use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\AnalysisReportCommandDefinition;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
@@ -112,10 +115,10 @@ final class DirectivesCommand extends Command
                 "another rule's findings is a claim this project measures rather than assumes,",
                 'and a difference between the two scopes is a defect, not a preference.',
                 '',
-                'Exit codes: <info>0</info> nothing inert, <info>2</info> at least one inert directive whose',
-                'boundary was observable, <info>3</info> bad input or configuration, <info>4</info> the run could',
-                'not parse part of the tree — which disqualifies it from calling anything',
-                'dead — and <info>1</info> if the command itself failed unexpectedly.',
+                'Exit codes: <info>0</info> no publishable refusal or observable inert directive,',
+                '<info>2</info> at least one publishable refusal or observable inert directive,',
+                '<info>3</info> input, configuration, or environment refusal, <info>4</info> incomplete run takes precedence',
+                'over those findings, and <info>5</info> if the command itself failed unexpectedly.',
                 '',
                 'Examples:',
                 '  <info>bin/qmx directives src/</info>',
@@ -175,13 +178,10 @@ final class DirectivesCommand extends Command
             // inherited deliberately.
             return $this->refusalPresenter->fallbackRefusal($output, $format, $failure);
         } catch (Exception $failure) {
-            // `Exception` and not `Throwable`: an `Error` is a bug in the tool,
-            // and swallowing it into an exit code would hide in CI exactly the
-            // failures CI exists to surface. Routed through the shared
-            // presenter's `internalError()` — the same envelope and
-            // `-q`/`--silent` survival every other command's internal error
-            // gets, not a local `reportError()`.
-            return $this->refusalPresenter->internalError($output, $format, $failure);
+            // `Exception` and not `Throwable`: an `Error` is a bug in the tool.
+            // The shared classifier distinguishes environment failures from
+            // unexpected exceptions while preserving the command's envelope.
+            return $this->refusalPresenter->unhandled($output, $format, $failure);
         }
     }
 
@@ -210,42 +210,25 @@ final class DirectivesCommand extends Command
 
         $prepared = $this->preflight->resolve($input, $output);
 
-        $missing = AnalysisPreflight::missingPaths($prepared->runConfiguration);
-        if ($missing !== []) {
-            // Every one of them, as `check` reports them: a user who mistyped
-            // two paths should learn both from one run.
-            throw ConfigurationRefusal::aboutCommandLineInput(
-                'paths',
-                implode("\n", $missing),
-            );
-        }
-
-        // The discovery the preflight resolved, not the pipeline's default: the
-        // default knows nothing of the user's `exclude`, and a verdict is
-        // relative to the file set that was measured.
         $report = $this->directiveAudit->auditDirectives(
             $prepared->runConfiguration,
-            $prepared->fileDiscovery,
             $sweep,
         );
 
-        if ($report->coverage->analyzedFilesCount() === 0 && $report->coverage->isComplete()) {
-            // A run that measured nothing has no standing to call a tree clean.
-            // The paths existed — they were checked above — so this is
-            // `exclude`, an empty `paths:`, a directory with no PHP in it, or a
-            // scope of nothing but `@generated` files, and every one of them is
-            // the caller's to fix. Measured, not discovered: a discovered file
-            // the run then skipped was not read either. A run that failed to
-            // parse everything it found is a different answer, and the code
-            // below already gives it.
+        if ($report->coverage->analyzedFilesCount() === 0 && $report->coverage->isComplete() && !$report->coverage->isIntentionallyEmpty()) {
+            // A complete but truly empty selection has no standing to call a
+            // tree clean. Named exclusions and generated-only runs are measured
+            // intentional empties; failed files take the incomplete exit below.
             throw ConfigurationRefusal::aboutResolvedInput(
                 'the configured scope analysed no PHP files, so no directive could be judged',
             );
         }
 
-        $exitCode = self::exitCodeFor($report);
-        $selection = $prepared->findingConfiguration->selection;
-        $presenter = new DirectiveAuditPresenter($report, $selection->only, $selection->disabled);
+        $selection = ($prepared->findingConfiguration
+            ?? throw new LogicException('Directive auditing requires a finding configuration.'))->enablement
+            ?? throw new LogicException('Directive auditing requires final rule enablement.');
+        $exitCode = self::exitCodeFor($report, $selection);
+        $presenter = new DirectiveAuditPresenter($report, $selection);
 
         if ($format === 'json') {
             OutputHelper::write($output, $presenter->json($exitCode));
@@ -269,13 +252,18 @@ final class DirectivesCommand extends Command
      * proven debt. That is what `Unmeasured` exists to prevent, and the reason
      * does not change because the shape of the ignorance does.
      */
-    private static function exitCodeFor(DirectiveAuditReport $report): int
+    private static function exitCodeFor(DirectiveAuditReport $report, RuleEnablement $enablement): int
     {
         if (!$report->coverage->isComplete()) {
             return self::EXIT_INCOMPLETE_RUN;
         }
 
         foreach ($report->verdicts as $verdict) {
+            foreach ($verdict->refusals as $refusal) {
+                if ($enablement->publishes($refusal->channel, SymbolLevel::File, $refusal->addressedProducer)) {
+                    return self::EXIT_INERT_FOUND;
+                }
+            }
             if ($verdict->effect === DirectiveEffect::Inert && $verdict->boundaryObservable) {
                 return self::EXIT_INERT_FOUND;
             }

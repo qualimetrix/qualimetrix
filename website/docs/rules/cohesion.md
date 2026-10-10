@@ -19,7 +19,7 @@ a property or call one another through `$this->method()`, excludes static,
 constructor and destructor methods, and groups stateless constant methods
 into one virtual node.
 
-The default warning/error thresholds are `3` and `5`. Readonly classes are
+The default warning/error thresholds are `3` and `5`, inclusive at equality. Readonly classes are
 excluded by default, and classes must have at least three methods. You can also
 exclude interface-mandated methods from the graph:
 
@@ -33,9 +33,9 @@ rules:
     exclude_methods: [getName, getDescription]
 ```
 
-`exclude_methods` also takes a single string, which stands for a one-element
-list: `exclude_methods: getName` means exactly `exclude_methods: [getName]`. A
-digit string is a method name like any other.
+`exclude_methods` requires a YAML sequence of strings. Use
+`exclude_methods: [getName]`; a scalar string or CSV is refused. String items
+retain their authored spelling and match method names case-insensitively.
 
 For a simple pass/fail threshold instead of separate warning/error levels
 (`threshold` cannot be combined with `warning` or `error` — mixing them is a
@@ -257,7 +257,7 @@ Qualimetrix implements a **simplified variant** of the Bieman & Kang (1995) TCC/
 - **Only direct `$this->property` access** is counted. B&K also defines "invocation trees" where a public method calling a private helper that accesses a property counts as indirect access. This is **not implemented** -- delegation through private methods is not tracked. This means TCC may be **underestimated** for classes that heavily use the delegation pattern.
 - **Static methods and abstract methods** are excluded -- they do not operate on instance state.
 - **Classes with 0 or 1 tracked public methods** get no TCC or LCC value at all: with fewer than two methods there is no pair to connect, so the ratio is undefined (0/0). The metrics are absent from the class's output, not 1.0.
-- **Namespace and project aggregates** (`cohesion.tcc.avg`, `cohesion.tcc.min` and the LCC equivalents) are computed only over classes that have a value; `.count` states how many that is. Where TCC is absent, the class-level `health.cohesion` score substitutes 0.5 for a class with fewer than six methods and 0 — the incohesive end — for a larger one (see [Health Scores](../reference/health-scores.md)).
+- **Namespace and project aggregates** (`cohesion.tcc.avg`, `cohesion.tcc.min` and the LCC equivalents) are computed only over classes that have a value; `.count` states how many that is. Health cohesion combines only available TCC and LCOM contributions, without substituting TCC 0.5 or 0; stateless classes can still contribute measured LCOM (see [Health Scores](../reference/health-scores.md)).
 
 !!! info "Deviation from original spec"
     Classes that declare **no instance properties** also get no TCC or LCC value, even with two or more tracked methods. Under the Bieman & Kang formula such a class has method pairs but no shared instance variable, so TCC = LCC = 0. Qualimetrix treats cohesion through shared state as not applicable to a stateless class instead of reporting it as maximally incohesive, which would pull namespace averages down for every stateless service.
@@ -276,3 +276,7 @@ bin/qmx check src/ --format=metrics
 ```
 
 To use TCC/LCC for quality gates, you can process the metrics JSON output programmatically (e.g., in a CI pipeline script).
+
+## Unmatched configured method names
+
+exclude_methods is a sequence and uses PHP case-insensitive method matching, with the first authored spelling retained. When measured scope permits declaration-absence claims, the LCOM producer also publishes cohesion.unmatched-exclude-method once per unmatched normalized configured name. Functions and property hooks do not witness Method-kind declarations; partial runs do not claim project-wide absence. This secondary warning carries project magnitude 1 and a semantic occurrence for the normalized name, without a configured warning boundary. The primary LCOM 3/5 band and graph formula are unchanged. CLI: --lcom-exclude-methods='[getName, getDescription]'.

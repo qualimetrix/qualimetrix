@@ -405,6 +405,13 @@ final class ChannelEmissionStaticGuardTest extends TestCase
     private static function delegatedEmitters(): array
     {
         return [
+            'src/Analysis/Evidence/CircularDependency/CycleFinding.php' =>
+                'CircularDependencyRule delegates its prepared cycle message and occurrence projection here; CircularDependencyRuleTest pins the emitted channel and identity.',
+            'src/Analysis/Evidence/Coupling/UnmatchedFrameworkFinding.php' =>
+                'UnmatchedFrameworkNamespaceRule delegates its unbound selector finding here; its owning test pins the channel and selector occurrence.',
+            'src/Analysis/Evidence/Cohesion/LcomExcludedMethods.php' =>
+                'LcomRule delegates its unmatched-exclusion channel here; the scanner follows rule inheritance'
+                . ' rather than helper calls. LcomRuleTest checks the emitted channel, declaration and scope.',
             'src/Analysis/Evidence/CodeSmell/CodeSmellFinding.php' =>
                 'AbstractCodeSmellRule hands a collected entry to this value object, which builds the finding;'
                 . ' the resolver follows constructions declared on a rule chain, not one method call further.',
@@ -415,33 +422,40 @@ final class ChannelEmissionStaticGuardTest extends TestCase
                 . ' user configuration rather than by a constant this resolver could read.',
             'src/Analysis/Policy/Architecture/LayerViolation/LayerViolationFinding.php' =>
                 'LayerViolationRule delegates to this value object.',
-            'src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassSummary.php' =>
+            'src/Analysis/Policy/Architecture/UnassignedClass/UnassignedClassSummary.php' =>
                 'UnassignedClassRule delegates to this summary.',
-            'src/Analysis/Policy/Architecture/LayerViolation/UnmatchedExcludeDiagnostic.php' =>
-                'LayerViolationRule delegates its second channel here, and the channel name arrives as an'
+            'src/Analysis/Policy/Architecture/LayerDeclaration/UnmatchedExcludeDiagnostic.php' =>
+                'LayerDeclarationRule delegates architecture.unmatched-exclude here; the channel name arrives as an'
                 . ' argument rather than a constant on this class, so the resolver has nothing to read even'
                 . ' if it followed the call.',
-            'src/Analysis/Policy/Architecture/LayerViolation/DoubtedAssignmentDiagnostic.php' =>
-                'LayerViolationRule delegates architecture.doubted-assignment here, the same shape as'
+            'src/Analysis/Policy/Architecture/LayerDeclaration/DoubtedAssignmentDiagnostic.php' =>
+                'LayerDeclarationRule delegates architecture.doubted-assignment here, the same shape as'
                 . ' UnmatchedExcludeDiagnostic above.',
-            'src/Analysis/Policy/Architecture/LayerViolation/DeclaredLayerReachability.php' =>
+            'src/Analysis/Policy/Architecture/LayerDeclaration/LayerOverlapDiagnostic.php' =>
+                'LayerDeclarationRule delegates partial non-pattern precedence findings here.',
+            'src/Analysis/Policy/Architecture/LayerDeclaration/UnmatchedTypeDiagnostic.php' =>
+                'LayerDeclarationRule delegates architecture.unmatched-type findings here.',
+            'src/Analysis/Policy/Architecture/LayerDeclaration/DeclaredLayerReachability.php' =>
                 'Reached from LayerDeclarationValidator, a configuration validator rather than a rule, so no'
                 . ' rule class chain leads here at all.',
-            'src/Analysis/Policy/Architecture/LayerViolation/PotentialShadowDiagnostic.php' =>
+            'src/Analysis/Policy/Architecture/LayerDeclaration/PotentialShadowDiagnostic.php' =>
                 'Reached from LayerDeclarationValidator, like DeclaredLayerReachability above.',
             'src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php' =>
                 'A configuration validator, like the one above.',
-            'src/Analysis/Run/ExcludeBinding/UnmatchedExcludeAudit.php' =>
+            'src/Analysis/Run/ExcludeBinding/UnmatchedExcludeFinding.php' =>
                 'UnmatchedExcludeRule names the channel but cannot emit it: what an exclude pattern bound to is'
                 . ' known during file discovery, before rules run, so the finding is assembled here and no rule'
                 . ' class chain leads to this construction.',
             'src/Analysis/Run/ExcludeBinding/UnjudgedExcludeFinding.php' =>
-                'The second shape of the same channel, for the pattern the walk could not judge; the audit above'
+                'The second shape of the same channel, for the pattern the walk could not judge; the audit'
                 . ' delegates to it, and it is off the rule chain for the same reason the audit is.',
-            'src/Analysis/Finding/SuppressionBinding/UnboundSuppressionAudit.php' =>
+            'src/Analysis/Finding/SuppressionBinding/UnboundSuppressionFinding.php' =>
                 'UnboundSuppressionRule names the three channels but cannot emit them: whether a suppression'
                 . ' value bound to anything is known only after the run, at the reporting seam, so the findings'
                 . ' are assembled here and no rule class chain leads to this construction.',
+            'src/Analysis/Policy/Baseline/EntryBinding/UnusedEntryFinding.php' =>
+                'Baseline usage is audited after measurement at the reporting seam, outside the rule chain;'
+                . ' UnusedEntryAuditTest checks its emitted channel and project scope.',
             'src/Analysis/Policy/Inline/Directive/Audit/StaleDirectiveFinding.php' =>
                 'The shape of the stale-directive finding, built for the usage accounting the policy state'
                 . ' delegates to and which UnusedDirectiveRule consults; the construction sits there, not'
@@ -651,11 +665,10 @@ final class ChannelEmissionStaticGuardTest extends TestCase
     }
 
     /**
-     * Walks from the concrete rule class upward through its ancestors until
-     * one of them textually contains a `new Finding(...)` construction —
-     * the emission may be inherited (AbstractCodeSmellRule,
-     * AbstractSecurityPatternRule) rather than declared on the concrete
-     * class itself.
+     * Reads constructions on the concrete rule and its subject-owned bases.
+     * AbstractRule's shared threshold emitter participates only when that
+     * chain calls thresholdFinding(); unrelated multi-channel rules do not
+     * emit their producer name merely because they inherit the helper.
      *
      * @param class-string $ruleClass
      *
@@ -664,18 +677,33 @@ final class ChannelEmissionStaticGuardTest extends TestCase
     private static function findEmissionSites(string $ruleClass): array
     {
         $current = $ruleClass;
+        $sites = [];
+        $usesThresholdFinding = false;
+        $finder = new NodeFinder();
 
         while ($current !== false && $current !== AbstractRule::class) {
-            $sites = self::findFindingSitesDeclaredOn($current);
-
-            if ($sites !== []) {
-                return $sites;
+            array_push($sites, ...self::findFindingSitesDeclaredOn($current));
+            $classNode = self::findClassNode($current);
+            if ($classNode !== null) {
+                /** @var list<MethodCall> $calls */
+                $calls = $finder->findInstanceOf($classNode, MethodCall::class);
+                foreach ($calls as $call) {
+                    if ($call->var instanceof Variable && $call->var->name === 'this'
+                        && $call->name instanceof Identifier && $call->name->toString() === 'thresholdFinding'
+                    ) {
+                        $usesThresholdFinding = true;
+                    }
+                }
             }
 
             $current = get_parent_class($current);
         }
 
-        return [];
+        if ($usesThresholdFinding) {
+            array_push($sites, ...self::findFindingSitesDeclaredOn(AbstractRule::class));
+        }
+
+        return $sites;
     }
 
     /**

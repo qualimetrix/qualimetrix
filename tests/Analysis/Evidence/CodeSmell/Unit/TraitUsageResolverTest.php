@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit;
 
 use PhpParser\Node\Name;
+use PhpParser\Node\Name\FullyQualified;
+use PhpParser\Node\Stmt\Class_;
+use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\Node\Stmt\Trait_;
 use PhpParser\Node\Stmt\TraitUse;
 use PhpParser\ParserFactory;
@@ -13,6 +16,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CodeSmell\TraitUsageResolver;
 use Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateClassData;
+use Qualimetrix\Core\Ast\NameResolution;
 
 #[CoversClass(TraitUsageResolver::class)]
 final class TraitUsageResolverTest extends TestCase
@@ -45,7 +49,8 @@ PHP;
         // Simulate: class MyClass { use MyTrait; }
         $classStmts = [new TraitUse([new Name('MyTrait')])];
 
-        $resolver = new TraitUsageResolver($traitDefs, 'App');
+        $resolver = new TraitUsageResolver($traitDefs);
+        $this->resolveClassStatements($classStmts, $data->namespace);
         $resolver->resolve($classStmts, $data);
 
         self::assertArrayHasKey('helper', $data->usedMethods);
@@ -75,7 +80,8 @@ PHP;
 
         $classStmts = [new TraitUse([new Name('MyTrait')])];
 
-        $resolver = new TraitUsageResolver($traitDefs, 'App');
+        $resolver = new TraitUsageResolver($traitDefs);
+        $this->resolveClassStatements($classStmts, $data->namespace);
         $resolver->resolve($classStmts, $data);
 
         self::assertArrayHasKey('secret', $data->usedProperties);
@@ -114,7 +120,8 @@ PHP;
         $data = new UnusedPrivateClassData('App', 'MyClass', 1);
         $classStmts = [new TraitUse([new Name('TraitA')])];
 
-        $resolver = new TraitUsageResolver($traitDefs, 'App');
+        $resolver = new TraitUsageResolver($traitDefs);
+        $this->resolveClassStatements($classStmts, $data->namespace);
         $resolver->resolve($classStmts, $data);
 
         // deepHelper is called from TraitB, which is used by TraitA
@@ -156,9 +163,10 @@ PHP;
         $data = new UnusedPrivateClassData('App', 'MyClass', 1);
         $classStmts = [new TraitUse([new Name('TraitA')])];
 
-        $resolver = new TraitUsageResolver($traitDefs, 'App');
+        $resolver = new TraitUsageResolver($traitDefs);
 
         // Should not stack overflow — cycle detection kicks in
+        $this->resolveClassStatements($classStmts, $data->namespace);
         $resolver->resolve($classStmts, $data);
 
         self::assertArrayHasKey('helpera', $data->usedMethods);
@@ -196,7 +204,8 @@ PHP;
         $data = new UnusedPrivateClassData('App', 'MyClass', 1);
         $classStmts = [new TraitUse([new Name('TraitA'), new Name('TraitB')])];
 
-        $resolver = new TraitUsageResolver($traitDefs, 'App');
+        $resolver = new TraitUsageResolver($traitDefs);
+        $this->resolveClassStatements($classStmts, $data->namespace);
         $resolver->resolve($classStmts, $data);
 
         self::assertArrayHasKey('froma', $data->usedMethods);
@@ -209,7 +218,8 @@ PHP;
         $data = new UnusedPrivateClassData('App', 'MyClass', 1);
         $classStmts = [new TraitUse([new Name('NonExistent')])];
 
-        $resolver = new TraitUsageResolver([], 'App');
+        $resolver = new TraitUsageResolver([]);
+        $this->resolveClassStatements($classStmts, $data->namespace);
         $resolver->resolve($classStmts, $data);
 
         self::assertSame([], $data->usedMethods);
@@ -222,7 +232,7 @@ PHP;
     {
         $data = new UnusedPrivateClassData('App', 'MyClass', 1);
 
-        $resolver = new TraitUsageResolver([], 'App');
+        $resolver = new TraitUsageResolver([]);
         $resolver->resolve([], $data);
 
         self::assertSame([], $data->usedMethods);
@@ -247,7 +257,8 @@ PHP;
         $data = new UnusedPrivateClassData('App', 'MyClass', 1);
         $classStmts = [new TraitUse([new Name('EmptyTrait')])];
 
-        $resolver = new TraitUsageResolver($traitDefs, 'App');
+        $resolver = new TraitUsageResolver($traitDefs);
+        $this->resolveClassStatements($classStmts, $data->namespace);
         $resolver->resolve($classStmts, $data);
 
         // Empty trait has no methods to scan — no usages recorded
@@ -300,7 +311,8 @@ PHP;
         $data = new UnusedPrivateClassData('App', 'MyClass', 1);
         $classStmts = [new TraitUse([new Name('TraitA')])];
 
-        $resolver = new TraitUsageResolver($traitDefs, 'App');
+        $resolver = new TraitUsageResolver($traitDefs);
+        $this->resolveClassStatements($classStmts, $data->namespace);
         $resolver->resolve($classStmts, $data);
 
         self::assertArrayHasKey('froma', $data->usedMethods);
@@ -331,16 +343,17 @@ PHP;
 
         $data = new UnusedPrivateClassData('App', 'MyClass', 1);
         // Use the fully qualified name directly
-        $classStmts = [new TraitUse([new Name('App\MyTrait')])];
+        $classStmts = [new TraitUse([new FullyQualified('App\MyTrait')])];
 
-        $resolver = new TraitUsageResolver($traitDefs, 'App');
+        $resolver = new TraitUsageResolver($traitDefs);
+        $this->resolveClassStatements($classStmts, $data->namespace);
         $resolver->resolve($classStmts, $data);
 
         self::assertArrayHasKey('found', $data->usedMethods);
     }
 
     #[Test]
-    public function itLooksUpTraitByShortName(): void
+    public function itDoesNotResolveAnUnimportedTraitFromAnotherNamespace(): void
     {
         $code = <<<'PHP'
 <?php
@@ -363,10 +376,11 @@ PHP;
         // Short name that doesn't match namespace but matches the last segment
         $classStmts = [new TraitUse([new Name('MyTrait')])];
 
-        $resolver = new TraitUsageResolver($traitDefs, 'Other');
+        $resolver = new TraitUsageResolver($traitDefs);
+        $this->resolveClassStatements($classStmts, $data->namespace);
         $resolver->resolve($classStmts, $data);
 
-        self::assertArrayHasKey('found', $data->usedMethods);
+        self::assertArrayNotHasKey('found', $data->usedMethods);
     }
 
     #[Test]
@@ -392,7 +406,8 @@ PHP;
         $data = new UnusedPrivateClassData(null, 'MyClass', 1);
         $classStmts = [new TraitUse([new Name('GlobalTrait')])];
 
-        $resolver = new TraitUsageResolver($traitDefs, null);
+        $resolver = new TraitUsageResolver($traitDefs);
+        $this->resolveClassStatements($classStmts, $data->namespace);
         $resolver->resolve($classStmts, $data);
 
         self::assertArrayHasKey('helper', $data->usedMethods);
@@ -442,7 +457,8 @@ PHP;
         $data = new UnusedPrivateClassData('App', 'MyClass', 1);
         $classStmts = [new TraitUse([new Name('MyTrait')])];
 
-        $resolver = new TraitUsageResolver($traitDefs, 'App');
+        $resolver = new TraitUsageResolver($traitDefs);
+        $this->resolveClassStatements($classStmts, $data->namespace);
         $resolver->resolve($classStmts, $data);
 
         // Abstract method has no body (stmts === null), should be skipped gracefully
@@ -475,7 +491,8 @@ PHP;
         $data = new UnusedPrivateClassData('App', 'MyClass', 1);
         $classStmts = [new TraitUse([new Name('MyTrait')])];
 
-        $resolver = new TraitUsageResolver($traitDefs, 'App');
+        $resolver = new TraitUsageResolver($traitDefs);
+        $this->resolveClassStatements($classStmts, $data->namespace);
         $resolver->resolve($classStmts, $data);
 
         self::assertArrayHasKey('staticmethod', $data->usedMethods);
@@ -509,7 +526,8 @@ PHP;
         $nonTraitStmt = new \PhpParser\Node\Stmt\Nop();
         $classStmts = [$nonTraitStmt, new TraitUse([new Name('MyTrait')])];
 
-        $resolver = new TraitUsageResolver($traitDefs, 'App');
+        $resolver = new TraitUsageResolver($traitDefs);
+        $this->resolveClassStatements($classStmts, $data->namespace);
         $resolver->resolve($classStmts, $data);
 
         self::assertArrayHasKey('helper', $data->usedMethods);
@@ -538,7 +556,8 @@ PHP;
         $data = new UnusedPrivateClassData('App', 'MyClass', 1);
         $classStmts = [new TraitUse([new Name('MyTrait')])];
 
-        $resolver = new TraitUsageResolver($traitDefs, 'App');
+        $resolver = new TraitUsageResolver($traitDefs);
+        $this->resolveClassStatements($classStmts, $data->namespace);
         $resolver->resolve($classStmts, $data);
 
         // self::class should NOT be treated as a constant reference
@@ -580,11 +599,19 @@ PHP;
             new TraitUse([new Name('TraitB')]),
         ];
 
-        $resolver = new TraitUsageResolver($traitDefs, 'App');
+        $resolver = new TraitUsageResolver($traitDefs);
+        $this->resolveClassStatements($classStmts, $data->namespace);
         $resolver->resolve($classStmts, $data);
 
         self::assertArrayHasKey('froma', $data->usedMethods);
         self::assertArrayHasKey('fromb', $data->usedMethods);
+    }
+
+    /** @param array<\PhpParser\Node\Stmt> $statements */
+    private function resolveClassStatements(array $statements, ?string $namespace): void
+    {
+        $class = new Class_('Synthetic', ['stmts' => $statements]);
+        NameResolution::resolve($namespace === null ? [$class] : [new Namespace_(new Name($namespace), [$class])]);
     }
 
     /**
@@ -594,6 +621,9 @@ PHP;
     {
         $parser = (new ParserFactory())->createForHostVersion();
 
-        return $parser->parse($code) ?? [];
+        $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
+
+        return $ast;
     }
 }

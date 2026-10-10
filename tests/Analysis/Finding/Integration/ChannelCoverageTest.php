@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Finding\Integration;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -18,16 +19,18 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\GotoRule;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\Coupling\ClassRankOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\ClassRankRule;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\ParamTypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageOptions;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
-use Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlock;
-use Qualimetrix\Analysis\Evidence\Duplication\DuplicateLocation;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
+use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlock;
+use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateLocation;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityOptions;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
@@ -37,15 +40,16 @@ use Qualimetrix\Analysis\Evidence\Security\SecurityPatternOptions;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountOptions;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountRule;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
@@ -54,8 +58,10 @@ use Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsage;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator;
+use Qualimetrix\Analysis\Policy\Inline\Directive\RefusedDirectives;
 use Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -64,6 +70,8 @@ use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 /**
  * Real-emission coverage guard: every channel exercised by this suite is
@@ -216,17 +224,18 @@ final class ChannelCoverageTest extends TestCase
         $rule = new ClassRankRule(new ClassRankOptions());
 
         $classInfo = self::classInfo('CriticalHub', RelativePath::fromString('src/CriticalHub.php'));
-        // With one class, computeScaleFactor(1) = sqrt(1/100) = 0.1, so the
-        // default error threshold (0.05) scales to 0.5 — 0.9 clears it.
-        // A class nothing depends on is never reported, whatever its rank.
-        $metricBag = (new MetricBag())->with('coupling.class-rank', 0.9)->with('coupling.ca', 1);
+        $metricBag = (new MetricBag())->with('coupling.class-rank-share', 10)->with('coupling.ca', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn([$classInfo]);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn($metricBag);
+        $repository->method('allLogicalClasses')->willReturn([$classInfo]);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn($metricBag);
+        $subject = $classInfo->subject ?? throw new LogicException('Fixture requires an exact declaration.');
+        $declaration = $subject->declarationPath() ?? throw new LogicException('Fixture requires a declaration path.');
+        $graph = self::createStub(DependencyGraphInterface::class);
+        $graph->method('getClassLikeDeclarations')->willReturn([ClassLikeDeclaration::of($declaration, ClassType::Class_, false, false)]);
 
-        $findings = $rule->analyze(new AnalysisContext($repository));
+        $findings = $rule->analyze(new AnalysisContext($repository, $graph));
         self::assertCount(1, $findings);
 
         self::assertDeclared($findings[0]->channel());
@@ -246,8 +255,8 @@ final class ChannelCoverageTest extends TestCase
             ->with('design.type-coverage.property.total', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn($metricBag);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn($metricBag);
 
         $findings = $rule->analyze(new AnalysisContext($repository));
         self::assertCount(1, $findings);
@@ -262,10 +271,9 @@ final class ChannelCoverageTest extends TestCase
         $resultProvider->replace([
             new DuplicateBlock(
                 locations: [
-                    new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25),
-                    new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45),
+                    new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25, 11, null),
+                    new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45, 11, null),
                 ],
-                lines: 100,
                 tokens: 200,
                 contentHash: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
             ),
@@ -280,6 +288,8 @@ final class ChannelCoverageTest extends TestCase
 
         foreach ($findings as $finding) {
             self::assertDeclared($finding->channel());
+            self::assertSame(SymbolLevel::File, $finding->level());
+            self::assertSame(11, $finding->metricValue);
         }
     }
 
@@ -314,7 +324,7 @@ final class ChannelCoverageTest extends TestCase
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $namespaceInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
-        $metricBag = (new MetricBag())->with('size.class-count.sum', 30);
+        $metricBag = (new MetricBag())->with('size.class-count', 30);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$namespaceInfo]);
@@ -340,11 +350,11 @@ final class ChannelCoverageTest extends TestCase
         $file = 'src/Foo.php';
         $subject = MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString($file)));
 
-        $policy = self::directivePolicy();
+        [$policy, $publication] = self::directivePolicy();
         $policy->prepare(
             [
                 $file => [
-                    new Suppression('coupling.instabilty', 'typo', 10, SuppressionType::File),
+                    new Suppression('coupling.instabilty', 'typo', 10, SuppressionType::File, position: 0),
                 ],
             ],
             [
@@ -365,13 +375,15 @@ final class ChannelCoverageTest extends TestCase
                         line: 30,
                         subject: $subject,
                         message: '@qmx-threshold complexity.ccn: warning (20) must not exceed error (10)',
+                        rulePattern: 'complexity.ccn',
+                        position: 0,
                         code: 'warning_exceeds_error',
                     ),
                 ],
             ],
         );
 
-        $validator = new InlineDirectiveValidator(new InlineDirectiveOptions(), $policy, self::channelIdentity());
+        $validator = new InlineDirectiveValidator($policy, new RefusedDirectives(self::channelIdentity()));
         $findings = $validator->validate(new AnalysisContext(self::createStub(MetricRepositoryInterface::class)));
 
         $emitted = array_map(static fn($finding): string => $finding->code, $findings);
@@ -389,7 +401,7 @@ final class ChannelCoverageTest extends TestCase
             self::assertDeclared($finding->channel());
         }
 
-        $unused = $policy->auditDirectiveUsage([], LevelActivity::empty());
+        $unused = $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage(), $publication)['findings'];
         self::assertCount(0, $unused, 'An unresolvable suppression is a configuration error, never stale debt.');
     }
 
@@ -398,9 +410,9 @@ final class ChannelCoverageTest extends TestCase
     {
         $file = 'src/Foo.php';
 
-        $policy = self::directivePolicy();
+        [$policy, $publication] = self::directivePolicy();
         $policy->prepare(
-            [$file => [new Suppression('code-smell.goto', 'no longer needed', 10, SuppressionType::File)]],
+            [$file => [new Suppression('code-smell.goto', 'no longer needed', 10, SuppressionType::File, position: 0)]],
             [],
             [],
         );
@@ -408,9 +420,9 @@ final class ChannelCoverageTest extends TestCase
         $context = new AnalysisContext(self::createStub(MetricRepositoryInterface::class));
         $options = new InlineDirectiveOptions();
         self::assertSame([], (new UnusedDirectiveRule($options, $policy))->analyze($context));
-        self::assertSame([], (new InlineDirectiveValidator($options, $policy, self::channelIdentity()))->validate($context));
+        self::assertSame([], (new InlineDirectiveValidator($policy, new RefusedDirectives(self::channelIdentity())))->validate($context));
 
-        $unused = $policy->auditDirectiveUsage([], LevelActivity::empty());
+        $unused = $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage(), $publication)['findings'];
         self::assertCount(1, $unused);
         self::assertSame(
             InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME,
@@ -420,14 +432,25 @@ final class ChannelCoverageTest extends TestCase
         self::assertDeclared($unused[0]->channel());
     }
 
-    private static function directivePolicy(): InlineDirectivePolicy
+    /** @return array{InlineDirectivePolicy, ChannelPublication} */
+    private static function directivePolicy(): array
     {
-        return new InlineDirectivePolicy(new DirectiveUsage(
-            self::channelIdentity(),
-            new RuleSelector(new InMemoryRuleChannelRegistry()),
-            new RuleOptionsRegistry(),
-            self::channelIdentity(),
-        ));
+        $container = (new ContainerFactory())->create();
+        $factory = $container->get(ChannelUniverseInterface::class);
+        \assert($factory instanceof RuleChannelSnapshotFactoryInterface);
+        $identity = $factory->snapshot(new ResolvedComputedMetricDefinitions([]));
+        $configuration = $container->get(RuleConfigurationInterface::class);
+        \assert($configuration instanceof RuleConfigurationInterface);
+        $execution = $container->get(RuleExecutionInterface::class);
+        \assert($execution instanceof RuleExecutionInterface);
+        $configuration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), $execution->allRules(), channels: $identity));
+
+        $refused = new RefusedDirectives($identity);
+
+        return [
+            new InlineDirectivePolicy(new DirectiveUsage($identity, $configuration, $identity, $refused), $refused),
+            new ChannelPublication($configuration->enablement() ?? throw new LogicException('Fixture requires resolved publication.')),
+        ];
     }
 
     private static function channelIdentity(): ChannelUniverseInterface
@@ -476,4 +499,13 @@ final class ChannelCoverageTest extends TestCase
 
         return $registry;
     }
+    private static function coverage(): \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts
+    {
+        return \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(
+            new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(),
+            [\Qualimetrix\Core\Path\RelativePath::fromString('src/Foo.php')],
+            [],
+        );
+    }
+
 }

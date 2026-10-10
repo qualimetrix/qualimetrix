@@ -24,6 +24,7 @@ final class SensitiveParameterVisitorTest extends TestCase
 
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        \Qualimetrix\Core\Ast\NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -122,6 +123,36 @@ PHP,
             'expectedCount' => 0,
         ];
 
+        yield 'unqualified namespace attribute is not the built-in' => [
+            'code' => '<?php namespace App; function login(#[SensitiveParameter] string $password) {}',
+            'expectedCount' => 1,
+        ];
+
+        yield 'alias to the built-in attribute' => [
+            'code' => '<?php namespace App; use SensitiveParameter as SP; function login(#[SP] string $password) {}',
+            'expectedCount' => 0,
+        ];
+
+        yield 'alias to the built-in attribute on a promoted property' => [
+            'code' => '<?php namespace App; use SensitiveParameter as SP; class Auth { public function __construct(#[SP] private string $password) {} }',
+            'expectedCount' => 0,
+        ];
+
+        yield 'group import alias from an unrelated namespace' => [
+            'code' => '<?php namespace App; use Vendor\\Audit\\{SensitiveParameter as SP}; function login(#[SP] string $password) {}',
+            'expectedCount' => 1,
+        ];
+
+        yield 'unrelated imported attribute with the same short name' => [
+            'code' => '<?php namespace App; use Vendor\\Audit\\SensitiveParameter; function login(#[SensitiveParameter] string $password) {}',
+            'expectedCount' => 1,
+        ];
+
+        yield 'case-insensitive built-in attribute' => [
+            'code' => '<?php namespace App; function login(#[\\sensitiveparameter] string $password) {}',
+            'expectedCount' => 0,
+        ];
+
         yield 'promoted property with attribute' => [
             'code' => '<?php class Auth { public function __construct(#[\SensitiveParameter] private string $password) {} }',
             'expectedCount' => 0,
@@ -158,6 +189,7 @@ PHP,
         $code = '<?php function login(string $password) {}';
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        \Qualimetrix\Core\Ast\NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();

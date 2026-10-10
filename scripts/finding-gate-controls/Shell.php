@@ -83,7 +83,7 @@ final class Shell
      * @param list<string> $command
      * @param array<string, string> $environment merged over that set, replacing
      */
-    public static function start(array $command, string $workingDirectory, array $environment = []): Child
+    public static function start(array $command, string $workingDirectory, array $environment = [], ?Closure $onOutput = null): Child
     {
         $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
         $handle = proc_open($command, $descriptors, $pipes, $workingDirectory, [
@@ -101,7 +101,7 @@ final class Shell
         }
 
         $pid = proc_get_status($handle)['pid'];
-        $child = new Child($handle, $pid, $pipes);
+        $child = new Child($handle, $pid, $pipes, $onOutput);
         self::$children[$pid] = $child;
 
         return $child;
@@ -168,6 +168,13 @@ final class Shell
         }
 
         exit(130);
+    }
+
+    /** The shutdown guard runs only after every supervised child has been stopped. */
+    public static function allowShutdownGuard(): void
+    {
+        self::$stopReason = null;
+        self::$launcher = null;
     }
 
     private static function launcherGone(): bool
@@ -339,7 +346,7 @@ final class Shell
  * It exists so several controls can be in flight at once: a supervision loop
  * that owns one child cannot read another's pipes, and an unread pipe stops the
  * child that fills it. Liveness is therefore recorded per child — `outputAge()`
- * on the child that has gone quiet, not on a stream where fourteen gates'
+ * on the child that has gone quiet, not on a stream where multiple gates'
  * output would be indistinguishable.
  */
 final class Child
@@ -366,9 +373,10 @@ final class Child
         private $handle,
         public readonly int $pid,
         array $pipes,
+        private readonly ?Closure $onOutput = null,
     ) {
         $this->open = [1 => $pipes[1], 2 => $pipes[2]];
-        $this->startedAt = microtime(true);
+        $this->startedAt = (hrtime(true) / 1_000_000_000);
         $this->lastOutputAt = $this->startedAt;
 
         foreach ($this->open as $stream) {
@@ -391,7 +399,10 @@ final class Child
             if (\is_string($chunk) && $chunk !== '') {
                 $this->buffers[$key] .= $chunk;
                 $this->bytes += \strlen($chunk);
-                $this->lastOutputAt = microtime(true);
+                $this->lastOutputAt = (hrtime(true) / 1_000_000_000);
+                if ($this->onOutput !== null) {
+                    ($this->onOutput)($key, $chunk);
+                }
             }
 
             if (feof($stream)) {
@@ -439,12 +450,12 @@ final class Child
 
     public function age(): float
     {
-        return microtime(true) - $this->startedAt;
+        return (hrtime(true) / 1_000_000_000) - $this->startedAt;
     }
 
     public function outputAge(): float
     {
-        return microtime(true) - $this->lastOutputAt;
+        return (hrtime(true) / 1_000_000_000) - $this->lastOutputAt;
     }
 
     public function bytes(): int

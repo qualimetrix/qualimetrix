@@ -14,7 +14,6 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -48,7 +47,7 @@ final class RepositoryMergeTest extends TestCase
             $declaration->file,
             10,
             CallableKind::Method,
-            new LogicalClassPath(SymbolPath::forClass('App', 'Service')),
+            DeclarationPath::of(SymbolPath::forClass('App', 'Service'), $declaration->file, DeclarationOrdinal::fromRank(0)),
         );
 
         foreach ([RepositoryMerge::subjectInfo($plain, $typed), RepositoryMerge::subjectInfo($typed, $plain)] as $info) {
@@ -62,10 +61,31 @@ final class RepositoryMergeTest extends TestCase
     {
         $declaration = DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'run'), RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0));
         $subject = MetricSubject::declaration($declaration);
-        $left = new SymbolInfo($subject, $declaration->file, 10, CallableKind::Method);
-        $right = new SymbolInfo($subject, $declaration->file, 20, CallableKind::Method);
+        $left = new SymbolInfo($subject, $declaration->file, 10, CallableKind::Method, DeclarationPath::of(SymbolPath::forClass('App', 'Service'), $declaration->file, DeclarationOrdinal::fromRank(0)));
+        $right = new SymbolInfo($subject, $declaration->file, 20, CallableKind::Method, DeclarationPath::of(SymbolPath::forClass('App', 'Service'), $declaration->file, DeclarationOrdinal::fromRank(0)));
 
         $this->expectException(InvalidArgumentException::class);
         RepositoryMerge::subjectInfo($left, $right);
+    }
+
+    #[Test]
+    public function itRejectsDifferentExactOwnersOfOneCallable(): void
+    {
+        $file = RelativePath::fromString('src/Service.php');
+        $subject = MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'run'), $file, DeclarationOrdinal::fromRank(0)));
+        $first = DeclarationPath::of(SymbolPath::forClass('App', 'Service'), $file, DeclarationOrdinal::fromRank(0));
+        foreach ([
+            DeclarationPath::of($first->logical, RelativePath::fromString('src/Other.php'), DeclarationOrdinal::fromRank(0)),
+            DeclarationPath::of($first->logical, $file, DeclarationOrdinal::fromRank(1)),
+        ] as $second) {
+            $left = new SymbolInfo($subject, $file, 10, CallableKind::Method, $first);
+            $right = new SymbolInfo($subject, $file, 10, CallableKind::Method, $second);
+            try {
+                RepositoryMerge::subjectInfo($left, $right);
+                self::fail('Different exact class owners were merged');
+            } catch (InvalidArgumentException $exception) {
+                self::assertStringContainsString('Conflicting callable metadata', $exception->getMessage());
+            }
+        }
     }
 }

@@ -1422,7 +1422,7 @@ PHP;
     #[Test]
     public function itRespectsExcludeMethodsFromConfig(): void
     {
-        $this->collector->applyLcomCollectionConfiguration(new LcomCollectionConfiguration(['getName']));
+        $this->collector->applyLcomCollectionConfiguration(new LcomCollectionConfiguration(['GETNAME']));
 
         $code = <<<'PHP'
 <?php
@@ -1548,6 +1548,33 @@ PHP;
     public function itDeliberatelyDoesNotProvideCallableMetrics(): void
     {
         self::assertNotContains(\Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface::class, class_implements($this->collector));
+    }
+
+    #[Test]
+    public function itKeepsDistinctCohesionGraphsForSameFileDeclarations(): void
+    {
+        $this->collectMetrics(<<<'PHP'
+<?php
+namespace App;
+class Twin {
+    private int $a = 0;
+    public function one(): void { $this->a++; }
+}
+if (false) {
+    class Twin {
+        private int $a = 0;
+        private int $b = 0;
+        public function one(): void { $this->a++; }
+        public function two(): void { $this->b++; }
+    }
+}
+PHP);
+
+        $visitor = $this->collector->getVisitor();
+        self::assertInstanceOf(LcomVisitor::class, $visitor);
+        $classes = array_values($visitor->getClassData());
+        self::assertCount(2, $classes);
+        self::assertSame([1, 2], array_map(static fn(LcomClassData $class): int => $class->calculateLcom([]), $classes));
     }
 
     private function collectMetrics(string $code): MetricBag

@@ -66,7 +66,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0026 — Assigned Declaration Ordinal](0026-assigned-declaration-ordinal.md) — stable declaration ordering and its named limits.
 - [0027 — Weight of Class](0027-weight-of-class-measures-accessors-not-visibility.md) — accessor-based WOC semantics.
 - [0029 — Channel Presentation Join](0029-channel-presentation-join.md) — presentation joins channel and producer metadata at run time.
-- [0030 — One Rule per Judgement](0030-one-rule-per-type-coverage-dimension.md) — independent judgements have independent producers.
+- [0030 — One Rule per Judgement](0030-one-rule-per-type-coverage-dimension.md) — independent judgements have independent producers; the five declaration diagnostics' former gate/options relationship is partially superseded by ADR 0103.
 - [0031 — Producer-Owned Channel Shape](0031-channel-shape-is-a-producer-property.md) — a producer declares magnitude or occurrence shape.
 - [0032 — Computed-Metric Producer Split](0032-computed-metric-producer-split.md) — one producer name per closed built-in definition.
 - [0033 — Derived Display Family](0033-display-family-is-derived-from-the-producer-name.md) — presentation family follows the producer name.
@@ -102,11 +102,11 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0070 — Subprocess Read Discipline](0070-subprocess-read-discipline.md) — one drain-safe way to run a child process and capture its output, with supervision left where it is.
 - [0071 — An Anonymous Class's Declaration Edge Is Flagged, Not Retyped or Dropped](0071-an-anonymous-classs-declaration-edge-is-flagged-not-retyped.md) — a nested anonymous class's own `extends`/`implements`/attribute/`trait_use` edge is marked as not a declaration fact of its recorded source, so declaration readers (DIT, NOC, layer membership) skip it while dependency readers (coupling, ClassRank, cycles, `relations:`) keep reading it as before.
 - [0072 — The Commit-Subject Rule Names the Commits It Can Judge](0072-commit-subject-authority.md) — the commit-msg hook declines to judge subjects git itself writes, detected by `MERGE_HEAD`/`REVERT_HEAD`/`CHERRY_PICK_HEAD` rather than by the word "Merge", and CI judges a pull request's own commits so a conflict can no longer decide the verdict.
-- [0073 — A Depth Belongs to a Declaration, a Child Count to a Name](0073-a-depth-belongs-to-a-declaration-a-child-count-to-a-name.md) — `design.dit` is resolved and published per class declaration, because one name can be declared in two files with two parents; the parent side stays a name and takes the deepest of its declarations, and `design.noc` counts distinct child names rather than edges.
+- [0073 — A Depth Belongs to a Declaration, a Child Count to a Name](0073-a-depth-belongs-to-a-declaration-a-child-count-to-a-name.md) — exact child-declaration identity and distinct logical-child NOC remain current; ancestry outcomes and duplicate-parent merging are partially superseded by ADR 0107.
 - [0074 — DIT Reads the Ancestors It Measures](0074-dit-reads-the-ancestors-it-measures.md) — depth beyond the analysed path is followed by parsing the project's own sources, never by loading them; the port is Design's and the adapter is Infrastructure's.
 - [0075 — The Builtin-Class List Is Compared, Never Generated](0075-the-builtin-class-list-is-compared-never-generated.md) — the hand-written registry of PHP's own classes stays hand-written so metrics do not become a function of the analysing machine; a governance control compares it against the loaded extensions in both directions, and the extension and version metadata that comparison needs lives in the control rather than in the product.
-- [0076 — A Floor Is Reported, and Said to Be One](0076-a-floor-is-reported-and-said-to-be-one.md) — `design.dit` keeps publishing the depth it could reach and the run logs one warning naming the chains it did not follow to a root; withholding the value was rejected, and the diagnostic is deliberately not a published key; amended 2026-09-24: `--log-level=error` silences it with or without `-v`.
-- [0077 — Open-Universe Selectors Are Explicit](0077-open-universe-selectors-are-explicit.md) — path and PHP-name selectors use explicit `exact`, `subtree`, or full-subject `regex` forms; closed identities and Architecture's binding DSL remain named exceptions.
+- [0076 — A Floor Is Reported, and Said to Be One](0076-a-floor-is-reported-and-said-to-be-one.md) — historical floor-publication and collector-warning decision, partially superseded by ADR 0107 for loops, the unresolved metric and rule-owned diagnostics.
+- [0077 — Open-Universe Selectors Are Explicit](0077-open-universe-selectors-are-explicit.md) — path and PHP-name selectors use explicit `exact`, `subtree`, or full-subject `regex` forms; Architecture's mutual DSL refusal is partially superseded by ADR 0103.
 - [0078 — An Entry the Run Did Not Read Makes It Incomplete](0078-an-entry-the-run-did-not-read-makes-it-incomplete.md) — a directory symlink, a non-regular `*.php` entry and an unlistable directory are terminal failures rather than silent drops, so the run is incomplete and answers exit 4; the published `kind` vocabulary grows to five, and a path named on the command line is still followed.
 - [0079 — A Criterion the Run Cannot Answer Is Undecidable, Not a Non-Match](0079-a-criterion-the-run-cannot-answer-is-undecidable.md) — graph-backed layer criteria combine three-valued, so a chain that leaves the analysed set no longer reads as a confident non-match; an unanswered layer or `exclude:` never withdraws a match and the doubt is published on `architecture.doubted-assignment`, a layer naming only types the run never met stays unreachable, template observation falls toward the layer existing, and a template naming a non-pattern criterion under `match: any` is refused; amended 2026-09-24: a type the analysed project's composer install declares is asked of the install, the whole-project channels wait for a run that covers the project (see ADR 0084), and a carve-out loads.
 - [0080 — A Project Fold Reads a Partition, Not the Leaves](0080-a-project-fold-reads-a-partition-not-the-leaves.md) — the project population of a namespace-collected metric is every namespace declaring a type, folded over its own scope rather than its subtree rollup; the coverage denominator comes from a size measurement independent of that fold.
@@ -115,6 +115,35 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0083 — A Number Option Declares Its Range in Its Form](0083-a-number-option-declares-its-range-in-its-form.md) — whole and fractional rule options accept 0 and above and a negative value is refused by the value; only computed-metric thresholds declare the signed form.
 - [0084 — A Project Scope Has Three States, and the Report Names It](0084-a-project-scope-has-three-states-and-the-report-names-it.md) — covered, narrowed or unknown; only a narrowed run withholds the whole-project channels, an unknown one leaves namespace values of suppressions unjudged, every format with a place for it publishes the state, and the suppression values a run skipped are named with the channels derived from them.
 - [0085 — A Copy of a Duplicate Block Is a Finding of Its Own](0085-a-copy-of-a-duplicate-block-is-a-finding-of-its-own.md) — `duplication.clone` reports one finding on each copy under an identity of its own and valued by the lines that copy spans, every copy of a block its longest copy admits by `min_lines` — so a pasted copy, however densely written, is a new finding in its own file and to GitLab/SARIF.
+- [0086 — One Configuration Document, Merged by Declared Policy](0086-one-configuration-document-merged-by-declared-policy.md) — every node of the configuration document declares its keys, form, merge policy and shorthands; one engine judges each layer before merging, `~` is "not written" and `{}` changes nothing at any depth, a refusal and a warning name the layers they are about, and the author's table of policies is generated from the declarations.
+
+- [0087 — The Finding Gate Declares Measured Changes](0087-the-finding-gate-declares-measured-changes.md) — complete physical records, one correspondence for ranking values, occurrence-preserving order and exact measured declaration forms.
+
+- [0088 — Atomic Section Declarations and a Shared Format Vocabulary](0088-atomic-section-declarations-and-format-vocabulary.md) — one key/schema declaration per provider, one registered format dictionary for both validation boundaries, and one project-scope measurement for callers.
+
+- [0091 — Declared Rule Options and Enablement](0091-declared-rule-options-and-enablement.md) — typed authored forms and one immutable execution/publication snapshot.
+
+- [0092 — Typed Document Declarations and Option Judgement](0092-typed-document-declarations-and-option-judgement.md) — typed document facts and rule option form projection.
+
+- [0093 — Measured Run Scope and Project Tree Queries](0093-measured-run-scope-and-project-tree-queries.md) — one metadata walk separates declaration absence from selector binding and retains the source snapshot.
+
+- [0094 — Analysis Results Publish Subject-Owned Values](0094-analysis-results-publish-subject-owned-values.md) — measurement and directive observations have their own owners; execution publication and late findings compose without duplicates and preserve merge order.
+
+- [0095 — Inline Directives Are Authored Sites with Bounded Reach](0095-inline-directives-are-authored-sites-with-bounded-reach.md) — Inline owns physical admission, declaration reach, shared refusals and actual suppression attribution; Reporting consumes the measured site.
+
+- [0096 — File Target Claims](0096-file-target-claims.md) — neutral filesystem judgement, held writes, publication and explicit descriptor/race limits.
+
+- [0097 — Duplication Copy Evidence](0097-duplication-copy-evidence.md) — connected token coverage, copy-owned values, File identity and explicit incomplete-run limits.
+- [0100 — Core AST Name Resolution and Superglobal Reads](0100-core-ast-name-resolution-and-superglobal-reads.md) — shared, bounded AST evidence for detector consumers.
+- [0101 — Class Count Judges the Own Namespace](0101-class-count-judges-own-namespace.md) — all namespace levels use own count while subtree totals stay published.
+- [0102 — Detector Verdicts and Finding Identity](0102-detector-verdicts-and-finding-identity.md) — credential and smell decisions, declaration identity, and raw threshold wording.
+
+- [0103 — Layer Policy Declaration Evidence and Selection](0103-layer-policy-declaration-evidence-and-selection.md) — separate declaration facts, source-owned findings, independent diagnostic publication, observed spelling and consumer baseline migration.
+
+- [0104 — Source Bytes and Prose Publication](0104-source-bytes-and-prose-publication.md) — canonical identity, display repairs and the closed prose mode.
+- [0105 — Finding Publication and Drill-down](0105-finding-publication-and-drill-down.md) — shared records, published bags, selection reach and generated-hook revision.
+
+- [0107 — Inheritance Chain Outcomes](0107-inheritance-chain-outcomes.md) — exact depths, numeric floors, non-numeric loops and independent Throwable knowledge share one Design-owned ancestry result.
 
 ## Superseded history
 

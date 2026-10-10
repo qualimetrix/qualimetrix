@@ -24,7 +24,7 @@ final class HookStatusCommand extends AbstractHookCommand
 
         $isSymlink = is_link($hookPath);
 
-        if (!self::hookExists($hookPath)) {
+        if (!$this->files->exists($hookPath)) {
             $output->writeln('Status: <comment>NOT INSTALLED</comment>');
             $output->writeln('');
             $output->writeln('To install the hook, run:');
@@ -61,7 +61,7 @@ final class HookStatusCommand extends AbstractHookCommand
         $target = readlink($hookPath);
         $output->writeln(\sprintf('Type: <info>Symlink</info> → %s', $target === false ? 'unknown' : $target));
 
-        if (!file_exists($hookPath)) {
+        if ($this->files->danglingLink($hookPath, $output)) {
             $output->writeln('');
             $output->writeln('<error>Warning: the symlink leads nowhere, so this hook does nothing.</error>');
             $output->writeln('Earlier releases installed a symlink into a script this package no longer ships.');
@@ -76,39 +76,27 @@ final class HookStatusCommand extends AbstractHookCommand
         return $this->contentsOf($hookPath, $output);
     }
 
-    /** @return string|null null when the file cannot be read */
-    private function reportFile(string $hookPath, OutputInterface $output): ?string
+    private function reportFile(string $hookPath, OutputInterface $output): string
     {
         $output->writeln('Type: <info>File</info>');
 
         return $this->contentsOf($hookPath, $output);
     }
 
-    /**
-     * @return string|null null when the file is there and unreadable
-     */
-    private function contentsOf(string $hookPath, OutputInterface $output): ?string
+    private function contentsOf(string $hookPath, OutputInterface $output): string
     {
-        // Silenced, and reported instead: an unreadable path makes
-        // `file_get_contents` raise a warning, and PHPUnit's error handler
-        // turns that into a stack trace longer than the command's own output.
-        $contents = @file_get_contents($hookPath);
+        $this->files->judge($hookPath, $output);
 
-        if ($contents === false) {
-            $output->writeln('');
-            $output->writeln('<error>Warning: the hook exists but cannot be read, so it cannot be identified.</error>');
-            $output->writeln(\sprintf('Check its permissions: ls -l %s', $hookPath));
-
-            return null;
-        }
-
-        return $contents;
+        return $this->files->read($hookPath);
     }
 
     private function reportOwnership(string $contents, OutputInterface $output): void
     {
         if (PreCommitHook::isOurs($contents)) {
             $output->writeln('Owner: <info>Qualimetrix</info>');
+            if (!PreCommitHook::isCurrent($contents)) {
+                $output->writeln('Revision: <comment>outdated</comment>');
+            }
 
             return;
         }
@@ -150,6 +138,9 @@ final class HookStatusCommand extends AbstractHookCommand
     private function reportSuggestions(string $contents, OutputInterface $output): void
     {
         if (PreCommitHook::isOurs($contents)) {
+            if (!PreCommitHook::isCurrent($contents)) {
+                $output->writeln(\sprintf('Reinstall it: %s hook:install --force', $this->runningBinaryLocator->hint()));
+            }
             $output->writeln('The hook will run Qualimetrix on staged PHP files before each commit.');
             $output->writeln('To bypass the hook, use: git commit --no-verify');
 

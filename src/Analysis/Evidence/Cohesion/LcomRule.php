@@ -10,12 +10,14 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -50,7 +52,7 @@ final class LcomRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks Lack of Cohesion of Methods (high values indicate class should be split)';
     }
@@ -65,29 +67,32 @@ final class LcomRule extends AbstractRule
         }
 
         $findings = [];
+        $declaration = self::channelDeclarations()[self::NAME];
 
-        foreach ($context->metrics->allDeclarations() as $classInfo) {
-            $finding = $this->findingForClass($classInfo, $context, $this->options);
+        foreach ($context->metrics->allClassDeclarations() as $classInfo) {
+            $finding = $this->findingForClass($classInfo, $context, $this->options, $declaration);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
         }
 
-        return $findings;
+        return [...$findings, ...LcomExcludedMethods::findings($context, $this->options, self::NAME, self::channelDeclarations()['cohesion.unmatched-exclude-method'])];
     }
 
-    private function findingForClass(SymbolInfo $classInfo, AnalysisContext $context, LcomOptions $options): ?Finding
+    private function findingForClass(SymbolInfo $classInfo, AnalysisContext $context, LcomOptions $options, ChannelDeclaration $declaration): ?Finding
     {
         $subject = $classInfo->subject ?? throw new LogicException('LCOM findings require an exact class declaration subject');
-        if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+        $metrics = $this->admittedMetrics($context, $subject, $declaration, function (MetricBag $metrics) use ($context, $subject, &$options): iterable {
+            $options = $this->getEffectiveOptions($context, $options, $subject);
+            yield GateInput::metrics('exclude-readonly', $metrics, option: $options->excludeReadonly);
+            yield GateInput::metrics('minimum-methods', $metrics, $options->minMethods);
+            yield GateInput::metrics('class-value', $metrics);
+        }, [GateInput::kind('class-coordinate', $subject->toSymbolPath()->getType())], level: SymbolLevel::Class_);
+        if ($metrics === null) {
             return null;
         }
-
-        $metrics = $context->metrics->get($subject->toSymbolPath());
-        $lcomValue = $this->eligibleLcom($metrics, $options);
-        if ($lcomValue === null) {
-            return null;
-        }
+        $lcom = $metrics->get(MetricName::COHESION_LCOM);
+        $lcomValue = (int) $lcom;
 
         /** @var LcomOptions $effectiveOptions */
         $effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
@@ -98,7 +103,7 @@ final class LcomRule extends AbstractRule
 
         $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
         $message = \sprintf(
-            'LCOM (Lack of Cohesion) is %d, exceeds threshold of %d. Class could be split into %d cohesive parts',
+            'LCOM (Lack of Cohesion) is %d, ' . ThresholdCrossing::of($lcomValue, $threshold)->value . ' threshold of %d. Class could be split into %d cohesive parts',
             $lcomValue,
             $threshold,
             $lcomValue,
@@ -121,20 +126,6 @@ final class LcomRule extends AbstractRule
         );
     }
 
-    private function eligibleLcom(MetricBag $metrics, LcomOptions $options): ?int
-    {
-        if ($options->excludeReadonly && $metrics->get(MetricName::DESIGN_IS_READONLY) === 1) {
-            return null;
-        }
-        $methodCount = (int) ($metrics->get(MetricName::SIZE_METHOD_COUNT) ?? 0);
-        if ($methodCount < $options->minMethods) {
-            return null;
-        }
-        $lcom = $metrics->get(MetricName::COHESION_LCOM);
-
-        return $lcom !== null ? (int) $lcom : null;
-    }
-
     /**
      * @return class-string<LcomOptions>
      */
@@ -146,19 +137,27 @@ final class LcomRule extends AbstractRule
     /**
      * `cohesion.lcom` reports LCOM4 (`$lcomValue` — see the emission above)
      * as `metricValue`, judged worse the higher it goes:
-     * {@see LcomOptions::getSeverity()}'s `$value >= $this->error` (line 94)
-     * / `$value >= $this->warning` (line 98).
+     * {@see LcomOptions::getSeverity()}'s `$value >= $this->error`
+     * / `$value >= $this->warning`.
      *
      * @return array<string, ChannelDeclaration>
      */
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Higher,
-                JudgedMetrics::of(MetricName::COHESION_LCOM),
+            self::NAME => self::judgingHigher(
+                [MetricName::COHESION_LCOM],
                 SymbolLevel::Class_,
+            )->withGates(
+                self::populationGate('class-coordinate', self::NAME, SymbolLevel::Class_, 'declaration', self::kindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
+                self::populationGate('exclude-readonly', self::NAME, SymbolLevel::Class_, 'declaration', self::flagExcludes('exclude-readonly', MetricName::DESIGN_IS_READONLY, 1, true), 'The configured class exclusion applies.'),
+                self::populationGate('minimum-methods', self::NAME, SymbolLevel::Class_, 'declaration', self::keyThreshold('minimum-methods', [MetricName::SIZE_METHOD_COUNT], '>=', 'minimum-methods', 'zero', true), 'Methods are below the configured minimum.'),
+                self::populationGate('class-value', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('class-value', [MetricName::COHESION_LCOM]), 'The class metric was not published.'),
             ),
+            'cohesion.unmatched-exclude-method' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project)
+                ->withoutConfiguredWarningBoundary()
+                ->describedAs('Reports configured LCOM method exclusions that match no declared method in the whole project')
+                ->withGates(...LcomExcludedMethods::populationGates()),
         ];
     }
 

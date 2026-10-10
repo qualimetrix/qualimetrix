@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Finding\Support;
 
+use LogicException;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\ValueReach;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
@@ -30,6 +34,7 @@ final class StubChannelDeclarationRegistry implements ChannelDeclarationRegistry
     public function __construct(
         private array $declarations = [],
         private ?ChannelDeclaration $default = null,
+        private ?MetricReachCatalogInterface $metricReachCatalog = null,
     ) {}
 
     /**
@@ -41,10 +46,10 @@ final class StubChannelDeclarationRegistry implements ChannelDeclarationRegistry
     {
         return new self([
             'complexity.ccn' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable, SymbolLevel::Class_),
-            'duplication.clone' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project),
+            'duplication.clone' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::File)->readingRunEvidence(),
             'maintainability.index.class' => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
             'code-smell.goto' => ChannelDeclaration::occurrence(SymbolLevel::Callable),
-            'architecture.layer-violation' => ChannelDeclaration::occurrence(SymbolLevel::Class_),
+            'architecture.layer-violation' => ChannelDeclaration::occurrence(SymbolLevel::Class_)->readingRunEvidence(),
         ]);
     }
 
@@ -69,6 +74,36 @@ final class StubChannelDeclarationRegistry implements ChannelDeclarationRegistry
     public function declarationFor(FindingChannel $channel): ?ChannelDeclaration
     {
         return $this->declarations[$channel->code] ?? $this->default;
+    }
+
+    public function reachAt(FindingChannel $channel, SymbolLevel $level): ValueReach
+    {
+        $declaration = $this->declarationFor($channel);
+        if ($declaration === null) {
+            throw new LogicException(\sprintf('Unknown fixture channel "%s".', $channel->code));
+        }
+        if (!\in_array($level, $declaration->levels, true)) {
+            throw new LogicException(\sprintf('Fixture channel "%s" does not report at level "%s".', $channel->code, $level->value));
+        }
+        if ($declaration->readsRunEvidence) {
+            return ValueReach::Run;
+        }
+        if ($declaration->judges !== null) {
+            if ($this->metricReachCatalog === null) {
+                throw new LogicException(\sprintf('Fixture channel "%s" requires explicit metric-reach facts.', $channel->code));
+            }
+
+            $reach = ValueReach::Members;
+            foreach ($declaration->judges->keys as $key) {
+                if ($this->metricReachCatalog->metricReach($key) === MetricReach::Run) {
+                    $reach = ValueReach::Run;
+                }
+            }
+
+            return $reach;
+        }
+
+        return ValueReach::Members;
     }
 
     public function staticDeclarations(): array

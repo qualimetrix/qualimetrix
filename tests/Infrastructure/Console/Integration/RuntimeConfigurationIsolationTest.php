@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Integration;
 
-use InvalidArgumentException;
+use LogicException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
@@ -18,7 +21,6 @@ use Qualimetrix\Infrastructure\Cache\CacheConfigurationResolver;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationStoreInterface;
-use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
@@ -27,6 +29,7 @@ use Qualimetrix\Infrastructure\Parallel\Configuration\ParallelConfigurationResol
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfiguration;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationStoreInterface;
 use Qualimetrix\Infrastructure\Profiler\Contract\ProfileReportInterface;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 use ReflectionProperty;
 use RuntimeException;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -35,6 +38,9 @@ use Symfony\Component\Console\Output\BufferedOutput;
 final class RuntimeConfigurationIsolationTest extends TestCase
 {
     private string $temporaryDirectory;
+
+    /** @var list<DocumentSectionSchemaInterface> the sections the compiled pipeline composes with */
+    private array $sections = [];
 
     protected function setUp(): void
     {
@@ -62,15 +68,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
             'parallel.workers' => 0,
         ]);
         $projectRoot = \Qualimetrix\Core\Path\AbsolutePath::fromString($this->temporaryDirectory);
-        $runtimeConfigurator->configure(
-            $customDocument,
-            $this->runConfigurationFor($customDocument),
-            $ruleInputValidator->resolve($customDocument, new ArrayInput([], $command->getDefinition())),
-            $this->cacheConfiguration($customDocument, $projectRoot),
-            $this->parallelConfiguration($customDocument),
-            new ArrayInput([], $command->getDefinition()),
-            new BufferedOutput(),
-        );
+        $runtimeConfigurator->configure($customDocument, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($customDocument), $this->cacheConfiguration($customDocument, $projectRoot), $this->parallelConfiguration($customDocument)), $ruleInputValidator->resolve($customDocument, new ArrayInput([], $command->getDefinition())), new ArrayInput([], $command->getDefinition()), new BufferedOutput());
 
         self::assertSame($customCacheDirectory, $this->cacheStore($runtimeConfigurator)->current()->directory->value());
         self::assertFalse($this->cacheStore($runtimeConfigurator)->current()->enabled);
@@ -78,15 +76,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
 
         $runtimeConfigurator->resetRunState();
         $defaultDocument = $this->document([]);
-        $runtimeConfigurator->configure(
-            $defaultDocument,
-            $this->runConfigurationFor($defaultDocument),
-            $ruleInputValidator->resolve($defaultDocument, new ArrayInput([], $command->getDefinition())),
-            $this->cacheConfiguration($defaultDocument, $projectRoot),
-            $this->parallelConfiguration($defaultDocument),
-            new ArrayInput([], $command->getDefinition()),
-            new BufferedOutput(),
-        );
+        $runtimeConfigurator->configure($defaultDocument, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($defaultDocument), $this->cacheConfiguration($defaultDocument, $projectRoot), $this->parallelConfiguration($defaultDocument)), $ruleInputValidator->resolve($defaultDocument, new ArrayInput([], $command->getDefinition())), new ArrayInput([], $command->getDefinition()), new BufferedOutput());
 
         self::assertSame($this->temporaryDirectory . '/.qmx-cache', $this->cacheStore($runtimeConfigurator)->current()->directory->value());
         self::assertTrue($this->cacheStore($runtimeConfigurator)->current()->enabled);
@@ -99,35 +89,26 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         [$runtimeConfigurator, $command, $ruleInputValidator] = $this->runtimeServices();
         $runtimeConfigurator->resetRunState();
         $projectRoot = \Qualimetrix\Core\Path\AbsolutePath::fromString($this->temporaryDirectory);
-        $invalidDocument = $this->document(['parallel.workers' => -1]);
-
         try {
-            $runtimeConfigurator->configure(
-                $invalidDocument,
-                $this->runConfigurationFor($invalidDocument),
-                $ruleInputValidator->resolve($invalidDocument, new ArrayInput([], $command->getDefinition())),
-                $this->cacheConfiguration($invalidDocument, $projectRoot),
-                $this->parallelConfiguration($invalidDocument),
-                new ArrayInput([], $command->getDefinition()),
-                new BufferedOutput(),
-            );
+            $invalidDocument = $this->document(['parallel.workers' => -1]);
+            $runtimeConfigurator->configure($invalidDocument, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($invalidDocument), $this->cacheConfiguration($invalidDocument, $projectRoot), $this->parallelConfiguration($invalidDocument)), $ruleInputValidator->resolve($invalidDocument, new ArrayInput([], $command->getDefinition())), new ArrayInput([], $command->getDefinition()), new BufferedOutput());
             self::fail('Invalid parallel configuration must fail before mutating owner stores.');
-        } catch (InvalidArgumentException) {
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('parallel.workers must be a non-negative integer.', $refusal->summary());
+            $position = $refusal->position();
+            self::assertNotNull($position);
+            self::assertSame(['parallel', 'workers'], $position->segments);
+            self::assertSame('workers', $position->written);
+            self::assertCount(1, $refusal->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
+            self::assertSame('test', $refusal->sources()[0]->locator());
         }
 
         self::assertTrue($this->cacheStore($runtimeConfigurator)->current()->enabled);
         self::assertNull($this->parallelStore($runtimeConfigurator)->current()->workers);
 
         $defaultDocument = $this->document([]);
-        $runtimeConfigurator->configure(
-            $defaultDocument,
-            $this->runConfigurationFor($defaultDocument),
-            $ruleInputValidator->resolve($defaultDocument, new ArrayInput([], $command->getDefinition())),
-            $this->cacheConfiguration($defaultDocument, $projectRoot),
-            $this->parallelConfiguration($defaultDocument),
-            new ArrayInput([], $command->getDefinition()),
-            new BufferedOutput(),
-        );
+        $runtimeConfigurator->configure($defaultDocument, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($defaultDocument), $this->cacheConfiguration($defaultDocument, $projectRoot), $this->parallelConfiguration($defaultDocument)), $ruleInputValidator->resolve($defaultDocument, new ArrayInput([], $command->getDefinition())), new ArrayInput([], $command->getDefinition()), new BufferedOutput());
 
         self::assertTrue($this->cacheStore($runtimeConfigurator)->current()->enabled);
         self::assertNull($this->parallelStore($runtimeConfigurator)->current()->workers);
@@ -136,43 +117,33 @@ final class RuntimeConfigurationIsolationTest extends TestCase
     #[Test]
     public function itKeepsEveryOwnerStoreAtDefaultsAfterLateArchitectureFailureInTheCompiledContainer(): void
     {
-        [$runtimeConfigurator, $command, $ruleInputValidator] = $this->runtimeServices();
+        [$runtimeConfigurator, $command, $ruleInputValidator, $execution] = $this->runtimeServices();
         $runtimeConfigurator->resetRunState();
         $projectRoot = \Qualimetrix\Core\Path\AbsolutePath::fromString($this->temporaryDirectory);
+        // The authored list passes document judgement; the merged allow cycle
+        // is refused by the architecture owner inside configure().
         $invalidDocument = $this->document([
-            'architecture' => ['layers' => ['not-an-ordered-list']],
+            'architecture' => ['layers' => [
+                ['name' => 'app', 'patterns' => ['App\\First']],
+            ], 'allow' => ['app' => ['app']]],
         ]);
         $input = new ArrayInput(['--profile' => true], $command->getDefinition());
 
         try {
-            $runtimeConfigurator->configure(
-                $invalidDocument,
-                $this->runConfigurationFor($invalidDocument),
-                $ruleInputValidator->resolve($invalidDocument, $input),
-                $this->cacheConfiguration($invalidDocument, $projectRoot),
-                $this->parallelConfiguration($invalidDocument),
-                $input,
-                new BufferedOutput(),
-            );
+            $runtimeConfigurator->configure($invalidDocument, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($invalidDocument), $this->cacheConfiguration($invalidDocument, $projectRoot), $this->parallelConfiguration($invalidDocument)), $ruleInputValidator->resolve($invalidDocument, $input), $input, new BufferedOutput());
             self::fail('Invalid architecture configuration must fail before mutating owner stores or effects.');
-        } catch (ConfigurationRefusal) {
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString('directed cycle', $refusal->getMessage());
+            self::assertStringContainsString('app -> app', $refusal->getMessage());
         }
 
         $this->assertDefaultOwnerState($runtimeConfigurator);
 
         $defaultDocument = $this->document([]);
         $defaultInput = new ArrayInput([], $command->getDefinition());
-        $runtimeConfigurator->configure(
-            $defaultDocument,
-            $this->runConfigurationFor($defaultDocument),
-            $ruleInputValidator->resolve($defaultDocument, $defaultInput),
-            $this->cacheConfiguration($defaultDocument, $projectRoot),
-            $this->parallelConfiguration($defaultDocument),
-            $defaultInput,
-            new BufferedOutput(),
-        );
+        $runtimeConfigurator->configure($defaultDocument, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($defaultDocument), $this->cacheConfiguration($defaultDocument, $projectRoot), $this->parallelConfiguration($defaultDocument)), $ruleInputValidator->resolve($defaultDocument, $defaultInput), $defaultInput, new BufferedOutput());
 
-        $this->assertDefaultOwnerState($runtimeConfigurator);
+        $this->assertDefaultOwnerState($runtimeConfigurator, $execution);
     }
 
     /**
@@ -209,65 +180,46 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         $projectRoot = \Qualimetrix\Core\Path\AbsolutePath::fromString($this->temporaryDirectory);
 
         $first = $this->document([
-            'computedMetrics' => ['computed.first' => ['formula' => '1', 'levels' => ['class']]],
-            'onlyRules' => ['computed.first'],
+            ConfigSchema::COMPUTED_METRICS => ['computed.first' => ['formula' => '1', 'levels' => ['class']]],
+            ConfigSchema::ONLY_RULES => ['computed.first'],
         ]);
         $firstInput = new ArrayInput([], $command->getDefinition());
         $runtimeConfigurator->resetRunState();
-        $runtimeConfigurator->configure(
-            $first,
-            $this->runConfigurationFor($first),
-            $ruleInputValidator->resolve($first, $firstInput),
-            $this->cacheConfiguration($first, $projectRoot),
-            $this->parallelConfiguration($first),
-            $firstInput,
-            new BufferedOutput(),
-        );
+        $runtimeConfigurator->configure($first, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($first), $this->cacheConfiguration($first, $projectRoot), $this->parallelConfiguration($first)), $ruleInputValidator->resolve($first, $firstInput), $firstInput, new BufferedOutput());
         self::assertContains('computed.first', $this->computedChannels($runtimeConfigurator));
 
         $second = $this->document([
-            'computedMetrics' => ['computed.second' => ['formula' => '1', 'levels' => ['class']]],
-            'onlyRules' => ['computed.second'],
+            ConfigSchema::COMPUTED_METRICS => ['computed.second' => ['formula' => '1', 'levels' => ['class']]],
+            ConfigSchema::ONLY_RULES => ['computed.second'],
         ]);
         $secondInput = new ArrayInput([], $command->getDefinition());
         $runtimeConfigurator->resetRunState();
-        $runtimeConfigurator->configure(
-            $second,
-            $this->runConfigurationFor($second),
-            $ruleInputValidator->resolve($second, $secondInput),
-            $this->cacheConfiguration($second, $projectRoot),
-            $this->parallelConfiguration($second),
-            $secondInput,
-            new BufferedOutput(),
-        );
+        $runtimeConfigurator->configure($second, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($second), $this->cacheConfiguration($second, $projectRoot), $this->parallelConfiguration($second)), $ruleInputValidator->resolve($second, $secondInput), $secondInput, new BufferedOutput());
         self::assertContains('computed.second', $this->computedChannels($runtimeConfigurator));
         self::assertNotContains('computed.first', $this->computedChannels($runtimeConfigurator));
 
         $invalid = $this->document([
-            'computedMetrics' => ['computed.invalid' => ['formula' => '(', 'levels' => ['class']]],
+            ConfigSchema::COMPUTED_METRICS => ['computed.invalid' => ['formula' => 'm["computed.nonexistent"] + 1', 'levels' => ['class']]],
         ]);
         $invalidInput = new ArrayInput([], $command->getDefinition());
         $runtimeConfigurator->resetRunState();
         $this->expectException(RuntimeException::class);
         try {
-            $runtimeConfigurator->configure(
-                $invalid,
-                $this->runConfigurationFor($invalid),
-                $ruleInputValidator->resolve($invalid, $invalidInput),
-                $this->cacheConfiguration($invalid, $projectRoot),
-                $this->parallelConfiguration($invalid),
-                $invalidInput,
-                new BufferedOutput(),
-            );
+            $runtimeConfigurator->configure($invalid, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($invalid), $this->cacheConfiguration($invalid, $projectRoot), $this->parallelConfiguration($invalid)), $ruleInputValidator->resolve($invalid, $invalidInput), $invalidInput, new BufferedOutput());
         } finally {
-            self::assertContains('computed.second', $this->computedChannels($runtimeConfigurator));
-            self::assertNotContains('computed.invalid', $this->computedChannels($runtimeConfigurator));
-            self::assertNotContains('computed.first', $this->computedChannels($runtimeConfigurator));
+            $configuration = $this->ruleConfiguration($runtimeConfigurator);
+            self::assertNull($configuration->enablement());
+            try {
+                $configuration->channelUniverse();
+                self::fail('A failed preflight must leave no channel universe installed.');
+            } catch (LogicException $error) {
+                self::assertSame('Rule channels are unavailable before analysis preflight.', $error->getMessage());
+            }
             $this->assertDefaultOwnerState($runtimeConfigurator);
         }
     }
 
-    /** @return array{RuntimeConfigurator, CheckCommand, RuleInputValidator} */
+    /** @return array{RuntimeConfigurator, CheckCommand, RuleInputValidator, \Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface} */
     private function runtimeServices(): array
     {
         $container = (new ContainerFactory())->create();
@@ -278,16 +230,22 @@ final class RuntimeConfigurationIsolationTest extends TestCase
 
         $ruleInputValidator = (new ReflectionProperty(CheckCommand::class, 'ruleInputValidator'))->getValue($command);
         self::assertInstanceOf(RuleInputValidator::class, $ruleInputValidator);
+        $pipeline = $container->get(ConfigurationPipelineInterface::class);
+        self::assertInstanceOf(ConfigurationPipelineInterface::class, $pipeline);
+        $this->sections = LayeredDocument::sectionsOf($pipeline);
 
-        return [$runtimeConfigurator, $command, $ruleInputValidator];
+        $execution = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class, $execution);
+        return [$runtimeConfigurator, $command, $ruleInputValidator, $execution];
     }
 
     /** @param array<string, mixed> $values */
     private function document(array $values): ConfigurationDocument
     {
-        return new ConfigurationDocument(
+        return LayeredDocument::of(
             [['source' => 'test', 'values' => $values]],
             \Qualimetrix\Core\Path\AbsolutePath::fromString($this->temporaryDirectory),
+            ...$this->sections,
         );
     }
 
@@ -322,11 +280,20 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         return (new ParallelConfigurationResolver())->resolve($document);
     }
 
-    private function assertDefaultOwnerState(RuntimeConfigurator $runtimeConfigurator): void
+    private function assertDefaultOwnerState(RuntimeConfigurator $runtimeConfigurator, ?\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface $readyExecution = null): void
     {
         self::assertTrue($this->cacheStore($runtimeConfigurator)->current()->enabled);
         self::assertNull($this->parallelStore($runtimeConfigurator)->current()->workers);
-        self::assertSame([], $this->ruleConfiguration($runtimeConfigurator)->all());
+        if ($readyExecution === null) {
+            self::assertSnapshotUnavailable($this->ruleConfiguration($runtimeConfigurator));
+        } else {
+            $snapshot = $this->ruleConfiguration($runtimeConfigurator)->resolvedOptions();
+            self::assertEqualsCanonicalizing(array_map(static fn(\Qualimetrix\Analysis\Finding\Contract\RuleMetadata $producer): string => $producer->name, $readyExecution->allRules()), array_keys($snapshot->all()));
+            $lcom = $snapshot->for('cohesion.lcom');
+            self::assertInstanceOf(\Qualimetrix\Analysis\Evidence\Cohesion\LcomOptions::class, $lcom);
+            self::assertTrue($lcom->enabled);
+            self::assertNull($lcom->excludeMethods);
+        }
         self::assertFalse($this->ruleConfiguration($runtimeConfigurator)->capturesExcludedFindings());
         self::assertSame([], $this->lcomConfigurationStore($runtimeConfigurator)->current()->excludedMethods);
         self::assertFalse($this->profileReport($runtimeConfigurator)->isEnabled());
@@ -361,15 +328,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
     /** @return list<string> */
     private function computedChannels(RuntimeConfigurator $runtimeConfigurator): array
     {
-        $analysisRuntime = (new ReflectionProperty(RuntimeConfigurator::class, 'analysisRuntimeConfigurator'))
-            ->getValue($runtimeConfigurator);
-        self::assertInstanceOf(AnalysisRuntimeConfigurator::class, $analysisRuntime);
-        $validator = (new ReflectionProperty(AnalysisRuntimeConfigurator::class, 'ruleInputValidator'))
-            ->getValue($analysisRuntime);
-        self::assertInstanceOf(RuleInputValidator::class, $validator);
-        $selector = (new ReflectionProperty(RuleInputValidator::class, 'ruleSelector'))->getValue($validator);
-        self::assertInstanceOf(RuleSelector::class, $selector);
-        $channels = (new ReflectionProperty(RuleSelector::class, 'channels'))->getValue($selector);
+        $channels = $this->ruleConfiguration($runtimeConfigurator)->channelUniverse();
 
         return array_values(array_map(
             static fn($channel): string => $channel->code,
@@ -380,7 +339,23 @@ final class RuntimeConfigurationIsolationTest extends TestCase
     {
         $root = $document->workingDirectory();
 
-        return new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include, coversProjectScope: false, authoredPathExcludes: []);
+        return new RunConfiguration(
+            pathExcludes: [],
+            projectRoot: $root,
+            generatedFilePolicy: GeneratedFilePolicy::Include,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Narrowed, uncoveredRoots: ['uncovered']),
+            authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
+        );
     }
 
+    private static function assertSnapshotUnavailable(\Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface $registry): void
+    {
+        try {
+            $registry->resolvedOptions();
+            self::fail('The invocation must have no ready rule options.');
+        } catch (LogicException $refusal) {
+            self::assertSame('Rule options are unavailable before analysis preflight.', $refusal->getMessage());
+        }
+    }
 }

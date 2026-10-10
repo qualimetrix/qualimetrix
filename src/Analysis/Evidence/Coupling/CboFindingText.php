@@ -130,22 +130,51 @@ final class CboFindingText
             return '';
         }
 
-        // Count occurrences per target class (a class may be referenced multiple times)
         $counts = [];
         $targetNames = [];
         foreach ($dependencies as $dep) {
             $targetKey = $dep->targetLogical()->toCanonical();
             $counts[$targetKey] = ($counts[$targetKey] ?? 0) + 1;
-            $targetNames[$targetKey] = $dep->targetLogical()->type ?? $targetKey;
+            $targetNames[$targetKey] = $dep->targetLogical()->toString();
         }
 
-        // Sort by occurrence count descending
         arsort($counts);
 
         $topKeys = \array_slice(array_keys($counts), 0, 5);
-        $topNames = array_map(static fn(string $targetKey): string => $targetNames[$targetKey], $topKeys);
+        $selected = array_map(static fn(string $targetKey): array => explode('\\', $targetNames[$targetKey]), $topKeys);
+        $topNames = [];
+        foreach ($selected as $index => $components) {
+            $topNames[] = self::shortestUniqueSuffix($components, $index, $selected);
+        }
 
         return 'Top dependencies: ' . implode(', ', $topNames);
+    }
+
+    /**
+     * @param list<string> $components
+     * @param list<list<string>> $selected
+     */
+    private static function shortestUniqueSuffix(array $components, int $index, array $selected): string
+    {
+        $componentCount = \count($components);
+        for ($depth = 1; $depth <= $componentCount; $depth++) {
+            $suffix = implode('\\', \array_slice($components, -$depth));
+            if (self::suffixIsUnique($suffix, $depth, $index, $selected)) {
+                return $suffix;
+            }
+        }
+        return implode('\\', $components);
+    }
+
+    /** @param list<list<string>> $selected */
+    private static function suffixIsUnique(string $suffix, int $depth, int $index, array $selected): bool
+    {
+        foreach ($selected as $otherIndex => $other) {
+            if ($index !== $otherIndex && implode('\\', \array_slice($other, -$depth)) === $suffix) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

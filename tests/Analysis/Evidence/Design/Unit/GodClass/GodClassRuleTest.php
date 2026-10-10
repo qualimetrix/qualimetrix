@@ -5,22 +5,83 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassOptions;
 use Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
+use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
+use Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch;
+use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(GodClassRule::class)]
 #[CoversClass(GodClassOptions::class)]
 final class GodClassRuleTest extends TestCase
 {
+    #[Test]
+    public function itAccountsForWrongLogicalKindsBeforeReadingClassMetrics(): void
+    {
+        $info = self::subjectInfo(SymbolPath::forMethod('App', 'Service', 'run'), RelativePath::fromString('service.php'), 1);
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->expects(self::once())->method('allClassDeclarations')->willReturn([$info]);
+        $repository->expects(self::never())->method('getSubject');
+        $session = self::populationSession(GodClassRule::NAME);
+        self::assertSame([], (new GodClassRule(new GodClassOptions()))->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
+        self::assertSame(0, $session->freeze()->judgedCount());
+        self::assertSame(1, $session->freeze()->unjudgedCount());
+        self::assertSame('logical-class-kind', $session->freeze()->abstentions()[0]->gate);
+    }
+
+    #[Test]
+    public function itSeparatesTooFewEvaluableCriteriaFromEnoughUnmatchedCriteria(): void
+    {
+        $info = self::subjectInfo(SymbolPath::fromClassFqn('App\\Service'), RelativePath::fromString('service.php'), 1);
+        foreach ([false, true] as $enoughCriteria) {
+            $metrics = MetricBag::fromArray(['size.method-count' => 3, 'complexity.wmc' => 0]);
+            if ($enoughCriteria) {
+                $metrics = $metrics->with('cohesion.tcc', 1.0)->with('size.class-loc', 10);
+            }
+            $repository = self::createStub(MetricRepositoryInterface::class);
+            $repository->method('allClassDeclarations')->willReturn([$info]);
+            $repository->method('getSubject')->willReturn($metrics);
+            $session = self::populationSession(GodClassRule::NAME);
+            self::assertSame([], (new GodClassRule(new GodClassOptions()))->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
+            self::assertSame($enoughCriteria ? 1 : 0, $session->freeze()->judgedCount());
+            self::assertSame($enoughCriteria ? 0 : 1, $session->freeze()->unjudgedCount());
+            if (!$enoughCriteria) {
+                self::assertSame('evaluable-criteria', $session->freeze()->abstentions()[0]->gate);
+            }
+        }
+    }
+
+    #[Test]
+    public function itStopsBeforeLaterPopulationInputsAfterReadonlyExclusion(): void
+    {
+        $info = self::subjectInfo(SymbolPath::fromClassFqn('App\\ReadonlyData'), RelativePath::fromString('readonly.php'), 1);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allClassDeclarations')->willReturn([$info]);
+        $repository->method('getSubject')->willReturn(MetricBag::fromArray(['design.is-readonly' => 1, 'size.method-count' => \NAN]));
+        $session = self::populationSession(GodClassRule::NAME);
+        self::assertSame([], (new GodClassRule(new GodClassOptions()))->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
+        self::assertSame('readonly-class', $session->freeze()->abstentions()[0]->gate);
+    }
+
     #[Test]
     public function itGetsName(): void
     {
@@ -34,7 +95,7 @@ final class GodClassRuleTest extends TestCase
     {
         $rule = new GodClassRule(new GodClassOptions());
 
-        self::assertSame('Detects God Classes (overly complex, large, low cohesion)', $rule->getDescription());
+        self::assertSame('Detects God Classes (overly complex, large, low cohesion)', $rule::getDescription());
     }
 
     #[Test]
@@ -66,7 +127,7 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions(enabled: false));
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('allDeclarations');
+        $repository->expects(self::never())->method('allClassDeclarations');
 
         $context = new AnalysisContext($repository);
 
@@ -90,9 +151,9 @@ final class GodClassRuleTest extends TestCase
             ->with('design.is-readonly', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -117,9 +178,9 @@ final class GodClassRuleTest extends TestCase
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -144,9 +205,9 @@ final class GodClassRuleTest extends TestCase
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -178,9 +239,9 @@ final class GodClassRuleTest extends TestCase
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -209,9 +270,9 @@ final class GodClassRuleTest extends TestCase
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -238,9 +299,9 @@ final class GodClassRuleTest extends TestCase
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -267,9 +328,9 @@ final class GodClassRuleTest extends TestCase
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -296,9 +357,9 @@ final class GodClassRuleTest extends TestCase
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -326,9 +387,9 @@ final class GodClassRuleTest extends TestCase
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -355,9 +416,9 @@ final class GodClassRuleTest extends TestCase
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -387,9 +448,9 @@ final class GodClassRuleTest extends TestCase
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -416,9 +477,9 @@ final class GodClassRuleTest extends TestCase
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -435,7 +496,7 @@ final class GodClassRuleTest extends TestCase
     #[Test]
     public function itHasOptionsDefaults(): void
     {
-        $options = GodClassOptions::fromArray(['enabled' => true]);
+        $options = GodClassOptions::fromResolved(ResolvedOptionsFixture::values(GodClassOptions::class, ['enabled' => true]));
 
         self::assertTrue($options->isEnabled());
         self::assertSame(47, $options->wmcThreshold);
@@ -450,7 +511,7 @@ final class GodClassRuleTest extends TestCase
     #[Test]
     public function itLoadsOptionsFromArrayWithCustomValues(): void
     {
-        $options = GodClassOptions::fromArray([
+        $options = GodClassOptions::fromResolved(ResolvedOptionsFixture::values(GodClassOptions::class, [
             'wmc_threshold' => 30,
             'lcom_threshold' => 5,
             'tcc_threshold' => 0.25,
@@ -458,7 +519,7 @@ final class GodClassRuleTest extends TestCase
             'min_criteria' => 2,
             'min_methods' => 5,
             'exclude_readonly' => false,
-        ]);
+        ]));
 
         self::assertTrue($options->isEnabled());
         self::assertSame(30, $options->wmcThreshold);
@@ -473,7 +534,7 @@ final class GodClassRuleTest extends TestCase
     #[Test]
     public function itLoadsOptionsFromArrayWithDualKey(): void
     {
-        $options = GodClassOptions::fromArray([
+        $options = GodClassOptions::fromResolved(ResolvedOptionsFixture::values(GodClassOptions::class, [
             'wmcThreshold' => 30,
             'lcomThreshold' => 5,
             'tccThreshold' => 0.25,
@@ -481,7 +542,7 @@ final class GodClassRuleTest extends TestCase
             'minCriteria' => 2,
             'minMethods' => 5,
             'excludeReadonly' => false,
-        ]);
+        ]));
 
         self::assertSame(30, $options->wmcThreshold);
         self::assertSame(5, $options->lcomThreshold);
@@ -493,22 +554,21 @@ final class GodClassRuleTest extends TestCase
     }
 
     #[Test]
-    public function itDisablesWhenLoadedFromEmptyArray(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        $options = GodClassOptions::fromArray([]);
-
-        self::assertFalse($options->isEnabled());
+        self::assertEquals(new GodClassOptions(), GodClassOptions::fromResolved(ResolvedOptionsFixture::values(GodClassOptions::class, [])));
+        self::assertFalse(GodClassOptions::fromResolved(ResolvedOptionsFixture::values(GodClassOptions::class, ['enabled' => false]))->isEnabled());
     }
     #[Test]
     public function itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations(): void
     {
         $class = SymbolPath::forClass('App\\Service', 'Twin');
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([
+        $repository->method('allClassDeclarations')->willReturn([
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn(
+        $repository->method('getSubject')->willReturn(
             (new MetricBag())
                 ->with('complexity.wmc', 50)
                 ->with('cohesion.lcom', 4)
@@ -530,6 +590,14 @@ final class GodClassRuleTest extends TestCase
         ], $subjects);
     }
 
+    private static function populationSession(string $producer, bool $selected = true): PopulationSession
+    {
+        return new PopulationSession((new ChannelPublication(new RuleEnablement([new EnablementDecision(
+            new SelectionCellAddress($producer, new FindingChannel($producer), SymbolLevel::Class_, ChannelSelectionRole::Selectable),
+            new AuthoredCellDecision($selected ? CellSwitch::On : CellSwitch::Off, CellAdmission::Direct),
+        )], null)))->publishes(...));
+    }
+
     private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
     {
         $type = $symbolPath->getType();
@@ -545,6 +613,7 @@ final class GodClassRuleTest extends TestCase
             $file,
             $line,
             $kind,
+            $kind === \Qualimetrix\Core\Symbol\CallableKind::Method ? \Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forClass($symbolPath->namespace ?? '', $symbolPath->type ?? ''), $file, \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)) : null,
         );
     }
 }

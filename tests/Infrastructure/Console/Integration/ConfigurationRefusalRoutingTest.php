@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Console\Integration;
 
 use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
@@ -13,15 +14,15 @@ use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolution
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
+use Qualimetrix\Infrastructure\Console\AnalysisPreflightProfile;
 use Qualimetrix\Infrastructure\Console\CheckConfigurationResolvers;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCommand;
@@ -33,11 +34,15 @@ use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
 use Qualimetrix\Infrastructure\Console\Command\DirectivesCommand;
+use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
+use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
@@ -46,8 +51,10 @@ use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
 use ReflectionClass;
 use ReflectionProperty;
+use stdClass;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Tester\ApplicationTester;
 use Symfony\Component\Console\Tester\CommandTester;
 use Throwable;
 
@@ -61,8 +68,9 @@ use Throwable;
  *
  * - **Wiring** ({@see itWiresThePresenterIntoEveryCommandTheRealContainerBuilds}):
  *   the real production container, unmodified, builds every one of the eight
- *   commands with a presenter in place. `CheckCommand`, `DirectivesCommand`
- *   and `LayerAssignmentCommand` take it as a constructor argument, so a
+ *   commands with a presenter in place. `CheckCommand` receives it through
+ *   its mandatory run-target session; `DirectivesCommand` and
+ *   `LayerAssignmentCommand` take it as a constructor argument, so a
  *   missed DI registration would fail loudly at construction; the five
  *   `baseline:*` commands take it through
  *   {@see BaselineCommand::setRefusalPresenter()} instead — a missed
@@ -84,13 +92,12 @@ use Throwable;
  * document, and consults {@see \Qualimetrix\Analysis\Policy\Baseline\BaselineChannelRenamer}
  * alone — there is no resolver in its call path to substitute.
  *
- * `baseline:update` and `baseline:cleanup` refuse a missing baseline file
- * before they resolve any configuration, so their cases name a file that is
- * there: a missing one would be refused by that earlier check and never reach
- * the substituted resolver this class exists to route. That earlier refusal
- * is {@see \Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest}'s
- * subject. The file stays empty on purpose: the loader is inert, so a command
- * that read it before resolving the configuration fails loudly here.
+ * `baseline:update` and `baseline:cleanup` preflight baseline grammar before
+ * resolving configuration, so these cases provide a valid envelope to reach
+ * the substituted resolver. Early file and grammar refusals belong to
+ * {@see \Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest}.
+ * Semantic loading remains after configuration: its loader is inert here,
+ * so calling it before the resolver fails loudly.
  */
 #[CoversNothing]
 final class ConfigurationRefusalRoutingTest extends TestCase
@@ -107,6 +114,33 @@ final class ConfigurationRefusalRoutingTest extends TestCase
                 unlink($path);
             }
         }
+    }
+
+    #[Test]
+    public function itRoutesAnActualEvaluatorFailureThroughNativeDirectivesPreparation(): void
+    {
+        $path = sys_get_temp_dir() . '/qmx-runtime-audit-' . bin2hex(random_bytes(6)) . '.yaml';
+        $this->presentBaselines[] = $path;
+        file_put_contents($path, "computed_metrics:\n  computed.bad:\n    formula: '1 / 0'\n    levels: [project]\n");
+        $container = (new ContainerFactory())->create();
+        $command = $container->get(DirectivesCommand::class);
+        self::assertInstanceOf(DirectivesCommand::class, $command);
+        $presenter = $container->get(RefusalPresenter::class);
+        self::assertInstanceOf(RefusalPresenter::class, $presenter);
+        $application = new \Qualimetrix\Infrastructure\Console\Application(new ErrorStream(), $presenter, new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
+        $application->addCommand($command);
+        $tester = new CommandTester($command);
+        $code = $tester->execute([
+            'paths' => ['tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php'], '--config' => $path, '--format' => 'json', '--quiet' => true,
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation'],
+        ], ['capture_stderr_separately' => true]);
+        self::assertSame(3, $code, $tester->getDisplay() . $tester->getErrorOutput());
+        $document = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(3, $document['exit_code']);
+        self::assertStringContainsString('Computed metric "computed.bad" failed at level "project"', $document['error']);
+        self::assertSame(['computed_metrics', 'computed.bad', 'formula'], $document['position']['path']);
+        self::assertSame([['kind' => 'file', 'name' => $path, 'imported_by' => null]], $document['source']);
+        self::assertArrayNotHasKey('verdicts', $document);
     }
 
     #[Test]
@@ -148,19 +182,110 @@ final class ConfigurationRefusalRoutingTest extends TestCase
         }
     }
 
+    /** @return iterable<string, array{class-string<\Symfony\Component\Console\Command\Command>, array<string, mixed>}> */
+    public static function provideMeasuringDoors(): iterable
+    {
+        yield 'check' => [CheckCommand::class, ['paths' => ['README.md']]];
+        yield 'directives' => [DirectivesCommand::class, ['paths' => ['README.md']]];
+        yield 'graph' => [GraphExportCommand::class, ['paths' => ['README.md']]];
+        yield 'debug configured paths' => [LayerAssignmentCommand::class, ['fqn' => 'App\\Sample']];
+        yield 'baseline generate' => [BaselineGenerateCommand::class, ['baseline' => 'new.json', 'paths' => ['README.md']]];
+        yield 'baseline update' => [BaselineUpdateCommand::class, ['baseline' => 'baseline.json', 'paths' => ['README.md']]];
+        yield 'baseline cleanup' => [BaselineCleanupCommand::class, ['baseline' => 'baseline.json', 'paths' => ['README.md']]];
+        yield 'baseline explain' => [BaselineExplainCommand::class, ['subject' => 'App\\Sample', 'paths' => ['README.md']]];
+    }
+
+    /**
+     * @param class-string<\Symfony\Component\Console\Command\Command> $commandClass
+     * @param array<string, mixed> $arguments
+     */
+    #[Test]
+    #[DataProvider('provideMeasuringDoors')]
+    public function itRefusesAnExplicitNonPhpFileAtEveryMeasuringDoor(string $commandClass, array $arguments): void
+    {
+        $directory = sys_get_temp_dir() . '/qmx-non-php-door-' . bin2hex(random_bytes(6));
+        mkdir($directory);
+        file_put_contents($directory . '/README.md', 'Not PHP');
+        file_put_contents($directory . '/Sample.php', '<?php namespace App; final class Sample {}');
+        file_put_contents($directory . '/qmx.yaml', "paths: [README.md]\ncache: {enabled: false}\n");
+        $previous = getcwd();
+        self::assertNotFalse($previous);
+        chdir($directory);
+        try {
+            $container = (new ContainerFactory())->create();
+            $generate = $container->get(BaselineGenerateCommand::class);
+            self::assertInstanceOf(BaselineGenerateCommand::class, $generate);
+            self::assertSame(0, (new CommandTester($generate))->execute([
+                'baseline' => 'baseline.json', 'paths' => ['Sample.php'], '--no-cache' => true, '--workers' => '0',
+            ]));
+            $command = $container->get($commandClass);
+            self::assertInstanceOf($commandClass, $command);
+            $tester = new CommandTester($command);
+            self::assertSame(3, $tester->execute($arguments, ['capture_stderr_separately' => true]));
+            self::assertStringContainsString('README.md', $tester->getErrorOutput());
+            self::assertStringContainsString('PHP', $tester->getErrorOutput());
+            self::assertFileDoesNotExist($directory . '/new.json');
+        } finally {
+            chdir($previous);
+            foreach (['README.md', 'Sample.php', 'qmx.yaml', 'baseline.json', 'baseline.json.lock'] as $file) {
+                @unlink($directory . '/' . $file);
+            }
+            rmdir($directory);
+        }
+    }
+
+    /** @return iterable<string, array{class-string<\Symfony\Component\Console\Command\Command>}> */
+    public static function provideNewDocumentDoors(): iterable
+    {
+        yield 'graph' => [GraphExportCommand::class];
+        yield 'rules' => [RulesCommand::class];
+    }
+
+    /** @param class-string<\Symfony\Component\Console\Command\Command> $commandClass */
+    #[Test]
+    #[DataProvider('provideNewDocumentDoors')]
+    public function itRefusesAnUnknownDocumentKeyAtTheNewDoors(string $commandClass): void
+    {
+        $config = sys_get_temp_dir() . '/qmx-bad-document-' . bin2hex(random_bytes(6)) . '.yaml';
+        file_put_contents($config, "not_a_configuration_root: true\n");
+        try {
+            $container = (new ContainerFactory())->create();
+            $command = $container->get($commandClass);
+            self::assertInstanceOf($commandClass, $command);
+            $stream = new ErrorStream();
+            $snapshot = $container->get(\Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface::class);
+            self::assertInstanceOf(\Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface::class, $snapshot);
+            $application = new \Qualimetrix\Infrastructure\Console\Application($stream, new RefusalPresenter($stream), $snapshot);
+            $application->setAutoExit(false);
+            $application->addCommand($command);
+            $tester = new ApplicationTester($application);
+            self::assertSame(3, $tester->run(['command' => $command->getName(), '--config' => $config], ['capture_stderr_separately' => true]));
+            self::assertStringContainsString('not_a_configuration_root', $tester->getErrorOutput());
+            self::assertStringContainsString(basename($config), $tester->getErrorOutput());
+        } finally {
+            unlink($config);
+        }
+    }
+
     #[Test]
     public function itAnswersTheCarrierWithExitThreeInCheck(): void
     {
+        $container = (new ContainerFactory())->create();
+        /** @var RuntimeConfigurator $runtime */
+        $runtime = $container->get(RuntimeConfigurator::class);
+        /** @var RunTargets $targets */
+        $targets = $container->get(RunTargets::class);
+
         $command = new CheckCommand(
             $this->inert(AnalysisPipelineInterface::class),
             $this->inert('Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator'),
-            $this->realRuntimeConfigurator(),
+            $runtime,
             $this->realResultPresenter(),
             $this->realRuleInputValidator(),
             $this->inert('Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver'),
             $this->throwingConfigurationInputAdapter(),
             $this->inert(CheckConfigurationResolvers::class),
-            $this->freshPresenter(),
+            new RunTargetSession($targets, $this->freshPresenter()),
         );
 
         $tester = new CommandTester($command);
@@ -200,6 +325,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
         // stay inert.
         $command = new LayerAssignmentCommand(
             $this->realAnalysisPreflight(),
+            AnalysisPreflightProfile::analysis(),
             $this->inert('Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver'),
             $this->freshPresenter(),
         );
@@ -215,12 +341,14 @@ final class ConfigurationRefusalRoutingTest extends TestCase
     #[Test]
     public function itAnswersTheCarrierWithExitThreeInBaselineGenerate(): void
     {
+        $errorStream = new ErrorStream();
         $command = new BaselineGenerateCommand(
             $this->realBaselineRun(),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineGenerator'),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineWriter'),
+            $errorStream,
         );
-        $command->setRefusalPresenter($this->freshPresenter());
+        $command->setRefusalPresenter(new RefusalPresenter($errorStream));
 
         $tester = new CommandTester($command);
         $code = $tester->execute(
@@ -239,8 +367,10 @@ final class ConfigurationRefusalRoutingTest extends TestCase
         $command = new BaselineUpdateCommand(
             $this->realBaselineRun(),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader'),
+            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentReader'),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineUpdater'),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineWriter'),
+            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\RunRuleCoverage'),
         );
         $command->setRefusalPresenter($this->freshPresenter());
 
@@ -261,6 +391,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
         $command = new BaselineCleanupCommand(
             $this->realBaselineRun(),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader'),
+            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentReader'),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineCleaner'),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineWriter'),
             $this->inert('Qualimetrix\\Analysis\\Finding\\Contract\\ChannelDeclarationRegistryInterface'),
@@ -285,6 +416,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
         $command = new BaselineExplainCommand(
             $this->realBaselineRun(),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader'),
+            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentReader'),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryExplanationService'),
             $this->inert('Qualimetrix\\Infrastructure\\Console\\Command\\BaselineConfiguredThresholds'),
             $this->inert('Qualimetrix\\Analysis\\Finding\\Contract\\ChannelDeclarationRegistryInterface'),
@@ -336,16 +468,22 @@ final class ConfigurationRefusalRoutingTest extends TestCase
      * from anything a CLI invocation supplies, so the CLI path this test
      * drives can never throw it. The clause is absent; this case proves the
      * exception falls all the way to
-     * `catch (Throwable)` and answers as a product defect, code 1, not 3 —
+     * `catch (Throwable)` and answers as a product defect, code 5, not 3 —
      * the behaviour the removal is supposed to have, not a regression of it.
      */
     #[Test]
-    public function itLeavesConflictingCliAliasAtExitOneAsAnInternalError(): void
+    public function itLeavesConflictingCliAliasAtExitFiveAsAnInternalError(): void
     {
+        $container = (new ContainerFactory())->create();
+        /** @var RuntimeConfigurator $runtime */
+        $runtime = $container->get(RuntimeConfigurator::class);
+        /** @var RunTargets $targets */
+        $targets = $container->get(RunTargets::class);
+
         $command = new CheckCommand(
             $this->inert(AnalysisPipelineInterface::class),
             $this->inert('Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator'),
-            $this->realRuntimeConfigurator(),
+            $runtime,
             $this->realResultPresenter(),
             $this->realRuleInputValidator(),
             $this->inert('Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver'),
@@ -355,13 +493,13 @@ final class ConfigurationRefusalRoutingTest extends TestCase
                 '--strict',
             )),
             $this->inert(CheckConfigurationResolvers::class),
-            $this->freshPresenter(),
+            new RunTargetSession($targets, $this->freshPresenter()),
         );
 
         $tester = new CommandTester($command);
         $code = $tester->execute(['paths' => ['src']]);
 
-        self::assertSame(1, $code);
+        self::assertSame(5, $code);
     }
 
     private function freshPresenter(): RefusalPresenter
@@ -380,14 +518,14 @@ final class ConfigurationRefusalRoutingTest extends TestCase
             self::REFUSAL_SUMMARY,
         );
 
-        return new ConfigurationInputAdapter(new class ($refusal) implements ConfigurationPipelineInterface {
+        return new ConfigurationInputAdapter(new RuleOptionDocumentForms(), new class ($refusal) implements ConfigurationPipelineInterface {
             public function __construct(private readonly Throwable $refusal) {}
 
             public function resolve(ConfigurationResolutionRequest $request): ConfigurationDocument
             {
                 throw $this->refusal;
             }
-        });
+        }, new ErrorStream(), self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class));
     }
 
     private function realRuntimeConfigurator(): RuntimeConfigurator
@@ -437,38 +575,24 @@ final class ConfigurationRefusalRoutingTest extends TestCase
         };
 
         return new RuleInputValidator(
+            new RuleOptionDocumentForms(),
             $ruleRegistry,
-            $this->inert('Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleSelector'),
-            $this->inert(FindingConfigurationResolverInterface::class),
             $this->inert('Qualimetrix\\Infrastructure\\Rule\\Contract\\RuleChannelSnapshotFactoryInterface'),
+            new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
+            $this->inert('Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Configuration\\ComputedMetricConfiguratorInterface'),
+            new \Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver(),
+            self::createStub(\Qualimetrix\Analysis\Policy\Architecture\Contract\UnassignedClassLayerRequirementInterface::class),
         );
     }
 
     private function realAnalysisPreflight(): AnalysisPreflight
     {
-        return new AnalysisPreflight(
-            $this->realRuntimeConfigurator(),
-            $this->throwingConfigurationInputAdapter(),
-            $this->inert(RunConfigurationResolverInterface::class),
-            $this->inert(CacheConfigurationResolverInterface::class),
-            $this->inert(ParallelConfigurationResolverInterface::class),
-            $this->inert('Qualimetrix\\Infrastructure\\Console\\RuleInputValidator'),
-            $this->inert(FileDiscoveryFactoryInterface::class),
-        );
+        return new AnalysisPreflight($this->realRuntimeConfigurator(), $this->throwingConfigurationInputAdapter(), new \Qualimetrix\Infrastructure\Console\RunConfigurationPreparation($this->inert(RunConfigurationResolverInterface::class), $this->inert(CacheConfigurationResolverInterface::class), $this->inert(ParallelConfigurationResolverInterface::class)), $this->inert('Qualimetrix\\Infrastructure\\Console\\RuleInputValidator'));
     }
 
     private function realBaselineRun(): BaselineRun
     {
-        return new BaselineRun(
-            $this->realRuntimeConfigurator(),
-            $this->inert('Qualimetrix\\Infrastructure\\Console\\MeasuredFindingSet'),
-            $this->inert('Qualimetrix\\Infrastructure\\Console\\RuleInputValidator'),
-            $this->throwingConfigurationInputAdapter(),
-            $this->inert(RunConfigurationResolverInterface::class),
-            $this->inert(ConfiguredFindingExclusionsResolverInterface::class),
-            $this->inert(CacheConfigurationResolverInterface::class),
-            $this->inert(ParallelConfigurationResolverInterface::class),
-        );
+        return new BaselineRun($this->realRuntimeConfigurator(), $this->inert('Qualimetrix\\Infrastructure\\Console\\MeasuredFindingSet'), $this->inert('Qualimetrix\\Infrastructure\\Console\\RuleInputValidator'), $this->throwingConfigurationInputAdapter(), new \Qualimetrix\Infrastructure\Console\RunConfigurationPreparation($this->inert(RunConfigurationResolverInterface::class), $this->inert(CacheConfigurationResolverInterface::class), $this->inert(ParallelConfigurationResolverInterface::class)), $this->inert(ConfiguredFindingExclusionsResolverInterface::class), new ErrorStream(), $this->inert(\Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface::class), $this->inert(\Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface::class));
     }
 
     private function nonExistentBaselinePath(): string
@@ -479,7 +603,13 @@ final class ConfigurationRefusalRoutingTest extends TestCase
     private function presentBaselinePath(): string
     {
         $path = $this->nonExistentBaselinePath();
-        touch($path);
+        file_put_contents($path, json_encode([
+            'version' => 14,
+            'generated' => '2026-09-01T00:00:00+00:00',
+            'scope' => ['src'],
+            'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
+            'entries' => new stdClass(),
+        ], \JSON_THROW_ON_ERROR));
         $this->presentBaselines[] = $path;
 
         return $path;

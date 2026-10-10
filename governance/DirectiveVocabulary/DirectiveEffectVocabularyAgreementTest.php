@@ -62,7 +62,7 @@ final class DirectiveEffectVocabularyAgreementTest extends TestCase
     {
         foreach (DirectiveEffect::cases() as $effect) {
             self::assertSame(
-                $effect->value !== 'unmeasured',
+                !\in_array($effect, [DirectiveEffect::Unmeasured, DirectiveEffect::Refused], true),
                 MeasuredEffects::isMeasured($effect->value),
                 $effect->value,
             );
@@ -83,16 +83,20 @@ final class DirectiveEffectVocabularyAgreementTest extends TestCase
     }
 
     /**
-     * The same in the other vocabulary, and the one that carries the point: a
-     * masking coalition is `unmeasured` like any other refusal, so a floor
-     * written over verdicts alone never asks for it.
+     * The floor still asks for every reason in its sweep population. A selected
+     * parent makes `scope-unmeasured` through a different product path, covered
+     * by DirectivesCommandTest::itExplainsAnUnmeasuredNocDirectiveOnASelectedParent.
+     * Requiring that reason in this sweep would add a probe of a probe.
      */
     #[Test]
     public function itAsksForEveryRefusalTheProductCanPublishAndNoOther(): void
     {
         $published = array_map(
             static fn(DirectiveUnmeasurableReason $reason): string => $reason->value,
-            DirectiveUnmeasurableReason::cases(),
+            array_values(array_filter(
+                DirectiveUnmeasurableReason::cases(),
+                static fn(DirectiveUnmeasurableReason $reason): bool => $reason !== DirectiveUnmeasurableReason::ScopeUnmeasured,
+            )),
         );
         $required = HeterogeneityFloor::REQUIRED_REASONS;
 

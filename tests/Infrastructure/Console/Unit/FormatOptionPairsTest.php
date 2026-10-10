@@ -39,7 +39,8 @@ final class FormatOptionPairsTest extends TestCase
             self::fail('Two spellings of one value must be refused.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString('"violations" and "limit" set one value', $refusal->getMessage());
-            self::assertSame('--format-opt', $refusal->origin()->locator());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame('--format-opt', $refusal->sources()[0]->locator());
         }
     }
 

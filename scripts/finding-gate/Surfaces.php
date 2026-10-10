@@ -11,7 +11,7 @@ final class Surfaces
     public const FORMATS = [
         'summary',
         'text',
-        'text-verbose',
+        'text-detail',
         'json',
         'checkstyle',
         'sarif',
@@ -35,6 +35,10 @@ final class Surfaces
     public static function surfaceClass(string $artifactKey): string
     {
         $surface = substr($artifactKey, (int) strpos($artifactKey, '|') + 1);
+
+        if ($surface === 'stderr:check:output') {
+            return $surface;
+        }
 
         foreach (['explain:', 'stderr:'] as $prefix) {
             if (str_starts_with($surface, $prefix)) {

@@ -1,0 +1,126 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 153451
++visible 153766
+@@ -958,4 +958,4 @@
+-            "reason": "high complexity, low type safety",
+-            "violationCount": 31,
+-            "violationDensity": 20.5,
+-            "size.class-count.sum": 3,
++            "reason": "low type safety",
++            "violationCount": 31,
++            "violationDensity": 20.5,
++            "size.class-count": 3,
+@@ -967,1 +967,2 @@
+-                "maintainability": 68.83373460995337
++                "maintainability": 68.83373460995337,
++                "overall": 71.96454304801637
+@@ -974,4 +975,4 @@
+-            "reason": "low type safety, high complexity",
+-            "violationCount": 11,
+-            "violationDensity": 34.4,
+-            "size.class-count.sum": 1,
++            "reason": "low type safety",
++            "violationCount": 11,
++            "violationDensity": 34.4,
++            "size.class-count": 1,
+@@ -983,1 +984,2 @@
+-                "maintainability": 72.4184767348737
++                "maintainability": 72.4184767348737,
++                "overall": 74.53018153566515
+@@ -990,4 +992,4 @@
+-            "reason": "low type safety, hard to maintain",
+-            "violationCount": 11,
+-            "violationDensity": 39.3,
+-            "size.class-count.sum": 1,
++            "reason": "low type safety",
++            "violationCount": 11,
++            "violationDensity": 39.3,
++            "size.class-count": 1,
+@@ -999,1 +1001,2 @@
+-                "maintainability": 74.25591940568707
++                "maintainability": 74.25591940568707,
++                "overall": 77.90118388113741
+@@ -1006,4 +1009,4 @@
+-            "reason": "low type safety, high coupling",
+-            "violationCount": 21,
+-            "violationDensity": 24.1,
+-            "size.class-count.sum": 3,
++            "reason": "low type safety",
++            "violationCount": 21,
++            "violationDensity": 24.1,
++            "size.class-count": 3,
+@@ -1015,1 +1018,2 @@
+-                "maintainability": 82.06521716751239
++                "maintainability": 82.06521716751239,
++                "overall": 81.73454612264
+@@ -1022,4 +1026,4 @@
+-            "reason": "low type safety, high coupling",
+-            "violationCount": 9,
+-            "violationDensity": 40.9,
+-            "size.class-count.sum": 1,
++            "reason": "low type safety",
++            "violationCount": 9,
++            "violationDensity": 40.9,
++            "size.class-count": 1,
+@@ -1031,1 +1035,2 @@
+-                "maintainability": 92.80831455200634
++                "maintainability": 92.80831455200634,
++                "overall": 88.56166291040127
+@@ -1040,1 +1045,1 @@
+-            "reason": "low type safety, high complexity",
++            "reason": "low type safety",
+@@ -1058,1 +1063,2 @@
+-                "maintainability": 77.42183311571353
++                "maintainability": 77.42183311571353,
++                "overall": 79.93085805119873
+@@ -1065,1 +1071,1 @@
+-            "reason": "low type safety, hard to maintain",
++            "reason": "low type safety",
+@@ -1083,1 +1089,2 @@
+-                "maintainability": 82.69546562057283
++                "maintainability": 82.69546562057283,
++                "overall": 83.94999999999999
+@@ -1090,1 +1097,1 @@
+-            "reason": "low type safety, hard to maintain",
++            "reason": "low type safety",
+@@ -1108,1 +1115,2 @@
+-                "maintainability": 83.80872549148728
++                "maintainability": 83.80872549148728,
++                "overall": 85.56547980649586
+@@ -1115,1 +1123,1 @@
+-            "reason": "low type safety, hard to maintain",
++            "reason": "low type safety",
+@@ -1133,1 +1141,2 @@
+-                "maintainability": 80.1746416334298
++                "maintainability": 80.1746416334298,
++                "overall": 87.57900000000001
+@@ -1140,1 +1149,1 @@
+-            "reason": "low type safety, hard to maintain",
++            "reason": "low type safety",
+@@ -1158,1 +1167,2 @@
+-                "maintainability": 81.64440299263389
++                "maintainability": 81.64440299263389,
++                "overall": 88.65
+@@ -1165,1 +1175,1 @@
+-            "reason": "low type safety, low cohesion",
++            "reason": "low type safety",
+@@ -1183,1 +1193,2 @@
+-                "maintainability": 94.18366603825962
++                "maintainability": 94.18366603825962,
++                "overall": 89.3747584945477
+@@ -1190,1 +1201,1 @@
+-            "reason": "low type safety, hard to maintain",
++            "reason": "low type safety",
+@@ -1208,1 +1219,2 @@
+-                "maintainability": 95.6849887312038
++                "maintainability": 95.6849887312038,
++                "overall": 92.5
+@@ -1215,1 +1227,1 @@
+-            "reason": "low type safety, hard to maintain",
++            "reason": "low type safety",
+@@ -1233,1 +1245,2 @@
+-                "maintainability": 98.46627460117084
++                "maintainability": 98.46627460117084,
++                "overall": 92.5

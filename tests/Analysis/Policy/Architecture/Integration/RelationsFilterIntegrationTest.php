@@ -7,7 +7,6 @@ namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Integration;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
@@ -17,6 +16,8 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Analysis\Configuration\Fixtures\Document\WrittenFile;
+use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 
 /**
  * End-to-end test for Phase 2 Step G (direction 4: dependency-type filter).
@@ -169,8 +170,8 @@ final class RelationsFilterIntegrationTest extends TestCase
             YAML);
 
         try {
-            $loaded = (new YamlConfigLoader())->load($yamlPath);
-            $messages = $this->collectFindingMessages($loaded['architecture']);
+            $loaded = WrittenFile::compose($yamlPath);
+            $messages = $this->collectFindingMessages($loaded);
 
             self::assertEdgeNotViolating($messages, 'OrderExtender', 'BaseEntity', 'YAML-loaded inheritance alias must accept Extends');
             self::assertEdgeViolates($messages, 'PaymentCaller', 'Helper', 'YAML-loaded inheritance alias must reject StaticCall');
@@ -180,42 +181,60 @@ final class RelationsFilterIntegrationTest extends TestCase
     }
 
     /**
-     * @param array<string, mixed> $configArray
+     * @param array<string, mixed>|\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument $configArray
      *
      * @return list<string> Finding messages for the layer-violation rule only.
      */
-    private function collectFindingMessages(array $configArray): array
+    private function collectFindingMessages(array|\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument $configArray): array
     {
         $analysis = $this->runPipelineWithConfig($configArray);
 
         return array_values(array_map(
             static fn(Finding $v): string => $v->message,
             array_filter(
-                $analysis->findings,
+                $analysis->findings(),
                 static fn(Finding $v): bool => $v->ruleName === LayerViolationRule::NAME,
             ),
         ));
     }
 
     /**
-     * @param array<string, mixed> $configArray
+     * @param array<string, mixed>|\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument $configArray
      */
-    private function runPipelineWithConfig(array $configArray): AnalysisResult
+    private function runPipelineWithConfig(array|\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument $configArray): AnalysisResult
     {
         $factory = new ArchitectureConfigurationFactory();
-        $result = $factory->fromArray($configArray);
+        $result = $factory->fromResolved($configArray instanceof \Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument ? $configArray : ArchitectureDocument::file($configArray));
 
         $container = (new ContainerFactory())->create();
+        $execution = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class, $execution);
+        $registry = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry::class, $registry);
+        $document = $configArray instanceof \Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument
+            ? $configArray
+            : \Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::document([['source' => 'config', 'values' => ['architecture' => $configArray]]], AbsolutePath::fromString(self::FIXTURE_PATH))->resolved();
+        $catalog = $container->get(\Qualimetrix\Infrastructure\Rule\ChannelUniverse::class);
+        self::assertInstanceOf(\Qualimetrix\Infrastructure\Rule\ChannelUniverse::class, $catalog);
+        $channels = $catalog->snapshot(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions([]));
+        $registry->replace(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::ready(new \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration($document), $execution->allRules(), channels: $channels));
 
         $holder = $container->get(ArchitecturePolicyConfiguratorInterface::class);
         self::assertInstanceOf(ArchitecturePolicy::class, $holder);
-        $holder->bind($result->configuration);
+        $holder->replace($result);
 
         $pipeline = $container->get(AnalysisPipelineInterface::class);
         self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
 
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-        return $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []));
+        return $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration(
+            pathExcludes: [],
+            projectRoot: $root,
+            generatedFilePolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
+            authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
+        ));
     }
 
     /**

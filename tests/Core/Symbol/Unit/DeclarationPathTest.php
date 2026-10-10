@@ -18,6 +18,17 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class DeclarationPathTest extends TestCase
 {
     #[Test]
+    public function itKeepsFilenameSuffixesDistinctFromDeclarationOrdinals(): void
+    {
+        $symbol = SymbolPath::forClass('', 'A');
+        $filename = DeclarationPath::of($symbol, RelativePath::fromString('x.php#1'), DeclarationOrdinal::fromRank(0));
+        $ordinal = DeclarationPath::of($symbol, RelativePath::fromString('x.php'), DeclarationOrdinal::fromRank(1));
+        self::assertNotSame($filename->toCanonical(), $ordinal->toCanonical());
+        self::assertSame('declaration:class:A@x.php%231', $filename->toCanonical());
+        self::assertSame('declaration:class:A@x.php#1', $ordinal->toCanonical());
+    }
+
+    #[Test]
     public function itBuildsAStableCanonicalIdentityAndAddsAnOrdinalOnlyForCollisions(): void
     {
         $logical = SymbolPath::forMethod('App', 'Service', 'handle');

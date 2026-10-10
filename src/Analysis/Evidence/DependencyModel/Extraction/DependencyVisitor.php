@@ -8,11 +8,9 @@ use LogicException;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassLike;
-use PhpParser\Node\Stmt\GroupUse;
 use PhpParser\Node\Stmt\Namespace_;
-use PhpParser\Node\Stmt\TraitUse;
-use PhpParser\Node\Stmt\Use_;
 use PhpParser\NodeVisitorAbstract;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\ClassLikeHandler;
@@ -27,15 +25,15 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 /**
  * Visitor that collects all class dependencies from AST.
  *
- * Detects all 14 dependency types:
+ * Detects every dependency position and preserves syntax facts separately:
  * - Extends, Implements, TraitUse
  * - New, StaticCall, StaticPropertyFetch, ClassConstFetch
- * - TypeHint (params, returns, properties — including closure and arrow
- *   function signatures, not just class methods)
+ * - TypeHint, PropertyType and ConstantType, each with its type shape
  * - Catch, Instanceof
- * - Attribute (including attributes on closure/arrow function parameters)
- * - PropertyType
- * - IntersectionType, UnionType
+ * - Attribute, with the declaration site and nesting preserved
+ *
+ * Named class-like declarations travel beside edges so declarations without
+ * dependencies retain their kind and direct-body Stringable facts.
  *
  * Note: closures/arrow functions declared outside any enclosing class (e.g.
  * at file top level, backing a "global function") have no owning symbol —
@@ -46,6 +44,7 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
 {
     private ?RelativePath $file = null;
     private ?FileDeclarationIndex $declarationIndex = null;
+    private ?string $currentNamespace = null;
     private ?string $currentClass = null;
     private ?DependencyContext $currentContext = null;
 
@@ -53,14 +52,20 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
      * Counts nested anonymous-class scopes the traversal is currently inside
      * (0 = not inside one). Raised in {@see consumeAnonymousClass()}, lowered
      * in {@see leaveNode()}. An anonymous class never resets $currentContext
-     * (see below), so a `use T;` reached while this is > 0 is a declaration
-     * fact of the innermost anonymous class, not of $currentContext — see
+     * (see below), so its trait uses and attribute sites describe the
+     * anonymous class rather than $currentContext — see
      * {@see dispatchInCurrentContext()}.
      */
     private int $anonymousClassDepth = 0;
 
     /** @var list<Dependency> */
     private array $dependencies = [];
+
+    /** @var list<ClassLikeDeclaration> */
+    private array $classLikeDeclarations = [];
+
+    /** @var list<array{?string, ?DependencyContext}> */
+    private array $classStack = [];
 
     private readonly DependencyHandlerTable $handlers;
 
@@ -94,16 +99,18 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
     /**
      * Resets the visitor state between files.
      *
-     * Called automatically by setFile(), but can also be called directly
+     * Called automatically by beginFile(), but can also be called directly
      * when reusing the visitor for multiple files in the same traverser.
      */
     public function reset(): void
     {
         $this->dependencies = [];
+        $this->classLikeDeclarations = [];
+        $this->classStack = [];
+        $this->currentNamespace = null;
         $this->currentClass = null;
         $this->currentContext = null;
         $this->anonymousClassDepth = 0;
-        $this->resolver->reset();
     }
 
     /**
@@ -116,11 +123,17 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
         return $this->dependencies;
     }
 
+    /** @return list<ClassLikeDeclaration> */
+    public function classLikeDeclarations(): array
+    {
+        return $this->classLikeDeclarations;
+    }
+
     private readonly DependencyResolver $resolver;
 
     public function enterNode(Node $node): ?int
     {
-        if ($this->consumeNamespaceOrImport($node)) {
+        if ($this->consumeNamespace($node)) {
             return null;
         }
 
@@ -155,31 +168,22 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
         }
 
         if ($this->currentContext !== null) {
-            array_push($this->dependencies, ...$this->currentContext->getDependencies());
+            $recorder = $this->currentContext->recorder();
+            array_push($this->dependencies, ...$recorder->dependencies());
+            $declaration = $recorder->classLikeDeclaration();
+            if ($declaration !== null) {
+                $this->classLikeDeclarations[] = $declaration;
+            }
         }
-        $this->currentClass = null;
-        $this->currentContext = null;
+        [$this->currentClass, $this->currentContext] = array_pop($this->classStack) ?? [null, null];
 
         return null;
     }
 
-    private function consumeNamespaceOrImport(Node $node): bool
+    private function consumeNamespace(Node $node): bool
     {
         if ($node instanceof Namespace_) {
-            $this->resolver->reset();
-            $this->resolver->setNamespace($node->name?->toString());
-
-            return true;
-        }
-
-        if ($node instanceof Use_) {
-            $this->resolver->addUseStatement($node);
-
-            return true;
-        }
-
-        if ($node instanceof GroupUse) {
-            $this->resolver->addGroupUseStatement($node);
+            $this->currentNamespace = $node->name?->toString();
 
             return true;
         }
@@ -193,9 +197,11 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
             return false;
         }
 
+        $nestedNamedClass = $this->currentContext !== null;
+        $this->classStack[] = [$this->currentClass, $this->currentContext];
         $className = $node->name->toString();
-        $this->currentClass = $this->resolver->getNamespace() !== null
-            ? $this->resolver->getNamespace() . '\\' . $className
+        $this->currentClass = $this->currentNamespace !== null
+            ? $this->currentNamespace . '\\' . $className
             : $className;
 
         if ($this->file === null || $this->declarationIndex === null) {
@@ -205,12 +211,15 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
         $logical = SymbolPath::fromClassFqn($this->currentClass);
         $this->currentContext = new DependencyContext(
             $this->resolver,
-            $this->file,
-            DeclarationPath::of(
-                $logical,
+            new DependencyRecorder(
                 $this->file,
-                $this->declarationIndex->ordinalOf(DeclarationKey::forLogical($logical), $node->getStartFilePos()),
+                DeclarationPath::of(
+                    $logical,
+                    $this->file,
+                    $this->declarationIndex->ordinalOf(DeclarationKey::forLogical($logical), $node->getStartFilePos()),
+                ),
             ),
+            $nestedNamedClass,
         );
         $this->classLikeHandler->handle($node, $this->currentContext);
 
@@ -242,13 +251,9 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
             return;
         }
 
-        // `use T;` inside an anonymous class body never reaches ClassLikeHandler
-        // (it's a separate Stmt\TraitUse child, dispatched here like any other
-        // node) — so it is the only body-level edge that still needs flagging.
-        // Other body dependencies (new, static calls, type hints) are usages,
-        // not declaration facts, and stay unflagged even at depth > 0.
-        $describesNestedAnonymousClass = $node instanceof TraitUse && $this->anonymousClassDepth > 0;
-        if ($describesNestedAnonymousClass) {
+        // Only the recorder's attribute and class-like operations read this
+        // provenance; ordinary usages keep their existing dependency semantics.
+        if ($this->anonymousClassDepth > 0) {
             $this->currentContext->startDescribingNestedAnonymousClass();
         }
         $this->handlers->dispatch($node, $this->currentContext);

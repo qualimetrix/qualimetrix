@@ -12,6 +12,8 @@ use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
+use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -203,6 +205,46 @@ final class AnalysisContextThresholdTest extends TestCase
         self::assertNull($context->getThresholdOverride('complexity.ccn', self::subject()));
         self::assertNull($context->getThresholdOverride('coupling.cbo', self::subject()));
     }
+
+    #[Test]
+    public function itKeepsTheWholeFirstWinnerAcrossBucketsAndRebuildsAfterItsRemoval(): void
+    {
+        $weaker = self::override('complexity.ccn', 10, 20, 10, 11, ControlScope::Class_);
+        $winner = self::override('complexity.ccn', 50, null, 1, null, ControlScope::Hook);
+        $tied = self::override('complexity.ccn', null, 90, 1, null, ControlScope::Hook);
+        $context = new AnalysisContext(
+            metrics: self::createStub(MetricRepositoryInterface::class),
+            thresholdOverrides: ['first.php' => [$weaker, $winner], 'second.php' => [$tied]],
+        );
+        self::assertSame($winner, $context->getThresholdOverride('complexity.ccn', self::subject()));
+        self::assertNull($context->getThresholdOverride('complexity.ccn', self::subject())->error);
+
+        $counterfactual = new AnalysisContext(
+            metrics: $context->metrics,
+            thresholdOverrides: ['first.php' => [$weaker], 'second.php' => [$tied]],
+        );
+        self::assertSame($tied, $counterfactual->getThresholdOverride('complexity.ccn', self::subject()));
+        self::assertSame($winner, $context->getThresholdOverride('complexity.ccn', self::subject()));
+    }
+
+    #[Test]
+    public function itKeepsDifferentExactOrdinalsOfOneLogicalDeclarationSeparate(): void
+    {
+        $logical = SymbolPath::forClass('N', 'C');
+        $file = RelativePath::fromString('src/Foo.php');
+        $first = MetricSubject::declaration(DeclarationPath::of($logical, $file, DeclarationOrdinal::fromRank(0)));
+        $second = MetricSubject::declaration(DeclarationPath::of($logical, $file, DeclarationOrdinal::fromRank(1)));
+        $firstOverride = self::override('complexity.ccn', 10, 20, 1, null, subject: $first);
+        $secondOverride = self::override('complexity.ccn', 30, 40, 1, null, subject: $second);
+        $context = new AnalysisContext(
+            metrics: self::createStub(MetricRepositoryInterface::class),
+            thresholdOverrides: ['unrelated.php' => [$firstOverride, $secondOverride]],
+        );
+
+        self::assertSame($firstOverride, $context->getThresholdOverride('complexity.ccn', $first));
+        self::assertSame($secondOverride, $context->getThresholdOverride('complexity.ccn', $second));
+    }
+
     private static function subject(): MetricSubject
     {
         return MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('src/Foo.php')));

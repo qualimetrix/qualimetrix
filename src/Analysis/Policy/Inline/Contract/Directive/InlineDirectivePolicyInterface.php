@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Contract\Directive;
 
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
@@ -98,7 +102,7 @@ interface InlineDirectivePolicyInterface
      *
      * @return list<DirectiveVerdict>
      */
-    public function directiveVerdicts(array $producedFindings, LevelActivity $levelActivity): array;
+    public function directiveVerdicts(array $producedFindings, LevelActivity $levelActivity, SubjectCoverageFacts $subjectCoverage): array;
 
     /**
      * The findings only the produced set can justify: suppressions that
@@ -110,7 +114,7 @@ interface InlineDirectivePolicyInterface
      *
      * @param list<Finding> $findings everything the rules produced this run
      *
-     * @return list<Finding>
+     * @return array{findings: list<Finding>, population: JudgedPopulation}
      */
-    public function auditDirectiveUsage(array $findings, LevelActivity $levelActivity): array;
+    public function auditDirectiveUsage(array $findings, LevelActivity $levelActivity, SubjectCoverageFacts $subjectCoverage, ChannelPublication $publication): array;
 }

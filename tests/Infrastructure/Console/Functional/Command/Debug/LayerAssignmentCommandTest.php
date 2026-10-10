@@ -4,19 +4,25 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional\Command\Debug;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Infrastructure\Console\AnalysisPreflightProfile;
 use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
+use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentJsonPresenter;
+use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentTextPresenter;
 use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
 use Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use ReflectionClass;
+use ReflectionMethod;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -41,6 +47,8 @@ use Symfony\Component\Console\Tester\CommandTester;
  * matching path inside the command.
  */
 #[CoversClass(LayerAssignmentCommand::class)]
+#[CoversClass(LayerAssignmentJsonPresenter::class)]
+#[CoversClass(LayerAssignmentTextPresenter::class)]
 #[CoversClass(LayerAssignmentResolver::class)]
 final class LayerAssignmentCommandTest extends TestCase
 {
@@ -48,16 +56,23 @@ final class LayerAssignmentCommandTest extends TestCase
 
     private string $originalMemoryLimit = '';
 
+    private string $originalWorkingDirectory = '';
+
     protected function setUp(): void
     {
         $this->tempDir = sys_get_temp_dir() . '/qmx-debug-layer-test-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0o755, true);
+        $workingDirectory = getcwd();
+        self::assertNotFalse($workingDirectory);
+        $this->originalWorkingDirectory = $workingDirectory;
+        chdir($this->tempDir);
         $current = \ini_get('memory_limit');
         $this->originalMemoryLimit = $current !== false ? $current : '-1';
     }
 
     protected function tearDown(): void
     {
+        chdir($this->originalWorkingDirectory);
         if (is_dir($this->tempDir)) {
             $this->removeDirectory($this->tempDir);
         }
@@ -89,6 +104,19 @@ final class LayerAssignmentCommandTest extends TestCase
         self::assertStringContainsString('Would also match (in declaration order):', $output);
         self::assertStringContainsString('(none', $output);
         self::assertStringNotContainsString('Diagnostic hint:', $output);
+    }
+
+    #[Test]
+    public function itAcceptsTheStrictPresetBeforeResolvingAnAssignment(): void
+    {
+        $config = $this->writeConfig([['service', ['App\\Service\\**']]]);
+        $this->declareClasses(['App\\Service\\UserService']);
+        $tester = $this->newTester();
+
+        self::assertSame(Command::SUCCESS, $tester->execute([
+            'fqn' => 'App\\Service\\UserService', '--config' => $config, '--preset' => ['strict'],
+        ]), $tester->getDisplay());
+        self::assertStringContainsString('Assigned to: service', $tester->getDisplay());
     }
 
     #[Test]
@@ -268,11 +296,8 @@ final class LayerAssignmentCommandTest extends TestCase
     }
 
     /**
-     * Membership folds ASCII case the way PHP folds class names, so a real
-     * class spelled in another case is still found — and keeps the answer it
-     * had before the refusal existed. Layer *matching* stays case-sensitive:
-     * the lower-cased spelling matches no pattern, so the answer is the
-     * informational `(no layer)`, not a refusal and not an assignment.
+     * PHP identity lookup folds ASCII case, while layer matching uses the
+     * spelling of the declaration the run observed.
      */
     #[Test]
     public function itFindsAnAnalysedClassSpelledInAnotherCase(): void
@@ -289,8 +314,50 @@ final class LayerAssignmentCommandTest extends TestCase
         ], ['capture_stderr_separately' => true]);
 
         self::assertSame(Command::SUCCESS, $exit);
-        self::assertStringContainsString('Assigned to: (no layer)', $tester->getDisplay());
+        self::assertStringContainsString('Class: App\\Service\\UserService', $tester->getDisplay());
+        self::assertStringContainsString('Assigned to: service', $tester->getDisplay());
         self::assertSame('', $tester->getErrorOutput());
+    }
+
+    #[Test]
+    public function itAcceptsADeclaredClassWhoseNameContainsHighBytes(): void
+    {
+        $configPath = $this->writeConfig([
+            ['service', ['App\\Service\\**']],
+        ]);
+        $this->declareClasses(['App\\Service\\Café']);
+
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'App\\Service\\Café',
+            '--config' => $configPath,
+        ], ['capture_stderr_separately' => true]);
+
+        self::assertSame(Command::SUCCESS, $exit, $tester->getErrorOutput());
+        self::assertStringContainsString('Class: App\\Service\\Café', $tester->getDisplay());
+        self::assertStringContainsString('Assigned to: service', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itAnswersForAClassSeenOnlyAtAGraphEdgeEnd(): void
+    {
+        $configPath = $this->writeConfig([
+            ['vendor', ['Vendor\\Lib\\**']],
+        ]);
+        $this->declareClassExtending('App\\Child', 'Vendor\\Lib\\Thing');
+
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'Vendor\\Lib\\Thing',
+            '--config' => $configPath,
+            '--format' => 'json',
+        ], ['capture_stderr_separately' => true]);
+
+        self::assertSame(Command::SUCCESS, $exit, $tester->getErrorOutput());
+        $decoded = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame('Vendor\\Lib\\Thing', $decoded['fqn']);
+        self::assertSame('vendor', $decoded['assigned']['layer']);
+        self::assertTrue($decoded['edgeEndOnly']);
     }
 
     /**
@@ -405,21 +472,97 @@ final class LayerAssignmentCommandTest extends TestCase
     #[Test]
     public function itExitsInvalidForAnFqnWithAnEmbeddedSpace(): void
     {
+        $configPath = $this->writeConfig([['service', ['App\\Service\\**']]]);
+        $this->declareClasses(['App\\Service\\Known']);
         $tester = $this->newTester();
-        $exit = $tester->execute(['fqn' => 'App\\Service Foo']);
+        $exit = $tester->execute(['fqn' => 'App\\Service Foo', '--config' => $configPath]);
 
         self::assertSame(ConsoleExitCode::Refusal->value, $exit);
-        self::assertStringContainsString('whitespace', $tester->getDisplay());
+        self::assertStringContainsString('is not among the declarations and graph ends', $tester->getDisplay());
+        self::assertStringNotContainsString('whitespace', $tester->getDisplay());
     }
 
     #[Test]
     public function itExitsInvalidForAnFqnWithAnInvalidIdentifierCharacter(): void
     {
+        $configPath = $this->writeConfig([['service', ['App\\Service\\**']]]);
+        $this->declareClasses(['App\\Service\\Known']);
         $tester = $this->newTester();
-        $exit = $tester->execute(['fqn' => 'App\\Service-Foo']);
+        $exit = $tester->execute(['fqn' => 'App\\Service-Foo', '--config' => $configPath]);
 
         self::assertSame(ConsoleExitCode::Refusal->value, $exit);
-        self::assertStringContainsString('not a valid PHP', $tester->getDisplay());
+        self::assertStringContainsString('is not among the declarations and graph ends', $tester->getDisplay());
+        self::assertStringNotContainsString('not a valid PHP', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itKeepsUnknownNamesRefusedWhenTheArchitecturePolicyIsDisabled(): void
+    {
+        $configPath = $this->writeConfig([['service', ['App\\Service\\**']]]);
+        $this->disableEveryArchitectureProducer($configPath);
+        $this->declareClasses(['App\\Service\\Known']);
+
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'Nope\\Missing',
+            '--config' => $configPath,
+        ]);
+
+        self::assertSame(ConsoleExitCode::Refusal->value, $exit);
+        self::assertStringContainsString('is not among the declarations and graph ends', $tester->getDisplay());
+        self::assertStringNotContainsString('policy disabled', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itReportsAKnownClassWhenTheArchitecturePolicyIsDisabled(): void
+    {
+        $configPath = $this->writeConfig([
+            ['all', ['App\\**']],
+            ['service', ['App\\Service\\**']],
+        ]);
+        $this->disableEveryArchitectureProducer($configPath);
+        $this->declareClasses(['App\\Service\\Known']);
+
+        $arguments = [
+            'fqn' => 'App\\Service\\Known',
+            '--config' => $configPath,
+        ];
+        $text = $this->newTester();
+        self::assertSame(Command::SUCCESS, $text->execute($arguments));
+        self::assertStringContainsString('policy is disabled in this configuration', $text->getDisplay());
+        self::assertStringNotContainsString('Diagnostic hint:', $text->getDisplay());
+        self::assertStringNotContainsString('Docs:', $text->getDisplay());
+
+        $json = $this->newTester();
+        self::assertSame(Command::SUCCESS, $json->execute($arguments + ['--format' => 'json']));
+        $decoded = json_decode($json->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertTrue($decoded['policyDisabled']);
+        self::assertArrayNotHasKey('reported', $decoded['shadowed'][0] ?? []);
+    }
+
+    #[Test]
+    public function itRefusesAProfileWithoutFindingConfigurationBeforeResolution(): void
+    {
+        $configPath = $this->writeConfig([['service', ['App\\Service\\**']]]);
+        $this->declareClasses(['App\\Service\\Known']);
+
+        $tester = new CommandTester($this->buildCommand(AnalysisPreflightProfile::graph()));
+        $exit = $tester->execute(['fqn' => 'App\\Service\\Known', '--config' => $configPath]);
+
+        self::assertSame(5, $exit);
+        self::assertStringContainsString('completed finding enablement', $tester->getDisplay());
+        self::assertStringNotContainsString('Assigned to:', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itRefusesAFindingConfigurationWithoutFinalEnablement(): void
+    {
+        $selection = new ReflectionMethod(LayerAssignmentCommand::class, 'policyDisabled');
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('completed finding enablement');
+
+        $selection->invoke(null, FindingConfiguration::none());
     }
 
     #[Test]
@@ -506,8 +649,8 @@ final class LayerAssignmentCommandTest extends TestCase
         $resolverConstructor = (new ReflectionClass(LayerAssignmentResolver::class))->getConstructor();
         self::assertNotNull($commandConstructor);
         self::assertNotNull($resolverConstructor);
-        self::assertCount(3, $commandConstructor->getParameters());
-        self::assertCount(6, $resolverConstructor->getParameters());
+        self::assertCount(4, $commandConstructor->getParameters());
+        self::assertCount(5, $resolverConstructor->getParameters());
     }
 
     /**
@@ -826,6 +969,8 @@ final class LayerAssignmentCommandTest extends TestCase
             'contenders' => [],
             'chainStopsAt' => [],
             'hasLayers' => true,
+            'policyDisabled' => false,
+            'edgeEndOnly' => false,
         ], $decoded);
     }
 
@@ -902,6 +1047,8 @@ final class LayerAssignmentCommandTest extends TestCase
             'contenders' => [],
             'chainStopsAt' => [],
             'hasLayers' => true,
+            'policyDisabled' => false,
+            'edgeEndOnly' => false,
         ], $decoded);
     }
 
@@ -1199,9 +1346,9 @@ final class LayerAssignmentCommandTest extends TestCase
     public function itNamesALaterMatchWhoseExcludeWentUnansweredInBothProjections(): void
     {
         // `web` owns the class for certain, and `infra` behind it loses the
-        // class whatever its clause answers, so the text lists it and so must
-        // the JSON — flagged as nothing `architecture.potential-shadow`
-        // reports, because `infra` may not match at all.
+        // class whatever its clause answers. The text lists it and JSON keeps
+        // it as a non-reported contending match, because `infra` may not match
+        // at all and therefore has no established shadow verdict.
         $sourcePath = $this->sourcePath();
         $configPath = $this->tempDir . '/qmx-' . bin2hex(random_bytes(6)) . '.yaml';
         file_put_contents($configPath, "paths: ['{$sourcePath}']\narchitecture:\n  layers:\n"
@@ -1219,8 +1366,12 @@ final class LayerAssignmentCommandTest extends TestCase
         $json->execute(['fqn' => 'App\\Web\\OrderController', '--config' => $configPath, '--format' => 'json']);
         $decoded = json_decode($json->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertIsArray($decoded);
-        self::assertSame('web', $decoded['shadowedBy']);
-        self::assertSame([['layer' => 'infra', 'criteria' => ['pattern "App\\**"'], 'reported' => false]], $decoded['shadowed']);
+        self::assertNull($decoded['shadowedBy']);
+        self::assertSame([], $decoded['shadowed']);
+        self::assertSame(
+            [['layer' => 'infra', 'criteria' => ['pattern "App\\**"'], 'reported' => false]],
+            $decoded['contendingMatches'],
+        );
         self::assertSame([], $decoded['contenders']);
     }
 
@@ -1284,7 +1435,41 @@ final class LayerAssignmentCommandTest extends TestCase
         $json->execute(['fqn' => 'App\\Service\\Foo', '--config' => $configPath, '--format' => 'json']);
         $decoded = json_decode($json->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertIsArray($decoded);
-        self::assertSame([['layer' => 'catch-all', 'criteria' => ['pattern "**"'], 'reported' => false]], $decoded['shadowed']);
+        self::assertSame([
+            [
+                'layer' => 'catch-all',
+                'criteria' => ['pattern "**"'],
+                'reported' => false,
+                'exemption' => 'narrower-declared-first',
+            ],
+        ], $decoded['shadowed']);
+    }
+
+    #[Test]
+    public function itNamesTheReceivesWhatItLeavesShadowExemption(): void
+    {
+        $sourcePath = $this->sourcePath();
+        $configPath = $this->tempDir . '/qmx-' . bin2hex(random_bytes(6)) . '.yaml';
+        file_put_contents($configPath, "paths: ['{$sourcePath}']\narchitecture:\n  layers:\n"
+            . "    - name: preferred\n      patterns: ['App\\**']\n      exclude:\n        suffix: ['Legacy']\n"
+            . "    - name: remainder\n      patterns: ['App\\**']\n"
+            . "  allow:\n    preferred: []\n    remainder: []\n  coverage-gap: ignore\n");
+        $this->declareClasses(['App\\Current']);
+
+        $text = $this->newTester();
+        self::assertSame(Command::SUCCESS, $text->execute(['fqn' => 'App\\Current', '--config' => $configPath]));
+        self::assertStringContainsString('receives-what-it-leaves', $text->getDisplay());
+        self::assertStringNotContainsString('architecture.potential-shadow', $text->getDisplay());
+
+        $json = $this->newTester();
+        self::assertSame(Command::SUCCESS, $json->execute([
+            'fqn' => 'App\\Current',
+            '--config' => $configPath,
+            '--format' => 'json',
+        ]));
+        $decoded = json_decode($json->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame('receives-what-it-leaves', $decoded['shadowed'][0]['exemption']);
+        self::assertFalse($decoded['shadowed'][0]['reported']);
     }
 
     #[Test]
@@ -1389,10 +1574,11 @@ final class LayerAssignmentCommandTest extends TestCase
     }
 
     /**
-     * The text branch has several internal exits inside its own renderer
-     * (matched, no-layer, undecided and unique-match among them), but they all fall through to one
-     * call site in the command — this pins that the pointer reaches all of
-     * them by covering the matched case here and the no-layer case below.
+     * The text presenter has several internal assignment exits (matched,
+     * no-layer, undecided and unique-match among them), but its public render
+     * operation appends the pointer after that body. This pins that the
+     * pointer reaches all of them by covering the matched case here and the
+     * no-layer case below.
      */
     #[Test]
     public function itPrintsTheDocsPointerAfterATextReportForAMatchedClass(): void
@@ -1424,10 +1610,9 @@ final class LayerAssignmentCommandTest extends TestCase
     }
 
     /**
-     * The JSON branch shares the same call site as the text branch (see
-     * above), so this is the negative half of the same regression: an agent
-     * parsing `--format=json` must never see the pointer mixed into the
-     * document.
+     * JSON uses its own whole-assignment presenter, so this is the negative
+     * half of the same regression: an agent parsing `--format=json` output
+     * must never see the text presenter's pointer mixed into the document.
      */
     #[Test]
     public function itOmitsTheDocsPointerFromJsonOutput(): void
@@ -1454,9 +1639,17 @@ final class LayerAssignmentCommandTest extends TestCase
         return new CommandTester($this->buildCommand());
     }
 
-    private function buildCommand(): LayerAssignmentCommand
+    private function buildCommand(?AnalysisPreflightProfile $profile = null): LayerAssignmentCommand
     {
-        $container = (new ContainerFactory())->create();
+        $factory = new ContainerFactory();
+        if ($profile === null) {
+            $container = $factory->create();
+        } else {
+            $container = $factory->configure();
+            $container->getDefinition(AnalysisPreflightProfile::class)->setSynthetic(true)->setPublic(true);
+            $container->compile();
+            $container->set(AnalysisPreflightProfile::class, $profile);
+        }
         $command = $container->get(LayerAssignmentCommand::class);
         \assert($command instanceof LayerAssignmentCommand);
 
@@ -1550,6 +1743,18 @@ final class LayerAssignmentCommandTest extends TestCase
         );
 
         return $path;
+    }
+
+    private function disableEveryArchitectureProducer(string $configPath): void
+    {
+        file_put_contents(
+            $configPath,
+            (string) file_get_contents($configPath)
+            . "rules:\n"
+            . "  architecture.layer-violation:\n    enabled: false\n"
+            . "  architecture.unassigned-class:\n    mode: ignore\n"
+            . "  architecture.layer-declaration:\n    enabled: false\n",
+        );
     }
 
     private function removeDirectory(string $dir): void

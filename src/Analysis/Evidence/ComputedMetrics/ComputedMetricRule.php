@@ -8,9 +8,13 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMe
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Finding\ComputedMetricFindingBuilder;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
@@ -52,7 +56,7 @@ final class ComputedMetricRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return ComputedMetricChannelFamily::descriptionOf(self::NAME);
     }
@@ -83,53 +87,19 @@ final class ComputedMetricRule extends AbstractRule
             $spanName = 'rule.' . $producer . '.' . $definition->name;
             $profiler->start($spanName, 'rule.' . $producer);
 
+            $declaration = ComputedMetricChannelFamily::declarationFor($definition->name, $definition->reportingLevels(), $definition->inverted);
+            if ($declaration === null) {
+                $profiler->stop($spanName);
+                continue;
+            }
             foreach ($definition->levels as $level) {
-                $this->checkLevel($context, $definition, $level, $findings);
+                $this->checkLevel($context, $definition, $level, $findings, $declaration);
             }
 
             $profiler->stop($spanName);
         }
 
         return $findings;
-    }
-
-    /**
-     * One instance, several producers, each switched on its own — so the
-     * default answer on {@see \Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule}
-     * (which speaks for `getName()` alone) would report this rule's six
-     * classless producers under the host's name and lose them.
-     *
-     * Read from the same two sources {@see analyze()} reads: the definition
-     * catalog for which producers and levels exist at all, and
-     * {@see ComputedMetricProducerOptions::isEnabledFor()} for whether each
-     * one runs. A definition excluded through the `computed_metrics` section
-     * never reaches the catalog, so it is absent here rather than present and
-     * false — which is correct: addressability already answers a directive
-     * naming a channel that left the universe.
-     *
-     * Deliberately **not** the whole of what {@see analyze()} decides: that
-     * method also skips a definition carrying no thresholds, because there is
-     * no boundary to breach. That is not a disablement — the producer ran and
-     * had nothing to say — so mirroring the skip here would report a live
-     * producer as switched off. This answer is about configuration, not about
-     * whether a finding was possible.
-     *
-     * @return array<string, array<string, bool>>
-     */
-    public function levelActivity(): array
-    {
-        $activity = [];
-
-        foreach ($this->definitionCatalog->all() as $definition) {
-            $ran = $this->producerOptions->isEnabledFor($definition->name);
-
-            foreach ($definition->levels as $level) {
-                $producer = $definition->producerRuleName();
-                $activity[$producer][$level->value] = ($activity[$producer][$level->value] ?? false) || $ran;
-            }
-        }
-
-        return $activity;
     }
 
     /**
@@ -140,16 +110,33 @@ final class ComputedMetricRule extends AbstractRule
         ComputedMetricDefinition $definition,
         SymbolLevel $level,
         array &$findings,
+        ChannelDeclaration $declaration,
     ): void {
         $symbols = $this->getSymbolsForLevel($context, $level);
 
         foreach ($symbols as [$subject, $symbolPath, $location]) {
-            $metrics = $context->metrics->get($symbolPath);
-            $value = $metrics->get($definition->name);
-
-            if ($value === null) {
+            $identity = $level === SymbolLevel::Class_ ? PopulationIdentity::subject($subject) : PopulationIdentity::aggregate($symbolPath);
+            $producer = $definition->producerRuleName();
+            $channel = new FindingChannel($definition->name);
+            if ($level === SymbolLevel::Class_ && $symbolPath->getType() !== SymbolType::Class_) {
+                $context->admit($producer, $channel, $level, $identity, $declaration, (static function () use ($symbolPath): iterable {
+                    yield GateInput::kind('class-coordinate', $symbolPath->getType());
+                })());
                 continue;
             }
+            $metrics = $context->metrics->getSubject($subject);
+            if (!$definition->getApplicabilityForLevel($level)->appliesTo($metrics->all())) {
+                continue;
+            }
+            if (!$context->admit($producer, $channel, $level, $identity, $declaration, (static function () use ($level, $symbolPath, $metrics): iterable {
+                if ($level === SymbolLevel::Class_) {
+                    yield GateInput::kind('class-coordinate', $symbolPath->getType());
+                }
+                yield GateInput::metrics('published-value', $metrics);
+            })())) {
+                continue;
+            }
+            $value = $metrics->get($definition->name);
 
             $finding = $this->findingBuilder->build(
                 $definition,
@@ -187,9 +174,9 @@ final class ComputedMetricRule extends AbstractRule
     private function getClassSymbolsWithPresentationLocations(AnalysisContext $context): array
     {
         $symbols = [];
-        foreach ($context->metrics->allDeclarations() as $declarationInfo) {
+        foreach ($context->metrics->allClassDeclarations() as $declarationInfo) {
             $declaration = $declarationInfo->subject?->declarationPath();
-            if ($declaration?->logical->getType() !== SymbolType::Class_) {
+            if ($declaration === null) {
                 continue;
             }
 

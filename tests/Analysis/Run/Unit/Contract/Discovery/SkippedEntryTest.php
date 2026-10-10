@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Run\Unit\Contract\Discovery;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -46,17 +47,13 @@ final class SkippedEntryTest extends TestCase
         @rmdir($this->root);
     }
 
-    /**
-     * The tree sits outside the project root, so the conversion falls back —
-     * and the fallback canonicalizes whatever path it is handed.
-     */
     #[Test]
-    public function itKeepsTheLinksOwnNameWhenTheTreeIsOutsideTheProjectRoot(): void
+    public function itRefusesALinkOutsideTheProjectRoot(): void
     {
-        self::assertSame(
-            $this->outOfRoot('linked'),
-            $this->relative($this->root . '/tree/linked', $this->projectRoot),
-        );
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('outside project root');
+
+        $this->relative($this->root . '/tree/linked', $this->projectRoot);
     }
 
     /** The branch that already held, kept honest against the same fixture. */
@@ -69,37 +66,22 @@ final class SkippedEntryTest extends TestCase
         );
     }
 
-    /**
-     * The structure-preserving fallback is what keeps two out-of-root files of
-     * the same basename apart, and protecting the last segment must not cost
-     * that.
-     */
     #[Test]
-    public function itStillPreservesTheDirectoryStructureOfAnOutOfRootEntry(): void
+    public function itRefusesARegularEntryOutsideTheProjectRoot(): void
     {
-        self::assertSame(
-            $this->outOfRoot('real'),
-            $this->relative($this->root . '/tree/real', $this->projectRoot),
-        );
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('outside project root');
+
+        $this->relative($this->root . '/tree/real', $this->projectRoot);
     }
 
-    /** A path whose parent is the filesystem root has no structure to keep. */
     #[Test]
-    public function itNamesAnEntryDirectlyUnderTheFilesystemRootByItsOwnName(): void
+    public function itRefusesAnEntryDirectlyUnderTheFilesystemRoot(): void
     {
-        self::assertSame('nonexistent-qmx-entry', $this->relative('/nonexistent-qmx-entry', $this->projectRoot));
-    }
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('outside project root');
 
-    /**
-     * What the structure-preserving fallback spells for an entry of the tree:
-     * the whole canonical path without its leading slash.
-     */
-    private function outOfRoot(string $name): string
-    {
-        $tree = realpath($this->root . '/tree');
-        self::assertIsString($tree);
-
-        return ltrim($tree, '/') . '/' . $name;
+        $this->relative('/nonexistent-qmx-entry', $this->projectRoot);
     }
 
     private function relative(string $entry, string $projectRoot): string

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance;
 
 use InvalidArgumentException;
+
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -13,18 +15,74 @@ use Qualimetrix\Analysis\Evidence\Design\Inheritance\NocOptions;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\NocRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
+use Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch;
+use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(NocRule::class)]
 #[CoversClass(NocOptions::class)]
 final class NocRuleTest extends TestCase
 {
+    #[Test]
+    public function itAccountsForWrongLogicalKindsBeforeReadingClassMetrics(): void
+    {
+        $info = self::subjectInfo(SymbolPath::forMethod('App', 'Service', 'run'), RelativePath::fromString('service.php'), 1);
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->expects(self::once())->method('allClassDeclarations')->willReturn([$info]);
+        $repository->expects(self::never())->method('getSubject');
+        $session = self::populationSession(NocRule::NAME);
+        self::assertSame([], (new NocRule(new NocOptions()))->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
+        self::assertSame(0, $session->freeze()->judgedCount());
+        self::assertSame(1, $session->freeze()->unjudgedCount());
+        self::assertSame('logical-class-kind', $session->freeze()->abstentions()[0]->gate);
+    }
+
+    #[Test]
+    public function itSeparatesMissingZeroAndHealthyChildCounts(): void
+    {
+        $info = self::subjectInfo(SymbolPath::fromClassFqn('App\\ParentClass'), RelativePath::fromString('parent.php'), 1);
+        foreach ([[null, 'noc-present'], [0, 'noc-positive'], [1, null]] as [$count, $gate]) {
+            $repository = self::createStub(MetricRepositoryInterface::class);
+            $repository->method('allClassDeclarations')->willReturn([$info]);
+            $repository->method('getSubject')->willReturn($count === null ? new MetricBag() : MetricBag::fromArray(['design.noc' => $count]));
+            $session = self::populationSession(NocRule::NAME);
+            self::assertSame([], (new NocRule(new NocOptions()))->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
+            self::assertSame($gate === null ? 1 : 0, $session->freeze()->judgedCount());
+            self::assertSame($gate === null ? 0 : 1, $session->freeze()->unjudgedCount());
+            if ($gate !== null) {
+                self::assertSame($gate, $session->freeze()->abstentions()[0]->gate);
+            }
+        }
+    }
+
+    #[Test]
+    public function itRefusesNegativeChildCountsEvenWithoutAccounting(): void
+    {
+        $info = self::subjectInfo(SymbolPath::fromClassFqn('App\\InvalidParent'), RelativePath::fromString('invalid.php'), 1);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allClassDeclarations')->willReturn([$info]);
+        $repository->method('getSubject')->willReturn(MetricBag::fromArray(['design.noc' => -1]));
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('Invalid measured population count.');
+        (new NocRule(new NocOptions()))->analyze(new AnalysisContext($repository));
+    }
+
     #[Test]
     public function itGetsName(): void
     {
@@ -40,7 +98,7 @@ final class NocRuleTest extends TestCase
 
         self::assertSame(
             'Checks Number of Children (many direct subclasses indicate wide impact)',
-            $rule->getDescription(),
+            $rule::getDescription(),
         );
     }
 
@@ -70,7 +128,7 @@ final class NocRuleTest extends TestCase
         $rule = new NocRule(new NocOptions(enabled: false));
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('allDeclarations');
+        $repository->expects(self::never())->method('allClassDeclarations');
 
         $context = new AnalysisContext($repository);
 
@@ -83,7 +141,7 @@ final class NocRuleTest extends TestCase
         $rule = new NocRule(new NocOptions());
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -103,9 +161,9 @@ final class NocRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('design.noc', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -126,9 +184,9 @@ final class NocRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('design.noc', 12);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -155,9 +213,9 @@ final class NocRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('design.noc', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -180,9 +238,9 @@ final class NocRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('design.noc', 3);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -203,9 +261,9 @@ final class NocRuleTest extends TestCase
         $metricBag = new MetricBag();
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -221,8 +279,8 @@ final class NocRuleTest extends TestCase
         $subject = $classInfo->subject;
         self::assertNotNull($subject);
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn((new MetricBag())->with('design.noc', 6));
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('design.noc', 6));
         $context = new AnalysisContext(
             metrics: $repository,
             thresholdOverrides: [
@@ -235,7 +293,7 @@ final class NocRuleTest extends TestCase
         self::assertCount(1, $findings);
         self::assertSame(Severity::Error, $findings[0]->severity);
         self::assertSame(6, $findings[0]->threshold);
-        self::assertSame('NOC (Number of Children) is 6, exceeds threshold of 6. Consider using interfaces instead of inheritance', $findings[0]->message);
+        self::assertSame('NOC (Number of Children) is 6, reaches threshold of 6. Consider using interfaces instead of inheritance', $findings[0]->message);
         self::assertSame($subject->toCanonical(), $findings[0]->subject->toCanonical());
     }
 
@@ -244,11 +302,11 @@ final class NocRuleTest extends TestCase
     #[Test]
     public function itLoadsOptionsFromArray(): void
     {
-        $options = NocOptions::fromArray([
+        $options = NocOptions::fromResolved(ResolvedOptionsFixture::values(NocOptions::class, [
             'enabled' => false,
             'warning' => 10,
             'error' => 20,
-        ]);
+        ]));
 
         self::assertFalse($options->enabled);
         self::assertSame(10, $options->warning);
@@ -256,11 +314,10 @@ final class NocRuleTest extends TestCase
     }
 
     #[Test]
-    public function itDisablesOptionsWhenLoadedFromEmptyArray(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        $options = NocOptions::fromArray([]);
-
-        self::assertFalse($options->enabled);
+        self::assertEquals(new NocOptions(), NocOptions::fromResolved(ResolvedOptionsFixture::values(NocOptions::class, [])));
+        self::assertFalse(NocOptions::fromResolved(ResolvedOptionsFixture::values(NocOptions::class, ['enabled' => false]))->isEnabled());
     }
 
     #[Test]
@@ -294,9 +351,9 @@ final class NocRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('design.noc', $noc);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -307,6 +364,8 @@ final class NocRuleTest extends TestCase
         } else {
             self::assertCount(1, $findings);
             self::assertSame($expectedSeverity, $findings[0]->severity);
+            $selectedThreshold = $expectedSeverity === Severity::Error ? $error : $warning;
+            self::assertStringContainsString(($noc === $selectedThreshold ? 'reaches' : 'exceeds') . ' threshold of', $findings[0]->message);
         }
     }
 
@@ -338,11 +397,11 @@ final class NocRuleTest extends TestCase
     {
         $class = SymbolPath::forClass('App\\Service', 'Twin');
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([
+        $repository->method('allClassDeclarations')->willReturn([
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn((new MetricBag())->with('design.noc', 12));
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('design.noc', 12));
 
         $findings = (new NocRule(new NocOptions()))
             ->analyze(new AnalysisContext($repository));
@@ -354,6 +413,14 @@ final class NocRuleTest extends TestCase
             'declaration:class:App\\Service\\Twin@src/A.php',
             'declaration:class:App\\Service\\Twin@src/B.php',
         ], $subjects);
+    }
+
+    private static function populationSession(string $producer, bool $selected = true): PopulationSession
+    {
+        return new PopulationSession((new ChannelPublication(new RuleEnablement([new EnablementDecision(
+            new SelectionCellAddress($producer, new FindingChannel($producer), SymbolLevel::Class_, ChannelSelectionRole::Selectable),
+            new AuthoredCellDecision($selected ? CellSwitch::On : CellSwitch::Off, CellAdmission::Direct),
+        )], null)))->publishes(...));
     }
 
     private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
@@ -371,6 +438,7 @@ final class NocRuleTest extends TestCase
             $file,
             $line,
             $kind,
+            $kind === \Qualimetrix\Core\Symbol\CallableKind::Method ? \Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forClass($symbolPath->namespace ?? '', $symbolPath->type ?? ''), $file, \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)) : null,
         );
     }
 }

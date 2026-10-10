@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 
+use LogicException;
+use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
+use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
@@ -46,7 +51,22 @@ final class RuleCompilerPass implements CompilerPassInterface, ConsumerBoundPass
         $rules = [];
 
         foreach ($container->findTaggedServiceIds(self::TAG) as $id => $tags) {
-            $rules[] = new Reference($id);
+            $definition = $container->getDefinition($id);
+            $class = $definition->getClass();
+            if ($class === null || !class_exists($class)) {
+                throw new LogicException(\sprintf('Rule service "%s" has no class.', $id));
+            }
+            $definition->setShared(false);
+            $rules[] = [
+                'metadata' => new \Symfony\Component\DependencyInjection\Definition(RuleMetadata::class, [
+                    RuleNameReader::read($class),
+                    $class::getOptionsClass(),
+                    $class::getDescription(),
+                    CliAliasReader::read($class),
+                    false,
+                ]),
+                'create' => new ServiceClosureArgument(new Reference($id)),
+            ];
         }
 
         foreach (self::CONSUMERS as $consumerId => $argumentIndex) {

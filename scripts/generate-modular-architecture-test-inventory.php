@@ -19,13 +19,11 @@ require_once __DIR__ . '/subprocess/ChildProcess.php';
 
 const OUTPUT_DIRECTORY = 'docs/internal/generated/modular-architecture';
 const TEST_LEVELS = ['Unit', 'Integration', 'Functional'];
-// 70 paths. Stage 05 moved four of them from Unit/ to Integration/ --
-// BaselineChannelRenamerTest, BaselineRoundTripVOTest, BaselineWriterTest and
-// ConfigurationErrorChannelRejectionTest -- because their bodies do real work,
-// not because the set changed: no file entered or left the tree, and the count
-// is the same on both sides of the move. Re-hash only against a diff of the
-// path list; a digest refreshed to make the generator run again asserts nothing.
-const P6_C_BASELINE_PATHS_SHA256 = 'd0bb0082d22f4bdcad0156a0941a8941975bbfa928bda7ed91f5a956b4880193';
+// 81 paths: the accepted finite Baseline artifact set plus comparison,
+// group-measurement, subject-region, update-mode, unused-entry, file-lookup and layer-migration regressions.
+// Re-hash only against a diff of the path list; refreshing the digest without
+// checking that delta asserts nothing.
+const P6_C_BASELINE_PATHS_SHA256 = '40fe4c6e1aecc08b787014bd1f4f10efd6393437ed9f5f2eca10d4251fc33319';
 
 $arguments = $_SERVER['argv'] ?? [];
 $check = in_array('--check', $arguments, true);
@@ -230,11 +228,10 @@ const P3_TEST_PATHS = [
     'tests/Analysis/Configuration/Unit/AnalysisConfigurationTest.php',
     'tests/Analysis/Configuration/Unit/ConfigSchemaTest.php',
     'tests/Analysis/Configuration/Unit/ConfigurationHolderTest.php',
-    'tests/Analysis/Configuration/Unit/Discovery/ComposerReaderTest.php',
     'tests/Analysis/Configuration/Unit/Loader/YamlConfigLoaderTest.php',
-    'tests/Analysis/Configuration/Unit/Pipeline/ConfigDataNormalizerTest.php',
+    'tests/Analysis/Configuration/Unit/Document/ConfigDataNormalizerTest.php',
     'tests/Analysis/Configuration/Unit/Pipeline/ConfigurationPipelineTest.php',
-    'tests/Analysis/Configuration/Unit/Pipeline/RuleNameValidatorTest.php',
+    'tests/Analysis/Finding/Unit/Contract/Selection/RuleNameValidatorTest.php',
     'tests/Analysis/Configuration/Unit/Pipeline/Stage/CliStageTest.php',
     'tests/Analysis/Configuration/Unit/Pipeline/Stage/ComposerDiscoveryStageTest.php',
     'tests/Analysis/Configuration/Unit/Pipeline/Stage/ConfigFileStageTest.php',
@@ -1149,6 +1146,9 @@ function classifyKind(string $path, array $discoveredClasses): string
     if (str_contains($path, '/Support/') || (str_ends_with($path, '.php') && !str_ends_with($path, 'Test.php'))) {
         return 'support';
     }
+    if ($path === 'governance/PublishedText/README.md') {
+        return 'documentation';
+    }
     if (str_ends_with($path, 'package.json') || str_ends_with($path, 'vite.config.js')) {
         return 'non-php-test-config';
     }
@@ -1207,10 +1207,12 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Analysis/Evidence/ComputedMetrics/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Evidence/Prioritization/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Configuration/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/ProjectManifest/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Finding/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Run/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Reporting/GraphProjection/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Reporting/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Core/FileTarget/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Path/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Symbol/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Symbol/Integration/', 'suite' => 'Integration'],
@@ -1252,6 +1254,7 @@ function testSuitePrefixTable(): array
         ['prefix' => 'governance/MeasurementVocabulary/', 'suite' => 'Governance'],
         ['prefix' => 'governance/MeasurementIdentity/', 'suite' => 'Governance'],
         ['prefix' => 'governance/GeneratedArtifactFreshness/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/PublishedText/', 'suite' => 'Governance'],
         ['prefix' => 'governance/FormatOptionKeys/', 'suite' => 'Governance'],
         ['prefix' => 'governance/DirectiveVocabulary/', 'suite' => 'Governance'],
         ['prefix' => 'governance/ControlRigLedger/', 'suite' => 'Governance'],

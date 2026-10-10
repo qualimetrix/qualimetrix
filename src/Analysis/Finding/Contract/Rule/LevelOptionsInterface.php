@@ -14,11 +14,9 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 interface LevelOptionsInterface
 {
     /**
-     * Creates level options from configuration array.
-     *
-     * @param array<string, mixed> $config
+     * Creates level options from the resolved configuration document.
      */
-    public static function fromArray(array $config): self;
+    public static function fromResolved(ResolvedRuleOptionValues $config): self;
 
     /**
      * Returns whether this level is enabled.

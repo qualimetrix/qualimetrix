@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Functional\Command;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
@@ -19,6 +20,65 @@ use Symfony\Component\Console\Tester\CommandTester;
 
 final class CheckCommandInputValidationTest extends TestCase
 {
+    #[Test]
+    public function itNamesComposerJsonForAMissingInferredAutoloadTarget(): void
+    {
+        $root = sys_get_temp_dir() . '/qmx-inferred-path-' . bin2hex(random_bytes(6));
+        mkdir($root);
+        file_put_contents($root . '/composer.json', '{"autoload":{"psr-4":{"App\\\\":"missing-src/"}}}');
+        $before = getcwd();
+        self::assertNotFalse($before);
+        try {
+            chdir($root);
+            $tester = $this->tester();
+            $tester->execute(['--format' => 'json'], ['capture_stderr_separately' => true]);
+            self::assertSame(3, $tester->getStatusCode(), $tester->getErrorOutput());
+            $error = self::envelopeError($tester);
+            self::assertStringContainsString('composer.json', $error);
+            self::assertStringContainsString('missing-src', $error);
+            self::assertStringNotContainsString('Error: Error:', $error);
+        } finally {
+            chdir($before);
+            unlink($root . '/composer.json');
+            rmdir($root);
+        }
+    }
+
+    #[Test]
+    #[TestWith([\Qualimetrix\Infrastructure\Console\Command\GraphExportCommand::class])]
+    #[TestWith([\Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand::class])]
+    public function itNamesInferredComposerTargetsThroughPreflightAndBaseline(string $commandClass): void
+    {
+        $root = sys_get_temp_dir() . '/qmx-inferred-adjacent-' . bin2hex(random_bytes(6));
+        mkdir($root);
+        file_put_contents($root . '/composer.json', '{"autoload":{"psr-4":{"App\\\\":"missing-src/"}}}');
+        $before = getcwd();
+        self::assertNotFalse($before);
+        try {
+            chdir($root);
+            $container = (new ContainerFactory())->create();
+            $command = $container->get($commandClass);
+            self::assertInstanceOf(\Symfony\Component\Console\Command\Command::class, $command);
+            $presenter = $container->get(RefusalPresenter::class);
+            self::assertInstanceOf(RefusalPresenter::class, $presenter);
+            (new Application(new ErrorStream(), $presenter, new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()))->addCommand($command);
+            $tester = new CommandTester($command);
+            $input = $commandClass === \Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand::class
+                ? ['baseline' => $root . '/baseline.json']
+                : ['--format' => 'json'];
+            $tester->execute($input, ['capture_stderr_separately' => true]);
+            self::assertSame(3, $tester->getStatusCode());
+            $refusal = $tester->getDisplay() . $tester->getErrorOutput();
+            self::assertStringContainsString('composer.json autoload target missing-src', $refusal);
+            self::assertStringNotContainsString('Error: Error:', $refusal);
+            self::assertFileDoesNotExist($root . '/baseline.json');
+        } finally {
+            chdir($before);
+            unlink($root . '/composer.json');
+            rmdir($root);
+        }
+    }
+
     #[Test]
     public function itFormatsIncompleteAnalysisAndGivesItExitCodePriority(): void
     {
@@ -41,6 +101,7 @@ final class CheckCommandInputValidationTest extends TestCase
         $payload = json_decode($tester->getDisplay(), true, 512, \JSON_THROW_ON_ERROR);
         self::assertFalse($payload['coverage']['complete']);
         self::assertSame(1, $payload['coverage']['failed']);
+        self::assertNull($payload['health']);
         self::assertStringNotContainsString($projectRoot . '/', $tester->getDisplay());
         self::assertStringContainsString('Parse error', $tester->getErrorOutput());
     }
@@ -66,7 +127,7 @@ final class CheckCommandInputValidationTest extends TestCase
 
             self::assertSame(3, $tester->getStatusCode());
             self::assertStringContainsString(
-                'Invalid value for "cache.enabled": expected boolean, got string',
+                \sprintf('"cache.enabled" in configuration file "%s" must be boolean, got string.', $config),
                 self::envelopeError($tester),
             );
         } finally {
@@ -412,7 +473,7 @@ final class CheckCommandInputValidationTest extends TestCase
         $container = (new ContainerFactory())->create();
         /** @var RefusalPresenter $refusalPresenter */
         $refusalPresenter = $container->get(RefusalPresenter::class);
-        $app = new Application(new ErrorStream(), $refusalPresenter);
+        $app = new Application(new ErrorStream(), $refusalPresenter, new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $app->setAutoExit(false);
         $app->setCatchExceptions(false);
 
@@ -474,7 +535,7 @@ final class CheckCommandInputValidationTest extends TestCase
         $command = $container->get(CheckCommand::class);
         /** @var RefusalPresenter $refusalPresenter */
         $refusalPresenter = $container->get(RefusalPresenter::class);
-        $application = new Application(new ErrorStream(), $refusalPresenter);
+        $application = new Application(new ErrorStream(), $refusalPresenter, new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $application->addCommand($command);
 
         return new CommandTester($command);

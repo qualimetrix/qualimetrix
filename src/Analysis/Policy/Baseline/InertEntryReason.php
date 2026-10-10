@@ -22,6 +22,10 @@ enum InertEntryReason: string
     /** No rule declares this channel, so nothing knows how to compare it. */
     case UndeclaredChannel = 'undeclared-channel';
 
+    case LevelNotDeclared = 'level-not-declared';
+
+    case BaselineAuditChannel = 'baseline-audit-channel';
+
     /**
      * The entry and its channel disagree about shape — magnitudes stored for
      * an `occurrence` channel, or missing for a `magnitude` one. Both
@@ -58,6 +62,8 @@ enum InertEntryReason: string
         return match ($this) {
             self::Malformed => 'malformed entry',
             self::UndeclaredChannel => 'channel is not declared by any rule',
+            self::LevelNotDeclared => 'subject level is not declared by this channel in this configuration',
+            self::BaselineAuditChannel => 'baseline audit findings cannot be accepted as debt',
             self::ConfigurationErrorChannel => 'channel reports a configuration error, which cannot be accepted as debt',
             self::ShapeMismatch => 'entry does not match the channel\'s declared shape',
             self::UnrecognizedMode => 'unrecognized mode',

@@ -40,10 +40,10 @@ final class TypeCoverageVisitor extends NodeVisitorAbstract implements Declarati
 {
     use DeclarationIndexAwareTrait;
 
-    /** @var array<string, array{paramTotal: int, paramTyped: int, returnTotal: int, returnTyped: int, propertyTotal: int, propertyTyped: int}> */
+    /** @var array<int, array{paramTotal: int, paramTyped: int, returnTotal: int, returnTyped: int, propertyTotal: int, propertyTyped: int}> */
     private array $classTypeInfo = [];
 
-    /** @var array<string, array{namespace: ?string, class: string, line: int, startFilePos: int}> */
+    /** @var array<int, array{namespace: ?string, class: string, line: int, startFilePos: int}> */
     private array $classInfos = [];
 
     private ?string $currentNamespace = null;
@@ -68,7 +68,7 @@ final class TypeCoverageVisitor extends NodeVisitorAbstract implements Declarati
     }
 
     /**
-     * @return array<string, array{paramTotal: int, paramTyped: int, returnTotal: int, returnTyped: int, propertyTotal: int, propertyTyped: int}>
+     * @return array<int, array{paramTotal: int, paramTyped: int, returnTotal: int, returnTyped: int, propertyTotal: int, propertyTyped: int}>
      */
     public function getClassTypeInfo(): array
     {
@@ -76,7 +76,7 @@ final class TypeCoverageVisitor extends NodeVisitorAbstract implements Declarati
     }
 
     /**
-     * @return array<string, array{namespace: ?string, class: string, line: int, startFilePos: int}>
+     * @return array<int, array{namespace: ?string, class: string, line: int, startFilePos: int}>
      */
     public function getClassInfos(): array
     {
@@ -92,8 +92,8 @@ final class TypeCoverageVisitor extends NodeVisitorAbstract implements Declarati
     {
         $result = [];
 
-        foreach ($this->classInfos as $fqn => $info) {
-            $typeInfo = $this->classTypeInfo[$fqn] ?? null;
+        foreach ($this->classInfos as $position => $info) {
+            $typeInfo = $this->classTypeInfo[$position] ?? null;
 
             if ($typeInfo === null) {
                 continue;
@@ -143,11 +143,11 @@ final class TypeCoverageVisitor extends NodeVisitorAbstract implements Declarati
         // Enter named class-like node (Class_, Interface_, Trait_, Enum_)
         if ($node instanceof ClassLike && $node->name !== null) {
             $className = $node->name->toString();
-            $fqn = $this->buildClassFqn($className);
+            $position = $node->getStartFilePos();
 
             $info = $this->analyzeClassLike($node);
-            $this->classTypeInfo[$fqn] = $info;
-            $this->classInfos[$fqn] = [
+            $this->classTypeInfo[$position] = $info;
+            $this->classInfos[$position] = [
                 'namespace' => $this->currentNamespace,
                 'class' => $className,
                 'line' => $node->getStartLine(),
@@ -274,15 +274,6 @@ final class TypeCoverageVisitor extends NodeVisitorAbstract implements Declarati
         // MODIFIER_READONLY is included for completeness (readonly alone requires
         // visibility in PHP, but php-parser may set it independently).
         return ($param->flags & (Class_::MODIFIER_PUBLIC | Class_::MODIFIER_PROTECTED | Class_::MODIFIER_PRIVATE | Class_::MODIFIER_READONLY)) !== 0;
-    }
-
-    private function buildClassFqn(string $className): string
-    {
-        if ($this->currentNamespace !== null && $this->currentNamespace !== '') {
-            return $this->currentNamespace . '\\' . $className;
-        }
-
-        return $className;
     }
 
     /**

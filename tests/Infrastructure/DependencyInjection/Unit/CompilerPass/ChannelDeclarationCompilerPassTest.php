@@ -5,31 +5,51 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass;
 
 use LogicException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\GotoRule;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface;
+use Qualimetrix\Analysis\Evidence\Coupling\ClassRankRule;
+use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyThreshold;
+use Qualimetrix\Analysis\Finding\Contract\Population\NameMatches;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleFamily;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationRule;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
+use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassSummary;
+use Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationValidatorCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ComputedMetricsConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\MeasurementConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\RuleConfigurator;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
@@ -68,7 +88,7 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
             array_keys($declarations),
         );
         self::assertEquals(
-            ChannelDeclaration::occurrence(SymbolLevel::Callable),
+            ChannelDeclaration::occurrence(SymbolLevel::Callable, SymbolLevel::File),
             $declarations['code-smell.goto'],
         );
         self::assertEquals(
@@ -76,6 +96,10 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
                 WorseDirection::Lower,
                 JudgedMetrics::of(MetricName::MAINTAINABILITY_MI),
                 SymbolLevel::Callable,
+            )->withGates(
+                new PopulationGate('exclude-tests', new FindingChannel('maintainability.mi'), SymbolLevel::Callable, 'callable', new NameMatches('exclude-tests', true), 'The configured test-file exclusion applies.'),
+                new PopulationGate('minimum-statements', new FindingChannel('maintainability.mi'), SymbolLevel::Callable, 'callable', new KeyThreshold('minimum-statements', [MetricName::SIZE_METHOD_STATEMENT_COUNT], '>=', 'minimum-statements', 'zero', true), 'Statement count is below the configured minimum.'),
+                new PopulationGate('maintainability', new FindingChannel('maintainability.mi'), SymbolLevel::Callable, 'callable', new KeyPresent('maintainability', [MetricName::MAINTAINABILITY_MI]), 'Maintainability was not published.'),
             ),
             $declarations['maintainability.mi'],
         );
@@ -114,6 +138,9 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         $container->register(LayerViolationRule::class)
             ->setClass(LayerViolationRule::class)
             ->addTag(RuleRegistryCompilerPass::TAG);
+        $container->register(LayerDeclarationRule::class)
+            ->setClass(LayerDeclarationRule::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
         $container->register(LayerDeclarationValidator::class)
             ->setClass(LayerDeclarationValidator::class)
             ->addTag(ConfigurationValidatorCompilerPass::TAG);
@@ -125,16 +152,15 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
 
         self::assertContains(
             'architecture.coverage-gap',
-            $channelsByProducer[LayerViolationRule::NAME],
+            $channelsByProducer[LayerDeclarationRule::NAME],
         );
     }
 
     /**
      * `architecture.coverage-gap` is emitted by {@see LayerDeclarationValidator}
      * under its own identity, distinct from the producer rule's `NAME`
-     * (`architecture.layer-violation`) — it inherits that rule's declared
-     * `REMEDIATION_MINUTES` rather than needing a constant of its own on a
-     * class that does not exist.
+     * (`architecture.layer-declaration`) — it inherits that rule's declared
+     * `REMEDIATION_MINUTES` rather than defining remediation on the validator.
      */
     #[Test]
     public function itAttributesRemediationMinutesToADiagnosticsOwnChannelName(): void
@@ -143,6 +169,9 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         self::registerUniverse($container);
         $container->register(LayerViolationRule::class)
             ->setClass(LayerViolationRule::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+        $container->register(LayerDeclarationRule::class)
+            ->setClass(LayerDeclarationRule::class)
             ->addTag(RuleRegistryCompilerPass::TAG);
         $container->register(LayerDeclarationValidator::class)
             ->setClass(LayerDeclarationValidator::class)
@@ -157,7 +186,7 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
             ->getArgument('$minutesByRule');
 
         self::assertSame(LayerViolationRule::REMEDIATION_MINUTES, $minutesByRule[LayerViolationRule::NAME]);
-        self::assertSame(LayerViolationRule::REMEDIATION_MINUTES, $minutesByRule['architecture.coverage-gap']);
+        self::assertSame(LayerDeclarationRule::REMEDIATION_MINUTES, $minutesByRule['architecture.coverage-gap']);
     }
 
     #[Test]
@@ -255,7 +284,7 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
 
     /**
      * The aggregate half of the same check: `size.class-count.sum` is not a
-     * `MetricName` constant, and it is exactly what `ClassCountRule` reads.
+     * `MetricName` constant, and the synthetic fixture declares it exactly.
      * A check that only compared against constant values would have forced
      * every aggregate-reading channel to declare a key its rule never asks
      * for.
@@ -465,6 +494,9 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         $container->register(LayerViolationRule::class)
             ->setClass(LayerViolationRule::class)
             ->addTag(RuleRegistryCompilerPass::TAG);
+        $container->register(LayerDeclarationRule::class)
+            ->setClass(LayerDeclarationRule::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
         $container->register(LayerDeclarationValidator::class)
             ->setClass(LayerDeclarationValidator::class)
             ->addTag(ConfigurationValidatorCompilerPass::TAG);
@@ -475,10 +507,73 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         $declarations = $container->getDefinition(ChannelUniverse::class)->getArgument('$staticDeclarations');
 
         self::assertNull($declarations[LayerViolationRule::NAME]->description);
-        self::assertNotNull($declarations[LayerViolationRule::DOUBTED_ASSIGNMENT_NAME]->description);
+        self::assertNotNull($declarations[ArchitectureChannels::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME]->description);
         // Stamped as a configuration error, and still carrying its own text.
         self::assertTrue($declarations['architecture.coverage-gap']->isConfigurationError());
         self::assertNotNull($declarations['architecture.coverage-gap']->description);
+    }
+
+    #[Test]
+    public function itRefusesARuleChannelWithBothCatalogJudgesAndExplicitRunEvidence(): void
+    {
+        $container = new ContainerBuilder();
+        self::registerUniverse($container);
+        $container->register(FixtureRuleWithConflictingReach::class)
+            ->setClass(FixtureRuleWithConflictingReach::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('names catalog judges and explicit run evidence');
+        (new ChannelDeclarationCompilerPass())->process($container);
+    }
+
+    #[Test]
+    public function itRefusesAValidatorChannelWithBothCatalogJudgesAndExplicitRunEvidence(): void
+    {
+        $container = new ContainerBuilder();
+        self::registerUniverse($container);
+        $container->register(FixtureRuleJudgingAnAggregate::class)
+            ->setClass(FixtureRuleJudgingAnAggregate::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+        $container->register(FixtureValidatorWithConflictingReach::class)
+            ->setClass(FixtureValidatorWithConflictingReach::class)
+            ->addTag(ConfigurationValidatorCompilerPass::TAG);
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('names catalog judges and explicit run evidence');
+        (new ChannelDeclarationCompilerPass())->process($container);
+    }
+
+    #[Test]
+    public function itKeepsTheSixRunEvidenceEmittersExplicitAtTheirOwners(): void
+    {
+        foreach ([
+            ClassRankRule::channelDeclarations()[ClassRankRule::NAME],
+            LayerViolationRule::channelDeclarations()[LayerViolationRule::NAME],
+            UnassignedClassSummary::unassignedClassChannel(),
+            CircularDependencyRule::channelDeclarations()[CircularDependencyRule::NAME],
+            CodeDuplicationRule::channelDeclarations()[CodeDuplicationRule::NAME],
+            array_values(UnusedDirectiveRule::channelDeclarations())[0],
+        ] as $declaration) {
+            self::assertTrue($declaration->readsRunEvidence);
+            self::assertNull($declaration->judges);
+        }
+    }
+
+    #[Test]
+    public function itSuppliesMandatoryReachPortsThroughTheExistingComposition(): void
+    {
+        $container = new ContainerBuilder();
+        (new MeasurementConfigurator())->configure($container);
+        (new ComputedMetricsConfigurator())->configure($container);
+        (new RuleConfigurator())->configure($container);
+
+        $universe = $container->getDefinition(ChannelUniverse::class);
+        self::assertSame(MetricReachCatalogInterface::class, (string) $universe->getArgument('$metricReachCatalog'));
+        self::assertSame(ComputedMetricReachInterface::class, (string) $universe->getArgument('$computedMetricReach'));
+        self::assertSame('qmx.measurement.aggregation', (string) $container->getAlias(MetricReachCatalogInterface::class));
+        $reach = $container->getDefinition((string) $container->getAlias(ComputedMetricReachInterface::class));
+        self::assertSame(MetricReachCatalogInterface::class, (string) $reach->getArgument(0));
     }
 
     private static function registerUniverse(ContainerBuilder $container): void
@@ -521,7 +616,7 @@ final class FixtureRuleWithNoChannelDeclarations implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule with no channelDeclarations() method, for the compiler pass "declares nothing" case.';
     }
@@ -580,7 +675,7 @@ final class FixtureRuleWithShapeMismatch implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule whose declared shape disagrees with its channel.';
     }
@@ -650,7 +745,7 @@ final class FixtureRuleForShapeAgreement implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule half of a mismatched producer pair.';
     }
@@ -738,9 +833,8 @@ final class FixtureValidatorWithDisagreeingShape implements ConfigurationValidat
 final class FixtureOptionsWithNoChannelDeclarations implements RuleOptionsInterface
 {
     /**
-     * @param array<string, mixed> $config
      */
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
         return new self();
     }
@@ -782,7 +876,7 @@ final class FixtureRuleWithoutAFamily implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule whose name has no non-empty first segment.';
     }
@@ -839,7 +933,7 @@ final class FixtureRuleJudgingAnUnknownMetric implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule for the judged-metric half of registry assembly.';
     }
@@ -907,7 +1001,7 @@ final class FixtureRuleJudgingAnAggregate implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule for the judged-metric half of registry assembly.';
     }
@@ -975,7 +1069,7 @@ final class FixtureOccurrenceRuleJudgingAMetric implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule for the judged-metric half of registry assembly.';
     }
@@ -1044,7 +1138,7 @@ final class FixtureRuleWithUndescribedSecondaryChannel implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule with an undescribed secondary channel.';
     }
@@ -1100,7 +1194,7 @@ final class FixtureRuleDescribingItsOwnChannel implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule describing its own channel twice.';
     }
@@ -1153,6 +1247,87 @@ final class FixtureValidatorWithUndescribedChannel implements ConfigurationValid
         return ['fixture.undescribed-diagnostic' => ChannelDeclaration::occurrence(SymbolLevel::Project)];
     }
 
+    public function validate(AnalysisContext $context): array
+    {
+        return [];
+    }
+}
+
+/** @internal Contradictory reach metadata for the assembly refusal. */
+final class FixtureRuleWithConflictingReach implements RuleInterface
+{
+    public const string NAME = 'fixture.conflicting-reach';
+
+    public const string DOCS_PAGE = 'rules/code-smell.md';
+
+    public const int REMEDIATION_MINUTES = 5;
+
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    public static function getDescription(): string
+    {
+        return 'Fixture rule for the judged-metric half of registry assembly.';
+    }
+
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Magnitude;
+    }
+
+    /**
+     * @return list<\Qualimetrix\Analysis\Finding\Contract\Finding>
+     */
+    public function analyze(AnalysisContext $context): array
+    {
+        return [];
+    }
+
+    /**
+     * @return class-string<RuleOptionsInterface>
+     */
+    public static function getOptionsClass(): string
+    {
+        return FixtureOptionsWithNoChannelDeclarations::class;
+    }
+
+    /** @return array<string, ChannelDeclaration> */
+    public static function channelDeclarations(): array
+    {
+        return [self::NAME => ChannelDeclaration::judging(
+            WorseDirection::Higher,
+            JudgedMetrics::of('size.class-count.sum'),
+            SymbolLevel::Namespace_,
+        )->readingRunEvidence()];
+    }
+}
+
+/** @internal Shares the magnitude producer while contradicting its reach authority. */
+final class FixtureValidatorWithConflictingReach implements ConfigurationValidatorInterface
+{
+    public static function producerRuleName(): string
+    {
+        return FixtureRuleJudgingAnAggregate::NAME;
+    }
+
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Magnitude;
+    }
+
+    /** @return array<string, ChannelDeclaration> */
+    public static function channelDeclarations(): array
+    {
+        return ['fixture.conflicting-diagnostic' => ChannelDeclaration::judging(
+            WorseDirection::Higher,
+            JudgedMetrics::of(MetricName::COMPLEXITY_CCN),
+            SymbolLevel::Class_,
+        )->readingRunEvidence()->describedAs('Reports conflicting evidence.')];
+    }
+
+    /** @return list<\Qualimetrix\Analysis\Finding\Contract\Finding> */
     public function validate(AnalysisContext $context): array
     {
         return [];

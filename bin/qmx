@@ -6,6 +6,7 @@ declare(strict_types=1);
 namespace Qualimetrix;
 
 use Qualimetrix\Infrastructure\Console\Application;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
@@ -21,6 +22,7 @@ use Qualimetrix\Infrastructure\Console\Command\HookUninstallCommand;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\CommandLoader\ContainerCommandLoader;
 
@@ -57,6 +59,8 @@ if (!$autoloaderFound) {
     exit(1);
 }
 
+OutOfMemoryHint::register();
+
 // Create single container with default configuration
 // Runtime configuration (CLI options, config file) will be applied
 // through ConfigurationProvider and RuleOptionsFactory before analysis
@@ -73,7 +77,7 @@ $container = $containerFactory->create();
 // prints through the same framing every command uses — a second instance here
 // would be a second, silently diverging diagnostic dialect
 // (`01-refusal-exit-ladder.md` §3).
-$application = new Application($container->get(ErrorStream::class), $container->get(RefusalPresenter::class));
+$application = new Application($container->get(ErrorStream::class), $container->get(RefusalPresenter::class), $container->get(ManifestSnapshotControlInterface::class));
 
 // setCatchErrors(true) turns a PHP Error reaching Symfony's own run() —
 // specifically during its configureIO() call, the one window before

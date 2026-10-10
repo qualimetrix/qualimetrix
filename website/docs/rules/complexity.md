@@ -479,8 +479,8 @@ A class with 20 simple getter/setter methods (each with complexity 1) has WMC = 
 
 | Level   | Threshold | Severity |
 | ------- | --------- | -------- |
-| Warning | > 50      | Warning  |
-| Error   | > 80      | Error    |
+| Warning | >= 50     | Warning  |
+| Error   | >= 80     | Error    |
 <!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
@@ -514,7 +514,7 @@ class OrderProcessor
 <!-- llms:skip-begin -->
 ### Implementation notes
 
-WMC is calculated as the sum of [Cyclomatic Complexity](#cyclomatic-complexity) of all methods in a class. The aggregator produces this class-level metric; the Complexity rule evaluates it and can exclude data classes. Since Qualimetrix uses the CCN2+ variant (which counts `??` and `?->` as decision points), WMC values will be correspondingly higher than those reported by other tools.
+WMC is calculated as the sum of [Cyclomatic Complexity](#cyclomatic-complexity) of all methods in a class. The Complexity collector produces it on each exact class declaration, including `0` for a class without methods. Property hooks and anonymous-class methods do not contribute; the Complexity rule evaluates it and can exclude data classes. Since Qualimetrix uses the CCN2+ variant (which counts `??` and `?->` as decision points), WMC values will be correspondingly higher than those reported by other tools.
 
 <!-- llms:skip-end -->
 
@@ -541,3 +541,7 @@ rules:
 bin/qmx check src/ --rule-opt="complexity.wmc:warning=60"
 bin/qmx check src/ --rule-opt="complexity.wmc:error=100"
 ```
+
+## Per-layer shorthand and class activation
+
+A top shorthand for CCN, cognitive complexity or NPath changes callable and preserves the class band. It conflicts with explicit writes to the same expanded leaves in one layer; independent settings such as callable.enabled are preserved. Separate layers merge their expanded leaves. NPath written class bands activate without a redundant true; class.enabled:false still turns them off. Integer bands refuse fractional values; effective ordering includes default halves. Existing academic algorithms and default numbers are unchanged. See [Configuration forms](../getting-started/configuration.md#declared-rule-forms-and-prepared-execution).

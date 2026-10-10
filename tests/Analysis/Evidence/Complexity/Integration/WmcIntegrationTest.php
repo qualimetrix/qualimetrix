@@ -4,145 +4,150 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Complexity\Integration;
 
+use PhpParser\NodeTraverser;
+use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector;
+use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationHelper;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MetricAggregator;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
-use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use SplFileInfo;
 
-/**
- * Integration test for WMC metric.
- *
- * Verifies that:
- * - WMC and ccn.sum are the same number, not two separately derived ones
- * - a class with no callables reaches the repository at no level
- * - each class gets its own sum rather than the file's
- */
 final class WmcIntegrationTest extends TestCase
 {
     #[Test]
-    public function itVerifiesWmcEqualsCcnSum(): void
+    public function itPublishesTheSameMethodSumAsWmc(): void
     {
-        // Setup repository
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->measure([
+            'src/TestClass.php' => <<<'SOURCE'
+<?php
+namespace App;
+class TestClass {
+    public function first($x) { if ($x) {} }
+    public function second($x) { if ($x) {} else if (!$x) {} }
+}
+SOURCE,
+        ]);
 
-        $classPath = SymbolPath::forClass('App', 'TestClass');
-        $method1Path = SymbolPath::forMethod('App', 'TestClass', 'method1');
-        $method2Path = SymbolPath::forMethod('App', 'TestClass', 'method2');
-
-        // Add method metrics
-        $this->addMethod($repository, $method1Path, $classPath, 7, 100);
-        $this->addMethod($repository, $method2Path, $classPath, 4, 200);
-
-        // Aggregate
-        $collector = new CyclomaticComplexityCollector();
-        $aggregator = new MetricAggregator(AggregationHelper::collectDefinitions([$collector]), self::createStub(ProfilerInterface::class));
-        $aggregator->aggregate($repository);
-
-        // Verify WMC === ccn.sum
-        $classBag = $repository->get($classPath);
-        $wmc = $classBag->get('complexity.wmc');
-        $ccnSum = $classBag->get('complexity.ccn.sum');
-
-        self::assertNotNull($wmc);
-        self::assertNotNull($ccnSum);
-        self::assertSame($ccnSum, $wmc, 'WMC should be equal to ccn.sum');
-        self::assertSame(11, (int) $wmc); // 7 + 4 = 11
+        $metrics = $repository->getSubject($this->classSubject('App', 'TestClass', 'src/TestClass.php'));
+        self::assertSame(5, $metrics->get('complexity.wmc'));
+        self::assertSame($metrics->get('complexity.ccn.sum'), $metrics->get('complexity.wmc'));
     }
 
     #[Test]
-    public function itHandlesClassWithoutMethodsGracefully(): void
+    public function itPublishesZeroForANamedClassWithoutMethods(): void
     {
-        // Setup repository with class but no methods
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->measure([
+            'src/EmptyClass.php' => '<?php namespace App; class EmptyClass {}',
+        ]);
 
-        $classPath = SymbolPath::forClass('App', 'EmptyClass');
-
-        // No methods added - aggregator should handle this gracefully
-
-        // Aggregate
-        $collector = new CyclomaticComplexityCollector();
-        $aggregator = new MetricAggregator(AggregationHelper::collectDefinitions([$collector]), self::createStub(ProfilerInterface::class));
-        $aggregator->aggregate($repository);
-
-        // Verify class has no WMC metric (since no methods)
-        $classes = iterator_to_array($repository->all(SymbolLevel::Class_));
-        self::assertCount(0, $classes, 'Class without methods should not be in repository');
+        self::assertSame(0, $repository->getSubject($this->classSubject('App', 'EmptyClass', 'src/EmptyClass.php'))->get('complexity.wmc'));
+        self::assertCount(1, iterator_to_array($repository->allClassDeclarations(), false));
     }
 
     #[Test]
-    public function itComputesWmcForMultipleClasses(): void
+    public function itKeepsEachClassSumInItsOwnDeclaration(): void
     {
-        // Setup repository with multiple classes
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->measure([
+            'src/Class1.php' => '<?php namespace App; class Class1 { public function first() {} }',
+            'src/Class2.php' => '<?php namespace App; class Class2 { public function first($x) { if ($x) {} } public function second() {} }',
+        ]);
 
-        // Class 1
-        $class1Path = SymbolPath::forClass('App', 'Class1');
-        $repository->addCallable(new CallableWithMetrics(
-            DeclarationPath::of(SymbolPath::forMethod('App', 'Class1', 'method1'), RelativePath::fromString('test1.php'), DeclarationOrdinal::fromRank(0)),
-            100,
-            CallableKind::Method,
-            null,
-            null,
-            new LogicalClassPath($class1Path),
-            (new MetricBag())->with('complexity.ccn', 10),
-        ));
-
-        // Class 2
-        $class2Path = SymbolPath::forClass('App', 'Class2');
-        $repository->addCallable(new CallableWithMetrics(
-            DeclarationPath::of(SymbolPath::forMethod('App', 'Class2', 'methodA'), RelativePath::fromString('test2.php'), DeclarationOrdinal::fromRank(0)),
-            100,
-            CallableKind::Method,
-            null,
-            null,
-            new LogicalClassPath($class2Path),
-            (new MetricBag())->with('complexity.ccn', 15),
-        ));
-        $repository->addCallable(new CallableWithMetrics(
-            DeclarationPath::of(SymbolPath::forMethod('App', 'Class2', 'methodB'), RelativePath::fromString('test2.php'), DeclarationOrdinal::fromRank(0)),
-            200,
-            CallableKind::Method,
-            null,
-            null,
-            new LogicalClassPath($class2Path),
-            (new MetricBag())->with('complexity.ccn', 5),
-        ));
-
-        // Aggregate
-        $collector = new CyclomaticComplexityCollector();
-        $aggregator = new MetricAggregator(AggregationHelper::collectDefinitions([$collector]), self::createStub(ProfilerInterface::class));
-        $aggregator->aggregate($repository);
-
-        // Verify both classes have WMC
-        $class1Bag = $repository->get($class1Path);
-        $class2Bag = $repository->get($class2Path);
-
-        self::assertSame(10, (int) $class1Bag->get('complexity.wmc'));
-        self::assertSame(20, (int) $class2Bag->get('complexity.wmc')); // 15 + 5 = 20
+        $first = $repository->getSubject($this->classSubject('App', 'Class1', 'src/Class1.php'));
+        $second = $repository->getSubject($this->classSubject('App', 'Class2', 'src/Class2.php'));
+        self::assertSame(1, $first->get('complexity.wmc'));
+        self::assertSame(3, $second->get('complexity.wmc'));
+        self::assertSame($first->get('complexity.ccn.sum'), $first->get('complexity.wmc'));
+        self::assertSame($second->get('complexity.ccn.sum'), $second->get('complexity.wmc'));
     }
 
-    private function addMethod(InMemoryMetricRepository $repository, SymbolPath $method, SymbolPath $class, int $ccn, int $startFilePos): void
+    #[Test]
+    public function itCarriesAnonymousClassContextFromSourceIntoCallableRecords(): void
     {
-        $repository->addCallable(new CallableWithMetrics(
-            DeclarationPath::of($method, RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
-            $startFilePos,
-            CallableKind::Method,
-            null,
-            null,
-            new LogicalClassPath($class),
-            (new MetricBag())->with('complexity.ccn', $ccn),
+        $repository = $this->measure([
+            'src/Outer.php' => <<<'SOURCE'
+<?php
+namespace App;
+class Outer {
+    public function run() {}
+    public function make() {
+        return new class {
+            public function hidden() {}
+        };
+    }
+}
+SOURCE,
+        ]);
+        $named = [];
+        $anonymous = [];
+        foreach ($repository->allCallables() as $info) {
+            if ($info->anonymousClassContext) {
+                $anonymous[] = $info;
+            } else {
+                $named[] = $info;
+            }
+        }
+
+        self::assertCount(2, $named);
+        self::assertCount(1, $anonymous);
+        self::assertNull($anonymous[0]->classAggregationOwner);
+        self::assertSame(2, $repository->getSubject($this->classSubject('App', 'Outer', 'src/Outer.php'))->get('complexity.wmc'));
+    }
+
+    /** @param array<string, string> $sources */
+    private function measure(array $sources): InMemoryMetricRepository
+    {
+        $collector = new CyclomaticComplexityCollector();
+        $definitions = [
+            ...AggregationHelper::collectDefinitions([$collector]),
+            new MetricDefinition(MetricName::SIZE_SYMBOL_METHOD_COUNT, SymbolLevel::Class_),
+        ];
+        $repository = new InMemoryMetricRepository($definitions);
+        $parser = (new ParserFactory())->createForHostVersion();
+        foreach ($sources as $file => $code) {
+            $ast = $parser->parse($code) ?? [];
+            $registrar = (new DeclarationRegistrarFactory())->createForFile();
+            $visitor = $collector->getVisitor();
+            self::assertInstanceOf(CyclomaticComplexityVisitor::class, $visitor);
+            $visitor->reset();
+            $collector->useDeclarationIndex($registrar->index());
+            $visitor->useDeclarationIndex($registrar->index());
+            $traverser = new NodeTraverser();
+            $traverser->addVisitor($registrar);
+            $traverser->addVisitor($visitor);
+            $traverser->traverse($ast);
+            $path = RelativePath::fromString($file);
+            $collector->collect(new SplFileInfo($file), $ast);
+            foreach ($collector->getClassesWithMetrics($path) as $class) {
+                $repository->addSubject(MetricSubject::declaration($class->declarationPath), $class->metrics, $path, $class->line);
+            }
+            foreach ($collector->getCallablesWithMetrics($path) as $callable) {
+                $repository->addCallable($callable);
+            }
+        }
+        (new MetricAggregator($definitions, self::createStub(ProfilerInterface::class)))->aggregate($repository);
+
+        return $repository;
+    }
+
+    private function classSubject(string $namespace, string $name, string $file): MetricSubject
+    {
+        return MetricSubject::declaration(DeclarationPath::of(
+            SymbolPath::forClass($namespace, $name),
+            RelativePath::fromString($file),
+            DeclarationOrdinal::fromRank(0),
         ));
     }
 }

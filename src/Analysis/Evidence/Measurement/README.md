@@ -20,20 +20,52 @@ for collection and repository interchange.
 Measurement/
 ├── Aggregation/        # aggregation phases and global collectors
 ├── Contract/           # named cross-owner metric and repository promises
+│   ├── ClassKeyScope.php # declaration or logical-name class key scope
+│   ├── MetricDefinitionCatalogInterface.php # measured definitions for composition
+│   └── FileNamespaceIndex.php # declared namespaces of each measured physical file
 ├── FileMeasurement/    # file collectors and derived metrics
 ├── Namespace_/         # project namespace attribution
-├── Repository/         # in-memory repository and indexes
+├── Repository/
+│   ├── InMemoryMetricRepository.php # routes the public repository contract
+│   ├── ClassMetricScopeRegistry.php  # finite class-key scopes and independent merge
+│   ├── AggregateMetricIndex.php     # project/file/namespace metrics and source info
+│   ├── LogicalClassMetricIndex.php  # folded class metrics and spelling evidence
+│   ├── MetricSubjectIndex.php       # exact declarations and callable metadata
+│   └── NamespaceMetricIndex.php     # namespace attribution and spelling evidence
 └── Visitor/             # AST visitor state and metadata
 ```
 
 ## Public contracts
 
+`FileNamespaceIndex::fromRepository()` associates physical files with every
+namespace in their exact declarations and logical classes, deduplicated in
+repository order. Missing declarations or a missing repository produce an empty
+list. Namespace aggregation ignores that empty list; reporting may interpret it
+as the global namespace for file findings.
+
 The `Contract/` namespace is the complete external surface. Important promises
 include `MetricRepositoryInterface`, `MetricRepositoryFactoryInterface`,
 `MetricCollectorInterface`, `FileMeasurementCollectorInterface`,
-`MeasurementAggregationInterface`, and `ProjectNamespaceResolverInterface`.
+`MeasurementAggregationInterface`, `ProjectNamespaceResolverInterface`, and
+`ProjectNamespaceSourceControlInterface`.
+
+`SourceMeasuringCollectorInterface` is the narrow byte-handoff contract for
+`LocCollector`. Run reads the private source snapshot and supplies the same
+bytes to parsing, LOC and Inline extraction. `CompositeCollector` resets before
+handoff and AST traversal; the general collector contract does not receive a
+source API.
+
 Consumers must not import repository indexes, visitor state, aggregation helpers,
 or collector implementations.
+
+`ProjectNamespaceResolver` takes optional explicit PSR-4 prefixes and performs
+no constructor filesystem IO. Console binds the current analysed project's
+`ComposerManifestFacts` through `ProjectNamespaceSourceControlInterface` before
+collection. Accepted production and development PSR-4 records form the namespace
+map independently of the run's `ProjectScopeState` and autoload-dev policy.
+Binding another invocation resets the old map, including when the new manifest
+has no accepted PSR-4 records. Worker reconstruction uses the captured prefixes;
+it does not re-read a worker's current directory.
 
 `Core\Symbol\SymbolLevel` is the project's one level vocabulary: the rule
 layer, the finding, the channel declaration, the stored metric and this
@@ -92,17 +124,77 @@ projects logical classes and namespaces. A duplicate FQN declaration is an
 exact fact; a logical-class projection is deliberately deduplicated before
 namespace aggregation.
 
+`Core\Symbol\ClassNameSpelling` supplies ASCII-only identity folding and the
+byte-smallest canonical observed name. Consumers joining logical findings to
+class or namespace measurements use that identity; exact source declaration
+subjects retain their authored paths and ordinals.
+
+Logical class and namespace projections use PHP's case-insensitive class-name
+identity. Each index retains every observed spelling, chooses the byte-smallest
+spelling as its canonical projection, and publishes groups with more than one
+spelling through `MetricRepositoryInterface::mixedSpellings()`. Exact
+`DeclarationPath` subjects are never rewritten or merged by that projection.
+Repository merges carry the complete spelling observations from both inputs;
+rebuilding the canonical indexes does not count their metric bags a second
+time. Namespace aggregation therefore sees one namespace for case variants and
+counts every distinct exact declaration once. Global function writes rekey
+existing namespace bags when the canonical spelling changes; repository merges
+choose the combined spelling before merging bags and preserve scalar precedence,
+structured entries and source metadata.
+
+The repository delegates each identity domain to one internal index. Exact
+declarations and callable metadata stay in `MetricSubjectIndex`; folded class
+identity and its spelling observations stay in `LogicalClassMetricIndex`;
+project, file, and namespace aggregate bags stay in `AggregateMetricIndex`.
+`NamespaceMetricIndex` remains the attribution view over those stored facts.
+Logical class identity and graph-only metrics remain in the logical index. Both
+declaration and logical-class indexes use `RepositoryMerge::store()` for the
+same bag and source-metadata merge policy.
+Logical callable fallback lookup is absent: declaration reads and scalar writes
+require exact subjects. `addScalar(SymbolPath)` accepts aggregate paths only;
+class, method and function paths refuse. `addSubjectScalar()` refuses a missing
+exact declaration of every kind, and preserves an existing bag's other metrics,
+structured entries and source identity.
+
+Declaration values stay in the exact subject index. `allClassDeclarations()`
+enumerates the value population; `allLogicalClasses()` enumerates graph names.
+Logical `get()`/`has()` for classes or callables and `all(Class_)` refuse even
+when a name has only one declaration. An exact class `getSubject()` overlays
+its logical graph bag without copying those keys into declaration storage.
+
 Enriching one of those subjects with a single computed value is
 `addSubjectScalar()`, the declaration-addressed counterpart of `addScalar()`.
 It exists so that a global collector writing one number per declaration does
 not have to build a `MetricBag` to do it: that would make every such collector
 a dependent of a class this repository already keeps on a point CBO threshold,
 and the first one to try it turned the threshold red (ADR 0073). Like
-`addScalar()`, it ignores a subject the repository does not hold. A write onto
-a class declaration also refreshes that class's logical projection, because the
-projection is the class-facing view aggregation reads; when a name has several
-declarations, whichever value should survive there is the collector's decision
-to make afterwards, not this method's.
+`addScalar()`, it enriches an existing subject. Exportable class keys require
+owning definitions: `ClassKeyScope` distinguishes `Declaration` from
+`LogicalName`, including the definition's published suffixes. Undeclared or
+wrong-area scalar writes refuse, and repository merge preserves compatible
+registries or refuses a scope conflict. Computed class values remain on their
+exact declaration; a same-name declaration cannot overwrite them.
+
+`MetricDefinitionCatalogInterface::all()` exposes the measured definitions to
+Infrastructure composition and the published-key control. The aggregation
+service implements that catalog. Infrastructure combines it with the computed
+catalog when creating a fresh repository after invocation configuration.
+Measurement does not depend on ComputedMetrics internals.
+
+`MetricDefinition::publicationLevels()` describes direct base-key publication
+separately from `publishedSuffixes()`. It contains `collectedAt` plus finite
+`directPublicationLevels`; repeated levels refuse. Collection and aggregation
+sample selection still use `collectedAt`. Generic File definitions from a
+namespace provider acquire Namespace publication once; provider class
+definitions retain their own levels. Class-area registration recognizes both
+direct Class publication and class aggregation suffixes.
+
+Callable registration and merge preserve one exact class aggregation owner.
+Methods and property hooks belonging to named classes carry their exact owner
+declaration; its logical name is derived rather than stored independently.
+Construction checks callable kind, owner and anonymous-class context together.
+Repository membership and contradictory producer joins retain their checks;
+lexical context alone does not make an anonymous callable a member.
 
 ## Collection and worker reconstruction
 
@@ -122,6 +214,9 @@ collectors, and re-aggregation of global metric definitions. It consumes the
 DependencyModel graph through `DependencyGraphInterface`; the graph itself and
 its extraction internals remain DependencyModel-owned.
 
+The aggregation completion log measures elapsed time with monotonic `hrtime`
+readings and publishes seconds, independently of adjustments to the system date.
+
 `NamespaceTree` holds the global namespace (the empty string) as an isolated
 leaf, so `NamespaceToProjectAggregator` reads its bag like any other one's.
 Code written entirely in the global namespace would otherwise publish no
@@ -135,6 +230,27 @@ Declare a project aggregation on the own-scope key, never on the rollup —
 `governance/MeasurementIdentity/NamespaceFoldCountsEachDeclarationOnceTest.php`
 measures the difference rather than reading the name, by checking that a parent's
 folded value does not move when a child gains a type nothing references.
+
+`size.class-count` is the own namespace count at every namespace level;
+`size.class-count.sum` remains the published subtree aggregate. The class-count
+rule judges the own value, so a parent's finding is not caused solely by its
+children's classes.
+
+Namespace file contributions declare their population and use unpublished
+`MetricName::NAMESPACE_FILE_CONTRIBUTION` metadata. Totals and file counts fold
+once per own contribution; sums preserve integers and averages divide total by
+files. A nonzero total with zero contributing files refuses before Sum, Count
+or Average; a genuinely empty population still averages to zero. Sum-only structural definitions do not publish a file-count `.count`
+suffix. `MetricDefinition::publishedSuffixes()` is the sole suffix authority,
+including the count accompanying an average. Marked namespace contributions
+refuse Max, Min and percentile strategies because totals/files cannot recover
+their original samples.
+
+> **Note:** Class-derived namespace aggregates sample physical declarations.
+> A graph-only value of a logical name with several declarations appears in
+> each declaration's view and contributes once for each. Graph algorithms keep
+> their logical-name population; class counts and health coverage use the
+> declaration population.
 
 `NamespaceToProjectAggregator` also publishes
 `size.symbol-declaring-namespace-count`: the number of namespaces that declare
@@ -151,14 +267,13 @@ not consult mutable global profiler state. The exact span order is initial
 `aggregation`, `global`, and optional `aggregation.global`, with the completion
 log between the first two spans.
 
-High fan-in of the public Measurement surface is governed by point thresholds,
-not a namespace-wide exclusion. Current CBO thresholds give one-edge headroom:
-`AbstractCollector` 27, `AggregationStrategy` 38, `MetricBag` 68,
-`MetricDefinition` 33, `MetricName` 65, `MetricRepositoryInterface` 46, and
-`ResettableVisitorInterface` 23. `MetricBag` and
-`MetricRepositoryInterface` also carry rounded point ClassRank warning/error
-thresholds of 0.035 and 0.020 respectively for their intentional contract-hub
-role.
+Intentional contract readership is governed by exact CBO path exclusions and
+an exact namespace-channel exclusion in `qmx.yaml`, alongside point thresholds.
+The remaining CBO point thresholds give one-edge headroom: `AbstractCollector`
+27, `AggregationStrategy` 38, and `ResettableVisitorInterface` 23. `MetricBag`
+also carries a rounded point ClassRank warning/error threshold of 0.035 for its
+intentional contract-hub role. Signal exclusions do not remove the underlying
+metric facts from publication.
 
 ## Test ownership and Definition of Done
 
@@ -176,3 +291,26 @@ attribution, and sequential/parallel worker equivalence.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+## Measurement reach and baseline comparison
+
+Measurement publishes Members/Run reach through its metric declarations.
+Baseline owns RunCoverage and the comparability decision over AnalysisCoverage;
+this does not introduce a general invocation context or Run phase port. A
+nonfinite member makes the entire magnitude group unavailable for comparison
+and capture; diagnostic findings and total/missing counts remain available.
+Incomplete evidence establishes neither acceptance nor staleness.
+
+The catalog declares Measurement's `size.symbol-method-count`,
+`size.symbol-class-count` and `size.symbol-declaring-namespace-count` beside
+their writers; declarations are not limited to direct collectors. Class
+population counters use physical declarations. Complexity owns WMC, including
+zero for a named class-like declaration without methods. Callable-to-class
+aggregation groups by the exact declared owner rather than combining all
+methods sharing a logical class name.
+
+`MetricRepositoryFactoryInterface::create(array $definitions = [])` constructs a
+fresh empty store governed by finite metric definitions. The private default
+factory performs native construction inside Measurement. Infrastructure
+composition adds its current measured/computed catalogs and delegates through
+this promise; class scalars with no declared scope remain refused.

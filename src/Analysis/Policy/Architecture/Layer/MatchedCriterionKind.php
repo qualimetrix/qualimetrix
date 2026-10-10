@@ -26,6 +26,7 @@ enum MatchedCriterionKind: string
     case Pattern = 'pattern';
     case Suffix = 'suffix';
     case Attribute = 'attribute';
+    case MemberAttribute = 'member attribute';
     case Implements = 'implements';
     case Extends = 'extends';
 }

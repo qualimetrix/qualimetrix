@@ -21,7 +21,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -31,7 +31,7 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
     #[Test]
     public function itSumsMetricsFromDescendantLeafNamespacesIntoTheParent(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->createDefinitions());
 
         // Simulate class symbols in two leaf namespaces (with callable-level raw values)
         $this->addClassWithCcn($repository, 'App\\Service', 'UserService', 'src/Service/UserService.php', 5);
@@ -64,35 +64,6 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
     #[Test]
     public function itAveragesFromRawCallableValuesRatherThanChildAverages(): void
     {
-        $repository = new InMemoryMetricRepository();
-
-        // App\Service has 3 methods with CCN: 2, 4, 6 → sum=12, avg=4
-        $this->addMethodMetric($repository, 'App\\Service', 'Svc', 'doA', 'src/S/Svc.php', 'complexity.ccn', 2);
-        $this->addMethodMetric($repository, 'App\\Service', 'Svc', 'doB', 'src/S/Svc.php', 'complexity.ccn', 4);
-        $this->addMethodMetric($repository, 'App\\Service', 'Svc', 'doC', 'src/S/Svc.php', 'complexity.ccn', 6);
-
-        // Simulate class-level aggregation: Svc has ccn.sum=12, ccn.avg=4
-        $repository->add(
-            SymbolPath::forClass('App\\Service', 'Svc'),
-            (new MetricBag())->with('complexity.ccn.sum', 12)->with('complexity.ccn.avg', 4.0)->with('complexity.ccn.count', 3),
-            RelativePath::fromString('src/S/Svc.php'),
-            1,
-        );
-
-        // App\Domain has 1 method with CCN: 10 → sum=10, avg=10
-        $this->addMethodMetric($repository, 'App\\Domain', 'Ent', 'calc', 'src/D/Ent.php', 'complexity.ccn', 10);
-        $repository->add(
-            SymbolPath::forClass('App\\Domain', 'Ent'),
-            (new MetricBag())->with('complexity.ccn.sum', 10)->with('complexity.ccn.avg', 10.0)->with('complexity.ccn.count', 1),
-            RelativePath::fromString('src/D/Ent.php'),
-            1,
-        );
-
-        // Simulate namespace bags (as ClassToNamespaceAggregator would)
-        $this->addNamespaceBag($repository, 'App\\Service', ['complexity.ccn.sum' => 12.0, 'complexity.ccn.avg' => 4.0]);
-        $this->addNamespaceBag($repository, 'App\\Domain', ['complexity.ccn.sum' => 10.0, 'complexity.ccn.avg' => 10.0]);
-
-        $tree = new NamespaceTree(['App\\Service', 'App\\Domain']);
         $definitions = [
             new MetricDefinition(
                 name: 'complexity.ccn',
@@ -103,7 +74,35 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
                 ],
             ),
         ];
+        $repository = new InMemoryMetricRepository($definitions);
 
+        // App\Service has 3 methods with CCN: 2, 4, 6 → sum=12, avg=4
+        $this->addMethodMetric($repository, 'App\\Service', 'Svc', 'doA', 'src/S/Svc.php', 'complexity.ccn', 2);
+        $this->addMethodMetric($repository, 'App\\Service', 'Svc', 'doB', 'src/S/Svc.php', 'complexity.ccn', 4);
+        $this->addMethodMetric($repository, 'App\\Service', 'Svc', 'doC', 'src/S/Svc.php', 'complexity.ccn', 6);
+
+        // Simulate class-level aggregation: Svc has ccn.sum=12, ccn.avg=4
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Service', 'Svc'), RelativePath::fromString('src/S/Svc.php'), DeclarationOrdinal::fromRank(0))),
+            (new MetricBag())->with('complexity.ccn.sum', 12)->with('complexity.ccn.avg', 4.0)->with('complexity.ccn.count', 3),
+            RelativePath::fromString('src/S/Svc.php'),
+            1,
+        );
+
+        // App\Domain has 1 method with CCN: 10 → sum=10, avg=10
+        $this->addMethodMetric($repository, 'App\\Domain', 'Ent', 'calc', 'src/D/Ent.php', 'complexity.ccn', 10);
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Domain', 'Ent'), RelativePath::fromString('src/D/Ent.php'), DeclarationOrdinal::fromRank(0))),
+            (new MetricBag())->with('complexity.ccn.sum', 10)->with('complexity.ccn.avg', 10.0)->with('complexity.ccn.count', 1),
+            RelativePath::fromString('src/D/Ent.php'),
+            1,
+        );
+
+        // Simulate namespace bags (as ClassToNamespaceAggregator would)
+        $this->addNamespaceBag($repository, 'App\\Service', ['complexity.ccn.sum' => 12.0, 'complexity.ccn.avg' => 4.0]);
+        $this->addNamespaceBag($repository, 'App\\Domain', ['complexity.ccn.sum' => 10.0, 'complexity.ccn.avg' => 10.0]);
+
+        $tree = new NamespaceTree(['App\\Service', 'App\\Domain']);
         $aggregator = new TreeAwareNamespaceAggregator($tree);
         $aggregator->aggregate($repository, $definitions);
 
@@ -120,7 +119,7 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
     #[Test]
     public function itPropagatesALeafsMetricsThroughEveryAncestorInADeepHierarchy(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->createDefinitions());
 
         $this->addClassWithCcn($repository, 'A\\B\\C', 'Foo', 'src/A/B/C/Foo.php', 4);
         $this->addMethodMetric($repository, 'A\\B\\C', 'Foo', 'run', 'src/A/B/C/Foo.php', 'complexity.ccn', 4);
@@ -147,18 +146,18 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
     #[Test]
     public function itIncludesAParentsOwnSymbolsAlongsideItsChildrensInAggregation(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->createDefinitions());
 
         // App has its own classes (2 classes direct) with callable-level raw values
-        $repository->add(
-            SymbolPath::forClass('App', 'Bootstrap'),
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'Bootstrap'), RelativePath::fromString('src/Bootstrap.php'), DeclarationOrdinal::fromRank(0))),
             (new MetricBag())->with('complexity.ccn.sum', 3),
             RelativePath::fromString('src/Bootstrap.php'),
             1,
         );
         $this->addMethodMetric($repository, 'App', 'Bootstrap', 'boot', 'src/Bootstrap.php', 'complexity.ccn', 3);
-        $repository->add(
-            SymbolPath::forClass('App', 'Kernel'),
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'Kernel'), RelativePath::fromString('src/Kernel.php'), DeclarationOrdinal::fromRank(0))),
             (new MetricBag())->with('complexity.ccn.sum', 7),
             RelativePath::fromString('src/Kernel.php'),
             1,
@@ -194,7 +193,7 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
     #[Test]
     public function itLeavesTheRepositoryUnchangedWhenNoParentNamespaceExists(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->createDefinitions());
 
         $this->addNamespaceBag($repository, 'App', ['complexity.ccn.sum' => 5.0]);
 
@@ -212,12 +211,12 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
     #[Test]
     public function itAggregatesAnyMetricDefinitionWithoutAHardcodedMetricList(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->createDefinitions());
 
         // Custom metric "foo" collected at File level
-        $repository->add(
-            SymbolPath::forClass('App\\Service', 'Svc'),
-            (new MetricBag())->with('foo', 42),
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Service', 'Svc'), RelativePath::fromString('src/S/Svc.php'), DeclarationOrdinal::fromRank(0))),
+            new MetricBag(),
             RelativePath::fromString('src/Svc.php'),
             1,
         );
@@ -245,9 +244,9 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
         ];
 
         // Add a child namespace to trigger parent creation
-        $repository->add(
-            SymbolPath::forClass('App\\Service\\Sub', 'Bar'),
-            (new MetricBag())->with('foo', 10),
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Service\\Sub', 'Bar'), RelativePath::fromString('src/Sub/Bar.php'), DeclarationOrdinal::fromRank(0))),
+            new MetricBag(),
             RelativePath::fromString('src/Sub/Bar.php'),
             1,
         );
@@ -271,17 +270,17 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
     #[Test]
     public function itComputesClassAndMethodSymbolCountsForTheParent(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository($this->createDefinitions());
 
         // Two classes in App\Service
-        $repository->add(
-            SymbolPath::forClass('App\\Service', 'Svc1'),
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Service', 'Svc1'), RelativePath::fromString('src/S/Svc1.php'), DeclarationOrdinal::fromRank(0))),
             new MetricBag(),
             RelativePath::fromString('src/S/Svc1.php'),
             1,
         );
-        $repository->add(
-            SymbolPath::forClass('App\\Service', 'Svc2'),
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Service', 'Svc2'), RelativePath::fromString('src/S/Svc2.php'), DeclarationOrdinal::fromRank(0))),
             new MetricBag(),
             RelativePath::fromString('src/S/Svc2.php'),
             1,
@@ -292,7 +291,7 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            new LogicalClassPath(SymbolPath::forClass('App\\Service', 'Svc1')),
+            DeclarationPath::of(SymbolPath::forClass('App\\Service', 'Svc1'), RelativePath::fromString('src/S/Svc1.php'), DeclarationOrdinal::fromRank(0)),
             new MetricBag(),
         ));
         $this->addNamespaceBag($repository, 'App\\Service', []);
@@ -321,8 +320,8 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
         string $file,
         int $ccn,
     ): void {
-        $repository->add(
-            SymbolPath::forClass($namespace, $class),
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass($namespace, $class), RelativePath::fromString($file), DeclarationOrdinal::fromRank(0))),
             (new MetricBag())->with('complexity.ccn.sum', $ccn),
             RelativePath::fromString($file),
             1,
@@ -347,7 +346,7 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            new LogicalClassPath(SymbolPath::forClass($namespace, $class)),
+            DeclarationPath::of(SymbolPath::forClass($namespace, $class), RelativePath::fromString($file), DeclarationOrdinal::fromRank(0)),
             (new MetricBag())->with($metric, $value),
         ));
     }

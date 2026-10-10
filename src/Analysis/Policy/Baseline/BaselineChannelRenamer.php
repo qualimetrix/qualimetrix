@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
-use JsonException;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
 use RuntimeException;
 
 /**
@@ -32,24 +31,15 @@ use RuntimeException;
  * the map names, the position of an entry among its siblings when the new
  * name sorts differently, and the order of subject keys if the file was not
  * already canonical. Subject keys, `occurrence`, `count`, `magnitudes`,
- * `mode`, `edge`, `scope`, `generated` and any envelope field this build does
- * not know are carried through untouched.
+ * `mode`, `edge`, `scope`, `exclusions` and `generated` are carried through untouched.
  *
  * **Three owners decide what a carried file is, and this class is only one of
  * them.** Reading a document raw is not a licence to hold a private opinion of
  * what a baseline is:
  *
- * - the **loader** owns what a *document* is — this carry refuses exactly the
- *   document-level defects it refuses (invalid JSON, a root that is not an
- *   object, a version this build does not hold, a missing `entries` object,
- *   an unreadable `generated` or `scope`) and demotes exactly what it demotes,
- *   counting the line rather than refusing the file. `generated` and `scope`
- *   ask the loader's own checks directly ({@see BaselineLoader::parseGenerated()},
- *   {@see BaselineLoader::parseScope()}); JSON validity, root-object shape,
- *   version and the `entries` object are a second, independently written set
- *   of checks that agrees with the loader's verdict today but is not the same
- *   code path — a future change to the loader's rules there needs its
- *   counterpart here updated by hand;
+ * - **BaselineFileShape** judges the same closed document grammar as the
+ *   loader, including envelope, entry, edge and exclusion keys. A known
+ *   entry field with an unusable value is carried and counted instead;
  * - the **writer** owns what a *file* looks like — block shape and line order
  *   are {@see BaselineDocumentLayout} and {@see BaselineEntryOrder}, so a
  *   carried file is laid out where {@see BaselineWriter} would have laid it
@@ -90,23 +80,15 @@ final readonly class BaselineChannelRenamer
     ) {}
 
     /**
-     * @throws ChannelRenameRefusal when the file is not a version this build can carry, when
-     *                              its envelope cannot be read, or when the carry would put
-     *                              two entries of one identity in the file
+     * @throws \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal when the document grammar is invalid
+     * @throws ChannelRenameRefusal when a carry would put two distinct entries under one identity
      * @throws BaselineConflictException when the file changed between the read and the write
      * @throws RuntimeException when the file cannot be read or replaced
      */
-    public function carry(string $path, ChannelRenameMap $map): ChannelRenameReport
+    public function carry(BaselineDocument $source, ChannelRenameMap $map): ChannelRenameReport
     {
-        $contents = @file_get_contents($path);
-
-        if ($contents === false) {
-            throw new RuntimeException(\sprintf('Cannot read the baseline file %s.', $path));
-        }
-
-        $document = self::decode($contents, $path);
-        $entries = self::readEntries($document, $path);
-        self::assertEnvelopeLoads($document, $path);
+        $document = BaselineFileShape::decode($source->bytes(), $source->path);
+        $entries = self::readEntries($document);
         unset($document['entries']);
 
         $rowHits = array_fill_keys($map->oldNames(), 0);
@@ -159,93 +141,12 @@ final readonly class BaselineChannelRenamer
         ksort($carried, \SORT_STRING);
 
         $this->documents->replace(
-            $path,
+            $source->target,
             BaselineDocumentLayout::render($document, $carried),
-            hash('sha256', $contents),
+            $source->contentHash,
         );
 
         return new ChannelRenameReport($total, $renamed, $rowHits, $unreadable, written: true);
-    }
-
-    /**
-     * The document as a whole, down to the version.
-     *
-     * The version is read here rather than with the rest of the envelope
-     * because it decides whether anything below it can be read at all: a file
-     * of another format is refused before its fields are judged by this one's
-     * rules. What remains of the envelope is checked in
-     * {@see self::assertEnvelopeLoads()}, in the loader's order. A defect
-     * inside an entry is neither: it is carried and counted.
-     *
-     * @throws ChannelRenameRefusal
-     *
-     * @return array<string, mixed>
-     */
-    private static function decode(string $contents, string $path): array
-    {
-        try {
-            $document = json_decode($contents, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException $e) {
-            throw new ChannelRenameRefusal(\sprintf('%s is not valid JSON: %s', $path, $e->getMessage()));
-        }
-
-        if (!\is_array($document) || array_is_list($document)) {
-            throw new ChannelRenameRefusal(\sprintf('%s is not a baseline document: its root must be a JSON object.', $path));
-        }
-
-        $version = $document['version'] ?? null;
-
-        if (!\is_int($version)) {
-            throw new ChannelRenameRefusal(\sprintf('%s has no integer "version"; it is not a baseline file.', $path));
-        }
-
-        if ($version !== BaselineFormatVersion::CURRENT) {
-            throw new ChannelRenameRefusal(\sprintf(
-                '%s is a version %d baseline and this build carries version %d. A carry substitutes a name and '
-                . 'converts nothing, so the file has to be brought to version %d first.',
-                $path,
-                $version,
-                BaselineFormatVersion::CURRENT,
-                BaselineFormatVersion::CURRENT,
-            ));
-        }
-
-        /** @var array<string, mixed> $document */
-        return $document;
-    }
-
-    /**
-     * The rest of the envelope, checked with the loader's own eyes.
-     *
-     * A carry that left `generated` or `scope` as it found them could write a
-     * file this build's own `check` then refuses to load — the raw path being
-     * more permissive than the loader is a defect in the same family as it
-     * being stricter. The checks are the loader's rather than a second copy
-     * of them, and they run in the loader's order, so a document gets one
-     * verdict whichever of the two reads it. Only the exception type differs:
-     * nothing was written, so this is a refusal.
-     *
-     * @param array<string, mixed> $document
-     *
-     * @throws ChannelRenameRefusal
-     */
-    private static function assertEnvelopeLoads(array $document, string $path): void
-    {
-        try {
-            BaselineLoader::parseGenerated($document['generated'] ?? null, $path);
-            BaselineLoader::parseScope($document['scope'] ?? null, $path);
-        } catch (ConfigurationRefusal $e) {
-            // Translated at the boundary rather than let through: this carry
-            // keeps its own local signal for the reasons
-            // {@see ChannelRenameRefusal} documents, so a change to how the
-            // loader reports its own refusals must not change the type this
-            // method throws.
-            throw new ChannelRenameRefusal(\sprintf(
-                '%s: %s. A carry writes the envelope back as it found it, so the file is left untouched.',
-                $path,
-                $e->summary(),
-            ));
-        }
     }
 
     /**
@@ -265,13 +166,11 @@ final readonly class BaselineChannelRenamer
      *
      * @return array<string, list<BaselineEntryPayload>>
      */
-    private static function readEntries(array $document, string $path): array
+    private static function readEntries(array $document): array
     {
         $entries = $document['entries'] ?? null;
 
-        if (!\is_array($entries)) {
-            throw new ChannelRenameRefusal(\sprintf('%s has no "entries" object.', $path));
-        }
+        \assert(\is_array($entries));
 
         $blocks = [];
 

@@ -83,6 +83,7 @@ final class RulesCommandFamilyCensusTest extends TestCase
     private const array EXPECTED_FAMILIES = [
         'annotation',
         'architecture',
+        'baseline',
         'code-smell',
         'cohesion',
         'complexity',

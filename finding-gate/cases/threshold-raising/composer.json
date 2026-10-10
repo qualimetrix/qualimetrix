@@ -1,0 +1,10 @@
+{
+    "name": "finding-gate-corpus/threshold-raising",
+    "description": "Pinned configuration boundaries can be raised by a declaration directive; GodClass and DataClass apply their own override axes, with unchanged neighbours proving declaration locality.",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Corpus\\ThresholdRaising\\": "src/"
+        }
+    }
+}

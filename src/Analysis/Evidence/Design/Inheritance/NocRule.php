@@ -9,13 +9,13 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
-use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Core\Observation\WorseDirection;
+use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -45,7 +45,7 @@ final class NocRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks Number of Children (many direct subclasses indicate wide impact)';
     }
@@ -59,10 +59,11 @@ final class NocRule extends AbstractRule
             return [];
         }
 
+        $declaration = self::channelDeclarations()[self::NAME];
         $findings = [];
 
-        foreach ($context->metrics->allDeclarations() as $classInfo) {
-            $finding = $this->findingForClass($classInfo, $context, $this->options);
+        foreach ($context->metrics->allClassDeclarations() as $classInfo) {
+            $finding = $this->findingForClass($classInfo, $context, $this->options, $declaration);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -71,43 +72,33 @@ final class NocRule extends AbstractRule
         return $findings;
     }
 
-    private function findingForClass(SymbolInfo $classInfo, AnalysisContext $context, NocOptions $options): ?Finding
+    private function findingForClass(SymbolInfo $classInfo, AnalysisContext $context, NocOptions $options, ChannelDeclaration $declaration): ?Finding
     {
         $subject = $classInfo->subject ?? throw new LogicException('NOC findings require an exact class declaration subject');
-        if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
-            return null;
-        }
-
-        $noc = $context->metrics->get($subject->toSymbolPath())->get(MetricName::DESIGN_NOC);
-        if ($noc === null || $noc === 0) {
+        $noc = null;
+        $inputs = (static function () use ($subject, $context, &$noc): iterable {
+            yield GateInput::kind('logicalKind', $subject->toSymbolPath()->getType());
+            $metrics = $context->metrics->getSubject($subject);
+            $noc = $metrics->get(MetricName::DESIGN_NOC);
+            yield GateInput::metrics('noc-present', $metrics);
+            yield GateInput::metrics('noc-positive', $metrics);
+        })();
+        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), $declaration, $inputs)) {
             return null;
         }
 
         $nocValue = (int) $noc;
         /** @var NocOptions $effectiveOptions */
         $effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
-        $severity = $effectiveOptions->getSeverity($nocValue);
-        if ($severity === null) {
-            return null;
-        }
-
-        $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
-
-        return new Finding(
-            location: new Location($classInfo->file, $classInfo->line),
-            subject: $subject,
-            symbolPath: $subject->toSymbolPath(),
-            ruleName: $this->getName(),
-            code: self::NAME,
-            message: \sprintf(
-                'NOC (Number of Children) is %d, exceeds threshold of %d. Consider using interfaces instead of inheritance',
-                $nocValue,
-                $threshold,
-            ),
-            severity: $severity,
-            metricValue: $nocValue,
-            recommendation: \sprintf('NOC: %d (threshold: %d) — too many direct subclasses', $nocValue, $threshold),
-            threshold: $threshold,
+        return $this->thresholdFinding(
+            $classInfo,
+            $nocValue,
+            $effectiveOptions->getSeverity($nocValue),
+            ['warning' => $effectiveOptions->warning, 'error' => $effectiveOptions->error],
+            static fn(int|float $threshold, ThresholdCrossing $crossing): array => [
+                \sprintf('NOC (Number of Children) is %d, %s threshold of %d. Consider using interfaces instead of inheritance', $nocValue, $crossing->value, $threshold),
+                \sprintf('NOC: %d (threshold: %d) — too many direct subclasses', $nocValue, $threshold),
+            ],
         );
     }
 
@@ -122,18 +113,21 @@ final class NocRule extends AbstractRule
     /**
      * `design.noc` reports NOC (`$nocValue` — see the emission above) as
      * `metricValue`, judged worse the higher it goes:
-     * {@see NocOptions::getSeverity()}'s `$value >= $this->error` (line 76)
-     * / `$value >= $this->warning` (line 80).
+     * {@see NocOptions::getSeverity()}'s `$value >= $this->error`
+     * / `$value >= $this->warning`.
      *
      * @return array<string, ChannelDeclaration>
      */
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Higher,
-                JudgedMetrics::of(MetricName::DESIGN_NOC),
+            self::NAME => self::judgingHigher(
+                [MetricName::DESIGN_NOC],
                 SymbolLevel::Class_,
+            )->withGates(
+                self::populationGate('logical-class-kind', self::NAME, SymbolLevel::Class_, 'declaration', self::kindIn('logicalKind', [SymbolType::Class_]), 'Only class declarations are judged.'),
+                self::populationGate('noc-present', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('noc-present', [MetricName::DESIGN_NOC]), 'The direct-child count was not published.'),
+                self::populationGate('noc-positive', self::NAME, SymbolLevel::Class_, 'declaration', self::keyThreshold('noc-positive', [MetricName::DESIGN_NOC], '>', 0, nonnegative: true), 'A class with no children is outside the NOC population.'),
             ),
         ];
     }

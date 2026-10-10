@@ -5,17 +5,19 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Complexity;
 
 use LogicException;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Core\Observation\WorseDirection;
+use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -47,7 +49,7 @@ final class WmcRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks Weighted Methods per Class (sum of method complexities)';
     }
@@ -62,9 +64,10 @@ final class WmcRule extends AbstractRule
         }
 
         $findings = [];
+        $declaration = self::channelDeclarations()[self::NAME];
 
-        foreach ($context->metrics->allDeclarations() as $classInfo) {
-            $finding = $this->findingForClass($classInfo, $context, $this->options);
+        foreach ($context->metrics->allClassDeclarations() as $classInfo) {
+            $finding = $this->findingForClass($classInfo, $context, $this->options, $declaration);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -73,24 +76,20 @@ final class WmcRule extends AbstractRule
         return $findings;
     }
 
-    private function findingForClass(SymbolInfo $classInfo, AnalysisContext $context, WmcOptions $options): ?Finding
+    private function findingForClass(SymbolInfo $classInfo, AnalysisContext $context, WmcOptions $options, ChannelDeclaration $declaration): ?Finding
     {
         $subject = $classInfo->subject ?? throw new LogicException('WMC findings require an exact class declaration subject');
-        if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+        $metrics = $this->admittedMetrics($context, $subject, $declaration, function (MetricBag $metrics) use ($context, $subject, &$options): iterable {
+            $options = $this->getEffectiveOptions($context, $options, $subject);
+            yield GateInput::metrics('exclude-data-classes', $metrics, option: $options->excludeDataClasses);
+            yield GateInput::metrics('class-value', $metrics);
+        }, [GateInput::kind('class-coordinate', $subject->toSymbolPath()->getType())], level: SymbolLevel::Class_);
+        if ($metrics === null) {
             return null;
         }
-
-        $metrics = $context->metrics->get($subject->toSymbolPath());
-        if ($options->excludeDataClasses && $metrics->get(MetricName::DESIGN_IS_DATA_CLASS) === 1) {
-            return null;
-        }
-
         $wmc = $metrics->get(MetricName::COMPLEXITY_WMC);
-        if ($wmc === null) {
-            return null;
-        }
-
         $wmcValue = (int) $wmc;
+
         /** @var WmcOptions $effectiveOptions */
         $effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
         $severity = $effectiveOptions->getSeverity($wmcValue);
@@ -108,7 +107,7 @@ final class WmcRule extends AbstractRule
             ruleName: $this->getName(),
             code: self::NAME,
             message: \sprintf(
-                'WMC (Weighted Methods per Class) is %d, exceeds threshold of %d. Simplify methods or split the class',
+                'WMC (Weighted Methods per Class) is %d, ' . ThresholdCrossing::of($wmcValue, $threshold)->value . ' threshold of %d. Simplify methods or split the class',
                 $wmcValue,
                 $threshold,
             ),
@@ -165,21 +164,23 @@ final class WmcRule extends AbstractRule
     }
 
     /**
-     * `complexity.wmc` (this rule's channel prefix, despite the class living
-     * under the Complexity leaf) reports WMC (`$wmcValue` — see the
+     * `complexity.wmc` reports WMC (`$wmcValue` — see the
      * emission above) as `metricValue`, judged worse the higher it goes:
-     * {@see WmcOptions::getSeverity()}'s `$value >= $this->error` (line 76)
-     * / `$value >= $this->warning` (line 80).
+     * {@see WmcOptions::getSeverity()}'s `$value >= $this->error`
+     * / `$value >= $this->warning`.
      *
      * @return array<string, ChannelDeclaration>
      */
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Higher,
-                JudgedMetrics::of(MetricName::COMPLEXITY_WMC),
+            self::NAME => self::judgingHigher(
+                [MetricName::COMPLEXITY_WMC],
                 SymbolLevel::Class_,
+            )->withGates(
+                self::populationGate('class-coordinate', self::NAME, SymbolLevel::Class_, 'declaration', self::kindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
+                self::populationGate('exclude-data-classes', self::NAME, SymbolLevel::Class_, 'declaration', self::flagExcludes('exclude-data-classes', MetricName::DESIGN_IS_DATA_CLASS, 1, true), 'The configured class exclusion applies.'),
+                self::populationGate('class-value', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('class-value', [MetricName::COMPLEXITY_WMC]), 'The class metric was not published.'),
             ),
         ];
     }

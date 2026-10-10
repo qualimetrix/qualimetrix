@@ -8,8 +8,12 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\ConfigSchema;
+use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Console\RuntimeLimits;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 #[CoversClass(RuntimeLimits::class)]
 final class RuntimeLimitsTest extends TestCase
@@ -35,7 +39,7 @@ final class RuntimeLimitsTest extends TestCase
     public function itRefusesANonPositiveSizeQuotingTheValue(string $value): void
     {
         try {
-            new RuntimeLimits($value);
+            RuntimeLimits::fromResolvedValue(self::document($value)->resolved()->get(ConfigSchema::MEMORY_LIMIT));
             self::fail(\sprintf('memory_limit "%s" must be refused by its shape.', $value));
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString(\sprintf('"%s"', $value), $refusal->summary());
@@ -56,6 +60,30 @@ final class RuntimeLimitsTest extends TestCase
     #[DataProvider('provideAcceptedSizes')]
     public function itAcceptsAPositiveSizeOrUnlimited(string $value): void
     {
-        self::assertSame($value, (new RuntimeLimits($value))->memoryLimit);
+        self::assertSame($value, RuntimeLimits::fromResolvedValue(self::document($value)->resolved()->get(ConfigSchema::MEMORY_LIMIT))->memoryLimit);
+    }
+
+    #[Test]
+    #[DataProvider('provideNonPositiveSizes')]
+    public function itRefusesAMalformedSizeEvenWhenTheCommandLineOverridesIt(string $size): void
+    {
+        try {
+            LayeredDocument::of([
+                ['source' => 'qmx.yaml', 'values' => [ConfigSchema::MEMORY_LIMIT => $size]],
+                ['source' => 'cli', 'values' => [ConfigSchema::MEMORY_LIMIT => '512M']],
+            ], AbsolutePath::fromString('/project'));
+            self::fail('The command line hid a malformed memory limit.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('qmx.yaml', $refusal->sources()[0]->locator());
+            self::assertSame(['memory_limit'], $refusal->position()?->segments);
+            self::assertStringContainsString('positive size', $refusal->summary());
+        }
+    }
+
+    private static function document(string $value): ConfigurationDocument
+    {
+        return LayeredDocument::of([
+            ['source' => 'qmx.yaml', 'values' => [ConfigSchema::MEMORY_LIMIT => $value]],
+        ], AbsolutePath::fromString('/project'));
     }
 }

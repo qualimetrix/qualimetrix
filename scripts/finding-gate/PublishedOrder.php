@@ -39,8 +39,8 @@ namespace QmxFindingGate;
  *   product that stopped publishing findings in the order of its own sort key
  *   therefore still reddens the gate.
  * - The key is not a blind second copy of the product's. Its field set and the
- *   order of its components come from {@see Fingerprints::INPUT_FIELDS}, the
- *   published identity {@see Gate::checkTuple()} already holds against the
+ *   order of its components come from {@see ReportRecords::IDENTITY_FIELDS}, the
+ *   published identity {@see TupleCheck::checkTuple()} already holds against the
  *   tracked equivalence tuple, so there is one owner for "which fields make a
  *   finding's identity"; a field added there that this class cannot decompose is
  *   a refusal rather than a silent omission. And the per-run assertion above is
@@ -73,7 +73,7 @@ final class PublishedOrder
     /**
      * The identity fields this class knows how to turn into key components.
      *
-     * Held against {@see Fingerprints::INPUT_FIELDS} on every record, so the two
+     * Held against {@see ReportRecords::IDENTITY_FIELDS} on every record, so the two
      * cannot drift apart in silence.
      *
      * @var list<string>
@@ -91,10 +91,12 @@ final class PublishedOrder
      * Read on the RAW artifact of each side, in that side's own vocabulary,
      * before any map touches it. The reference is in the reference's order and
      * the candidate in the candidate's; neither is asserted against the other.
+     *
+     * @param list<array<string,mixed>>|null $complete validated physical authority for the tally
      */
-    public static function disorder(string $surfaceClass, string $text): ?string
+    public static function disorder(string $surfaceClass, string $text, ?array $complete = null): ?string
     {
-        foreach (self::blocks($surfaceClass, $text) as $block) {
+        foreach (self::blocks($surfaceClass, $text, $complete) as $block) {
             $keys = $block['keys'];
 
             for ($i = 1, $n = \count($keys); $i < $n; ++$i) {
@@ -124,10 +126,12 @@ final class PublishedOrder
      * is left exactly where it was, so a comparison that is byte-exact stays
      * byte-exact. Re-encoding the document would move every byte of it and turn
      * one question into another.
+     *
+     * @param list<array<string,mixed>>|null $complete validated physical authority for the tally
      */
-    public static function reorder(string $surfaceClass, string $text): string
+    public static function reorder(string $surfaceClass, string $text, ?array $complete = null): string
     {
-        $blocks = self::blocks($surfaceClass, $text);
+        $blocks = self::blocks($surfaceClass, $text, $complete);
 
         // Back to front, so an earlier block's spans are still valid offsets
         // after a later block has been rewritten.
@@ -179,12 +183,14 @@ final class PublishedOrder
      * sorts. Subject keys themselves are not touched: they are sorted by
      * `ksort` and no rename in this vocabulary moves one.
      *
+     * @param list<array<string,mixed>>|null $complete validated physical authority for the tally
+     *
      * @return list<array{label: string, elements: list<array{0: int, 1: int}>, keys: list<list<mixed>|string>}>
      */
-    private static function blocks(string $surfaceClass, string $text): array
+    private static function blocks(string $surfaceClass, string $text, ?array $complete): array
     {
         if ($surfaceClass === 'format:json') {
-            return self::jsonBlocks($text);
+            return self::jsonBlocks($text, $complete);
         }
 
         if ($surfaceClass !== 'baseline-file') {
@@ -249,9 +255,11 @@ final class PublishedOrder
      * alone, `case:complexity|format:json` still differed on
      * `"complexity.ccn": 4` and `"complexity.cognitive": 4` swapping places.
      *
+     * @param list<array<string,mixed>>|null $complete validated physical authority for the tally
+     *
      * @return list<array{label: string, elements: list<array{0: int, 1: int}>, keys: list<list<mixed>|string>}>
      */
-    private static function jsonBlocks(string $text): array
+    private static function jsonBlocks(string $text, ?array $complete): array
     {
         $open = self::valueBracket($text, '"violations"');
 
@@ -276,7 +284,7 @@ final class PublishedOrder
 
         $tallyLabel = 'the per-rule tally';
         $tallySpans = self::elements($text, $tally);
-        $ranks = self::ruleRanks($records, $keys, $text);
+        $ranks = self::ruleRanks($records, $keys, $text, $complete);
         $blocks[] = [
             'label' => $tallyLabel,
             'elements' => $tallySpans,
@@ -301,16 +309,22 @@ final class PublishedOrder
      *
      * @param list<array<string, mixed>> $records
      * @param list<list<mixed>|string> $keys
+     * @param list<array<string,mixed>>|null $complete validated physical authority for the tally
      *
      * @return array<string, int>
      */
-    private static function ruleRanks(array $records, array $keys, string $text): array
+    private static function ruleRanks(array $records, array $keys, string $text, ?array $complete): array
     {
-        if (str_contains($text, '"truncated": true') || str_contains($text, '"truncated":true')) {
+        if ((str_contains($text, '"truncated": true') || str_contains($text, '"truncated":true')) && $complete === null) {
             throw new GateError(
                 'The JSON surface truncated its findings, so the per-rule tally cannot be put in the order the'
                 . ' product publishes it in. Add --format-opt=violations=all to the case arguments.',
             );
+        }
+
+        if ($complete !== null) {
+            $records = $complete;
+            $keys = array_map(static fn(array $record): array|string => self::identityKey('format:json', $record, 'the complete physical authority'), $records);
         }
 
         $order = array_keys($keys);
@@ -603,7 +617,7 @@ final class PublishedOrder
      */
     private static function identityFields(): array
     {
-        return Fingerprints::INPUT_FIELDS;
+        return ReportRecords::IDENTITY_FIELDS;
     }
 
     /**

@@ -7,7 +7,7 @@ namespace Qualimetrix\Governance\Channel;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface;
@@ -20,6 +20,7 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 /**
  * Every real channel must resolve to its producer's own
@@ -89,7 +90,9 @@ final class SarifRuleDescriptorCoverageTest extends TestCase
         $configurator = $container->get(ComputedMetricConfiguratorInterface::class);
         \assert($configurator instanceof ComputedMetricConfiguratorInterface);
 
-        $document = new ConfigurationDocument([], AbsolutePath::fromString('/'));
+        $configurationPipeline = $container->get(ConfigurationPipelineInterface::class);
+        \assert($configurationPipeline instanceof ConfigurationPipelineInterface);
+        $document = LayeredDocument::of([], AbsolutePath::fromString('/'), ...LayeredDocument::sectionsOf($configurationPipeline));
         $configurator->replace($configurator->resolve($document));
 
         $universe = $container->get(ChannelUniverseInterface::class);

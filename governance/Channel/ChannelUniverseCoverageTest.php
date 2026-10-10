@@ -18,8 +18,8 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationRule;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\ConfigurationValidatorRegistry;
@@ -71,17 +71,17 @@ final class ChannelUniverseCoverageTest extends TestCase
      * literal. This file is where it is derived: against the tracked fixture
      * and against the rule classes read directly.
      */
-    public const int DECLARED_CHANNEL_COUNT = 59;
+    public const int DECLARED_CHANNEL_COUNT = 63;
 
     /**
-     * Nine subclasses of `AbstractCodeSmellRule`, three of
+     * Eight subclasses of `AbstractCodeSmellRule`, three of
      * `AbstractSecurityPatternRule` and three of
      * `AbstractTypeCoverageRule` declare their channel in the ancestor and
      * bind their own name through late static binding. A scan over
      * `*Rule.php` files does not see them, which is exactly why this count is
      * pinned separately from the total.
      */
-    private const int CHANNELS_DECLARED_BY_AN_ANCESTOR = 15;
+    private const int CHANNELS_DECLARED_BY_AN_ANCESTOR = 14;
 
     #[Test]
     public function itRequiresEveryDeclaredChannelToHaveAProducer(): void
@@ -168,7 +168,7 @@ final class ChannelUniverseCoverageTest extends TestCase
             LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
             LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
         ] as $siblingCode) {
-            self::assertSame(LayerViolationRule::NAME, $universe->producerOf($siblingCode), $siblingCode);
+            self::assertSame(LayerDeclarationRule::NAME, $universe->producerOf($siblingCode), $siblingCode);
         }
 
         // One channel reporting at two levels: the level used to be a suffix
@@ -189,6 +189,10 @@ final class ChannelUniverseCoverageTest extends TestCase
             $name = 'design.type-coverage.' . $facet;
             self::assertSame($name, $universe->producerOf($name), $facet);
         }
+
+        $boolean = new ReflectionClass(\Qualimetrix\Analysis\Evidence\CodeSmell\BooleanArgumentRule::class);
+        self::assertSame($boolean->getName(), $boolean->getMethod('channelDeclarations')->getDeclaringClass()->getName());
+        self::assertSame('code-smell.boolean-argument', $universe->producerOf('code-smell.boolean-argument'));
 
         // Declaration in an abstract ancestor, resolved by late static binding.
         $inherited = self::channelsDeclaredByAnAncestor();
@@ -217,7 +221,7 @@ final class ChannelUniverseCoverageTest extends TestCase
         // shares no suffix relation with the channel.
         self::assertFalse($universe->hasRule('architecture'));
         self::assertSame(
-            LayerViolationRule::NAME,
+            LayerDeclarationRule::NAME,
             $universe->producerOf(LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME),
         );
     }
@@ -446,11 +450,8 @@ final class ChannelUniverseCoverageTest extends TestCase
             return false;
         }
 
-        $options = $optionsClass::fromArray([]);
-        \assert($options instanceof HierarchicalRuleOptionsInterface);
-
-        foreach ($options->getSupportedLevels() as $level) {
-            if ($options->forLevel($level) instanceof ThresholdAwareOptionsInterface) {
+        foreach ($optionsClass::levelOptionsClasses() as $levelClass) {
+            if (is_a($levelClass, ThresholdAwareOptionsInterface::class, true)) {
                 return true;
             }
         }

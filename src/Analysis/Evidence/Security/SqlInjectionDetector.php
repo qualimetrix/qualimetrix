@@ -8,9 +8,9 @@ use PhpParser\Node;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\BinaryOp\Concat;
 use PhpParser\Node\Expr\FuncCall;
-use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Name;
 use PhpParser\Node\Scalar\InterpolatedString;
+use Qualimetrix\Core\Ast\SuperglobalRead;
 
 /**
  * Detects SQL injection patterns: superglobals used in SQL contexts.
@@ -57,12 +57,13 @@ final readonly class SqlInjectionDetector
         }
 
         foreach ($this->superglobalAnalyzer->readsInParts($query[0]) as $read) {
-            if (!isset($reported[spl_object_id($read)]) && \is_string($read->name)) {
+            if (!isset($reported[spl_object_id($read->node)])) {
                 return [
                     new SecurityPatternLocation(
                         type: 'sql_injection',
                         line: $node->getStartLine(),
                         context: "\${$read->name} {$query[1]}",
+                        superglobal: $read->name,
                     ),
                 ];
             }
@@ -75,7 +76,7 @@ final readonly class SqlInjectionDetector
      * Every superglobal read the query built or run by $node holds; empty when
      * $node is not a query.
      *
-     * @return list<Variable>
+     * @return list<SuperglobalRead>
      */
     public function reads(Node $node): array
     {

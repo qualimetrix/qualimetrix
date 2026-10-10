@@ -1,7 +1,6 @@
 # Форматы вывода
 
-Qualimetrix поддерживает 12 форматов вывода (включая устаревший
-`text-verbose`). Выбирайте тот, который подходит для вашего рабочего процесса.
+Qualimetrix поддерживает 11 форматов вывода. Выбирай тот, который подходит для твоего рабочего процесса.
 
 ```bash
 bin/qmx check src/ --format=<формат>
@@ -56,16 +55,16 @@ Health █████████████████████░░░�
   * Labels reflect per-dimension scales (e.g., Typing requires >80% for Acceptable)
 
 Worst namespaces
-  48.2 App\Billing\Invoice (6 classes, 11 violations, 3.8/100 LOC)
-  55.9 App\Service\Order (4 classes, 7 violations, 2.1/100 LOC)
-  61.3 App\Repository (9 classes, 5 violations, 0.9/100 LOC)
-  +5 more (use --format=html or --format-opt=top=8)
+  48.2 App\Billing\Invoice (6 classes in subtree, 11 violations, 3.8/100 LOC)
+  55.9 App\Service\Order (4 classes in subtree, 7 violations, 2.1/100 LOC)
+  61.3 App\Repository (9 classes in subtree, 5 violations, 0.9/100 LOC)
+  +5 more (use --format-opt=top=8)
 
 Worst classes
   38.4 App\Billing\Invoice\InvoiceCalculator — low cohesion
   45.1 App\Service\Order\OrderService — high coupling
   52.7 App\Repository\OrderRepository
-  +9 more (use --format=html or --format-opt=top=10)
+  +9 more (use --format-opt=top=12)
 
 
 Top issues by impact
@@ -107,20 +106,32 @@ bin/qmx check src/ --class=App\\Service\\UserService
 
 | Формат       | Что осталось вне выборки                                                                                                       |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| `json`       | Объект верхнего уровня `outOfScope`: `violationCount`, `errorCount`, `warningCount`, `infoCount`                               |
-| `metrics`    | Объект верхнего уровня `outOfScope`: `violations`, `errors`, `warnings`, `info`                                                |
+| `json`       | Объект верхнего уровня `outOfScope`: `violationCount`, `errorCount`, `warningCount`, `infoCount`, `identities`                 |
+| `metrics`    | Те же счётчики и идентичности `outOfScope`, что и в JSON                                                                       |
 | `sarif`      | Уведомление уровня `note` в `runs[0].invocations[0].toolExecutionNotifications[]` с дескриптором `QMX-DRILL-DOWN-OUT-OF-SCOPE` |
 | `gitlab`     | Отказ с кодом 3 до анализа: виджет merge request считает каждую запись проблемой                                               |
 | `checkstyle` | Отказ с кодом 3 до анализа: читатель Checkstyle считает каждую запись ошибкой                                                  |
 | `github`     | Строка `::notice title=drill-down.out-of-scope::`                                                                              |
 | `html`       | Баннер над отчётом                                                                                                             |
-| `suppressed` | Ничего: его документ — состав подавлений всего прогона, выборка его не сужает                                                  |
+| `suppressed` | Отказывает при селекторе: документ описывает весь прогон                                                                       |
 
 `json` и `metrics` несут `outOfScope` в каждом документе: `null` без выборки и
 нулевые счётчики, когда вне выборки ничего не осталось. `sarif`, `github` и
 `html` добавляют свою запись, только когда вне выборки что-то есть. Код возврата
 вычисляется по выборке и `outOfScope` вместе, поэтому чистая выборка может
 завершиться с кодом 2.
+
+Селектор неймспейса использует объявленный неймспейс находки. Для файлового
+агрегата (`annotation.*`, `duplication.clone`) подходит любой неймспейс,
+объявленный в файле; файл без деклараций сравнивается как глобальный неймспейс.
+`--class` не выбирает файловый агрегат. `suppress_namespaces` намеренно не
+делает этот файловый шаг: используй `suppress_paths`. Перекрывающиеся
+namespace exclusions сохраняют кредит первому совпадению.
+
+`suppressed --namespace/--class` отказывает с кодом 3: документ composition
+описывает весь прогон. `--show-suppressed` допустим; заголовок списка в stderr
+говорит, что он относится ко всему прогону и селектор к нему не применён.
+Анализ и итоговый код выхода всегда относятся ко всему прогону.
 
 **Режим детализации с `--detail`:**
 
@@ -135,13 +146,10 @@ bin/qmx check src/ --detail=all
 bin/qmx check src/ --detail=50
 ```
 
-`--detail` включает список нарушений с необязательным потолком; он ничего не
-ранжирует. `--detail=N` показывает первые N нарушений в том порядке, в каком
-список печатается (по файлу, если `--group-by` не задаёт другого), — то есть
-всегда первые N из тех, что напечатал бы `--detail=all`. `--detail=0` равен
-`--detail=all`. Любое другое значение (`--detail=abc`, `--detail=-1`)
-отклоняется с кодом 3 до начала анализа. Ранжированный раздел
-`Top issues by impact` — это `--top`.
+`--detail` включает список находок с необязательным потолком. `--detail=N`
+выбирает N худших по severity, затем impact, до группировки вывода. Без ранга
+используется место находки. `--detail=0` равен `--detail=all`; неверные значения
+отказывают с кодом 3 до анализа. `--top` управляет отдельным списком impact.
 
 !!! note
     `--detail` включается автоматически при использовании `--namespace` или `--class`. Флаг также работает с `--format=text`: добавляет группированный список нарушений после компактного построчного вывода.
@@ -157,8 +165,8 @@ bin/qmx check src/ --detail=50
 **Пример вывода:**
 
 ```
-src/Repository/OrderRepository.php: error[coupling.class-rank]: ClassRank is 0.6491, exceeds threshold of 0.3536 (scaled for 2 classes). This class is a critical hub — changes have wide impact (OrderRepository)
-src/Repository/OrderRepository.php: warning[complexity.ccn]: Cyclomatic complexity is 10, exceeds threshold of 10. Consider extracting methods or simplifying conditions (OrderRepository::findByCriteria)
+src/Repository/OrderRepository.php: error[coupling.class-rank]: ClassRank share is 12.98× uniform, exceeds threshold of 10.00×. This class is a critical hub — changes have wide impact (OrderRepository)
+src/Repository/OrderRepository.php: warning[complexity.ccn]: Cyclomatic complexity is 10, reaches threshold of 10. Consider extracting methods or simplifying conditions (OrderRepository::findByCriteria)
 src/Service/UserService.php:9: warning[code-smell.error-suppression]: Error suppression (@) on file_get_contents() - handle errors explicitly
 src/Service/UserService.php: warning[complexity.ccn]: Cyclomatic complexity is 14, exceeds threshold of 10. Consider extracting methods or simplifying conditions (UserService::calculate)
 
@@ -176,30 +184,27 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 
 ---
 
-## text-verbose
-
-<!-- llms:skip-begin -->
-!!! warning "Устарело"
-    `text-verbose` устарел. Используйте вместо него `--format=text --detail`, который обеспечивает аналогичный группированный многострочный вывод нарушений.
-
-    ```bash
-    # Замена: bin/qmx check src/ --format=text-verbose
-    bin/qmx check src/ --format=text --detail
-    ```
-<!-- llms:skip-end -->
-<!-- llms-only
-Устарел. Используйте `--format=text --detail`.
--->
-
----
-
 ## json
 
 Машиночитаемый JSON-вывод. Формат, ориентированный на сводную информацию: оценки здоровья, худшие нарушители и все нарушения.
 
 **Когда использовать:** Пользовательские скрипты, дашборды, программная обработка.
 
-**Ключи верхнего уровня:** `meta`, `summary`, `outOfScope`, `coverage`, `projectScope` (см. [Охват проекта во всех форматах](#project-scope-in-every-format)), `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, плюс `violationGroups`, когда передан `--group-by` — без него ключа нет вовсе, это не пустой объект.
+**Ключи верхнего уровня:** `meta`, `summary`, `outOfScope`, `coverage`, `projectScope` (см. [Охват проекта во всех форматах](#project-scope-in-every-format)), `configurationDiagnostics`, `computedMetricOutcomes`, `abstentions`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, плюс `violationGroups`, когда передан `--group-by` — без него ключа нет вовсе, это не пустой объект.
+
+`configurationDiagnostics` перечисляет предупреждения о конфигурации, которую прогон принял, — те же, что `check` печатает в stderr, — и равен `[]`, когда их нет. Каждая запись — `{"message": "…", "source": [{"kind": "preset", "name": "…", "imported_by": null}, …]}`: `source` называет каждый слой, о котором предупреждение, от младшего к старшему, в той же форме, что `source` ошибки конфигурации. Например, `only_rules: []` в `qmx.yaml` поверх пресета, фильтрующего правила, законно и даёт одну запись, называющую оба слоя.
+
+Каждый успешный JSON-документ check содержит `computedMetricOutcomes`, в том
+числе пустой массив. Непустые записи группируют недостающие входы и null-результаты
+авторских формул по метрике и уровню: `metric`, `level`, `missingKeysCount`,
+`noValueCount`, `missingKeys` и `subjects`. Ключи — точное объединение недостающих
+ключей; предметы — не более трёх детерминированных канонических точных идентичностей.
+Это отдельная сводка, не находки и не `configurationDiagnostics`.
+
+Успешный check с разрешённым форматом ровно `json` и выводом в stdout пишет полный
+исходный документ при обычной и тихой подробности. SILENT не выводит ни байта.
+JSON из конфигурации следует тому же пути; файловые назначения и остальные
+форматы сохраняют прежнее поведение вывода.
 
 `meta` называет инструмент, записавший документ: `version`, `package`, `timestamp` и два адреса документации — `docs`, сайт документации, и `llmsTxt`, индекс для ИИ-агентов. Оба адреса есть в каждом JSON-отчёте, у которого есть объект-конверт; см. исключения в [Адреса документации в JSON-отчётах](#documentation-addresses).
 
@@ -227,12 +232,24 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
         "debtPer1kLoc": 2.1
     },
     "outOfScope": null,
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
+    "projectScope": {
+        "state": "covered",
+        "uncoveredAutoloadTargets": [],
+        "unjudgedChannels": [],
+        "unjudgedValues": [],
+        "reasons": []
+    },
+    "configurationDiagnostics": [],
+    "computedMetricOutcomes": [],
+    "abstentions": [],
     "health": {
         "complexity": {
             "score": 78.0,
-            "label": "Excellent",
-            "threshold": {"warning": 50, "error": 25},
+            "label": "Good",
+            "threshold": {
+                "warning": 50,
+                "error": 30
+            },
             "coverage": {
                 "state": "measured",
                 "measured": 2263,
@@ -244,9 +261,18 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
             },
             "decomposition": [
                 {
-                    "metric": "complexity.ccn.sum",
+                    "metric": "complexity.ccn.avg",
                     "humanName": "Cyclomatic complexity",
-                    "value": 412,
+                    "value": 4.12,
+                    "coverage": {
+                        "state": "measured",
+                        "measured": 2263,
+                        "eligible": 2263,
+                        "ratio": 1.0,
+                        "unit": "callables",
+                        "basis": "complexity.ccn.count",
+                        "reason": null
+                    },
                     "good": true,
                     "direction": "lower-is-better"
                 }
@@ -255,14 +281,19 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
                 {
                     "symbolPath": "App\\Service\\UserService",
                     "className": "App\\Service\\UserService",
-                    "metrics": {"complexity.ccn.sum": 96}
+                    "metrics": {
+                        "complexity.ccn.sum": 96
+                    }
                 }
             ]
         },
         "overall": {
             "score": 72.0,
-            "label": "Fair",
-            "threshold": {"warning": 50, "error": 25},
+            "label": "Good",
+            "threshold": {
+                "warning": 50,
+                "error": 30
+            },
             "coverage": {
                 "state": "not-applicable",
                 "measured": null,
@@ -280,10 +311,11 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
         {
             "symbolPath": "App\\Service",
             "healthOverall": 52.0,
-            "label": "Poor",
+            "label": "Fair",
             "reason": "high coupling",
             "violationCount": 15,
-            "size.class-count": 8,
+            "violationDensity": 7.5,
+            "size.class-count.sum": 8,
             "healthScores": {}
         }
     ],
@@ -294,6 +326,7 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
             "label": "Poor",
             "reason": "low cohesion",
             "violationCount": 8,
+            "violationDensity": 4.0,
             "file": "src/Service/UserService.php",
             "metrics": {},
             "healthScores": {}
@@ -304,13 +337,26 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
             "rank": 1,
             "file": "src/Service/UserService.php",
             "line": 42,
+            "subject": "declaration:callable:App\\Service\\UserService::calculate@src/Service/UserService.php",
             "symbol": "App\\Service\\UserService::calculate",
+            "channel": "complexity.ccn",
+            "occurrence": null,
+            "edge": null,
+            "namespace": "App\\Service",
+            "namespaces": ["App\\Service"],
             "rule": "complexity.ccn",
+            "code": "complexity.ccn",
             "severity": "error",
             "message": "Cyclomatic complexity: 15 (threshold: 10) — too many code paths",
             "recommendation": null,
+            "metricValue": 15,
+            "threshold": 10,
+            "techDebtMinutes": 30,
+            "acceptedLevel": null,
+            "baselineVerdict": null,
+            "baselineReason": null,
             "impactScore": 3.71,
-            "coupling.class-rank": 0.1237,
+            "coupling.class-rank-share": 3.711,
             "debtMinutes": 30
         }
     ],
@@ -324,6 +370,7 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
             "occurrence": null,
             "edge": null,
             "namespace": "App\\Service",
+            "namespaces": ["App\\Service"],
             "rule": "complexity.ccn",
             "code": "complexity.ccn",
             "severity": "error",
@@ -332,7 +379,9 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
             "metricValue": 15,
             "threshold": 10,
             "techDebtMinutes": 30,
-            "acceptedLevel": null
+            "acceptedLevel": null,
+            "baselineVerdict": null,
+            "baselineReason": null
         }
     ],
     "violationsMeta": {
@@ -350,33 +399,40 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 <!-- llms:skip-end -->
 
-Записи `worstNamespaces` и `worstClasses` включают поле `violationDensity` -- количество нарушений на 100 строк кода -- для нормализованной по размеру оценки качества кода.
+Записи `worstNamespaces` и `worstClasses` включают поле `violationDensity`: число находок на 100 строк кода. При наличии находок и отсутствующем или нулевом LOC значение равно null.
+
+`worstNamespaces` включает неймспейсы, объявляющие хотя бы один собственный класс, интерфейс, трейт или enum; контейнеры только с дочерними объявлениями исключаются. Каждое числовое поле записи неймспейса относится к его поддереву: `healthOverall`, `healthScores`, `violationCount`, `violationDensity` и `size.class-count.sum`. Запись класса относится к его точному объявлению. Глобальный неймспейс — отдельный лист; его счётчики не включают именованные неймспейсы.
+
+`healthScores` содержит доступные измерения complexity, cohesion, coupling, typing и maintainability; `overall` в нём нет. Композит — `healthOverall`. Причины, метки и цвета summary следуют действующим порогам вычисляемых метрик.
+
+JSON и summary отбирают кандидатов из полной популяции до ранжирования и ограничения. Для отдельного заголовка class health выборка `--class` в JSON/summary требует единственного точного объявления. Если логическое имя имеет несколько объявлений, команда отказывает с кодом 5; `--namespace` сохраняет все их точные записи offender. `--format-opt=rank-by=score` по умолчанию сортирует health-баллы по возрастанию; `density` — плотность по убыванию. `count` отвергается с кодом 3. Summary показывает настоящий остаток: например, `+12 more (use --format-opt=top=15)` после трёх из пятнадцати кандидатов. Счётчик классов неймспейса выводится как "N classes in subtree". HTML показывает не более десяти локальных дочерних записей и полный доступный локальный размер; его список не является глобальным ранжированием JSON.
 
 `topIssues` — тот же ранжированный список, что формат `summary` печатает как
 «Top issues by impact»; другие форматы его не выводят. Каждая запись называет
 `impactScore`, специфичный для правила и используемый для ранжирования, и
-оценку `debtMinutes`. Ключ `coupling.class-rank` присутствует всегда, но его
-значение равно `null`, если правило-производитель не читает сигнал коупл-хаба;
-`file` и `line` тоже могут быть `null` — у находки уровня проекта нет позиции
-в исходнике.
+оценку `debtMinutes`. Ключ `coupling.class-rank-share` присутствует всегда.
+Находки классов и методов используют измеренную долю своего класса; находки
+файлов и неймспейсов — максимальную долю среди их классов. Значение равно `null`,
+если конечная доля недоступна, а также для находок функций и проекта.
+Ранжирование может использовать медиану измеренных долей для `impactScore`,
+не заменяя этот `null`. `file` и `line` тоже могут быть `null` — у находки уровня
+проекта нет позиции в исходнике. Доля равна сырому PageRank, умноженному на число
+логических вершин графа, и выражена в кратных равномерной вероятности. Выгрузка метрик
+сохраняет `coupling.class-rank` и добавляет `coupling.class-rank-share`;
+ранжирование не подменяет отсутствующую долю сырой вероятностью.
 
-Каждое нарушение несёт `acceptedLevel`: потолок baseline, относительно
-которого эта находка измерена, или `null`, когда у находки нет собственного
-принятого уровня. За этим значением стоят два разных случая, которые оно не
-различает: baseline вообще не настроен для прогона, либо baseline настроен,
-но именно эту находку он ещё не оценивал (новая находка). Ни JSON-payload, ни
-само поле `acceptedLevel` не говорят, какой из случаев перед вами.
+Каждая находка содержит nullable `acceptedLevel`, `baselineVerdict` и
+`baselineReason`. Verdict `breached` означает сравнимое превышение и Error;
+`not-compared` сохраняет принятую границу, обычную серьёзность и скалярную причину.
+Null не доказывает ни одно состояние. Null acceptedLevel не отличает отсутствие
+baseline от новой identity. Непустой acceptedLevel несёт `{"shape":"magnitude","describe":"20, 30","count":2}`;
+текущая metricValue остаётся отдельным полем. HTML передаёт те же поля и показывает
+оба состояния. Наличие acceptedLevel само по себе не доказывает превышение.
 
-Когда значение не равно null, `acceptedLevel` — это объект: находка, чья
-собственная группа идентичности превысила принятый уровень, публикуется как
-прорыв и несёт `{"shape": "occurrence", "describe": "2 occurrences", "count": 2}`.
-`shape` называет, что именно считает потолок, `count` — принятое количество,
-`describe` — то же число словами. Прорыв к тому же повышается до severity
-`error`, что бы ни сообщило правило само по себе.
 `violationsMeta` также сообщает `shown` — число нарушений, фактически
 включённых в этот payload; оно может быть меньше `total`, когда
-`--format-opt=violations=N` обрезает список. Обрезанный список — это первые N
-в порядке идентичности, описанном ниже.
+`--format-opt=violations=N` обрезает список. Обрезанный список выбирает N худших находок по severity, затем impact,
+до группировки для вывода. Без ранга используется место находки.
 
 `message` и `recommendation` значат одно и то же в `violations` и в
 `topIssues`: сообщение находки и её рекомендацию или `null`. При
@@ -386,16 +442,57 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 посчитаны в `outOfScope`; без выборки он равен `null` — как и у остальных
 форматов, это показано в таблице детализации в разделе `summary` выше.
 
-Когда имя символа из анализируемого кода — невалидный UTF-8 (парсер принимает в
-идентификаторе любой байт выше 0x7F), каждый невалидный байт публикуется как
-U+FFFD, а документ получает ключ верхнего уровня `invalidUtf8Replaced` с числом
-исправленных строк. `metrics`, `suppressed` и нагрузка `html` делают то же;
-`sarif` сообщает об этом уведомлением инструмента
-`QMX-PUBLICATION-INVALID-UTF8`, `gitlab` — записью `publication.invalid-utf8`,
-`checkstyle` — ошибкой под синтетическим файлом `[publication]`. Путь к файлу,
-не являющийся валидным UTF-8, исправляется и помечается так же; `sarif`
-исправляет его до процентного кодирования, поэтому URI артефакта несёт
-`%EF%BF%BD`, а не голый `%FF`.
+Невалидные байты исходника публикуются как `%XX`; валидный UTF-8 не меняется.
+Компоненты идентичности всегда кодируют буквальный `%` как `%25`, а разделители
+каноники, например `#` в файле декларации, как `%23`. Отображаемые строки имеют
+другой смысл: буквальный валидный `Pa%FFth.php` и путь с невалидным байтом могут
+выглядеть одинаково. Для точной идентичности используй `subject`, а не `file`.
+SARIF `uri` кодирует исходные байты пути: невалидный байт становится `%FF`,
+буквальный знак процента — `%25`.
+
+Каждый формат сообщает ненулевое число исправленных строк в stderr. JSON,
+metrics, suppressed и HTML сохраняют маркер документа `invalidUtf8Replaced`;
+SARIF дополнительно использует уведомление инструмента. GitLab и Checkstyle
+содержат только настоящие находки, без синтетической записи
+`publication.invalid-utf8`. Проза считает всё тело одной опубликованной строкой
+и сохраняет буквальные проценты; структурированные форматы считают исправленные
+поля. Эти числа не обязаны совпадать между форматами.
+
+
+`json.violations`, `json.topIssues` и HTML используют одинаковые ключи находки:
+`file`, `line`, `symbol`, `channel`, `subject`, `occurrence`, `edge`, `namespace`, `namespaces`,
+`rule`, `code`, `severity`, `message`, `recommendation`, `metricValue`, `threshold`,
+`techDebtMinutes`, `acceptedLevel`, `baselineVerdict`, `baselineReason`.
+В HTML используй `rule/code/symbol` вместо `ruleName/violationCode/symbolPath`.
+Диагностика, рекомендация и baseline status показаны отдельно; наличие потолка
+само по себе не доказывает измеренного превышения.
+
+`namespaces` содержит те же пространства имён, что используют выбор и
+группировка. Объявление сохраняет свой неймспейс; файловая находка несёт
+неймспейсы измеренных точных объявлений и логических классов в файле.
+Блоки namespace без таких объявлений отсутствуют в индексе. Пустой список
+заменяется на `[""]` для отображения как global, даже если в исходнике есть
+блок namespace. Проектная
+находка несёт `[]`. `namespace` — единственное имя (в том числе `""` для global)
+или `null` для нескольких имён и проектных находок. Файловая находка с несколькими
+неймспейсами входит в одну отсортированную группу и не дублируется.
+
+`outOfScope` добавляет `identities`: мультимножество `channel`, `subject`,
+`occurrence`, `edge` и `severity`, сохраняющее отдельные occurrences.
+JSON и metrics используют `violationCount/errorCount/warningCount/infoCount`.
+SARIF передаёт идентичности в уведомлении; GitHub сохраняет `::notice`.
+Health печатает счётчики выбранных находок и находок вне области даже без scores.
+
+HTML viewer использует опубликованные мешки репозитория, включая глобальный
+неймспейс. Площадь class-like берётся из `size.class-loc`, namespace/project —
+из агрегированного LOC. Отсутствующий health остаётся неизвестным. Viewer не
+пересчитывает здоровье поддерева и не заменяет его MI. Worst Sub-Namespaces
+показывает опубликованный дробный score; координаты Мартина берутся из `coupling.*`.
+
+Ключи словаря `violationGroups` используют полное процентное кодирование,
+включая буквальный `%` как `%25`, чтобы группы байтово различных файлов
+не сливались. Декодируй ключ через `rawurldecode`; поле `file` остаётся
+отображаемым текстом.
 
 Для машинной идентичности используй `channel + subject + optional occurrence +
 optional edge`. `symbol` — логическая проекция для отображения; строка исходника,
@@ -411,7 +508,7 @@ optional edge`. `symbol` — логическая проекция для ото
 
 При использовании `--group-by=class` или `--group-by=namespace` нарушения организуются в объект `violationGroups`. Каждая группа — это `{count, violations}`: счётчик нарушений и их массив; собственных `errorCount`, `warningCount` или `violationDensity` у группы нет.
 
-Ключи группы — не всегда FQCN класса или пространство имён. Для `--group-by=class`: ключ — это FQCN класса для находки уровня класса, путь к файлу для находки уровня файла без контекста класса, и пустая строка `""` для находки уровня проекта (у неё нет ни класса, ни файла). Для `--group-by=namespace`: ключ — это пространство имён для класса внутри него, `<global>` для класса без пространства имён, и `(project)` для находки уровня проекта.
+Ключи группы — не всегда FQCN класса или пространство имён. Для `--group-by=class`: ключ — это FQCN класса для находки уровня класса, путь к файлу для находки уровня файла без контекста класса, и пустая строка `""` для находки уровня проекта (у неё нет ни класса, ни файла). Для `--group-by=namespace`: ключ соединяет отсортированные имена через `, `, показывает пустое имя как `(global)` и использует `[project]` для находки уровня проекта.
 
 <!-- llms:skip-begin -->
 ```json
@@ -466,7 +563,9 @@ bin/qmx check src/ --format=json --no-progress > report.json
 
 **Когда использовать:** Пользовательские дашборды, анализ трендов, пайплайны data science или создание собственных критериев качества на основе сырых метрик.
 
-**Ключи верхнего уровня:** `version`, `toolVersion`, `package`, `timestamp`, `docs`, `llmsTxt`, `symbols[]` (каждый с `type`: file/class/namespace/method/function/project, `name`, `file`, `line`, `metrics: {...}`), `outOfScope`, `projectScope`, `coverage`, `summary`. При `--namespace`/`--class` `summary` считает только выборку, а `outOfScope` — то, что осталось вне её; `symbols[]` выборка не сужает никогда. Типа `callable` не существует; одна запись `project` агрегирует статистические метрики по всему проекту (min/max/avg/p95 по всем символам) и имеет `line` равным `null`. Здесь `version` — версия формата этой выгрузки, а `toolVersion` — версия Qualimetrix; `docs` и `llmsTxt` — те же адреса документации, что `json` публикует в `meta`.
+**Ключи верхнего уровня:** `version`, `toolVersion`, `package`, `timestamp`, `docs`, `llmsTxt`, `symbols[]` (каждый с `type`: file/class/namespace/method/function/project, `name`, `subject`, `file`, `line`, `metrics: {...}`), `outOfScope`, `projectScope`, `coverage`, `summary`. При `--namespace`/`--class` `summary` считает только выборку, а `outOfScope` — то, что осталось вне её; `symbols[]` выборка не сужает никогда. Типа `callable` не существует; одна запись `project` агрегирует статистические метрики по всему проекту (min/max/avg/p95 по всем символам) и имеет `file` и `line` равными `null`. Здесь `version` — версия формата этой выгрузки, а `toolVersion` — версия Qualimetrix; `docs` и `llmsTxt` — те же адреса документации, что `json` публикует в `meta`.
+
+Каждое объявление класса или callable публикуется отдельно. Поле `name` может повторяться; идентичность записи задаёт `subject`. Графовые значения имени повторяются в каждом его объявлении, а class-агрегаты считают объявления. У `namespace` и `project` поля `file` и `line` равны `null`. Суффикс `.count` рядом с `.avg` — размер выборки; отдельный файловый `.count` у `size.*-count` неймспейса не публикуется. Для `size.loc|lloc|cloc` неймспейса `.sum` — целый итог поддерева, `.count` — число вкладывающих файлов, `.avg` — их отношение.
 
 <!-- llms:skip-begin -->
 **Пример вывода (сокращённо):**
@@ -483,6 +582,7 @@ bin/qmx check src/ --format=json --no-progress > report.json
         {
             "type": "file",
             "name": "src/Service/UserService.php",
+            "subject": "file:src/Service/UserService.php",
             "file": "src/Service/UserService.php",
             "line": 1,
             "metrics": {
@@ -494,6 +594,7 @@ bin/qmx check src/ --format=json --no-progress > report.json
         {
             "type": "class",
             "name": "App\\Service\\UserService",
+            "subject": "declaration:class:App\\Service\\UserService@src/Service/UserService.php",
             "file": "src/Service/UserService.php",
             "line": 10,
             "metrics": {
@@ -510,6 +611,7 @@ bin/qmx check src/ --format=json --no-progress > report.json
         {
             "type": "method",
             "name": "App\\Service\\UserService::calculate",
+            "subject": "declaration:callable:App\\Service\\UserService::calculate@src/Service/UserService.php",
             "file": "src/Service/UserService.php",
             "line": 42,
             "metrics": {
@@ -520,7 +622,7 @@ bin/qmx check src/ --format=json --no-progress > report.json
             }
         }
     ],
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": [], "reasons": []},
     "summary": {
         "filesAnalyzed": 45,
         "filesSkipped": 0,
@@ -556,6 +658,10 @@ bin/qmx check src/ --format=metrics --no-progress > metrics.json
 **Когда использовать:** Jenkins, SonarQube или любой инструмент, принимающий Checkstyle XML.
 
 Checkstyle 3.0 XML: `<file name="...">` с вложенными `<error line="" severity="error|warning|info" message="" source="qmx.<rule>"/>`.
+
+Обычные находки требуют файла исходника. Безфайловые находки неймспейса и
+проекта пропускаются; для полного набора используй JSON или SARIF. Ошибки
+охвата сохраняют свою отдельную проекцию.
 
 Выборка `--namespace`/`--class` с этим форматом отклоняется (код 3): каждый
 `<error>` для его читателя — ошибка, поэтому сказать, что отчёт перечисляет
@@ -697,6 +803,10 @@ SARIF 2.1.0: `runs[].results[]` с `ruleId`, `ruleIndex` (позиция пра�
 
 Массив объектов с `description`, `check_name`, `fingerprint`, `severity` (critical/major/info), `location.{path,lines.begin}`. Маппинг: error → critical, warning → major, info → info.
 
+Обычные находки требуют пути исходника в `location.path`. Безфайловые находки
+неймспейса и проекта пропускаются; для полного набора используй JSON или SARIF.
+Ошибки охвата сохраняют свою отдельную проекцию.
+
 Выборка `--namespace`/`--class` с этим форматом отклоняется (код 3): каждая
 запись — проблема в виджете merge request, поэтому сказать, что отчёт
 перечисляет лишь часть прогона, было бы нечем.
@@ -744,12 +854,18 @@ code_quality:
 
 **Когда использовать:** GitHub Actions CI. Проще в настройке, чем SARIF — не нужен шаг загрузки.
 
-Формат workflow-команд: `::<level> file=<path>,line=<n>,title=<rule>::<message>` (по строке на нарушение). Маппинг: warning → `::warning`, error → `::error`.
+Формат workflow-команд: `::<level> file=<path>,line=<n>,title=<rule>::<message>` (по строке на нарушение). Маппинг: info → `::notice`, warning → `::warning`, error → `::error`.
 
 На каждой строке присутствует только `title=`. У находки уровня проекта нет
 позиции в исходнике, поэтому она печатается как
 `::<level> title=<rule>::<message>` — без `file=` и `line=`; GitHub тогда
 показывает её у прогона workflow, а не у строки в диффе.
+
+Диагностика отчёта тоже использует `::notice` только с `title=`: выбранные
+популяции без оценки (`rule-population.incomplete`), охват проекта
+(`run.project-scope`) и находки вне выборки (`drill-down.out-of-scope`). Эти
+уведомления описывают отчёт, не добавляя нарушений и не меняя код завершения
+проверки правил.
 
 <!-- llms:skip-begin -->
 **Пример вывода:**
@@ -778,6 +894,13 @@ code_quality:
 
 Текстовая таблица оценок здоровья для терминального вывода. Показывает каждое измерение с оценкой, статусом, порогами и деталями декомпозиции.
 
+Включённые встроенные измерения проекта сохраняются с недоступными оценками и
+явным покрытием. Отсутствующие значения декомпозиции равны null, отличаются от
+числового 0 и показывают измеренную/подходящую долю. Text, summary и health также
+публикуют ограниченные строки отсутствующих авторских значений, даже без оценок
+здоровья и вывода логгера. При выборе класса или пространства имён отсутствующая
+локальная оценка не заменяется проектной.
+
 **Когда использовать:** Быстрая проверка здоровья из CLI, рабочие процессы AI-агентов, диагностика пайплайнов.
 
 **Основные возможности:**
@@ -788,6 +911,9 @@ code_quality:
 - Декомпозиция по каждому измерению
 - Колонка `Coverage` и по одной строке `Computed over N of M ...` на измерение внутри декомпозиции — доля предмета, о которой говорит эта оценка (см. [Что покрывает оценка](../reference/health-scores.ru.md#what-a-score-covers))
 - Поддержка drill-down через `--namespace` и `--class`
+
+Участники cohesion следуют TCC, когда он участвует, иначе измеренному LCOM
+с его направлением «меньше — лучше».
 
 **Худшие участники по измерениям:**
 
@@ -818,6 +944,7 @@ bin/qmx check src/ --format=health --namespace='subtree:App\Service'
 - Цветовая кодировка оценок здоровья для каждого узла
 - Переход вглубь пространств имён по клику
 - Панель деталей с метриками, нарушениями и декомпозицией
+- Декомпозиция проекта подготовлена PHP в `summary.healthDecomposition`, покрытие — в `summary.healthCoverage`; viewer сохраняет null-входы и измеренный 0 без вычисления формул в JavaScript
 - Покрытие рядом с каждым проектным баром здоровья (`n/a`, когда покрытие не определено) — из объекта `summary.healthCoverage`, который нагрузка несёт рядом с `summary.healthScores`
 - Каждое нарушение отчёта висит на узле дерева, поэтому счётчики дерева сходятся с `summary.totalViolations`: нарушение без собственного узла класса или пространства имён — проектное, файловое в файле без класса или с несколькими, глобальная функция вне пространства имён — показывается на корне проекта
 - Отчёт назван по анализируемому проекту: `--format-opt=project-name=...`, иначе `name` из его `composer.json`, иначе имя его каталога
@@ -866,18 +993,19 @@ xdg-open report.html  # Linux
 пер-рулевые исключения. Глобальные `path-suppression` и `namespace-suppression`
 там видны только как счётчик под `-v`, а не по находкам; снятия `baseline` и
 `git-scope` не выводятся вовсе; текстового аналога `neverMatched` нет.
-`suppressed` — единственная поверхность, публикующая все семь механизмов
+`suppressed` — единственная поверхность, публикующая все восемь механизмов
 по отдельным находкам.
 
 **Состав — это мультимножество, а не множество находок.** Одна находка может
 попасть под несколько механизмов сразу — например, находку, которую убрал бы
 инлайновый `@qmx-ignore`, могло раньше убрать исключение по неймспейсу. Всего
-семь механизмов: `suppression` (инлайновые `@qmx-ignore`/`@qmx-ignore-file`/
+восемь механизмов: `suppression` (инлайновые `@qmx-ignore`/`@qmx-ignore-file`/
 `@qmx-ignore-next-line`), `path-suppression` и `namespace-suppression` (глобальные
 `suppress_paths`/`suppress_namespaces`), `baseline` (потолок принятого уровня),
 `git-scope` (сужение `--report=git:*`) и две половины пер-рулевого леджера
 исключений, настраиваемого под ключом `rules: {<имя-правила>: {...}}` —
-`rule-namespace-suppression` и `rule-path-suppression`. `byMechanism` считает
+`rule-namespace-suppression`, `rule-path-suppression` и снятие реально
+порождённых находок механизмом `selection`. `byMechanism` считает
 записи по каждому механизму отдельно; поскольку одна и та же находка может
 попасть под несколько механизмов, эти счётчики **не складываются** в число
 различных подавленных находок — об этом прямо говорит поле `note` самого
@@ -894,8 +1022,9 @@ xdg-open report.html  # Linux
 `json`, — аудит неполного прогона говорит, что он неполон), `projectScope`
 (тот же объект, что у `json`, — аудит суженного прогона называет каналы
 подавлений, которые не судились), `mechanisms` (все
-семь, всегда присутствуют), `byMechanism` (счётчик на каждый механизм, включая
-нулевые), `suppressed` (само мультимножество), `neverMatched`.
+восемь, всегда присутствуют), `byMechanism` (счётчик на каждый механизм, включая
+нулевые), `suppressed` (само мультимножество), `neverMatched` и `notRun`
+(metadata producers).
 
 Каждая запись `suppressed` несёт идентичность, которую публикует `json`, —
 `channel` (здесь это код находки), `subject`, `occurrence`, `edge`, — чтобы её
@@ -922,10 +1051,11 @@ xdg-open report.html  # Linux
         "discovered": 1204,
         "analyzed": 1204,
         "generatedExcluded": 0,
+        "excluded": 0,
         "failed": 0,
         "failures": []
     },
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": [], "reasons": []},
     "mechanisms": [
         "suppression",
         "path-suppression",
@@ -933,7 +1063,8 @@ xdg-open report.html  # Linux
         "baseline",
         "git-scope",
         "rule-namespace-suppression",
-        "rule-path-suppression"
+        "rule-path-suppression",
+        "selection"
     ],
     "byMechanism": {
         "suppression": 12,
@@ -942,7 +1073,8 @@ xdg-open report.html  # Linux
         "baseline": 0,
         "git-scope": 0,
         "rule-namespace-suppression": 58,
-        "rule-path-suppression": 131
+        "rule-path-suppression": 131,
+        "selection": 0
     },
     "suppressed": [
         {
@@ -976,6 +1108,7 @@ xdg-open report.html  # Linux
             "recommendation": "Constructor parameters: 8 (threshold: 8) — consider splitting responsibilities"
         }
     ],
+    "notRun": [],
     "neverMatched": [
         {
             "mechanism": "rule-path-suppression",
@@ -999,6 +1132,31 @@ bin/qmx check src/ --format=suppressed --no-progress > suppressed.json
 ```
 
 ---
+
+## JSON аудита директив
+
+`bin/qmx directives --format=json` публикует `meta`, `scope`,
+`selection`, `sweep`, `directives`, `summary` и `exit_code`.
+У директивы есть `file`, строка тега `line`, `form`, `target`,
+`effect`, `reason`, `masked_by`, `boundary_observable` и обязательный
+`refusals`. Исходы — `effective`, `overrun`, `inert`, `unmeasured`
+и `refused`; `reason` описывает Unmeasured (выключенный producer или
+перекрытый threshold). Место отказа несёт непустой список
+`[{channel, message}]`; остальные исходы — `[]`. Внутренние физическая
+позиция и addressed producer не публикуются. Два одинаковых комментария на
+строке могут поэтому дать две одинаковые публичные записи.
+Threshold overrides одного правила на одной строке пока сливаются.
+
+`summary` считает все пять исходов, включая `refused`. Отказ виден и тогда,
+когда селекция не позволяет его каналу изменить `exit_code`.
+Неполный анализ возвращает 4 раньше решения по отказам/inert; иначе публикуемый
+отказ или наблюдаемый inert даёт 2, оставшиеся случаи — 0.
+См. [справочник команды](cli-options.ru.md#directives).
+
+Для `--format=suppressed` Inline передаёт первую реально применившуюся
+директиву; Reporting не выводит размещение повторно. Публичный `suppressor`
+по-прежнему равен `файл:строка`, поэтому разные физические места на строке
+имеют одну метку.
 
 ## Адреса документации в JSON-отчётах {#documentation-addresses}
 
@@ -1025,144 +1183,183 @@ bin/qmx check src/ --format=suppressed --no-progress > suppressed.json
 
 Адреса есть не в каждом JSON-выводе. `gitlab` — голый массив, в нём нет объекта
 для них; у DOT-вывода `graph:export` нет конверта вовсе; отказ — это всегда
-ровно `{"error": ..., "exit_code": ..., "position": ...}`, где `position` равен
-`null`, если отказ не привязан к месту в конфигурационном документе: значение
-из командной строки, файл целиком и объединённое значение вроде
-`memory_limit: 010M` дают `null`, даже когда сообщение называет ключ. Если
-`position` есть, он указывает отвергнутое место так, как его нашла проверка:
-для обязательного ключа, которого нет, `path` заканчивается этим ключом, а
-`written` называет его; а baseline-файл — который пишут
+ровно `{"error": ..., "exit_code": ..., "position": ..., "source": ...}`, где
+`position` равен `null`, если отказ не привязан к месту в конфигурационном
+документе: значение из командной строки, отказ о файле целиком или синтетическом
+слитом входе даёт `null`, даже когда сообщение называет ключ. Неверные
+`memory_limit`, `fail_on` и `parallel.workers` из файла сохраняют написавший слой
+и место в документе.
+Если `position` есть, он указывает отвергнутое место так, как его нашла
+проверка: для обязательного ключа, которого нет, `path` заканчивается этим
+ключом, а `written` называет его. `source` перечисляет слои конфигурации, о
+которых отказ, от младшего к старшему — один для значения, написанного одним
+слоем, все вкладчики для ограничения между ключами, — каждый в виде
+`{"kind": ..., "name": ..., "imported_by": ...}`. `kind` — это `defaults`,
+`composer`, `preset`, `file`, `cli`, `baseline` или `resolved`; `name` — имя
+пресета, путь файла или опция. `resolved` называет отказ, владелец которого
+не имеет происхождения написанного значения; его `name` — ключ, если он известен,
+иначе `null`. `source` равен `null` при внутренней ошибке и при отказе без
+источника в конфигурации. Текстовый отказ называет те же написавшие слои в
+сообщении или отдельной строке `Source:`, в том числе под `--quiet`;
+синтетический слитый источник не называется автором.
+А baseline-файл — который пишут
 `baseline:generate`, `update`, `cleanup` и переписывает на месте
 `baseline:rename-channels` — это версионированный входной артефакт, который
 инструмент читает обратно, со своей схемой, а не отчёт.
 
+## Популяции выбранных правил
+
+Правило может не судить выбранный предмет: нужная метрика не опубликована,
+действует его штатное исключение или необходимые данные неизвестны. Это
+отличается от здорового предмета, который был оценён без находки. Отключённые
+и невыбранные каналы не добавляют записи о популяции.
+
+Каждый успешный JSON-документ check содержит `abstentions`, включая `[]`.
+Непустая группа несёт `producer`, `channel`, `level`, `gate`, `reason`,
+`unit`, `count` и `examples`. Группа принадлежит первому не пройденному
+объявленному условию; примеры — не более пяти отсортированных уникальных
+канонических идентичностей. Счётчик использует штатную единицу условия:
+декларацию, неймспейс, цикл или настроенный селектор. Разные единицы нельзя
+складывать в общее число предметов. Независимые вызовы анализа сохраняют
+свои популяции при объединении; повторное принятие одной замороженной
+популяции не удваивает счётчики.
+
+| Формат                      | Выбранные предметы, оставшиеся без оценки                                                           |
+| --------------------------- | --------------------------------------------------------------------------------------------------- |
+| `text`, `summary`, `health` | Краткое уведомление при обычной подробности и ограниченные детали при `-v`, в том числе без находок |
+| `json`                      | Полные группы `abstentions` при обычной и тихой подробности, а также в файлах                       |
+| `sarif`                     | Уведомление `note` с дескриптором `QMX-RULE-POPULATION-INCOMPLETE`                                  |
+| `github`                    | Строка `::notice title=rule-population.incomplete::`                                                |
+| `html`                      | Видимый баннер и полная нагрузка `abstentions`                                                      |
+
+Эти записи не создают нарушения, не меняют серьёзность или код выхода по
+правилам, не расходуют границы baseline и не увеличивают число подавлений.
+Они отделены от `computedMetricOutcomes`, покрытия файлов анализа и покрытия
+оценок здоровья. Metrics, Checkstyle, GitLab, suppressed и baseline не получают
+искусственных находок об отсутствии оценки. Успешный stdout в silent остаётся
+пустым; файл отчёта сохраняет сведения о популяции своего формата.
+
 ## Покрытие анализа во всех форматах
 
-Каждая обнаруженная запись классифицируется как проанализированная,
-намеренно исключённый generated-файл или ошибка. Запись — это PHP-файл, который
-прогон измерил, PHP-файл, который он не смог прочитать, или запись файловой
-системы, которую он вообще не открывал: каталог, который нельзя перечислить,
-ссылка, по которой он не спускается. Generated-исключения не делают анализ
-неполным; любая ошибка делает политический результат неавторитетным. Нуль
-найденных файлов всё равно проходит через выбранный форматтер.
+Запись завершается анализом, намеренным авторским/generated исключением или
+ошибкой. `excluded` считает названные авторские записи вне `discovered`.
+В `discovered` входят PHP `analyzed`, PHP `generatedExcluded` и выбранные записи
+с итоговым `failed`: это могут быть каталоги, ссылки и специальные записи,
+а также PHP-файлы. Снятый каталог не выдаёт число его PHP-потомков. Исключение не делает анализ неполным, любой failure —
+делает. Полный намеренно пустой набор (`analyzed=0`, `failed=0`,
+`excluded + generatedExcluded > 0`) и действительно пустое дерево различаются.
+Код 4 при неполноте имеет приоритет над успехом и политическими нарушениями;
+`check` сохраняет выбранный диагностический отчёт, но результат неавторитетен.
 
-| Формат         | Представление coverage                                                                                               |
-| -------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `summary`      | Текстовая строка coverage после заголовка                                                                            |
-| `text`         | Текстовая строка coverage после сводки нарушений                                                                     |
-| `text-verbose` | Та же проекция, что и у `text --detail`                                                                              |
-| `health`       | Текстовая строка coverage после заголовка                                                                            |
-| `json`         | Объект `coverage` верхнего уровня: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `failed`, `failures[]` |
-| `metrics`      | Тот же объект `coverage` верхнего уровня, что и в `json`                                                             |
-| `sarif`        | `runs[0].invocations[0].executionSuccessful`; ошибки в `toolExecutionNotifications[]`                                |
-| `gitlab`       | По blocker-issue на каждый сбой с `check_name: analysis.<kind>`; пустой полный прогон даёт `[]`                      |
-| `checkstyle`   | Сбои как errors в синтетическом файле `[analysis]`, source — `qmx.analysis.<kind>`                                   |
-| `github`       | По одной `::error`-аннотации на каждый сбой; полный прогон без нарушений не даёт аннотаций                           |
-| `html`         | Встроенные данные `coverage`; при неполном анализе также виден warning-banner                                        |
-| `suppressed`   | Объект `coverage` верхнего уровня: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `failed`, `failures[]` |
+| Формат       | Представление coverage                                                                                                           |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `summary`    | Текстовая строка coverage после заголовка                                                                                        |
+| `text`       | Текстовая строка coverage после сводки нарушений                                                                                 |
+| `health`     | Текстовая строка coverage после заголовка                                                                                        |
+| `json`       | Объект `coverage` верхнего уровня: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `excluded`, `failed`, `failures[]` |
+| `metrics`    | Тот же объект `coverage` верхнего уровня, что и в `json`                                                                         |
+| `sarif`      | `runs[0].invocations[0].executionSuccessful`; ошибки в `toolExecutionNotifications[]`                                            |
+| `gitlab`     | По blocker-issue на каждый сбой с `check_name: analysis.<kind>`; пустой полный прогон даёт `[]`                                  |
+| `checkstyle` | Сбои как errors в синтетическом файле `[analysis]`, source — `qmx.analysis.<kind>`                                               |
+| `github`     | По одной `::error`-аннотации на каждый сбой; полный прогон без нарушений не даёт аннотаций                                       |
+| `html`       | Встроенные данные `coverage`; при неполном анализе также виден warning-banner                                                    |
+| `suppressed` | Объект `coverage` верхнего уровня: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `excluded`, `failed`, `failures[]` |
 
-В `json` и `metrics` каждый элемент `failures[]` содержит `path`, `kind` и
-`message`. Текстовые форматы различают нуль найденных файлов, только
-generated-файлы, полный и неполный анализ.
+В `json` и `metrics` каждый элемент `failures[]` содержит `path`, `kind` и `message`.
+Текстовые форматы выводят измеренные количества, не утверждая, что каждый названный
+путь исключён, когда другой корень просто пуст.
 
-У `kind` пять значений:
+| `kind`                 | Запись                                                                       |
+| ---------------------- | ---------------------------------------------------------------------------- |
+| `parse`                | PHP с синтаксической ошибкой                                                 |
+| `processing`           | Сбой измерения PHP                                                           |
+| `unreadable-file`      | Source snapshot не удалось получить до вызова parser                         |
+| `directory-symlink`    | Ссылка на каталог, встретившаяся внутри обхода и не пройденная               |
+| `not-regular-file`     | Необычная PHP-запись: FIFO, socket, device или недопустимая walked file link |
+| `unreadable-directory` | Каталог, который нельзя перечислить                                          |
 
-| `kind`                 | Запись                                                                                            |
-| ---------------------- | ------------------------------------------------------------------------------------------------- |
-| `parse`                | PHP-файл, который не удалось разобрать                                                            |
-| `processing`           | PHP-файл, упавший при измерении                                                                   |
-| `directory-symlink`    | символическая ссылка на каталог, встреченная внутри сканируемого дерева                           |
-| `not-regular-file`     | запись `*.php`, не являющаяся обычным файлом: FIFO, сокет, устройство, ссылка с исчезнувшей целью |
-| `unreadable-directory` | каталог, который процессу нельзя перечислить                                                      |
-
-Последние три называют запись, которая так и не стала единицей анализа, поэтому
-несут путь этой записи, а не PHP-файла. Незнакомое значение считай записью,
-которую прогон не прочитал: список может вырасти, и отказ от всего документа
-ради этого знания хуже, чем сообщить о неполном прогоне.
+Skips называют запись, не ставшую единицей анализа. Неизвестный `kind` считай
+признаком неполного прогона, а не причиной отбросить весь документ.
 
 ## Охват проекта во всех форматах {#project-scope-in-every-format}
 
-Некоторые каналы утверждают, что настроенное значение ни с чем в проекте не
-совпало: слой, которому не принадлежит ни один класс, `exclude:`, не убравший
-ни одного каталога, подавление, не называющее ничего. Прогон по части проекта
-не может утверждать такое о коде, который не анализировал, поэтому эти каналы
-говорят только тогда, когда анализируемые пути покрывают всё, что
-`composer.json` объявляет в `autoload` (и в `autoload-dev` с
-[`--include-autoload-dev`](cli-options.ru.md#--include-autoload-dev)). Отчёт
-сообщает, в каком из трёх состояний был прогон:
+Отчёт публикует итоговое измерение, объединяющее захваченный Composer-состав
+и фактический выбор записей. Initial target-state до обхода не является итогом:
+отсутствующий в selection пустой каталог сам по себе не означает пропущенный PHP.
 
-| Состояние  | Когда                                                                                                                  | Каналы всего проекта                                                                                                         |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `covered`  | анализируемые пути содержат каждую объявленную autoload-цель                                                           | судятся                                                                                                                      |
-| `narrowed` | какая-то объявленная цель лежит вне анализируемых путей                                                                | не судятся; отчёт называет их и оставленные вне прогона цели                                                                 |
-| `unknown`  | `composer.json` отсутствует, не разбирается или не объявляет production-autoload вне `vendor`, `node_modules` и `.git` | судятся, принимая анализируемые пути за весь проект, — кроме значений-неймспейсов каналов подавлений, которые отчёт называет |
+`state` остаётся `covered`, `narrowed`, `unknown` или `unmeasured`. Этот enum
+описывает свидетельства, но не разрешает одинаково все проверки. Есть два вопроса:
 
-Только на прогоне по всему проекту судятся каналы
-`architecture.unreachable-layer`, `architecture.empty-template`,
-`architecture.unmatched-exclude`, `coupling.unmatched-framework-namespace`,
-`discovery.unmatched-exclude`, `suppression.unmatched-path`,
-`suppression.unmatched-namespace` и `suppression.unmatched-rule-ledger`.
-Отчёт суженного прогона перечисляет их все, независимо от того, включены ли
-они в этом прогоне.
+- **Отсутствие деклараций.** Пропущенные PHP, авторское снятие PHP,
+  generated-исключения и неизвестный состав кода удерживают утверждение об
+  отсутствии неймспейса, класса или имени метода.
+- **Полнота селекторов/путей.** Проверяется полнота PHP-путей и известность
+  состава кода отдельно. Авторские и generated-исключения не являются входами
+  этого вопроса. Уже привязанный selector остаётся `Removed` и при удержанном ответе.
 
-`covered` — утверждение об автозагрузке, а не о каждом заданном значении.
-Каналы подавлений ещё и судят каждое значение по месту, которое оно называет, и
-значение, называющее место вне проанализированных путей, пропускается:
-`suppress_paths: [{subtree: tests/Legacy}]` при `qmx check src/`, когда `tests/`
-объявлен только в `autoload-dev`, на этом прогоне в состоянии `covered` не
-судится. Отчёт называет каждое пропущенное значение в `unjudgedValues`, а его
-канал — в `unjudgedChannels`, так что «просужено и привязалось» и «не
-просматривалось» читаются по-разному. См.
-[правила подавления](../rules/suppression.ru.md).
+Первый вопрос задают семь каналов:
+`architecture.empty-template`, `architecture.unmatched-exclude`,
+`architecture.unmatched-type`, `architecture.unreachable-layer`,
+`cohesion.unmatched-exclude-method`, `coupling.unmatched-framework-namespace`,
+`suppression.unmatched-namespace`.
+Второй используют `discovery.unmatched-exclude`, `suppression.unmatched-path`
+и `suppression.unmatched-rule-ledger`; namespace-значения последнего также
+спрашивают первый. Всего десять каналов.
 
-На проекте в состоянии `unknown` запускайте проверку по всему его коду: более
-узкий прогон там судится так, будто он и есть весь проект, и слой, чьи классы
-лежат вне названных путей, будет назван не совпавшим ни с чем. Исключение —
-значения-неймспейсы глобального `suppress_namespaces` и заданных под правилом
-`suppress_namespaces` и `suppress_namespace_channels`: без объявленного автозагрузчика неймспейсу
-негде находиться, поэтому на таком проекте они не судятся ни на каком прогоне,
-а отчёт называет каждое такое значение в `unjudgedValues`, а его канал —
-`suppression.unmatched-namespace` или `suppression.unmatched-rule-ledger` — в
-`unjudgedChannels`.
+Полный поимённый roster PHP может покрыть известную область. Наблюдённый regular
+`.php` вне выбора — пропущенный файл, даже если он совпал с exclude. Снятый каталог
+вне selection скрывает невидимых потомков: именованный `incomplete-universe`
+удерживает оба вопроса без listing или PHP-поиска там. Assets и special entries
+не считаются предполагаемыми пропущенными PHP. Целый корень может установить
+полноту без пригодной объявленной автозагрузки; произвольная часть — нет.
 
-| Формат                                      | Представление охвата проекта                                                                                                              |
-| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `json`, `metrics`, `suppressed`             | Объект верхнего уровня `projectScope` в каждом документе: `state`, `uncoveredAutoloadTargets[]`, `unjudgedChannels[]`, `unjudgedValues[]` |
-| `sarif`                                     | `note` в `runs[0].invocations[0].toolExecutionNotifications[]` с дескриптором `QMX-RUN-PROJECT-SCOPE`                                     |
-| `github`                                    | Строка `::notice title=run.project-scope::`                                                                                               |
-| `html`                                      | Баннер над отчётом                                                                                                                        |
-| `summary`, `text`, `text-verbose`, `health` | Строка `Project scope …` рядом с фразой о покрытии                                                                                        |
-| `gitlab`, `checkstyle`                      | Ничего: их потребители считают каждую запись находкой, а сужение прогона — не его дефект                                                  |
+Причина `omitted-composer-root` сохраняет `cause` и `visitedLevels`. Поля
+`candidate`, `startDirectory` и `lastDirectory` публикуются только для путей
+внутри проекта и относительно его корня. При отсутствии основного манифеста
+причина пропущенного Composer-корня не добавляется.
 
-У `projectScope` одни и те же ключи в любом состоянии. `uncoveredAutoloadTargets`
-пуст, если состояние не `narrowed`. `unjudgedValues` перечисляет каждое
-заданное значение подавления, которое прогон в состоянии `covered` или
-`unknown` пропустил, в виде `{"option", "pattern"}`: `option` — это
-`suppress_paths`, `suppress_namespaces` или `rules.<rule>.<option>`, ключ, под
-которым искать, а `pattern` — селектор в записанном виде
-(`subtree:tests/Legacy`). `unjudgedChannels` для `narrowed` называет все каналы
-всего проекта — там не судилось ни одно значение, и `unjudgedValues` пуст, — а
-в остальных состояниях каналы пропущенных значений. Остальные форматы добавляют
-запись для `narrowed`, для `unknown` и для прогона в состоянии `covered`,
-пропустившего значение. Консоль, кроме того, печатает в stderr предупреждение с
-autoload-целями, которые суженный прогон оставил вне анализа.
+| Формат                          | Представление охвата проекта                                        |
+| ------------------------------- | ------------------------------------------------------------------- |
+| `json`, `metrics`, `suppressed` | Объект верхнего уровня `projectScope` в каждом документе            |
+| `sarif`                         | Уведомление invocation с дескриптором `QMX-RUN-PROJECT-SCOPE`       |
+| `github`                        | Строка `::notice title=run.project-scope::`                         |
+| `html`                          | Баннер над отчётом                                                  |
+| `summary`, `text`, `health`     | Строка `Project scope …`                                            |
+| `gitlab`, `checkstyle`          | Записи об охвате нет: их потребители считают каждую запись находкой |
 
+Объект сохраняет пять полей: `state`, `uncoveredAutoloadTargets[]`,
+`unjudgedChannels[]`, `unjudgedValues[]`, `reasons[]`. Пропущенное значение имеет
+`{channel, option, pattern}`. `unjudgedChannels` перечисляет только каналы,
+у которых не судилось ни одного значения; частично проверенный канал может
+отсутствовать в этом списке, хотя его skipped values сохранены с `channel`.
+Поэтому пустой список каналов не доказывает, что каждое значение проверено.
+Причины сохраняют `kind` и именованные данные, включая места снятия и
+неизвестности. Вспомогательные Composer-проблемы объясняют ограничения ancestry,
+не закрывая охват основного проекта. Карта PSR-4 по-прежнему размещает
+namespace-значения независимо от enum. См. [правила подавления](../rules/suppression.ru.md).
+
+
+Если селектор скрыт другим источником, skipped value сохраняет три ключа.
+Причина Exclude связывает `selector` с `coveredBy`, называет только `sources`
+hider, отсутствующие среди источников селектора, и даёт совет `rerun`.
+Это объяснение удержания ответа, а не finding или доказательство remediation.
+Недоступные метаданные поиска внутри реально снятой run entry также удерживают
+только отсутствие деклараций, сохраняя фактическое свидетельство `unlistable`.
 ## Сравнительная таблица
 
-| Формат         | Читаемость    | Машинный    | Группировка                          | Интеграция с CI            |
-| -------------- | ------------- | ----------- | ------------------------------------ | -------------------------- |
-| `summary`      | Лучшая        | Нет         | Оценки здоровья, drill-down          | Любой (код выхода)         |
-| `text`         | Хорошая       | Парсируемый | `--group-by`                         | Любой (код выхода)         |
-| `text-verbose` | Хорошая       | Нет         | `--group-by` (по умолч.: file)       | Любой (код выхода)         |
-| `json`         | Нет           | Да          | Встроенная (по файлам)               | Скрипты                    |
-| `metrics`      | Нет           | Да          | Встроенная (по символам)             | Скрипты, дашборды          |
-| `checkstyle`   | Нет           | Да          | Встроенная (по файлам)               | Jenkins, SonarQube         |
-| `sarif`        | Нет           | Да          | Встроенная                           | GitHub, VS Code, JetBrains |
-| `gitlab`       | Нет           | Да          | Плоский список                       | GitLab MR виджет           |
-| `github`       | Нет           | Нет         | Плоский список                       | GitHub Actions аннотации   |
-| `health`       | Хорошая       | Нет         | Измерения здоровья                   | Быстрые проверки, CI       |
-| `html`         | Интерактивная | Нет         | Иерархия treemap                     | Отчёты, ревью              |
-| `suppressed`   | Нет           | Да          | Плоское мультимножество по механизму | Аудит подавления           |
+| Формат       | Читаемость    | Машинный    | Группировка                          | Интеграция с CI            |
+| ------------ | ------------- | ----------- | ------------------------------------ | -------------------------- |
+| `summary`    | Лучшая        | Нет         | Оценки здоровья, drill-down          | Любой (код выхода)         |
+| `text`       | Хорошая       | Парсируемый | `--group-by`                         | Любой (код выхода)         |
+| `json`       | Нет           | Да          | Встроенная (по файлам)               | Скрипты                    |
+| `metrics`    | Нет           | Да          | Встроенная (по символам)             | Скрипты, дашборды          |
+| `checkstyle` | Нет           | Да          | Встроенная (по файлам)               | Jenkins, SonarQube         |
+| `sarif`      | Нет           | Да          | Встроенная                           | GitHub, VS Code, JetBrains |
+| `gitlab`     | Нет           | Да          | Плоский список                       | GitLab MR виджет           |
+| `github`     | Нет           | Нет         | Плоский список                       | GitHub Actions аннотации   |
+| `health`     | Хорошая       | Нет         | Измерения здоровья                   | Быстрые проверки, CI       |
+| `html`       | Интерактивная | Нет         | Иерархия treemap                     | Отчёты, ревью              |
+| `suppressed` | Нет           | Да          | Плоское мультимножество по механизму | Аудит подавления           |
 
 ### Коды выхода
 
@@ -1175,6 +1372,7 @@ autoload-целями, которые суженный прогон остави
 | 2          | Есть хотя бы одно нарушение уровня error                        |
 | 3          | Ошибка конфигурации или входных данных                          |
 | 4          | Анализ неполон; политический результат неавторитетен            |
+| `5`        | Внутренняя ошибка инструмента                                   |
 
 По умолчанию `--fail-on=error`: предупреждения отображаются, но не приводят к ненулевому коду выхода. Используйте `--fail-on=warning`, чтобы предупреждения тоже вызывали код выхода 1. Код 4 имеет приоритет над policy-кодами warning/error.
 
@@ -1184,3 +1382,32 @@ autoload-целями, которые суженный прогон остави
 
 !!! note "Примечание"
     Все диагностические сообщения `check` вне выбранного report-payload (уведомления и ошибки конфигурации, deprecation, logging и сообщения о записи файла) выводятся в **stderr**, а не в stdout. Это позволяет безопасно перенаправлять вывод анализа в файл или другой инструмент: `bin/qmx check src/ --format=json > results.json`.
+
+## Selection removals и skipped producers
+
+`selection` — восьмой suppression mechanism. Он содержит реально порождённые
+находки, снятые итоговым publication selection. `byMechanism.selection` считает
+только эти multiset entries, никогда не число неисполненных producers.
+
+`notRun` всегда массив. У записи есть `producer`, `reason` (`disabled` или
+`filtered`), decisive `statement` и описание `layer`. Skipped producer не даёт
+искусственной находки или suppression count. У выключенного channel может быть
+живой sibling, поэтому producer notRun и channel removal — разные исходы.
+Обычные suppressed identity/multiset rules сохраняются; drill-down и formatter
+truncation остаются presentation, а не selection.
+
+Directive JSON сохраняет `selection.only` и `selection.disabled` как списки
+строк. Публикуются итоговый filter и все tied decisive disabling texts;
+повторяющиеся cells удалены, нижние disables, снятые поздним enable, отсутствуют.
+qmx rules печатает реальные origins/layer indices отдельно в human listing;
+это не меняет молча форму directive JSON.
+
+## Baseline entry audit
+
+baseline.unused-entry — проектный Warning о stale/inert после полного ceiling
+и до Git-проекции. Не попадает в measured set, capture или accept-new; подавления
+путей/пространств имён и Git его не скрывают. Невыбранный аудит и несравнимые записи
+дают только счётчики stderr без списков путей. Девять форматов с находками публикуют
+аудит; metrics, health и suppressed сохраняют свой предмет. Во всех двенадцати
+форматах изолированное предупреждение даёт 0 по умолчанию/--fail-on=error/none,
+1 с --fail-on=warning. Неполный анализ приоритетен и даёт 4. Оценка исправления — 5 минут.

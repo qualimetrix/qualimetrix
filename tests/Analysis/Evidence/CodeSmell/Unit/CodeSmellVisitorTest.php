@@ -34,6 +34,23 @@ PHP;
     }
 
     #[Test]
+    public function itRecognizesLiteralAndConcatenatedVariableVariablesButNotUnknownNames(): void
+    {
+        $visitor = $this->analyze(<<<'PHP'
+<?php
+${'_GET'};
+${'_' . 'POST'};
+$$unknown;
+$GLOBALS['_GET'];
+PHP);
+
+        self::assertSame(['_GET', '_POST', 'GLOBALS'], array_map(
+            static fn(CodeSmellLocation $location): ?string => $location->extra,
+            $visitor->getLocationsByType('superglobals'),
+        ));
+    }
+
+    #[Test]
     public function itDetectsAllSuperglobalVariables(): void
     {
         $code = <<<'PHP'
@@ -385,7 +402,7 @@ PHP;
     }
 
     #[Test]
-    public function itDoesNotFlagDebugFunctionsInsideADebugApiMethod(): void
+    public function itFlagsOutputEvenInsideMethodsNamedLikeDebugApis(): void
     {
         $code = <<<'PHP'
 <?php
@@ -402,7 +419,7 @@ PHP;
         $visitor = $this->analyze($code);
 
         $locations = $visitor->getLocationsByType('debug_code');
-        self::assertCount(0, $locations);
+        self::assertCount(2, $locations);
     }
 
     #[Test]
@@ -653,12 +670,11 @@ PHP);
     }
 
     #[Test]
-    public function itDoesNotDetectAVariableVariableSpellingOfASuperglobal(): void
+    public function itDetectsALiteralVariableVariableSpellingOfASuperglobal(): void
     {
-        // Known limit: only the plain variable name is read; `${'_GET'}` is absent from the benchmark corpus.
         $visitor = $this->analyze('<?php function read(): mixed { return ${\'_GET\'}[\'id\'] ?? $_SERVER[\'x\']; }');
 
-        self::assertSame(['_SERVER'], array_map(static fn(CodeSmellLocation $l): ?string => $l->extra, $visitor->getLocationsByType('superglobals')));
+        self::assertSame(['_GET', '_SERVER'], array_map(static fn(CodeSmellLocation $l): ?string => $l->extra, $visitor->getLocationsByType('superglobals')));
     }
 
     #[Test]

@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\FindingProjection;
 
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
+
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
 use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionResult;
 
 /**
  * What the finding pipeline produced, and what each of its stages removed.
@@ -32,8 +36,10 @@ use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
  */
 final readonly class FindingProjectionResult
 {
+    public JudgedPopulation $population;
     /**
      * @param list<Finding> $findings what the run reports, after every stage
+     * @param AnnotationSuppressionResult $annotationSuppression the Inline-owned result carrying exact directive attribution
      * @param list<Finding> $measuredFindings the set a baseline measures — the baseline stage's input
      * @param array<string, list<Finding>> $removedByStage what each stage removed, keyed by {@see FindingFilterStage}'s value
      * @param list<BaselineEntry> $staleEntries entries whose identity the measured set did not hold (ADR 0017);
@@ -47,12 +53,23 @@ final readonly class FindingProjectionResult
      */
     public function __construct(
         public array $findings,
+        public AnnotationSuppressionResult $annotationSuppression,
         public array $measuredFindings = [],
         public array $removedByStage = [],
         public array $staleEntries = [],
         public array $inertEntries = [],
         public ?array $baselineScope = null,
-    ) {}
+        public ?CeilingOutcome $ceilingOutcome = null,
+        private bool $unusedAuditPublished = true,
+        ?JudgedPopulation $population = null,
+    ) {
+        $this->population = $population ?? JudgedPopulation::empty();
+    }
+
+    public function withPopulation(JudgedPopulation $population): self
+    {
+        return new self($this->findings, $this->annotationSuppression, $this->measuredFindings, $this->removedByStage, $this->staleEntries, $this->inertEntries, $this->baselineScope, $this->ceilingOutcome, $this->unusedAuditPublished, $population);
+    }
 
     /**
      * What the given stage took out of the run, in the order it saw it.
@@ -67,6 +84,14 @@ final readonly class FindingProjectionResult
     public function removedCountBy(FindingFilterStage $stage): int
     {
         return \count($this->removedBy($stage));
+    }
+
+    /** @return array{stale: int, inert: int} */
+    public function unselectedUnusedEntries(): array
+    {
+        return $this->unusedAuditPublished
+            ? ['stale' => 0, 'inert' => 0]
+            : ['stale' => \count($this->staleEntries), 'inert' => \count($this->inertEntries)];
     }
 
     public function staleEntryCount(): int

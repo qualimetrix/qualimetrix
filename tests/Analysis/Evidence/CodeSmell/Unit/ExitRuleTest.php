@@ -28,7 +28,7 @@ final class ExitRuleTest extends TestCase
         $rule = new ExitRule(new CodeSmellOptions());
 
         self::assertSame('code-smell.exit', $rule->getName());
-        self::assertSame('Detects usage of exit() and die()', $rule->getDescription());
+        self::assertSame('Detects usage of exit() and die()', $rule::getDescription());
     }
 
     #[Test]

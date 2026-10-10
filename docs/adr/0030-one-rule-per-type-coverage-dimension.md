@@ -1,7 +1,14 @@
 # 0030. One Rule per Judgement: Type-Coverage Dimensions and the Unassigned-Class Gate
 
 **Date:** 2026-08-24
-**Status:** Accepted
+**Status:** Accepted; partially superseded by ADR 0103
+
+The five declaration diagnostics' gate/options relationship to
+`architecture.layer-violation` is superseded by
+[ADR 0103](0103-layer-policy-declaration-evidence-and-selection.md):
+`architecture.layer-declaration` now owns their independent enabled gate and
+FilterExempt selection boundary. The type-coverage split and unassigned-class
+producer remain in force. The text below records the original decision.
 
 ## Context
 

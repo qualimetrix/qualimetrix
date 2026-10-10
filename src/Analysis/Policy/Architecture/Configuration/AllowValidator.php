@@ -4,16 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowListEntry;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowTarget;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\InvalidSelectorException;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelector;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelectorParser;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationWarning;
-use Throwable;
 
 /**
  * Parses and validates the {@code architecture.allow} sub-tree.
@@ -22,13 +17,18 @@ use Throwable;
  * grammar (exact / glob / captured); the result is a {@see AllowListEntry}
  * list in user declaration order.
  *
- * Cross-validation against the registry's layer names runs only for
- * {@see LayerSelector}s of kind {@code exact} — glob and captured selectors
- * are intentionally not validated against the current registry, because
- * template-layer expansion produces concrete layer names after config load.
- * A glob source that matches no concrete layer today may still be
- * the intent (the user may add layers later, or the template-expansion stage
- * may produce them); the rule executor will simply skip non-matching entries.
+ * A source name is judged against the declared layers by the configuration
+ * document ({@see ArchitectureSection}), in the layer that wrote it, whatever
+ * is written under it. A source written without targets allows nothing and
+ * adds no entry, once its selector parses.
+ *
+ * Cross-validation of a target against the registry's layer names runs only
+ * for {@see LayerSelector}s of kind {@code exact} — glob and captured
+ * selectors are intentionally not validated against the current registry,
+ * because template-layer expansion produces concrete layer names after config
+ * load. A glob that matches no concrete layer today may still be the intent
+ * (the user may add layers later, or the template-expansion stage may produce
+ * them); the rule executor will simply skip non-matching entries.
  *
  * The long form ({@code [target: 'service', relations: ['static_call']]}) is
  * fully wired: {@code relations:} expands through
@@ -39,50 +39,27 @@ use Throwable;
  */
 final class AllowValidator
 {
-    /** Builds the refusal noise every throw site in this class shares: a position under the resolved document. */
-    private static function refuse(string $position, string $summary, ?Throwable $previous = null): never
-    {
-        throw ConfigurationRefusal::atResolvedKey(
-            RefusedPosition::open(explode('.', $position), $position),
-            $summary,
-            previous: $previous,
-        );
-    }
-
     /**
      * @param list<string> $layerNames Names from the registry; used for cross-validation of exact selectors only.
      * @param list<ArchitectureConfigurationWarning> $warnings Accumulator, mutated by reference for warning collection.
      *
      * @return list<AllowListEntry>
      */
-    public function validate(mixed $allowRaw, array $layerNames, array &$warnings): array
+    public function validate(SectionSpot $allow, array $layerNames, array &$warnings): array
     {
-        if ($allowRaw === [] || $allowRaw === null) {
-            return [];
-        }
-
-        if (!\is_array($allowRaw) || array_is_list($allowRaw)) {
-            self::refuse('architecture.allow', 'architecture.allow: must be a map of layer-name → list of target layer names.');
-        }
-
         $layerSet = array_flip($layerNames);
         $entries = [];
 
-        foreach ($allowRaw as $sourceRaw => $targets) {
-            if (!\is_string($sourceRaw)) {
-                self::refuse('architecture.allow', 'architecture.allow: must be a map of layer-name → list of target layer names.');
-            }
-
-            $sourceSelector = $this->parseSelector(
+        foreach ($allow->keys() as $sourceRaw) {
+            $targets = $allow->child($sourceRaw);
+            $sourceSelector = CarriedValueForm::parseSelector(
                 $sourceRaw,
                 \sprintf('architecture.allow.%s', $sourceRaw),
+                $targets,
             );
 
-            if ($sourceSelector->isExact() && !isset($layerSet[$sourceRaw])) {
-                self::refuse(
-                    \sprintf('architecture.allow.%s', $sourceRaw),
-                    \sprintf('architecture.allow.%s: unknown layer.', $sourceRaw),
-                );
+            if (!$targets->isWritten()) {
+                continue;
             }
 
             $allowTargets = $this->normalizeAllowTargets($sourceRaw, $sourceSelector, $targets, $layerSet);
@@ -100,31 +77,21 @@ final class AllowValidator
     private function normalizeAllowTargets(
         string $source,
         LayerSelector $sourceSelector,
-        mixed $targets,
+        SectionSpot $targets,
         array $layerSet,
     ): array {
-        if ($targets === null) {
-            return [];
-        }
-
-        if (!\is_array($targets) || !array_is_list($targets)) {
-            self::refuse(
-                \sprintf('architecture.allow.%s', $source),
-                \sprintf('architecture.allow.%s: must be a list of target layer names.', $source),
-            );
-        }
-
         $sourceShapes = $sourceSelector->captureVariableShapes();
 
         $result = [];
         $seenBareExact = [];
-        foreach ($targets as $index => $entry) {
+        foreach (array_keys((array) $targets->value()) as $index) {
+            $entry = $targets->child($index);
             [$targetSelector, $allowCrossInstance, $relations] = $this->normalizeAllowEntry($source, $index, $entry);
 
-            $this->crossValidateCapturedTarget($source, $index, $sourceSelector, $sourceShapes, $targetSelector);
+            $this->crossValidateCapturedTarget($source, $index, $sourceSelector, $sourceShapes, $targetSelector, $entry);
 
             $isBare = $relations === null && !$allowCrossInstance;
-            if ($this->shouldSkipExactTarget($source, $index, $targetSelector, $layerSet, $isBare, $seenBareExact)) {
+            if ($this->shouldSkipExactTarget($source, $index, $targetSelector, $layerSet, $isBare, $seenBareExact, $entry)) {
                 continue;
             }
 
@@ -167,6 +134,7 @@ final class AllowValidator
         LayerSelector $sourceSelector,
         array $sourceShapes,
         LayerSelector $targetSelector,
+        SectionSpot $entry,
     ): void {
         if (!$targetSelector->isCaptured()) {
             return;
@@ -191,8 +159,7 @@ final class AllowValidator
         }
 
         if ($undeclared !== []) {
-            self::refuse(
-                \sprintf('architecture.allow.%s[%d]', $source, $index),
+            throw $entry->refusal(
                 $this->renderUndeclaredCaptureMessage(
                     $source,
                     $index,
@@ -200,12 +167,12 @@ final class AllowValidator
                     $targetSelector,
                     $undeclared,
                 ),
+                written: $targetSelector->originalString(),
             );
         }
 
         if ($shapeMismatches !== []) {
-            self::refuse(
-                \sprintf('architecture.allow.%s[%d]', $source, $index),
+            throw $entry->refusal(
                 $this->renderShapeMismatchMessage(
                     $source,
                     $index,
@@ -213,6 +180,7 @@ final class AllowValidator
                     $targetSelector,
                     $shapeMismatches,
                 ),
+                written: $targetSelector->originalString(),
             );
         }
     }
@@ -343,6 +311,7 @@ final class AllowValidator
         array $layerSet,
         bool $isBare,
         array &$seenBareExact,
+        SectionSpot $entry,
     ): bool {
         if (!$targetSelector->isExact()) {
             return false;
@@ -351,10 +320,7 @@ final class AllowValidator
         $targetName = $targetSelector->originalString();
 
         if (!isset($layerSet[$targetName])) {
-            self::refuse(
-                \sprintf('architecture.allow.%s[%d]', $source, $index),
-                \sprintf("architecture.allow.%s[%d]: unknown layer '%s'.", $source, $index, $targetName),
-            );
+            throw $entry->refusal(\sprintf("architecture.allow.%s[%d]: unknown layer '%s'.", $source, $index, $targetName), written: $targetName);
         }
 
         if (!$isBare) {
@@ -387,44 +353,23 @@ final class AllowValidator
      *
      * @return array{0: LayerSelector, 1: bool, 2: list<DependencyType>|null}
      */
-    private function normalizeAllowEntry(string $source, int $index, mixed $entry): array
+    private function normalizeAllowEntry(string $source, int $index, SectionSpot $entry): array
     {
         $context = \sprintf('architecture.allow.%s[%d]', $source, $index);
 
-        if (\is_string($entry)) {
-            if ($entry === '') {
-                self::refuse($context, \sprintf('%s: target must be a non-empty string.', $context));
-            }
-
-            return [$this->parseSelector($entry, $context), false, null];
-        }
-
-        if (\is_array($entry) && !array_is_list($entry)) {
+        if (self::isLongForm($entry)) {
             [$targetRaw, $allowCrossInstance, $relations] = LongFormAllowEntryNormalizer::normalize($source, $index, $entry);
 
-            return [$this->parseSelector($targetRaw, $context), $allowCrossInstance, $relations];
+            return [CarriedValueForm::parseSelector($targetRaw, $context, $entry->child('target')), $allowCrossInstance, $relations];
         }
 
-        self::refuse(
-            $context,
-            \sprintf(
-                "%s: each target must be a layer name (string) or a map with a non-empty 'target' key.",
-                $context,
-            ),
-        );
+        return [CarriedValueForm::parseSelector(CarriedValueForm::selector($source, $index, $entry), $context, $entry), false, null];
     }
 
-    /**
-     * Catches the Core-domain {@see InvalidSelectorException} from
-     * {@see LayerSelectorParser::parse()} and rewraps it as a
-     * {@see ConfigurationRefusal} with the user-facing config path prefix.
-     */
-    private function parseSelector(string $raw, string $context): LayerSelector
+    private static function isLongForm(SectionSpot $entry): bool
     {
-        try {
-            return LayerSelectorParser::parse($raw);
-        } catch (InvalidSelectorException $e) {
-            self::refuse($context, \sprintf('%s: %s', $context, $e->getMessage()), $e);
-        }
+        $value = $entry->value();
+
+        return \is_array($value) && !array_is_list($value);
     }
 }

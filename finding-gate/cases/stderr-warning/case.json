@@ -1,0 +1,13 @@
+{
+  "id": "stderr-warning",
+  "description": "A DIT chain leaves the analysed path without a Composer-mapped source for its external parent and publishes a timestamped warning on stderr.",
+  "coverage": "auxiliary",
+  "paths": [
+    "src"
+  ],
+  "config": "qmx.yaml",
+  "args": [],
+  "channels": [
+    "design.dit@class"
+  ]
+}

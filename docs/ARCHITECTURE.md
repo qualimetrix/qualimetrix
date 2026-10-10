@@ -2,16 +2,17 @@
 
 ## Navigation
 
-| Task                        | Document                                                                        |
-| --------------------------- | ------------------------------------------------------------------------------- |
-| **Getting started**         | [CLAUDE.md](../CLAUDE.md) — rules, structure, commands                          |
-| **New collector**           | [Analysis capability index](../src/Analysis/README.md#current-leaves)           |
-| **New rule**                | [Analysis capability index](../src/Analysis/README.md#current-leaves)           |
-| **Understanding contracts** | [src/Core/README.md](../src/Core/README.md)                                     |
-| **Analysis pipeline**       | [src/Analysis/README.md](../src/Analysis/README.md)                             |
-| **Formatters**              | [src/Reporting/README.md](../src/Reporting/README.md)                           |
-| **Configuration**           | [src/Analysis/Configuration/README.md](../src/Analysis/Configuration/README.md) |
-| **DI, cache, CLI**          | [src/Infrastructure/README.md](../src/Infrastructure/README.md)                 |
+| Task                        | Document                                                                            |
+| --------------------------- | ----------------------------------------------------------------------------------- |
+| **Getting started**         | [CLAUDE.md](../CLAUDE.md) — rules, structure, commands                              |
+| **New collector**           | [Analysis capability index](../src/Analysis/README.md#current-leaves)               |
+| **New rule**                | [Analysis capability index](../src/Analysis/README.md#current-leaves)               |
+| **Understanding contracts** | [src/Core/README.md](../src/Core/README.md)                                         |
+| **Analysis pipeline**       | [src/Analysis/README.md](../src/Analysis/README.md)                                 |
+| **Formatters**              | [src/Reporting/README.md](../src/Reporting/README.md)                               |
+| **Project manifest**        | [src/Analysis/ProjectManifest/README.md](../src/Analysis/ProjectManifest/README.md) |
+| **Configuration**           | [src/Analysis/Configuration/README.md](../src/Analysis/Configuration/README.md)     |
+| **DI, cache, CLI**          | [src/Infrastructure/README.md](../src/Infrastructure/README.md)                     |
 
 ---
 
@@ -57,8 +58,8 @@ an uncovered project class fail even when it has no dependency edges.
 
 Every test, support file, and fixture directory is governed by the same
 manifest; `test-topology.tsv` in the generated directory reports how many of
-each. Self-analysis runs against the versioned v13 root baseline, whose
-165 groups across 119 subjects are checked against the file itself by
+each. Self-analysis runs against the versioned v14 root baseline, whose
+105 groups across 90 subjects are checked against the file itself by
 `DocumentationConsistencyTest`, and the current dogfood result is zero findings.
 
 The manifest checker is the exact owner/visibility/import authority. It runs as
@@ -70,11 +71,31 @@ review projections, not the manifest or a runtime/DI registry. A direct
 cycles fail configuration loading, while `architecture.circular-dependency`
 checks cycles in actual class dependencies.
 
-`ConfigurationDocument` is the concrete public source seam. It preserves the
-ordered contributions and invocation working directory only; it is not a
-generic configuration interface or invocation context. Run, Finding, Cache,
-Parallel, Reporting, and Console resolve their own values from it, retaining
-mutable state only inside the owner that needs a per-container store.
+`ConfigurationDocument` is the concrete public source seam. It carries the
+invocation working directory, a resolved document with provenance and
+diagnostics, and Composer's two non-authored discovery target lists; it is not
+a generic configuration interface or invocation context. Architecture,
+ComputedMetrics, Coupling, Cache, Console, Parallel, Run, Reporting and
+FindingProjection read their owner-declared values from the resolved document.
+Finding also reads its declared `rules`, `only_rules` and `disabled_rules`
+sections. Authored values and history are judged before the one immutable
+options/enablement snapshot is published; no temporary raw contribution reads
+remain. Mutable state remains only inside the owner that needs a
+per-container store.
+
+`Analysis\ProjectManifest` owns the analysed Composer source facts and their
+typed integrity issues. Its Infrastructure adapter provides one canonical-root
+snapshot per invocation, shared by discovery, Run scope, namespace attribution,
+external ancestry and HTML metadata. Run captures an immutable universe, then combines it with final filesystem
+selection once. Finding's measured ProjectScopeJudgement asks declaration absence
+and selector/path completeness separately; Reporting preserves four states and
+named reasons rather than deriving a second authority from the enum. A complete
+named PHP roster can cover paths; omitted empty target directories alone are not
+missing PHP. Pure narrowing retains captured evidence without another IO read.
+The opt-in ProjectTree query supplies full regular-PHP metadata without source
+reads; ordinary analysis does not request this extra snapshot.
+Console's command profiles restrict consumers without hiding context-free
+document invalidity. See [ADR 0089](adr/0089-composer-manifest-facts-and-project-scope-reasons.md).
 
 ### 2. Five-Phase Pipeline
 
@@ -93,6 +114,13 @@ Discovery -> Collection (parallel) -> Aggregation -> RuleExecution -> Reporting
 | Reporting     | <1%       | No                   |
 
 **Collection** — the only parallelizable phase (AST parsing is the bottleneck).
+
+Run's outward `AnalysisResult` composes a Run-owned `MeasuredRunResult`, an
+Inline-owned `DirectiveObservations`, rule execution and late publication.
+Measurement and source observations retain their owners. Execution publication
+is stored once; late Inline and authored-exclude findings remain separate, and
+`findings()` preserves original run order through merge. See
+[ADR 0094](adr/0094-analysis-results-publish-subject-owned-values.md).
 
 ### 3. Collector/Rule Separation
 
@@ -139,32 +167,38 @@ over `Analysis/Evidence/*`.
 
 ### 6. Baseline Ceiling
 
-The version 13 baseline retains the post-rule, reported-magnitude ceiling. It compares
-only groups of findings that currently fire, after source/configuration
-suppression and exclusions but before git report scoping. A measured breach is
-promoted to Error; a malformed, stale, or otherwise inapplicable entry is
-fail-safe and suppresses nothing. See [ADR 0017](adr/0017-baseline-ceiling.md)
-and [Baseline](../src/Analysis/Policy/Baseline/README.md) for the lifecycle and file contract.
+The version 14 baseline compares complete compatible identity groups after
+source/configuration suppression and before Git projection. Baseline-owned
+RunCoverage and one CeilingOutcome distinguish stale, unmeasured, outside and
+not-compared entries. A measured breach promotes to Error; present incomparable
+findings keep accepted caps and their normal severity. The project-level
+baseline.unused-entry audit follows the ceiling and survives Git projection.
+See [ADR 0098](adr/0098-baseline-entry-comparability.md) and
+[Baseline](../src/Analysis/Policy/Baseline/README.md).
 
-For full details (CompilerPasses, exclude patterns, autowiring constraints for rules), see [CLAUDE.md § Symfony DI](../CLAUDE.md#7-symfony-di-automatic-service-registration).
+
 
 ### 7. Analysis Coverage and Verdict
 
-Every discovered PHP file ends in exactly one state: analyzed, intentionally
-excluded as generated, or failed during parsing/processing. Generated exclusions
-keep a run complete; failures make it incomplete. `check` still renders the
-selected report for diagnosis but exits 4 and marks policy results as
-non-authoritative. Artifact-producing consumers such as baseline lifecycle
-commands and `graph:export` refuse incomplete input. See
-[ADR 0018](adr/0018-analysis-coverage-verdict-and-output-projection.md).
-
----
+Every selected entry reaches a terminal result: analyzed, intentionally excluded
+by authored selection or generated policy, or failed. Named exclusions count
+entries separately. `discovered` is analyzed PHP plus generated-excluded PHP
+plus selected failed terminal entries; it excludes named authored exclusions.
+Failures can name directories, links or special entries as well as PHP files.
+Skipped filesystem entries and source-read refusals make the run incomplete. `check` and `directives`
+retain diagnostic output with exit 4; baseline lifecycle commands and
+`graph:export` refuse incomplete input before mutation or authoritative output.
+A complete intentionally excluded empty set succeeds with a measured explanation,
+including empty baseline generation. See
+[ADR 0018](adr/0018-analysis-coverage-verdict-and-output-projection.md),
+[ADR 0078](adr/0078-an-entry-the-run-did-not-read-makes-it-incomplete.md), and
+[ADR 0093](adr/0093-measured-run-scope-and-project-tree-queries.md).
 
 ## Architectural Invariants
 
 ### DO NOT Violate
 
-1. **Core imports nothing from the project outside `Core`** — its only external types are `PhpParser\Node` and `Composer\InstalledVersions`; no control enforces that list (see `src/Core/README.md`)
+1. **Core imports nothing from the project outside `Core`** — its external types are `Composer\InstalledVersions` and php-parser types confined to `Core/Ast/`; no control enforces that list (see `src/Core/README.md`)
 2. **Rules are stateless** — they do not perform AST traversal, only read metrics
 3. **Collectors are stateful per-file** — they reset between files via `reset()`
 4. **Atomic cache writes** — via tmp + rename (race condition protection)

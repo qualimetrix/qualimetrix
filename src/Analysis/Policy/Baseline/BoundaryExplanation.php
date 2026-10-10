@@ -21,11 +21,14 @@ final readonly class BoundaryExplanation
      * @param list<InertBaselineEntry> $unidentifiedEntries lines of the file about this subject
      *                                                      whose identity could not be read, so
      *                                                      no boundary exists for them
+     * @param ?string $canonicalSpelling a known alternative for an unknown raw spelling;
+     *                                   the requested subject still remains unknown
      */
     public function __construct(
         public string $subjectKey,
         public array $boundaries,
         public BoundaryExplanationStatus $status,
         public array $unidentifiedEntries,
+        public ?string $canonicalSpelling = null,
     ) {}
 }

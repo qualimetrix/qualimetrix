@@ -4,18 +4,15 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Size;
 
-use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
-use Qualimetrix\Analysis\Finding\Contract\Location;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Core\Observation\WorseDirection;
+use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -42,7 +39,7 @@ final class MethodCountRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks number of methods per class';
     }
@@ -60,17 +57,19 @@ final class MethodCountRule extends AbstractRule
      * (`$methodCountValue` — see the emission above) as `metricValue`,
      * judged worse the higher it goes:
      * {@see MethodCountOptions::getSeverity()}'s `$value >= $this->error`
-     * (line 67) / `$value >= $this->warning` (line 71).
+     * / `$value >= $this->warning`.
      *
      * @return array<string, ChannelDeclaration>
      */
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Higher,
-                JudgedMetrics::of(MetricName::SIZE_METHOD_COUNT),
+            self::NAME => self::judgingHigher(
+                [MetricName::SIZE_METHOD_COUNT],
                 SymbolLevel::Class_,
+            )->withGates(
+                self::populationGate('class-coordinate', self::NAME, SymbolLevel::Class_, 'declaration', self::kindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
+                self::populationGate('method-count', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('method-count', [MetricName::SIZE_METHOD_COUNT]), 'Method count was not published.'),
             ),
         ];
     }
@@ -86,17 +85,8 @@ final class MethodCountRule extends AbstractRule
 
         $findings = [];
 
-        foreach ($context->metrics->allDeclarations() as $classInfo) {
-            $subject = $classInfo->subject ?? throw new LogicException('Method count findings require an exact class declaration subject');
-            if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
-                continue;
-            }
-            $metrics = $context->metrics->get($subject->toSymbolPath());
+        foreach ($this->admittedDeclarations($context, self::channelDeclarations()[self::NAME], $context->metrics->allClassDeclarations(), SymbolLevel::Class_, 'method-count', 'class-coordinate') as [$classInfo, $subject, $metrics]) {
             $methodCount = $metrics->get(MetricName::SIZE_METHOD_COUNT);
-
-            if ($methodCount === null) {
-                continue;
-            }
 
             $methodCountValue = (int) $methodCount;
             /** @var MethodCountOptions $effectiveOptions */
@@ -116,24 +106,15 @@ final class MethodCountRule extends AbstractRule
         int $methodCount,
         MethodCountOptions $options,
     ): ?Finding {
-        $severity = $options->getSeverity($methodCount);
-        if ($severity === null) {
-            return null;
-        }
-
-        $threshold = $severity === Severity::Error ? $options->error : $options->warning;
-
-        return new Finding(
-            location: new Location($classInfo->file, $classInfo->line),
-            subject: $subject,
-            symbolPath: $subject->toSymbolPath(),
-            ruleName: $this->getName(),
-            code: self::NAME,
-            message: \sprintf('Method count is %d, exceeds threshold of %d. Consider splitting into smaller focused classes', $methodCount, $threshold),
-            severity: $severity,
-            metricValue: $methodCount,
-            recommendation: \sprintf('Methods: %d (threshold: %d) — too many methods', $methodCount, $threshold),
-            threshold: $threshold,
+        return $this->thresholdFinding(
+            $classInfo,
+            $methodCount,
+            $options->getSeverity($methodCount),
+            ['warning' => $options->warning, 'error' => $options->error],
+            static fn(int|float $threshold, ThresholdCrossing $crossing): array => [
+                \sprintf('Method count is %d, %s threshold of %d. Consider splitting into smaller focused classes', $methodCount, $crossing->value, $threshold),
+                \sprintf('Methods: %d (threshold: %d) — too many methods', $methodCount, $threshold),
+            ],
         );
     }
 

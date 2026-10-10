@@ -51,12 +51,23 @@ final readonly class Suppression
         public ?string $reason,
         public int $line,
         public SuppressionType $type,
+        public int $position,
         public ?DeclarationBinding $binding = null,
         public ?DirectiveRefusal $refusal = null,
+        public ?int $silencedLine = null,
     ) {
+        if ($position < 0) {
+            throw new InvalidArgumentException('A suppression position must be non-negative');
+        }
+
         $isSymbolControl = $type === SuppressionType::Symbol && $refusal === null;
         if ($isSymbolControl !== ($binding !== null)) {
             throw new InvalidArgumentException('Symbol suppressions require a declaration binding; physical and refused suppressions require none');
+        }
+
+        $requiresSilencedLine = $type === SuppressionType::NextLine && $refusal === null;
+        if ($requiresSilencedLine !== ($silencedLine !== null)) {
+            throw new InvalidArgumentException('A carried next-line suppression requires its silenced line, and no other suppression may carry one');
         }
 
         $this->target = SuppressionTarget::fromAnnotation($rule);
@@ -76,13 +87,15 @@ final readonly class Suppression
      * One authored directive, whatever it was bound to: the key every reader
      * that counts directives rather than bindings groups by.
      *
+     * Byte position keeps identical tags in separate comments on one line apart.
+     *
      * The refusal reason is part of it because one form can be refused for
      * two reasons on one line — an unbound declaration form and the same tag
      * with no channel — and each is a mistake of its own.
      */
     public function authoredSite(): string
     {
-        return implode("\0", [(string) $this->line, $this->form(), $this->rule, $this->refusal->reason->value ?? '']);
+        return implode("\0", [(string) $this->line, (string) $this->position, $this->form(), $this->rule, $this->refusal->reason->value ?? '']);
     }
 
     /** What this directive filters on — a channel selector, or nothing at all. */

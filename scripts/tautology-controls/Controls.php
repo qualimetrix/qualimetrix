@@ -51,7 +51,7 @@ final class Controls
             'Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.CompilerPass.RuleCompilerPassTest::itInjectsIntoEveryConsumerItDeclaresAndIntoNothingElse',
             'Qualimetrix.Tests.Infrastructure.Parallel.Unit.Strategy.AmphpParallelStrategyTest::itUsesLoggerForDebugMessages',
             'Qualimetrix.Tests.Infrastructure.Rule.Unit.RuleRegistryTest::itReadsMetadataOffARuleClassItCouldNotHaveBuilt',
-            'Qualimetrix.Tests.Reporting.Unit.FindingProjection.DeclaredChannelFileScopeTest::itMarksAChannelBothCapabilitiesDeclareAsProjectScoped',
+            'Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.Configurator.DeclaredChannelFileScopeTest::itKeepsDeclaredProjectChannelsExemptAndLayerViolationsFileScoped',
             'Qualimetrix.Tests.Unit.Core.Symbol.CallableKindTest::itUsesValuesNoCompositeKeyCanSplitInTheWrongPlace',
             'Qualimetrix.Tests.Unit.Core.Symbol.SymbolInfoTest::itKeepsTheExactSubjectItWasConstructedFrom',
             'Qualimetrix.Tests.Unit.Core.Symbol.SymbolInfoTest::itRefusesAWriteToAConstructedSymbolInfo',
@@ -132,7 +132,7 @@ final class Controls
                 'R122',
                 'NamespaceInstabilityOptions reads the enabled flag instead of defaulting past it',
                 'src/Analysis/Evidence/Coupling/NamespaceInstabilityOptions.php',
-                ['enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),' => 'enabled: true,'],
+                ["enabled: \$config->boolean('enabled', true)," => 'enabled: true,'],
                 ['Qualimetrix.Tests.Analysis.Evidence.Coupling.Unit.NamespaceInstabilityOptionsTest::itIsDisabledWhenTheEnabledFlagIsFalse'],
             ),
 
@@ -156,14 +156,14 @@ final class Controls
                 'every-declaring-capability-is-asked',
                 'R065',
                 'the assembled channel scope asks every capability that declares project-scoped channels',
-                'src/Reporting/FindingProjection/DeclaredChannelFileScope.php',
+                'src/Infrastructure/DependencyInjection/Configurator/DeclaredChannelFileScope.php',
                 ['            ...CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS,' . "\n" => ''],
                 [
                     // Both halves of the repair: the roll-call reads the
                     // declaring capabilities off the tree, and the unit case
                     // writes out a channel of each capability by hand.
                     'Qualimetrix.Governance.Channel.ProjectScopedChannelRollCallTest::itAsksEveryCapabilityThatDeclaresProjectScopedChannels',
-                    'Qualimetrix.Tests.Reporting.Unit.FindingProjection.DeclaredChannelFileScopeTest::itMarksAChannelBothCapabilitiesDeclareAsProjectScoped',
+                    'Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.Configurator.DeclaredChannelFileScopeTest::itKeepsDeclaredProjectChannelsExemptAndLayerViolationsFileScoped',
                 ],
             ),
 
@@ -211,8 +211,8 @@ final class Controls
                 'the rules vocabulary the configuration pipeline validates against carries producers no rule class declares',
                 'src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php',
                 [
-                    "->setArgument('\$ruleNames', array_keys(\$thresholdOverrideSupport));"
-                        => "->setArgument('\$ruleNames', array_values(array_filter(array_keys(\$thresholdOverrideSupport), static fn(string \$name): bool => !str_starts_with(\$name, 'health.'))));",
+                    "->setArgument('\$classlessProducers', \$classlessProducers);"
+                        => "->setArgument('\$classlessProducers', array_filter(\$classlessProducers, static fn(ProducerDeclaration \$producer): bool => !str_starts_with(\$producer->name, 'health.')));",
                 ],
                 ['Qualimetrix.Tests.Infrastructure.DependencyInjection.Integration.ContainerFactoryTest::itLetsTheConfigurationPipelineAddressAProducerNoRuleClassDeclares'],
             ),

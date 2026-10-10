@@ -1,0 +1,29 @@
+suppress_paths: []
+computed_metrics:
+  health.complexity: { enabled: false }
+  health.cohesion: { enabled: false }
+  health.coupling: { enabled: false }
+  health.typing: { enabled: false }
+  health.maintainability: { enabled: false }
+  health.overall: { enabled: false }
+only_rules: [complexity.ccn, design.god-class, design.data-class, annotation.directive]
+rules:
+  complexity.ccn:
+    callable:
+      warning: 2
+      error: 10
+    class:
+      enabled: false
+  design.god-class:
+    enabled: true
+    wmc_threshold: 1
+    lcom_threshold: 1
+    tcc_threshold: 0.5
+    class_loc_threshold: 500
+    min_criteria: 3
+    min_methods: 3
+  design.data-class:
+    enabled: true
+    woc_threshold: 0
+    wmc_threshold: 10
+    min_members: 3

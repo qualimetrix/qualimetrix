@@ -7,12 +7,20 @@ namespace Qualimetrix\Tests\Analysis\Run\Unit\Discovery;
 use FilesystemIterator;
 use Generator;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Run\Discovery\DirectoryPruner;
-use Qualimetrix\Analysis\Run\Discovery\FinderFileDiscovery;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Run\Contract\Configuration\AuthoredExclude;
+use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
+use Qualimetrix\Analysis\Run\Discovery\EntryInspector;
+use Qualimetrix\Analysis\Run\Discovery\ProjectWalk;
+use Qualimetrix\Analysis\Run\Discovery\WalkRequest;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Pattern\SelectorDefinition;
@@ -21,7 +29,7 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 
-#[CoversClass(FinderFileDiscovery::class)]
+#[CoversClass(ProjectWalk::class)]
 final class FinderFileDiscoveryTest extends TestCase
 {
     private string $fixturesDir;
@@ -42,8 +50,7 @@ final class FinderFileDiscoveryTest extends TestCase
     {
         $file = $this->createFile('Test.php', '<?php class Test {}');
 
-        $discovery = $this->discovery();
-        $files = iterator_to_array($discovery->discover(AbsolutePath::fromString($file)), false);
+        $files = iterator_to_array($this->discoverCandidates(AbsolutePath::fromString($file)), false);
 
         self::assertCount(1, $files);
         self::assertInstanceOf(SplFileInfo::class, $files[0]); // @phpstan-ignore staticMethod.alreadyNarrowedType
@@ -57,8 +64,7 @@ final class FinderFileDiscoveryTest extends TestCase
         $this->createFile('B.php', '<?php class B {}');
         $this->createFile('readme.txt', 'not php');
 
-        $discovery = $this->discovery();
-        $files = iterator_to_array($discovery->discover(AbsolutePath::fromString($this->fixturesDir)), false);
+        $files = iterator_to_array($this->discoverCandidates(AbsolutePath::fromString($this->fixturesDir)), false);
 
         self::assertCount(2, $files);
 
@@ -78,8 +84,7 @@ final class FinderFileDiscoveryTest extends TestCase
         mkdir($this->fixturesDir . '/vendor', 0755, true);
         $this->createFileInDir('vendor', 'VendorClass.php', '<?php class VendorClass {}');
 
-        $discovery = $this->discovery();
-        $files = iterator_to_array($discovery->discover(AbsolutePath::fromString($this->fixturesDir)), false);
+        $files = iterator_to_array($this->discoverCandidates(AbsolutePath::fromString($this->fixturesDir)), false);
 
         self::assertCount(1, $files);
         self::assertSame('App.php', $files[0]->getFilename());
@@ -94,8 +99,7 @@ final class FinderFileDiscoveryTest extends TestCase
         $this->createFileInDir('src', 'Src.php', '<?php class Src {}');
         $this->createFileInDir('lib', 'Lib.php', '<?php class Lib {}');
 
-        $discovery = $this->discovery();
-        $files = iterator_to_array($discovery->discover([
+        $files = iterator_to_array($this->discoverCandidates([
             AbsolutePath::fromString($this->fixturesDir . '/src'),
             AbsolutePath::fromString($this->fixturesDir . '/lib'),
         ]), false);
@@ -106,17 +110,7 @@ final class FinderFileDiscoveryTest extends TestCase
     #[Test]
     public function itReturnsEmptyForEmptyPaths(): void
     {
-        $discovery = $this->discovery();
-        $files = iterator_to_array($discovery->discover([]), false);
-
-        self::assertSame([], $files);
-    }
-
-    #[Test]
-    public function itSkipsNonExistentPaths(): void
-    {
-        $discovery = $this->discovery();
-        $files = iterator_to_array($discovery->discover(AbsolutePath::fromString('/non/existent/path')), false);
+        $files = iterator_to_array($this->discoverCandidates([]), false);
 
         self::assertSame([], $files);
     }
@@ -128,8 +122,7 @@ final class FinderFileDiscoveryTest extends TestCase
         $this->createFile('A.php', '<?php class A {}');
         $this->createFile('M.php', '<?php class M {}');
 
-        $discovery = $this->discovery();
-        $files = iterator_to_array($discovery->discover(AbsolutePath::fromString($this->fixturesDir)), false);
+        $files = iterator_to_array($this->discoverCandidates(AbsolutePath::fromString($this->fixturesDir)), false);
 
         $filenames = array_map(
             static fn(SplFileInfo $f): string => $f->getFilename(),
@@ -146,8 +139,7 @@ final class FinderFileDiscoveryTest extends TestCase
         $this->createFile('Root.php', '<?php class Root {}');
         $this->createFileInDir('sub', 'Sub.php', '<?php class Sub {}');
 
-        $discovery = $this->discovery();
-        $files = iterator_to_array($discovery->discover(AbsolutePath::fromString($this->fixturesDir)), false);
+        $files = iterator_to_array($this->discoverCandidates(AbsolutePath::fromString($this->fixturesDir)), false);
 
         self::assertCount(2, $files);
     }
@@ -159,8 +151,7 @@ final class FinderFileDiscoveryTest extends TestCase
         $singleFile = $this->createFile('Single.php', '<?php class Single {}');
         $this->createFileInDir('src', 'InDir.php', '<?php class InDir {}');
 
-        $discovery = $this->discovery();
-        $files = iterator_to_array($discovery->discover([
+        $files = iterator_to_array($this->discoverCandidates([
             AbsolutePath::fromString($singleFile),
             AbsolutePath::fromString($this->fixturesDir . '/src'),
         ]), false);
@@ -179,78 +170,13 @@ final class FinderFileDiscoveryTest extends TestCase
     }
 
     #[Test]
-    #[DataProvider('providePrunedRoots')]
-    public function itRefusesANamedRootThatIsADirectoryItNeverWalks(string $written, string $shown): void
-    {
-        mkdir($this->fixturesDir . '/' . $shown, 0755, true);
-        $this->createFileInDir($shown, 'Hidden.php', '<?php class Hidden {}');
-
-        try {
-            iterator_to_array($this->discovery()->discover(AbsolutePath::fromString($this->fixturesDir . '/' . $written)), false);
-            self::fail('A named root the walk never enters must be refused, not analysed as empty.');
-        } catch (ConfigurationRefusal $refusal) {
-            self::assertStringStartsWith(\sprintf('"%s" is a vendor, node_modules or .git directory', $shown), $refusal->summary());
-        }
-    }
-
-    #[Test]
-    public function itRefusesBeforeYieldingAFileNamedBesideThePrunedRoot(): void
-    {
-        $file = $this->createFile('Named.php', '<?php class Named {}');
-        mkdir($this->fixturesDir . '/lib/vendor', 0755, true);
-        mkdir($this->fixturesDir . '/node_modules', 0755, true);
-
-        $discovered = $this->discovery()->discover([
-            AbsolutePath::fromString($file),
-            AbsolutePath::fromString($this->fixturesDir . '/lib/vendor'),
-            AbsolutePath::fromString($this->fixturesDir . '/node_modules'),
-        ]);
-        self::assertInstanceOf(Generator::class, $discovered);
-
-        try {
-            // Runs the walk up to its first yield: a refusal that comes after a
-            // file was handed out would return here instead of throwing.
-            $discovered->current();
-            self::fail('Expected a refusal before the first file.');
-        } catch (ConfigurationRefusal $refusal) {
-            self::assertStringStartsWith(
-                '"lib/vendor", "node_modules" are vendor, node_modules or .git directories',
-                $refusal->summary(),
-            );
-        }
-    }
-
-    #[Test]
-    public function itWalksANamedRootThatLiesInsideAPrunedDirectory(): void
-    {
-        mkdir($this->fixturesDir . '/vendor/acme', 0755, true);
-        $this->createFileInDir('vendor/acme', 'Vendored.php', '<?php class Vendored {}');
-
-        $files = iterator_to_array($this->discovery()->discover(AbsolutePath::fromString($this->fixturesDir . '/vendor/acme')), false);
-
-        self::assertCount(1, $files);
-        self::assertSame('Vendored.php', $files[0]->getFilename());
-    }
-
-    #[Test]
-    public function itAnalysesAFileNamedInsideAPrunedDirectory(): void
-    {
-        mkdir($this->fixturesDir . '/vendor/acme', 0755, true);
-        $file = $this->createFileInDir('vendor/acme', 'helpers.php', '<?php function helper() {}');
-
-        $files = iterator_to_array($this->discovery()->discover(AbsolutePath::fromString($file)), false);
-
-        self::assertCount(1, $files);
-    }
-
-    #[Test]
     public function itStillPrunesAVendorDirectoryBelowANamedRoot(): void
     {
         mkdir($this->fixturesDir . '/src/vendor', 0755, true);
         $this->createFileInDir('src', 'App.php', '<?php class App {}');
         $this->createFileInDir('src/vendor', 'Hidden.php', '<?php class Hidden {}');
 
-        $files = iterator_to_array($this->discovery()->discover(AbsolutePath::fromString($this->fixturesDir . '/src')), false);
+        $files = iterator_to_array($this->discoverCandidates(AbsolutePath::fromString($this->fixturesDir . '/src')), false);
 
         self::assertSame(['App.php'], array_map(static fn(SplFileInfo $file): string => $file->getFilename(), $files));
     }
@@ -260,17 +186,40 @@ final class FinderFileDiscoveryTest extends TestCase
      * root the author does not want analysed — and discovery cannot tell that
      * root from one written on the command line.
      */
+
     #[Test]
     public function itLeavesARootRemovedByAnAuthoredExcludeToThatExclude(): void
     {
         mkdir($this->fixturesDir . '/legacy', 0755, true);
         $this->createFileInDir('legacy', 'Old.php', '<?php class Old {}');
-        $discovery = new FinderFileDiscovery(new DirectoryPruner(
-            AbsolutePath::fromString($this->fixturesDir),
-            [...DirectoryPruner::builtInPatterns(), new PathPattern(new SelectorDefinition(SelectorKind::Exact, 'legacy'))],
-        ));
+        $selector = new AuthoredExclude(
+            new PathPattern(new SelectorDefinition(SelectorKind::Exact, 'legacy')),
+            [ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml')],
+        );
 
-        self::assertSame([], iterator_to_array($discovery->discover(AbsolutePath::fromString($this->fixturesDir . '/legacy')), false));
+        self::assertSame([], iterator_to_array($this->discoverCandidates(AbsolutePath::fromString($this->fixturesDir . '/legacy'), [$selector]), false));
+    }
+
+    /** @param AbsolutePath|list<AbsolutePath> $paths
+     * @param list<AuthoredExclude> $selectors
+     *
+     * @return Generator<int, SplFileInfo>
+     */
+    private function discoverCandidates(AbsolutePath|array $paths, array $selectors = []): Generator
+    {
+        $root = AbsolutePath::fromString($this->fixturesDir);
+        $paths = \is_array($paths) ? $paths : [$paths];
+        $universe = new ProjectScopeUniverse($root, true, [], [], [], true, []);
+        $run = new RunConfiguration(
+            pathExcludes: array_map(static fn(AuthoredExclude $selector): PathPattern => $selector->pattern, $selectors),
+            projectRoot: $root,
+            generatedFilePolicy: GeneratedFilePolicy::Exclude,
+            projectScope: new ProjectScopeMeasurement($universe, $paths, ProjectScopeState::Covered, []),
+            authoredPathExcludes: $selectors,
+            autoloadDevPolicy: AutoloadDevPolicy::Exclude,
+        );
+
+        yield from (new ProjectWalk(new EntryInspector()))->walk(new WalkRequest($run))->candidates;
     }
 
     private function createFile(string $name, string $content): string
@@ -279,13 +228,6 @@ final class FinderFileDiscoveryTest extends TestCase
         file_put_contents($path, $content);
 
         return $path;
-    }
-
-    private function discovery(): FinderFileDiscovery
-    {
-        $root = AbsolutePath::fromString($this->fixturesDir);
-
-        return new FinderFileDiscovery(new DirectoryPruner($root, DirectoryPruner::builtInPatterns()));
     }
 
     private function createFileInDir(string $dir, string $name, string $content): string

@@ -41,42 +41,16 @@ final class RetiredSuppressionOptions
         'excludePaths' => 'suppressPaths',
     ];
 
-    /**
-     * Refuses a retired option written inside a `rules:` block.
-     *
-     * Finds the block itself rather than being handed one: reading a raw
-     * document is this refusal's business, and the loader's own structural
-     * checks stay free of the branches that come with it.
-     *
-     * @param array<array-key, mixed> $rawConfig the document exactly as written
-     * @param string $rulesKey the spelling its author gave the `rules` root
-     */
-    public static function refuseInRules(array $rawConfig, string $rulesKey, string $path): void
+    /** @return array<string, string> Canonical retired document keys and their replacement wording. */
+    public static function documentKeys(): array
     {
-        $section = $rawConfig[$rulesKey] ?? null;
-
-        if (!\is_array($section)) {
-            return;
+        $retired = [];
+        foreach (self::REPLACEMENTS as $old => $replacement) {
+            $canonical = ConfigKeySpelling::rewriteLike($old, 'a-b');
+            $new = ConfigKeySpelling::rewriteLike($replacement, 'a-b');
+            $retired[$canonical] = self::refusalText($canonical, $new);
         }
-
-        foreach ($section as $ruleConfig) {
-            if (!\is_array($ruleConfig)) {
-                continue;
-            }
-
-            foreach (array_keys($ruleConfig) as $authored) {
-                $refusal = self::refusalFor((string) $authored);
-                $authoredString = (string) $authored;
-
-                if ($refusal !== null) {
-                    throw ConfigurationRefusal::atConfigFileKey(
-                        $path,
-                        RefusedPosition::open([$rulesKey, $authoredString], $authoredString),
-                        $refusal,
-                    );
-                }
-            }
-        }
+        return $retired;
     }
 
     /**

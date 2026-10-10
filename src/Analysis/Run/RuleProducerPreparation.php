@@ -5,26 +5,21 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Run;
 
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
+
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
-use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
-use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
-use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
-use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
-use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
-use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
-use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
-use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
-use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput;
-use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface;
-use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
-use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\UnmatchedTypeWarningInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
 
@@ -43,13 +38,10 @@ final readonly class RuleProducerPreparation
      *                                               that one subject has one construction.
      */
     public function __construct(
-        private LayerPolicyPreparationInterface $layerPolicyPreparation,
+        private LayerPolicyPreparationInterface&UnmatchedTypeWarningInterface $layerPolicyPreparation,
         private CircularDependencyPreparationInterface $circularDependencyPreparation,
-        private InlineDirectivePolicyInterface $inlineDirectivePolicy,
-        private ThresholdDirectiveAuditInterface $thresholdDirectiveAudit,
         private FileSetInspectionComposite $fileSetInspection,
         private RuleSelectorProducerGate $producerGate,
-        private RuleConfigurationInterface $ruleConfiguration,
     ) {}
 
     /**
@@ -60,8 +52,6 @@ final readonly class RuleProducerPreparation
         iterable $classUniverse,
         ProfilerInterface $profiler,
     ): void {
-        $selection = $this->ruleConfiguration->selection();
-        $ruleOptions = $this->ruleConfiguration->all();
         $enabled = false;
 
         // Every producer that reads the prepared policy, not just the first
@@ -70,8 +60,8 @@ final readonly class RuleProducerPreparation
         // alone. As a producer of its own it is not, and asking about one of
         // two left `--only-rule=architecture.unassigned-class` reaching an
         // unprepared policy. The list is the capability's, not the run's.
-        foreach (LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES as $producerRuleName) {
-            if ($this->producerGate->isEnabled($producerRuleName, $selection->only, $selection->disabled, $ruleOptions)) {
+        foreach (ArchitectureChannels::PRODUCERS as $producerRuleName) {
+            if ($this->producerGate->isEnabled($producerRuleName)) {
                 $enabled = true;
 
                 break;
@@ -93,13 +83,7 @@ final readonly class RuleProducerPreparation
         DependencyGraphInterface $graph,
         ProfilerInterface $profiler,
     ): void {
-        $selection = $this->ruleConfiguration->selection();
-        if (!$this->producerGate->isEnabled(
-            CircularDependencyPreparationInterface::PRODUCER_RULE_NAME,
-            $selection->only,
-            $selection->disabled,
-            $this->ruleConfiguration->all(),
-        )) {
+        if (!$this->producerGate->isEnabled(CircularDependencyPreparationInterface::PRODUCER_RULE_NAME)) {
             $this->circularDependencyPreparation->reset();
 
             return;
@@ -110,95 +94,31 @@ final readonly class RuleProducerPreparation
         $profiler->stop('cycles');
     }
 
-    /**
-     * Hands this run's inline directives to the capability that owns them.
-     *
-     * Unlike every other producer prepared here, this one is prepared whether
-     * or not its rule is enabled, because what is prepared is not the rule's
-     * state — it is the run's own record of what the author wrote, and a
-     * caller may ask about it without asking the rule for findings.
-     *
-     * Switching the rule off still silences everything the rule emits, and by
-     * two gates that are not this one: the channel is opened by the rule as it
-     * runs ({@see InlineDirectivePolicyInterface::auditDirectiveUsage()}), and
-     * the validator that reports malformed directives executes inside its
-     * producer's slot, which a disabled producer does not get. Clearing the
-     * store as well silenced a third thing nobody asked to silence — the
-     * suppression half of a directive audit, which then read as "this tree has
-     * no annotations".
-     *
-     * @param array<string, list<Suppression>> $suppressions
-     * @param array<string, list<ThresholdOverride>> $thresholdOverrides
-     * @param array<string, list<ThresholdDiagnostic>> $thresholdDiagnostics
-     */
-    public function prepareInlineDirectives(
-        array $suppressions,
-        array $thresholdOverrides,
-        array $thresholdDiagnostics,
-    ): void {
-        $this->inlineDirectivePolicy->prepare($suppressions, $thresholdOverrides, $thresholdDiagnostics);
-    }
-
-    /**
-     * The second question about the same directives, asked once the findings
-     * exist: which of them silenced nothing.
-     *
-     * @param list<Finding> $findings
-     *
-     * @return list<Finding>
-     */
-    public function auditInlineDirectives(array $findings, LevelActivity $levelActivity): array
+    public function unmatchedTypeWarning(ProjectScopeJudgement $scope, ChannelPublication $publication): ?string
     {
-        return $this->inlineDirectivePolicy->auditDirectiveUsage($findings, $levelActivity);
-    }
+        if (!$publication->publishes(
+            ArchitectureChannels::LAYER_DECLARATION_PRODUCER_NAME,
+            new FindingChannel(ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME),
+            SymbolLevel::Project,
+        )) {
+            return null;
+        }
 
-    /**
-     * What each authored suppression did, as verdicts rather than as the one
-     * channel the run publishes.
-     *
-     * @param list<Finding> $findings
-     *
-     * @return list<DirectiveVerdict>
-     */
-    public function directiveVerdicts(array $findings, LevelActivity $levelActivity): array
-    {
-        return $this->inlineDirectivePolicy->directiveVerdicts($findings, $levelActivity);
-    }
-
-    /**
-     * The other half of the same question, and the expensive one: what each
-     * authored `@qmx-threshold` did.
-     *
-     * It is asked here rather than from the pipeline for the same reason
-     * {@see auditInlineDirectives()} is: this is where Run holds its side of
-     * the conversation with the capabilities that produce rules, so the
-     * pipeline keeps naming phases instead of collaborators.
-     *
-     * @return list<DirectiveVerdict>
-     */
-    public function auditThresholdDirectives(
-        AnalysisContext $context,
-        RuleExecutionInterface $executor,
-        RuleExecutionResult $baseline,
-        DirectiveSweepScope $sweep,
-    ): array {
-        return $this->thresholdDirectiveAudit->verdicts(
-            new ThresholdDirectiveAuditInput($context, $executor, $baseline, $sweep),
-        );
+        return $this->layerPolicyPreparation->notJudgedWarning($scope);
     }
 
     /**
      * @param list<SplFileInfo> $eligibleFiles
+     * @param array<string, RelativePath> $publishedByInput
+     *
+     * @return list<AnalysisFailure>
      */
-    public function inspectFiles(array $eligibleFiles, AbsolutePath $projectRoot): void
+    public function inspectFiles(array $eligibleFiles, AbsolutePath $projectRoot, array $publishedByInput): array
     {
-        $selection = $this->ruleConfiguration->selection();
-        $this->fileSetInspection->inspect(
+        return $this->fileSetInspection->inspect(
             $eligibleFiles,
             $projectRoot,
-            $selection->only,
-            $selection->disabled,
-            $this->ruleConfiguration->all(),
+            $publishedByInput,
         );
     }
 }

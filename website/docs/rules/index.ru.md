@@ -1,6 +1,6 @@
 # Обзор правил
 
-Qualimetrix содержит набор встроенных правил для проверки качества PHP-кода. Каждое правило анализирует определённый аспект кода -- сложность, размер, связанность, проектирование, поддерживаемость или распространённые плохие практики -- и сообщает о нарушениях при превышении пороговых значений.
+Qualimetrix содержит набор встроенных правил для проверки качества PHP-кода. Каждое правило анализирует определённый аспект кода -- сложность, размер, связанность, проектирование, поддерживаемость или распространённые плохие практики -- и сообщает о нарушениях при достижении или пересечении порога в направлении, заданном правилом.
 
 ## Идентификаторы правил и судимые метрики
 
@@ -102,10 +102,11 @@ Qualimetrix содержит набор встроенных правил для
 
 ### Правила архитектуры
 
-| Правило                                       | ID                                 | Что проверяет                                                    | Warning | Error   |
-| --------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------- | ------- | ------- |
-| [Циклические зависимости](architecture.ru.md) | `architecture.circular-dependency` | Классы, которые зависят друг от друга по кругу                   | --      | Error   |
-| [Нарушения слоёв](architecture.ru.md)         | `architecture.layer-violation`     | Зависимости между слоями, не разрешённые архитектурной политикой | --      | Warning |
+| Правило                                                        | ID                                 | Что проверяет                                                    | Warning | Error     |
+| -------------------------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------- | ------- | --------- |
+| [Циклические зависимости](architecture.ru.md)                  | `architecture.circular-dependency` | Классы, которые зависят друг от друга по кругу                   | --      | Error     |
+| [Нарушения слоёв](architecture.ru.md)                          | `architecture.layer-violation`     | Зависимости между слоями, не разрешённые архитектурной политикой | --      | Warning   |
+| [Диагностики объявления](architecture.ru.md#layer-declaration) | `architecture.layer-declaration`   | Критерии слоёв, покрытие и установленные эффекты объявления      | —       | По каналу |
 
 [Подробнее о правилах архитектуры --&gt;](architecture.ru.md)
 
@@ -113,9 +114,9 @@ Qualimetrix содержит набор встроенных правил для
 
 Эти правила обнаруживают дублированные блоки кода по всей кодовой базе с помощью анализа потока токенов.
 
-| Правило                                | ID                  | Что обнаруживает                               | Warning    | Error       |
-| -------------------------------------- | ------------------- | ---------------------------------------------- | ---------- | ----------- |
-| [Дублирование кода](duplication.ru.md) | `duplication.clone` | Структурно идентичные блоки кода между файлами | < 50 строк | >= 50 строк |
+| Правило                                | ID                  | Что обнаруживает                               | Warning         | Error            |
+| -------------------------------------- | ------------------- | ---------------------------------------------- | --------------- | ---------------- |
+| [Дублирование кода](duplication.ru.md) | `duplication.clone` | Структурно идентичные блоки кода между файлами | < 50 строк кода | >= 50 строк кода |
 
 [Подробнее о правилах дублирования --&gt;](duplication.ru.md)
 
@@ -158,7 +159,9 @@ Qualimetrix содержит набор встроенных правил для
 
 ### Правила аннотаций
 
-Это правило проверяет сами аннотации `@qmx-ignore` / `@qmx-threshold`, написанные в коде, а не код. Оно публикуется через четыре канала — `annotation.unresolved-directive`, `annotation.unsupported-threshold` и `annotation.invalid-threshold` являются ошибками конфигурации и валят прогон безусловно; `annotation.unused-directive` — обычный долг с настраиваемой severity и единственный канал, который нельзя адресовать `@qmx-ignore`.
+Это правило проверяет сами аннотации `@qmx-ignore` / `@qmx-threshold`, написанные в коде, а не код. Оно публикуется через четыре канала — `annotation.unresolved-directive`, `annotation.unsupported-threshold` и `annotation.invalid-threshold` являются ошибками конфигурации и валят прогон безусловно; `annotation.unused-directive` — обычный долг с настраиваемой severity и не адресуется через `@qmx-ignore`.
+
+Канал дублирования `duplication.clone` также не адресуется через `@qmx-ignore`.
 
 | Правило                                | ID                     | Что обнаруживает                                                                                            |
 | -------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------- |
@@ -248,7 +251,7 @@ rules:
 - **Cohesion:** `cohesion.lcom` (правило); `cohesion.tcc`, `cohesion.lcc` (только метрики, не правила — используются как входы `design.god-class`)
 - **Coupling:** `coupling.cbo`, `coupling.instability`, `coupling.distance`, `coupling.class-rank`, `coupling.unmatched-framework-namespace`
 - **Maintainability:** `maintainability.mi`
-- **Architecture:** `architecture.circular-dependency`, `architecture.layer-violation`, `architecture.unassigned-class`
+- **Architecture:** `architecture.circular-dependency`, `architecture.layer-violation`, `architecture.layer-declaration`, `architecture.unassigned-class`
 - **Duplication:** `duplication.clone`
 - **Code Smell:** `code-smell.boolean-argument`, `code-smell.count-in-loop`, `code-smell.debug-code`, `code-smell.empty-catch`, `code-smell.error-suppression`, `code-smell.eval`, `code-smell.exit`, `code-smell.goto`, `code-smell.superglobals`, `code-smell.long-parameter-list`, `code-smell.unreachable-code`, `code-smell.identical-subexpression`, `code-smell.constructor-overinjection`, `code-smell.unused-private`
 - **Security:** `security.hardcoded-credentials`, `security.sql-injection`, `security.xss`, `security.command-injection`, `security.sensitive-parameter`
@@ -258,3 +261,7 @@ rules:
 
 Отключение правила: `--disable-rule=complexity.npath`. Отключение группы: `--disable-rule=code-smell.*` (по wildcard; захватывает только потомков, не сам `code-smell`).
 -->
+
+## Producers и channels
+
+Rule metadata именует producers; producer может публиковать несколько channels. Имена computed/health и их уровни берутся из invocation snapshot, не фиксированного числа. Bare producer selector адресует producer; channel-name:level использует declared channel code с одним реальным level witness. Diagnostic roles могут допускать дополнительную публикацию под only filters. См. [selection](../usage/cli-options.ru.md#опции-правил).

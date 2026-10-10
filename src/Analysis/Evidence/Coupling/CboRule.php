@@ -9,14 +9,16 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -62,7 +64,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks CBO (Coupling Between Objects) at class and namespace levels';
     }
@@ -127,15 +129,17 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Higher,
-                JudgedMetrics::of(
-                    MetricName::COUPLING_CBO,
+            self::NAME => self::judgingHigher(
+                [MetricName::COUPLING_CBO,
                     MetricName::COUPLING_CBO_APP,
-                    MetricName::COUPLING_CBO_OWN,
-                ),
+                    MetricName::COUPLING_CBO_OWN,],
                 SymbolLevel::Class_,
                 SymbolLevel::Namespace_,
+            )->withGates(
+                self::populationGate('class-coordinate', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', self::kindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
+                self::populationGate('class-cbo', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', self::keyPresent('class-cbo', ['all' => MetricName::COUPLING_CBO, 'application' => MetricName::COUPLING_CBO_APP]), 'The selected CBO publication is unavailable.'),
+                self::populationGate('own-classes', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', self::keyThreshold('own-classes', [MetricName::SIZE_CLASS_COUNT], '>=', 'own-classes', 'zero', true), 'Own classes are below the configured minimum.'),
+                self::populationGate('own-cbo', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', self::keyPresent('own-cbo', [MetricName::COUPLING_CBO_OWN]), 'Own CBO was not published.'),
             ),
         ];
     }
@@ -149,9 +153,10 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             return [];
         }
         $findings = [];
+        $declaration = self::channelDeclarations()[self::NAME];
 
-        foreach ($context->metrics->allDeclarations() as $classInfo) {
-            $finding = $this->classFinding($classInfo, $context, $this->options->class);
+        foreach ($context->metrics->allClassDeclarations() as $classInfo) {
+            $finding = $this->classFinding($classInfo, $context, $this->options->class, $declaration);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -160,20 +165,22 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         return $findings;
     }
 
-    private function classFinding(SymbolInfo $info, AnalysisContext $context, ClassCboOptions $options): ?Finding
+    private function classFinding(SymbolInfo $info, AnalysisContext $context, ClassCboOptions $options, ChannelDeclaration $declaration): ?Finding
     {
         $subject = $info->subject ?? throw new LogicException('CBO class findings require an exact class declaration subject');
-        if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+        $metrics = null;
+        $applicationScope = false;
+        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), $declaration, (function () use ($context, $subject, &$metrics, &$options, &$applicationScope): iterable {
+            yield GateInput::kind('class-coordinate', $subject->toSymbolPath()->getType());
+            $options = $this->getEffectiveOptions($context, $options, $subject);
+            $metrics = $context->metrics->getSubject($subject);
+            $applicationScope = $options->scope === 'application';
+            yield GateInput::metrics('class-cbo', $metrics, selector: $options->scope);
+        })())) {
             return null;
         }
-
-        $metrics = $context->metrics->get($subject->toSymbolPath());
-        $applicationScope = $options->scope === 'application';
         $metricName = $applicationScope ? MetricName::COUPLING_CBO_APP : MetricName::COUPLING_CBO;
         $cbo = $metrics->get($metricName);
-        if ($cbo === null) {
-            return null;
-        }
 
         $frameworkCe = $applicationScope ? (int) ($metrics->get(MetricName::COUPLING_CE_FRAMEWORK) ?? 0) : null;
 
@@ -210,9 +217,10 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             return [];
         }
         $findings = [];
+        $declaration = self::channelDeclarations()[self::NAME];
 
         foreach ($context->metrics->all(SymbolLevel::Namespace_) as $nsInfo) {
-            $finding = $this->namespaceFinding($nsInfo, $context, $this->options->namespace);
+            $finding = $this->namespaceFinding($nsInfo, $context, $this->options->namespace, $declaration);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -221,13 +229,16 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         return $findings;
     }
 
-    private function namespaceFinding(SymbolInfo $info, AnalysisContext $context, NamespaceCboOptions $options): ?Finding
+    private function namespaceFinding(SymbolInfo $info, AnalysisContext $context, NamespaceCboOptions $options, ChannelDeclaration $declaration): ?Finding
     {
         $subject = $info->subject ?? MetricSubject::aggregate($info->symbolPath);
         $metrics = $context->metrics->get($info->symbolPath);
-        $classCount = (int) ($metrics->get(MetricName::SIZE_CLASS_COUNT) ?? 0);
+        $options = $this->getEffectiveOptions($context, $options, $subject);
         $cbo = $metrics->get(MetricName::COUPLING_CBO_OWN);
-        if ($classCount < $options->minClassCount || $cbo === null) {
+        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Namespace_, PopulationIdentity::aggregate($info->symbolPath), $declaration, (static function () use ($metrics, $options): iterable {
+            yield GateInput::metrics('own-classes', $metrics, $options->minClassCount);
+            yield GateInput::metrics('own-cbo', $metrics);
+        })())) {
             return null;
         }
 
@@ -256,7 +267,9 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     ): ?Finding {
         /** @var ClassCboOptions|NamespaceCboOptions $options */
         $options = $this->getEffectiveOptions($context, $options, $subject);
-        $metrics = $context->metrics->get($subject->toSymbolPath());
+        $metrics = $presentation['namespaceLevel']
+            ? $context->metrics->get($symbolInfo->symbolPath)
+            : $context->metrics->getSubject($subject);
         // A namespace is judged on its own scope, so its direction is read there too.
         $ca = (int) $metrics->require($presentation['namespaceLevel'] ? MetricName::COUPLING_CA_OWN : MetricName::COUPLING_CA);
         $ce = (int) $metrics->require($presentation['namespaceLevel'] ? MetricName::COUPLING_CE_OWN : MetricName::COUPLING_CE);

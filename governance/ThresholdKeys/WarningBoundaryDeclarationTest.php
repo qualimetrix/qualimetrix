@@ -7,6 +7,7 @@ namespace Qualimetrix\Governance\ThresholdKeys;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
@@ -14,9 +15,10 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\NoConfiguredBoundary;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use ReflectionObject;
 use ReflectionProperty;
 use Throwable;
@@ -32,7 +34,7 @@ use Throwable;
  * `getSeverity()` never. Each covers the other's blind spot.
  *
  * **A switch point is defined here, once.** `b` is a switch point of an object
- * when `getSeverity()` is not constant over `{b-1, b, b+1}` for an integer `b`,
+ * when `getSeverity()` changes between silence and a finding over `{b-1, b, b+1}` for an integer `b`,
  * or `{b-δ, b, b+δ, b+1}` for a fractional one. The `b+1` probe is not padding:
  * an exclusive comparison over `(int) $value` moves the switch to `b+1`, and a
  * neighbourhood of `b∓δ` cannot see it. The `severity_switch_points` column of
@@ -128,7 +130,8 @@ final class WarningBoundaryDeclarationTest extends TestCase
 
     /**
      * The other half: options that stay outside `ThresholdAwareOptionsInterface`
-     * must not be sitting on a boundary. Silence is how such a class reports to
+     * must not hide a warning boundary. An error boundary may change severity
+     * while both sides still report. Silence is how such a class reports to
      * the reader, so a configured threshold hiding behind that silence would be
      * printed as "not resolvable" forever.
      *
@@ -138,7 +141,7 @@ final class WarningBoundaryDeclarationTest extends TestCase
      * members — two of them — and says so.
      */
     #[Test]
-    public function itFindsNoSeverityChangeInOptionsThatDenyHavingABoundary(): void
+    public function itFindsNoHiddenWarningBoundaryInPlainOptions(): void
     {
         $checked = 0;
 
@@ -157,9 +160,9 @@ final class WarningBoundaryDeclarationTest extends TestCase
                 }
 
                 self::assertFalse(
-                    self::isSwitchPoint($options, $value),
+                    self::isWarningSwitchPoint($options, $value),
                     \sprintf(
-                        '%s reports no warning boundary, yet its public member $%s = %s is where getSeverity() changes'
+                        '%s reports no warning boundary, yet its public member $%s = %s is where getSeverity() changes between silence and a finding'
                         . ' its answer. Either the member is a boundary and the class must say so, or the comparison'
                         . ' around it is not the one the class believes it is.',
                         $label,
@@ -344,8 +347,9 @@ final class WarningBoundaryDeclarationTest extends TestCase
         $rules = $container->get(RuleRegistryInterface::class);
         \assert($rules instanceof RuleRegistryInterface);
 
-        $factory = $container->get(RuleOptionsFactory::class);
-        \assert($factory instanceof RuleOptionsFactory);
+        $execution = $container->get(RuleExecutionInterface::class);
+        \assert($execution instanceof RuleExecutionInterface);
+        $snapshot = ResolvedOptionsFixture::build(FindingConfiguration::none(), $execution->allRules());
 
         foreach ($rules->getClasses() as $ruleClass) {
             if (ChannelDeclarationReader::read($ruleClass) === []) {
@@ -354,11 +358,11 @@ final class WarningBoundaryDeclarationTest extends TestCase
 
             $name = RuleNameReader::read($ruleClass);
 
-            yield $name => $factory->create($name, $ruleClass::getOptionsClass());
+            yield $name => $snapshot->for($name);
         }
     }
 
-    private static function isSwitchPoint(RuleOptionsInterface|LevelOptionsInterface $options, int|float $value): bool
+    private static function isWarningSwitchPoint(RuleOptionsInterface|LevelOptionsInterface $options, int|float $value): bool
     {
         $probes = \is_int($value)
             ? [$value - 1, $value, $value + 1]
@@ -370,7 +374,8 @@ final class WarningBoundaryDeclarationTest extends TestCase
             $answers[] = self::severity($options, $probe);
         }
 
-        return \count(array_unique($answers)) > 1;
+        return \in_array('threw', $answers, true)
+            || (\in_array('none', $answers, true) && \count(array_unique($answers)) > 1);
     }
 
     private static function severity(RuleOptionsInterface|LevelOptionsInterface $options, int|float $value): string

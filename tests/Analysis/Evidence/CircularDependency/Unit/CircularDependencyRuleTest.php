@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis;
@@ -19,6 +20,7 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\FixedCycleDetector;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(CircularDependencyRule::class)]
 final class CircularDependencyRuleTest extends TestCase
@@ -34,6 +36,36 @@ final class CircularDependencyRuleTest extends TestCase
     }
 
     #[Test]
+    public function itCountsCeilingExclusionsBeforeSeverityAndBypassesNonpositiveCeilings(): void
+    {
+        $this->prepare([
+            new Cycle($this->paths(['A', 'B']), $this->paths(['A', 'B', 'A'])),
+            new Cycle($this->paths(['A', 'B', 'C']), $this->paths(['A', 'B', 'C', 'A'])),
+        ]);
+        $channel = new \Qualimetrix\Analysis\Finding\Contract\FindingChannel(CircularDependencyRule::NAME);
+        $publication = new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement([
+            new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
+                new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(CircularDependencyRule::NAME, $channel, \Qualimetrix\Core\Symbol\SymbolLevel::Project, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable),
+                new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
+            ),
+        ], null));
+        foreach ([2, 0, -1] as $ceiling) {
+            $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(($publication)->publishes(...));
+            $findings = $this->rule(new CircularDependencyOptions(maxCycleSize: $ceiling))->analyze(
+                (new AnalysisContext(new InMemoryMetricRepository()))->withPopulationTrace($session),
+            );
+            $population = $session->freeze();
+            self::assertCount($ceiling > 0 ? 1 : 2, $findings);
+            self::assertSame($ceiling > 0 ? 1 : 2, $population->judgedCount());
+            self::assertSame($ceiling > 0 ? 1 : 0, $population->unjudgedCount());
+            if ($ceiling > 0) {
+                self::assertSame('cycle', $population->abstentions()[0]->unit);
+                self::assertSame('max-cycle-size', $population->abstentions()[0]->gate);
+            }
+        }
+    }
+
+    #[Test]
     public function itReturnsCorrectName(): void
     {
         $rule = $this->rule(new CircularDependencyOptions());
@@ -46,7 +78,7 @@ final class CircularDependencyRuleTest extends TestCase
     {
         $rule = $this->rule(new CircularDependencyOptions());
 
-        self::assertStringContainsString('circular', strtolower($rule->getDescription()));
+        self::assertStringContainsString('circular', strtolower($rule::getDescription()));
     }
 
     #[Test]
@@ -251,11 +283,11 @@ final class CircularDependencyRuleTest extends TestCase
     #[Test]
     public function itCreatesOptionsFromArrayWithSnakeCase(): void
     {
-        $options = CircularDependencyOptions::fromArray([
+        $options = CircularDependencyOptions::fromResolved(ResolvedOptionsFixture::values(CircularDependencyOptions::class, [
             'enabled' => true,
             'max_cycle_size' => 5,
             'direct_as_error' => false,
-        ]);
+        ]));
 
         self::assertTrue($options->enabled);
         self::assertSame(5, $options->maxCycleSize);
@@ -265,11 +297,11 @@ final class CircularDependencyRuleTest extends TestCase
     #[Test]
     public function itCreatesOptionsFromArrayWithCamelCase(): void
     {
-        $options = CircularDependencyOptions::fromArray([
+        $options = CircularDependencyOptions::fromResolved(ResolvedOptionsFixture::values(CircularDependencyOptions::class, [
             'enabled' => true,
             'maxCycleSize' => 3,
             'directAsError' => true,
-        ]);
+        ]));
 
         self::assertTrue($options->enabled);
         self::assertSame(3, $options->maxCycleSize);
@@ -277,14 +309,14 @@ final class CircularDependencyRuleTest extends TestCase
     }
 
     #[Test]
-    public function itGivesSnakeCasePrecedenceOverCamelCase(): void
+    public function itRefusesTwoAuthoredSpellingsOfTheCycleLimit(): void
     {
-        $options = CircularDependencyOptions::fromArray([
+        self::expectException(\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal::class);
+        self::expectExceptionMessage('Keys "max_cycle_size" and "maxCycleSize" in "rules.fixture" in configuration file "/project/qmx.yaml" are two spellings of one key, and a layer may set it only once. Keep one of them.');
+        CircularDependencyOptions::fromResolved(ResolvedOptionsFixture::values(CircularDependencyOptions::class, [
             'max_cycle_size' => 5,
             'maxCycleSize' => 3,
-        ]);
-
-        self::assertSame(5, $options->maxCycleSize);
+        ]));
     }
 
     #[Test]
@@ -360,7 +392,7 @@ final class CircularDependencyRuleTest extends TestCase
     }
 
     #[Test]
-    public function itContainsStructuredJsonDataInRecommendation(): void
+    public function itKeepsRoutingAdviceWithoutEmbeddingCycleData(): void
     {
         $cycles = [
             new Cycle($this->paths(['A', 'B', 'C']), $this->paths(['A', 'B', 'C', 'A'])),
@@ -379,20 +411,8 @@ final class CircularDependencyRuleTest extends TestCase
         self::assertNotNull($findings[0]->recommendation);
 
         $recommendation = $findings[0]->recommendation;
-        self::assertStringContainsString('Cycle data: {', $recommendation);
-
-        // Extract JSON from recommendation
-        $jsonStart = strpos($recommendation, 'Cycle data: ');
-        self::assertIsInt($jsonStart);
-        $jsonString = substr($recommendation, $jsonStart + \strlen('Cycle data: '));
-        $decoded = json_decode($jsonString, true);
-
-        self::assertIsArray($decoded);
-        self::assertArrayHasKey('cycle', $decoded);
-        self::assertArrayHasKey('length', $decoded);
-        self::assertArrayHasKey('category', $decoded);
-        self::assertSame(3, $decoded['length']);
-        self::assertSame('small', $decoded['category']);
+        self::assertStringNotContainsString('Cycle data:', $recommendation);
+        self::assertStringContainsString('invert one dependency', $recommendation);
     }
 
     #[Test]
@@ -426,19 +446,12 @@ final class CircularDependencyRuleTest extends TestCase
         $recommendation = $findings[0]->recommendation;
         self::assertNotNull($recommendation);
 
-        $jsonStart = strpos($recommendation, 'Cycle data: ');
-        self::assertIsInt($jsonStart);
-        $decoded = json_decode(substr($recommendation, $jsonStart + \strlen('Cycle data: ')), true);
-
-        self::assertIsArray($decoded);
-        self::assertSame(
-            ['App\\Billing\\Service', 'App\\Orders\\Service', 'App\\Billing\\Service'],
-            $decoded['cycle'],
-        );
+        self::assertStringNotContainsString('Cycle data:', $recommendation);
+        self::assertStringContainsString('Billing\\Service → Orders\\Service → Billing\\Service', $recommendation);
     }
 
     #[Test]
-    public function itLabelsCategoryAsLargeForBigCycles(): void
+    public function itKeepsLargeCycleAdviceWithoutEmbeddingCycleData(): void
     {
         // 30 classes → large category (>20)
         $classNames = array_map(static fn(int $i): string => "Class{$i}", range(1, 30));
@@ -461,14 +474,9 @@ final class CircularDependencyRuleTest extends TestCase
         self::assertNotNull($findings[0]->recommendation);
 
         $recommendation = $findings[0]->recommendation;
-        $jsonStart = strpos($recommendation, 'Cycle data: ');
-        self::assertIsInt($jsonStart);
-        $jsonString = substr($recommendation, $jsonStart + \strlen('Cycle data: '));
-        $decoded = json_decode($jsonString, true);
-
-        self::assertIsArray($decoded);
-        self::assertSame('large', $decoded['category']);
-        self::assertSame(30, $decoded['length']);
+        self::assertStringNotContainsString('Cycle data:', $recommendation);
+        self::assertStringContainsString('entry-point classes', $recommendation);
+        self::assertSame(30, $findings[0]->metricValue);
     }
 
     /**

@@ -10,16 +10,16 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Core\Observation\WorseDirection;
+use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Symbol\MetricSubject;
-use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
 
@@ -54,7 +54,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks instability at class and namespace levels';
     }
@@ -119,22 +119,28 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
      * (`$instabilityValue` — see {@see analyzeClassLevel()} and
      * {@see analyzeNamespaceLevel()}) as `metricValue`, judged worse the
      * higher it goes: {@see ClassInstabilityOptions::getSeverity()}'s
-     * `$instability >= $this->maxError` (line 61) / `$instability >=
-     * $this->maxWarning` (line 65) at the class level, and
+     * `$instability >= $this->maxError` / `$instability >=
+     * $this->maxWarning` at the class level, and
      * {@see NamespaceInstabilityOptions::getSeverity()}'s `$instability >=
-     * $this->maxError` (line 62) / `$instability >= $this->maxWarning`
-     * (line 66) at the namespace level.
+     * $this->maxError` / `$instability >= $this->maxWarning`
+     * at the namespace level.
      *
      * @return array<string, ChannelDeclaration>
      */
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Higher,
-                JudgedMetrics::of(MetricName::COUPLING_INSTABILITY),
+            self::NAME => self::judgingHigher(
+                [MetricName::COUPLING_INSTABILITY],
                 SymbolLevel::Class_,
                 SymbolLevel::Namespace_,
+            )->withGates(
+                self::populationGate('class-coordinate', self::NAME, SymbolLevel::Class_, 'declaration', self::kindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
+                self::populationGate('class-instability', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('class-instability', [MetricName::COUPLING_INSTABILITY]), 'Class instability was not published.'),
+                self::populationGate('class-afferent', self::NAME, SymbolLevel::Class_, 'declaration', self::keyThreshold('class-afferent', [MetricName::COUPLING_CA], '>=', 'class-afferent', 'zero', true), 'Class afferent coupling is below its minimum.'),
+                self::populationGate('namespace-classes', self::NAME, SymbolLevel::Namespace_, 'namespace', self::keyThreshold('namespace-classes', [MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)], '>=', 'namespace-classes', 'zero', true), 'Subtree classes are below the configured minimum.'),
+                self::populationGate('namespace-instability', self::NAME, SymbolLevel::Namespace_, 'namespace', self::keyPresent('namespace-instability', [MetricName::COUPLING_INSTABILITY]), 'Namespace instability was not published.'),
+                self::populationGate('namespace-afferent', self::NAME, SymbolLevel::Namespace_, 'namespace', self::keyThreshold('namespace-afferent', [MetricName::COUPLING_CA], '>=', 'namespace-afferent', 'zero', true), 'Namespace afferent coupling is below its minimum.'),
             ),
         ];
     }
@@ -150,9 +156,11 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
         $classOptions = $this->options->class;
 
         $findings = [];
+        $declaration = self::channelDeclarations()[self::NAME];
 
-        foreach ($context->metrics->allDeclarations() as $classInfo) {
-            $finding = $this->classFinding($classInfo, $context, $classOptions);
+        foreach ($context->metrics->allClassDeclarations() as $classInfo) {
+            $subject = $classInfo->subject ?? throw new LogicException('Instability class findings require an exact class declaration subject');
+            $finding = $this->classFinding(new Location($classInfo->file, $classInfo->line), $subject, $context, $classOptions, $declaration);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -162,25 +170,24 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
     }
 
     private function classFinding(
-        SymbolInfo $classInfo,
+        Location $location,
+        MetricSubject $subject,
         AnalysisContext $context,
         ClassInstabilityOptions $options,
+        ChannelDeclaration $declaration,
     ): ?Finding {
-        $subject = $classInfo->subject ?? throw new LogicException('Instability class findings require an exact class declaration subject');
-        if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+        $metrics = null;
+        if (!$this->admitSubject($context, $subject, $declaration, (function () use ($context, $subject, &$metrics, &$options): iterable {
+            yield GateInput::kind('class-coordinate', $subject->toSymbolPath()->getType());
+            $options = $this->getEffectiveOptions($context, $options, $subject);
+            $metrics = $context->metrics->getSubject($subject);
+            yield GateInput::metrics('class-instability', $metrics);
+            yield GateInput::metrics('class-afferent', $metrics, $options->minAfferent);
+        })(), SymbolLevel::Class_)) {
             return null;
         }
-
-        $metrics = $context->metrics->get($subject->toSymbolPath());
         $instability = $metrics->get(MetricName::COUPLING_INSTABILITY);
-        if ($instability === null) {
-            return null;
-        }
-
         $ca = (int) ($metrics->get(MetricName::COUPLING_CA) ?? 0);
-        if ($ca < $options->minAfferent) {
-            return null;
-        }
 
         $instabilityValue = (float) $instability;
         /** @var ClassInstabilityOptions $effectiveOptions */
@@ -194,13 +201,13 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
         $threshold = $severity === Severity::Error ? $effectiveOptions->maxError : $effectiveOptions->maxWarning;
 
         return new Finding(
-            location: new Location($classInfo->file, $classInfo->line),
+            location: $location,
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
             code: self::NAME,
             message: \sprintf(
-                'Instability is %.2f (Ca=%d, Ce=%d), exceeds threshold of %.2f. Reduce outgoing dependencies',
+                'Instability is %.2f (Ca=%d, Ce=%d), ' . ThresholdCrossing::of($instabilityValue, $threshold)->value . ' threshold of %.2f. Reduce outgoing dependencies',
                 $instabilityValue,
                 $ca,
                 $ce,
@@ -224,29 +231,22 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
         $namespaceOptions = $this->options->namespace;
 
         $findings = [];
+        $declaration = self::channelDeclarations()[self::NAME];
 
         foreach ($context->metrics->all(SymbolLevel::Namespace_) as $nsInfo) {
             $subject = $nsInfo->subject ?? MetricSubject::aggregate($nsInfo->symbolPath);
             $metrics = $context->metrics->get($nsInfo->symbolPath);
 
-            // Skip namespaces with too few classes
-            $classCount = (int) ($metrics->get(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)) ?? 0);
-            if ($classCount < $namespaceOptions->minClassCount) {
+            $populationOptions = $this->getEffectiveOptions($context, $namespaceOptions, $subject);
+            if (!$this->admitSubject($context, MetricSubject::aggregate($nsInfo->symbolPath), $declaration, (static function () use ($metrics, $populationOptions): iterable {
+                yield GateInput::metrics('namespace-classes', $metrics, $populationOptions->minClassCount);
+                yield GateInput::metrics('namespace-instability', $metrics);
+                yield GateInput::metrics('namespace-afferent', $metrics, $populationOptions->minAfferent);
+            })(), SymbolLevel::Namespace_, 'namespace')) {
                 continue;
             }
-
             $instability = $metrics->get(MetricName::COUPLING_INSTABILITY);
-
-            if ($instability === null) {
-                continue;
-            }
-
-            // Skip namespaces with insufficient afferent coupling.
-            // Namespaces with very few dependents have high instability by definition.
             $ca = (int) ($metrics->get(MetricName::COUPLING_CA) ?? 0);
-            if ($ca < $namespaceOptions->minAfferent) {
-                continue;
-            }
 
             $instabilityValue = (float) $instability;
 
@@ -266,7 +266,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
                     ruleName: $this->getName(),
                     code: self::NAME,
                     message: \sprintf(
-                        'Instability is %.2f (Ca=%d, Ce=%d), exceeds threshold of %.2f. Reduce outgoing dependencies',
+                        'Instability is %.2f (Ca=%d, Ce=%d), ' . ThresholdCrossing::of($instabilityValue, $threshold)->value . ' threshold of %.2f. Reduce outgoing dependencies',
                         $instabilityValue,
                         $ca,
                         $ce,

@@ -5,68 +5,77 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Measurement\Repository;
 
 use InvalidArgumentException;
+use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassKeyScope;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\MixedSpelling;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
-use Qualimetrix\Core\Symbol\SymbolLevelProjection;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 
+/**
+ * Coordinates exact, logical and aggregate metric identities with namespace attribution.
+ *
+ * @qmx-threshold complexity.wmc warning=63 -- The 17-operation repository port and its shared identity routes have WMC 62 after removing duplicate reads, writes and merge entrypoints.
+ *                Moving cross-index routing into an identity index makes that index own the others; one-point headroom keeps further branching visible.
+ * @qmx-threshold size.method-count warning=21 error=21 -- The required port and shared rekey routes contribute 20 counted methods after removing three redundant entrypoints.
+ *                Inlining shared routes duplicates identity coordination; the next counted method reaches this inclusive boundary.
+ */
 final class InMemoryMetricRepository implements MetricRepositoryInterface
 {
-    public function mergedWith(MetricRepositoryInterface $other): ?MetricRepositoryInterface
+    private AggregateMetricIndex $aggregateIndex;
+    private MetricSubjectIndex $subjectIndex;
+    private LogicalClassMetricIndex $logicalClassIndex;
+    private NamespaceMetricIndex $namespaceIndex;
+
+    private ClassMetricScopeRegistry $classScopes;
+
+    /** @param list<MetricDefinition> $definitions */
+    public function __construct(array $definitions = [])
+    {
+        $this->aggregateIndex = new AggregateMetricIndex();
+        $this->subjectIndex = new MetricSubjectIndex();
+        $this->logicalClassIndex = new LogicalClassMetricIndex();
+        $this->namespaceIndex = new NamespaceMetricIndex();
+        $this->classScopes = new ClassMetricScopeRegistry($definitions);
+    }
+
+    public function mergedWith(MetricRepositoryInterface $other): ?self
     {
         if (!$other instanceof self) {
             return null;
         }
 
-        return $this->mergeWith($other);
-    }
+        $namespaceSpellings = new NamespaceMetricIndex();
+        $namespaceSpellings->importSpellings($this->namespaceIndex);
+        $namespaceSpellings->importSpellings($other->namespaceIndex);
+        $merged = new self();
+        $merged->classScopes = $this->classScopes->mergeWith($other->classScopes);
+        $merged->aggregateIndex = $this->aggregateIndex->mergeWith($other->aggregateIndex, $namespaceSpellings);
+        $merged->subjectIndex = $this->subjectIndex->mergeWith($other->subjectIndex);
+        $merged->logicalClassIndex = $this->logicalClassIndex->mergeWith($other->logicalClassIndex);
+        $merged->namespaceIndex->rebuild(
+            $merged->aggregateIndex->infos(),
+            [...$merged->subjectIndex->infos(), ...$merged->logicalClassIndex->infos()],
+        );
+        $merged->namespaceIndex->importSpellings($namespaceSpellings);
 
-    /** @var array<string, MetricBag> canonical -> MetricBag */
-    private array $metrics = [];
-
-    /** @var array<string, SymbolInfo> canonical -> SymbolInfo */
-    private array $symbolInfos = [];
-
-    private MetricSubjectIndex $subjectIndex;
-
-    private NamespaceMetricIndex $namespaceIndex;
-
-    public function __construct()
-    {
-        $this->subjectIndex = new MetricSubjectIndex();
-        $this->namespaceIndex = new NamespaceMetricIndex();
+        return $merged;
     }
 
     public function get(SymbolPath $symbol): MetricBag
     {
-        $canonical = $symbol->toCanonical();
+        AggregateMetricIndex::assertAggregateSymbol($symbol);
 
-        if (isset($this->metrics[$canonical])) {
-            return $this->metrics[$canonical];
-        }
-
-        return $symbol->getType() === SymbolType::Class_
-            ? $this->subjectIndex->logicalClassMetrics($symbol) ?? new MetricBag()
-            : $this->subjectIndex->logicalCallableMetrics($canonical) ?? new MetricBag();
+        return $this->metricsOfSymbol($symbol) ?? new MetricBag();
     }
 
-    /**
-     * Two levels live outside `$symbolInfos`, each behind its own enumeration.
-     * `add()` is the only writer of `$symbolInfos`: it refuses a method or a
-     * function outright, and it hands a class to the subject index before it
-     * reaches the map — so neither a callable nor a logical class is ever
-     * stored there. Both are answered by delegating to the enumeration that
-     * owns them, which keeps the two spellings of one enumeration from
-     * drifting apart. The remaining levels are matched by projecting each
-     * symbol's declaration kind onto its level, so nothing here maps a level
-     * back onto a kind.
-     */
     public function all(SymbolLevel $level): iterable
     {
         if ($level === SymbolLevel::Callable) {
@@ -74,128 +83,73 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
 
             return;
         }
-
         if ($level === SymbolLevel::Class_) {
-            yield from $this->allLogicalClasses();
-
-            return;
+            throw new LogicException('Use allClassDeclarations() or allLogicalClasses() for class records');
         }
 
-        foreach ($this->symbolInfos as $info) {
-            if (SymbolLevelProjection::ofDeclaration($info->symbolPath->getType()) === $level) {
-                yield $info;
-            }
-        }
+        yield from $this->aggregateIndex->all($level);
     }
 
     public function has(SymbolPath $symbol): bool
     {
-        $canonical = $symbol->toCanonical();
+        AggregateMetricIndex::assertAggregateSymbol($symbol);
 
-        if (isset($this->metrics[$canonical])) {
-            return true;
-        }
-
-        return $symbol->getType() === SymbolType::Class_
-            ? $this->subjectIndex->logicalClassMetrics($symbol) !== null
-            : $this->subjectIndex->logicalCallableMetrics($canonical) !== null;
+        return $this->metricsOfSymbol($symbol) !== null;
     }
 
-    /**
-     * Adds or merges metrics for a symbol.
-     *
-     * If the symbol already has metrics, new metrics are merged (new values override).
-     */
     public function add(SymbolPath $symbol, MetricBag $metrics, ?RelativePath $file, ?int $line): void
     {
         if (\in_array($symbol->getType(), [SymbolType::Method, SymbolType::Function_], true)) {
             throw new InvalidArgumentException('MetricRepositoryInterface::add() accepts aggregate or logical-class SymbolPath only; use addCallable() or addSubject() for declarations');
         }
-
         if ($symbol->getType() === SymbolType::Class_) {
-            $info = $this->subjectIndex->addLogicalClass($symbol, $metrics, $file, $line === 0 ? null : $line);
+            $this->classScopes->assertBag($metrics, ClassKeyScope::LogicalName);
+            $this->observeNamespace($symbol->namespace ?? '');
+            $info = $this->logicalClassIndex->addLogicalClass($symbol, $metrics, $file, $line === 0 ? null : $line);
             $this->namespaceIndex->add($info);
 
             return;
         }
-
-        $canonical = $symbol->toCanonical();
-
-        if (isset($this->metrics[$canonical])) {
-            // Merge with existing metrics
-            $this->metrics[$canonical] = $this->metrics[$canonical]->merge($metrics);
-
-            $this->symbolInfos[$canonical] = RepositoryMerge::plainInfo(
-                $this->symbolInfos[$canonical],
-                new SymbolInfo($symbol, $file, $line),
-            );
-        } else {
-            $this->metrics[$canonical] = $metrics;
-            $info = new SymbolInfo($symbol, $file, $line);
-            $this->symbolInfos[$canonical] = $info;
-
-        }
-
-        $this->namespaceIndex->add($this->symbolInfos[$canonical]);
-        $this->subjectIndex->synchronizeAggregateInfo($this->symbolInfos[$canonical]);
+        $this->storeAggregate($symbol, $metrics, $file, $line);
     }
 
     public function getSubject(MetricSubject $subject): MetricBag
     {
-        if ($subject->aggregatePath() !== null) {
-            return $this->get($subject->aggregatePath());
-        }
-
-        return $this->subjectIndex->get($subject);
+        return $this->metricsOfSubject($subject) ?? new MetricBag();
     }
 
     public function hasSubject(MetricSubject $subject): bool
     {
-        if ($subject->aggregatePath() !== null) {
-            return $this->has($subject->aggregatePath());
-        }
-
-        return $this->subjectIndex->has($subject);
+        return $this->metricsOfSubject($subject) !== null;
     }
 
     public function addSubject(MetricSubject $subject, MetricBag $metrics, ?RelativePath $file, ?int $line): void
     {
+        $line = $line === 0 ? null : $line;
         $aggregate = $subject->aggregatePath();
         if ($aggregate !== null) {
-            $this->subjectIndex->add($subject, new MetricBag(), $file, $line === 0 ? null : $line);
-            $this->add($aggregate, $metrics, $file, $line);
+            $this->storeAggregate($aggregate, $metrics, $file, $line);
+
+            return;
+        }
+        $logicalClass = $subject->logicalClassPath();
+        if ($logicalClass !== null) {
+            $this->add($logicalClass->symbolPath, $metrics, $file, $line);
 
             return;
         }
 
-        // Keep an unknown location as null; Location explicitly rejects
-        // synthetic 0.
-        $line = $line === 0 ? null : $line;
+        if ($subject->declarationPath()?->logical->getType() === SymbolType::Class_) {
+            $this->classScopes->assertBag($metrics, ClassKeyScope::Declaration);
+        }
         $info = $this->subjectIndex->add($subject, $metrics, $file, $line);
-
-        $declaration = $subject->declarationPath();
-        if ($declaration?->logical->getType() === SymbolType::Class_) {
-            // Exact class facts remain addressable by DeclarationPath. Their
-            // logical projection is the separate class-facing view used by
-            // aggregation, graph construction, and legacy SymbolPath reads.
-            // Do not index the declaration itself: it would count alongside
-            // its projection during namespace aggregation.
-            $this->addLogicalClassProjection($declaration->logical, $metrics);
-
-            return;
-        }
-
-        $this->namespaceIndex->add($info);
+        $this->indexExactSubject($info, $metrics);
     }
 
     public function addCallable(CallableWithMetrics $callable): void
     {
         $info = $this->subjectIndex->addCallable($callable);
-        $this->namespaceIndex->add($info);
-
-        if ($callable->classAggregationOwner !== null) {
-            $this->addLogicalClassProjection($callable->classAggregationOwner->symbolPath, new MetricBag());
-        }
+        $this->indexExactSubject($info, $callable->metrics);
     }
 
     public function allDeclarations(): iterable
@@ -210,92 +164,129 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
 
     public function allLogicalClasses(): iterable
     {
-        yield from $this->subjectIndex->allLogicalClasses();
+        yield from $this->logicalClassIndex->allLogicalClasses();
+    }
+
+    public function allClassDeclarations(): iterable
+    {
+        yield from $this->subjectIndex->allClassDeclarations();
     }
 
     public function addScalar(SymbolPath $symbol, string $key, int|float $value): void
     {
-        $canonical = $symbol->toCanonical();
+        AggregateMetricIndex::assertAggregateSymbol($symbol);
 
-        if ($symbol->getType() === SymbolType::Class_) {
-            $this->subjectIndex->addLogicalClassScalar($symbol, $key, $value);
-
-            return;
-        }
-
-        if (!isset($this->metrics[$canonical])) {
-            return;
-        }
-
-        $this->metrics[$canonical] = $this->metrics[$canonical]->with($key, $value);
+        $this->addSubjectScalar(MetricSubject::aggregate($symbol), $key, $value);
     }
 
-    /**
-     * Returns all namespaces that have metrics.
-     *
-     * @return list<string>
-     */
+    /** @return list<string> */
     public function getNamespaces(): array
     {
         return $this->namespaceIndex->namespaces();
     }
 
-    /**
-     * Returns all metrics for symbols in a given namespace.
-     *
-     * @return list<SymbolInfo>
-     */
+    /** @return list<SymbolInfo> */
     public function forNamespace(string $namespace): array
     {
         return $this->namespaceIndex->forNamespace($namespace);
     }
 
-    /**
-     * Creates a new repository with metrics merged from both repositories.
-     *
-     * If both repositories have metrics for the same symbol, they are merged.
-     */
-    public function mergeWith(self $other): self
+    /** @return list<MixedSpelling> */
+    public function mixedSpellings(): array
     {
-        $merged = new self();
-        $plain = RepositoryMerge::plain($this->metrics, $this->symbolInfos, $other->metrics, $other->symbolInfos);
-        $merged->metrics = $plain['metrics'];
-        $merged->symbolInfos = $plain['infos'];
-        $merged->subjectIndex = $this->subjectIndex->mergeWith($other->subjectIndex);
-        $merged->subjectIndex->synchronizeAggregateInfos($merged->symbolInfos);
-        $merged->namespaceIndex->rebuild($merged->symbolInfos, $merged->subjectIndex->infos());
-
-        return $merged;
+        return [...$this->logicalClassIndex->mixedSpellings(), ...$this->namespaceIndex->mixedSpellings()];
     }
 
     public function addSubjectScalar(MetricSubject $subject, string $key, int|float $value): void
     {
         $aggregate = $subject->aggregatePath();
         if ($aggregate !== null) {
-            $this->addScalar($aggregate, $key, $value);
+            $this->aggregateIndex->addScalar($this->canonicalNamespaceSymbol($aggregate), $key, $value);
 
             return;
+        }
+        if ($subject->logicalClassPath() !== null) {
+            $this->classScopes->assertKey($key, ClassKeyScope::LogicalName);
+            $this->logicalClassIndex->addScalarToExisting($subject, $key, $value);
+
+            return;
+        }
+        $classDeclaration = $subject->declarationPath()?->logical->getType() === SymbolType::Class_;
+        if ($classDeclaration) {
+            $this->classScopes->assertKey($key, ClassKeyScope::Declaration);
+        }
+        $stored = $this->subjectIndex->addScalarToExisting($subject, $key, $value);
+        $this->indexExactSubject($stored['info'], $stored['metrics']);
+    }
+
+    private function metricsOfSymbol(SymbolPath $symbol): ?MetricBag
+    {
+        return $this->aggregateIndex->get($this->canonicalNamespaceSymbol($symbol));
+    }
+
+    private function metricsOfSubject(MetricSubject $subject): ?MetricBag
+    {
+        $aggregate = $subject->aggregatePath();
+        if ($aggregate !== null) {
+            return $this->metricsOfSymbol($aggregate);
+        }
+        if ($subject->logicalClassPath() !== null) {
+            return $this->logicalClassIndex->has($subject) ? $this->logicalClassIndex->get($subject) : null;
         }
 
         if (!$this->subjectIndex->has($subject)) {
-            return;
+            return null;
         }
-
-        $this->subjectIndex->add($subject, (new MetricBag())->with($key, $value), null, null);
-
+        $exact = $this->subjectIndex->get($subject);
         $declaration = $subject->declarationPath();
-        if ($declaration?->logical->getType() === SymbolType::Class_) {
-            // Same reason addSubject() does it: the logical projection is the
-            // class-facing view aggregation reads, and it would otherwise keep
-            // a value this write has just replaced.
-            $this->addLogicalClassProjection($declaration->logical, (new MetricBag())->with($key, $value));
+        if ($declaration?->logical->getType() !== SymbolType::Class_) {
+            return $exact;
         }
+        $logical = $this->logicalClassIndex->logicalClassMetrics($declaration->logical);
+
+        return $logical === null ? $exact : $logical->merge($exact);
     }
 
-    private function addLogicalClassProjection(SymbolPath $symbol, MetricBag $metrics): void
+    private function storeAggregate(SymbolPath $symbol, MetricBag $metrics, ?RelativePath $file, ?int $line): void
     {
-        $info = $this->subjectIndex->addLogicalClass($symbol, $metrics, null, null);
+        if ($symbol->getType() === SymbolType::Namespace_) {
+            $symbol = SymbolPath::forNamespace($this->observeNamespace($symbol->namespace ?? ''));
+        }
+
+        $info = $this->aggregateIndex->add($symbol, $metrics, $file, $line);
         $this->namespaceIndex->add($info);
     }
 
+    private function indexExactSubject(SymbolInfo $info, MetricBag $metrics): void
+    {
+        $projection = $this->logicalClassIndex->project($info, $metrics);
+        if ($info->symbolPath->namespace !== null) {
+            $this->observeNamespace($info->symbolPath->namespace);
+        }
+
+        $this->namespaceIndex->add($info);
+
+        if ($projection !== null) {
+            $this->namespaceIndex->add($projection);
+        }
+    }
+
+    private function observeNamespace(string $namespace): string
+    {
+        $previous = $this->namespaceIndex->canonical($namespace);
+        $this->namespaceIndex->observe($namespace);
+        $canonical = $this->namespaceIndex->canonical($namespace);
+        if ($previous !== $canonical) {
+            $this->aggregateIndex->moveNamespace($previous, $canonical);
+        }
+
+        return $canonical;
+    }
+
+    private function canonicalNamespaceSymbol(SymbolPath $symbol): SymbolPath
+    {
+        return $symbol->getType() === SymbolType::Namespace_
+            ? SymbolPath::forNamespace($this->namespaceIndex->canonical($symbol->namespace ?? ''))
+            : $symbol;
+    }
 }

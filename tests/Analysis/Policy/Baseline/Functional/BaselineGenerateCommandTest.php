@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Functional;
 
 use Closure;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
@@ -21,6 +22,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubBaselineRun;
@@ -45,11 +47,161 @@ final class BaselineGenerateCommandTest extends TestCase
         TempDirectory::remove($this->tempDir);
     }
 
+    #[Test]
+    public function itWritesAnEmptyBaselineForACompleteNamedExclusion(): void
+    {
+        mkdir($this->tempDir . '/src');
+        file_put_contents($this->tempDir . '/src/Legacy.php', '<?php namespace Sample; final class Legacy {}');
+        file_put_contents($this->tempDir . '/composer.json', '{"autoload":{"psr-4":{"Sample\\\\":"src/"}}}');
+        file_put_contents($this->tempDir . '/qmx.yaml', "paths: [src]\nexclude: [{subtree: src}]\ncache: {enabled: false}\n");
+        $previous = getcwd();
+        self::assertNotFalse($previous);
+        try {
+            chdir($this->tempDir);
+            $command = (new ContainerFactory())->create()->get(BaselineGenerateCommand::class);
+            self::assertInstanceOf(BaselineGenerateCommand::class, $command);
+            $tester = new CommandTester($command);
+            $tester->execute(['baseline' => $this->baselinePath, '--workers' => '0'], ['capture_stderr_separately' => true]);
+        } finally {
+            chdir($previous);
+        }
+
+        self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertSame([], self::entriesOf($this->baselinePath));
+        self::assertStringContainsString('1 named path(s) left out by exclude patterns', $tester->getErrorOutput());
+    }
+
+    #[Test]
+    public function itDoesNotWriteABaselineWhenAnotherNamedPathFails(): void
+    {
+        mkdir($this->tempDir . '/src');
+        file_put_contents($this->tempDir . '/src/Legacy.php', '<?php namespace Sample; final class Legacy {}');
+        file_put_contents($this->tempDir . '/src/Broken.php', '<?php final class Broken {');
+        file_put_contents($this->tempDir . '/qmx.yaml', "paths: [src]\nexclude: [{exact: src/Legacy.php}]\ncache: {enabled: false}\n");
+        $previous = getcwd();
+        self::assertNotFalse($previous);
+        try {
+            chdir($this->tempDir);
+            $command = (new ContainerFactory())->create()->get(BaselineGenerateCommand::class);
+            self::assertInstanceOf(BaselineGenerateCommand::class, $command);
+            $tester = new CommandTester($command);
+            $tester->execute(['baseline' => $this->baselinePath, '--workers' => '0'], ['capture_stderr_separately' => true]);
+        } finally {
+            chdir($previous);
+        }
+
+        self::assertSame(4, $tester->getStatusCode());
+        self::assertFileDoesNotExist($this->baselinePath);
+        self::assertStringContainsString('Analysis incomplete', $tester->getDisplay());
+    }
+
     /**
      * Regenerating over an existing file discards every acceptance it
      * records, including entries a user deliberately tightened — and the
      * command line that does it is the one that created the file.
      */
+    #[Test]
+    public function itPreparesAPrivateSiblingBeforeMeasuringForANewBaseline(): void
+    {
+        $observed = null;
+        $duringAnalysis = function () use (&$observed): void {
+            $observed = array_values(array_diff((array) scandir($this->tempDir), ['.', '..']));
+        };
+
+        $tester = $this->execute([], duringAnalysis: $duringAnalysis);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
+        self::assertIsArray($observed);
+        self::assertCount(1, $observed, 'A staged baseline sibling must exist during analysis.');
+        self::assertNotSame('baseline.json', $observed[0]);
+        self::assertFileExists($this->baselinePath);
+        self::assertSame(['baseline.json', 'baseline.json.lock'], array_values(array_diff((array) scandir($this->tempDir), ['.', '..'])));
+    }
+
+    /** @return iterable<string, array{int}> */
+    public static function interruptionSignals(): iterable
+    {
+        yield 'SIGTERM' => [\SIGTERM];
+        yield 'SIGINT' => [\SIGINT];
+    }
+
+    #[Test]
+    #[DataProvider('interruptionSignals')]
+    public function itKeepsAnExistingBaselineAndDiscardsItsSiblingOnSignal(int $signal): void
+    {
+        if (!\function_exists('pcntl_signal')) {
+            self::markTestSkipped('Signal handling is unavailable.');
+        }
+        file_put_contents($this->baselinePath, 'OLD');
+        $ready = $this->tempDir . '/ready';
+        $script = <<<'PHP'
+require $argv[1];
+$error = new \Qualimetrix\Infrastructure\Console\ErrorStream();
+$command = new \Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand(
+    new \Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubBaselineRun(
+        [],
+        ['src'],
+        \Qualimetrix\Core\Path\AbsolutePath::fromString($argv[2]),
+        onMeasure: static function () use ($argv): void {
+            file_put_contents($argv[4], 'READY');
+            sleep(10);
+        },
+    ),
+    new \Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator(
+        \Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry::withDefaults(),
+        new \Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock(),
+    ),
+    new \Qualimetrix\Analysis\Policy\Baseline\BaselineWriter(),
+    $error,
+);
+$command->setRefusalPresenter(new \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter($error));
+$tester = new \Symfony\Component\Console\Tester\CommandTester($command);
+$tester->execute(['baseline' => $argv[3], 'paths' => ['src'], '--force' => true]);
+exit($tester->getStatusCode());
+PHP;
+        $process = proc_open([\PHP_BINARY, '-r', $script, \dirname(__DIR__, 5) . '/vendor/autoload.php', $this->tempDir, $this->baselinePath, $ready], [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+        self::assertIsResource($process);
+        fclose($pipes[0]);
+        try {
+            $deadline = microtime(true) + 5;
+            while (!is_file($ready) && microtime(true) < $deadline) {
+                usleep(10_000);
+            }
+            self::assertFileExists($ready);
+            $entries = scandir($this->tempDir);
+            self::assertIsArray($entries);
+            self::assertCount(1, array_filter($entries, static fn(string $name): bool => str_starts_with($name, '.qmx-')));
+            self::assertTrue(proc_terminate($process, $signal));
+            $deadline = microtime(true) + 5;
+            do {
+                $status = proc_get_status($process);
+                if (!$status['running']) {
+                    break;
+                }
+                usleep(10_000);
+            } while (microtime(true) < $deadline);
+            self::assertFalse($status['running'], 'The interrupted baseline did not stop promptly.');
+            self::assertSame('OLD', file_get_contents($this->baselinePath));
+            $entries = scandir($this->tempDir);
+            self::assertIsArray($entries);
+            self::assertSame([], array_filter($entries, static fn(string $name): bool => str_starts_with($name, '.qmx-')));
+            self::assertSame(128 + $signal, $status['exitcode']);
+        } finally {
+            if (\is_resource($process)) {
+                proc_terminate($process);
+                proc_close($process);
+            }
+            foreach ($pipes as $pipe) {
+                if (\is_resource($pipe)) {
+                    fclose($pipe);
+                }
+            }
+            if (is_file($ready)) {
+                unlink($ready);
+            }
+        }
+    }
+
     #[Test]
     public function itRefusesToOverwriteAnExistingBaselineWithoutForce(): void
     {
@@ -72,6 +224,106 @@ final class BaselineGenerateCommandTest extends TestCase
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertSame([1], self::countsOf(self::entriesOf($this->baselinePath)));
+    }
+
+    #[Test]
+    public function itPreservesTheDestinationModeUnderForce(): void
+    {
+        file_put_contents($this->baselinePath, 'do not touch');
+        chmod($this->baselinePath, 0o600);
+
+        $tester = $this->execute(['--force' => true]);
+
+        clearstatcache(true, $this->baselinePath);
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertSame(0o600, fileperms($this->baselinePath) & 0o7777);
+    }
+
+    #[Test]
+    public function itRefusesAMissingDestinationParentBeforeAnalysis(): void
+    {
+        $this->baselinePath = $this->tempDir . '/missing/baseline.json';
+        $measured = false;
+
+        $tester = $this->execute([], null, static function () use (&$measured): void {
+            $measured = true;
+        });
+
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertFalse($measured);
+        self::assertDirectoryDoesNotExist($this->tempDir . '/missing');
+        self::assertStringContainsString('parent directory is missing', $tester->getErrorOutput());
+    }
+
+    #[Test]
+    public function itRefusesToForceOverAReadOnlyFileBeforeAnalysis(): void
+    {
+        file_put_contents($this->baselinePath, 'do not touch');
+        chmod($this->baselinePath, 0o444);
+        clearstatcache(true, $this->baselinePath);
+        if (is_writable($this->baselinePath)) {
+            chmod($this->baselinePath, 0o644);
+            self::markTestSkipped('The process writes a file with no write permission (running as root).');
+        }
+
+        $measured = false;
+        try {
+            $tester = $this->execute(['--force' => true], null, static function () use (&$measured): void {
+                $measured = true;
+            });
+        } finally {
+            chmod($this->baselinePath, 0o644);
+        }
+
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertFalse($measured);
+        self::assertSame('do not touch', file_get_contents($this->baselinePath));
+    }
+
+    #[Test]
+    public function itRefusesToForceInAReadOnlyParentBeforeAnalysis(): void
+    {
+        $parent = $this->tempDir . '/destination';
+        mkdir($parent);
+        $this->baselinePath = $parent . '/baseline.json';
+        file_put_contents($this->baselinePath, 'do not touch');
+        chmod($parent, 0o555);
+        clearstatcache(true, $parent);
+        if (is_writable($parent)) {
+            chmod($parent, 0o755);
+            self::markTestSkipped('The process writes a directory with no write permission (running as root).');
+        }
+
+        $measured = false;
+        try {
+            $tester = $this->execute(['--force' => true], null, static function () use (&$measured): void {
+                $measured = true;
+            });
+        } finally {
+            chmod($parent, 0o755);
+        }
+
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertFalse($measured);
+        self::assertSame('do not touch', file_get_contents($this->baselinePath));
+        self::assertFileDoesNotExist($this->baselinePath . '.lock');
+    }
+
+    #[Test]
+    public function itReportsAnExposedWritableDestinationBeforeAnalysis(): void
+    {
+        file_put_contents($this->baselinePath, 'do not touch');
+        chmod($this->tempDir, 0o777);
+
+        try {
+            $tester = $this->execute(['--force' => true]);
+        } finally {
+            chmod($this->tempDir, 0o700);
+        }
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString($this->tempDir, $tester->getErrorOutput());
+        self::assertStringContainsString('changed by others', $tester->getErrorOutput());
     }
 
     /**
@@ -127,36 +379,36 @@ final class BaselineGenerateCommandTest extends TestCase
     }
 
     #[Test]
-    public function itRefusesToForceOverADanglingSymlinkWithoutAnUnsafeFallback(): void
+    public function itWritesThroughAClosedDanglingSymlinkUnderForce(): void
     {
         $target = $this->tempDir . '/missing-target.json';
         symlink($target, $this->baselinePath);
 
         $tester = $this->execute(['--force' => true]);
 
-        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
-        self::assertSame('', $tester->getDisplay());
-        self::assertStringContainsString('not a regular file', $tester->getErrorOutput());
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertTrue(is_link($this->baselinePath));
         self::assertSame($target, readlink($this->baselinePath));
+        self::assertSame([1], self::countsOf(self::entriesOf($target)));
     }
 
     #[Test]
-    public function itRefusesToForceOverASymlinkToARegularFileWithoutTouchingEither(): void
+    public function itWritesThroughAClosedSymlinkUnderForceAndPreservesTheReferentMode(): void
     {
         $target = $this->tempDir . '/target.json';
         $contents = '{"owned": "by another process"}';
         file_put_contents($target, $contents);
+        chmod($target, 0o600);
         symlink($target, $this->baselinePath);
 
         $tester = $this->execute(['--force' => true]);
 
-        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
-        self::assertSame('', $tester->getDisplay());
-        self::assertStringContainsString('not a regular file', $tester->getErrorOutput());
+        clearstatcache(true, $target);
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertTrue(is_link($this->baselinePath));
         self::assertSame($target, readlink($this->baselinePath));
-        self::assertSame($contents, file_get_contents($target));
+        self::assertSame([1], self::countsOf(self::entriesOf($target)));
+        self::assertSame(0o600, fileperms($target) & 0o7777);
     }
 
     /**
@@ -187,7 +439,7 @@ final class BaselineGenerateCommandTest extends TestCase
 
         self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
         self::assertSame('', $tester->getDisplay());
-        self::assertStringContainsString('cannot be read', $tester->getErrorOutput());
+        self::assertStringContainsString('cannot open target', $tester->getErrorOutput());
         self::assertStringContainsString('Permission denied', $tester->getErrorOutput());
         self::assertFalse($measured, 'The run was measured before the unreadable destination was refused.');
         self::assertSame('do not touch', file_get_contents($this->baselinePath));
@@ -202,7 +454,7 @@ final class BaselineGenerateCommandTest extends TestCase
 
         self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
         self::assertSame('', $tester->getDisplay());
-        self::assertStringContainsString('not a regular file', $tester->getErrorOutput());
+        self::assertStringContainsString('target is a directory', $tester->getErrorOutput());
         self::assertDirectoryExists($this->baselinePath);
     }
 
@@ -297,6 +549,7 @@ final class BaselineGenerateCommandTest extends TestCase
     private function execute(array $options, ?array $findings = null, ?Closure $duringAnalysis = null): CommandTester
     {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $errorStream = new ErrorStream();
 
         $command = new BaselineGenerateCommand(
             new StubBaselineRun(
@@ -307,8 +560,9 @@ final class BaselineGenerateCommandTest extends TestCase
             ),
             new BaselineGenerator($declarations, new FixedClock()),
             new BaselineWriter(),
+            $errorStream,
         );
-        $command->setRefusalPresenter(new RefusalPresenter(new ErrorStream()));
+        $command->setRefusalPresenter(new RefusalPresenter($errorStream));
 
         $tester = new CommandTester($command);
         $tester->execute(

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
+use LogicException;
+use Qualimetrix\Reporting\Formatter\Prose\GlyphMode;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\ConsoleSectionOutput;
 use Symfony\Component\Console\Output\NullOutput;
@@ -46,6 +48,8 @@ final class ErrorStream
      */
     private array $sections = [];
 
+    private ?GlyphMode $mode = null;
+
     private ?OutputInterface $boundTo = null;
 
     private OutputInterface $diagnostics;
@@ -58,6 +62,19 @@ final class ErrorStream
     public function __construct()
     {
         $this->diagnostics = new NullOutput();
+    }
+
+    public function useGlyphMode(GlyphMode $mode): void
+    {
+        if ($this->mode !== null && $this->mode !== $mode) {
+            throw new LogicException('The error stream already has a different glyph mode.');
+        }
+        $this->mode = $mode;
+    }
+
+    public function glyphMode(): GlyphMode
+    {
+        return $this->mode ?? GlyphMode::Unicode;
     }
 
     /** Drops the binding so the next run starts with an empty section list. */
@@ -75,7 +92,7 @@ final class ErrorStream
     {
         $this->bind($output);
 
-        return $this->diagnostics;
+        return $this->diagnostics instanceof NullOutput ? $this->diagnostics : new GlyphOutput($this->diagnostics, $this->glyphMode(...));
     }
 
     /**
@@ -90,13 +107,13 @@ final class ErrorStream
      * The fallback is taken whenever there is no writer, and a run bound to a
      * single-channel output has none: its diagnostics are dropped by design.
      * Dropping applies to diagnostics, not to the message that ends the run —
-     * an uncaught throwable would otherwise leave exit code 1 and an empty
+     * an uncaught throwable would otherwise leave an internal error and an empty
      * screen, which is worse than writing the trace into the one channel the
      * caller gave, and is what Symfony does when no owner is involved at all.
      */
     public function boundWriter(OutputInterface $fallback): OutputInterface
     {
-        return $this->diagnostics instanceof NullOutput ? $fallback : $this->diagnostics;
+        return new GlyphOutput($this->diagnostics instanceof NullOutput ? $fallback : $this->diagnostics, $this->glyphMode(...));
     }
 
     /** Writes one diagnostic line through this run's writer. */
@@ -172,12 +189,13 @@ final class ErrorStream
 
     private function sectionOn(StreamOutput $error): ConsoleSectionOutput
     {
-        return new ConsoleSectionOutput(
+        return new GlyphConsoleSection(
             $error->getStream(),
             $this->sections,
             $error->getVerbosity(),
             $error->isDecorated(),
             $error->getFormatter(),
+            $this->glyphMode(...),
         );
     }
 }

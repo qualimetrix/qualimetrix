@@ -9,38 +9,50 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
-use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
-use Qualimetrix\Analysis\Run\Discovery\FinderFileDiscovery;
-use Qualimetrix\Analysis\Run\Pipeline\DependencyGraphAnalyzer;
-use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\ProductIdentity;
-use Qualimetrix\Infrastructure\Ast\PhpFileParser;
+use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Qualimetrix\Reporting\GraphProjection\DependencyGraphProjector;
+use Qualimetrix\Tests\TestSupport\Logging\Support\RecordingLogger;
+use ReflectionProperty;
+use RuntimeException;
 use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Exception\InvalidOptionException;
 use Symfony\Component\Console\Tester\CommandTester;
 
 #[CoversClass(GraphExportCommand::class)]
 final class GraphExportCommandTest extends TestCase
 {
     private string $tempDir;
+    private ?GraphExportCommand $containerCommand = null;
+    private string $originalMemoryLimit;
+
+    private string $originalCwd;
 
     protected function setUp(): void
     {
         // Create temporary directory for test files
         $this->tempDir = sys_get_temp_dir() . '/qmx-test-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0777, true);
+        $this->originalMemoryLimit = (string) \ini_get('memory_limit');
+        $cwd = getcwd();
+        self::assertNotFalse($cwd);
+        $this->originalCwd = $cwd;
+        chdir($this->tempDir);
     }
 
     protected function tearDown(): void
     {
+        ini_set('memory_limit', $this->originalMemoryLimit);
+        chdir($this->originalCwd);
         // Clean up temporary directory
         if (is_dir($this->tempDir)) {
             $this->removeDirectory($this->tempDir);
@@ -61,8 +73,9 @@ final class GraphExportCommandTest extends TestCase
         $command = new GraphExportCommand(
             $this->createAnalyzer(),
             new DependencyGraphProjector(),
+            $this->preflight(),
             new ErrorStream(),
-            new RefusalPresenter(new ErrorStream()),
+            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
             new NullLogger(),
         );
 
@@ -85,6 +98,58 @@ final class GraphExportCommandTest extends TestCase
     }
 
     #[Test]
+    public function itReportsMixedSpellingEvidenceFromTheGraphAnalysis(): void
+    {
+        file_put_contents($this->tempDir . '/First.php', '<?php namespace App; final class Service {}');
+        file_put_contents($this->tempDir . '/Second.php', '<?php namespace app; final class service {}');
+        $logger = new RecordingLogger();
+        $command = new GraphExportCommand(
+            $this->createAnalyzer(),
+            new DependencyGraphProjector(),
+            $this->preflight(),
+            new ErrorStream(),
+            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
+            $logger,
+        );
+        (new Application())->addCommand($command);
+
+        $tester = new CommandTester($command);
+        $exit = $tester->execute(['paths' => [$this->tempDir]]);
+
+        self::assertSame(0, $exit);
+        $warnings = array_values(array_filter($logger->records, static fn(array $record): bool => $record['level'] === 'warning'));
+        self::assertSame(
+            ['mixed spelling: App\\Service, app\\service → App\\Service'],
+            array_column($warnings, 'message'),
+        );
+    }
+
+    #[Test]
+    public function itExportsAQuietGraphWithNoProgressOption(): void
+    {
+        file_put_contents(
+            $this->tempDir . '/Source.php',
+            '<?php namespace App; final class Source { public function use(Model $model): void {} }',
+        );
+
+        $tester = $this->createCommandTester();
+        try {
+            $exit = $tester->execute([
+                'paths' => [$this->tempDir],
+                '--no-progress' => true,
+            ], ['capture_stderr_separately' => true]);
+        } catch (InvalidOptionException $exception) {
+            self::assertSame('The "--no-progress" option does not exist.', $exception->getMessage());
+            self::fail('Graph export must accept --no-progress.');
+        }
+
+        self::assertSame(0, $exit, $tester->getErrorOutput());
+        self::assertStringStartsWith('digraph', $tester->getDisplay());
+        self::assertStringContainsString('Source', $tester->getDisplay());
+        self::assertSame('', $tester->getErrorOutput());
+    }
+
+    #[Test]
     public function itExportsGraphToFile(): void
     {
         // Create test PHP files with dependencies
@@ -101,8 +166,9 @@ final class GraphExportCommandTest extends TestCase
         $command = new GraphExportCommand(
             $this->createAnalyzer(),
             new DependencyGraphProjector(),
+            $this->preflight(),
             new ErrorStream(),
-            new RefusalPresenter(new ErrorStream()),
+            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
             new NullLogger(),
         );
 
@@ -118,6 +184,7 @@ final class GraphExportCommandTest extends TestCase
         // Assert success
         self::assertSame(0, $commandTester->getStatusCode());
         self::assertFileExists($outputFile);
+        self::assertSame('', $commandTester->getDisplay(), 'A file export must leave the report stream empty.');
 
         $content = file_get_contents($outputFile);
         self::assertIsString($content);
@@ -136,8 +203,9 @@ final class GraphExportCommandTest extends TestCase
         $command = new GraphExportCommand(
             $this->createAnalyzer(),
             new DependencyGraphProjector(),
+            $this->preflight(),
             new ErrorStream(),
-            new RefusalPresenter(new ErrorStream()),
+            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
             new NullLogger(),
         );
 
@@ -170,8 +238,9 @@ final class GraphExportCommandTest extends TestCase
         $command = new GraphExportCommand(
             $this->createAnalyzer(),
             new DependencyGraphProjector(),
+            $this->preflight(),
             new ErrorStream(),
-            new RefusalPresenter(new ErrorStream()),
+            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
             new NullLogger(),
         );
 
@@ -208,8 +277,9 @@ final class GraphExportCommandTest extends TestCase
         $command = new GraphExportCommand(
             $this->createAnalyzer(),
             new DependencyGraphProjector(),
+            $this->preflight(),
             new ErrorStream(),
-            new RefusalPresenter(new ErrorStream()),
+            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
             new NullLogger(),
         );
 
@@ -243,8 +313,9 @@ final class GraphExportCommandTest extends TestCase
         $command = new GraphExportCommand(
             $this->createAnalyzer(),
             new DependencyGraphProjector(),
+            $this->preflight(),
             new ErrorStream(),
-            new RefusalPresenter(new ErrorStream()),
+            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
             new NullLogger(),
         );
 
@@ -279,8 +350,9 @@ final class GraphExportCommandTest extends TestCase
         $command = new GraphExportCommand(
             $this->createAnalyzer(),
             new DependencyGraphProjector(),
+            $this->preflight(),
             new ErrorStream(),
-            new RefusalPresenter(new ErrorStream()),
+            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
             new NullLogger(),
         );
 
@@ -310,6 +382,133 @@ final class GraphExportCommandTest extends TestCase
         self::assertSame(0, $tester->getStatusCode());
         self::assertJson($tester->getDisplay());
         self::assertStringContainsString('App\\\\Service', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itAppliesGeneratedFilePolicyFromThePreparedRun(): void
+    {
+        file_put_contents($this->tempDir . '/Target.php', '<?php namespace App; final class Target {}');
+        file_put_contents($this->tempDir . '/Generated.php', "<?php\n// @generated\nnamespace App; final class Generated { public function use(Target \$target): void {} }");
+
+        $default = $this->createCommandTester();
+        self::assertSame(0, $default->execute(['paths' => [$this->tempDir]]));
+        self::assertStringNotContainsString('Generated', $default->getDisplay());
+
+        $included = $this->createCommandTester();
+        self::assertSame(0, $included->execute(['paths' => [$this->tempDir], '--include-generated' => true]));
+        self::assertStringContainsString('Generated', $included->getDisplay());
+    }
+
+    #[Test]
+    public function itExportsAnEmptyGraphForACompleteNamedExclusion(): void
+    {
+        mkdir($this->tempDir . '/src');
+        file_put_contents($this->tempDir . '/src/Legacy.php', '<?php namespace App; final class Legacy {}');
+        file_put_contents($this->tempDir . '/qmx.yaml', "paths: [src]\nexclude: [{subtree: src}]\ncache: {enabled: false}\n");
+
+        $tester = new CommandTester($this->containerCommand());
+        $tester->execute(['--config' => $this->tempDir . '/qmx.yaml'], ['capture_stderr_separately' => true]);
+
+        self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringStartsWith('digraph', $tester->getDisplay());
+        self::assertStringContainsString('1 named path(s) left out by exclude patterns', $tester->getErrorOutput());
+    }
+
+    #[Test]
+    public function itLeavesTheGraphArtifactUntouchedWhenAnotherNamedPathFails(): void
+    {
+        mkdir($this->tempDir . '/src');
+        file_put_contents($this->tempDir . '/src/Legacy.php', '<?php namespace App; final class Legacy {}');
+        file_put_contents($this->tempDir . '/src/Broken.php', '<?php final class Broken {');
+        file_put_contents($this->tempDir . '/qmx.yaml', "paths: [src]\nexclude: [{exact: src/Legacy.php}]\ncache: {enabled: false}\n");
+        $destination = $this->tempDir . '/graph.dot';
+        file_put_contents($destination, 'sentinel');
+
+        $tester = new CommandTester($this->containerCommand());
+        $tester->execute(['--config' => $this->tempDir . '/qmx.yaml', '--output' => $destination], ['capture_stderr_separately' => true]);
+
+        self::assertSame(4, $tester->getStatusCode());
+        self::assertSame('sentinel', file_get_contents($destination));
+        self::assertStringContainsString('Analysis incomplete', $tester->getErrorOutput());
+    }
+
+    #[Test]
+    public function itUsesConfiguredDefaultsAndExclusionsWithoutReadingTheReportFormat(): void
+    {
+        mkdir($this->tempDir . '/src/Legacy', 0o755, true);
+        file_put_contents($this->tempDir . '/src/Present.php', '<?php namespace App; final class Present {}');
+        file_put_contents($this->tempDir . '/src/Legacy/Excluded.php', '<?php namespace App; final class Excluded {}');
+        file_put_contents($this->tempDir . '/Outside.php', '<?php namespace App; final class Outside {}');
+        file_put_contents($this->tempDir . '/qmx.yaml', "paths: [src]\nexclude: [{subtree: src/Legacy}]\nformat: json\ncache: {enabled: false}\n");
+
+        $previous = getcwd();
+        self::assertNotFalse($previous);
+        chdir($this->tempDir);
+        try {
+            $tester = new CommandTester($this->containerCommand());
+            self::assertSame(0, $tester->execute([]), $tester->getDisplay());
+            self::assertStringStartsWith('digraph', $tester->getDisplay());
+            self::assertStringContainsString('Present', $tester->getDisplay());
+            self::assertStringNotContainsString('Excluded', $tester->getDisplay());
+            self::assertStringNotContainsString('Outside', $tester->getDisplay());
+
+            $check = (new ContainerFactory())->create()->get(\Qualimetrix\Infrastructure\Console\Command\CheckCommand::class);
+            self::assertInstanceOf(\Qualimetrix\Infrastructure\Console\Command\CheckCommand::class, $check);
+            $checked = new CommandTester($check);
+            self::assertSame(0, $checked->execute(['--workers' => '0']));
+            $report = json_decode($checked->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+            self::assertSame(1, $report['coverage']['analyzed']);
+            self::assertSame(1, $report['summary']['filesAnalyzed']);
+        } finally {
+            chdir($previous);
+        }
+    }
+
+    #[Test]
+    public function itCommitsGraphRuntimeOptionsToTheSameStoresItsAnalyzerReads(): void
+    {
+        file_put_contents($this->tempDir . '/Sample.php', '<?php namespace App; final class Sample {}');
+        file_put_contents($this->tempDir . '/qmx.yaml', "paths: ['{$this->tempDir}']\ncache: {dir: '{$this->tempDir}/cache', enabled: true}\nparallel: {workers: 2}\ncoupling: {framework_namespaces: [{subtree: Framework}]}\n");
+        $tester = new CommandTester($this->containerCommand());
+        self::assertSame(0, $tester->execute(['--config' => $this->tempDir . '/qmx.yaml']));
+        self::assertDirectoryExists($this->tempDir . '/cache');
+        $this->removeDirectory($this->tempDir . '/cache');
+
+        self::assertSame(0, $tester->execute([
+            '--config' => $this->tempDir . '/qmx.yaml',
+            '--preset' => ['strict'],
+            '--no-cache' => true,
+            '--workers' => '0',
+            '--memory-limit' => '768M',
+        ]), $tester->getDisplay());
+        self::assertDirectoryDoesNotExist($this->tempDir . '/cache');
+        self::assertSame('768M', \ini_get('memory_limit'));
+        $runtime = (new ReflectionProperty(AnalysisPreflight::class, 'runtimeConfigurator'))->getValue($this->preflight());
+        $parallel = (new ReflectionProperty($runtime, 'parallelConfigurationStore'))->getValue($runtime);
+        self::assertSame(0, $parallel->current()->workers);
+        $cacheFactory = (new ReflectionProperty($runtime, 'cacheFactory'))->getValue($runtime);
+        $cacheStore = (new ReflectionProperty($cacheFactory, 'configurationStore'))->getValue($cacheFactory);
+        self::assertFalse($cacheStore->current()->enabled);
+        $analysisRuntime = (new ReflectionProperty($runtime, 'analysisRuntimeConfigurator'))->getValue($runtime);
+        $coupling = (new ReflectionProperty($analysisRuntime, 'couplingConfigurator'))->getValue($analysisRuntime);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis::class, $coupling);
+        self::assertTrue($coupling->isFramework('Framework\\Library'));
+        self::assertFalse($coupling->isFramework('App\\Sample'));
+
+        file_put_contents($this->tempDir . '/qmx.yaml', "paths: ['{$this->tempDir}']\ncache: {dir: '{$this->tempDir}/cache', enabled: false}\n");
+        self::assertSame(0, $tester->execute(['--config' => $this->tempDir . '/qmx.yaml']));
+        self::assertDirectoryDoesNotExist($this->tempDir . '/cache');
+    }
+
+    #[Test]
+    public function itRefusesAMissingPathBesideAValidSourceBeforeAnalysis(): void
+    {
+        file_put_contents($this->tempDir . '/Present.php', '<?php final class Present {}');
+        $analyzer = new CountingDependencyGraphAnalyzer($this->createAnalyzer());
+        $tester = $this->createCommandTesterWithAnalyzer($analyzer);
+        self::assertSame(3, $tester->execute(['paths' => [$this->tempDir, $this->tempDir . '/missing']], ['capture_stderr_separately' => true]));
+        self::assertSame(0, $analyzer->calls);
+        self::assertStringContainsString('missing', $tester->getErrorOutput());
     }
 
     #[Test]
@@ -384,6 +583,31 @@ final class GraphExportCommandTest extends TestCase
         self::assertSame(4, $tester->getStatusCode());
         self::assertSame("existing bytes\n", file_get_contents($destination));
         self::assertStringContainsString('Analysis incomplete: 1 of 2', $tester->getErrorOutput());
+    }
+
+    #[Test]
+    public function itHoldsAPrivateGraphSiblingBeforeAnalysisAndDiscardsItOnFailure(): void
+    {
+        file_put_contents($this->tempDir . '/Source.php', '<?php final class Source {}');
+        $destination = $this->tempDir . '/graph.json';
+        file_put_contents($destination, 'OLD GRAPH');
+        $observed = null;
+        $analyzer = self::createStub(DependencyGraphAnalyzerInterface::class);
+        $analyzer->method('analyze')->willReturnCallback(function () use (&$observed, $destination): never {
+            $entries = scandir($this->tempDir);
+            self::assertIsArray($entries);
+            $observed = array_values(array_diff($entries, ['.', '..', 'Source.php', 'graph.json']));
+            self::assertSame('OLD GRAPH', file_get_contents($destination));
+            throw new RuntimeException('Stop after observing the staged graph.');
+        });
+        $tester = $this->createCommandTesterWithAnalyzer($analyzer);
+        $tester->execute(['paths' => [$this->tempDir . '/Source.php'], '--format' => 'json', '--output' => $destination]);
+
+        self::assertSame(5, $tester->getStatusCode());
+        self::assertIsArray($observed);
+        self::assertCount(1, $observed, 'Graph output must hold a private sibling while analysis runs.');
+        self::assertSame('OLD GRAPH', file_get_contents($destination));
+        self::assertSame(['Source.php', 'graph.json'], array_values(array_diff((array) scandir($this->tempDir), ['.', '..'])));
     }
 
     /**
@@ -632,44 +856,49 @@ final class GraphExportCommandTest extends TestCase
         self::assertFileDoesNotExist($destination);
     }
 
-    /**
-     * The neighbouring door stays silent on purpose: a missed exclusion leaves
-     * the graph exactly what it would have been, so the caller loses nothing.
-     * This is the regression guard against the refusal spreading.
-     */
     #[Test]
     #[DataProvider('provideExportFormats')]
-    public function itKeepsAMissedExcludeNamespaceSilentAndUnchanged(string $format): void
+    public function itRefusesAMissedExcludeNamespaceAndSuggestsTheExactCase(string $format): void
     {
         $this->writeTwoNamespaceFixture();
 
-        $plain = $this->createCommandTester();
-        self::assertSame(0, $plain->execute([
-            'paths' => [$this->tempDir],
-            '--format' => $format,
-        ]));
-
-        $missedExclude = $this->createCommandTester();
-        self::assertSame(0, $missedExclude->execute([
+        $missed = $this->createCommandTester();
+        self::assertSame(3, $missed->execute([
             'paths' => [$this->tempDir],
             '--format' => $format,
             '--exclude-namespace' => ['subtree:Zzz\\Nope'],
-        ]));
+        ], ['capture_stderr_separately' => true]));
+        self::assertStringContainsString('Zzz\\Nope', self::refusalText($missed, $format));
 
-        self::assertSame(
-            self::withoutTimestamp($plain->getDisplay()),
-            self::withoutTimestamp($missedExclude->getDisplay()),
-        );
+        $wrongCase = $this->createCommandTester();
+        self::assertSame(3, $wrongCase->execute([
+            'paths' => [$this->tempDir],
+            '--format' => $format,
+            '--exclude-namespace' => ['subtree:acme\\deep'],
+        ], ['capture_stderr_separately' => true]));
+        $refusal = self::refusalText($wrongCase, $format);
+        self::assertStringContainsString('did you mean "Acme\\Deep"', $refusal);
+
+        $correctCase = $this->createCommandTester();
+        self::assertSame(0, $correctCase->execute([
+            'paths' => [$this->tempDir],
+            '--format' => $format,
+            '--exclude-namespace' => ['subtree:Acme\\Deep'],
+        ]));
+        self::assertStringNotContainsString('Deep', $correctCase->getDisplay());
     }
 
-    /**
-     * The JSON envelope carries `meta.timestamp` from `date('c')`, which
-     * differs across a second boundary — comparing it would make the
-     * byte-for-byte guard flaky about the wrong thing.
-     */
-    private static function withoutTimestamp(string $rendered): string
+    private static function refusalText(CommandTester $tester, string $format): string
     {
-        return (string) preg_replace('/"timestamp": "[^"]+"/', '"timestamp": "-"', $rendered);
+        if ($format !== 'json') {
+            return $tester->getErrorOutput();
+        }
+
+        $decoded = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($decoded);
+        self::assertIsString($decoded['error'] ?? null);
+
+        return $decoded['error'];
     }
 
     private function writeTwoNamespaceFixture(): void
@@ -701,15 +930,24 @@ final class GraphExportCommandTest extends TestCase
         rmdir($dir);
     }
 
-    private function createAnalyzer(): DependencyGraphAnalyzer
+    private function containerCommand(): GraphExportCommand
     {
-        return new DependencyGraphAnalyzer(
-            new FinderFileDiscovery(),
-            new PhpFileParser(),
-            new DependencyVisitor(new DependencyResolver()),
-            new DependencyGraphBuilder(),
-            new DeclarationRegistrarFactory(),
-        );
+        if ($this->containerCommand === null) {
+            $command = (new ContainerFactory())->create()->get(GraphExportCommand::class);
+            self::assertInstanceOf(GraphExportCommand::class, $command);
+            $this->containerCommand = $command;
+        }
+
+        return $this->containerCommand;
+    }
+
+    private function createAnalyzer(): DependencyGraphAnalyzerInterface
+    {
+        $command = $this->containerCommand();
+        $analyzer = (new ReflectionProperty(GraphExportCommand::class, 'analyzer'))->getValue($command);
+        \assert($analyzer instanceof DependencyGraphAnalyzerInterface);
+
+        return $analyzer;
     }
 
     private function createCommandTester(): CommandTester
@@ -722,14 +960,24 @@ final class GraphExportCommandTest extends TestCase
         $command = new GraphExportCommand(
             $analyzer,
             new DependencyGraphProjector(),
+            $this->preflight(),
             new ErrorStream(),
-            new RefusalPresenter(new ErrorStream()),
+            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
             new NullLogger(),
         );
         $application = new Application();
         $application->addCommand($command);
 
         return new CommandTester($command);
+    }
+
+    private function preflight(): AnalysisPreflight
+    {
+        $command = $this->containerCommand();
+        $preflight = (new ReflectionProperty(GraphExportCommand::class, 'preflight'))->getValue($command);
+        \assert($preflight instanceof AnalysisPreflight);
+
+        return $preflight;
     }
 }
 
@@ -746,10 +994,11 @@ final class CountingDependencyGraphAnalyzer implements DependencyGraphAnalyzerIn
 
     public function __construct(private readonly DependencyGraphAnalyzerInterface $delegate) {}
 
-    public function analyze(array $paths, AbsolutePath $projectRoot): DependencyGraphAnalysisResult
-    {
+    public function analyze(
+        \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration $configuration,
+    ): DependencyGraphAnalysisResult {
         ++$this->calls;
 
-        return $this->delegate->analyze($paths, $projectRoot);
+        return $this->delegate->analyze($configuration);
     }
 }

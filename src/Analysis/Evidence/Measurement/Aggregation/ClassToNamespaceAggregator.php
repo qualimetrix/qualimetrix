@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Measurement\Aggregation;
 
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
@@ -30,7 +31,7 @@ final class ClassToNamespaceAggregator implements AggregationPhaseInterface
         }
 
         $profiler->start('aggregation.to_namespaces.build_map', 'aggregation');
-        $fileToNamespace = NamespaceMetricContributions::mapFilesToNamespaces($repository);
+        $fileToNamespace = FileNamespaceIndex::fromRepository($repository);
         $namespaceToFileSymbols = NamespaceMetricContributions::mapNamespacesToFileSymbols($repository, $fileToNamespace);
         $profiler->stop('aggregation.to_namespaces.build_map');
 
@@ -59,9 +60,8 @@ final class ClassToNamespaceAggregator implements AggregationPhaseInterface
             );
             $namespaceBag = AggregationHelper::addSymbolCounts($namespaceBag, $symbolInfos);
 
-            $firstFile = $symbolInfos[0]->file;
             $namespacePath = SymbolPath::forNamespace($namespace);
-            $repository->add($namespacePath, $namespaceBag, $firstFile, null);
+            $repository->add($namespacePath, $namespaceBag, null, null);
         }
         $profiler->stop('aggregation.to_namespaces.process');
     }

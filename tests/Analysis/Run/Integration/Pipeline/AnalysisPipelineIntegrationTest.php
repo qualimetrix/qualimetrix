@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Run\Integration\Pipeline;
 
-use ArrayIterator;
+use LogicException;
 use PHPUnit\Framework\Attributes\Group;
 
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyDetector;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions;
@@ -17,15 +19,18 @@ use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingCollector;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
+use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MeasurementAggregationService;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MetricAggregator;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
@@ -36,41 +41,63 @@ use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\DerivedMetricExtractor;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
-use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
-use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
+use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
+use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleExecution;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
 use Qualimetrix\Analysis\Policy\Inline\Extraction\SourceControlExtractor;
 use Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
+use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
+use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry;
+use Qualimetrix\Analysis\Run\Contract\FileSetInspectionFailure;
+use Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Analysis\Run\Discovery\ScopeFacts;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Infrastructure\Ast\CachedFileParser;
 use Qualimetrix\Infrastructure\Ast\PhpFileParser;
 use Qualimetrix\Infrastructure\Cache\CacheConfigurationStore;
@@ -94,8 +121,11 @@ use Qualimetrix\Infrastructure\Profiler\ProfileSession;
 use Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphExportFormat;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphProjectionRequest;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Qualimetrix\Tests\Analysis\Run\Support\Pipeline\TestPipelineBuilder;
+use ReflectionMethod;
 use ReflectionProperty;
 use SplFileInfo;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -125,6 +155,215 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $this->profiler = new ProfileSession();
     }
 
+    #[Test]
+    public function itMapsEveryCollectionFailureKindToItsCoverageFailureKind(): void
+    {
+        $paths = [
+            RelativePath::fromString('parse.php'),
+            RelativePath::fromString('unreadable.php'),
+            RelativePath::fromString('processing.php'),
+        ];
+        $failures = [
+            FileProcessingResult::failure($paths[0], 'parse error', FileProcessingFailureKind::Parse),
+            FileProcessingResult::failure($paths[1], 'read error', FileProcessingFailureKind::UnreadableFile),
+            FileProcessingResult::failure($paths[2], 'processing error', FileProcessingFailureKind::Processing),
+        ];
+
+        $coverage = (new ReflectionMethod(AnalysisPipeline::class, 'buildCoverage'))->invoke(
+            null,
+            $paths,
+            [],
+            new CollectionPhaseOutput([], $failures, classLikeDeclarations: []),
+            [],
+            [],
+            [],
+        );
+
+        self::assertSame(3, $coverage->failedFilesCount());
+        $mapped = [];
+        foreach ($coverage->failures as $failure) {
+            $mapped[$failure->path->value()] = [$failure->kind, $failure->message];
+        }
+        ksort($mapped);
+        self::assertSame([
+            'parse.php' => [AnalysisFailureKind::Parse, 'parse error'],
+            'processing.php' => [AnalysisFailureKind::Processing, 'processing error'],
+            'unreadable.php' => [AnalysisFailureKind::UnreadableFile, 'read error'],
+        ], $mapped);
+    }
+
+    #[Test]
+    public function itKeepsCollectionFailurePrecedenceAndUnfailedSurvivorsWhenInspectionAlsoFails(): void
+    {
+        $collectedFailure = RelativePath::fromString('collected.php');
+        $lateFailure = RelativePath::fromString('late.php');
+        $survivor = RelativePath::fromString('survivor.php');
+
+        $coverage = (new ReflectionMethod(AnalysisPipeline::class, 'buildCoverage'))->invoke(
+            null,
+            [$collectedFailure, $lateFailure, $survivor],
+            [],
+            new CollectionPhaseOutput(
+                [$lateFailure, $survivor],
+                [FileProcessingResult::failure($collectedFailure, 'collection parse', FileProcessingFailureKind::Parse)],
+                [],
+            ),
+            [],
+            [],
+            [
+                new AnalysisFailure($collectedFailure, AnalysisFailureKind::UnreadableFile, 'later read'),
+                new AnalysisFailure($lateFailure, AnalysisFailureKind::UnreadableFile, 'first read'),
+                new AnalysisFailure($lateFailure, AnalysisFailureKind::UnreadableFile, 'repeated read'),
+            ],
+        );
+
+        self::assertSame([$survivor], $coverage->analyzedFiles);
+        self::assertSame(2, $coverage->failedFilesCount());
+        self::assertSame($collectedFailure, $coverage->failures[0]->path);
+        self::assertSame(AnalysisFailureKind::Parse, $coverage->failures[0]->kind);
+        self::assertSame('collection parse', $coverage->failures[0]->message);
+        self::assertSame($lateFailure, $coverage->failures[1]->path);
+        self::assertSame('first read', $coverage->failures[1]->message);
+    }
+
+    #[Test]
+    #[TestWith(['analyze'])]
+    #[TestWith(['audit'])]
+    public function itRetainsPublishedSelectedAndSkippedPathsAfterCollectionRemovesTheirParent(string $entryPoint): void
+    {
+        $fixtureRoot = sys_get_temp_dir() . '/qmx-late-inspection-' . bin2hex(random_bytes(6));
+        $lostDirectory = $fixtureRoot . '/lost';
+        mkdir($lostDirectory, 0o755, true);
+        file_put_contents($lostDirectory . '/Bad.php', '<?php');
+        file_put_contents($lostDirectory . '/Skipped.php', '<?php');
+        file_put_contents($fixtureRoot . '/Keep.php', '<?php');
+
+        $root = AbsolutePath::fromString($fixtureRoot);
+        $state = new class {
+            public bool $removeAfterCollection = true;
+        };
+        $discovery = self::createStub(ProjectFilesInterface::class);
+        $discovery->method('discover')->willReturnCallback(
+            static fn(): DiscoveredProjectFiles => new DiscoveredProjectFiles(
+                [new SplFileInfo($lostDirectory . '/Bad.php'), new SplFileInfo($fixtureRoot . '/Keep.php')],
+                [],
+                [],
+                $state->removeAfterCollection
+                        ? [SkippedEntry::nonRegular(AbsolutePath::fromString($lostDirectory . '/Skipped.php'), 'not regular')]
+                        : [],
+                [],
+                new ScopeFacts([], [], [], false),
+                $state->removeAfterCollection ? 3 : 2,
+            ),
+        );
+        $orchestrator = self::createStub(CollectionOrchestratorInterface::class);
+        $orchestrator->method('collect')->willReturnCallback(
+            static function () use ($state, $lostDirectory): CollectionPhaseOutput {
+                if ($state->removeAfterCollection) {
+                    unlink($lostDirectory . '/Bad.php');
+                    unlink($lostDirectory . '/Skipped.php');
+                    rmdir($lostDirectory);
+                }
+
+                return new CollectionPhaseOutput([
+                    RelativePath::fromString('lost/Bad.php'),
+                    RelativePath::fromString('Keep.php'),
+                ], [], classLikeDeclarations: []);
+            },
+        );
+        $participant = new class implements FileSetInspectionParticipantInterface {
+            public bool $fail = true;
+            public int $resets = 0;
+
+            public static function participantId(): string
+            {
+                return 'late-read';
+            }
+
+            public static function producerRuleName(): string
+            {
+                return 'duplication.clone';
+            }
+
+            public function resetForRun(): void
+            {
+                ++$this->resets;
+            }
+
+            public function inspect(array $eligibleFiles, AbsolutePath $projectRoot): void
+            {
+                if ($this->fail) {
+                    throw new FileSetInspectionFailure([[
+                        'input' => PathFactory::fromCliArgument($eligibleFiles[0]->getPathname(), $projectRoot),
+                        'message' => 'late read failed',
+                    ]]);
+                }
+            }
+        };
+        $metadata = new RuleMetadata('duplication.clone', CodeDuplicationOptions::class, '', [], false);
+        $registry = new RuleOptionsRegistry();
+        $registry->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), [$metadata]));
+        $ruleExecutor = self::createStub(RuleExecutionInterface::class);
+        $ruleExecutor->method('allRules')->willReturn([$metadata]);
+        $ruleExecutor->method('execute')->willReturn(new RuleExecutionResult(
+            [],
+            [],
+            new RuleExclusionStats(),
+            LevelActivity::empty(),
+        ));
+        $ruleExecutor->method('publication')->willReturn(new ChannelPublication(new RuleEnablement([], null)));
+        $ruleExecutor->method('publishable')->willReturn([]);
+        $producerGate = new RuleSelectorProducerGate($registry);
+        $computed = self::createStub(ComputedMetricEvaluator::class);
+        $computed->method('evaluate')->willReturn(new ComputedMetricEvaluationSummary());
+
+        $pipeline = TestPipelineBuilder::create()
+            ->withProjectFiles($discovery)
+            ->withCollectionOrchestrator($orchestrator)
+            ->withRuleExecution($ruleExecutor)
+            ->withRuleConfiguration($registry)
+            ->withMeasurementAggregation(new MeasurementAggregationService(
+                [],
+                new CompositeCollector([], new DeclarationRegistrarFactory()),
+                $this->profiler,
+            ))
+            ->withComputedMetricEvaluation($computed)
+            ->withCircularDependencyPreparation(new CircularDependencyAnalysis(new CircularDependencyDetector()))
+            ->withFileSetInspection(new FileSetInspectionComposite([$participant], $producerGate, $this->profiler), $producerGate)
+            ->withProfiler($this->profiler)
+            ->build();
+
+        try {
+            $run = self::runConfiguration($root);
+            $coverage = $entryPoint === 'analyze'
+                ? $pipeline->analyze($run)->measured->coverage
+                : $pipeline->auditDirectives($run)->coverage;
+
+            self::assertFalse($coverage->isComplete());
+            self::assertSame(['Keep.php'], array_map(static fn(RelativePath $path): string => $path->value(), $coverage->analyzedFiles));
+            self::assertSame(2, $coverage->failedFilesCount());
+            self::assertSame('lost/Bad.php', $coverage->failures[0]->path->value());
+            self::assertSame(AnalysisFailureKind::UnreadableFile, $coverage->failures[0]->kind);
+            self::assertSame('late read failed', $coverage->failures[0]->message);
+            self::assertSame('lost/Skipped.php', $coverage->failures[1]->path->value());
+            self::assertSame(AnalysisFailureKind::NotRegularFile, $coverage->failures[1]->kind);
+
+            mkdir($lostDirectory, 0o755, true);
+            file_put_contents($lostDirectory . '/Bad.php', '<?php');
+            $state->removeAfterCollection = false;
+            $participant->fail = false;
+            $nextCoverage = $entryPoint === 'analyze'
+                ? $pipeline->analyze($run)->measured->coverage
+                : $pipeline->auditDirectives($run)->coverage;
+
+            self::assertTrue($nextCoverage->isComplete());
+            self::assertSame(2, $nextCoverage->analyzedFilesCount());
+            self::assertSame(2, $participant->resets);
+        } finally {
+            self::removeFixtureDirectory($fixtureRoot);
+        }
+    }
+
     /**
      * Bug: AnalysisPipeline builds a DependencyGraph ($graph) but never passes it
      * to AnalysisContext. Line 127:
@@ -139,7 +378,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
     {
         // Arrange: create dependencies between two classes
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\Service\OrderService'), RelativePath::fromString('tmp/OrderService.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\Repository\OrderRepository')),
                 DependencyType::New_,
@@ -159,7 +398,11 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             },
         );
 
-        $ruleExecutor = new RuleExecution([$spyRule], $this->profiler, new RuleOptionsRegistry());
+        $registry = new RuleOptionsRegistry();
+        $metadata = new RuleMetadata('test.spy', \Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellOptions::class, '', [], false);
+        $configuration = FindingConfiguration::none();
+        $registry->replace(ResolvedOptionsFixture::ready($configuration, [$metadata]));
+        $ruleExecutor = new RuleExecution([['metadata' => $metadata, 'create' => static fn(): RuleInterface => $spyRule]], $this->profiler, $registry);
 
         $pipeline = $this->createPipelineWithDependencies(
             $dependencies,
@@ -167,7 +410,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         );
 
         // Act
-        $pipeline->analyze(self::runConfiguration(AbsolutePath::fromString('/tmp/src')));
+        $pipeline->analyze(self::runConfiguration(AbsolutePath::fromString(sys_get_temp_dir())));
 
         // Assert: the rule should have received a non-null dependency graph
         self::assertNotNull($capturedContext, 'Rule should have been executed');
@@ -192,13 +435,13 @@ final class AnalysisPipelineIntegrationTest extends TestCase
     {
         // Arrange: A circular dependency A -> B -> A
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceA'), RelativePath::fromString('tmp/ServiceA.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceB')),
                 DependencyType::New_,
                 new Location(RelativePath::fromString('tmp/ServiceA.php'), 10),
             ),
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceB'), RelativePath::fromString('tmp/ServiceB.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceA')),
                 DependencyType::New_,
@@ -210,8 +453,13 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $graphBuilder = AdjacencyGraphBuilder::builder();
         $graph = $graphBuilder->build(
             $dependencies,
-            array_map(static fn(Dependency $dependency): LogicalClassPath => new LogicalClassPath($dependency->sourceLogical()), $dependencies),
-        );
+            array_map(static fn(Dependency $dependency): ClassLikeDeclaration => ClassLikeDeclaration::of(
+                $dependency->source,
+                ClassType::Class_,
+                false,
+                false,
+            ), $dependencies),
+        )->graph;
         $detector = new CircularDependencyDetector();
         $cycles = $detector->detect($graph);
         self::assertNotEmpty($cycles, 'Sanity check: CircularDependencyDetector should find cycles');
@@ -219,18 +467,22 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         // Now run via the full pipeline with CircularDependencyRule.
         $analysis = new CircularDependencyAnalysis($detector);
         $rule = new CircularDependencyRule(new CircularDependencyOptions(enabled: true), $analysis);
-        $ruleExecutor = new RuleExecution([$rule], $this->profiler, new RuleOptionsRegistry());
+        $registry = new RuleOptionsRegistry();
+        $lookup = ResolvedOptionsFixture::lookup($rule);
+        $configuration = FindingConfiguration::none();
+        $registry->replace(ResolvedOptionsFixture::ready($configuration, [$lookup['metadata']]));
+        $ruleExecutor = new RuleExecution([$lookup], $this->profiler, $registry);
 
         // Pre-populate the repository with the classes so CouplingCollector can find them
         $repository = new InMemoryMetricRepository();
-        $repository->add(
-            SymbolPath::forClass('Fixtures\CircularDeps', 'ServiceA'),
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('Fixtures\CircularDeps', 'ServiceA'), RelativePath::fromString('tmp/ServiceA.php'), DeclarationOrdinal::fromRank(0))),
             new MetricBag(),
             RelativePath::fromString('tmp/ServiceA.php'),
             1,
         );
-        $repository->add(
-            SymbolPath::forClass('Fixtures\CircularDeps', 'ServiceB'),
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('Fixtures\CircularDeps', 'ServiceB'), RelativePath::fromString('tmp/ServiceB.php'), DeclarationOrdinal::fromRank(0))),
             new MetricBag(),
             RelativePath::fromString('tmp/ServiceB.php'),
             1,
@@ -244,11 +496,11 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         );
 
         // Act
-        $result = $pipeline->analyze(self::runConfiguration(AbsolutePath::fromString('/tmp/src')));
+        $result = $pipeline->analyze(self::runConfiguration(AbsolutePath::fromString(sys_get_temp_dir())));
 
         // Assert: should find circular dependency findings
         $circularFindings = array_filter(
-            $result->findings,
+            $result->findings(),
             static fn(Finding $v): bool => $v->ruleName === CircularDependencyRule::NAME,
         );
 
@@ -295,17 +547,21 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $ruleInputValidator = (new ReflectionProperty(CheckCommand::class, 'ruleInputValidator'))->getValue($checkCommand);
         self::assertInstanceOf(RuleInputValidator::class, $ruleInputValidator);
 
-        $architectureDocument = new ConfigurationDocument([[
+        $configurationPipeline = $container->get(ConfigurationPipelineInterface::class);
+        self::assertInstanceOf(ConfigurationPipelineInterface::class, $configurationPipeline);
+        $pipelineSections = LayeredDocument::sectionsOf($configurationPipeline);
+        $architectureValues = [
+            'layers' => [
+                ['name' => 'controller', 'patterns' => ['RunResetFixture\\First\\Controller\\**']],
+                ['name' => 'repository', 'patterns' => ['RunResetFixture\\First\\Repository\\**']],
+            ],
+            'allow' => ['controller' => [], 'repository' => []],
+            'coverage-gap' => 'ignore',
+        ];
+        $architectureDocument = LayeredDocument::of([[
             'source' => 'test',
-            'values' => ['architecture' => [
-                'layers' => [
-                    ['name' => 'controller', 'patterns' => ['RunResetFixture\\First\\Controller\\**']],
-                    ['name' => 'repository', 'patterns' => ['RunResetFixture\\First\\Repository\\**']],
-                ],
-                'allow' => ['controller' => [], 'repository' => []],
-                'coverage-gap' => 'ignore',
-            ]],
-        ]], AbsolutePath::fromString($fixtureRoot));
+            'values' => ['architecture' => $architectureValues],
+        ]], AbsolutePath::fromString($fixtureRoot), ...$pipelineSections);
 
         /**
          * @return array{\Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult, array<string, array{total: float, count: int, unstopped: int}>}
@@ -314,28 +570,26 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             string $path,
             ConfigurationDocument $document,
             string ...$disabledRules,
-        ) use ($fixtureRoot, $runtimeConfigurator, $pipeline, $checkCommand, $profileReport, $ruleConfiguration, $ruleInputValidator): array {
+        ) use ($fixtureRoot, $runtimeConfigurator, $pipeline, $checkCommand, $profileReport, $ruleInputValidator, $pipelineSections, $architectureValues): array {
             $runtimeConfigurator->resetRunState();
             $input = new ArrayInput(['--profile' => true], $checkCommand->getDefinition());
             $projectRoot = AbsolutePath::fromString($fixtureRoot);
+            if ($disabledRules !== []) {
+                $values = ['disabled_rules' => array_values($disabledRules)];
+                if ($document->resolved()->get('architecture') !== null) {
+                    $values['architecture'] = $architectureValues;
+                }
+                $document = LayeredDocument::of([['source' => 'test', 'values' => $values]], $projectRoot, ...$pipelineSections);
+            }
             $findingConfiguration = $ruleInputValidator->resolve($document, $input);
-            $runtimeConfigurator->configure(
-                $document,
-                self::runConfigurationFor($document),
-                $findingConfiguration,
-                new CacheConfiguration(PathFactory::fromCliArgument('.qmx-cache', $projectRoot), true),
-                new ParallelConfiguration(),
-                $input,
-                new BufferedOutput(),
-            );
-            $ruleConfiguration->configureSelection(new RuleSelection(disabled: array_values($disabledRules)));
+            $runtimeConfigurator->configure($document, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration(self::runConfigurationFor($document), new CacheConfiguration(PathFactory::fromCliArgument('.qmx-cache', $projectRoot), true), new ParallelConfiguration()), $findingConfiguration, $input, new BufferedOutput());
             $result = $pipeline->analyze(new RunConfiguration(
-                [AbsolutePath::fromString($path)],
-                [],
-                AbsolutePath::fromString($fixtureRoot),
-                GeneratedFilePolicy::Include,
-                coversProjectScope: true,
+                pathExcludes: [],
+                projectRoot: AbsolutePath::fromString($fixtureRoot),
+                generatedFilePolicy: GeneratedFilePolicy::Include,
+                projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: AbsolutePath::fromString($fixtureRoot), pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [AbsolutePath::fromString($path)], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
                 authoredPathExcludes: [],
+                autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
             ));
 
             return [$result, $profileReport->summary()->spans];
@@ -343,33 +597,33 @@ final class AnalysisPipelineIntegrationTest extends TestCase
 
         try {
             [$first] = $run($cyclicRoot, $architectureDocument);
-            self::assertNotEmpty(self::findingsNamed($first->findings, LayerViolationRule::NAME));
-            self::assertNotEmpty(self::findingsNamed($first->findings, CircularDependencyRule::NAME));
+            self::assertNotEmpty(self::findingsNamed($first->findings(), LayerViolationRule::NAME));
+            self::assertNotEmpty(self::findingsNamed($first->findings(), CircularDependencyRule::NAME));
 
-            [$second] = $run($cleanRoot, new ConfigurationDocument([], AbsolutePath::fromString($fixtureRoot)));
-            self::assertSame([], self::findingsNamed($second->findings, LayerViolationRule::NAME));
-            self::assertSame([], self::findingsNamed($second->findings, CircularDependencyRule::NAME));
+            [$second] = $run($cleanRoot, LayeredDocument::of([], AbsolutePath::fromString($fixtureRoot), ...$pipelineSections));
+            self::assertSame([], self::findingsNamed($second->findings(), LayerViolationRule::NAME));
+            self::assertSame([], self::findingsNamed($second->findings(), CircularDependencyRule::NAME));
 
             [$withoutCycles, $cycleDisabledSpans] = $run(
                 $cyclicRoot,
                 $architectureDocument,
                 CircularDependencyRule::NAME,
             );
-            self::assertNotEmpty(self::findingsNamed($withoutCycles->findings, LayerViolationRule::NAME));
-            self::assertSame([], self::findingsNamed($withoutCycles->findings, CircularDependencyRule::NAME));
+            self::assertNotEmpty(self::findingsNamed($withoutCycles->findings(), LayerViolationRule::NAME));
+            self::assertSame([], self::findingsNamed($withoutCycles->findings(), CircularDependencyRule::NAME));
             self::assertArrayHasKey('architecture-prepare', $cycleDisabledSpans);
             self::assertArrayNotHasKey('cycles', $cycleDisabledSpans);
 
             // Both producers of the layer policy, because the span is skipped
             // only when nothing that reads the policy is selected — see
-            // LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES.
+            // ArchitectureChannels::PRODUCERS.
             [$withoutLayers, $architectureDisabledSpans] = $run(
                 $cyclicRoot,
                 $architectureDocument,
-                ...LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES,
+                ...ArchitectureChannels::PRODUCERS,
             );
-            self::assertSame([], self::findingsNamed($withoutLayers->findings, LayerViolationRule::NAME));
-            self::assertNotEmpty(self::findingsNamed($withoutLayers->findings, CircularDependencyRule::NAME));
+            self::assertSame([], self::findingsNamed($withoutLayers->findings(), LayerViolationRule::NAME));
+            self::assertNotEmpty(self::findingsNamed($withoutLayers->findings(), CircularDependencyRule::NAME));
             self::assertArrayNotHasKey('architecture-prepare', $architectureDisabledSpans);
             self::assertArrayHasKey('cycles', $architectureDisabledSpans);
         } finally {
@@ -393,13 +647,13 @@ final class AnalysisPipelineIntegrationTest extends TestCase
     {
         // Arrange: two classes in the same namespace with cross-namespace dependencies
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\Service\OrderService'), RelativePath::fromString('tmp/OrderService.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\Repository\OrderRepository')),
                 DependencyType::New_,
                 new Location(RelativePath::fromString('tmp/OrderService.php'), 10),
             ),
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\Service\PaymentService'), RelativePath::fromString('tmp/PaymentService.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\Repository\PaymentRepository')),
                 DependencyType::New_,
@@ -408,16 +662,16 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         ];
 
         // Pre-populate repository with classes (so CouplingCollector finds them)
-        $repository = new InMemoryMetricRepository();
-        $repository->add(
-            SymbolPath::forClass('App\Service', 'OrderService'),
-            (new MetricBag())->with('size.loc', 50),
+        $repository = new InMemoryMetricRepository((new CouplingCollector(new CouplingAnalysis()))->getMetricDefinitions());
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\Service', 'OrderService'), RelativePath::fromString('tmp/OrderService.php'), DeclarationOrdinal::fromRank(0))),
+            new MetricBag(),
             RelativePath::fromString('tmp/OrderService.php'),
             1,
         );
-        $repository->add(
-            SymbolPath::forClass('App\Service', 'PaymentService'),
-            (new MetricBag())->with('size.loc', 30),
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\Service', 'PaymentService'), RelativePath::fromString('tmp/PaymentService.php'), DeclarationOrdinal::fromRank(0))),
+            new MetricBag(),
             RelativePath::fromString('tmp/PaymentService.php'),
             1,
         );
@@ -443,6 +697,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             new \Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats(),
             \Qualimetrix\Analysis\Finding\Contract\LevelActivity::empty(),
         ));
+        $ruleExecutor->method('publication')->willReturn(new ChannelPublication(new RuleEnablement([], null)));
 
         $pipeline = $this->createPipelineWithGlobalCollectors(
             $dependencies,
@@ -453,11 +708,11 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         );
 
         // Act
-        $result = $pipeline->analyze(self::runConfiguration(AbsolutePath::fromString('/tmp/src')));
+        $result = $pipeline->analyze(self::runConfiguration(AbsolutePath::fromString(sys_get_temp_dir())));
 
         // Verify class-level CBO was computed (sanity check)
-        $orderServiceBag = $result->metrics->get(
-            SymbolPath::forClass('App\Service', 'OrderService'),
+        $orderServiceBag = $result->measured->repository->getSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\Service', 'OrderService'), RelativePath::fromString('tmp/OrderService.php'), DeclarationOrdinal::fromRank(0))),
         );
         self::assertNotNull(
             $orderServiceBag->get('coupling.cbo'),
@@ -465,7 +720,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         );
 
         // Now check namespace-level aggregated CBO
-        $namespaceBag = $result->metrics->get(SymbolPath::forNamespace('App\Service'));
+        $namespaceBag = $result->measured->repository->get(SymbolPath::forNamespace('App\Service'));
 
         // The CouplingCollector defines cbo aggregation at namespace level
         // with Sum, Average, Max strategies. These should produce cbo.sum, cbo.avg, cbo.max.
@@ -501,7 +756,16 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             $fixtureFiles,
         );
         $universe = array_map(
-            static fn(string $fqn): LogicalClassPath => new LogicalClassPath(SymbolPath::fromClassFqn($fqn)),
+            static fn(string $fqn): ClassLikeDeclaration => ClassLikeDeclaration::of(
+                DeclarationPath::of(
+                    SymbolPath::fromClassFqn($fqn),
+                    RelativePath::fromString('fixture.php'),
+                    DeclarationOrdinal::fromRank(0),
+                ),
+                ClassType::Class_,
+                false,
+                false,
+            ),
             [
                 'Fixtures\\CouplingProject\\Core\\AbstractEntity',
                 'Fixtures\\CouplingProject\\Core\\EntityInterface',
@@ -531,8 +795,8 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $container = (new ContainerFactory())->create();
         $builder = $container->get(DependencyGraphBuilderInterface::class);
         self::assertInstanceOf(DependencyGraphBuilderInterface::class, $builder);
-        $sequentialGraph = $builder->build($sequential['dependencies'], $universe);
-        $parallelGraph = $builder->build($parallel['dependencies'], $universe);
+        $sequentialGraph = $builder->build($sequential['dependencies'], $universe)->graph;
+        $parallelGraph = $builder->build($parallel['dependencies'], $universe)->graph;
 
         $isolatedClass = SymbolPath::fromClassFqn('Fixtures\\CouplingProject\\Isolated\\StandaloneClass');
         self::assertSame([], $sequentialGraph->getClassDependencies($isolatedClass));
@@ -625,6 +889,12 @@ namespace InlineWorkerFixture;
  */
 final class Controlled
 {
+    /** @qmx-ignore code-smell.unused-private -- Member line transport. */
+    private const FLAG = true;
+
+    /**
+     * @qmx-threshold complexity.ccn warning=25 error=15
+     */
     public function run(): void {}
 
     #[\Deprecated]
@@ -640,11 +910,38 @@ PHP);
 
             self::assertSame(SequentialStrategy::class, $sequential['strategy']);
             self::assertNotEmpty($sequential['suppressions']);
-            self::assertContains(15, array_map(
+            self::assertContains(21, array_map(
                 static fn($suppression): int => $suppression->line,
                 array_merge(...array_values($sequential['suppressions'])),
             ), 'the directive written after the attribute is read before the worker round trip is compared');
-            self::assertNotEmpty($sequential['thresholdOverrides']);
+
+            $memberSuppressions = array_values(array_filter(
+                array_merge(...array_values($sequential['suppressions'])),
+                static fn(Suppression $suppression): bool => $suppression->rule === 'code-smell.unused-private',
+            ));
+            self::assertCount(1, $memberSuppressions);
+            self::assertSame(12, $memberSuppressions[0]->line);
+            self::assertNotNull($memberSuppressions[0]->binding);
+            self::assertSame(ControlScope::Class_, $memberSuppressions[0]->binding->controlScope);
+            self::assertSame('lines:13:13', $memberSuppressions[0]->binding->reach->key());
+
+            $complexityOverrides = array_values(array_filter(
+                array_merge(...array_values($sequential['thresholdOverrides'])),
+                static fn(ThresholdOverride $override): bool => $override->rulePattern === ComplexityRule::NAME
+                    && $override->subject->toSymbolPath()->getType() === SymbolType::Class_,
+            ));
+            self::assertCount(1, $complexityOverrides);
+            self::assertSame(15, $complexityOverrides[0]->warning);
+            self::assertSame(25, $complexityOverrides[0]->error);
+            self::assertSame(ControlScope::Class_, $complexityOverrides[0]->controlScope);
+
+            $complexityDiagnostics = array_values(array_filter(
+                array_merge(...array_values($sequential['thresholdDiagnostics'])),
+                static fn(ThresholdDiagnostic $diagnostic): bool => $diagnostic->rulePattern === ComplexityRule::NAME,
+            ));
+            self::assertCount(1, $complexityDiagnostics);
+            self::assertSame(16, $complexityDiagnostics[0]->line);
+            self::assertSame('warning_exceeds_error', $complexityDiagnostics[0]->code);
             self::assertNotEmpty($sequential['thresholdDiagnostics']);
 
             $parallel = self::collectThroughProductionStrategy($files, $fixtureRoot, 2);
@@ -699,13 +996,6 @@ PHP);
                     $this->parser = new PhpFileParser();
                 }
 
-                public function parse(SplFileInfo $file): array
-                {
-                    ++$this->parsed;
-
-                    return $this->parser->parse($file);
-                }
-
                 public function parseContent(SplFileInfo $file, string $content): array
                 {
                     ++$this->parsed;
@@ -728,11 +1018,15 @@ PHP);
 
             self::assertSame(1, $inner->parsed, 'the second cached run must not parse');
             self::assertSame(
-                ['8:bound', '12:refused'],
+                ['8:bound', '8:bound', '12:refused'],
                 array_map(
                     static fn($suppression): string => $suppression->line . ':' . ($suppression->refusal === null ? 'bound' : 'refused'),
                     $fresh->suppressions(),
                 ),
+            );
+            self::assertNotSame(
+                $fresh->suppressions()[0]->binding?->subject->toCanonical(),
+                $fresh->suppressions()[1]->binding?->subject->toCanonical(),
             );
             self::assertEquals($fresh->suppressions(), $miss->suppressions());
             self::assertEquals($fresh->suppressions(), $hit->suppressions());
@@ -768,44 +1062,54 @@ PHP);
         ?InMemoryMetricRepository $existingRepository = null,
         ?CircularDependencyAnalysis $circularDependencyAnalysis = null,
     ): AnalysisPipeline {
-        $discovery = self::createStub(FileDiscoveryInterface::class);
-        $discovery->method('discover')->willReturn(new ArrayIterator([
-            new SplFileInfo('/tmp/dummy.php'),
-        ]));
+        $discovery = self::createStub(ProjectFilesInterface::class);
+        $discovery->method('discover')->willReturn(new DiscoveredProjectFiles(
+            [new SplFileInfo(sys_get_temp_dir() . '/dummy.php')],
+            [],
+            [],
+            [],
+            [],
+            new ScopeFacts([], [], [], false),
+            1,
+        ));
 
         $orchestrator = self::createStub(CollectionOrchestratorInterface::class);
         $orchestrator->method('collect')->willReturnCallback(
             function (array $files, $repository) use ($dependencies, $existingRepository): CollectionPhaseOutput {
                 // If we have a pre-populated repository, copy its data
                 if ($existingRepository !== null) {
-                    foreach ($existingRepository->all(SymbolLevel::Class_) as $info) {
-                        $bag = $existingRepository->get($info->symbolPath);
-                        $repository->add($info->symbolPath, $bag, $info->file, $info->line);
+                    foreach ($existingRepository->allClassDeclarations() as $info) {
+                        $subject = $info->subject ?? throw new LogicException('Class declaration requires an exact subject');
+                        $bag = $existingRepository->getSubject($subject);
+                        $repository->addSubject($subject, $bag, $info->file, $info->line);
                     }
                 }
 
                 return new CollectionPhaseOutput([
-                    PathFactory::bestEffortRelative(
-                        $files[0]->getPathname(),
-                        AbsolutePath::fromString('/tmp/src'),
-                    ),
-                ], [], dependencies: $dependencies);
+                    RelativePath::fromString('dummy.php'),
+                ], [], [], dependencies: $dependencies);
             },
         );
 
         $fileCollector = new CompositeCollector([], new DeclarationRegistrarFactory());
 
+        $configuration = new RuleOptionsRegistry();
+        $configuration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), $ruleExecutor->allRules()));
+
+        $computed = self::createStub(ComputedMetricEvaluator::class);
+        $computed->method('evaluate')->willReturn(new ComputedMetricEvaluationSummary());
+
         return TestPipelineBuilder::create()
-            ->withDefaultDiscovery($discovery)
+            ->withProjectFiles($discovery)
             ->withCollectionOrchestrator($orchestrator)
             ->withRuleExecution($ruleExecutor)
-            ->withRuleConfiguration(new RuleOptionsRegistry())
+            ->withRuleConfiguration($configuration)
             ->withMeasurementAggregation(new MeasurementAggregationService([], $fileCollector, $this->profiler))
-            ->withComputedMetricEvaluation(self::createStub(ComputedMetricEvaluator::class))
+            ->withComputedMetricEvaluation($computed)
             ->withCircularDependencyPreparation(
                 $circularDependencyAnalysis ?? new CircularDependencyAnalysis(new CircularDependencyDetector()),
             )
-            ->withFileSetInspection($this->emptyFileSetInspection())
+            ->withFileSetInspection($this->emptyFileSetInspection($configuration))
             ->withProfiler($this->profiler)
             ->build();
     }
@@ -823,49 +1127,59 @@ PHP);
         CompositeCollector $compositeCollector,
         InMemoryMetricRepository $existingRepository,
     ): AnalysisPipeline {
-        $discovery = self::createStub(FileDiscoveryInterface::class);
-        $discovery->method('discover')->willReturn(new ArrayIterator([
-            new SplFileInfo('/tmp/dummy.php'),
-        ]));
+        $discovery = self::createStub(ProjectFilesInterface::class);
+        $discovery->method('discover')->willReturn(new DiscoveredProjectFiles(
+            [new SplFileInfo(sys_get_temp_dir() . '/dummy.php')],
+            [],
+            [],
+            [],
+            [],
+            new ScopeFacts([], [], [], false),
+            1,
+        ));
 
         $orchestrator = self::createStub(CollectionOrchestratorInterface::class);
         $orchestrator->method('collect')->willReturnCallback(
             function (array $files, $repository) use ($dependencies, $existingRepository): CollectionPhaseOutput {
                 // Copy pre-populated symbols into the pipeline's repository
-                foreach ([SymbolLevel::Class_, SymbolLevel::Namespace_] as $level) {
-                    foreach ($existingRepository->all($level) as $info) {
-                        $bag = $existingRepository->get($info->symbolPath);
-                        $repository->add($info->symbolPath, $bag, $info->file, $info->line);
-                    }
+                foreach ($existingRepository->allClassDeclarations() as $info) {
+                    $subject = $info->subject ?? throw new LogicException('Class declaration requires an exact subject');
+                    $repository->addSubject($subject, $existingRepository->getSubject($subject), $info->file, $info->line);
+                }
+                foreach ($existingRepository->all(SymbolLevel::Namespace_) as $info) {
+                    $repository->add($info->symbolPath, $existingRepository->get($info->symbolPath), $info->file, $info->line);
                 }
 
                 return new CollectionPhaseOutput([
-                    PathFactory::bestEffortRelative(
-                        $files[0]->getPathname(),
-                        AbsolutePath::fromString('/tmp/src'),
-                    ),
-                ], [], dependencies: $dependencies);
+                    RelativePath::fromString('dummy.php'),
+                ], [], [], dependencies: $dependencies);
             },
         );
 
+        $configuration = new RuleOptionsRegistry();
+        $configuration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), $ruleExecutor->allRules()));
+
+        $computed = self::createStub(ComputedMetricEvaluator::class);
+        $computed->method('evaluate')->willReturn(new ComputedMetricEvaluationSummary());
+
         return TestPipelineBuilder::create()
-            ->withDefaultDiscovery($discovery)
+            ->withProjectFiles($discovery)
             ->withCollectionOrchestrator($orchestrator)
             ->withRuleExecution($ruleExecutor)
-            ->withRuleConfiguration(new RuleOptionsRegistry())
+            ->withRuleConfiguration($configuration)
             ->withMeasurementAggregation($globalCollectorRunner)
-            ->withComputedMetricEvaluation(self::createStub(ComputedMetricEvaluator::class))
+            ->withComputedMetricEvaluation($computed)
             ->withCircularDependencyPreparation(new CircularDependencyAnalysis(new CircularDependencyDetector()))
-            ->withFileSetInspection($this->emptyFileSetInspection())
+            ->withFileSetInspection($this->emptyFileSetInspection($configuration))
             ->withProfiler($this->profiler)
             ->build();
     }
 
-    private function emptyFileSetInspection(): FileSetInspectionComposite
+    private function emptyFileSetInspection(RuleConfigurationInterface $configuration): FileSetInspectionComposite
     {
         return new FileSetInspectionComposite(
             [],
-            new RuleSelectorProducerGate(new RuleSelector(new InMemoryRuleChannelRegistry())),
+            new RuleSelectorProducerGate($configuration),
             $this->profiler,
         );
     }
@@ -1000,8 +1314,9 @@ PHP);
 
         $fileProcessingTaskFactory = new FileProcessingTaskFactory(
             new LcomCollectionConfigurationStore(),
+            new RuleOptionDocumentForms(),
             DependencyVisitor::class,
-            [LocCollector::class],
+            [LocCollector::class, CyclomaticComplexityCollector::class],
             [],
             [ComplexityRule::class],
         );
@@ -1017,7 +1332,7 @@ PHP);
         );
 
         $compositeCollector = new CompositeCollector(
-            [new LocCollector()],
+            [new LocCollector(), new CyclomaticComplexityCollector()],
             new DeclarationRegistrarFactory(),
             [],
             new DependencyVisitor(new DependencyResolver()),
@@ -1027,7 +1342,7 @@ PHP);
             $compositeCollector,
             sourceControlExtractor: new SourceControlExtractor(
                 thresholdOverrideExtractor: new ThresholdOverrideExtractor(
-                    RuleValidatorMapFactory::build([ComplexityRule::class]),
+                    RuleValidatorMapFactory::build(new RuleOptionDocumentForms(), [ComplexityRule::class]),
                 ),
             ),
         );
@@ -1058,7 +1373,10 @@ PHP);
             $logger,
         );
         $strategy = $selector->select($projectRoot);
-        $output = $orchestrator->collect($files, new InMemoryMetricRepository(), $projectRoot);
+        $output = $orchestrator->collect($files, new InMemoryMetricRepository([
+            ...(new LocCollector())->getMetricDefinitions(),
+            ...(new CyclomaticComplexityCollector())->getMetricDefinitions(),
+        ]), $projectRoot);
 
         return [
             'dependencies' => $output->dependencies,
@@ -1073,13 +1391,27 @@ PHP);
 
     private static function runConfiguration(AbsolutePath $root): RunConfiguration
     {
-        return new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []);
+        return new RunConfiguration(
+            pathExcludes: [],
+            projectRoot: $root,
+            generatedFilePolicy: GeneratedFilePolicy::Include,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
+            authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
+        );
     }
     private static function runConfigurationFor(ConfigurationDocument $document): RunConfiguration
     {
         $root = $document->workingDirectory();
 
-        return new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include, coversProjectScope: false, authoredPathExcludes: []);
+        return new RunConfiguration(
+            pathExcludes: [],
+            projectRoot: $root,
+            generatedFilePolicy: GeneratedFilePolicy::Include,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Narrowed, uncoveredRoots: ['uncovered']),
+            authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
+        );
     }
 
 }

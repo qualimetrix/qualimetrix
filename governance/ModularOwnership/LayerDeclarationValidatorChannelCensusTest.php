@@ -6,7 +6,7 @@ namespace Qualimetrix\Governance\ModularOwnership;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 
 final class LayerDeclarationValidatorChannelCensusTest extends TestCase
 {

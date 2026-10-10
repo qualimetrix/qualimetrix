@@ -11,7 +11,6 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\MetricSubjectCodec;
-use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
  * Exact subject and occurrence projection for one code-smell collector entry.
@@ -34,6 +33,12 @@ final readonly class CodeSmellFinding
     /**
      * @param CodeSmellEntry $entry
      */
+    public static function subjectFromEntry(array $entry, RelativePath $file): MetricSubject
+    {
+        return MetricSubjectCodec::decodeEntry($entry, $file);
+    }
+
+    /** @param CodeSmellEntry $entry */
     public static function fromEntry(array $entry, RelativePath $file): self
     {
         return new self(
@@ -47,7 +52,6 @@ final readonly class CodeSmellFinding
     }
 
     public function toFinding(
-        SymbolPath $fileSymbol,
         string $ruleName,
         string $smellType,
         Severity $severity,
@@ -65,7 +69,7 @@ final readonly class CodeSmellFinding
         return new Finding(
             location: $this->location,
             subject: $this->subject,
-            symbolPath: $fileSymbol,
+            symbolPath: $this->subject->toSymbolPath(),
             ruleName: $ruleName,
             code: $ruleName,
             message: $message,

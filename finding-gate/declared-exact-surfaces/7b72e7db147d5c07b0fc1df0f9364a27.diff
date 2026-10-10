@@ -1,0 +1,52 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 160815
++visible 161316
+@@ -730,1 +730,1 @@
+-            "size.class-count.sum": 101,
++            "size.class-count": 101,
+@@ -736,1 +736,2 @@
+-                "maintainability": 64.66796136701234
++                "maintainability": 64.66796136701234,
++                "overall": 85.2603249466698
+@@ -762,1 +763,2 @@
+-                "maintainability": 72.17046596900295
++                "maintainability": 72.17046596900295,
++                "overall": 97.19999999999999
+@@ -786,1 +788,2 @@
+-                "maintainability": 72.17046596900295
++                "maintainability": 72.17046596900295,
++                "overall": 97.19999999999999
+@@ -810,1 +813,2 @@
+-                "maintainability": 72.17046596900295
++                "maintainability": 72.17046596900295,
++                "overall": 97.19999999999999
+@@ -834,1 +838,2 @@
+-                "maintainability": 72.17046596900295
++                "maintainability": 72.17046596900295,
++                "overall": 97.19999999999999
+@@ -858,1 +863,2 @@
+-                "maintainability": 72.17046596900295
++                "maintainability": 72.17046596900295,
++                "overall": 97.19999999999999
+@@ -882,1 +888,2 @@
+-                "maintainability": 72.17046596900295
++                "maintainability": 72.17046596900295,
++                "overall": 97.19999999999999
+@@ -906,1 +913,2 @@
+-                "maintainability": 72.17046596900295
++                "maintainability": 72.17046596900295,
++                "overall": 97.19999999999999
+@@ -930,1 +938,2 @@
+-                "maintainability": 72.17046596900295
++                "maintainability": 72.17046596900295,
++                "overall": 97.19999999999999
+@@ -954,1 +963,2 @@
+-                "maintainability": 72.17046596900295
++                "maintainability": 72.17046596900295,
++                "overall": 97.19999999999999
+@@ -978,1 +988,2 @@
+-                "maintainability": 72.17046596900295
++                "maintainability": 72.17046596900295,
++                "overall": 97.19999999999999

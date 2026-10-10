@@ -9,14 +9,23 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\CoverageFailure;
 use Qualimetrix\Reporting\Formatter\Html\HtmlFormatter;
 use Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Health\HealthHintProjector;
 use Qualimetrix\Reporting\ReportBuilder;
+use Qualimetrix\Reporting\ReportCoverage;
 use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
@@ -31,9 +40,100 @@ final class HtmlFormatterTest extends TestCase
             new HtmlTreeBuilder(
                 new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues())),
                 self::createStub(ComputedMetricDefinitionCatalogInterface::class),
+                new \Qualimetrix\Reporting\Formatter\Html\HtmlProjectMetadata(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()),
+                new \Qualimetrix\Reporting\Formatter\FindingRecord(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()), new \Qualimetrix\Reporting\Formatter\Json\JsonSanitizer()),
             ),
-            new HealthHintProjector(new HealthMetricCatalog()),
+            new HealthHintProjector(new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()))),
         );
+    }
+
+    #[Test]
+    public function itRepairsMalformedPopulationExamplesWithoutLosingTheBanner(): void
+    {
+        $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
+        $trace->record(
+            'complexity.ccn',
+            new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.ccn'),
+            \Qualimetrix\Core\Symbol\SymbolLevel::Callable,
+            \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::selector("missing\xFF", 'callable'),
+            'callable-value',
+            'Callable complexity was not published.',
+        );
+        $formatted = $this->formatter->format(ReportBuilder::create()->population($trace->freeze())->build(), new FormatterContext());
+        $payload = self::payload($formatted->body);
+        self::assertStringContainsString('data-qmx-population="incomplete"', $formatted->body);
+        self::assertSame(['missing%FF'], $payload['abstentions'][0]['examples']);
+        self::assertSame(1, $formatted->escapedStrings);
+        self::assertSame($formatted->escapedStrings, $payload['invalidUtf8Replaced']);
+        self::assertStringContainsString('1 published string(s) contained invalid UTF-8', $formatted->body);
+    }
+
+    #[Test]
+    public function itPublishesUnjudgedPopulationOnAnEmptyFindingReportWithoutAFailure(): void
+    {
+        $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
+        $channel = new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.ccn');
+        $trace->record(
+            'complexity.ccn',
+            $channel,
+            \Qualimetrix\Core\Symbol\SymbolLevel::Callable,
+            \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::occurrence('missing<&>', 0, 'callable'),
+            'callable-value',
+            'Missing <value> & publication.',
+        );
+        $report = ReportBuilder::create()->population($trace->freeze())->build();
+        $output = $this->formatter->format($report, new FormatterContext())->body;
+        self::assertStringContainsString('data-qmx-population="incomplete"', $output);
+        self::assertStringContainsString('Missing &lt;value&gt; &amp; publication.', $output);
+        $payload = self::payload($output);
+        self::assertSame(1, $payload['abstentions'][0]['count']);
+        self::assertSame('Missing <value> & publication.', $payload['abstentions'][0]['reason']);
+        self::assertSame([], $report->findings);
+        self::assertSame(0, $report->errorCount);
+    }
+
+    #[Test]
+    public function itEmbedsRepositoryMetricsForTheGlobalNamespaceAndClass(): void
+    {
+        $metrics = new InMemoryMetricRepository([new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition('size.class-loc', \Qualimetrix\Core\Symbol\SymbolLevel::Class_)]);
+        $namespaceBag = ['size.loc.sum' => 9, 'health.overall' => 92.07, 'coupling.instability' => 0.5];
+        $classBag = ['size.class-loc' => 4];
+        $metrics->add(SymbolPath::forNamespace(''), MetricBag::fromArray($namespaceBag), null, null);
+        $class = SymbolPath::forClass('', 'Greeter');
+        $metrics->addSubject(
+            MetricSubject::declaration(DeclarationPath::of($class, RelativePath::fromString('Greeter.php'), DeclarationOrdinal::fromRank(0))),
+            MetricBag::fromArray($classBag),
+            RelativePath::fromString('Greeter.php'),
+            2,
+        );
+        $report = ReportBuilder::create()->metrics($metrics)->build();
+
+        $payload = self::payload($this->formatter->format($report, new FormatterContext())->body);
+        $node = $payload['tree']['children'][0];
+        self::assertSame($namespaceBag, $node['metrics']);
+        self::assertSame($classBag, $node['children'][0]['metrics']);
+        self::assertSame([], $payload['summary']['healthScores']);
+    }
+
+    #[Test]
+    public function itUsesTheInvocationManifestSnapshotForHtmlMetadata(): void
+    {
+        $root = sys_get_temp_dir() . '/qmx-html-snapshot-' . bin2hex(random_bytes(6));
+        mkdir($root);
+        $reader = new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader();
+        $metadata = new \Qualimetrix\Reporting\Formatter\Html\HtmlProjectMetadata($reader);
+        try {
+            file_put_contents($root . '/composer.json', '{"name":"first/project"}');
+            $reader->read(\Qualimetrix\Core\Path\AbsolutePath::fromString($root));
+            file_put_contents($root . '/composer.json', '{"name":"changed/project"}');
+            self::assertSame('first/project', $metadata->of(false, null, $root)['name']);
+            self::assertSame('authored name', $metadata->of(false, 'authored name', $root)['name']);
+            $reader->beginInvocation();
+            self::assertSame('changed/project', $metadata->of(false, null, $root)['name']);
+        } finally {
+            unlink($root . '/composer.json');
+            rmdir($root);
+        }
     }
 
     #[Test]
@@ -57,12 +157,33 @@ final class HtmlFormatterTest extends TestCase
             ->duration(0.5)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         self::assertStringContainsString('<!DOCTYPE html>', $output);
         self::assertStringContainsString('<html lang="en">', $output);
         self::assertStringContainsString('</html>', $output);
         self::assertStringContainsString('id="report-data"', $output);
+    }
+
+    #[Test]
+    public function itUsesTheSameEntryFailureNarrativeInTheBannerAndPreservesCoverageData(): void
+    {
+        $coverage = new ReportCoverage(2, 1, 0, 1, [
+            new CoverageFailure('src/pipe', 'not-regular-file', 'FIFO'),
+        ]);
+        $report = ReportBuilder::create()->filesAnalyzed(1)->filesSkipped(1)->coverage($coverage)->build();
+
+        $output = $this->formatter->format($report, new FormatterContext())->body;
+
+        self::assertStringContainsString(
+            'data-qmx-coverage="incomplete"',
+            $output,
+        );
+        self::assertStringContainsString(
+            'Analysis incomplete: 1 of 2 discovered entries failed (1 not-regular-file); policy results are not authoritative.',
+            $output,
+        );
+        self::assertSame($coverage->toArray(), self::payload($output)['coverage']);
     }
 
     #[Test]
@@ -74,7 +195,7 @@ final class HtmlFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         // CSS should be inlined (no __CSS__ placeholder)
         self::assertStringNotContainsString('__CSS__', $output);
@@ -90,7 +211,7 @@ final class HtmlFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         // JS should be inlined (no placeholders)
         self::assertStringNotContainsString('__D3_JS__', $output);
@@ -106,7 +227,7 @@ final class HtmlFormatterTest extends TestCase
             ->duration(0.3)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         // JSON data should be embedded (no __DATA__ placeholder)
         self::assertStringNotContainsString('__DATA__', $output);
@@ -124,7 +245,7 @@ final class HtmlFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()->filesAnalyzed(1)->filesSkipped(0)->duration(0.1)->build();
 
-        $output = $this->formatter->format($report, new FormatterContext(options: ['project-name' => '__APP_JS__ and __D3_JS__']));
+        $output = $this->formatter->format($report, new FormatterContext(options: ['project-name' => '__APP_JS__ and __D3_JS__']))->body;
 
         self::assertSame('__APP_JS__ and __D3_JS__', self::payload($output)['project']['name']);
     }
@@ -141,9 +262,9 @@ final class HtmlFormatterTest extends TestCase
         try {
             $report = ReportBuilder::create()->filesAnalyzed(1)->filesSkipped(0)->duration(0.1)->build();
 
-            $named = self::payload($this->formatter->format($report, new FormatterContext(basePath: $root)));
-            $unnamed = self::payload($this->formatter->format($report, new FormatterContext(basePath: $bare)));
-            $explicit = self::payload($this->formatter->format($report, new FormatterContext(basePath: $root, options: ['project-name' => 'Chosen'])));
+            $named = self::payload($this->formatter->format($report, new FormatterContext(basePath: $root))->body);
+            $unnamed = self::payload($this->formatter->format($report, new FormatterContext(basePath: $bare))->body);
+            $explicit = self::payload($this->formatter->format($report, new FormatterContext(basePath: $root, options: ['project-name' => 'Chosen']))->body);
         } finally {
             unlink($root . '/composer.json');
             rmdir($bare);
@@ -174,7 +295,7 @@ final class HtmlFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         // The project name "<project>" uses angle brackets, so JSON_HEX_TAG
         // must escape them. The literal string "<project>" should NOT appear
@@ -193,7 +314,7 @@ final class HtmlFormatterTest extends TestCase
             ->build();
 
         $context = new FormatterContext(scopedReporting: true);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('"scopedReporting":true', $output);
     }
@@ -207,7 +328,7 @@ final class HtmlFormatterTest extends TestCase
             ->duration(0.0)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         // Should produce valid HTML with minimal data
         self::assertStringContainsString('<!DOCTYPE html>', $output);
@@ -223,7 +344,7 @@ final class HtmlFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         self::assertStringContainsString('"hints"', $output);
         self::assertStringContainsString('"metricHints"', $output);
@@ -247,7 +368,7 @@ final class HtmlFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         self::assertStringContainsString('id="report-footer"', $output);
     }

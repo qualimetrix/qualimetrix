@@ -10,9 +10,9 @@ use ReflectionClass;
 /**
  * Proves two claims about `Report::unguarded()` and `Report::print()` that no
  * single planted breakage can prove by itself, because both are claims about
- * *every* case rather than about one:
+ * every case in the declared permanent coverage population rather than one:
  *
- * 1. for every case any probe declares in `reddens`, removing that
+ * 1. for every permanent-population case a probe declares in `reddens`, removing that
  *    declaration from every probe that carries it makes that case — and only
  *    that case — read as "guarded by nothing";
  * 2. a declared case name absent from the run's own case universe never turns
@@ -185,12 +185,13 @@ if ($baseline['exit'] !== 0) {
 
 // Claim 1: removing any one case's declaration(s) from `reddens` makes that
 // case, and only that case, read as guarded by nothing. Checked over the
-// whole universe rather than one sample case, per the plan's own objection to
-// a single planted breakage: "if any one case has its declaration removed" is
-// universal, and one probe does not establish a universal.
+// permanent coverage population rather than one sample case. Exact one-time
+// proof limitations remain in the full execution and staleness universe.
 $failures = [];
 
-foreach ($universe as $case) {
+$coveragePopulation = Report::coveragePopulation($universe);
+
+foreach ($coveragePopulation as $case) {
     $mutated = array_map(static fn(Probe $probe): Probe => withoutFromReddens($probe, $case), $probes);
     $result = printed(Report::of(asDeclaredOutcomes($mutated, $universe), false));
     $unguarded = unguardedNamesIn($result['output']);
@@ -208,14 +209,14 @@ foreach ($universe as $case) {
 
 if ($failures !== []) {
     fwrite(\STDERR, implode("\n", $failures) . "\n");
-    fwrite(\STDERR, \sprintf("%d of %d cases failed the removal control.\n", \count($failures), \count($universe)));
+    fwrite(\STDERR, \sprintf("%d of %d cases failed the removal control.\n", \count($failures), \count($coveragePopulation)));
 
     exit(1);
 }
 
 printf(
     "removal control: %d cases, each one's declaration removed in turn — every removal reddened exactly its own case and no other.\n",
-    \count($universe),
+    \count($coveragePopulation),
 );
 
 // Claim 2: a declared name absent from the universe never turns red, so it

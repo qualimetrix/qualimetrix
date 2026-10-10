@@ -75,10 +75,10 @@ final class ConsoleLogger extends AbstractLogger
 
         $contextStr = '';
         if ($context !== []) {
-            $encoded = self::encodeJson($context);
+            $encoded = self::encodeJson($context, $encodingError);
             $contextStr = $encoded !== null
                 ? ' ' . $encoded
-                : \sprintf(' (context not shown: %s)', json_last_error_msg());
+                : \sprintf(' (context not shown: %s)', $encodingError);
         }
 
         return "[{$timestamp}] [{$levelUpper}] {$message}{$contextStr}";

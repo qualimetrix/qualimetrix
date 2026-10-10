@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Security\Unit;
 
 use InvalidArgumentException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -18,6 +19,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(SqlInjectionRule::class)]
 #[CoversClass(SecurityPatternOptions::class)]
@@ -29,7 +31,7 @@ final class SqlInjectionRuleTest extends TestCase
         $rule = new SqlInjectionRule(new SecurityPatternOptions());
 
         self::assertSame('security.sql-injection', $rule->getName());
-        self::assertSame('Detects potential SQL injection vulnerabilities', $rule->getDescription());
+        self::assertSame('Detects potential SQL injection vulnerabilities', $rule::getDescription());
     }
 
     #[Test]
@@ -161,10 +163,10 @@ final class SqlInjectionRuleTest extends TestCase
     #[Test]
     public function itLoadsOptionsFromArray(): void
     {
-        $options = SecurityPatternOptions::fromArray(['enabled' => false]);
+        $options = SecurityPatternOptions::fromResolved(ResolvedOptionsFixture::values(SecurityPatternOptions::class, ['enabled' => false]));
         self::assertFalse($options->isEnabled());
 
-        $options = SecurityPatternOptions::fromArray([]);
+        $options = SecurityPatternOptions::fromResolved(ResolvedOptionsFixture::values(SecurityPatternOptions::class, []));
         self::assertTrue($options->isEnabled());
     }
 

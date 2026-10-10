@@ -67,8 +67,11 @@ wording that claimed more; the wording in the class and here is the corrected
 one.
 
 **Keys are declared in their exact published spelling, aggregate strategy
-included.** `size.class-count` is declared as `size.class-count.sum`, because
-that is the key `ClassCountRule` reads. A channel whose body chooses between
+included.** The original `size.class-count.sum` example was superseded for
+this channel by [ADR 0101](0101-class-count-judges-own-namespace.md):
+`ClassCountRule` now reads and declares the own `size.class-count` value at
+every namespace level. The published `.sum` metric remains available to other
+consumers. A channel whose body chooses between
 keys names all of them, in the order its own code considers them:
 `coupling.cbo` names `coupling.cbo` and `coupling.cbo-app`; the three complexity
 channels each name a base key and that key's `.max` aggregate, because they read

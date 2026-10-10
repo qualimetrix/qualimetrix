@@ -9,7 +9,9 @@ use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Reporting\FindingProjection\InertSuppressor;
 use Qualimetrix\Reporting\FindingProjection\SuppressedFinding;
 use Qualimetrix\Reporting\FindingProjection\SuppressionMechanism;
+use Qualimetrix\Reporting\Formatter\FormattedReport;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\Formatter\PublicationKind;
 use Qualimetrix\Reporting\Formatter\PublishedFinding;
 use Qualimetrix\Reporting\Formatter\PublishedUtf8;
 use Qualimetrix\Reporting\FormatterContext;
@@ -28,7 +30,7 @@ use Qualimetrix\Reporting\Report;
  */
 final class SuppressedFormatter implements FormatterInterface
 {
-    public function format(Report $report, FormatterContext $context): string
+    public function format(Report $report, FormatterContext $context): FormattedReport
     {
         // Empty means nothing was suppressed; absent means the run never built
         // the composition, and answering "nothing" for that is the one answer
@@ -67,9 +69,18 @@ final class SuppressedFormatter implements FormatterInterface
             'byMechanism' => $byMechanism,
             'suppressed' => $suppressed,
             'neverMatched' => $neverMatched,
+            'notRun' => array_map(static fn(\Qualimetrix\Analysis\Finding\Contract\SelectionRecord $record): array => [
+                'producer' => $record->producer,
+                'reason' => $record->reason,
+                'statement' => $record->statement,
+                'layer' => $record->layer,
+            ], $composition->notRun),
         ];
 
-        return PublishedUtf8::encodeJsonObject($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES);
+        $repairs = 0;
+        $body = PublishedUtf8::encodeJsonObject($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES, $repairs);
+
+        return new FormattedReport($body, $repairs);
     }
 
     /**
@@ -94,6 +105,11 @@ final class SuppressedFormatter implements FormatterInterface
             'message' => $finding->message,
             'recommendation' => $finding->recommendation,
         ];
+    }
+
+    public function publicationKind(): PublicationKind
+    {
+        return PublicationKind::JsonDocument;
     }
 
     public function getName(): string

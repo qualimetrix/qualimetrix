@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Design\Inheritance;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassKeyScope;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
@@ -31,10 +32,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * Chidamber & Kemerer (1994) definition, where NOC counts the immediate
  * subclasses of a class; interface hierarchies are contracts, not subclassing.
  *
- * NOC is measured on the population DIT is -- the named classes the per-file
- * pass measured, recognised by the `design.dit` it left on them -- so the two
- * metrics that read one inheritance tree from opposite ends share their
- * denominators. An interface, a trait or an enum gets no NOC, not even 0.
+ * NOC is measured on the graph's positive named-class declaration roster.
+ * Interfaces, traits and enums receive no NOC, including no synthetic zero.
  *
  * Anonymous classes never contribute to NOC: they have no declaration
  * identity a named class could `extends`, and their own `extends` edge is
@@ -42,6 +41,10 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * class (see {@see DependencyType::Extends} and
  * {@see \Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency::$describesNestedAnonymousClass}),
  * so it is excluded below rather than counted against the enclosing class.
+ *
+ * Namespace aggregates sample each physical class declaration: the logical-name
+ * NOC value repeats in every declaration's view. Their sum/count/average
+ * are declaration-weighted; the underlying graph algorithm still uses logical names.
  */
 final class NocCollector implements GlobalContextCollectorInterface
 {
@@ -68,6 +71,7 @@ final class NocCollector implements GlobalContextCollectorInterface
             new MetricDefinition(
                 name: MetricName::DESIGN_NOC,
                 collectedAt: SymbolLevel::Class_,
+                classKeyScope: ClassKeyScope::LogicalName,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [
                         AggregationStrategy::Sum,
@@ -96,25 +100,22 @@ final class NocCollector implements GlobalContextCollectorInterface
             $parentPath = $children['symbolPath'];
 
             // Skip classes not in the repository (e.g. vendor classes)
-            if (!$repository->has($parentPath)) {
+            if (!$repository->hasSubject(\Qualimetrix\Core\Symbol\MetricSubject::logicalClass(new \Qualimetrix\Core\Symbol\LogicalClassPath($parentPath)))) {
                 continue;
             }
 
             $noc = \count($children['children']);
 
-            $repository->addScalar($parentPath, MetricName::DESIGN_NOC, $noc);
+            $repository->addSubjectScalar(\Qualimetrix\Core\Symbol\MetricSubject::logicalClass(new \Qualimetrix\Core\Symbol\LogicalClassPath($parentPath)), MetricName::DESIGN_NOC, $noc);
         }
 
-        // Step 3: every measured class without children gets NOC = 0
-        foreach ($repository->all(SymbolLevel::Class_) as $classSymbol) {
-            if (!$repository->has($classSymbol->symbolPath)) {
+        foreach ($graph->getClassLikeDeclarations() as $fact) {
+            if ($fact->type !== \Qualimetrix\Core\Symbol\ClassType::Class_) {
                 continue;
             }
-
-            $metrics = $repository->get($classSymbol->symbolPath);
-
-            if ($metrics->has(MetricName::DESIGN_DIT) && !$metrics->has(MetricName::DESIGN_NOC)) {
-                $repository->addScalar($classSymbol->symbolPath, MetricName::DESIGN_NOC, 0);
+            $subject = \Qualimetrix\Core\Symbol\MetricSubject::logicalClass($fact->logical);
+            if ($repository->hasSubject($subject) && !$repository->getSubject($subject)->has(MetricName::DESIGN_NOC)) {
+                $repository->addSubjectScalar($subject, MetricName::DESIGN_NOC, 0);
             }
         }
     }

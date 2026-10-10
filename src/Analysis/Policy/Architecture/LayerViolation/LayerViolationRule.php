@@ -4,74 +4,30 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
 
+use Generator;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidence;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidenceCollector;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
+use Qualimetrix\Analysis\Policy\Architecture\Observation\EdgeEvidenceWalk;
+use Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidence;
+use Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidenceCollector;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
-/**
- * Reports what the *code* does wrong against the declared architecture policy:
- * a dependency edge the allow-list forbids.
- *
- * Under declaration-order matching (ADR 0006), a class is assigned to the
- * FIRST layer whose patterns match its FQN. One channel comes out of that:
- * `architecture.layer-violation`, per use-site, one finding per forbidden
- * dependency edge.
- *
- * A second channel comes out of the other half of the same walk.
- * `architecture.unmatched-exclude` reports an `exclude:` clause that removed
- * nothing from a layer that did catch classes: the layer is then larger than
- * its author wrote it to be, and every verdict drawn from it is drawn from a
- * wider set than intended. It is built by
- * {@see UnmatchedExcludeDiagnostic}, which is also where the reasoning for it
- * being this rule's channel rather than {@see LayerDeclarationValidator}'s
- * lives.
- *
- * A third, `architecture.doubted-assignment`, counts the symbols whose layer
- * the run could not fully decide — assigned while a layer bearing on the
- * assignment could not be answered, or in no layer only because of one — and
- * names those layers. It is information, reported at `info` and never
- * gating, whatever the coverage mode, and
- * {@see DoubtedAssignmentDiagnostic::forDoubts()} says why it is not
- * the coverage gap.
- *
- * How much of the analysed code no layer claims is a fact about the run
- * rather than about one edge, and belongs to {@see UnassignedClassRule}. It
- * reads the same {@see LayerEvidenceCollector}, so the two rules still share
- * one traversal.
- *
- * The five verdicts on the *declaration* — coverage, unreachable layer,
- * pending layer matched, potential shadow, empty template — are not here.
- * They belong to {@see LayerDeclarationValidator}, which is a
- * {@see \Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface}
- * rather than a rule, because being a statement about the configuration is now
- * a property of the producer's type rather than a flag on a channel. The
- * validator runs in this rule's slot, under this rule's name, and answers to
- * this rule's options.
- *
- * **Statelessness:** per CLAUDE.md "stateless rules", nothing this rule
- * computes survives an `analyze()` call — the executor reuses rule instances.
- * The one shared per-run structure, {@see LayerEvidence}, lives in
- * {@see LayerEvidenceCollector} keyed weakly by the run's own
- * {@see AnalysisContext}, so it cannot leak into the next run either.
- */
+/** Reports forbidden dependency edges against the prepared layer policy. */
 #[CliAlias('layer-violation', 'enabled')]
 #[CliAlias('layer-violation-severity', 'severity')]
 final class LayerViolationRule extends AbstractRule
 {
-    public const string NAME = LayerPolicyPreparationInterface::PRODUCER_RULE_NAME;
+    public const string NAME = ArchitectureChannels::PRODUCER_RULE_NAME;
     public const string DOCS_PAGE = 'rules/architecture.md';
-
-    public const string UNMATCHED_EXCLUDE_NAME = LayerPolicyPreparationInterface::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME;
-
-    public const string DOUBTED_ASSIGNMENT_NAME = LayerPolicyPreparationInterface::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME;
 
     public const int REMEDIATION_MINUTES = 15;
 
@@ -94,7 +50,7 @@ final class LayerViolationRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Detects dependencies between layers that are not explicitly allowed by the architecture policy.';
     }
@@ -121,11 +77,8 @@ final class LayerViolationRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Class_),
-            self::UNMATCHED_EXCLUDE_NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)
-                ->describedAs('Reports a layer\'s exclude clause that removed no class while the layer\'s own criteria matched some.'),
-            self::DOUBTED_ASSIGNMENT_NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)
-                ->describedAs('Counts the symbols whose layer assignment is in doubt because a layer criterion could not be answered about them.'),
+            self::NAME => EdgeEvidenceWalk::channelDeclaration(),
+
         ];
     }
 
@@ -144,36 +97,15 @@ final class LayerViolationRule extends AbstractRule
 
         $evidence = $this->evidence->collect($context);
         if ($evidence === null) {
+            $context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::invocation(self::NAME), self::channelDeclarations()[self::NAME], (static function (): Generator {
+                yield GateInput::context('preparedEvidenceAvailable', false);
+            })());
             return [];
         }
 
         $ownedTargets = OwnedLayerTargets::fromDeclarations($context->metrics->allDeclarations());
 
-        return [
-            ...$this->buildFindings($evidence, $ownedTargets),
-            // The forbidden edges are about what the run did look at and are
-            // reported whatever its scope. The exclude diagnostic is the other
-            // shape: "this clause removed nothing" is a fact about the pair
-            // (configuration, run scope), and a run narrowed below the
-            // project's autoload roots cannot tell an inert clause from one
-            // whose classes are simply outside the slice. The gate is the
-            // same project-coverage predicate
-            // UnmatchedFrameworkNamespaceRule asks.
-            ...($context->coversProjectScope
-                ? UnmatchedExcludeDiagnostic::forInertClauses($evidence, self::UNMATCHED_EXCLUDE_NAME)
-                : []),
-            // Not scope-gated: the doubt is about the symbols this run looked
-            // at. A narrower run reports different doubts, not fewer — a
-            // project class it left outside can be in doubt where a run over
-            // the whole project decides it — which is why the advice for a
-            // symbol outside the analysed paths names analysing it as well.
-            ...DoubtedAssignmentDiagnostic::forDoubts(
-                $evidence->coverageState,
-                $evidence->undecidedSymbolsByLayer(),
-                $evidence->ownsIfExcludedSymbolsByLayer(),
-                self::DOUBTED_ASSIGNMENT_NAME,
-            ),
-        ];
+        return $this->buildFindings($evidence, $ownedTargets);
     }
 
     /**
@@ -197,7 +129,7 @@ final class LayerViolationRule extends AbstractRule
                 ownedTargets: $ownedTargets->forLogical($dependency->targetLogical()),
                 ruleName: self::NAME,
                 severity: $this->options->severity,
-                recommendation: LayerRoutingGuidance::forForbiddenEdge($dependency, $fromLayer, $toLayer, $evidence->architecture),
+                recommendation: LayerRoutingGuidance::forForbiddenEdge($fromLayer, $evidence->architecture),
             ))->toFindings();
 
             foreach ($edgeFindings as $finding) {

@@ -14,7 +14,11 @@ use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
 use Qualimetrix\Reporting\Formatter\CoverageNarrator;
 use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
 use Qualimetrix\Reporting\Formatter\FormatOptionValue;
+use Qualimetrix\Reporting\Formatter\FormattedReport;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\Formatter\Prose\ComputedMetricAbsenceNarrator;
+use Qualimetrix\Reporting\Formatter\Prose\RuleAbstentionNarrator;
+use Qualimetrix\Reporting\Formatter\PublicationKind;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
@@ -26,9 +30,8 @@ use Qualimetrix\Reporting\Report;
  * Renders a table of health dimensions with scores, status labels,
  * and threshold info, followed by decomposition details for each dimension.
  *
- * @qmx-threshold complexity.wmc warning=60 -- average per-method complexity
- * here is about 3.5; WMC is high because of how many small rendering
- * methods the formatter has, not because any one of them is complex.
+ * @qmx-threshold complexity.wmc warning=62 -- The health view intentionally selects compact or verbose
+ * population prose alongside its dimension rendering; moving another renderer only transfers its branches.
  */
 final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysInterface
 {
@@ -40,18 +43,28 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
         private readonly HealthScoreResolver $healthScoreResolver,
     ) {}
 
-    public function format(Report $report, FormatterContext $context): string
+    public function format(Report $report, FormatterContext $context): FormattedReport
     {
         $color = new AnsiColor($context->useColor);
         $terminalWidth = $context->terminalWidth > 0 ? $context->terminalWidth : self::DEFAULT_TERMINAL_WIDTH;
         $lines = [];
 
         $this->renderHeader($report, $context, $color, $lines);
+        $lines[] = \sprintf('Findings: %d error(s), %d warning(s), %d info', $report->errorCount, $report->warningCount, $report->infoCount);
+        if ($report->outOfScope !== null) {
+            $outside = $report->outOfScope;
+            $lines[] = \sprintf('Outside this scope: %d error(s), %d warning(s), %d info', $outside->errorCount, $outside->warningCount, $outside->infoCount);
+        }
+        $lines[] = '';
+
         $coverageLines = CoverageNarrator::lines($report);
         if ($coverageLines !== []) {
             array_push($lines, ...$coverageLines);
             $lines[] = '';
         }
+
+        array_push($lines, ...($context->verbose ? RuleAbstentionNarrator::verboseLines($report) : RuleAbstentionNarrator::lines($report)));
+        array_push($lines, ...ComputedMetricAbsenceNarrator::lines($report));
 
         $healthScores = $this->healthScoreResolver->resolve($report, $context);
 
@@ -61,7 +74,7 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
             $lines[] = '';
             $this->appendPointer($color, $lines);
 
-            return implode("\n", $lines) . "\n";
+            return new FormattedReport(implode("\n", $lines) . "\n");
         }
 
         // Separate overall from dimension scores
@@ -83,7 +96,12 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
         $lines[] = '';
         $this->appendPointer($color, $lines);
 
-        return implode("\n", $lines) . "\n";
+        return new FormattedReport(implode("\n", $lines) . "\n");
+    }
+
+    public function publicationKind(): PublicationKind
+    {
+        return PublicationKind::Prose;
     }
 
     public function getName(): string
@@ -297,6 +315,10 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
 
     private function renderDecompositionItem(DecompositionItem $item, AnsiColor $color): string
     {
+        if ($item->value === null) {
+            return \sprintf('%s%s: not measured %s', '    ', $item->humanName, $item->coverage->applicable ? \sprintf('%d/%d', $item->coverage->measured, $item->coverage->eligible) : '—');
+        }
+
         $value = $this->formatValue($item->value);
         $boldValue = $color->bold($value);
         $paddedValue = $this->ansiRightPad($boldValue, 8);

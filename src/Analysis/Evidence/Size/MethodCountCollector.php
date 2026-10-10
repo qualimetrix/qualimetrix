@@ -82,7 +82,6 @@ final class MethodCountCollector extends AbstractCollector implements Declaratio
             MetricName::DESIGN_IS_DATA_CLASS,
             MetricName::DESIGN_IS_ABSTRACT,
             MetricName::DESIGN_IS_INTERFACE,
-            MetricName::DESIGN_IS_EXCEPTION,
             MetricName::DESIGN_WOC,
         ];
     }
@@ -96,33 +95,13 @@ final class MethodCountCollector extends AbstractCollector implements Declaratio
 
         \assert($this->visitor instanceof MethodCountVisitor);
 
-        foreach ($this->visitor->getClassMetrics() as $classFqn => $metrics) {
-            // RFC-008: Calculate derived class characteristics
-            // isPromotedPropertiesOnly = all properties are promoted
-            $isPromotedOnly = $metrics->propertyCount > 0
-                && $metrics->propertyCount === $metrics->promotedPropertyCount;
-
-            $bag = $bag
-                ->with(MetricName::SIZE_METHOD_COUNT . ':' . $classFqn, $metrics->methodCount())
-                ->with(MetricName::SIZE_METHOD_COUNT_TOTAL . ':' . $classFqn, $metrics->methodCountTotal)
-                ->with(MetricName::SIZE_METHOD_COUNT_PUBLIC . ':' . $classFqn, $metrics->methodCountPublic)
-                ->with(MetricName::SIZE_METHOD_COUNT_PROTECTED . ':' . $classFqn, $metrics->methodCountProtected)
-                ->with(MetricName::SIZE_METHOD_COUNT_PRIVATE . ':' . $classFqn, $metrics->methodCountPrivate)
-                ->with(MetricName::SIZE_GETTER_COUNT . ':' . $classFqn, $metrics->getterCount)
-                ->with(MetricName::SIZE_SETTER_COUNT . ':' . $classFqn, $metrics->setterCount)
-                ->with(MetricName::SIZE_PROPERTY_COUNT . ':' . $classFqn, $metrics->propertyCount)
-                ->with(MetricName::SIZE_PROPERTY_COUNT_PUBLIC . ':' . $classFqn, $metrics->propertyCountPublic)
-                ->with(MetricName::SIZE_PROPERTY_COUNT_PROTECTED . ':' . $classFqn, $metrics->propertyCountProtected)
-                ->with(MetricName::SIZE_PROPERTY_COUNT_PRIVATE . ':' . $classFqn, $metrics->propertyCountPrivate)
-                ->with(MetricName::SIZE_PROMOTED_PROPERTY_COUNT . ':' . $classFqn, $metrics->promotedPropertyCount)
-                // RFC-008: Class characteristics for false positive reduction
-                ->with(MetricName::DESIGN_IS_READONLY . ':' . $classFqn, $metrics->isReadonly ? 1 : 0)
-                ->with(MetricName::DESIGN_IS_PROMOTED_PROPERTIES_ONLY . ':' . $classFqn, $isPromotedOnly ? 1 : 0)
-                ->with(MetricName::DESIGN_IS_DATA_CLASS . ':' . $classFqn, $metrics->isDataClass() ? 1 : 0)
-                ->with(MetricName::DESIGN_IS_ABSTRACT . ':' . $classFqn, $metrics->isAbstract ? 1 : 0)
-                ->with(MetricName::DESIGN_IS_INTERFACE . ':' . $classFqn, $metrics->isInterface ? 1 : 0)
-                ->with(MetricName::DESIGN_IS_EXCEPTION . ':' . $classFqn, $metrics->isException ? 1 : 0)
-                ->with(MetricName::DESIGN_WOC . ':' . $classFqn, $metrics->woc());
+        foreach ($this->visitor->getClassMetrics() as $metrics) {
+            $classFqn = $metrics->namespace !== null && $metrics->namespace !== ''
+                ? $metrics->namespace . '\\' . $metrics->className
+                : $metrics->className;
+            foreach (self::metricValues($metrics) as $name => $value) {
+                $bag = $bag->with($name . ':' . $classFqn, $value);
+            }
         }
 
         return $bag;
@@ -138,36 +117,43 @@ final class MethodCountCollector extends AbstractCollector implements Declaratio
         $result = [];
 
         foreach ($this->visitor->getClassMetrics() as $metrics) {
-            // RFC-008: Calculate derived class characteristics
-            $isPromotedOnly = $metrics->propertyCount > 0
-                && $metrics->propertyCount === $metrics->promotedPropertyCount;
-
-            $bag = (new MetricBag())
-                ->with(MetricName::SIZE_METHOD_COUNT, $metrics->methodCount())
-                ->with(MetricName::SIZE_METHOD_COUNT_TOTAL, $metrics->methodCountTotal)
-                ->with(MetricName::SIZE_METHOD_COUNT_PUBLIC, $metrics->methodCountPublic)
-                ->with(MetricName::SIZE_METHOD_COUNT_PROTECTED, $metrics->methodCountProtected)
-                ->with(MetricName::SIZE_METHOD_COUNT_PRIVATE, $metrics->methodCountPrivate)
-                ->with(MetricName::SIZE_GETTER_COUNT, $metrics->getterCount)
-                ->with(MetricName::SIZE_SETTER_COUNT, $metrics->setterCount)
-                ->with(MetricName::SIZE_PROPERTY_COUNT, $metrics->propertyCount)
-                ->with(MetricName::SIZE_PROPERTY_COUNT_PUBLIC, $metrics->propertyCountPublic)
-                ->with(MetricName::SIZE_PROPERTY_COUNT_PROTECTED, $metrics->propertyCountProtected)
-                ->with(MetricName::SIZE_PROPERTY_COUNT_PRIVATE, $metrics->propertyCountPrivate)
-                ->with(MetricName::SIZE_PROMOTED_PROPERTY_COUNT, $metrics->promotedPropertyCount)
-                // RFC-008: Class characteristics for false positive reduction
-                ->with(MetricName::DESIGN_IS_READONLY, $metrics->isReadonly ? 1 : 0)
-                ->with(MetricName::DESIGN_IS_PROMOTED_PROPERTIES_ONLY, $isPromotedOnly ? 1 : 0)
-                ->with(MetricName::DESIGN_IS_DATA_CLASS, $metrics->isDataClass() ? 1 : 0)
-                ->with(MetricName::DESIGN_IS_ABSTRACT, $metrics->isAbstract ? 1 : 0)
-                ->with(MetricName::DESIGN_IS_INTERFACE, $metrics->isInterface ? 1 : 0)
-                ->with(MetricName::DESIGN_IS_EXCEPTION, $metrics->isException ? 1 : 0)
-                ->with(MetricName::DESIGN_WOC, $metrics->woc());
+            $bag = new MetricBag();
+            foreach (self::metricValues($metrics) as $name => $value) {
+                $bag = $bag->with($name, $value);
+            }
 
             $result[] = $this->classWithMetrics(SymbolPath::forClass($metrics->namespace ?? '', $metrics->className), $file, $metrics->startFilePos, $metrics->line, $bag);
         }
 
         return $result;
+    }
+
+    /** @return array<string, int|float> */
+    private static function metricValues(MethodCountMetrics $metrics): array
+    {
+        $isPromotedOnly = $metrics->propertyCount > 0
+            && $metrics->propertyCount === $metrics->promotedPropertyCount;
+
+        return [
+            MetricName::SIZE_METHOD_COUNT => $metrics->methodCount(),
+            MetricName::SIZE_METHOD_COUNT_TOTAL => $metrics->methodCountTotal,
+            MetricName::SIZE_METHOD_COUNT_PUBLIC => $metrics->methodCountPublic,
+            MetricName::SIZE_METHOD_COUNT_PROTECTED => $metrics->methodCountProtected,
+            MetricName::SIZE_METHOD_COUNT_PRIVATE => $metrics->methodCountPrivate,
+            MetricName::SIZE_GETTER_COUNT => $metrics->getterCount,
+            MetricName::SIZE_SETTER_COUNT => $metrics->setterCount,
+            MetricName::SIZE_PROPERTY_COUNT => $metrics->propertyCount,
+            MetricName::SIZE_PROPERTY_COUNT_PUBLIC => $metrics->propertyCountPublic,
+            MetricName::SIZE_PROPERTY_COUNT_PROTECTED => $metrics->propertyCountProtected,
+            MetricName::SIZE_PROPERTY_COUNT_PRIVATE => $metrics->propertyCountPrivate,
+            MetricName::SIZE_PROMOTED_PROPERTY_COUNT => $metrics->promotedPropertyCount,
+            MetricName::DESIGN_IS_READONLY => $metrics->isReadonly ? 1 : 0,
+            MetricName::DESIGN_IS_PROMOTED_PROPERTIES_ONLY => $isPromotedOnly ? 1 : 0,
+            MetricName::DESIGN_IS_DATA_CLASS => $metrics->isDataClass() ? 1 : 0,
+            MetricName::DESIGN_IS_ABSTRACT => $metrics->isAbstract ? 1 : 0,
+            MetricName::DESIGN_IS_INTERFACE => $metrics->isInterface ? 1 : 0,
+            MetricName::DESIGN_WOC => $metrics->woc(),
+        ];
     }
 
     /**
@@ -288,14 +274,6 @@ final class MethodCountCollector extends AbstractCollector implements Declaratio
             ),
             new MetricDefinition(
                 name: MetricName::DESIGN_IS_INTERFACE,
-                collectedAt: SymbolLevel::Class_,
-                aggregations: [
-                    SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
-                    SymbolLevel::Project->value => [AggregationStrategy::Sum],
-                ],
-            ),
-            new MetricDefinition(
-                name: MetricName::DESIGN_IS_EXCEPTION,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],

@@ -4,30 +4,30 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting;
 
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary;
+
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
 
 /**
  * Value Object representing the analysis report.
  *
- * @qmx-threshold coupling.cbo warning=32 error=32 -- Report is the transport VO every formatter's
- *                `format(Report, FormatterContext)` signature depends on, and the type every
- *                pipeline consumer that builds one depends on in turn; the `SuppressionComposition`
- *                field and its eleventh formatter consumer (`SuppressedFormatter`) are the intentional
- *                cause of the two-point rise from the previously baseline-accepted 28, and the
- *                `ReportProjectScope` field of one more: a fact about the run every format publishes
- *                travels on the one object every format reads. A point
- *                threshold replaces that baseline entry rather than raising it, per the same reasoning
- *                already applied to the sibling hub {@see FormatterContext}.
+ * @qmx-threshold coupling.cbo warning=37 error=37 -- This immutable report carries the same
+ *                publication snapshot to every formatter. Its population field and shared
+ *                abstention narrator and captured namespace index add intended edges.
+ *                Splitting the transport record would distribute these same facts among
+ *                objects every formatter still has to read. The exact limit retains one-edge headroom.
  */
 final readonly class Report
 {
+    public JudgedPopulation $population;
     /**
      * @param list<Finding> $findings
      * @param array<string, HealthScore> $healthScores
@@ -48,8 +48,14 @@ final readonly class Report
      *                                        so `$findings` is then the whole run.
      * @param ?ReportProjectScope $projectScope Whether the run's paths covered the project;
      *                                          `null` only for a report no run measured
+     * @param list<array{message: string, source: list<array<string, mixed>>}> $configurationDiagnostics Warnings about
+     *                                                                                                   the accepted configuration,
+     *                                                                                                   already published: each
+     *                                                                                                   `source` entry is the
+     *                                                                                                   refusal envelope's
      */
     public function __construct(
+        public \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces,
         public array $findings,
         public int $filesAnalyzed,
         public int $filesSkipped,
@@ -69,7 +75,12 @@ final readonly class Report
         public ?SuppressionComposition $suppressionComposition = null,
         public ?OutOfScopeFindings $outOfScope = null,
         public ?ReportProjectScope $projectScope = null,
-    ) {}
+        public array $configurationDiagnostics = [],
+        public ComputedMetricEvaluationSummary $computedMetricEvaluation = new ComputedMetricEvaluationSummary(),
+        ?JudgedPopulation $population = null,
+    ) {
+        $this->population = $population ?? JudgedPopulation::empty();
+    }
 
     /**
      * Checks if report has no findings.

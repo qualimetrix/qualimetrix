@@ -5,17 +5,12 @@ declare(strict_types=1);
 /**
  * The three cheap observation points, taken through the product's real doors.
  *
- * `warning: true -> 1` happens inside `fromArray()`; before the factory the
- * value is still `true`. So a stand with one observation point cannot say
- * where a form was lost, and this one keeps three: what the DOOR produced,
- * what the MERGED DOCUMENT carried, and what the OPTIONS OBJECT became. The
+ * A value can change between the authored door, the merged document and the
+ * resolved options object. This probe keeps all three observation points. The
  * fourth point — the report — costs a process and lives in {@see ProcessProbe}.
  *
- * None of this re-implements parsing. The yaml door is `ConfigFileStage`
- * behind the real pipeline, the `--rule-opt` door is `RuleOptionsParser`, the
- * `cli-alias` door is `CliOptionsParser` over a real `InputDefinition` built
- * from the real `check` command. A stand that parsed the value itself would be
- * measuring its own parser.
+ * The YAML and CLI doors use the production configuration input adapter and
+ * pipeline over the real `check` command definition.
  */
 
 namespace Qualimetrix\PromiseEffect;
@@ -24,20 +19,22 @@ use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Loader\CommandLineLayer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
-use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
-use Qualimetrix\Infrastructure\Console\CliOptionsParser;
+use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -114,9 +111,21 @@ final class InProcess
 
     private readonly ConfigurationPipeline $pipeline;
 
-    private readonly FindingConfigurationResolver $resolver;
+    private readonly string $nativeProfile;
 
-    private readonly RuleOptionsParser $ruleOptionsParser;
+    private const string OLD_RESOLVER = 'Qualimetrix\\Analysis\\Finding\\Configuration\\FindingConfigurationResolver';
+    private const string OLD_OVERRIDES = 'Qualimetrix\\Analysis\\Finding\\Contract\\Configuration\\FindingCliOverrides';
+    private const string OLD_FACTORY = 'Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsFactory';
+    private const string OLD_PARSER_FACTORY = 'Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsParserFactory';
+    private const string OLD_CLI_PARSER = 'Qualimetrix\\Infrastructure\\Console\\CliOptionsParser';
+
+    private readonly ?object $legacyResolver;
+
+    private readonly ?object $legacyRuleOptionsParser;
+
+    private readonly ?ConfigurationInputAdapter $inputAdapter;
+
+    private readonly ?RuleInputValidator $ruleInputValidator;
 
     private readonly Command $checkCommand;
 
@@ -132,11 +141,26 @@ final class InProcess
 
     public function __construct(string $scratchRoot)
     {
-        $container = (new ContainerFactory())->create();
+        $typed = class_exists(RuleOptionsBuild::class);
+        $old = class_exists(self::OLD_RESOLVER)
+            && class_exists(self::OLD_OVERRIDES)
+            && class_exists(self::OLD_FACTORY)
+            && class_exists(self::OLD_PARSER_FACTORY)
+            && class_exists(self::OLD_CLI_PARSER);
 
-        // Asked for by its interface, as the product asks; held as the
-        // concrete class, because the door point needs the stage list and the
-        // interface promises only the resolved document.
+        if ($typed === $old) {
+            throw new LedgerError('the product exposes neither one complete native configuration profile nor exactly one');
+        }
+
+        $this->nativeProfile = $typed ? 'typed' : 'old';
+        $factory = new ContainerFactory();
+        if ($typed) {
+            $container = $factory->configure();
+            $container->getDefinition(RuleInputValidator::class)->setPublic(true);
+            $container->compile();
+        } else {
+            $container = $factory->create();
+        }
         $pipeline = $container->get(ConfigurationPipelineInterface::class);
         $execution = $container->get(RuleExecutionInterface::class);
         $registry = $container->get(RuleRegistryInterface::class);
@@ -149,25 +173,63 @@ final class InProcess
 
         $this->pipeline = $pipeline;
 
-        // Stateless; the container keeps it private, and a copy of the product
-        // class is the product class.
-        $this->resolver = new FindingConfigurationResolver();
-
         foreach ($execution->allRules() as $metadata) {
             $this->optionsClasses[$metadata->name] = $metadata->optionsClass;
         }
 
         $this->aliases = $registry->getAllCliAliases();
-        $this->ruleOptionsParser = (new RuleOptionsParserFactory())->createFromClasses($registry->getClasses());
-
         $this->checkCommand = new Command('check');
-        CheckCommandDefinition::addOptions($this->checkCommand, $registry);
+        CheckCommandDefinition::addOptions(new RuleOptionDocumentForms(), $this->checkCommand, $registry);
+
+        if ($typed) {
+            $universe = $container->get(ChannelUniverse::class);
+            $optionsBuild = $container->get(RuleOptionsBuild::class);
+            $computedMetrics = $container->get(ComputedMetricConfiguratorInterface::class);
+            $inputValidator = $container->get(RuleInputValidator::class);
+
+            if (!$universe instanceof ChannelUniverse
+                || !$optionsBuild instanceof RuleOptionsBuild
+                || !$computedMetrics instanceof ComputedMetricConfiguratorInterface
+                || !$inputValidator instanceof RuleInputValidator) {
+                throw new LedgerError('the typed product did not yield its declared collaborators');
+            }
+
+            $this->legacyResolver = null;
+            $this->legacyRuleOptionsParser = null;
+            $this->inputAdapter = new ConfigurationInputAdapter(new RuleOptionDocumentForms(), $pipeline, new ErrorStream(), $execution);
+            $this->ruleInputValidator = $inputValidator;
+        } else {
+            $this->inputAdapter = null;
+            $this->ruleInputValidator = null;
+            $resolverClass = self::oldClass('resolver');
+            $parserFactoryClass = self::oldClass('parser-factory');
+            $this->legacyResolver = new $resolverClass();
+            $factory = new $parserFactoryClass();
+            $makeParser = self::nativeCallable($factory, 'createFromClasses');
+            $parser = $makeParser($registry->getClasses());
+
+            if (!\is_object($parser)) {
+                throw new LedgerError('the old product did not yield its rule option parser');
+            }
+
+            $this->legacyRuleOptionsParser = $parser;
+        }
 
         $this->workDirectory = $scratchRoot . '/in-process';
 
         if (!is_dir($this->workDirectory)) {
             mkdir($this->workDirectory, 0o775, true);
         }
+    }
+
+    public function nativeProfile(): string
+    {
+        return $this->nativeProfile;
+    }
+
+    public function aliasAcceptsValue(string $alias): bool
+    {
+        return $this->checkCommand->getDefinition()->getOption(ltrim($alias, '-'))->acceptValue();
     }
 
     public function observations(): int
@@ -208,21 +270,11 @@ final class InProcess
      * The axis-C probe: one invocation written by up to three layers at once,
      * observed at the two points a merged document is actually read from.
      *
-     * `take()` is deliberately untouched. It is the input axes A, B and D were
-     * measured through, and widening it would move cells this package does not
-     * address — the input/classifier distinction 02-stand.md opens with.
-     *
      * Two observations come back, not one:
      *
-     *   - `object` is what `RuleOptionsFactory::create()` built. It answers
-     *     "whose value is in the object" for every ordinary rule-option path.
-     *   - `framework` is what the registry's own predicates answer. The three
-     *     framework keys (`suppress_paths`, `suppress_namespaces`,
-     *     `suppress_namespace_channels`) are drained by the factory BEFORE
-     *     `fromArray()` and reach no field of any options object, so a grid
-     *     with only the first point would be green while their composition
-     *     was broken. Asked of the same predicates three of the four consumers
-     *     of the merged document ask.
+     *   - `object` is the producer's resolved options object.
+     *   - `framework` is what the registry's exclusion predicates answer for
+     *     the same resolved configuration.
      *
      * @param array<string, mixed> $document what the `qmx.yaml` door is handed
      * @param list<array<string, mixed>> $presets preset documents, lowest layer first
@@ -281,6 +333,177 @@ final class InProcess
         array $pathWitnesses,
         array $namespaceWitnesses,
     ): array {
+        if ($this->nativeProfile === 'old') {
+            return $this->nativeOldComposeFresh($document, $presets, $ruleOpts, $aliasFlags, $rule, $pathWitnesses, $namespaceWitnesses);
+        }
+
+        $file = $this->workDirectory . '/qmx.yaml';
+        file_put_contents($file, Yaml::dump($document, 8, 2));
+
+        $presetNames = [];
+        foreach ($presets as $index => $preset) {
+            $name = 'composition-' . $index . '-' . md5(serialize($preset)) . '.yaml';
+            file_put_contents($this->workDirectory . '/' . $name, Yaml::dump($preset, 8, 2));
+            $presetNames[] = $name;
+        }
+
+        try {
+            $input = $this->input($file, $presetNames, $ruleOpts, $aliasFlags);
+            $adapter = $this->inputAdapter ?? throw new LedgerError('the typed input adapter is unavailable');
+            $request = $adapter->adapt($input, $this->workDirectory);
+            $document = $this->pipeline->resolve($request);
+            $validator = $this->ruleInputValidator ?? throw new LedgerError('the typed rule validator is unavailable');
+            $configuration = $validator->resolve($document, $input);
+            $registry = new RuleOptionsRegistry();
+            $registry->replace($configuration);
+            $options = $registry->resolvedOptions()->for($rule);
+        } catch (Throwable $error) {
+            $refused = self::fromThrowable($error);
+            $refused = new Observation($refused->outcome, $this->tokenize($refused->text));
+
+            return ['object' => $refused, 'framework' => $refused];
+        }
+
+        $excluded = [];
+        foreach ($pathWitnesses as $witness) {
+            $excluded['path:' . $witness] = $registry->isPathExcluded($rule, RelativePath::fromString($witness));
+        }
+        foreach ($namespaceWitnesses as $witness) {
+            $excluded['namespace:' . $witness] = $registry->isNamespaceExcluded($rule, $witness);
+        }
+
+        return [
+            'object' => new Observation(Observation::ACCEPTED, $this->tokenize(self::dump(['options' => self::plain($options)]))),
+            'framework' => new Observation(Observation::ACCEPTED, $this->tokenize(self::dump(['excluded' => $excluded]))),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $document
+     * @param list<string> $ruleOpts
+     * @param array<string, string> $aliasFlags
+     *
+     * @return array{door: Observation, merged: Observation, object: Observation}
+     */
+    private function takeFresh(array $document, array $ruleOpts, array $aliasFlags, string $rule): array
+    {
+        if ($this->nativeProfile === 'old') {
+            return $this->nativeOldTakeFresh($document, $ruleOpts, $aliasFlags, $rule);
+        }
+
+        $file = $this->workDirectory . '/qmx.yaml';
+        file_put_contents($file, Yaml::dump($document, 8, 2));
+
+        try {
+            $input = $this->input($file, [], $ruleOpts, $aliasFlags);
+            $adapter = $this->inputAdapter ?? throw new LedgerError('the typed input adapter is unavailable');
+            $request = $adapter->adapt($input, $this->workDirectory);
+            $cliDoor = CommandLineLayer::of($request)->root->plain();
+        } catch (Throwable $error) {
+            $refused = self::fromThrowable($error);
+            $refused = new Observation($refused->outcome, $this->tokenize($refused->text));
+
+            return ['door' => $refused, 'merged' => $refused, 'object' => $refused];
+        }
+
+        $door = null;
+        $merged = null;
+        $object = null;
+        $resolved = null;
+
+        try {
+            $resolved = $this->pipeline->resolve($request);
+
+            $yamlDoor = null;
+            foreach ($this->pipeline->stages() as $stage) {
+                if ($stage->name() !== 'config_file') {
+                    continue;
+                }
+                $layer = $stage->apply($request);
+                if ($layer === null || \count($layer->authored) !== 1) {
+                    throw new LedgerError('The written config file produced no single authored layer.');
+                }
+                $yamlDoor = $layer->authored[0]->root->plain();
+                break;
+            }
+            if ($yamlDoor === null) {
+                throw new LedgerError('The pipeline has no config-file stage for the written document.');
+            }
+            $door = new Observation(Observation::ACCEPTED, self::dump([
+                'yaml' => $yamlDoor,
+                'cli' => $cliDoor,
+            ]));
+
+            $documentValues = [];
+            foreach ($resolved->resolved()->roots() as $root => $value) {
+                $documentValues[$root] = $value->plain();
+            }
+            $merged = new Observation(Observation::ACCEPTED, self::dump($documentValues));
+        } catch (Throwable $error) {
+            $merged = self::fromThrowable($error);
+            $door ??= $merged;
+        }
+
+        if ($rule === '' || !isset($this->optionsClasses[$rule])) {
+            $object = new Observation(Observation::ACCEPTED, '(no options object at this path)');
+        }
+
+        if (!$door->accepted()) {
+            $merged = $door;
+            $object = $door;
+        }
+
+        if ($object === null && $merged->accepted()) {
+            try {
+                if ($resolved === null) {
+                    throw new LedgerError('The accepted merged observation has no resolved document.');
+                }
+                $validator = $this->ruleInputValidator ?? throw new LedgerError('the typed rule validator is unavailable');
+                $configuration = $validator->resolve($resolved, $input);
+                $registry = new RuleOptionsRegistry();
+                $registry->replace($configuration);
+                $options = $registry->resolvedOptions()->for($rule);
+
+                $object = new Observation(Observation::ACCEPTED, self::dump([
+                    'options' => self::plain($options),
+                    'excluded' => [
+                        'namespace' => $registry->isNamespaceExcluded($rule, 'Probe\\Sub'),
+                        'path' => $registry->isPathExcluded($rule, RelativePath::fromString('src/Sub/Helper.php')),
+                    ],
+                ]));
+            } catch (Throwable $error) {
+                $object = self::fromThrowable($error);
+            }
+        }
+
+        $object ??= $merged;
+
+        return [
+            'door' => new Observation($door->outcome, $this->tokenize($door->text)),
+            'merged' => new Observation($merged->outcome, $this->tokenize($merged->text)),
+            'object' => new Observation($object->outcome, $this->tokenize($object->text)),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $document
+     * @param list<array<string, mixed>> $presets
+     * @param list<string> $ruleOpts
+     * @param array<string, string> $aliasFlags
+     * @param list<string> $pathWitnesses
+     * @param list<string> $namespaceWitnesses
+     *
+     * @return array{object: Observation, framework: Observation}
+     */
+    private function nativeOldComposeFresh(
+        array $document,
+        array $presets,
+        array $ruleOpts,
+        array $aliasFlags,
+        string $rule,
+        array $pathWitnesses,
+        array $namespaceWitnesses,
+    ): array {
         $file = $this->workDirectory . '/qmx.yaml';
         file_put_contents($file, Yaml::dump($document, 8, 2));
 
@@ -309,7 +532,7 @@ final class InProcess
                 ),
                 $this->checkCommand->getDefinition(),
             );
-            $cliValues = (new CliOptionsParser($this->ruleOptionsParser))->parseRuleOptions($input);
+            $cliValues = self::oldCliValues($this->legacyRuleOptionsParser, $input);
         } catch (Throwable $error) {
             $refused = self::fromThrowable($error);
             $refused = new Observation($refused->outcome, $this->tokenize($refused->text));
@@ -325,7 +548,7 @@ final class InProcess
 
         try {
             $resolved = $this->pipeline->resolve($request);
-            $configuration = $this->resolver->resolve($resolved, new FindingCliOverrides($cliValues));
+            $configuration = self::oldConfiguration($this->legacyResolver, $resolved, $cliValues);
 
             // A fresh registry per observation, for the same reason `take()`
             // builds one: the factory drains the framework keys into the
@@ -333,7 +556,7 @@ final class InProcess
             // probe with the previous probe's exclusions.
             $registry = new RuleOptionsRegistry();
             $registry->replace($configuration);
-            $options = (new RuleOptionsFactory($registry))->create($rule, $this->optionsClasses[$rule]);
+            $options = self::oldOptions($registry, $rule, $this->optionsClasses[$rule]);
         } catch (Throwable $error) {
             $refused = self::fromThrowable($error);
             $refused = new Observation($refused->outcome, $this->tokenize($refused->text));
@@ -364,7 +587,7 @@ final class InProcess
      *
      * @return array{door: Observation, merged: Observation, object: Observation}
      */
-    private function takeFresh(array $document, array $ruleOpts, array $aliasFlags, string $rule): array
+    private function nativeOldTakeFresh(array $document, array $ruleOpts, array $aliasFlags, string $rule): array
     {
         $file = $this->workDirectory . '/qmx.yaml';
         file_put_contents($file, Yaml::dump($document, 8, 2));
@@ -383,7 +606,7 @@ final class InProcess
                 ),
                 $this->checkCommand->getDefinition(),
             );
-            $cliValues = (new CliOptionsParser($this->ruleOptionsParser))->parseRuleOptions($input);
+            $cliValues = self::oldCliValues($this->legacyRuleOptionsParser, $input);
         } catch (Throwable $error) {
             $door = self::fromThrowable($error);
         }
@@ -426,7 +649,7 @@ final class InProcess
                 'paths', 'exclude', 'format', 'failOn', 'disabledRules', 'onlyRules',
                 'suppressPaths', 'suppressNamespaces', 'excludeHealth', 'includeGenerated',
                 'memoryLimit'] as $root) {
-                $contributions = $resolved->contributions($root);
+                $contributions = self::nativeCallable($resolved, 'contributions')($root);
 
                 if ($contributions !== []) {
                     $documentContributions[$root] = $contributions;
@@ -443,29 +666,17 @@ final class InProcess
             $object = new Observation(Observation::ACCEPTED, '(no options object at this path)');
         }
 
-        // A refused door has nothing downstream to observe. Before this, the
-        // probe caught the door's refusal, left $cliValues empty and went on to
-        // build an options object out of the document alone -- which is all
-        // defaults -- so the deepest point voted "accepted, no effect" and the
-        // row read INERT. 186 cells of axis A said the product silently
-        // accepted a value it had in fact refused, with its own framing, at the
-        // door. What travels downstream now is the refusal itself.
-        if (!$door->accepted()) {
-            $merged = $door;
-            $object = $door;
-        }
-
         if ($object === null && $merged->accepted()) {
             try {
                 $resolved = $this->pipeline->resolve($request);
-                $configuration = $this->resolver->resolve($resolved, new FindingCliOverrides($cliValues));
+                $configuration = self::oldConfiguration($this->legacyResolver, $resolved, $cliValues);
 
                 // A fresh registry per observation: the factory drains the
                 // framework keys into providers the registry owns, and a shared
                 // one would carry the previous probe's exclusions into this one.
                 $registry = new RuleOptionsRegistry();
                 $registry->replace($configuration);
-                $options = (new RuleOptionsFactory($registry))->create($rule, $this->optionsClasses[$rule]);
+                $options = self::oldOptions($registry, $rule, $this->optionsClasses[$rule]);
 
                 // The three framework keys never reach `fromArray()`; the
                 // factory drains them into the registry's two providers, and
@@ -491,6 +702,89 @@ final class InProcess
             'merged' => new Observation($merged->outcome, $this->tokenize($merged->text)),
             'object' => new Observation($object->outcome, $this->tokenize($object->text)),
         ];
+    }
+
+    private static function oldClass(string $role): string
+    {
+        $classes = [
+            'resolver' => self::OLD_RESOLVER,
+            'overrides' => self::OLD_OVERRIDES,
+            'factory' => self::OLD_FACTORY,
+            'parser-factory' => self::OLD_PARSER_FACTORY,
+            'cli-parser' => self::OLD_CLI_PARSER,
+        ];
+
+        return $classes[$role] ?? throw new LedgerError('unknown old product collaborator: ' . $role);
+    }
+
+    private static function nativeCallable(object $receiver, string $method): callable
+    {
+        $call = [$receiver, $method];
+
+        if (!\is_callable($call)) {
+            throw new LedgerError('the native old product lacks ' . $receiver::class . '::' . $method);
+        }
+
+        return $call;
+    }
+
+    /** @param array<string, mixed> $cliValues */
+    private static function oldConfiguration(?object $resolver, object $resolved, array $cliValues): mixed
+    {
+        if ($resolver === null) {
+            throw new LedgerError('the native old resolver is unavailable');
+        }
+
+        $overridesClass = self::oldClass('overrides');
+
+        return self::nativeCallable($resolver, 'resolve')($resolved, new $overridesClass($cliValues));
+    }
+
+    /** @return array<string, mixed> */
+    private static function oldCliValues(?object $parser, ArrayInput $input): array
+    {
+        if ($parser === null) {
+            throw new LedgerError('the native old parser is unavailable');
+        }
+
+        $cliParserClass = self::oldClass('cli-parser');
+
+        $values = self::nativeCallable(new $cliParserClass($parser), 'parseRuleOptions')($input);
+
+        if (!\is_array($values)) {
+            throw new LedgerError('the old CLI parser did not yield an option map');
+        }
+
+        return $values;
+    }
+
+    /** @param class-string<RuleOptionsInterface> $optionsClass */
+    private static function oldOptions(RuleOptionsRegistry $registry, string $rule, string $optionsClass): mixed
+    {
+        $factoryClass = self::oldClass('factory');
+
+        return self::nativeCallable(new $factoryClass($registry), 'create')($rule, $optionsClass);
+    }
+
+    /**
+     * @param list<string> $presetNames
+     * @param list<string> $ruleOpts
+     * @param array<string, string> $aliasFlags
+     */
+    private function input(string $configFile, array $presetNames, array $ruleOpts, array $aliasFlags): ArrayInput
+    {
+        $arguments = ['--config' => $configFile];
+        if ($presetNames !== []) {
+            $arguments['--preset'] = $presetNames;
+        }
+        if ($ruleOpts !== []) {
+            $arguments['--rule-opt'] = $ruleOpts;
+        }
+        foreach ($aliasFlags as $alias => $value) {
+            $arguments['--' . $alias] = $value;
+        }
+
+        return new ArrayInput($arguments, $this->checkCommand->getDefinition());
     }
 
     /**

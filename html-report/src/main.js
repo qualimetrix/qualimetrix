@@ -12,7 +12,6 @@ import { createColorScale, getHealthColor } from './color.js';
 import { parseHash, generateHash, initHashNavigation } from './hash.js';
 import { createSearchHandler } from './search.js';
 import { renderDetail, setNavigateTo } from './detail.js';
-import { computeSubtreeMetrics } from './subtree.js';
 import { initHints } from './hints.js';
 import { renderMartinDiagram, cleanupTooltip as cleanupMartinTooltip } from './martin-diagram.js';
 
@@ -74,9 +73,6 @@ export function init() {
 
   // Build tree data for D3
   const treeData = buildTreeData(DATA.tree);
-
-  // Compute subtree metrics for hierarchical roll-up (worst sub-namespaces)
-  computeSubtreeMetrics(treeData);
 
   // Auto-drill into single-child namespaces to skip unhelpful single-rectangle views
   // e.g., <project> → Qualimetrix (single root ns) → show Qualimetrix's children directly
@@ -155,11 +151,11 @@ function initBreadcrumb() {
 
   // Click handler delegated to nav for breadcrumb links
   nav.addEventListener('click', (e) => {
-    const link = e.target.closest('a[data-path]');
+    const link = e.target.closest('a[data-id]');
     if (!link) return;
 
     e.preventDefault();
-    const path = link.getAttribute('data-path');
+    const path = link.getAttribute('data-id');
     const treeData = buildTreeData(DATA.tree);
     const target = path === '' ? treeData : findNode(treeData, path);
     if (target) {
@@ -260,6 +256,7 @@ function renderTreemap(node) {
     const div = document.createElement('div');
     div.className = 'node';
     div.setAttribute('data-path', sourceNode.path || '');
+    div.setAttribute('data-id', sourceNode.id ?? sourceNode.path ?? '');
     div.setAttribute('data-testid', `treemap-node-${sourceNode.name}`);
     div.setAttribute('data-type', sourceNode.type || '');
     div.setAttribute('data-name', sourceNode.name || '');
@@ -351,6 +348,7 @@ function renderLeafNode(container, node, width, height) {
   const div = document.createElement('div');
   div.className = 'node';
   div.setAttribute('data-path', node.path || '');
+  div.setAttribute('data-id', node.id ?? node.path ?? '');
   div.setAttribute('data-testid', `treemap-node-${node.name}`);
   div.setAttribute('data-type', node.type || '');
   div.setAttribute('data-name', node.name || '');
@@ -399,7 +397,7 @@ function selectNode(node) {
   const container = document.getElementById('treemap');
   if (container) {
     container.querySelectorAll('.node.selected').forEach(el => el.classList.remove('selected'));
-    const el = container.querySelector(`[data-path="${CSS.escape(node.path)}"]`);
+    const el = container.querySelector(`[data-id="${CSS.escape(node.id ?? node.path)}"]`);
     if (el) el.classList.add('selected');
   }
 }
@@ -453,7 +451,7 @@ function updateBreadcrumb(node) {
     } else {
       const link = document.createElement('a');
       link.href = '#';
-      link.setAttribute('data-path', seg.path);
+      link.setAttribute('data-id', seg.id ?? seg.path);
       link.textContent = seg.name;
       nav.appendChild(link);
     }
@@ -468,7 +466,7 @@ function buildBreadcrumbPath(node) {
   const segments = [];
 
   // Always start with root
-  segments.push({ name: treeData.name || 'Project', path: '', type: 'project' });
+  segments.push({ name: treeData.name || 'Project', path: '', id: treeData.id ?? '', type: 'project' });
 
   if (!node.path) return segments;
 
@@ -476,14 +474,19 @@ function buildBreadcrumbPath(node) {
   const parts = node.path.split('\\');
   let currentPath = '';
 
-  for (let i = 0; i < parts.length; i++) {
+  const namespaceParts = node.type === 'class' ? parts.length - 1 : parts.length;
+  for (let i = 0; i < namespaceParts; i++) {
     currentPath = i === 0 ? parts[0] : currentPath + '\\' + parts[i];
     const found = findNode(treeData, currentPath);
     if (found) {
-      segments.push({ name: found.name, path: found.path, type: found.type });
+      segments.push({ name: found.name, path: found.path, id: found.id ?? found.path, type: found.type });
     } else {
-      segments.push({ name: parts[i], path: currentPath, type: 'namespace' });
+      segments.push({ name: parts[i], path: currentPath, id: currentPath, type: 'namespace' });
     }
+  }
+
+  if (node.type === 'class') {
+    segments.push({ name: node.name, path: node.path, id: node.id ?? node.path, type: 'class' });
   }
 
   return segments;
@@ -544,7 +547,7 @@ function showTooltip(event, node) {
   if (shown.length > 0) {
     html += '<br><span style="color:#aaa">Issues:</span>';
     for (const v of shown) {
-      const label = v.violationCode || v.ruleName;
+      const label = v.code || v.rule;
       const sevColor = v.severity === 'error' ? '#ff6b6b' : '#ffc107';
       html += `<br><span style="color:${sevColor}">●</span> ${escapeHtml(label)}`;
     }
@@ -614,7 +617,7 @@ function animateColorTransition() {
   const nodes = container.querySelectorAll('.node');
 
   for (const nodeEl of nodes) {
-    const path = nodeEl.getAttribute('data-path');
+    const path = nodeEl.getAttribute('data-id');
     if (path == null) continue;
 
     // Find the source node by path

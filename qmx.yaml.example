@@ -42,7 +42,7 @@
 # General Settings
 # -----------------------------------------------------------------------------
 
-# Output format: summary, text, text-verbose, json, metrics, checkstyle, sarif, gitlab, github, health, html
+# Output format: summary, text, json, metrics, checkstyle, sarif, gitlab, github, health, html
 # Docs: https://qualimetrix.github.io/qualimetrix/reference/output-formats/
 # format: summary              # default: summary
 
@@ -300,7 +300,6 @@
   # — Duplication —
   # Code duplication detection (memory-intensive, skipped when disabled).
   # duplication.clone:
-  #   warning: 5                 # duplicate block count
   #   error: 50
   #   min_lines: 5
   #   min_tokens: 70

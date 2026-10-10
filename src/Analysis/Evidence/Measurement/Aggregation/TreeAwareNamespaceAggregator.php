@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Measurement\Aggregation;
 
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
-use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -51,7 +50,7 @@ final class TreeAwareNamespaceAggregator implements AggregationPhaseInterface
         usort($parentNamespaces, static fn(string $a, string $b): int => substr_count($b, '\\') <=> substr_count($a, '\\'));
 
         // Build maps once before the loop
-        $fileToNamespace = NamespaceMetricContributions::mapFilesToNamespaces($repository);
+        $fileToNamespace = FileNamespaceIndex::fromRepository($repository);
         $fileSymbolsMap = NamespaceMetricContributions::mapNamespacesToFileSymbols($repository, $fileToNamespace);
 
         foreach ($parentNamespaces as $parentNs) {
@@ -94,21 +93,9 @@ final class TreeAwareNamespaceAggregator implements AggregationPhaseInterface
             );
             $bag = AggregationHelper::addSymbolCounts($bag, $allSymbolInfos);
 
-            $firstFile = $this->findFirstFile($allSymbolInfos);
             $parentPath = SymbolPath::forNamespace($parentNs);
-            $repository->add($parentPath, $bag, $firstFile, null);
+            $repository->add($parentPath, $bag, null, null);
         }
     }
 
-    /**
-     * @param list<SymbolInfo> $symbolInfos
-     */
-    private function findFirstFile(array $symbolInfos): ?RelativePath
-    {
-        foreach ($symbolInfos as $info) {
-            return $info->file;
-        }
-
-        return null;
-    }
 }

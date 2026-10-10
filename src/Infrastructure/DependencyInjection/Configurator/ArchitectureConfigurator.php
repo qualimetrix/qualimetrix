@@ -7,12 +7,15 @@ namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ExternalSupertypeSourceInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\UnassignedClassLayerRequirementInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
-use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
+use Qualimetrix\Infrastructure\Composer\DeclaredSupertypeReader;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
+use Qualimetrix\Infrastructure\Console\AnalysisPreflightProfile;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
 use Symfony\Component\Config\FileLocator;
@@ -25,12 +28,15 @@ use Symfony\Component\DependencyInjection\Reference;
 final class ArchitectureConfigurator implements ContainerConfiguratorInterface
 {
     private const string ARCHITECTURE_POLICY = 'Qualimetrix\\Analysis\\Policy\\Architecture\\ArchitecturePolicy';
+    private const string ARCHITECTURE_SECTION = 'Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ArchitectureSection';
     private const string LAYER_ASSIGNMENT_COMMAND = 'Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand';
     private const string LAYER_ASSIGNMENT_RESOLVER = 'Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver';
-    private const string LAYER_DECLARATION_VALIDATOR = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerDeclarationValidator';
-    private const string LAYER_EVIDENCE_COLLECTOR = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\Observation\\LayerEvidenceCollector';
+    private const string LAYER_DECLARATION_VALIDATOR = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerDeclaration\\LayerDeclarationValidator';
+    private const string LAYER_EVIDENCE_COLLECTOR = 'Qualimetrix\\Analysis\\Policy\\Architecture\\Observation\\LayerEvidenceCollector';
     private const string LAYER_VIOLATION_RULE = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule';
-    private const string UNASSIGNED_CLASS_RULE = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\UnassignedClassRule';
+    private const string LAYER_DECLARATION_RULE = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerDeclaration\\LayerDeclarationRule';
+    private const string UNASSIGNED_CLASS_RULE = 'Qualimetrix\\Analysis\\Policy\\Architecture\\UnassignedClass\\UnassignedClassRule';
+    private const string UNASSIGNED_CLASS_LAYER_REQUIREMENT = 'Qualimetrix\\Analysis\\Policy\\Architecture\\UnassignedClass\\UnassignedClassLayerRequirement';
 
     public function __construct(
         private readonly string $srcDir,
@@ -50,10 +56,29 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
             $this->srcDir . '/Analysis/Policy/Architecture/LayerViolation/*Rule.php',
         );
 
+        $loader->registerClasses(
+            $rules,
+            'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerDeclaration\\',
+            $this->srcDir . '/Analysis/Policy/Architecture/LayerDeclaration/*Rule.php',
+        );
+
         $container->register(self::ARCHITECTURE_POLICY)
             ->setAutowired(true);
+        $container->register(DeclaredSupertypeReader::class)
+            ->setAutowired(true);
+        $container->setAlias(ExternalSupertypeSourceInterface::class, DeclaredSupertypeReader::class)
+            ->setPublic(true);
+        $container->register(self::ARCHITECTURE_SECTION)
+            ->setAutoconfigured(true);
+        $container->register(self::UNASSIGNED_CLASS_LAYER_REQUIREMENT);
+        $container->setAlias(UnassignedClassLayerRequirementInterface::class, self::UNASSIGNED_CLASS_LAYER_REQUIREMENT);
 
         $this->registerLayerVerdicts($container);
+        $loader->registerClasses(
+            $rules,
+            'Qualimetrix\\Analysis\\Policy\\Architecture\\UnassignedClass\\',
+            $this->srcDir . '/Analysis/Policy/Architecture/UnassignedClass/*Rule.php',
+        );
         $container->setAlias(ArchitecturePolicyConfiguratorInterface::class, self::ARCHITECTURE_POLICY)
             ->setPublic(true);
         $container->setAlias(LayerPolicyPreparationInterface::class, self::ARCHITECTURE_POLICY)
@@ -67,54 +92,39 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
                 new Reference(DependencyGraphBuilderInterface::class),
                 new Reference(LayerAssignmentInspectorInterface::class),
                 new Reference(MetricRepositoryFactoryInterface::class),
-                new Reference(FileDiscoveryFactoryInterface::class),
-                new Reference(GeneratedFileFilterInterface::class),
+                new Reference(ProjectFilesInterface::class),
             ]);
+        $container->register(AnalysisPreflightProfile::class)
+            ->setFactory([AnalysisPreflightProfile::class, 'analysis']);
         $container->register(self::LAYER_ASSIGNMENT_COMMAND)
             ->setArguments([
                 new Reference(AnalysisPreflight::class),
+                new Reference(AnalysisPreflightProfile::class),
                 new Reference(self::LAYER_ASSIGNMENT_RESOLVER),
                 new Reference(RefusalPresenter::class),
             ])
             ->setPublic(true);
     }
 
-    /**
-     * The verdicts on the declared layers and the walk they share.
-     *
-     * Called after the rule scan, and that order is load-bearing: channels
-     * enter the universe in the order their producers are registered, and this
-     * family's published order has the two rules' channels ahead of the
-     * validator's five. See ChannelDeclarationCompilerPass.
-     *
-     * The rule and its validator answer to one options service — the producer
-     * rule's own — because `--rule-opt=architecture.layer-violation:enabled=false`
-     * has always silenced that family, and a second Options instance would be a
-     * second place for that answer to be read. The ids are derived from the
-     * rules the same way {@see RuleOptionsCompilerPass} derives them when it
-     * registers the services later in the build; a reference to a service
-     * defined by a later pass resolves at the end of compilation.
-     *
-     * The shared walk gets a second options service on top of that one:
-     * `architecture.unassigned-class` is a producer of its own now, and what
-     * the walk has to materialise depends on both gates.
-     */
+    /** Registers observation and the validator before the unassigned-class channel to preserve published order. */
     private function registerLayerVerdicts(ContainerBuilder $container): void
     {
         $options = new Reference(RuleOptionsCompilerPass::optionsServiceIdForRule(self::LAYER_VIOLATION_RULE));
+        $declarationOptions = new Reference(RuleOptionsCompilerPass::optionsServiceIdForRule(self::LAYER_DECLARATION_RULE));
         $unassignedClassOptions = new Reference(RuleOptionsCompilerPass::optionsServiceIdForRule(self::UNASSIGNED_CLASS_RULE));
 
-        // Named, because both gates share one parameter type and a swap would
+        // Named, because all three gates share one parameter type and a swap would
         // still type-check while silencing `architecture.unassigned-class`.
         $container->register(self::LAYER_EVIDENCE_COLLECTOR)
             ->setArguments([
                 '$layerViolation' => $options,
                 '$unassignedClass' => $unassignedClassOptions,
+                '$layerDeclaration' => $declarationOptions,
                 '$processor' => new Reference(self::ARCHITECTURE_POLICY),
             ]);
 
         $container->register(self::LAYER_DECLARATION_VALIDATOR)
-            ->setArguments([new Reference(self::LAYER_EVIDENCE_COLLECTOR), $options])
+            ->setArguments([new Reference(self::LAYER_EVIDENCE_COLLECTOR)])
             ->setAutoconfigured(true)
             ->setAutowired(false)
             ->setLazy(true);

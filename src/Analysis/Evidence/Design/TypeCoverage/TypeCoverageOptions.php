@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Design\TypeCoverage;
 
+use Qualimetrix\Analysis\Finding\Contract\Rule\BandDirection;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\InvertedOverrideValidator;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -38,21 +41,13 @@ final readonly class TypeCoverageOptions implements RuleOptionsInterface, Thresh
         public float $error = 50.0,
     ) {}
 
-    /**
-     * @param array<string, mixed> $config
-     */
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
-        if ($config === []) {
-            return new self(enabled: false);
-        }
-
-        $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 80.0, 50.0);
-
+        $thresholds = ThresholdParser::parse($config, RuleOptionSurface::bandFor(self::class, 'threshold'), 80.0, 50.0);
         return new self(
-            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
-            warning: (float) $thresholds['warning'],
-            error: (float) $thresholds['error'],
+            enabled: $config->boolean('enabled', true),
+            warning: $thresholds['warning'],
+            error: $thresholds['error'],
         );
     }
 
@@ -96,10 +91,9 @@ final readonly class TypeCoverageOptions implements RuleOptionsInterface, Thresh
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
         return RuleOptionKeySet::of([
-            'enabled' => RuleOptionShape::boolean()->orNull(),
             'error' => RuleOptionShape::number()->orNull(),
             'threshold' => RuleOptionShape::number()->orNull(),
             'warning' => RuleOptionShape::number()->orNull(),
-        ]);
+        ])->band('threshold', 'warning', 'error', BandDirection::Falling);
     }
 }

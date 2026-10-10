@@ -6,21 +6,25 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\CliStage;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
-use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
 use Qualimetrix\Infrastructure\Console\CliOptionsParser;
 use Qualimetrix\Infrastructure\Rule\RuleRegistry;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
 
@@ -42,10 +46,12 @@ final class RuleOptionAliasRangeRefusalTest extends TestCase
             $this->fromAlias('-1');
             self::fail('a negative value written through --max-cycle-size was accepted');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertStringContainsString(
-                'Option "maxCycleSize" of rule "architecture.circular-dependency" must be a non-negative whole number or null, got -1.',
+            self::assertSame(
+                'Option --max-cycle-size (written as --max-cycle-size=-1) must be at least 0, got -1.',
                 $refusal->getMessage(),
             );
+            self::assertSame(ConfigurationSource::CommandLine, $refusal->sources()[0]->source());
+            self::assertSame('--max-cycle-size', $refusal->sources()[0]->locator());
         }
     }
 
@@ -64,18 +70,24 @@ final class RuleOptionAliasRangeRefusalTest extends TestCase
     private function fromAlias(string $value): RuleOptionsInterface
     {
         $command = new Command('check');
-        CheckCommandDefinition::addOptions($command, new RuleRegistry([CircularDependencyRule::class]));
+        CheckCommandDefinition::addOptions(new RuleOptionDocumentForms(), $command, new RuleRegistry([CircularDependencyRule::class]));
 
         $input = new ArrayInput(['--max-cycle-size' => $value], $command->getDefinition());
-        $parser = new CliOptionsParser((new RuleOptionsParserFactory())->createFromClasses([CircularDependencyRule::class]));
-
+        $parser = new CliOptionsParser(new RuleOptionDocumentForms(), (new RuleOptionsParserFactory())->createFromClasses([CircularDependencyRule::class]));
+        $writes = $parser->pathWrites($input);
+        self::assertCount(1, $writes);
+        self::assertSame(['rules', 'architecture.circular-dependency', 'max-cycle-size'], $writes[0]->path);
+        $pipeline = new ConfigurationPipeline();
+        $container = (new \Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory())->create();
+        $execution = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class, $execution);
+        foreach (['rules', 'only_rules', 'disabled_rules'] as $root) {
+            $pipeline->addSection(new \Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection($execution, $root));
+        }
+        $pipeline->addStage(new CliStage());
+        $document = $pipeline->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project'), cliPathWrites: $writes));
         $registry = new RuleOptionsRegistry();
-        $registry->replace(new FindingConfiguration(
-            new RuleOptionsDocument(),
-            new FindingCliOverrides($parser->parseRuleOptions($input)),
-            new RuleSelection(),
-        ));
 
-        return (new RuleOptionsFactory($registry))->create(CircularDependencyRule::NAME, CircularDependencyOptions::class);
+        return (new ResolvedOptionsFixture($registry, FindingConfiguration::fromDocument($document)))->create(CircularDependencyRule::NAME, CircularDependencyOptions::class);
     }
 }

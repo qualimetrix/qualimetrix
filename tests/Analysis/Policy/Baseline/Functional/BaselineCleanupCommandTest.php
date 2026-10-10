@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Functional;
 
+use Closure;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -26,6 +28,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
@@ -93,6 +96,31 @@ final class BaselineCleanupCommandTest extends TestCase
         self::assertSame($mtimeBefore, filemtime($this->baselinePath));
     }
 
+    #[Test]
+    public function itHoldsAPrivateSiblingDuringListingAndDiscardsItWithoutRemove(): void
+    {
+        $this->writeBaseline([self::occurrenceEntry()], ['src']);
+        clearstatcache(true, $this->baselinePath);
+        $inode = fileinode($this->baselinePath);
+        $bytes = file_get_contents($this->baselinePath);
+        $observed = null;
+        $this->execute([], onMeasure: function () use (&$observed, $bytes): void {
+            $entries = scandir($this->tempDir);
+            self::assertIsArray($entries);
+            $observed = array_values(array_diff($entries, ['.', '..', 'baseline.json', 'baseline.json.lock']));
+            self::assertSame($bytes, file_get_contents($this->baselinePath));
+        });
+
+        self::assertIsArray($observed);
+        self::assertCount(1, $observed, 'A private replacement sibling must be held during measurement.');
+        clearstatcache(true, $this->baselinePath);
+        self::assertSame($inode, fileinode($this->baselinePath));
+        self::assertSame($bytes, file_get_contents($this->baselinePath));
+        $entries = scandir($this->tempDir);
+        self::assertIsArray($entries);
+        self::assertSame([], array_values(array_diff($entries, ['.', '..', 'baseline.json', 'baseline.json.lock'])));
+    }
+
     /**
      * Two entries on one symbol and one channel, differing only in the edge
      * they forbid, plus an unrelated neighbour. Removing one leaves the other
@@ -112,6 +140,27 @@ final class BaselineCleanupCommandTest extends TestCase
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringContainsString(
             '(not measured: this invocation did not run the rule for this channel at this level)',
+            $tester->getDisplay(),
+        );
+        self::assertStringNotContainsString('nothing reported for this identity', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itExplainsAnOldProjectCopyAsAChannelLevelNoLongerDeclared(): void
+    {
+        $entry = new BaselineEntry(
+            new BaselineIdentity(SymbolPath::forProject()->toCanonical(), new FindingChannel('duplication.clone')),
+            [40],
+            1,
+        );
+        $this->writeBaseline([$entry], ['src']);
+
+        $tester = $this->execute([]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('project: duplication.clone', $tester->getDisplay());
+        self::assertStringContainsString(
+            '(cannot be applied: subject level is not declared by this channel in this configuration)',
             $tester->getDisplay(),
         );
         self::assertStringNotContainsString('nothing reported for this identity', $tester->getDisplay());
@@ -231,12 +280,15 @@ final class BaselineCleanupCommandTest extends TestCase
         array $runScope = ['src'],
         array $measured = [],
         ?RunRuleCoverage $coverage = null,
+        ?Closure $onMeasure = null,
     ): CommandTester {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $declarations->declare(self::OCCURRENCE_CHANNEL, ChannelDeclaration::occurrence(SymbolLevel::Callable, SymbolLevel::File));
 
         $command = new BaselineCleanupCommand(
-            new StubBaselineRun($measured, $runScope, AbsolutePath::fromString($this->tempDir)),
+            new StubBaselineRun($measured, $runScope, AbsolutePath::fromString($this->tempDir), onMeasure: $onMeasure),
             new BaselineLoader(new BaselineEntryParser($declarations)),
+            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
             new BaselineCleaner(new FixedClock('2026-09-01T00:00:00+00:00')),
             new BaselineWriter(),
             $declarations,
@@ -264,8 +316,9 @@ final class BaselineCleanupCommandTest extends TestCase
                 generated: (new FixedClock())->now(),
                 scope: $scope,
                 entries: $entries,
+                exclusions: self::fixtureExclusions(),
             ),
-            $this->baselinePath,
+            \Qualimetrix\Core\FileTarget\TargetPath::resolve($this->baselinePath),
             AbsolutePath::fromString($this->tempDir),
         );
     }
@@ -346,5 +399,13 @@ final class BaselineCleanupCommandTest extends TestCase
         }
 
         return $entries;
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
+        );
     }
 }

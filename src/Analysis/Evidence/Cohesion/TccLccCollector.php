@@ -80,7 +80,10 @@ final class TccLccCollector extends AbstractCollector implements DeclarationInde
 
         \assert($this->visitor instanceof TccLccVisitor);
 
-        foreach ($this->visitor->getClassData() as $classFqn => $classData) {
+        foreach ($this->visitor->getClassData() as $classData) {
+            $classFqn = $classData->namespace !== null && $classData->namespace !== ''
+                ? $classData->namespace . '\\' . $classData->className
+                : $classData->className;
             // Skip classes with fewer than 2 public instance methods — TCC/LCC is not
             // meaningful for them. This covers all-static utility classes, empty classes,
             // single-method classes, and classes with only constructors/destructors.

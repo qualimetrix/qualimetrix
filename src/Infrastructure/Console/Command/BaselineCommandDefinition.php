@@ -142,7 +142,10 @@ final class BaselineCommandDefinition
                 null,
                 InputOption::VALUE_NONE,
                 'Disable progress bar',
-            );
+            )
+            ->addOption('no-cache', null, InputOption::VALUE_NONE, 'Disable caching')
+            ->addOption('workers', 'w', InputOption::VALUE_REQUIRED, 'Number of parallel workers')
+            ->addOption('memory-limit', null, InputOption::VALUE_REQUIRED, 'PHP memory limit');
     }
 
     /**

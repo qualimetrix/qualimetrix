@@ -37,10 +37,7 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
 {
     use ClassVisitorStackTrait;
 
-    /**
-     * @var array<string, TccLccClassData>
-     *                                     Class FQN => TCC/LCC data
-     */
+    /** @var array<int, TccLccClassData> */
     private array $classData = [];
 
     /**
@@ -59,7 +56,7 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
     }
 
     /**
-     * @return array<string, TccLccClassData>
+     * @return array<int, TccLccClassData>
      */
     public function getClassData(): array
     {
@@ -82,18 +79,18 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
             // Skip Enum_ — enums cannot have instance properties, so TCC will always
             // be 0.0, which is misleading. Consistent with LCOM exclusion.
             if ($node instanceof Interface_ || $node instanceof Enum_) {
-                $this->pushClass(null);
+                $this->pushClass(null, null);
 
                 return null;
             }
 
             $className = $this->extractClassLikeName($node);
-            $this->pushClass($className);
+            $this->pushClass($className, $className === null ? null : $node->getStartFilePos());
 
             // Only create data for named classes
             if ($className !== null) {
-                $fqn = $this->buildClassFqn($className);
-                $this->classData[$fqn] = new TccLccClassData(
+                $position = $node->getStartFilePos();
+                $this->classData[$position] = new TccLccClassData(
                     namespace: $this->currentNamespace,
                     className: $className,
                     line: $node->getStartLine(),
@@ -111,11 +108,11 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
             // Count promoted constructor properties (PHP 8+): parameters with
             // visibility modifiers are real instance properties.
             if ($currentClass !== null && $node->name->toString() === '__construct') {
-                $fqn = $this->buildClassFqn($currentClass);
-                if (isset($this->classData[$fqn])) {
+                $position = $this->getCurrentClassPosition();
+                if (isset($this->classData[$position])) {
                     foreach ($node->params as $param) {
                         if ($param->flags !== 0) {
-                            $this->classData[$fqn]->incrementPropertyCount();
+                            $this->classData[$position]->incrementPropertyCount();
                         }
                     }
                 }
@@ -132,9 +129,9 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
                 $methodName = $node->name->toString();
                 $this->methodStack[] = $methodName;
 
-                $fqn = $this->buildClassFqn($currentClass);
-                if (isset($this->classData[$fqn])) {
-                    $this->classData[$fqn]->addMethod($methodName);
+                $position = $this->getCurrentClassPosition();
+                if (isset($this->classData[$position])) {
+                    $this->classData[$position]->addMethod($methodName);
                 }
             } else {
                 $this->methodStack[] = null;
@@ -148,10 +145,10 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
         if ($node instanceof Property && !$node->isStatic()) {
             $currentClass = $this->getCurrentClass();
             if ($currentClass !== null) {
-                $fqn = $this->buildClassFqn($currentClass);
-                if (isset($this->classData[$fqn])) {
+                $position = $this->getCurrentClassPosition();
+                if (isset($this->classData[$position])) {
                     // A single Property node can declare multiple variables: public int $a, $b;
-                    $this->classData[$fqn]->incrementPropertyCount(\count($node->props));
+                    $this->classData[$position]->incrementPropertyCount(\count($node->props));
                 }
             }
 
@@ -170,9 +167,9 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
             if ($node->var instanceof Variable && $node->var->name === 'this') {
                 $propertyName = $this->extractPropertyName($node);
                 if ($propertyName !== null) {
-                    $fqn = $this->buildClassFqn($currentClass);
-                    if (isset($this->classData[$fqn])) {
-                        $this->classData[$fqn]->addPropertyAccess($currentMethod, $propertyName);
+                    $position = $this->getCurrentClassPosition();
+                    if (isset($this->classData[$position])) {
+                        $this->classData[$position]->addPropertyAccess($currentMethod, $propertyName);
                     }
                 }
             }

@@ -7,17 +7,17 @@ namespace Qualimetrix\Governance\Occurrence;
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
+use Qualimetrix\Analysis\Evidence\CircularDependency\CycleFinding;
 use Qualimetrix\Analysis\Evidence\CodeSmell\IdenticalSubExpressionRule;
-use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule;
+use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkFinding;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
 use Qualimetrix\Analysis\Evidence\Security\HardcodedCredentialsRule;
 use Qualimetrix\Analysis\Evidence\Security\SensitiveParameterRule;
-use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
+use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionFinding;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\UnmatchedExcludeDiagnostic;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationFinding;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnmatchedExcludeDiagnostic;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnjudgedExcludeFinding;
-use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
+use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeFinding;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
@@ -53,7 +53,7 @@ use RuntimeException;
  */
 final class OccurrenceKindFreezeGuardTest extends TestCase
 {
-    private const int EXPECTED_FROZEN_COUNT = 11;
+    private const int EXPECTED_FROZEN_COUNT = 13;
 
     /**
      * The frozen spelling itself, pinned by literal rather than derived from
@@ -74,7 +74,7 @@ final class OccurrenceKindFreezeGuardTest extends TestCase
     private const array FROZEN_SPELLING = [
         HardcodedCredentialsRule::class => 'security.hardcoded-credentials',
         SensitiveParameterRule::class => 'security.sensitive-parameter',
-        CircularDependencyRule::class => 'architecture.circular-dependency',
+        CycleFinding::class => 'architecture.circular-dependency',
         IdenticalSubExpressionRule::class => 'code-smell.identical-subexpression',
         CodeDuplicationRule::class => 'duplication.code-duplication',
         LayerViolationFinding::class => 'architecture.layer-violation',
@@ -85,11 +85,13 @@ final class OccurrenceKindFreezeGuardTest extends TestCase
         // channels through one constructor, so no single channel spelling
         // could name it. The pin is a literal either way, which is the whole
         // requirement: it must not follow a rename of the channel.
-        UnmatchedExcludeAudit::class => 'unmatched-exclude-pattern',
+        UnmatchedExcludeFinding::class => 'unmatched-exclude-pattern',
         UnjudgedExcludeFinding::class => 'unjudged-exclude-pattern',
-        UnboundSuppressionAudit::class => 'unbound-suppression-value',
-        UnmatchedFrameworkNamespaceRule::class => 'unmatched-framework-prefix',
+        UnboundSuppressionFinding::class => 'unbound-suppression-value',
+        UnmatchedFrameworkFinding::class => 'unmatched-framework-prefix',
         UnmatchedExcludeDiagnostic::class => 'inert-layer-exclude-clause',
+        \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerOverlapDiagnostic::class => 'declared-layer-overlap',
+        \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\UnmatchedTypeDiagnostic::class => 'unmatched-layer-type',
     ];
 
     #[Test]

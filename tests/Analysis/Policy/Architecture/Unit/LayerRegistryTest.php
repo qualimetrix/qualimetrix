@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContextFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
@@ -665,7 +665,7 @@ final class LayerRegistryTest extends TestCase
     {
         $deps = [];
         foreach ($edges as [$source, $target, $type]) {
-            $deps[] = new Dependency(
+            $deps[] = Dependency::ofKind(
                 DeclarationPath::of($source, RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath($target),
                 $type,
@@ -737,6 +737,11 @@ final class LayerRegistryTest extends TestCase
             public function getDeclarationDependencies(): array
             {
                 return $this->deps;
+            }
+
+            public function getClassLikeDeclarations(): array
+            {
+                return [];
             }
         };
     }

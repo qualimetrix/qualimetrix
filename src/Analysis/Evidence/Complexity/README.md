@@ -9,9 +9,8 @@ rules that interpret that evidence: `complexity.ccn`,
 
 The leaf does not publish a `Contract/` surface. It consumes Measurement's
 collector, metric and aggregation contracts and Finding's rule and finding
-contracts. Measurement retains `CallableToClassAggregator` and the
-`MetricName::COMPLEXITY_WMC` derived metric: WMC is the class-level sum of
-callable CCN, while this leaf owns its rule and options.
+contracts. Complexity also owns the `complexity.wmc` definition and its
+declaration-scoped collection: the sum of the CCN values of owned methods.
 
 ## Structure
 
@@ -41,7 +40,14 @@ Complexity/
 ```
 
 The three callable collectors retain their names, requirements and metric
-definitions. Rule metadata retains the exact option-class mappings:
+definitions. Callable CCN, cognitive and NPath rule coordinates declare
+required metric publication through their full channel declarations. Exact
+callable subjects with measured zero complete healthy judgement; absent values
+belong to the `callable-value` absence group. Selected accounting includes both
+healthy and finding sides without changing threshold comparisons or collector
+algorithms. Direct and unselected calls use the same pure eligibility gate.
+
+Rule metadata retains the exact option-class mappings:
 `ComplexityRule` -> `ComplexityOptions`, `CognitiveComplexityRule` ->
 `CognitiveComplexityOptions`, `NpathComplexityRule` ->
 `NpathComplexityOptions`, and `WmcRule` -> `WmcOptions`.
@@ -266,26 +272,19 @@ new MetricDefinition(
 
 ## WMC (Weighted Methods per Class)
 
-WMC is derived by Measurement as `MetricName::COMPLEXITY_WMC`: the sum of the
-callable-level CCN values for a class. `WmcRule` consumes that metric together
-with data-class and method-count evidence; it does not collect or aggregate
-WMC itself. Its `complexity.wmc` channel retains the existing warning/error
-thresholds and `excludeDataClasses` option.
+`CyclomaticComplexityCollector` publishes `MetricName::COMPLEXITY_WMC` for each
+named class-like declaration. Its existing shared visitor records namespace,
+name, physical position and line; the registrar index supplies the exact
+declaration ordinal. Every named class, interface, trait and enum starts with
+WMC zero, including those with no callables. Only methods owned by that exact
+declaration contribute CCN; hooks and anonymous-class methods do not. The
+roster and namespace state reset between files without another AST traversal.
+`WmcRule` consumes this value with data-class and method-count evidence; its
+warning/error thresholds and `excludeDataClasses` option are unchanged.
 
-## Rule option key declarations
-
-`ComplexityOptions`, `CognitiveComplexityOptions`, `NpathComplexityOptions` and
-`WmcOptions` declare their accepted option keys through
-`RuleOptionsInterface::acceptedOptionKeys()`; the three hierarchical wrappers
-also declare `levelOptionsClasses()`, mapping the `callable`/`class` slots to
-their level classes. The two slots do not share one key set: `callable`
-accepts `enabled`, `error`, `threshold`, `warning`; `class` accepts `enabled`,
-`max-error`, `max-warning`, `threshold` — each level class declares its own set
-through the same method. `WmcOptions` (flat, not hierarchical) accepts
-`enabled`, `error`, `exclude-data-classes`, `threshold`, `warning`.
-`RuleOptionKeyRecognition` reads these declarations and refuses an unrecognised key
-by name at both depths — the rule's own top level and inside a `callable`/
-`class` level slot, each compared against its own declared set.
+Threshold messages compare the raw metric with the selected effective boundary:
+equality "reaches" it, while a greater value "exceeds" it. A rounded display
+value can look equal to the boundary even when the raw value exceeds it.
 
 ## Test ownership and Definition of Done
 
@@ -297,6 +296,30 @@ sets and all rule IDs/channels/options are unchanged, and no old Complexity
 production or test FQCN remains in this leaf.
 
 
+## Declared forms and activation
+
+Each options/level class declares its `RuleOptionKeySet` including value forms
+and bands; `RuleOptionSurface` and `RulesSection` read it before construction.
+Framework `enabled` belongs to the common root form, while a level declares its
+own enabled slot. Owners build with `fromResolved`, never `fromArray` or constructor
+reflection as a schema.
+
+Top-level CCN/cognitive/NPath shorthand changes the callable band and preserves
+the class band. A shorthand and an explicit write to the same expanded leaf
+refuse in one layer; independent leaves such as callable.enabled are preserved.
+Different layers merge the expanded leaves. A written NPath class band activates
+without an extra true switch. An explicit class.enabled:false still turns it off.
+DoD retains independent callable/class defaults, effective-band ordering and
+pre-discovery refusal of every malformed authored layer. Metric algorithms and
+all default band numbers are unchanged.
+
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+Callable and class-maximum populations are recorded before severity selection. Class coordinates are checked before reading their metric bags; a measured zero contributes one healthy judgement while an absent publication contributes one unjudged declaration. WMC retains its configured data-class exclusion.
+
+Gate construction and lazy declaration-metric admission use Finding-owned
+`AbstractRule` operations. Each rule retains its raw metric keys, coordinate,
+ordered predicates and failure reasons; a refused coordinate never reads its
+metric bag.

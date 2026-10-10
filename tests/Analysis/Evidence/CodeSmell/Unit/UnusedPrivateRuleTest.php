@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit;
 
 use LogicException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -20,18 +21,46 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(UnusedPrivateRule::class)]
 #[CoversClass(UnusedPrivateOptions::class)]
 final class UnusedPrivateRuleTest extends TestCase
 {
     #[Test]
+    public function itCountsMeasuredZeroAndDistinguishesMissingPublication(): void
+    {
+        $infos = [];
+        foreach (['Healthy', 'Missing'] as $name) {
+            $file = \Qualimetrix\Core\Path\RelativePath::fromString('src/' . $name . '.php');
+            $subject = \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forClass('Population', $name), $file, \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)));
+            $infos[] = new \Qualimetrix\Core\Symbol\SymbolInfo($subject, $file, 1);
+        }
+        $repository = self::createStub(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface::class);
+        $repository->method('allClassDeclarations')->willReturn($infos);
+        $repository->method('getSubject')->willReturnCallback(static fn(\Qualimetrix\Core\Symbol\MetricSubject $subject): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag => $subject->toSymbolPath()->type === 'Healthy' ? (new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag())->with(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL, 0) : new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag());
+        $decisions = [];
+        foreach (UnusedPrivateRule::channelDeclarations() as $channel => $declaration) {
+            foreach ($declaration->levels as $level) {
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(UnusedPrivateRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
+            }
+        }
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+        $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
+        self::assertSame([], $rule->analyze((new \Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext($repository))->withPopulationTrace($session)));
+        self::assertSame(1, $session->freeze()->judgedCount());
+        self::assertSame(1, $session->freeze()->unjudgedCount());
+        self::assertSame('declaration', $session->freeze()->abstentions()[0]->unit);
+        self::assertStringContainsString('Missing', $session->freeze()->abstentions()[0]->examples[0]);
+    }
+
+    #[Test]
     public function itExposesItsRuleNameAndDescription(): void
     {
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
         self::assertSame('code-smell.unused-private', $rule->getName());
-        self::assertSame('Detects unused private methods, properties, and constants', $rule->getDescription());
+        self::assertSame('Detects unused private methods, properties, and constants', $rule::getDescription());
     }
 
     #[Test]
@@ -46,7 +75,7 @@ final class UnusedPrivateRuleTest extends TestCase
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions(enabled: false));
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('allDeclarations');
+        $repository->expects(self::never())->method('allClassDeclarations');
 
         $context = new AnalysisContext($repository);
 
@@ -65,7 +94,7 @@ final class UnusedPrivateRuleTest extends TestCase
             ->with('code-smell.unused-private.total', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
         $repository->method('getSubject')
             ->willReturn($metricBag);
 
@@ -87,7 +116,7 @@ final class UnusedPrivateRuleTest extends TestCase
             ->withEntry('code-smell.unused-private.method', ['line' => 15, 'name' => 'doLoadMappingFile']);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
         $repository->method('getSubject')
             ->willReturn($metricBag);
 
@@ -115,7 +144,7 @@ final class UnusedPrivateRuleTest extends TestCase
             ->withEntry('code-smell.unused-private.property', ['line' => 10, 'name' => 'cache']);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
         $repository->method('getSubject')
             ->willReturn($metricBag);
 
@@ -139,7 +168,7 @@ final class UnusedPrivateRuleTest extends TestCase
             ->withEntry('code-smell.unused-private.constant', ['line' => 8, 'name' => 'MAX_RETRIES']);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
         $repository->method('getSubject')
             ->willReturn($metricBag);
 
@@ -167,7 +196,7 @@ final class UnusedPrivateRuleTest extends TestCase
             ->withEntry('code-smell.unused-private.constant', ['line' => 8, 'name' => 'QUX']);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
         $repository->method('getSubject')
             ->willReturn($metricBag);
 
@@ -192,7 +221,7 @@ final class UnusedPrivateRuleTest extends TestCase
     {
         $classInfo = $this->exactClassInfo(SymbolPath::forClass('App', 'Unnamed'), 'src/Unnamed.php', 5);
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
         $repository->method('getSubject')->willReturn(
             (new MetricBag())
                 ->with('code-smell.unused-private.total', 1)
@@ -212,7 +241,7 @@ final class UnusedPrivateRuleTest extends TestCase
     {
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->expects(self::never())->method('getSubject');
-        $repository->method('allDeclarations')->willReturn([
+        $repository->method('allClassDeclarations')->willReturn([
             new SymbolInfo(SymbolPath::forClass('App', 'Legacy'), RelativePath::fromString('src/Legacy.php'), 1),
         ]);
 
@@ -232,7 +261,7 @@ final class UnusedPrivateRuleTest extends TestCase
             1,
         );
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$function]);
+        $repository->method('allClassDeclarations')->willReturn([$function]);
         $repository->expects(self::never())->method('getSubject');
 
         self::assertSame([], (new UnusedPrivateRule(new UnusedPrivateOptions()))->analyze(new AnalysisContext($repository)));
@@ -246,7 +275,7 @@ final class UnusedPrivateRuleTest extends TestCase
         $second = $this->exactClassInfo($logical, 'src/Second.php', 8);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$first, $second]);
+        $repository->method('allClassDeclarations')->willReturn([$first, $second]);
         $repository->method('getSubject')->willReturnCallback(
             static fn() => (new MetricBag())
                 ->with('code-smell.unused-private.total', 1)
@@ -263,10 +292,10 @@ final class UnusedPrivateRuleTest extends TestCase
     #[Test]
     public function itReadsTheEnabledFlagFromTheOptionsArray(): void
     {
-        $options = UnusedPrivateOptions::fromArray(['enabled' => false]);
+        $options = UnusedPrivateOptions::fromResolved(ResolvedOptionsFixture::values(UnusedPrivateOptions::class, ['enabled' => false]));
         self::assertFalse($options->isEnabled());
 
-        $options = UnusedPrivateOptions::fromArray([]);
+        $options = UnusedPrivateOptions::fromResolved(ResolvedOptionsFixture::values(UnusedPrivateOptions::class, []));
         self::assertTrue($options->isEnabled());
     }
 

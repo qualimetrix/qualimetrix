@@ -7,49 +7,63 @@ namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 final readonly class AnalysisContext
 {
+    /** @var array<string, array<string, ThresholdOverride>> */
+    private array $thresholdWinners;
+
     /**
+     * The default describes a complete hand-built test context. Production
+     * passes the measured judgement explicitly, including counterfactual rule
+     * executions that must answer the same scope question as their baseline.
+     *
      * @param array<string, list<ThresholdOverride>> $thresholdOverrides Per-file threshold overrides
-     * @param bool $coversProjectScope Whether the run analysed the whole project rather than a slice of it —
-     *                                 including a project whose manifest declares no autoload, where the
-     *                                 analysed paths are the project
-     *
-     * `$coversProjectScope` is the answer
-     * {@see \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage}
-     * gave for this run's paths, carried here because a rule cannot see them.
-     * A rule that reports a configured value as binding to nothing must read
-     * it first: "bound nothing" is a fact about the pair (configuration, run
-     * scope), and on a narrowed run the same configuration binds perfectly
-     * well outside the slice. Every other rule ignores it — a measured
-     * threshold is about the declarations the run did analyse, whatever else
-     * exists.
-     *
-     * The default is `true` so that a context built by hand — a unit test, a
-     * fixture — reads as a whole-project run and the channels above stay
-     * audible. {@see \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration}
-     * refuses a default for the same field, and the reason it gives —
-     * a construction site silently inheriting the wider run's answer — applies
-     * here too. What differs is the population: every construction site of that
-     * class is production, while nearly all of this one's are hand-built test
-     * contexts. So the rule is kept and the enforcement moved to where the
-     * population is: `AnalysisContextScopeArgumentGuardTest` fails on any
-     * production `new AnalysisContext(` that leaves this argument out, which is
-     * the silent inheritance the rule exists to prevent. Today production
-     * builds it twice, both times from a measurement: the pipeline, and the
-     * threshold audit re-executing rules against the pipeline's own context.
      */
     public function __construct(
         public MetricRepositoryInterface $metrics,
         public ?DependencyGraphInterface $dependencyGraph = null,
         public ?NamespaceTree $namespaceTree = null,
         public array $thresholdOverrides = [],
-        public bool $coversProjectScope = true,
-    ) {}
+        public ProjectScopeJudgement $projectScope = new ProjectScopeJudgement(),
+        private ?PopulationSession $populationSession = null,
+    ) {
+        $winners = [];
+        foreach ($thresholdOverrides as $overrides) {
+            foreach ($overrides as $override) {
+                $key = $override->subject->toCanonical();
+                $winner = $winners[$key][$override->rulePattern] ?? null;
+                if (self::wins($override, $winner)) {
+                    $winners[$key][$override->rulePattern] = $override;
+                }
+            }
+        }
+        $this->thresholdWinners = $winners;
+    }
+
+    /** @internal Finding execution binds a fresh accounting session. */
+    public function withPopulationTrace(PopulationSession $session): self
+    {
+        return new self($this->metrics, $this->dependencyGraph, $this->namespaceTree, $this->thresholdOverrides, $this->projectScope, $session);
+    }
+
+    /** @param iterable<GateInput> $inputs */
+    public function admit(string $producer, FindingChannel $channel, SymbolLevel $level, PopulationIdentity $identity, ChannelDeclaration $declaration, iterable $inputs): bool
+    {
+        $failed = $declaration->populationFailure($channel, $level, $identity, $inputs);
+        $this->populationSession?->record($producer, $channel, $level, $identity, $declaration, $failed['gate'] ?? null, $failed['reason'] ?? null);
+        return $failed === null;
+    }
 
     /**
      * Finds the most specific threshold override bound to an exact subject.
@@ -60,36 +74,24 @@ final readonly class AnalysisContext
      */
     public function getThresholdOverride(string $ruleName, MetricSubject $subject): ?ThresholdOverride
     {
-        $bestMatch = null;
-        $bestSpecificity = 0;
-        $bestSpan = \PHP_INT_MAX;
-
-        foreach ($this->thresholdOverrides as $overrides) {
-            foreach ($overrides as $override) {
-                if (!$override->matches($ruleName) || $override->subject->toCanonical() !== $subject->toCanonical()) {
-                    continue;
-                }
-
-                $specificity = $override->controlScope->specificity();
-                $span = self::span($override);
-
-                if ($bestMatch === null
-                    || $specificity > $bestSpecificity
-                    || ($specificity === $bestSpecificity && $span < $bestSpan)
-                ) {
-                    $bestMatch = $override;
-                    $bestSpecificity = $specificity;
-                    $bestSpan = $span;
-                }
-            }
-        }
-
-        return $bestMatch;
+        return $this->thresholdWinners[$subject->toCanonical()][$ruleName] ?? null;
     }
 
     /** Lines the override covers; one without an end covers everything after it. */
     private static function span(ThresholdOverride $override): int
     {
         return $override->endLine !== null ? $override->endLine - $override->line : \PHP_INT_MAX;
+    }
+
+    private static function wins(ThresholdOverride $override, ?ThresholdOverride $winner): bool
+    {
+        if ($winner === null) {
+            return true;
+        }
+        $specificity = $override->controlScope->specificity();
+        $winnerSpecificity = $winner->controlScope->specificity();
+
+        return $specificity > $winnerSpecificity
+            || ($specificity === $winnerSpecificity && self::span($override) < self::span($winner));
     }
 }

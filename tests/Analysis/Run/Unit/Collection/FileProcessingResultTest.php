@@ -8,6 +8,7 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
@@ -15,9 +16,9 @@ use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Analysis\Run\Contract\Collection\SuccessfulFileProcessing;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use ReflectionClass;
 
@@ -32,7 +33,7 @@ final class FileProcessingResultTest extends TestCase
 
         $result = FileProcessingResult::success(
             filePath: $filePath,
-            payload: new SuccessfulFileProcessing(fileBag: $fileBag),
+            payload: new SuccessfulFileProcessing(fileBag: $fileBag, classLikeDeclarations: []),
         );
 
         self::assertTrue($result->isSuccessful());
@@ -40,6 +41,27 @@ final class FileProcessingResultTest extends TestCase
         self::assertSame($fileBag, $result->fileBag());
         self::assertSame([], $result->callableMetrics());
         self::assertSame([], $result->classMetrics());
+    }
+
+    #[Test]
+    public function itCarriesClassLikeDeclarationsFromTheSuccessfulPayload(): void
+    {
+        $declaration = ClassLikeDeclaration::of(
+            DeclarationPath::of(
+                SymbolPath::fromClassFqn('App\\Subject'),
+                RelativePath::fromString('src/Subject.php'),
+                DeclarationOrdinal::fromRank(0),
+            ),
+            ClassType::Class_,
+            true,
+            false,
+        );
+        $result = FileProcessingResult::success(
+            RelativePath::fromString('src/Subject.php'),
+            new SuccessfulFileProcessing(new MetricBag(), classLikeDeclarations: [$declaration]),
+        );
+
+        self::assertSame([$declaration], $result->classLikeDeclarations());
     }
 
     #[Test]
@@ -55,7 +77,7 @@ final class FileProcessingResultTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            new LogicalClassPath(SymbolPath::forClass('App', 'Service')),
+            DeclarationPath::of(SymbolPath::forClass('App', 'Service'), DeclarationPath::of($symbolPath, RelativePath::fromString('path/to/file.php'), DeclarationOrdinal::fromRank(0))->file, DeclarationOrdinal::fromRank(0)),
             $methodBag,
         )];
 
@@ -63,6 +85,7 @@ final class FileProcessingResultTest extends TestCase
             filePath: RelativePath::fromString('path/to/file.php'),
             payload: new SuccessfulFileProcessing(
                 fileBag: $fileBag,
+                classLikeDeclarations: [],
                 callableMetrics: $callableMetrics,
             ),
         );
@@ -91,6 +114,7 @@ final class FileProcessingResultTest extends TestCase
             filePath: RelativePath::fromString('path/to/file.php'),
             payload: new SuccessfulFileProcessing(
                 fileBag: $fileBag,
+                classLikeDeclarations: [],
                 classMetrics: $classMetrics,
             ),
         );
@@ -119,7 +143,7 @@ final class FileProcessingResultTest extends TestCase
     public function itRejectsPartialOrDualTerminalStates(): void
     {
         $filePath = RelativePath::fromString('path/to/file.php');
-        $success = new SuccessfulFileProcessing(new MetricBag());
+        $success = new SuccessfulFileProcessing(new MetricBag(), classLikeDeclarations: []);
         $reflection = new ReflectionClass(FileProcessingResult::class);
         $constructor = $reflection->getConstructor();
         self::assertNotNull($constructor);

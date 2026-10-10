@@ -61,18 +61,17 @@ final class DuplicationCopyBaselineProcessTest extends TestCase
         [$newCopy] = $report['violations'];
         self::assertSame('src/Gamma.php', $newCopy['file']);
         self::assertSame('warning', $newCopy['severity']);
-        self::assertSame(20, $newCopy['metricValue'], 'the new copy spans one line more than the accepted ones');
+        self::assertSame(19, $newCopy['metricValue'], 'the comment leaves the new copy with the same covered code lines');
         self::assertNull($newCopy['acceptedLevel']);
     }
 
     /**
-     * `min_lines` admits a block by its longest copy. A comment lifting the
-     * longest copy past it adds the block, so every copy is a new finding —
-     * the one in the file nobody touched too, at a value of its own below
-     * `min_lines` and reported as a warning.
+     * A comment widens the physical span without adding covered code lines.
+     * Neither short copy reaches min_lines, so adding the comment after
+     * baseline generation must not admit the block.
      */
     #[Test]
-    public function itReportsEveryCopyWhenACommentLiftsTheLongestPastMinLines(): void
+    public function itDoesNotAdmitCopiesWhenACommentOnlyWidensTheirPhysicalSpan(): void
     {
         file_put_contents($this->tmpDir . '/src/Alpha.php', self::shortFunction('alpha', ''));
         file_put_contents($this->tmpDir . '/src/Beta.php', self::shortFunction('beta', ''));
@@ -83,8 +82,8 @@ final class DuplicationCopyBaselineProcessTest extends TestCase
         file_put_contents($this->tmpDir . '/src/Alpha.php', self::shortFunction('alpha', '    // explain y'));
 
         $checked = $this->qmx('check', 'src', '--config=qmx.yaml', '--baseline=baseline.json', '--fail-on=warning', '--format=json', '--no-progress', '--no-cache', '--workers=0');
-        self::assertSame(1, $checked['exitCode'], $checked['stderr'] . "\n" . $checked['stdout']);
-        self::assertSame([['src/Alpha.php', 5, 'warning'], ['src/Beta.php', 4, 'warning']], self::violations($checked['stdout']));
+        self::assertSame(0, $checked['exitCode'], $checked['stderr'] . "\n" . $checked['stdout']);
+        self::assertSame([], self::violations($checked['stdout']));
     }
 
     /**
@@ -124,11 +123,7 @@ final class DuplicationCopyBaselineProcessTest extends TestCase
         return $violations;
     }
 
-    /**
-     * Every copy is a boundary of its own under the one project subject, so
-     * `baseline:explain` prints a section per copy; without the copy's
-     * occurrence and file the sections read the same.
-     */
+    /** Each file explains only its own accepted or newly reported copy. */
     #[Test]
     public function itTellsTheExplainedCopiesApartByOccurrenceAndFile(): void
     {
@@ -136,22 +131,95 @@ final class DuplicationCopyBaselineProcessTest extends TestCase
         self::assertSame(0, $generated['exitCode'], $generated['stderr'] . "\n" . $generated['stdout']);
         file_put_contents($this->tmpDir . '/src/Gamma.php', self::copiedClass('Gamma'));
 
-        $explained = $this->qmx('baseline:explain', 'project:', 'src', '--config=qmx.yaml', '--baseline=baseline.json', '--no-progress');
-        self::assertSame(0, $explained['exitCode'], $explained['stderr'] . "\n" . $explained['stdout']);
-
-        preg_match_all('/Occurrence: ([0-9a-f]{16})\n    Reported at: (\S+)\n    baseline: +(.+)\n/', $explained['stdout'], $sections, \PREG_SET_ORDER);
         $baselineByFile = [];
-        foreach ($sections as [, , $at, $baseline]) {
-            $baselineByFile[$at] = $baseline;
+        $occurrences = [];
+        foreach (['Alpha', 'Beta', 'Gamma'] as $class) {
+            $explained = $this->qmx('baseline:explain', 'file:src/' . $class . '.php', 'src', '--config=qmx.yaml', '--baseline=baseline.json', '--no-progress');
+            self::assertSame(0, $explained['exitCode'], $explained['stderr'] . "\n" . $explained['stdout']);
+
+            preg_match_all('/Occurrence: ([0-9a-f]{16})\n    Reported at: (\S+)\n    baseline: +(.+)\n    now: +(.+)\n/', $explained['stdout'], $sections, \PREG_SET_ORDER);
+            self::assertCount(1, $sections, $explained['stdout']);
+            foreach ($sections as [, $occurrence, $at, $baseline, $now]) {
+                $baselineByFile[$at] = ['baseline' => $baseline, 'now' => $now];
+                $occurrences[] = $occurrence;
+            }
         }
         ksort($baselineByFile);
 
         self::assertSame(
-            ['src/Alpha.php:4' => 'accepted 19; now 19', 'src/Beta.php:4' => 'accepted 19; now 19', 'src/Gamma.php:4' => '(none)'],
+            [
+                'src/Alpha.php:4' => ['baseline' => 'accepted 19', 'now' => '19'],
+                'src/Beta.php:4' => ['baseline' => 'accepted 19', 'now' => '19'],
+                'src/Gamma.php:4' => ['baseline' => '(none)', 'now' => '19'],
+            ],
             $baselineByFile,
-            $explained['stdout'],
         );
-        self::assertCount(3, array_unique(array_column($sections, 1)));
+        self::assertCount(1, array_unique($occurrences), 'file subject distinguishes copies with the same occurrence');
+    }
+
+    #[Test]
+    public function itSuppressesOnlyTheDuplicateCopyInTheExcludedPath(): void
+    {
+        file_put_contents(
+            $this->tmpDir . '/qmx.yaml',
+            "onlyRules: ['duplication.clone']\nsuppress_paths: [{exact: 'src/Alpha.php'}]\n",
+        );
+
+        $checked = $this->qmx('check', 'src', '--config=qmx.yaml', '--format=json', '--no-progress', '--no-cache', '--workers=0');
+        self::assertSame(0, $checked['exitCode'], $checked['stderr'] . "\n" . $checked['stdout']);
+
+        /** @var array{violations: list<array{file: string, subject: string, channel: string}>} $report */
+        $report = json_decode($checked['stdout'], true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(
+            [['src/Beta.php', 'file:src/Beta.php', 'duplication.clone']],
+            array_map(static fn(array $v): array => [$v['file'], $v['subject'], $v['channel']], $report['violations']),
+        );
+    }
+
+    #[Test]
+    public function itKeepsBothFileCopiesUnderBroadNamespaceRegexes(): void
+    {
+        foreach (['.*', '^$', '^(?!App).*'] as $expression) {
+            file_put_contents(
+                $this->tmpDir . '/qmx.yaml',
+                "onlyRules: ['duplication.clone']\nsuppress_namespaces: [{regex: '" . $expression . "'}]\n",
+            );
+
+            $checked = $this->qmx('check', 'src', '--config=qmx.yaml', '--format=json', '--no-progress', '--no-cache', '--workers=0');
+            self::assertSame(0, $checked['exitCode'], $checked['stderr'] . "\n" . $checked['stdout']);
+            /** @var array{violations: list<array{file: string, subject: string}>} $report */
+            $report = json_decode($checked['stdout'], true, flags: \JSON_THROW_ON_ERROR);
+            $copies = array_map(static fn(array $v): array => [$v['file'], $v['subject']], $report['violations']);
+            sort($copies);
+            self::assertSame([
+                ['src/Alpha.php', 'file:src/Alpha.php'],
+                ['src/Beta.php', 'file:src/Beta.php'],
+            ], $copies, $checked['stdout']);
+        }
+    }
+
+    #[Test]
+    public function itRefusesTheRetiredProjectSelectorAndDisablesTheFileProducer(): void
+    {
+        file_put_contents($this->tmpDir . '/qmx.yaml', "failOn: none\n");
+
+        $active = $this->qmx('check', 'src', '--config=qmx.yaml', '--format=json', '--no-progress', '--no-cache', '--workers=0');
+        self::assertSame(0, $active['exitCode'], $active['stderr'] . "\n" . $active['stdout']);
+        /** @var array{violations: list<array{channel: string}>} $activeReport */
+        $activeReport = json_decode($active['stdout'], true, flags: \JSON_THROW_ON_ERROR);
+        self::assertCount(2, array_filter($activeReport['violations'], static fn(array $v): bool => $v['channel'] === 'duplication.clone'));
+
+        $retired = $this->qmx('check', 'src', '--config=qmx.yaml', '--disable-rule=duplication.clone:project', '--format=json', '--no-progress', '--no-cache', '--workers=0');
+        self::assertSame(3, $retired['exitCode'], $retired['stderr'] . "\n" . $retired['stdout']);
+        /** @var array{error: string} $refusal */
+        $refusal = json_decode($retired['stdout'], true, flags: \JSON_THROW_ON_ERROR);
+        self::assertStringContainsString('levels available are "file"', $refusal['error']);
+
+        $disabled = $this->qmx('check', 'src', '--config=qmx.yaml', '--disable-rule=duplication.clone:file', '--format=json', '--no-progress', '--no-cache', '--workers=0');
+        self::assertSame(0, $disabled['exitCode'], $disabled['stderr'] . "\n" . $disabled['stdout']);
+        /** @var array{violations: list<array{channel: string}>} $report */
+        $report = json_decode($disabled['stdout'], true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame([], array_values(array_filter($report['violations'], static fn(array $v): bool => $v['channel'] === 'duplication.clone')));
     }
 
     /**
@@ -198,8 +266,8 @@ final class DuplicationCopyBaselineProcessTest extends TestCase
     }
 
     /**
-     * Four lines and over 70 tokens: one line short of the default
-     * `min_lines`, until `$extra` lands inside it.
+     * Four code lines and over 70 tokens; an inserted comment changes only
+     * the physical span.
      */
     private static function shortFunction(string $name, string $extra): string
     {

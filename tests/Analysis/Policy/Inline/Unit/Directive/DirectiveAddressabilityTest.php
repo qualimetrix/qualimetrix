@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -170,7 +171,7 @@ final class DirectiveAddressabilityTest extends TestCase
 
     /**
      * `duplication.clone:class` names an
-     * impossible pair (the channel reports at project level only) AND reaches
+     * impossible pair (the channel reports at file level only) AND reaches
      * the ban, and {@see DirectiveAddressability::problemWithSuppression()}
      * asks the pair grammar first. Reordering the two checks would silently
      * swap the published refusal text — and pass this test only if it were
@@ -203,12 +204,31 @@ final class DirectiveAddressabilityTest extends TestCase
             null,
             1,
             SuppressionType::Symbol,
+            position: 0,
             refusal: DirectiveRefusal::formNotRecognised('ignore-lines'),
         ));
 
         self::assertIsString($problem);
         self::assertStringContainsString('@qmx-ignore-lines complexity.ccn', $problem);
         self::assertStringContainsString('is not a tag this tool reads', $problem);
+    }
+
+    #[Test]
+    public function itNamesTheCarrierWhoseReachCannotSupplyTheRequestedLevel(): void
+    {
+        $problem = self::addressability()->problemWithSuppression(new Suppression(
+            'coupling.cbo:callable',
+            null,
+            7,
+            SuppressionType::Symbol,
+            position: 12,
+            refusal: DirectiveRefusal::levelNotReachableHere('property $value'),
+        ));
+
+        self::assertSame(
+            'Suppression "coupling.cbo:callable" asks for a level that is not reachable from property $value; move it to a declaration at that level or remove the level suffix.',
+            $problem,
+        );
     }
 
     /**
@@ -228,6 +248,7 @@ final class DirectiveAddressabilityTest extends TestCase
             null,
             1,
             SuppressionType::Symbol,
+            position: 0,
             refusal: DirectiveRefusal::namesNoTarget($form),
         ));
 
@@ -253,6 +274,7 @@ final class DirectiveAddressabilityTest extends TestCase
             null,
             1,
             SuppressionType::Symbol,
+            position: 0,
             refusal: DirectiveRefusal::thresholdWithNoDeclarationToBind(),
         ));
         $outsideDocblock = self::addressability()->problemWithSuppression(new Suppression(
@@ -260,6 +282,7 @@ final class DirectiveAddressabilityTest extends TestCase
             null,
             1,
             SuppressionType::Symbol,
+            position: 0,
             refusal: DirectiveRefusal::thresholdOutsideDocblock(),
         ));
 
@@ -278,6 +301,7 @@ final class DirectiveAddressabilityTest extends TestCase
             null,
             1,
             SuppressionType::Symbol,
+            position: 0,
             refusal: DirectiveRefusal::noDeclarationToBind(),
         ));
 
@@ -299,6 +323,7 @@ final class DirectiveAddressabilityTest extends TestCase
             null,
             1,
             SuppressionType::Symbol,
+            position: 0,
             refusal: DirectiveRefusal::noDeclarationToBind(),
         ));
 
@@ -317,7 +342,7 @@ final class DirectiveAddressabilityTest extends TestCase
                 'coupling.cbo' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
                 'duplication.clone' => ChannelDeclaration::magnitude(
                     WorseDirection::Higher,
-                    SymbolLevel::Project,
+                    SymbolLevel::File,
                 ),
                 'code-smell.long-parameter-list' => ChannelDeclaration::judging(
                     WorseDirection::Higher,
@@ -338,6 +363,7 @@ final class DirectiveAddressabilityTest extends TestCase
                 'code-smell.long-parameter-list' => true,
             ],
             new ResolvedComputedMetricDefinitions([]),
+            ...self::unusedReachPorts(),
         ));
     }
 
@@ -348,7 +374,7 @@ final class DirectiveAddressabilityTest extends TestCase
 
     private static function suppression(string $rule): Suppression
     {
-        return new Suppression($rule, null, 1, SuppressionType::File);
+        return new Suppression($rule, null, 1, SuppressionType::File, position: 0);
     }
 
     private static function declarationSubject(): MetricSubject
@@ -358,5 +384,27 @@ final class DirectiveAddressabilityTest extends TestCase
             RelativePath::fromString(self::FILE),
             DeclarationOrdinal::fromRank(0),
         ));
+    }
+
+    /** @return array{\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface} */
+    private static function unusedReachPorts(): array
+    {
+        return [
+            new class implements \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface {
+                public function metricReach(string $metricKey): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach
+                {
+                    throw new LogicException('This fixture does not query measured-metric reach.');
+                }
+            },
+            new class implements \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface {
+                public function reachAt(
+                    string $metricName,
+                    \Qualimetrix\Core\Symbol\SymbolLevel $level,
+                    \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface $definitions,
+                ): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach {
+                    throw new LogicException('This fixture does not query computed-metric reach.');
+                }
+            },
+        ];
     }
 }

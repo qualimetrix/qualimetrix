@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\TypeShape;
 use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraph;
 use Qualimetrix\Analysis\Evidence\DependencyModel\NamespaceCouplings;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -27,7 +28,7 @@ final class JsonGraphExporterTest extends TestCase
     public function itExportsValidJson(): void
     {
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\ServiceA'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\ServiceB')),
                 DependencyType::TypeHint,
@@ -79,13 +80,13 @@ final class JsonGraphExporterTest extends TestCase
     public function itHasStatisticsSection(): void
     {
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\ServiceA'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\ServiceB')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
             ),
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\ServiceB'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\ServiceC')),
                 DependencyType::New_,
@@ -95,7 +96,8 @@ final class JsonGraphExporterTest extends TestCase
 
         $graph = $this->createGraph($dependencies);
         $exporter = new JsonGraphExporter();
-        $data = $this->decode($exporter->export($graph));
+        $json = $exporter->export($graph);
+        $data = $this->decode($json);
 
         self::assertSame(3, $data['statistics']['nodeCount']);
         self::assertSame(2, $data['statistics']['edgeCount']);
@@ -105,7 +107,7 @@ final class JsonGraphExporterTest extends TestCase
     public function itIncludesFqnAndNamespaceInNodes(): void
     {
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\Service\\UserService'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Repository\\UserRepository')),
                 DependencyType::TypeHint,
@@ -130,19 +132,19 @@ final class JsonGraphExporterTest extends TestCase
     public function itAggregatesEdges(): void
     {
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\ServiceA'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\ServiceB')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
             ),
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\ServiceA'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\ServiceB')),
                 DependencyType::New_,
                 new Location(RelativePath::fromString('test/file.php'), 20),
             ),
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\ServiceA'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\ServiceB')),
                 DependencyType::TypeHint,
@@ -152,7 +154,8 @@ final class JsonGraphExporterTest extends TestCase
 
         $graph = $this->createGraph($dependencies);
         $exporter = new JsonGraphExporter();
-        $data = $this->decode($exporter->export($graph));
+        $json = $exporter->export($graph);
+        $data = $this->decode($json);
 
         // Should be aggregated into one edge
         self::assertSame(1, $data['statistics']['edgeCount']);
@@ -162,26 +165,51 @@ final class JsonGraphExporterTest extends TestCase
         self::assertSame('App\\ServiceA', $edge['from']);
         self::assertSame('App\\ServiceB', $edge['to']);
         self::assertSame(['new', 'type_hint'], $edge['types']); // sorted alphabetically
+        self::assertMatchesRegularExpression('/"shape":\s*\{\}/', $json);
         self::assertSame(3, $edge['count']);
+    }
+
+    #[Test]
+    public function itPreservesTypeAndShapeAssociationsOnAggregatedEdges(): void
+    {
+        $source = DeclarationPath::of(
+            SymbolPath::fromClassFqn('App\\ServiceA'),
+            RelativePath::fromString('test.php'),
+            DeclarationOrdinal::fromRank(0),
+        );
+        $target = new LogicalClassPath(SymbolPath::fromClassFqn('App\\ServiceB'));
+        $location = new Location(RelativePath::fromString('test.php'), 10);
+        $graph = $this->createGraph([
+            Dependency::ofType($source, $target, DependencyType::TypeHint, $location, TypeShape::Union),
+            Dependency::ofType($source, $target, DependencyType::PropertyType, $location, TypeShape::Nullable),
+            Dependency::ofKind($source, $target, DependencyType::New_, $location),
+        ]);
+
+        $edge = $this->decode((new JsonGraphExporter())->export($graph))['edges'][0];
+
+        self::assertSame([
+            'property_type' => ['nullable'],
+            'type_hint' => ['union'],
+        ], $edge['shape']);
     }
 
     #[Test]
     public function itSortsEdgesByFromThenTo(): void
     {
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\Z'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\A')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
             ),
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\A'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Z')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 20),
             ),
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\A'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\B')),
                 DependencyType::TypeHint,
@@ -218,13 +246,13 @@ final class JsonGraphExporterTest extends TestCase
     public function itFiltersIncludeNamespaces(): void
     {
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\Service\\Foo'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Service\\Bar')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
             ),
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\Tests\\FooTest'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Service\\Foo')),
                 DependencyType::TypeHint,
@@ -250,13 +278,13 @@ final class JsonGraphExporterTest extends TestCase
     public function itFiltersExcludeNamespaces(): void
     {
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\Service\\Foo'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Service\\Bar')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
             ),
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\Tests\\FooTest'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Service\\Foo')),
                 DependencyType::TypeHint,
@@ -277,7 +305,7 @@ final class JsonGraphExporterTest extends TestCase
     public function itFiltersEdgesWhenNodesAreFiltered(): void
     {
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\Service\\Foo'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Tests\\FooTest')),
                 DependencyType::TypeHint,
@@ -298,19 +326,19 @@ final class JsonGraphExporterTest extends TestCase
     public function itPreservesAllDependencyTypes(): void
     {
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\Foo'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Bar')),
                 DependencyType::Extends,
                 new Location(RelativePath::fromString('test/file.php'), 1),
             ),
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\Foo'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Bar')),
                 DependencyType::Implements,
                 new Location(RelativePath::fromString('test/file.php'), 2),
             ),
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\Foo'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Bar')),
                 DependencyType::StaticCall,
@@ -339,7 +367,7 @@ final class JsonGraphExporterTest extends TestCase
     {
         $broken = "Bad\xFFClass";
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\' . $broken), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Good')),
                 DependencyType::TypeHint,
@@ -355,7 +383,7 @@ final class JsonGraphExporterTest extends TestCase
         $data = $this->decode($json);
         self::assertGreaterThanOrEqual(1, $data['invalidUtf8Replaced'] ?? 0);
         self::assertStringContainsString(
-            "Bad\u{FFFD}Class",
+            "Bad%FFClass",
             (string) json_encode($data, \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR),
         );
     }
@@ -368,7 +396,7 @@ final class JsonGraphExporterTest extends TestCase
     public function itAddsNoRepairMarkWhenTheInputIsValid(): void
     {
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\Good'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Better')),
                 DependencyType::TypeHint,
@@ -459,6 +487,7 @@ final class JsonGraphExporterTest extends TestCase
             [],
             [],
             DependencyGraph::declarationsAmong($dependencies),
+            [],
         );
     }
 }

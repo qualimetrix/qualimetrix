@@ -14,6 +14,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SourceMeasuringCollectorInterface;
+use Qualimetrix\Core\Ast\NameResolution;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\FileDeclarationIndex;
 use SplFileInfo;
@@ -66,8 +68,10 @@ final class CompositeCollector implements FileMeasurementCollectorInterface
      */
     public function collect(SplFileInfo $file, array $ast, RelativePath $filePath): CollectionOutput
     {
+        NameResolution::resolve($ast);
+
         if ($this->collectors === [] && $this->dependencyTraversalParticipant === null) {
-            return new CollectionOutput(new MetricBag(), []);
+            return new CollectionOutput(new MetricBag(), [], []);
         }
 
         $traverser = new NodeTraverser();
@@ -77,6 +81,7 @@ final class CompositeCollector implements FileMeasurementCollectorInterface
         return new CollectionOutput(
             $this->collectMetrics($file, $ast, $filePath),
             $this->dependencyTraversalParticipant?->dependencies() ?? [],
+            $this->dependencyTraversalParticipant?->classLikeDeclarations() ?? [],
         );
     }
 
@@ -87,6 +92,15 @@ final class CompositeCollector implements FileMeasurementCollectorInterface
     {
         foreach ($this->collectors as $collector) {
             $collector->reset();
+        }
+    }
+
+    public function measureSource(string $source): void
+    {
+        foreach ($this->collectors as $collector) {
+            if ($collector instanceof SourceMeasuringCollectorInterface) {
+                $collector->measureSource($source);
+            }
         }
     }
 

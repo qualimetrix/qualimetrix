@@ -39,7 +39,7 @@ architecture:
     # real, non-anonymous member so the layer is reachable on both sides
     # regardless of the anonymous-class defect.
     - name: graph-extends
-      extends: ['Corpus\Layers\GraphBase\Marker']
+      extends: ['Corpus\Layers\GraphBase\Marker', 'Corpus\Layers\GraphBase\Markre']
     # ExtendsHost's fallback layer: matched by namespace, minus whatever
     # really (not anonymously) extends Marker. Correctly attributed,
     # ExtendsHost has no real extends edge, so it lands here instead of

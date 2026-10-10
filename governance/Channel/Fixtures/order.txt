@@ -32,6 +32,7 @@ code-smell.superglobals
 code-smell.unreachable-code
 code-smell.unused-private
 cohesion.lcom
+cohesion.unmatched-exclude-method
 complexity.cognitive
 complexity.ccn
 complexity.npath
@@ -63,6 +64,8 @@ suppression.unmatched-rule-ledger
 architecture.layer-violation
 architecture.unmatched-exclude
 architecture.doubted-assignment
+architecture.layer-overlap
+architecture.unmatched-type
 architecture.coverage-gap
 architecture.unreachable-layer
 architecture.potential-shadow
@@ -71,6 +74,7 @@ architecture.pending-layer-matched
 architecture.unassigned-class
 architecture.circular-dependency
 duplication.clone
+baseline.unused-entry
 discovery.unmatched-exclude
 annotation.unresolved-directive
 annotation.unsupported-threshold

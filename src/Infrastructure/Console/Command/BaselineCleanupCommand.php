@@ -4,16 +4,21 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
+use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCleaner;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCleanupCandidate;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCleanupReason;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
 use Qualimetrix\Analysis\Policy\Baseline\EntrySelector;
 use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
+use Qualimetrix\Core\FileTarget\PreparedTarget;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
+use Qualimetrix\Infrastructure\Console\RunTarget\StagedSignalGuard;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -44,9 +49,19 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 final class BaselineCleanupCommand extends BaselineCommand
 {
+    private const array FIXED_REASON_DESCRIPTIONS = [
+        BaselineCleanupReason::Stale->value => 'nothing reported for this identity',
+        BaselineCleanupReason::ExclusionsRemovedPopulation->value => 'this identity belongs to a file newly excluded from analysis',
+        BaselineCleanupReason::ProducerDidNotRun->value => 'not measured: this invocation did not run the rule for this channel at this level',
+        BaselineCleanupReason::LevelNotDeclared->value => 'level not declared: this channel does not report at the level of this baseline entry',
+        BaselineCleanupReason::ChannelNotDeclared->value => 'no rule declares this channel',
+        BaselineCleanupReason::ChannelIsConfigurationError->value => 'this channel reports a configuration error and cannot be accepted as debt',
+    ];
+
     public function __construct(
         private readonly BaselineRunInterface $baselineRun,
         private readonly BaselineLoader $loader,
+        private readonly BaselineDocumentReader $documentReader,
         private readonly BaselineCleaner $cleaner,
         private readonly BaselineWriter $writer,
         private readonly ChannelDeclarationRegistryInterface $declarations,
@@ -77,7 +92,8 @@ final class BaselineCleanupCommand extends BaselineCommand
             . "\n" . 'when the run did not measure its channel at the level of its subject'
             . "\n" . '(--only-rule, --disable-rule, including a selector narrowed to one'
             . "\n" . 'level such as X:namespace, enabled: false, or a level switched off in'
-            . "\n" . 'the rule\'s options), or when no rule declares its channel any more,'
+            . "\n" . 'the rule\'s options), when the channel no longer declares the entry\'s'
+            . "\n" . 'subject level, or when no rule declares its channel any more,'
             . "\n" . 'or when the entry could not be read at all. None of those proves the'
             . "\n" . 'debt is gone — a loosened threshold silences a finding just as'
             . "\n" . 'effectively as a fix — so removal is always yours to assert, one'
@@ -93,7 +109,18 @@ final class BaselineCleanupCommand extends BaselineCommand
         // refused beside the candidates it should have been copied from.
         $written = CommandLineSpelling::options($input, 'remove');
 
-        $measured = $this->measureAgainstBaseline($this->baselineRun, $this->loader, $input, $output, $baselinePath);
+        $document = $this->documentReader->preflight($baselinePath);
+
+        return $this->withPreparedTarget(
+            $document->target,
+            fn(PreparedTarget $prepared, ?StagedSignalGuard $guard): int => $this->cleanupPrepared($input, $output, $written, $document, $prepared, $guard),
+        );
+    }
+
+    /** @param list<string> $written */
+    private function cleanupPrepared(InputInterface $input, OutputInterface $output, array $written, BaselineDocument $document, PreparedTarget $prepared, ?StagedSignalGuard $guard): int
+    {
+        $measured = $this->measureAgainstBaseline($this->baselineRun, $this->loader, $input, $output, $document);
 
         if ($measured === null) {
             return self::FAILURE;
@@ -106,10 +133,11 @@ final class BaselineCleanupCommand extends BaselineCommand
             $baseline,
             $context->findings(),
             $this->declarations,
-            $this->ruleCoverage->unmeasured(array_map(
+            $this->ruleCoverage->classify(array_map(
                 static fn($entry) => $entry->identity,
                 $baseline->entries,
             )),
+            $context->coverage,
         );
         self::reportCandidates($candidates, $output);
 
@@ -140,18 +168,23 @@ final class BaselineCleanupCommand extends BaselineCommand
             return self::SUCCESS;
         }
 
-        $this->writer->write($removal->baseline, $baselinePath, $context->projectRoot);
+        $this->writer->write($removal->baseline, $document->target, $context->projectRoot, $prepared, $guard === null ? null : $guard->assertNotInterrupted(...));
 
-        $output->writeln(\sprintf(
-            '<info>Removed %d entr%s; %d remain%s (%d including entries that cannot be applied).</info>',
-            \count($removal->removed),
-            \count($removal->removed) === 1 ? 'y' : 'ies',
-            $removal->baseline->count(),
-            $removal->baseline->count() === 1 ? 's' : '',
-            $removal->baseline->totalCount(),
-        ));
+        self::reportRemoval(\count($removal->removed), $removal->baseline->count(), $removal->baseline->totalCount(), $output);
 
         return self::SUCCESS;
+    }
+
+    private static function reportRemoval(int $removed, int $remaining, int $includingInert, OutputInterface $output): void
+    {
+        $output->writeln(\sprintf(
+            '<info>Removed %d entr%s; %d remain%s (%d including entries that cannot be applied).</info>',
+            $removed,
+            $removed === 1 ? 'y' : 'ies',
+            $remaining,
+            $remaining === 1 ? 's' : '',
+            $includingInert,
+        ));
     }
 
     /**
@@ -226,14 +259,11 @@ final class BaselineCleanupCommand extends BaselineCommand
 
     private static function describeReason(BaselineCleanupCandidate $candidate): string
     {
-        return match ($candidate->reason) {
-            BaselineCleanupReason::Stale => 'nothing reported for this identity',
-            BaselineCleanupReason::ProducerDidNotRun => 'not measured: this invocation did not run the rule for'
-                . ' this channel at this level',
-            BaselineCleanupReason::ChannelNotDeclared => 'no rule declares this channel',
-            BaselineCleanupReason::ChannelIsConfigurationError => 'this channel reports a configuration error and'
-                . ' cannot be accepted as debt',
-            BaselineCleanupReason::Inert => 'cannot be applied: ' . ($candidate->inertReason?->description() ?? 'unreadable'),
-        };
+        if ($candidate->reason === BaselineCleanupReason::Inert) {
+            return 'cannot be applied: ' . ($candidate->inertReason?->description() ?? 'unreadable');
+        }
+
+        return self::FIXED_REASON_DESCRIPTIONS[$candidate->reason->value]
+            ?? throw new LogicException('Unknown baseline cleanup reason.');
     }
 }

@@ -23,10 +23,6 @@ final class NameStatusListing
         'whose path did not resolve inside the project root — the project root may be a subdirectory of the git tree, '
         . 'or the path may point outside it through a link';
 
-    private const string SKIPPED_UNREPRESENTABLE =
-        'whose name holds a backslash, which this build\'s relative-path model rewrites as a directory separator '
-        . '(the file is real; the name cannot be carried through unchanged)';
-
     /**
      * `U` is the one refused status with a cause the user can act on: finish
      * the merge. An unmerged entry is not a version of a file — the index
@@ -45,15 +41,8 @@ final class NameStatusListing
     private const string SKIPPED_UNSUPPORTED_STATUS =
         'reported by git under status "%s", which this build does not know how to carry';
 
-    private const string SOURCE_UNREPRESENTABLE =
-        'whose source name holds a backslash and cannot be carried through this build\'s relative-path model. '
-        . 'The file itself is analysed; only the name it was moved from is lost';
-
     /** @var array<string, list<string>> */
     private array $skipped = [];
-
-    /** @var list<string> */
-    private array $lostSources = [];
 
     private function __construct() {}
 
@@ -80,7 +69,6 @@ final class NameStatusListing
         $listing = new self();
         $files = $listing->read($output, $projectRoot, $gitToplevel);
         $listing->reportSkipped($logger);
-        $listing->reportLostSources($logger);
 
         return $files;
     }
@@ -102,16 +90,6 @@ final class NameStatusListing
                 $this->skipped[self::refusedStatusReason($record->status)][] = $record->rawPath;
 
                 continue;
-            }
-
-            if (!ChangedFile::isRepresentableGitPath($record->rawPath)) {
-                $this->skipped[self::SKIPPED_UNREPRESENTABLE][] = $record->rawPath;
-
-                continue;
-            }
-
-            if ($record->rawOldPath !== null && !ChangedFile::isRepresentableGitPath($record->rawOldPath)) {
-                $this->lostSources[] = $record->rawOldPath;
             }
 
             $toplevel ??= $gitToplevel();
@@ -167,29 +145,5 @@ final class NameStatusListing
                 implode(', ', $paths),
             ));
         }
-    }
-
-    /**
-     * The rename whose source name was lost, reported apart from the drops.
-     *
-     * Nothing downstream reads `oldPath` today, so this costs the run nothing
-     * — which is the reason to say it rather than not to. The same condition
-     * on the *new* name drops the record and is reported as a drop; saying
-     * nothing here would make the two outcomes of one check look like one.
-     */
-    private function reportLostSources(LoggerInterface $logger): void
-    {
-        $paths = $this->lostSources;
-
-        if ($paths === []) {
-            return;
-        }
-
-        $logger->warning(\sprintf(
-            'Kept %d changed file(s) %s. Raw git paths: %s',
-            \count($paths),
-            self::SOURCE_UNREPRESENTABLE,
-            implode(', ', $paths),
-        ));
     }
 }

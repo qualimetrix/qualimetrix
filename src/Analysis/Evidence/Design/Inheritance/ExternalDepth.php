@@ -4,36 +4,40 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Design\Inheritance;
 
-/**
- * How deep the part of a chain outside the analysed path went, and whether that
- * number is the whole answer.
- *
- * `$depth` is what was actually walked. When the outcome is not
- * {@see ExternalChainOutcome::ReachedRoot} the number is a floor rather than a
- * measurement: the chain continues somewhere this run could not read.
- */
+/** External tail evidence; an incomplete finite depth is a lower bound, while a loop has no depth. */
 final readonly class ExternalDepth
 {
     private function __construct(
-        public int $depth,
+        public ?int $depth,
         public ExternalChainOutcome $outcome,
-        /** The class the walk could not place, when it stopped early. */
-        public ?string $unresolved = null,
+        public ?string $unresolved,
+        public ThrowableReach $reachesThrowable,
+        public ?string $analysedName = null,
     ) {}
 
-    public static function reachedRoot(int $depth): self
+    public static function reachedRoot(int $depth, ThrowableReach $reachesThrowable = ThrowableReach::No): self
     {
-        return new self($depth, ExternalChainOutcome::ReachedRoot);
+        return new self($depth, ExternalChainOutcome::ReachedRoot, null, $reachesThrowable);
     }
 
-    public static function noMap(): self
+    public static function noMap(int $depth = 0, ThrowableReach $reachesThrowable = ThrowableReach::Unknown, ?string $unresolved = null): self
     {
-        return new self(0, ExternalChainOutcome::NoMapForIt);
+        return new self($depth, ExternalChainOutcome::NoMapForIt, $unresolved, $reachesThrowable);
     }
 
-    public static function brokeAt(int $depth, string $fqcn): self
+    public static function brokeAt(int $depth, string $fqcn, ThrowableReach $reachesThrowable = ThrowableReach::Unknown): self
     {
-        return new self($depth, ExternalChainOutcome::BrokeAt, $fqcn);
+        return new self($depth, ExternalChainOutcome::BrokeAt, $fqcn, $reachesThrowable);
+    }
+
+    public static function loop(string $fqcn, ThrowableReach $reachesThrowable = ThrowableReach::Unknown): self
+    {
+        return new self(null, ExternalChainOutcome::Loop, $fqcn, $reachesThrowable);
+    }
+
+    public static function reachedAnalysedName(int $depth, string $fqcn, ThrowableReach $reachesThrowable = ThrowableReach::Unknown): self
+    {
+        return new self($depth, ExternalChainOutcome::ReachedAnalysedName, null, $reachesThrowable, $fqcn);
     }
 
     public function isComplete(): bool

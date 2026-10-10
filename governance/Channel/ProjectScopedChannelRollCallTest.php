@@ -8,7 +8,7 @@ use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Reporting\FindingProjection\DeclaredChannelFileScope;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -41,10 +41,10 @@ final class ProjectScopedChannelRollCallTest extends TestCase
      *
      * This is the floor for "the scan died altogether", and nothing else: it
      * is equal to the number of declarers today, so it carries no slack and a
-     * fourth declarer arriving unread is caught by
+     * fifth declarer arriving unread is caught by
      * {@see itReadsEveryFileThatNamesTheConstant}, not by this number.
      */
-    private const int KNOWN_DECLARERS = 2;
+    private const int KNOWN_DECLARERS = 4;
 
     /**
      * Files that name the constant without declaring one, each with the reason.
@@ -70,9 +70,9 @@ final class ProjectScopedChannelRollCallTest extends TestCase
     private const array NON_DECLARING_MENTIONS = [
         'src/Analysis/Finding/Contract/Filter/ChannelFileScope.php'
             => 'a {@see} in the docblock of the type the declarations are assembled into',
-        'src/Analysis/Policy/Architecture/LayerViolation/DeclaredLayerReachability.php'
+        'src/Analysis/Policy/Architecture/LayerDeclaration/DeclaredLayerReachability.php'
             => 'a {@see} in a docblock explaining what one capability declares about one channel',
-        'src/Reporting/FindingProjection/DeclaredChannelFileScope.php'
+        'src/Infrastructure/DependencyInjection/Configurator/DeclaredChannelFileScope.php'
             => 'the assembly under test: it spreads every declaration into the scope',
     ];
 

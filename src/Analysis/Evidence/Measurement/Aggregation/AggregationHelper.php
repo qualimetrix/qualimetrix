@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Measurement\Aggregation;
 
+use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
@@ -17,7 +18,7 @@ final class AggregationHelper
     /**
      * Applies aggregation strategies to collected values.
      *
-     * @param array<string, list<int|float>> $metricValues
+     * @param array<string, list<int|float|array{total: int|float, files: int}>> $metricValues
      * @param list<MetricDefinition> $definitions
      */
     public static function applyAggregations(
@@ -37,21 +38,43 @@ final class AggregationHelper
             $strategies = $definition->getStrategiesForLevel($targetLevel);
 
             foreach ($strategies as $strategy) {
-                $aggregatedValue = self::applyStrategy($strategy, $values);
+                $aggregatedValue = $definition->namespaceFileContribution
+                    ? NamespaceMetricContributions::applyFileContributions($strategy, $values)
+                    : self::applyStrategy($strategy, self::plainValues($values));
                 $aggregatedName = $definition->aggregatedName($strategy);
                 $bag = $bag->with($aggregatedName, $aggregatedValue);
             }
 
             // Auto-store count alongside Average so higher levels know the sample size.
-            if (\in_array(AggregationStrategy::Average, $strategies, true)
+            if (\in_array(AggregationStrategy::Count->value, $definition->publishedSuffixes($targetLevel), true)
                 && !\in_array(AggregationStrategy::Count, $strategies, true)
             ) {
                 $countName = $definition->aggregatedName(AggregationStrategy::Count);
-                $bag = $bag->with($countName, \count($values));
+                $bag = $bag->with($countName, $definition->namespaceFileContribution
+                    ? NamespaceMetricContributions::applyFileContributions(AggregationStrategy::Count, $values)
+                    : \count($values));
             }
         }
 
         return $bag;
+    }
+
+    /**
+     * @param list<int|float|array{total: int|float, files: int}> $values
+     *
+     * @return list<int|float>
+     */
+    private static function plainValues(array $values): array
+    {
+        $plain = [];
+        foreach ($values as $value) {
+            if (\is_array($value)) {
+                throw new LogicException('Only marked definitions may carry namespace file contributions');
+            }
+            $plain[] = $value;
+        }
+
+        return $plain;
     }
 
     /**
@@ -71,29 +94,9 @@ final class AggregationHelper
             AggregationStrategy::Max => max($values),
             AggregationStrategy::Min => min($values),
             AggregationStrategy::Count => \count($values),
-            AggregationStrategy::Percentile95 => self::calculatePercentile95($values),
-            AggregationStrategy::Percentile5 => self::calculatePercentile5($values),
+            AggregationStrategy::Percentile95 => self::calculatePercentile($values, 0.95),
+            AggregationStrategy::Percentile5 => self::calculatePercentile($values, 0.05),
         };
-    }
-
-    /**
-     * Calculates the 95th percentile using linear interpolation.
-     *
-     * @param list<int|float> $values Non-empty list of values
-     */
-    private static function calculatePercentile95(array $values): float
-    {
-        return self::calculatePercentile($values, 0.95);
-    }
-
-    /**
-     * Calculates the 5th percentile using linear interpolation.
-     *
-     * @param list<int|float> $values Non-empty list of values
-     */
-    private static function calculatePercentile5(array $values): float
-    {
-        return self::calculatePercentile($values, 0.05);
     }
 
     /**
@@ -140,10 +143,10 @@ final class AggregationHelper
         foreach ($symbolInfos as $info) {
             $path = $info->symbolPath;
 
-            if ($path->member !== null) {
+            if ($info->subject?->declarationPath() !== null && $path->member !== null) {
                 // Both methods (type !== null) and functions (type === null) are callables
                 $methodCount++;
-            } elseif ($path->type !== null) {
+            } elseif ($info->subject?->declarationPath() !== null && $path->type !== null) {
                 $classCount++;
             }
         }
@@ -173,7 +176,7 @@ final class AggregationHelper
         foreach ($symbolInfos as $info) {
             $path = $info->symbolPath;
 
-            if ($path->type !== null && $path->member === null) {
+            if ($info->subject?->declarationPath() !== null && $path->type !== null && $path->member === null) {
                 $declaring[$path->namespace ?? ''] = true;
             }
         }
@@ -194,7 +197,23 @@ final class AggregationHelper
 
         foreach ($collectors as $collector) {
             foreach ($collector->getMetricDefinitions() as $definition) {
-                $definitions[] = $definition;
+                if ($definition->collectedAt === SymbolLevel::File
+                    && $collector instanceof \Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceMetricProviderInterface) {
+                    $directLevels = $definition->directPublicationLevels;
+                    if (!\in_array(SymbolLevel::Namespace_, $definition->publicationLevels(), true)) {
+                        $directLevels[] = SymbolLevel::Namespace_;
+                    }
+                    $definitions[] = new MetricDefinition(
+                        name: $definition->name,
+                        collectedAt: SymbolLevel::File,
+                        aggregations: $definition->aggregations,
+                        namespaceFileContribution: true,
+                        classKeyScope: $definition->classKeyScope,
+                        directPublicationLevels: $directLevels,
+                    );
+                } else {
+                    $definitions[] = $definition;
+                }
             }
         }
 

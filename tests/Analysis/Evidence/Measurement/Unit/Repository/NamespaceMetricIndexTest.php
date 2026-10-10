@@ -43,7 +43,7 @@ final class NamespaceMetricIndexTest extends TestCase
     }
 
     #[Test]
-    public function itRebuildsWithoutExactClassDeclarations(): void
+    public function itRebuildsExactDeclarationsAndLogicalClassProjectionsIndependently(): void
     {
         $index = new NamespaceMetricIndex();
         $logicalClass = SymbolPath::forClass('App', 'Service');
@@ -57,7 +57,7 @@ final class NamespaceMetricIndexTest extends TestCase
         $index->rebuild([], [$exactClass, $projection, $projection]);
 
         self::assertSame(['App'], $index->namespaces());
-        self::assertCount(1, $index->forNamespace('App'));
+        self::assertCount(2, $index->forNamespace('App'));
     }
 
     #[Test]
@@ -67,5 +67,28 @@ final class NamespaceMetricIndexTest extends TestCase
 
         self::assertSame([], $index->namespaces());
         self::assertSame([], $index->forNamespace('App'));
+    }
+
+    #[Test]
+    public function itFoldsNamespaceSpellingsIntoOneCanonicalProjection(): void
+    {
+        $index = new NamespaceMetricIndex();
+        $index->add(new SymbolInfo(
+            MetricSubject::logicalClass(new LogicalClassPath(SymbolPath::forClass('App\\Web', 'First'))),
+            null,
+            null,
+        ));
+        $index->add(new SymbolInfo(
+            MetricSubject::logicalClass(new LogicalClassPath(SymbolPath::forClass('App\\web', 'Second'))),
+            null,
+            null,
+        ));
+
+        self::assertSame(['App\\Web'], $index->namespaces());
+        self::assertCount(2, $index->forNamespace('APP\\WEB'));
+        self::assertCount(1, $index->mixedSpellings());
+        self::assertSame('namespace', $index->mixedSpellings()[0]->kind);
+        self::assertSame(['App\\Web', 'App\\web'], $index->mixedSpellings()[0]->spellings);
+        self::assertSame('App\\Web', $index->mixedSpellings()[0]->canonical);
     }
 }

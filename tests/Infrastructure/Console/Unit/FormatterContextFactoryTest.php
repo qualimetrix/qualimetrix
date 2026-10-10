@@ -38,6 +38,18 @@ final class FormatterContextFactoryTest extends TestCase
     }
 
     #[Test]
+    public function itReadsActualOutputVerbosityAndPreservesItThroughDetailCopies(): void
+    {
+        foreach ([\Symfony\Component\Console\Output\OutputInterface::VERBOSITY_NORMAL => false,
+            \Symfony\Component\Console\Output\OutputInterface::VERBOSITY_VERBOSE => true] as $verbosity => $expected) {
+            $output = new \Symfony\Component\Console\Output\BufferedOutput($verbosity);
+            $context = $this->factory->create($this->createInput([]), $output, $this->formatter, $this->projectRoot());
+            self::assertSame($expected, $context->verbose);
+            self::assertSame($expected, $context->withDetailLimit(3)->verbose);
+        }
+    }
+
+    #[Test]
     public function itSetsTheViolationsOptionToAllWhenAllFlagIsPassed(): void
     {
         $input = $this->createInput(['--all' => true]);
@@ -278,7 +290,8 @@ final class FormatterContextFactoryTest extends TestCase
             self::fail('An unparsable value must be refused, not replaced by a default.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString($message, $refusal->getMessage());
-            self::assertSame($option, $refusal->origin()->locator());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame($option, $refusal->sources()[0]->locator());
         }
     }
 
@@ -306,7 +319,8 @@ final class FormatterContextFactoryTest extends TestCase
         yield 'top fraction' => ['top=2.9', 'expected a whole number, 1 or more.'];
         yield 'top zero' => ['top=0', 'expected a whole number, 1 or more.'];
         yield 'limit word' => ['limit=many', 'expected a whole number, 0 or more, or "all".'];
-        yield 'rank-by typo' => ['rank-by=dnesity', 'expected one of: count, density.'];
+        yield 'retired count' => ['rank-by=count', 'expected one of: score, density.'];
+        yield 'rank-by typo' => ['rank-by=dnesity', 'expected one of: score, density.'];
         yield 'empty project name' => ['project-name=', 'expected a non-empty name.'];
         yield 'contributors negative' => ['contributors=-1', 'expected a whole number, 0 or more.'];
     }
@@ -419,7 +433,8 @@ final class FormatterContextFactoryTest extends TestCase
             self::fail('A value of the wrong shape must be refused.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString($message, $refusal->getMessage());
-            self::assertSame($option, $refusal->origin()->locator());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame($option, $refusal->sources()[0]->locator());
         }
     }
 
@@ -484,7 +499,8 @@ final class FormatterContextFactoryTest extends TestCase
             self::fail('Every written pair must be judged.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString($message, $refusal->getMessage());
-            self::assertSame('--format-opt', $refusal->origin()->locator());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame('--format-opt', $refusal->sources()[0]->locator());
         }
     }
 
@@ -508,6 +524,24 @@ final class FormatterContextFactoryTest extends TestCase
             $this->projectRoot(),
         );
         self::assertSame('all', $withAll->getOption('violations'));
+    }
+
+    /** @return iterable<string, array{array<string, string>}> */
+    public static function provideSuppressedSelectors(): iterable
+    {
+        yield 'namespace' => [['--namespace' => 'subtree:Shop']];
+        yield 'class' => [['--class' => 'Shop\\Cart']];
+    }
+
+    /** @param array<string, string> $parameters */
+    #[Test]
+    #[DataProvider('provideSuppressedSelectors')]
+    public function itRefusesAReportingSelectorForTheWholeRunSuppressedDocument(array $parameters): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('describes the whole run');
+
+        $this->factory->bindFormatBeforeAnalysis($this->createInput($parameters), 'suppressed');
     }
 
     /**

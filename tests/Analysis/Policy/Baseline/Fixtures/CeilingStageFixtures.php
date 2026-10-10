@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Fixtures;
 
 use DateTimeImmutable;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -12,15 +13,17 @@ use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
-use Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage;
+use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
 use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 
 /**
  * The scaffolding the ceiling-stage tests share, so each case states only
@@ -39,6 +42,7 @@ trait CeilingStageFixtures
             scope: ['src'],
             entries: $entries,
             inertEntries: $inertEntries,
+            exclusions: self::fixtureExclusions(),
         );
     }
 
@@ -75,9 +79,16 @@ trait CeilingStageFixtures
         Baseline $baseline,
         ?StubChannelDeclarationRegistry $declarations = null,
     ): BaselineCeilingStage {
+        if ($declarations === null) {
+            $declarations = StubChannelDeclarationRegistry::withDefaults();
+            $declarations->declare('code-smell.goto', ChannelDeclaration::occurrence(SymbolLevel::Callable, SymbolLevel::File));
+        }
+
         return new BaselineCeilingStage(
             $baseline,
-            $declarations ?? StubChannelDeclarationRegistry::withDefaults(),
+            $declarations,
+            StubRuleCoverage::completeFor($baseline),
+            [],
         );
     }
 
@@ -123,5 +134,13 @@ trait CeilingStageFixtures
     private static function severitiesOf(array $findings): array
     {
         return array_map(static fn(Finding $finding): Severity => $finding->severity, $findings);
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
+        );
     }
 }

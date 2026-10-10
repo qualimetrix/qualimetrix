@@ -24,9 +24,13 @@ Shared trait used by `ConsoleLogger` and `FileLogger` providing:
 - `meetsMinLevel()` — log level threshold filtering. A level outside PSR-3's
   eight, as a message level or as a threshold, throws
   `Psr\Log\InvalidArgumentException` instead of being ranked below everything
-- `encodeJson()` — the context encoding both loggers use: bytes that are not
-  UTF-8 are substituted (U+FFFD); a value substitution cannot save (`INF`,
-  `NAN`) returns `null` and the caller says the context was lost
+- `encodeJson()` — leaves valid native JSON context unchanged. Malformed value
+  bytes become `%XX` only within scalars, arrays and exact `stdClass` with
+  UTF-8 keys. Unsupported objects, malformed keys, recursion and non-finite
+  values lose context with the native encoding cause stated explicitly.
+  Invalid context with `JsonSerializable` may invoke its callback twice while
+  distinguishing recursion; repair adds no third invocation. Valid context
+  invokes the native encoder once.
 
 ### ConsoleLogger
 
@@ -58,16 +62,18 @@ PSR-3 `LoggerInterface` implementation with output to file in JSON Lines format.
 **Features:**
 - PSR-3 message interpolation (`{placeholder}` tokens replaced with context values)
 - Each entry is a separate JSON line
-- Automatic directory creation
+- Constructor and early log calls do not open files; records wait for an
+  explicitly attached Core `HeldTarget`, whose parent already exists
 - Logging all levels (including DEBUG)
-- A path that cannot be written throws `Contract\LogFileUnavailable` with
-  the path and the reason PHP gave, and `RuntimeLoggerConfigurator` answers it
-  as `--log-file` input (exit 3); the failed call's own PHP warning is
-  captured, never printed — under `display_errors=1` it would reach stdout
-  ahead of a machine format
+- Console judges and claims the target with its other run targets; file failures
+  carry Core's typed kind, requested path and cause, without PHP warnings
+  leaking ahead of a machine report
 - A record whose context cannot be encoded keeps its line, with
   `"context": null` and a `context_error` naming the reason
-- A record written short (a full disk) throws instead of leaving a truncated line
+- A failed append latches its first cause and counts the partial record and
+  subsequent lost records. `settle()` throws that failure with the count;
+  `log()` does not throw a file failure into a parser's recovery catch. A
+  partially written line can remain
 
 **Output format:**
 ```json
@@ -91,6 +97,12 @@ a default would be indistinguishable from a written `info`.
 - A file logger is created with `--log-file`, at the written level or INFO;
   only `null` means no file, and a blank path throws `LogFileUnavailable`
 - Returns a composite logger if both are active, `NullLogger` if neither is
+- `create()` requires all three arguments, including explicit nulls. The same
+  per-run factory receives `attachFileTarget()` after Console claims targets;
+  attachment publishes the log name even when the configured minimum level admits
+  no records. Inherited children cannot remove the parent's attached empty log.
+  The factory receives `settle()` before report publication and after profile delivery, and `reset()`
+  during runtime teardown
 
 ### LoggerHolder and DelegatingLogger
 

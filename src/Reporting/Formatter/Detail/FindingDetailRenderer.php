@@ -24,24 +24,24 @@ final class FindingDetailRenderer
      *
      * @return list<Finding>
      */
-    public static function order(array $findings, FormatterContext $context): array
+    public static function order(array $findings, FormatterContext $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces): array
     {
-        return FindingSorter::sort($findings, self::effectiveGroupBy($context));
+        return FindingSorter::sort($findings, self::effectiveGroupBy($context), $fileNamespaces);
     }
 
     /** @param list<Finding> $findings */
-    public function render(array $findings, FormatterContext $context): string
+    public function render(array $findings, FormatterContext $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces): string
     {
         $color = new AnsiColor($context->useColor);
         $lines = [];
         $effectiveGroupBy = self::effectiveGroupBy($context);
-        $sorted = FindingSorter::sort($findings, $effectiveGroupBy);
+        $sorted = FindingSorter::sort($findings, $effectiveGroupBy, $fileNamespaces);
 
         if ($effectiveGroupBy === GroupBy::None) {
             $this->renderFlat($sorted, $color, $context, $lines);
         } else {
             $this->renderGrouped(
-                FindingSorter::group($sorted, $effectiveGroupBy),
+                FindingSorter::group($sorted, $effectiveGroupBy, $fileNamespaces),
                 $effectiveGroupBy,
                 $color,
                 $context,
@@ -104,7 +104,7 @@ final class FindingDetailRenderer
             GroupBy::Rule => \sprintf('%s (%d)', $color->bold($this->nonEmptyKey($key, '<unknown>')), $count),
             GroupBy::Severity => \sprintf('%s (%d)', $this->formatSeverityLabel($key, $color), $count),
             GroupBy::ClassName => $this->formatCountedGroupHeader($key, '<unknown>', $count, $color),
-            GroupBy::NamespaceName => $this->formatCountedGroupHeader($key, '<global>', $count, $color),
+            GroupBy::NamespaceName => $this->formatCountedGroupHeader($key, '(global)', $count, $color),
             GroupBy::None => throw new LogicException('GroupBy::None is handled by renderFlat()'),
         };
     }
@@ -147,9 +147,16 @@ final class FindingDetailRenderer
         }
         $lines[] = $line;
 
-        $message = PublishedFinding::advice($finding);
+        $message = $finding->message;
         $ruleCode = $color->dim('[' . $finding->code . ']');
         $lines[] = \sprintf('    %s  %s', $message, $ruleCode);
+        if ($finding->recommendation !== null) {
+            $lines[] = '    Recommendation: ' . $finding->recommendation;
+        }
+        $baseline = \Qualimetrix\Reporting\Formatter\AcceptedLevelNarrator::describe($finding);
+        if ($baseline !== null) {
+            $lines[] = '    ' . $baseline;
+        }
         $lines[] = '';
     }
 
@@ -175,7 +182,7 @@ final class FindingDetailRenderer
     private function formatFullLocation(Finding $finding, FormatterContext $context): string
     {
         if ($finding->location->file === null) {
-            return '[project]';
+            return PublishedFinding::place($finding)->name;
         }
 
         $file = $context->relativizePath($finding->location->file);

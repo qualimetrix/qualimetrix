@@ -11,14 +11,18 @@ use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Application as QualimetrixApplication;
 use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Hook\PreCommitHook;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\RunningBinaryLocator;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
+use Qualimetrix\Subprocess\ChildProcess;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Tester\ApplicationTester;
 use Symfony\Component\Console\Tester\CommandTester;
+
+require_once \dirname(__DIR__, 5) . '/scripts/subprocess/ChildProcess.php';
 
 #[CoversClass(HookStatusCommand::class)]
 final class HookStatusCommandTest extends TestCase
@@ -59,7 +63,7 @@ final class HookStatusCommandTest extends TestCase
     #[Test]
     public function itReportsHookNotInstalled(): void
     {
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
 
         $application = new Application();
         $application->addCommand($command);
@@ -82,7 +86,7 @@ final class HookStatusCommandTest extends TestCase
     #[Test]
     public function itPrintsTheDocsPointerAfterTheReport(): void
     {
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
         $commandTester = new CommandTester($command);
         $commandTester->execute([]);
 
@@ -92,7 +96,7 @@ final class HookStatusCommandTest extends TestCase
     #[Test]
     public function itSuppressesTheDocsPointerUnderQuiet(): void
     {
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
         $commandTester = new CommandTester($command);
         $commandTester->execute([], ['verbosity' => OutputInterface::VERBOSITY_QUIET]);
 
@@ -114,7 +118,7 @@ final class HookStatusCommandTest extends TestCase
         symlink($tempScript, $hookPath);
         chmod($hookPath, 0755);
 
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
 
         $application = new Application();
         $application->addCommand($command);
@@ -138,7 +142,7 @@ final class HookStatusCommandTest extends TestCase
         file_put_contents($hookPath, "#!/bin/bash\n# Qualimetrix pre-commit hook\necho 'Running hook'\n");
         chmod($hookPath, 0755);
 
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
 
         $application = new Application();
         $application->addCommand($command);
@@ -162,7 +166,7 @@ final class HookStatusCommandTest extends TestCase
         file_put_contents($hookPath, "#!/bin/bash\necho 'Some other hook'\n");
         chmod($hookPath, 0755);
 
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
 
         $application = new Application();
         $application->addCommand($command);
@@ -186,7 +190,7 @@ final class HookStatusCommandTest extends TestCase
         file_put_contents($hookPath, "#!/bin/bash\n# Qualimetrix pre-commit hook\necho 'test'\n");
         chmod($hookPath, 0644); // Not executable
 
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
 
         $application = new Application();
         $application->addCommand($command);
@@ -214,7 +218,7 @@ final class HookStatusCommandTest extends TestCase
 
         file_put_contents($backupPath, "#!/bin/bash\necho 'backup'\n");
 
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
 
         $application = new Application();
         $application->addCommand($command);
@@ -235,7 +239,7 @@ final class HookStatusCommandTest extends TestCase
         // Remove .git directory
         $this->removeDirectory($this->gitDir);
 
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
 
         $commandTester = self::throughLadder($command);
 
@@ -256,7 +260,7 @@ final class HookStatusCommandTest extends TestCase
     {
         symlink($this->tempDir . '/scripts/pre-commit-hook.sh', $this->gitDir . '/hooks/pre-commit');
 
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
 
         $application = new Application();
         $application->addCommand($command);
@@ -270,6 +274,31 @@ final class HookStatusCommandTest extends TestCase
         self::assertStringContainsString('Symlink', $output);
         self::assertStringContainsString('leads nowhere', $output);
         self::assertStringNotContainsString('NOT INSTALLED', $output);
+    }
+
+    #[Test]
+    public function itReportsTheNativeLegacyHookAsOutdatedAndAcceptsTheCurrentRevision(): void
+    {
+        $initialized = ChildProcess::run(['git', 'init', '--quiet'], $this->tempDir);
+        self::assertSame(0, $initialized['exitCode']);
+        $legacy = file_get_contents(\dirname(__DIR__, 2) . '/Fixtures/pre_commit_hook_before_exit_classification.sh');
+        self::assertIsString($legacy);
+
+        foreach (['legacy' => $legacy, 'current' => PreCommitHook::script('/usr/local/bin/qmx'), 'third-party' => "#!/bin/sh\necho foreign\n"] as $revision => $script) {
+            file_put_contents($this->gitDir . '/hooks/pre-commit', $script);
+            chmod($this->gitDir . '/hooks/pre-commit', 0755);
+            $result = ChildProcess::run([\PHP_BINARY, \dirname(__DIR__, 5) . '/bin/qmx', 'hook:status'], $this->tempDir);
+
+            self::assertSame(0, $result['exitCode']);
+            if ($revision === 'legacy') {
+                self::assertStringContainsString('Owner: Qualimetrix', $result['stdout']);
+                self::assertStringContainsString('Revision: outdated', $result['stdout']);
+                self::assertStringContainsString('hook:install --force', $result['stdout']);
+            } else {
+                self::assertStringNotContainsString('Revision: outdated', $result['stdout']);
+                self::assertStringContainsString($revision === 'current' ? 'Owner: Qualimetrix' : 'Owner: Third-party hook', $result['stdout']);
+            }
+        }
     }
 
     /**
@@ -296,7 +325,7 @@ final class HookStatusCommandTest extends TestCase
     private static function throughLadder(Command $command): ApplicationTester
     {
         $errorStream = new ErrorStream();
-        $application = new QualimetrixApplication($errorStream, new RefusalPresenter($errorStream));
+        $application = new QualimetrixApplication($errorStream, new RefusalPresenter($errorStream), new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $application->setAutoExit(false);
         $application->addCommand($command);
 

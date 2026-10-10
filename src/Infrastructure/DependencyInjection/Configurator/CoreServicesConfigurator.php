@@ -10,6 +10,7 @@ use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Time\ClockInterface;
 use Qualimetrix\Core\Time\SystemClock;
 use Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
 use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
@@ -82,6 +83,9 @@ final class CoreServicesConfigurator implements ContainerConfiguratorInterface
         $container->register(LoggerFactory::class)
             ->setPublic(true);
         $container->setAlias(LoggerFactoryInterface::class, LoggerFactory::class)->setPublic(true);
+        $container->register(RunTargets::class)
+            ->setArguments([new Reference(LoggerFactoryInterface::class)])
+            ->setPublic(true);
 
         // LoggerHolder - mutable, holds current logger
         $container->register(LoggerHolder::class)

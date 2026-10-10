@@ -42,6 +42,21 @@ final class LcomClassDataTest extends TestCase
     }
 
     #[Test]
+    public function itMatchesConfiguredMethodExclusionsWithoutCase(): void
+    {
+        $data = new LcomClassData();
+        foreach (['work', 'bridge', 'label'] as $method) {
+            $data->addMethod($method);
+            $data->addPropertyAccess($method, $method);
+        }
+        $data->markNonTrivial();
+
+        self::assertSame(3, $data->calculateLcom());
+        self::assertSame(1, $data->calculateLcom(['BRIDGE', 'Bridge', 'LABEL']));
+        self::assertSame(['work', 'bridge', 'label'], $data->getMethods());
+    }
+
+    #[Test]
     public function itCalculatesLcomWhenExcludingNonexistentMethod(): void
     {
         $classData = new LcomClassData(namespace: 'App', className: 'Service');

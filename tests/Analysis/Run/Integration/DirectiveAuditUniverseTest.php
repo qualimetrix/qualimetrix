@@ -4,40 +4,48 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Run\Integration;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricAnalysis;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricEvaluator;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuild;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsage;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
+use Qualimetrix\Analysis\Policy\Inline\Directive\RefusedDirectives;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
+use Qualimetrix\Analysis\Run\Discovery\ScopeFacts;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
@@ -50,6 +58,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Qualimetrix\Tests\Analysis\Run\Support\Pipeline\TestPipelineBuilder;
 use SplFileInfo;
 
@@ -104,23 +113,33 @@ final class DirectiveAuditUniverseTest extends TestCase
     private static function runWith(array $produced, array $published): array
     {
         $root = AbsolutePath::fromString(\dirname(__DIR__, 4));
-        $relative = PathFactory::bestEffortRelative(__FILE__, $root);
+        $relative = PathFactory::published(AbsolutePath::fromString(__FILE__), $root);
 
-        $policy = new InlineDirectivePolicy(new DirectiveUsage(
-            self::productionUniverse(),
-            new RuleSelector(new InMemoryRuleChannelRegistry()),
-            new RuleOptionsRegistry(),
-            self::productionUniverse(),
+        $universe = self::productionUniverse();
+        $container = (new ContainerFactory())->create();
+        $metadata = $container->get(RuleExecutionInterface::class);
+        self::assertInstanceOf(RuleExecutionInterface::class, $metadata);
+        $configuration = new RuleOptionsRegistry();
+        $configuration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), $metadata->allRules(), channels: $universe));
+        $policy = new InlineDirectivePolicy(new DirectiveUsage($universe, $configuration, $universe, new RefusedDirectives($universe)), new RefusedDirectives($universe));
+
+        $discovery = self::createStub(ProjectFilesInterface::class);
+        $discovery->method('discover')->willReturn(new DiscoveredProjectFiles(
+            [new SplFileInfo(__FILE__)],
+            [],
+            [],
+            [],
+            [],
+            new ScopeFacts([], [], [], false),
+            1,
         ));
-
-        $discovery = self::createStub(FileDiscoveryInterface::class);
-        $discovery->method('discover')->willReturn([new SplFileInfo(__FILE__)]);
 
         $collection = self::createStub(CollectionOrchestratorInterface::class);
         $collection->method('collect')->willReturn(new CollectionPhaseOutput(
             [$relative],
             [],
-            [self::FILE => [new Suppression(self::CHANNEL, 'reason', 3, SuppressionType::File)]],
+            [],
+            [self::FILE => [new Suppression(self::CHANNEL, 'reason', 3, SuppressionType::File, position: 0)]],
         ));
 
         // Stands in for UnusedDirectiveRule, whose only job is to arm the
@@ -135,10 +154,12 @@ final class DirectiveAuditUniverseTest extends TestCase
             },
         );
         $rules->method('allRules')->willReturn([]);
+        $rules->method('publication')->willReturnCallback(static fn(): ChannelPublication => new ChannelPublication(
+            $configuration->enablement() ?? throw new LogicException('The native invocation enablement must be captured before publication.'),
+        ));
 
-        // The pipeline asks the executor which of the late findings this run's
-        // selection publishes. Nothing here selects anything, so the honest
-        // stub answer is the argument — and it must be written down: a stub's
+        // The native captured publication already selected the audit. The stub
+        // keeps its resulting late findings — it must be written down: a stub's
         // default empty array would drop the very finding both cases are about
         // and make the pair pass and fail for reasons that are not the subject.
         $rules->method('publishable')->willReturnArgument(0);
@@ -146,32 +167,40 @@ final class DirectiveAuditUniverseTest extends TestCase
         $profiler = self::createStub(ProfilerInterface::class);
         $aggregation = self::createStub(MeasurementAggregationInterface::class);
         $aggregation->method('aggregate')->willReturn(new NamespaceTree([]));
-        $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $catalog->method('all')->willReturn([]);
+        $analysis = new ComputedMetricAnalysis(new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator(), new HealthFormulaExcluder(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())));
+        $analysis->replace(new ResolvedComputedMetricDefinitions([]));
         $graphBuilder = self::createStub(DependencyGraphBuilderInterface::class);
-        $graphBuilder->method('build')->willReturn(AdjacencyGraphBuilder::empty());
+        $graphBuilder->method('build')->willReturn(new DependencyGraphBuild(AdjacencyGraphBuilder::empty(), []));
         $repositoryFactory = self::createStub(MetricRepositoryFactoryInterface::class);
         $repositoryFactory->method('create')->willReturn(new InMemoryMetricRepository());
 
         $pipeline = TestPipelineBuilder::create()
-            ->withDefaultDiscovery($discovery)
+            ->withProjectFiles($discovery)
             ->withCollectionOrchestrator($collection)
             ->withRuleExecution($rules)
+            ->withRuleConfiguration($configuration)
             ->withInlineDirectivePolicy($policy)
             ->withCircularDependencyPreparation(self::createStub(CircularDependencyPreparationInterface::class))
             ->withFileSetInspection(new FileSetInspectionComposite(
                 [],
-                new RuleSelectorProducerGate(new RuleSelector(new InMemoryRuleChannelRegistry())),
+                new RuleSelectorProducerGate($configuration),
                 $profiler,
             ))
             ->withMeasurementAggregation($aggregation)
-            ->withComputedMetricEvaluation(new ComputedMetricEvaluator($catalog, $profiler))
+            ->withComputedMetricEvaluation(new ComputedMetricEvaluator($analysis, $profiler))
             ->withGraphBuilder($graphBuilder)
             ->withRepositoryFactory($repositoryFactory)
             ->withProfiler($profiler)
             ->build();
 
-        return $pipeline->analyze(new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []))->findings;
+        return $pipeline->analyze(new RunConfiguration(
+            pathExcludes: [],
+            projectRoot: $root,
+            generatedFilePolicy: GeneratedFilePolicy::Include,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
+            authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
+        ))->findings();
     }
 
     /**

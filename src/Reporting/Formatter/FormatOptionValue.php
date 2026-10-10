@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter;
 
 use LogicException;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\RankBy;
 
 /**
  * The value grammar of every `--format-opt` key, written once.
@@ -26,7 +27,7 @@ final class FormatOptionValue
     private const string COUNT = 'a whole number, 0 or more';
     private const string POSITIVE = 'a whole number, 1 or more';
     private const string LIMIT = 'a whole number, 0 or more, or "all"';
-    private const string RANK_BY = 'one of: count, density';
+    private const string RANK_BY = 'one of: score, density';
     private const string NAME = 'a non-empty name';
 
     /** @var array<string, string> key => what a value of it must be */
@@ -49,7 +50,7 @@ final class FormatOptionValue
     private const array ONE_VALUE = [['violations', 'limit']];
 
     /** @var list<string> */
-    private const array RANKINGS = ['count', 'density'];
+    private const array RANKINGS = ['score', 'density'];
 
     /**
      * What `$raw` would have to be for `$key` to parse, or null when it parses.
@@ -119,12 +120,11 @@ final class FormatOptionValue
         return $raw === 'all' ? null : self::wholeNumber($raw);
     }
 
-    /** @return 'count'|'density' */
-    public static function rankBy(string $raw): string
+    public static function rankBy(string $raw): RankBy
     {
         self::assertAccepted('rank-by', $raw);
 
-        return $raw === 'density' ? 'density' : 'count';
+        return RankBy::from($raw);
     }
 
     private static function assertAccepted(string $key, string $raw): void

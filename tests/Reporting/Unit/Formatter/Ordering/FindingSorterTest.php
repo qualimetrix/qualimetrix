@@ -25,7 +25,7 @@ final class FindingSorterTest extends TestCase
         $errorA10 = $this->finding('a.php', 10, Severity::Error, 'complexity');
         $errorA3 = $this->finding('a.php', 3, Severity::Error, 'complexity');
 
-        $sorted = FindingSorter::sort([$warningB5, $errorA10, $errorA3], GroupBy::None);
+        $sorted = FindingSorter::sort([$warningB5, $errorA10, $errorA3], GroupBy::None, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertSame([$errorA3, $errorA10, $warningB5], $sorted);
     }
@@ -37,7 +37,7 @@ final class FindingSorterTest extends TestCase
         $errorA10 = $this->finding('a.php', 10, Severity::Error, 'complexity');
         $errorA3 = $this->finding('a.php', 3, Severity::Error, 'complexity');
 
-        $sorted = FindingSorter::sort([$warningB5, $errorA10, $errorA3], GroupBy::File);
+        $sorted = FindingSorter::sort([$warningB5, $errorA10, $errorA3], GroupBy::File, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertSame([$errorA3, $errorA10, $warningB5], $sorted);
     }
@@ -49,7 +49,7 @@ final class FindingSorterTest extends TestCase
         $complexityA = $this->finding('a.php', 1, Severity::Error, 'complexity');
         $sizeA = $this->finding('a.php', 1, Severity::Error, 'size');
 
-        $sorted = FindingSorter::sort([$sizeB, $complexityA, $sizeA], GroupBy::Rule);
+        $sorted = FindingSorter::sort([$sizeB, $complexityA, $sizeA], GroupBy::Rule, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertSame([$complexityA, $sizeA, $sizeB], $sorted);
     }
@@ -57,7 +57,7 @@ final class FindingSorterTest extends TestCase
     #[Test]
     public function itSortsEmptyArrayToEmptyArray(): void
     {
-        $sorted = FindingSorter::sort([], GroupBy::None);
+        $sorted = FindingSorter::sort([], GroupBy::None, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertSame([], $sorted);
     }
@@ -69,7 +69,7 @@ final class FindingSorterTest extends TestCase
         $v2 = $this->finding('a.php', 5, Severity::Warning, 'complexity');
         $v3 = $this->finding('b.php', 2, Severity::Error, 'complexity');
 
-        $groups = FindingSorter::group([$v1, $v2, $v3], GroupBy::File);
+        $groups = FindingSorter::group([$v1, $v2, $v3], GroupBy::File, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertCount(2, $groups);
         self::assertArrayHasKey('a.php', $groups);
@@ -84,7 +84,7 @@ final class FindingSorterTest extends TestCase
         $v1 = $this->finding('a.php', 1, Severity::Error, 'complexity');
         $v2 = $this->finding('b.php', 2, Severity::Warning, 'size');
 
-        $groups = FindingSorter::group([$v1, $v2], GroupBy::None);
+        $groups = FindingSorter::group([$v1, $v2], GroupBy::None, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertCount(1, $groups);
         self::assertArrayHasKey('', $groups);
@@ -98,7 +98,7 @@ final class FindingSorterTest extends TestCase
         $v2 = $this->finding('b.php', 2, Severity::Warning, 'size');
         $v3 = $this->finding('c.php', 3, Severity::Error, 'cohesion.lcom');
 
-        $groups = FindingSorter::group([$v1, $v2, $v3], GroupBy::Severity);
+        $groups = FindingSorter::group([$v1, $v2, $v3], GroupBy::Severity, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertCount(2, $groups);
         self::assertArrayHasKey('error', $groups);
@@ -114,7 +114,7 @@ final class FindingSorterTest extends TestCase
         $v2 = $this->findingWithSymbol('b.php', 1, Severity::Error, 'complexity', 'App\A', 'ClassA');
         $v3 = $this->findingWithSymbol('a.php', 3, Severity::Error, 'complexity', 'App\A', 'ClassA');
 
-        $sorted = FindingSorter::sort([$v1, $v2, $v3], GroupBy::ClassName);
+        $sorted = FindingSorter::sort([$v1, $v2, $v3], GroupBy::ClassName, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         // ClassA first (alphabetically), then ClassB
         self::assertSame([$v3, $v2, $v1], $sorted);
@@ -127,7 +127,7 @@ final class FindingSorterTest extends TestCase
         $v2 = $this->findingWithSymbol('b.php', 1, Severity::Error, 'complexity', 'App\Model', 'Bar');
         $v3 = $this->findingWithSymbol('a.php', 3, Severity::Error, 'complexity', 'App\Model', 'Baz');
 
-        $sorted = FindingSorter::sort([$v1, $v2, $v3], GroupBy::NamespaceName);
+        $sorted = FindingSorter::sort([$v1, $v2, $v3], GroupBy::NamespaceName, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         // App\Model first, then App\Service
         self::assertSame([$v3, $v2, $v1], $sorted);
@@ -140,7 +140,7 @@ final class FindingSorterTest extends TestCase
         $v2 = $this->findingWithSymbol('a.php', 5, Severity::Warning, 'complexity', 'App', 'ClassA');
         $v3 = $this->findingWithSymbol('b.php', 2, Severity::Error, 'complexity', 'App', 'ClassB');
 
-        $groups = FindingSorter::group([$v1, $v2, $v3], GroupBy::ClassName);
+        $groups = FindingSorter::group([$v1, $v2, $v3], GroupBy::ClassName, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertCount(2, $groups);
         self::assertArrayHasKey('App\ClassA', $groups);
@@ -161,7 +161,7 @@ final class FindingSorterTest extends TestCase
             severity: Severity::Error,
         );
 
-        $groups = FindingSorter::group([$v1], GroupBy::ClassName);
+        $groups = FindingSorter::group([$v1], GroupBy::ClassName, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         // Namespace-level finding has no class — falls back to file path
         self::assertArrayHasKey('src/Service.php', $groups);
@@ -174,7 +174,7 @@ final class FindingSorterTest extends TestCase
         $v2 = $this->findingWithSymbol('b.php', 2, Severity::Warning, 'complexity', 'App\Service', 'Bar');
         $v3 = $this->findingWithSymbol('c.php', 3, Severity::Error, 'complexity', 'App\Model', 'Baz');
 
-        $groups = FindingSorter::group([$v1, $v2, $v3], GroupBy::NamespaceName);
+        $groups = FindingSorter::group([$v1, $v2, $v3], GroupBy::NamespaceName, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertCount(2, $groups);
         self::assertArrayHasKey('App\Service', $groups);
@@ -195,9 +195,22 @@ final class FindingSorterTest extends TestCase
             severity: Severity::Warning,
         );
 
-        $groups = FindingSorter::group([$v1], GroupBy::NamespaceName);
+        $groups = FindingSorter::group([$v1], GroupBy::NamespaceName, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
-        self::assertArrayHasKey('<global>', $groups);
+        self::assertArrayHasKey('(global)', $groups);
+    }
+
+    #[Test]
+    public function itUsesPublishedImpactRankBeforePlaceEvenForEqualImpactScores(): void
+    {
+        $first = $this->finding('z.php', 10, Severity::Error, 'first');
+        $second = $this->finding('a.php', 1, Severity::Error, 'second');
+        $ranking = [
+            new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($first, 20, null, 15, 3),
+            new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($second, 20, null, 15, 3),
+        ];
+        self::assertSame([$first], FindingSorter::worstFirst([$second, $first], $ranking, 1));
+        self::assertSame([$second], FindingSorter::worstFirst([$first, $second], [], 1));
     }
 
     private function finding(string $file, int $line, Severity $severity, string $ruleName): Finding

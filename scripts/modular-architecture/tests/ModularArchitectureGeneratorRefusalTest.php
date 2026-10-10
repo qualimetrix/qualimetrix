@@ -22,6 +22,8 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
     {
         $cases = [
             ['OutputConfigurator.php', 'register(BaselineCleanupCommand::class)', "register('unrelated.service')"],
+            ['FindingConfigurator.php', 'register(RulesSection::class . \'.\' . $root, RulesSection::class)', 'register(RulesSection::class . \'.\' . $root, \'unrelated.service\')'],
+            ['FindingConfigurator.php', 'register(RulesSection::class . \'.\' . $root, RulesSection::class)', "register(RulesSection::class, 'unrelated.service')"],
             ['AnalysisConfigurator.php', 'new Reference(DelegatingLogger::class)', "new Reference('unrelated.service')"],
             ['OutputConfigurator.php', 'setAlias(BaselineRunInterface::class, BaselineRun::class)', 'setUnrelatedAlias(BaselineRunInterface::class, BaselineRun::class)'],
             ['OutputConfigurator.php', '$container->register(BaselineCleanupCommand::class)', '$unrelated->register(BaselineCleanupCommand::class)'],
@@ -583,8 +585,8 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 $projectRoot . '/scripts/tautology-controls/tests',
             );
             $this->copyDirectory(
-                $sourceRoot . '/scripts/finding-gate/tests',
-                $projectRoot . '/scripts/finding-gate/tests',
+                $sourceRoot . '/scripts/finding-gate',
+                $projectRoot . '/scripts/finding-gate',
             );
             $this->copyDirectory(
                 $sourceRoot . '/scripts/suppression-snapshot/tests',

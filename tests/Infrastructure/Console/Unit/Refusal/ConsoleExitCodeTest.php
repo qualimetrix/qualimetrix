@@ -21,7 +21,7 @@ final class ConsoleExitCodeTest extends TestCase
     public function itCarriesExactlyTheTwoPublicExitCodes(): void
     {
         self::assertSame(3, ConsoleExitCode::Refusal->value);
-        self::assertSame(1, ConsoleExitCode::InternalError->value);
+        self::assertSame(5, ConsoleExitCode::InternalError->value);
         self::assertCount(2, (new ReflectionEnum(ConsoleExitCode::class))->getCases());
     }
 }

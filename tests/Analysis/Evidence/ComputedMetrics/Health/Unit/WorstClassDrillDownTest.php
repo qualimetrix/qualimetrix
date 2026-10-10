@@ -7,247 +7,62 @@ namespace Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
-use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\OffenderNamespaceSelection;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
-use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub;
 
 #[CoversClass(WorstClassDrillDown::class)]
 final class WorstClassDrillDownTest extends TestCase
 {
-    use MetricRepositoryTestHelper;
-
-    private WorstClassDrillDown $drillDown;
-
-    protected function setUp(): void
-    {
-        $this->drillDown = new WorstClassDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class));
-    }
-
-    // --- buildSubtreeHealthScores ---
-
-    // --- buildWorstClasses ---
-
     #[Test]
-    public function itBuildWorstClassesReturnsEmptyWhenNoClassesMatch(): void
+    public function itSelectsTheUnionWithoutRebuildingOrReorderingRecords(): void
     {
-        $metrics = $this->createMetricRepository(
-            projectMetrics: new MetricBag(),
-            classes: [
-                new SymbolInfo(SymbolPath::forClass('App\\Other', 'Foo'), RelativePath::fromString('src/Other/Foo.php'), 1),
-            ],
-            classMetrics: [
-                'class:App\\Other\\Foo' => MetricBag::fromArray([
-                    'health.overall' => 80.0,
-                ]),
-            ],
-        );
-
-        $result = $this->drillDown->buildWorstClasses($metrics, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'), []);
-
-        self::assertSame([], $result);
+        $first = $this->offender('App\Service', 'Worker', 80, 0);
+        $duplicate = $this->offender('App\Service', 'Worker', 20, 1);
+        $wholeName = $this->offender('App\Other', 'Widget', 30, 0);
+        $outside = $this->offender('App\ServiceBus', 'Bus', 10, 0);
+        $source = [$first, $duplicate, $outside, $wholeName];
+        $selection = new OffenderNamespaceSelection([
+            NamespacePatternStub::exact('App\Service'),
+            NamespacePatternStub::regex('App\\\\Other\\\\Widget'),
+        ]);
+        $result = (new WorstClassDrillDown())->buildWorstClasses($source, $selection);
+        self::assertSame([$first, $duplicate, $wholeName], $result);
+        self::assertSame([80.0, 20.0, 30.0], array_map(static fn($item) => $item->healthOverall, $result));
+        self::assertSame([90.0, 85.0], $result[0]->overallThresholds);
+        self::assertSame('reason captured with report', $result[0]->reason);
+        self::assertSame($source, [$first, $duplicate, $outside, $wholeName]);
     }
 
     #[Test]
-    public function itBuildWorstClassesSortedByHealthAscending(): void
+    public function itSelectsNothingWhenNoNamespaceOrWholeNameMatches(): void
     {
-        $classA = SymbolPath::forClass('App\\Service', 'Alpha');
-        $classB = SymbolPath::forClass('App\\Service', 'Beta');
-
-        $metrics = $this->createMetricRepository(
-            projectMetrics: new MetricBag(),
-            classes: [
-                new SymbolInfo($classA, RelativePath::fromString('src/Service/Alpha.php'), 1),
-                new SymbolInfo($classB, RelativePath::fromString('src/Service/Beta.php'), 1),
-            ],
-            classMetrics: [
-                'class:App\\Service\\Alpha' => MetricBag::fromArray([
-                    'health.overall' => 80.0,
-                    'health.complexity' => 90.0,
-                ]),
-                'class:App\\Service\\Beta' => MetricBag::fromArray([
-                    'health.overall' => 40.0,
-                    'health.complexity' => 30.0,
-                ]),
-            ],
-        );
-
-        $result = $this->drillDown->buildWorstClasses($metrics, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'), []);
-
-        self::assertCount(2, $result);
-        // Worst (lowest score) first
-        self::assertSame('Beta', $result[0]->symbolPath->type);
-        self::assertSame('Alpha', $result[1]->symbolPath->type);
+        self::assertSame([], (new WorstClassDrillDown())->buildWorstClasses(
+            [$this->offender('App', 'Worker', 20, 0)],
+            new OffenderNamespaceSelection([NamespacePatternStub::subtree('Other')]),
+        ));
     }
 
     #[Test]
-    public function itBuildWorstClassesCountsFindingsPerClass(): void
+    public function itDoesNotTreatTheGlobalNamespaceDisplayLabelAsAnAnalyzedName(): void
     {
-        $classPath = SymbolPath::forClass('App\\Service', 'Foo');
-        $methodPath = SymbolPath::forMethod('App\\Service', 'Foo', 'bar');
-
-        $metrics = $this->createMetricRepository(
-            projectMetrics: new MetricBag(),
-            classes: [
-                new SymbolInfo($classPath, RelativePath::fromString('src/Service/Foo.php'), 1),
-            ],
-            classMetrics: [
-                'class:App\\Service\\Foo' => MetricBag::fromArray([
-                    'health.overall' => 60.0,
-                    'size.class-loc' => 100,
-                ]),
-            ],
-        );
-
-        // Two findings: one class-level, one callable-level (both count toward the class)
-        $findings = [
-            new Finding(
-                location: new Location(RelativePath::fromString('src/Service/Foo.php'), 10),
-                subject: MetricSubject::declaration(DeclarationPath::of($classPath, RelativePath::fromString('src/Service/Foo.php'), DeclarationOrdinal::fromRank(0))),
-                symbolPath: $classPath,
-                ruleName: 'test.rule',
-                code: 'T001',
-                message: 'test violation 1',
-                severity: Severity::Warning,
-            ),
-            new Finding(
-                location: new Location(RelativePath::fromString('src/Service/Foo.php'), 20),
-                subject: MetricSubject::declaration(DeclarationPath::of($methodPath, RelativePath::fromString('src/Service/Foo.php'), DeclarationOrdinal::fromRank(0))),
-                symbolPath: $methodPath,
-                ruleName: 'test.rule',
-                code: 'T002',
-                message: 'test violation 2',
-                severity: Severity::Warning,
-            ),
-        ];
-
-        $result = $this->drillDown->buildWorstClasses($metrics, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'), $findings);
-
-        self::assertCount(1, $result);
-        self::assertSame(2, $result[0]->violationCount);
-        self::assertSame(2.0, $result[0]->violationDensity);
+        $selection = new OffenderNamespaceSelection([NamespacePatternStub::regex('\\(global\\)')]);
+        self::assertFalse($selection->matches(SymbolPath::forNamespace('')));
     }
 
-    #[Test]
-    public function itBuildWorstClassesSkipsNamespaceLevelFindings(): void
+    private function offender(string $namespace, string $name, float $score, int $ordinal): WorstOffender
     {
-        $classPath = SymbolPath::forClass('App\\Service', 'Foo');
-        $nsPath = SymbolPath::forNamespace('App\\Service');
+        $symbol = SymbolPath::forClass($namespace, $name);
+        $file = RelativePath::fromString('src/Types.php');
+        $subject = MetricSubject::declaration(DeclarationPath::of($symbol, $file, DeclarationOrdinal::fromRank($ordinal)));
 
-        $metrics = $this->createMetricRepository(
-            projectMetrics: new MetricBag(),
-            classes: [
-                new SymbolInfo($classPath, RelativePath::fromString('src/Service/Foo.php'), 1),
-            ],
-            classMetrics: [
-                'class:App\\Service\\Foo' => MetricBag::fromArray([
-                    'health.overall' => 60.0,
-                ]),
-            ],
-        );
-
-        $findings = [
-            new Finding(
-                location: new Location(RelativePath::fromString('src/Service/Foo.php'), 10),
-                subject: MetricSubject::aggregate($nsPath),
-                symbolPath: $nsPath,
-                ruleName: 'test.rule',
-                code: 'T001',
-                message: 'namespace violation',
-                severity: Severity::Warning,
-            ),
-        ];
-
-        $result = $this->drillDown->buildWorstClasses($metrics, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'), $findings);
-
-        self::assertCount(1, $result);
-        self::assertSame(0, $result[0]->violationCount);
+        return new WorstOffender($subject, $score, 'captured label', 'reason captured with report', new WorstOffenderEvidence(2, 0, ['coupling.cbo' => 0], ['complexity' => 0.0]), [90.0, 85.0]);
     }
-
-    #[Test]
-    public function itBuildWorstClassesSkipsClassesWithoutHealthOverall(): void
-    {
-        $classPath = SymbolPath::forClass('App\\Service', 'NoHealth');
-
-        $metrics = $this->createMetricRepository(
-            projectMetrics: new MetricBag(),
-            classes: [
-                new SymbolInfo($classPath, RelativePath::fromString('src/Service/NoHealth.php'), 1),
-            ],
-            classMetrics: [
-                'class:App\\Service\\NoHealth' => MetricBag::fromArray([
-                    'health.complexity' => 80.0,
-                    // no health.overall
-                ]),
-            ],
-        );
-
-        $result = $this->drillDown->buildWorstClasses($metrics, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'), []);
-
-        self::assertSame([], $result);
-    }
-
-    #[Test]
-    public function itBuildWorstClassesIncludesNotableMetricsWhenRequested(): void
-    {
-        $classPath = SymbolPath::forClass('App\\Service', 'Rich');
-
-        $metrics = $this->createMetricRepository(
-            projectMetrics: new MetricBag(),
-            classes: [
-                new SymbolInfo($classPath, RelativePath::fromString('src/Service/Rich.php'), 1),
-            ],
-            classMetrics: [
-                'class:App\\Service\\Rich' => MetricBag::fromArray([
-                    'health.overall' => 70.0,
-                    'size.method-count' => 15,
-                    'coupling.cbo' => 8,
-                    'size.loc' => 300,
-                ]),
-            ],
-        );
-
-        $result = $this->drillDown->buildWorstClasses($metrics, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'), [], includeNotableMetrics: true);
-
-        self::assertCount(1, $result);
-        self::assertArrayHasKey('size.method-count', $result[0]->metrics);
-        self::assertSame(15, $result[0]->metrics['size.method-count']);
-        self::assertArrayHasKey('coupling.cbo', $result[0]->metrics);
-        self::assertArrayHasKey('size.loc', $result[0]->metrics);
-    }
-
-    #[Test]
-    public function itBuildWorstClassesOmitsNotableMetricsByDefault(): void
-    {
-        $classPath = SymbolPath::forClass('App\\Service', 'Simple');
-
-        $metrics = $this->createMetricRepository(
-            projectMetrics: new MetricBag(),
-            classes: [
-                new SymbolInfo($classPath, RelativePath::fromString('src/Service/Simple.php'), 1),
-            ],
-            classMetrics: [
-                'class:App\\Service\\Simple' => MetricBag::fromArray([
-                    'health.overall' => 70.0,
-                    'size.method-count' => 5,
-                ]),
-            ],
-        );
-
-        $result = $this->drillDown->buildWorstClasses($metrics, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'), []);
-
-        self::assertCount(1, $result);
-        self::assertSame([], $result[0]->metrics);
-    }
-
-    // --- buildClassHealthScores ---
-
 }

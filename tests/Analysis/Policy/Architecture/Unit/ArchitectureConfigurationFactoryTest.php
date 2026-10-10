@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureFactoryRe
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationWarning;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 
 /**
  * Orchestration-level coverage for the factory. Per-concern validator details
@@ -46,7 +47,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     #[Test]
     public function itProducesAnEmptyConfigurationForEmptyInput(): void
     {
-        $result = $this->factory->fromArray([]);
+        $result = $this->factory->fromResolved(ArchitectureDocument::file([]));
 
         self::assertTrue($result->configuration->isEmpty());
         self::assertSame(CoverageMode::Ignore, $result->configuration->coverage());
@@ -57,11 +58,11 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     #[Test]
     public function itReturnsAResultWithConfigurationAndNoWarningsForValidInput(): void
     {
-        $result = $this->factory->fromArray([
+        $result = $this->factory->fromResolved(ArchitectureDocument::file([
             'layers' => [
                 ['name' => 'controller', 'patterns' => ['App\\Controller']],
             ],
-        ]);
+        ]));
 
         self::assertFalse($result->configuration->isEmpty());
         self::assertSame(['controller'], $result->configuration->registry()->layerNames());
@@ -72,7 +73,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     public function itAssemblesLayersAllowAndCoverageIntoOneConfiguration(): void
     {
         // Exercises layers + allow + coverage in one shot.
-        $result = $this->factory->fromArray([
+        $result = $this->factory->fromResolved(ArchitectureDocument::file([
             'layers' => [
                 ['name' => 'controller', 'patterns' => ['App\\Controller']],
                 ['name' => 'service', 'patterns' => ['App\\Service']],
@@ -82,7 +83,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
                 'service' => [],
             ],
             'coverage-gap' => 'warn',
-        ]);
+        ]));
 
         $config = $result->configuration;
         self::assertSame(['controller', 'service'], $config->registry()->layerNames());
@@ -101,7 +102,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     #[Test]
     public function itReplacesTheLayersListWholesaleWithAnOverlay(): void
     {
-        $result = $this->factory->fromContributions([
+        $result = $this->factory->fromResolved(ArchitectureDocument::stacked(
             ['layers' => [
                 ['name' => 'a', 'patterns' => ['App\\A']],
                 ['name' => 'b', 'patterns' => ['App\\B']],
@@ -109,7 +110,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
             ['layers' => [
                 ['name' => 'c', 'patterns' => ['App\\C']],
             ]],
-        ]);
+        ));
 
         self::assertSame(['c'], $result->configuration->registry()->layerNames());
     }
@@ -117,12 +118,12 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     #[Test]
     public function itKeepsTheLayersListWhenAnOverlayOmitsIt(): void
     {
-        $result = $this->factory->fromContributions([
+        $result = $this->factory->fromResolved(ArchitectureDocument::stacked(
             ['layers' => [
                 ['name' => 'controller', 'patterns' => ['App\\Controller']],
             ]],
             ['coverage-gap' => 'error'],
-        ]);
+        ));
 
         self::assertSame(['controller'], $result->configuration->registry()->layerNames());
         self::assertSame(CoverageMode::Error, $result->configuration->coverage());
@@ -131,13 +132,13 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     #[Test]
     public function itMergesAllowMapsFromMultipleContributionsBySource(): void
     {
-        $result = $this->factory->fromContributions([
+        $result = $this->factory->fromResolved(ArchitectureDocument::stacked(
             [
                 'layers' => $this->mergeRegressionLayers(),
                 'allow' => ['controller' => ['service']],
             ],
             ['allow' => ['service' => ['repository']]],
-        ]);
+        ));
 
         self::assertTrue($result->configuration->policy()->isAllowed('controller', 'service'));
         self::assertTrue($result->configuration->policy()->isAllowed('service', 'repository'));
@@ -149,10 +150,10 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
         // The layers ride along because a non-ignore coverage mode is refused
         // without them; what this test measures is which of the two scalars
         // survives the merge, and that is unchanged by their presence.
-        $result = $this->factory->fromContributions([
+        $result = $this->factory->fromResolved(ArchitectureDocument::stacked(
             ['layers' => $this->mergeRegressionLayers(), 'coverage-gap' => 'warn'],
             ['coverage-gap' => 'error'],
-        ]);
+        ));
 
         self::assertSame(CoverageMode::Error, $result->configuration->coverage());
     }
@@ -160,13 +161,13 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     #[Test]
     public function itReplacesAnAllowListEntryInsteadOfMergingItsTargets(): void
     {
-        $result = $this->factory->fromContributions([
+        $result = $this->factory->fromResolved(ArchitectureDocument::stacked(
             [
                 'layers' => $this->mergeRegressionLayers(),
                 'allow' => ['controller' => ['service', 'shared']],
             ],
             ['allow' => ['controller' => ['repository']]],
-        ]);
+        ));
 
         self::assertTrue($result->configuration->policy()->isAllowed('controller', 'repository'));
         self::assertFalse($result->configuration->policy()->isAllowed('controller', 'service'));
@@ -176,11 +177,11 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     #[Test]
     public function itKeepsPresetLayersWhileMergingAllowAndCoverageAcrossContributions(): void
     {
-        $result = $this->factory->fromContributions([
+        $result = $this->factory->fromResolved(ArchitectureDocument::stacked(
             ['layers' => $this->mergeRegressionLayers(), 'coverage-gap' => 'ignore'],
             ['allow' => ['controller' => ['service']], 'coverage-gap' => 'warn'],
             ['allow' => ['service' => ['repository']], 'coverage-gap' => 'error'],
-        ]);
+        ));
 
         self::assertSame(['controller', 'service', 'repository', 'shared'], $result->configuration->registry()->layerNames());
         self::assertTrue($result->configuration->policy()->isAllowed('controller', 'service'));
@@ -195,14 +196,14 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
         $this->expectExceptionMessage('directed cycle');
         $this->expectExceptionMessage('service -> service');
 
-        $this->factory->fromArray([
+        $this->factory->fromResolved(ArchitectureDocument::file([
             'layers' => [
                 ['name' => 'service', 'patterns' => ['App\\Service']],
             ],
             'allow' => [
                 'service' => ['service'],
             ],
-        ]);
+        ]));
     }
 
     #[Test]
@@ -212,7 +213,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
         $this->expectExceptionMessage('directed cycle');
         $this->expectExceptionMessage('controller -> service -> controller');
 
-        $this->factory->fromArray([
+        $this->factory->fromResolved(ArchitectureDocument::file([
             'layers' => [
                 ['name' => 'controller', 'patterns' => ['App\\Controller']],
                 ['name' => 'service', 'patterns' => ['App\\Service']],
@@ -221,7 +222,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
                 'controller' => ['service'],
                 'service' => ['controller'],
             ],
-        ]);
+        ]));
     }
 
     #[Test]
@@ -231,7 +232,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
         $this->expectExceptionMessage('directed cycle');
         $this->expectExceptionMessage('application -> domain -> persistence -> application');
 
-        $this->factory->fromArray([
+        $this->factory->fromResolved(ArchitectureDocument::file([
             'layers' => [
                 ['name' => 'application', 'patterns' => ['App\\Application']],
                 ['name' => 'domain', 'patterns' => ['App\\Domain']],
@@ -242,13 +243,13 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
                 'domain' => ['persistence'],
                 'persistence' => ['application'],
             ],
-        ]);
+        ]));
     }
 
     #[Test]
     public function itAcceptsAnExactDirectedAcyclicGraph(): void
     {
-        $result = $this->factory->fromArray([
+        $result = $this->factory->fromResolved(ArchitectureDocument::file([
             'layers' => [
                 ['name' => 'application', 'patterns' => ['App\\Application']],
                 ['name' => 'domain', 'patterns' => ['App\\Domain']],
@@ -259,7 +260,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
                 'domain' => ['persistence'],
                 'persistence' => [],
             ],
-        ]);
+        ]));
 
         self::assertTrue($result->configuration->policy()->isAllowed('application', 'domain'));
         self::assertTrue($result->configuration->policy()->isAllowed('domain', 'persistence'));
@@ -271,14 +272,14 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     {
         // End-to-end check that WildcardSelfAllowDetector is wired into the
         // factory pipeline after AllowValidator and before result assembly.
-        $result = $this->factory->fromArray([
+        $result = $this->factory->fromResolved(ArchitectureDocument::file([
             'layers' => [
                 ['name' => 'domain-orders', 'patterns' => ['App\\Domain\\Orders\\**']],
             ],
             'allow' => [
                 'domain-*' => ['domain-*'],
             ],
-        ]);
+        ]));
 
         self::assertCount(1, $result->warnings);
         self::assertStringContainsString('wildcard-self-allow', $result->warnings[0]->message);
@@ -287,32 +288,32 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     #[Test]
     public function itRejectsAnAllowEntryNamingALayerTheLayersValidatorDidNotProduce(): void
     {
-        // Demonstrates the orchestration handoff: the registry's layerNames()
-        // is what AllowValidator consults.
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage('architecture.allow.controller: unknown layer');
+        $this->expectExceptionMessage('Unknown name "controller" under "architecture.allow"');
 
-        $this->factory->fromArray([
+        $this->factory->fromResolved(ArchitectureDocument::file([
             'layers' => [['name' => 'service', 'patterns' => ['App\\Service']]],
             'allow' => [
                 'controller' => ['service'],
             ],
-        ]);
+        ]));
     }
 
     // -------------------------------------------------------------------------
-    // Top-level structure validation (factory-owned)
+    // Top-level structure: judged by the configuration engine per layer
     // -------------------------------------------------------------------------
 
     #[Test]
     public function itRejectsASequentialTopLevelStructure(): void
     {
         try {
-            $this->factory->fromArray(['foo', 'bar']);
+            $this->factory->fromResolved(ArchitectureDocument::file(['foo', 'bar']));
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ConfigurationSource::Resolved, $e->origin()->source());
-            self::assertStringContainsString('sequential list is not allowed', $e->getMessage());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
+            self::assertStringContainsString('must be a map, got a list', $e->getMessage());
         }
     }
 
@@ -320,15 +321,17 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     public function itNamesTheUnknownKeyWhenATopLevelKeyIsMisspelled(): void
     {
         try {
-            $this->factory->fromArray([
+            $this->factory->fromResolved(ArchitectureDocument::file([
                 'layres' => [],
-            ]);
+            ]));
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ConfigurationSource::Resolved, $e->origin()->source());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
             self::assertStringContainsString('layres', $e->getMessage());
-            self::assertStringContainsString('Allowed keys', $e->getMessage());
-            self::assertStringContainsString('layers', $e->getMessage());
+            self::assertStringContainsString('did you mean "layers"', $e->getMessage());
+            self::assertSame(['architecture', 'layres'], $e->position()?->segments);
         }
     }
 
@@ -336,76 +339,86 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     public function itRejectsTheUnknownTopLevelKeyImports(): void
     {
         try {
-            $this->factory->fromArray([
+            $this->factory->fromResolved(ArchitectureDocument::file([
                 'layers' => [['name' => 'a', 'patterns' => ['App\\A']]],
                 'imports' => ['some.yaml'],
-            ]);
+            ]));
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ConfigurationSource::Resolved, $e->origin()->source());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
             self::assertStringContainsString('imports', $e->getMessage());
         }
     }
 
     #[Test]
-    public function itListsEveryUnknownTopLevelKeyInTheException(): void
+    public function itRefusesAMisspeltTopLevelKeyWrittenAsTilde(): void
     {
+        // `~` is "not written" for a known key; for an unknown one it is still
+        // a key the author typed, and dropping it would hide the typo.
         try {
-            $this->factory->fromArray([
+            $this->factory->fromResolved(ArchitectureDocument::file([
                 'layers' => [['name' => 'a', 'patterns' => ['App\\A']]],
-                'foo' => 1,
-                'bar' => 2,
-            ]);
+                'coverage_gapp' => null,
+            ]));
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
-            self::assertStringContainsString('foo', $e->getMessage());
-            self::assertStringContainsString('bar', $e->getMessage());
-            self::assertStringContainsString('unknown keys', $e->getMessage());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
+            self::assertSame('coverage_gapp', $e->position()?->written);
+            self::assertStringContainsString('Unknown key "architecture.coverage_gapp"', $e->getMessage());
         }
     }
 
     // -------------------------------------------------------------------------
-    // origin()->source() is Resolved for all errors (factory + validators)
+    // Every refusal names the configuration file that wrote the value
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function itAddressesTheResolvedDocumentWhenTheLayersValidatorThrows(): void
+    public function itNamesTheWritingFileWhenTheLayersValidatorThrows(): void
     {
         try {
-            $this->factory->fromArray([
+            $this->factory->fromResolved(ArchitectureDocument::file([
                 'layers' => 'not-a-list',
-            ]);
+            ]));
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ConfigurationSource::Resolved, $e->origin()->source());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
         }
     }
 
     #[Test]
-    public function itAddressesTheResolvedDocumentWhenTheAllowValidatorThrows(): void
+    public function itNamesTheWritingFileWhenTheAllowValidatorThrows(): void
     {
         try {
-            $this->factory->fromArray([
+            $this->factory->fromResolved(ArchitectureDocument::file([
                 'layers' => [['name' => 'controller', 'patterns' => ['App\\Controller']]],
                 'allow' => 'wrong',
-            ]);
+            ]));
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ConfigurationSource::Resolved, $e->origin()->source());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
         }
     }
 
     #[Test]
-    public function itAddressesTheResolvedDocumentWhenTheCoverageValidatorThrows(): void
+    public function itNamesTheWritingFileWhenTheCoverageValidatorThrows(): void
     {
         try {
-            $this->factory->fromArray([
+            $this->factory->fromResolved(ArchitectureDocument::file([
                 'layers' => [['name' => 'core', 'patterns' => ['App\\Core']]],
                 'coverage-gap' => 'verbose',
-            ]);
+            ]));
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ConfigurationSource::Resolved, $e->origin()->source());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
         }
     }
 
@@ -416,7 +429,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     #[Test]
     public function itMatchesAGlobAllowTargetAgainstConcreteLayers(): void
     {
-        $result = $this->factory->fromArray([
+        $result = $this->factory->fromResolved(ArchitectureDocument::file([
             'layers' => [
                 ['name' => 'controller', 'patterns' => ['App\\Controller']],
                 ['name' => 'user-repository', 'patterns' => ['App\\User\\Repository']],
@@ -425,7 +438,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
             'allow' => [
                 'controller' => ['*-repository'],
             ],
-        ]);
+        ]));
 
         $policy = $result->configuration->policy();
 
@@ -438,7 +451,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     #[Test]
     public function itMatchesAGlobAllowSourceAgainstMultipleConcreteLayers(): void
     {
-        $result = $this->factory->fromArray([
+        $result = $this->factory->fromResolved(ArchitectureDocument::file([
             'layers' => [
                 ['name' => 'domain-orders', 'patterns' => ['App\\Domain\\Orders']],
                 ['name' => 'domain-inventory', 'patterns' => ['App\\Domain\\Inventory']],
@@ -447,7 +460,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
             'allow' => [
                 'domain-*' => ['shared'],
             ],
-        ]);
+        ]));
 
         $policy = $result->configuration->policy();
 
@@ -464,14 +477,14 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
         // post-config-load, so a glob with zero current registry matches is
         // still legal at config-load time. The policy will accept any concrete
         // target name that satisfies the glob.
-        $result = $this->factory->fromArray([
+        $result = $this->factory->fromResolved(ArchitectureDocument::file([
             'layers' => [
                 ['name' => 'controller', 'patterns' => ['App\\Controller']],
             ],
             'allow' => [
                 'controller' => ['module-*'],
             ],
-        ]);
+        ]));
 
         $policy = $result->configuration->policy();
 
@@ -485,17 +498,19 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     public function itRejectsAnUnbalancedBraceInAnAllowSelectorAtConfigLoad(): void
     {
         try {
-            $this->factory->fromArray([
+            $this->factory->fromResolved(ArchitectureDocument::file([
                 'layers' => [
                     ['name' => 'controller', 'patterns' => ['App\\Controller']],
                 ],
                 'allow' => [
                     'controller' => ['domain-{m'],
                 ],
-            ]);
+            ]));
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
-            self::assertSame(ConfigurationSource::Resolved, $e->origin()->source());
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
             self::assertStringContainsString('architecture.allow.controller[0]', $e->getMessage());
             self::assertStringContainsString("unbalanced '{'", $e->getMessage());
         }
@@ -507,7 +522,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
         // Step E binding-aware semantics: captured source binding flows into
         // captured target before matching, so same-{m} edges pass and
         // cross-instance edges are rejected.
-        $result = $this->factory->fromArray([
+        $result = $this->factory->fromResolved(ArchitectureDocument::file([
             'layers' => [
                 ['name' => 'app-orders', 'patterns' => ['App\\Orders\\App']],
                 ['name' => 'domain-orders', 'patterns' => ['App\\Orders\\Domain']],
@@ -516,7 +531,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
             'allow' => [
                 'app-{m}' => ['domain-{m}'],
             ],
-        ]);
+        ]));
 
         $policy = $result->configuration->policy();
 

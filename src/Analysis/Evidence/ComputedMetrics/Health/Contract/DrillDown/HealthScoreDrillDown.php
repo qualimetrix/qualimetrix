@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown;
 
+use Closure;
 use Generator;
+use LogicException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage;
@@ -14,6 +16,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Score\ContributorRanker
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
@@ -25,13 +28,12 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final readonly class HealthScoreDrillDown
 {
     private ContributorRanker $contributorRanker;
-    private HealthDecompositionCatalog $decomposition;
 
     public function __construct(
         private ComputedMetricDefinitionCatalogInterface $definitionCatalog,
+        private HealthDecompositionCatalog $decomposition,
     ) {
         $this->contributorRanker = new ContributorRanker();
-        $this->decomposition = new HealthDecompositionCatalog();
     }
 
     /**
@@ -63,10 +65,15 @@ final readonly class HealthScoreDrillDown
             $dimensionName = $dim->shortName();
 
             $inputs = $this->classInputs($dimension);
+            $classes = $inputs === [] ? [] : iterator_to_array($this->filterClassesByNamespace($metrics, $namespace), false);
+            $inputs = $this->decomposition->selectContributorInputs($inputs, array_map(
+                static fn(SymbolInfo $symbol): Closure => $metrics->getSubject($symbol->subject ?? throw new LogicException('Class contributor requires exact subject'))->get(...),
+                $classes,
+            ));
             $contributors = $inputs === []
                 ? []
                 : $this->contributorRanker->rank(
-                    $this->contributorCandidates($metrics, $this->filterClassesByNamespace($metrics, $namespace), $inputs),
+                    $this->contributorCandidates($metrics, $classes, $inputs),
                     $inputs[0]['direction'],
                 );
 
@@ -143,24 +150,12 @@ final readonly class HealthScoreDrillDown
      */
     public function buildClassHealthScores(MetricRepositoryInterface $metrics, string $classFqn): array
     {
-        // Find the class in the metrics repository
-        $classPath = null;
-        foreach ($metrics->all(SymbolLevel::Class_) as $symbolInfo) {
-            $ns = $symbolInfo->symbolPath->namespace ?? '';
-            $type = $symbolInfo->symbolPath->type ?? '';
-            $fqcn = $ns !== '' ? $ns . '\\' . $type : $type;
-
-            if ($fqcn === $classFqn) {
-                $classPath = $symbolInfo->symbolPath;
-                break;
-            }
-        }
-
-        if ($classPath === null) {
+        $subject = self::classSubjectFor($metrics, $classFqn);
+        if ($subject === null) {
             return [];
         }
 
-        $classMetrics = $metrics->get($classPath);
+        $classMetrics = $metrics->getSubject($subject);
         $healthScores = [];
 
         foreach (HealthDimension::all() as $dim) {
@@ -187,12 +182,28 @@ final readonly class HealthScoreDrillDown
         return $healthScores;
     }
 
+    private static function classSubjectFor(MetricRepositoryInterface $metrics, string $classFqn): ?MetricSubject
+    {
+        $subjects = [];
+        foreach ($metrics->allClassDeclarations() as $symbolInfo) {
+            if ($symbolInfo->symbolPath->toString() === $classFqn) {
+                $subjects[] = $symbolInfo->subject;
+            }
+        }
+
+        if (\count($subjects) > 1 || ($subjects !== [] && $subjects[0] === null)) {
+            throw new LogicException('Class health score selection requires one exact declaration');
+        }
+
+        return $subjects[0] ?? null;
+    }
+
     /**
      * @return Generator<SymbolInfo>
      */
     private function filterClassesByNamespace(MetricRepositoryInterface $metrics, NamespacePattern $namespace): Generator
     {
-        foreach ($metrics->all(SymbolLevel::Class_) as $symbolInfo) {
+        foreach ($metrics->allClassDeclarations() as $symbolInfo) {
             $classNs = $symbolInfo->symbolPath->namespace ?? '';
 
             if ($namespace->matches($classNs)) {
@@ -212,6 +223,11 @@ final readonly class HealthScoreDrillDown
      */
     private function classInputs(string $dimension): array
     {
+        $definition = $this->definitionCatalog->find($dimension);
+        if ($definition !== null && !$definition->isBuiltinFormulaForLevel(SymbolLevel::Namespace_)) {
+            return [];
+        }
+
         return array_map(static fn(array $input): array => [
             'classKey' => $input['classKey'],
             'direction' => $input['direction'],
@@ -230,7 +246,7 @@ final readonly class HealthScoreDrillDown
         array $inputs,
     ): Generator {
         foreach ($classSymbols as $symbol) {
-            $metrics = $repository->get($symbol->symbolPath);
+            $metrics = $repository->getSubject($symbol->subject ?? throw new LogicException('Class contributor requires exact subject'));
             $selection = $this->decomposition->selectContributorMetrics($inputs, $metrics->get(...));
 
             yield [

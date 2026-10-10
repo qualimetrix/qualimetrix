@@ -39,13 +39,16 @@ The following functions are detected:
 - `debug_print_backtrace`, `debug_zval_dump`
 
 `debug_backtrace` is not detected: it returns data and belongs to ordinary error handling.
-A positional `true` second argument is return mode only for `print_r` and `var_export`;
-the named `return: true` argument is honoured for every function. Names are matched as
-written — `use function` aliases are not resolved.
+A positional `true` second argument or named `return: true` is return mode only
+for `print_r` and `var_export`. Calls inside methods named `dump`, `dd`, or
+`debug` are still detected; an intentional call needs a reasoned `@qmx-ignore`.
+Names are matched as written — `use function` aliases are not resolved.
 
 ## Superglobals
 
-The following are detected by their plain variable name (a variable-variable spelling such as `${'_GET'}` is not):
+The following are detected as plain variables, literal variable-variable names
+such as `${'_GET'}` or `${'_'.'GET'}`, and literal `$GLOBALS['_GET']` reads.
+An unknown dynamic name such as `$$name` cannot be identified:
 - `$_GET`, `$_POST`, `$_REQUEST`
 - `$_COOKIE`, `$_SESSION`
 - `$_SERVER`, `$_FILES`, `$_ENV`
@@ -54,10 +57,17 @@ The following are detected by their plain variable name (a variable-variable spe
 ## Empty Catch: chain of attempts
 
 An empty catch is exempt only when its `try` is a direct statement of a `foreach` body and can
-end the search on success: it holds a `return`, or a `continue` that skips statements after the
-try, at its top level or inside its `if` branches
+end the search on success after work: it holds a `return` or `break`, or a
+`continue` that skips statements after the try, at its top level or inside its `if` branches
 (`ControlFlow/ChainOfAttempts.php`). A try nested deeper, one inside a closure, and one whose
 `continue` skips nothing are reported.
+`ControlFlow/AttemptWork` recognizes eager function, method, nullsafe method and
+static calls, object construction, include, throw, shell execution and eval.
+Deferred function-like bodies and first-class callable creation do not count as
+executed work; eager receiver or argument evaluation still does.
+An early guard inside the `try`, after a preparatory call but before useful
+work, can still make the empty `catch` look like a valid chain of attempts:
+`$y = prepare($x); if ($y === null) continue; work($y);`.
 
 ## Usage
 
@@ -100,8 +110,12 @@ the visitor evaluates the chain once, at its head.
 - `RepeatedExpression/IfChain.php` — if-chain shape: an `else` holding only an `if` continues the chain
 - `ControlFlow/ControlFlowSmells.php` — empty catches, goto, exit/die, and count/sizeof loop conditions
 - `ControlFlow/ChainOfAttempts.php` — the foreach chain-of-attempts shape that exempts an empty catch
+- `ControlFlow/AttemptWork.php` — recognizes work before a chain-of-attempts exit
 - `Debug/DebugCodeSmells.php` — debug-call recognition
 - `BooleanArgument/BooleanArgumentSmells.php` — boolean-argument and promoted-property policy
+- `UsageTrackingTrait.php` — records private member references while visiting a class or trait
+- `OwnClassReference.php` — recognizes resolved references to the inspected class and its instances
+- `LiteralCallableUse.php` — recognizes literal array and string callables targeting that class
 
 `CodeSmellVisitor` owns AST traversal/delegation and only three residual one-node projections: `eval`, error suppression (including its direct function-name payload), and direct superglobal access. `ControlFlowSmells` owns only empty catches (including the foreach chain-of-attempts exception), `goto`, `exit`/`die`, and `count`/`sizeof` calls in `for`, `while`, and `do` conditions. Debug and boolean-argument policy stay in their named child subjects.
 
@@ -109,6 +123,14 @@ The complete repeated-expression stack is collector → visitor → `RepeatedExp
 
 The only internal dogfood control is `CredentialLiterals` `@qmx-ignore health.cohesion -- Stateless credential-literal shapes share one classification policy and location boundary.` It is a structural explanation, not a metric behavior change or baseline debt. `HardcodedCredentialsVisitor` carried a matching `design.data-class` control until that rule was corrected to gate on a low share of functional public methods; a delegating traversal adapter is no longer read as a data surface.
 
+
+## Private-member declaration evidence
+
+`UnusedPrivateVisitor` and `UnusedPrivateCollector` retain one exact record per
+named declaration. Conditional declarations sharing a name keep independent
+member definitions and references; nested anonymous classes do not contribute
+to an enclosing class's unused-member evidence. The collector declares
+`code-smell.unused-private.total` with its other class metrics.
 
 ## Rule option key declarations
 
@@ -127,3 +149,10 @@ inside a level slot alike.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+Code-smell occurrence rules decode native entry subjects and account occurrences before finding construction. Allowed-name filtering and promoted-property filtering use the same ordered declaration as direct eligibility; malformed extras bypass only the native name predicate, while an empty string reaches it. Metric-backed rules account published zero before severity selection and retain their configured kind, constructor, class-context and value-object exclusions.
+
+Gate construction and lazy declaration-metric admission use Finding-owned
+`AbstractRule` operations. Each rule retains its raw metric keys, coordinate,
+ordered predicates and failure reasons; a refused coordinate never reads its
+metric bag.

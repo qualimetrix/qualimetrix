@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Evidence\Coupling\Configuration\CouplingSection;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
 use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule;
@@ -16,13 +17,17 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 /**
  * The branches where the rule must say nothing.
@@ -35,6 +40,44 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 #[CoversClass(UnmatchedFrameworkNamespaceRule::class)]
 final class UnmatchedFrameworkNamespaceRuleTest extends TestCase
 {
+    #[Test]
+    public function itDistinguishesScopeSelectorsUnknownGraphAndKnownEmptyClassification(): void
+    {
+        foreach ([
+            [$this->context(null, false), 0, 2, 'namespace-scope', 'configured-framework-selector'],
+            [$this->context(null), 0, 1, 'graph-available', 'invocation'],
+            [$this->context($this->graphOf()), 0, 2, 'classified-names', 'configured-framework-selector'],
+            [$this->context($this->graph()), 2, 0, null, null],
+        ] as [$context, $judged, $unjudged, $gate, $unit]) {
+            $decisions = [];
+            foreach (UnmatchedFrameworkNamespaceRule::channelDeclarations() as $channel => $declaration) {
+                foreach ($declaration->levels as $level) {
+                    $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(UnmatchedFrameworkNamespaceRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
+                }
+            }
+            $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+            $findings = $this->rule(['Nope', 'Symfony'])->analyze($context->withPopulationTrace($session));
+            self::assertCount($judged === 0 ? 0 : 1, $findings);
+            self::assertSame($judged, $session->freeze()->judgedCount());
+            self::assertSame($unjudged, $session->freeze()->unjudgedCount());
+            self::assertSame($gate === null ? [] : [[$gate, $unit]], array_map(
+                static fn(\Qualimetrix\Analysis\Finding\Contract\Population\RuleAbstention $absence): array => [$absence->gate, $absence->unit],
+                $session->freeze()->abstentions(),
+            ));
+        }
+        $graph = self::createMock(DependencyGraphInterface::class);
+        $graph->expects(self::never())->method('getAllDependencies');
+        $decisions = [];
+        foreach (UnmatchedFrameworkNamespaceRule::channelDeclarations() as $channel => $declaration) {
+            foreach ($declaration->levels as $level) {
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(UnmatchedFrameworkNamespaceRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
+            }
+        }
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+        self::assertSame([], $this->rule([])->analyze($this->context($graph)->withPopulationTrace($session)));
+        self::assertTrue($session->freeze()->isEmpty());
+    }
+
     #[Test]
     public function itNamesItselfAfterItsChannel(): void
     {
@@ -152,12 +195,13 @@ final class UnmatchedFrameworkNamespaceRuleTest extends TestCase
     private function rule(array $prefixes, ?UnmatchedFrameworkNamespaceOptions $options = null): UnmatchedFrameworkNamespaceRule
     {
         $coupling = new CouplingAnalysis();
-        $coupling->replace($coupling->resolve(new ConfigurationDocument(
+        $coupling->replace($coupling->resolve(LayeredDocument::of(
             [[
                 'source' => 'test',
                 'values' => ['coupling' => ['frameworkNamespaces' => array_map(static fn(string $prefix): array => ['subtree' => $prefix], $prefixes)]],
             ]],
             AbsolutePath::fromString('/project'),
+            new CouplingSection(),
         )));
 
         return new UnmatchedFrameworkNamespaceRule(
@@ -181,10 +225,20 @@ final class UnmatchedFrameworkNamespaceRuleTest extends TestCase
 
         $metrics = self::createStub(MetricRepositoryInterface::class);
         $metrics->method('has')->willReturnCallback(
-            static fn(SymbolPath $path): bool => \in_array($path->toCanonical(), $canonical, true),
+            static function (): never {
+                throw new LogicException('Class membership must use the exact logical subject');
+            },
+        );
+        $metrics->method('hasSubject')->willReturnCallback(
+            static function (MetricSubject $subject) use ($canonical): bool {
+                $logical = $subject->logicalClassPath()
+                    ?? throw new LogicException('Framework membership requires a logical class subject');
+
+                return \in_array($logical->toCanonical(), $canonical, true);
+            },
         );
 
-        return new AnalysisContext($metrics, $graph, coversProjectScope: $coversProjectScope);
+        return new AnalysisContext($metrics, $graph, projectScope: new ProjectScopeJudgement($coversProjectScope ? [] : [ProjectScopeDoor::Paths]));
     }
 
     /** One edge: `Sample\Service` depends on `Symfony\Component\Console\Command\Command`. */
@@ -230,7 +284,7 @@ final class UnmatchedFrameworkNamespaceRuleTest extends TestCase
 
     private function edge(SymbolPath $source, SymbolPath $target): Dependency
     {
-        return new Dependency(
+        return Dependency::ofKind(
             DeclarationPath::of($source, RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0)),
             new LogicalClassPath($target),
             DependencyType::TypeHint,

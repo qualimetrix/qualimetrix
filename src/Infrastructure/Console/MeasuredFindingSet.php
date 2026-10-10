@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
+use LogicException;
+
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
@@ -16,27 +16,24 @@ final readonly class MeasuredFindingSet
     public function __construct(
         private AnalysisPipelineInterface $analyzer,
         private FindingProjector $projector,
-        private FileDiscoveryFactoryInterface $fileDiscoveryFactory,
     ) {}
 
     /**
      * @return list<\Qualimetrix\Analysis\Finding\Contract\Finding>
      */
-    public function forRun(RunConfiguration $configuration, ?FileDiscoveryInterface $fileDiscovery = null, FindingProjectionOptions $options = new FindingProjectionOptions()): array
+    public function forRun(RunConfiguration $configuration, FindingProjectionOptions $options = new FindingProjectionOptions()): array
     {
-        return $this->run($configuration, $fileDiscovery, $options)->findings;
+        return $this->run($configuration, $options)->findings;
     }
 
-    public function run(RunConfiguration $configuration, ?FileDiscoveryInterface $fileDiscovery = null, FindingProjectionOptions $options = new FindingProjectionOptions()): MeasuredAnalysisRun
+    public function run(RunConfiguration $configuration, FindingProjectionOptions $options = new FindingProjectionOptions()): MeasuredAnalysisRun
     {
-        $result = $this->analyzer->analyze(
-            $configuration,
-            $fileDiscovery ?? $this->fileDiscoveryFactory->create($configuration->projectRoot, $configuration->pathExcludes),
-        );
+        $result = $this->analyzer->analyze($configuration);
         $projection = $this->projector->project(
-            $result->findings,
-            $result->suppressions,
+            $result->findings(),
+            $result->directives->suppressions,
             $options,
+            $result->populationPublication ?? throw new LogicException('Measured finding projection requires captured channel publication'),
         );
         return new MeasuredAnalysisRun($result, $projection->measuredFindings);
     }

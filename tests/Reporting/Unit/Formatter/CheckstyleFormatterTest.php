@@ -31,6 +31,24 @@ final class CheckstyleFormatterTest extends TestCase
     }
 
     #[Test]
+    public function itNamesAnUncomparedEntryWithoutClaimingABreach(): void
+    {
+        $finding = self::finding(
+            location: new Location(RelativePath::fromString('src/A.php'), 1),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/A.php')),
+            ruleName: 'code-smell.goto',
+            code: 'code-smell.goto',
+            message: 'Original message',
+            severity: Severity::Warning,
+            metricValue: 31,
+            recommendation: 'Recommended repair',
+        )->reportedUncompared(new \Qualimetrix\Analysis\Finding\Contract\AcceptedLevel([25.0], 1), 'analysis-incomplete');
+        $output = $this->formatter->format(ReportBuilder::create()->addFinding($finding)->filesAnalyzed(1)->build(), new FormatterContext())->body;
+        self::assertStringContainsString('accepted at 25; not compared: analysis-incomplete', $output);
+        self::assertStringNotContainsString('now 31', $output);
+    }
+
+    #[Test]
     public function itReturnsCheckstyleAsName(): void
     {
         self::assertSame('checkstyle', $this->formatter->getName());
@@ -45,7 +63,7 @@ final class CheckstyleFormatterTest extends TestCase
             ->duration(0.5)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         $xml = new DOMDocument();
         $loaded = $xml->loadXML($output);
@@ -62,7 +80,7 @@ final class CheckstyleFormatterTest extends TestCase
             ->duration(0.15)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $xml = $this->parseXml($output);
 
         $checkstyle = $xml->getElementsByTagName('checkstyle')->item(0);
@@ -100,7 +118,7 @@ final class CheckstyleFormatterTest extends TestCase
             ->duration(0.23)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $xml = $this->parseXml($output);
 
         $files = $xml->getElementsByTagName('file');
@@ -161,7 +179,7 @@ final class CheckstyleFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $xml = $this->parseXml($output);
 
         $files = $xml->getElementsByTagName('file');
@@ -202,11 +220,14 @@ final class CheckstyleFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $xml = $this->parseXml($output);
 
         $error = $xml->getElementsByTagName('error')->item(0);
         self::assertNotNull($error);
+
+        self::assertSame(1, $xml->getElementsByTagName('file')->length);
+        self::assertSame('src/Service/UserService.php', $xml->getElementsByTagName('file')->item(0)?->getAttribute('name'));
 
         // Line defaults to 1 for namespace-level findings without explicit line
         self::assertTrue($error->hasAttribute('line'));
@@ -231,7 +252,7 @@ final class CheckstyleFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         // Should produce valid XML (the parser will throw if invalid)
         $xml = $this->parseXml($output);
@@ -244,8 +265,8 @@ final class CheckstyleFormatterTest extends TestCase
     #[Test]
     public function itIncludesXmlDeclaration(): void
     {
-        $report = new Report([], 0, 0, 0.0, 0, 0);
-        $output = $this->formatter->format($report, new FormatterContext());
+        $report = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 0, 0, 0.0, 0, 0);
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         self::assertStringStartsWith('<?xml version="1.0" encoding="UTF-8"?>', $output);
     }
@@ -267,7 +288,7 @@ final class CheckstyleFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         self::assertStringContainsString('source="qmx.complexity.method"', $output);
         self::assertStringNotContainsString('source="qmx.complexity"', $output);
@@ -283,6 +304,54 @@ final class CheckstyleFormatterTest extends TestCase
         }
 
         return $xml;
+    }
+
+    #[Test]
+    public function itPublishesOnlySourceLocatedFindingsInMixedAndFilelessReports(): void
+    {
+        $fileless = [];
+        foreach ([SymbolPath::forNamespace('App'), SymbolPath::forNamespace(''), SymbolPath::forProject()] as $symbol) {
+            $fileless[] = self::finding(
+                location: Location::none(),
+                symbolPath: $symbol,
+                ruleName: 'aggregate.rule',
+                code: 'aggregate.rule',
+                message: 'Aggregate finding',
+                severity: Severity::Warning,
+            );
+        }
+
+        foreach ([true, false] as $includeSource) {
+            $builder = ReportBuilder::create()->addFindings($fileless);
+            if ($includeSource) {
+                $builder->addFinding(self::finding(
+                    location: new Location(RelativePath::fromString('src/A.php'), 12),
+                    symbolPath: SymbolPath::forClass('App', 'A'),
+                    ruleName: 'source.rule',
+                    code: 'source.rule',
+                    message: 'Source finding',
+                    severity: Severity::Error,
+                ));
+            }
+            $output = $this->formatter->format($builder->build(), new FormatterContext())->body;
+            $xml = $this->parseXml($output);
+            $files = $xml->getElementsByTagName('file');
+            $errors = $xml->getElementsByTagName('error');
+            self::assertSame($includeSource ? 1 : 0, $files->length);
+            self::assertSame($includeSource ? 1 : 0, $errors->length);
+            if ($includeSource) {
+                $file = $files->item(0);
+                $error = $errors->item(0);
+                self::assertNotNull($file);
+                self::assertNotNull($error);
+                self::assertSame('src/A.php', $file->getAttribute('name'));
+                self::assertSame('12', $error->getAttribute('line'));
+                self::assertSame('error', $error->getAttribute('severity'));
+                self::assertSame('Source finding', $error->getAttribute('message'));
+                self::assertSame('qmx.source.rule', $error->getAttribute('source'));
+                self::assertSame(4, $error->attributes->length);
+            }
+        }
     }
 
     #[Test]
@@ -309,7 +378,7 @@ final class CheckstyleFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $xml = $this->parseXml($output);
 
         $error = $xml->getElementsByTagName('error')->item(0);
@@ -341,7 +410,7 @@ final class CheckstyleFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $xml = $this->parseXml($output);
 
         $error = $xml->getElementsByTagName('error')->item(0);
@@ -366,7 +435,7 @@ final class CheckstyleFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $xml = $this->parseXml($output);
 
         $error = $xml->getElementsByTagName('error')->item(0);

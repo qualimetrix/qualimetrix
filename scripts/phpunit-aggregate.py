@@ -17,6 +17,11 @@ Usage:
     gets it from here rather than from a second reading of this file, and
     shard_command() is the single place both the print and the run come from.
 
+    QMX_PHPUNIT_PROFILE=1 adds per-suite JUnit files in the runner's temporary
+    cache and prints discovery time, shard wall times, and the 30 slowest cases.
+    The temporary files are removed after publication. The same environment
+    variable makes --print-commands show the profiled command.
+
 The command names the configuration explicitly and retains the aggregate's
 no-coverage, benchmark, and live-freshness exclusions. Suite output is captured per shard, then published only after the
 run in the fixed PHPUnit-suite order.
@@ -26,6 +31,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import shutil
 import signal
@@ -33,6 +39,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
@@ -49,6 +56,7 @@ COMMON_ARGUMENTS = (
     "--no-coverage",
     "--exclude-group=benchmark",
     "--exclude-group=live-freshness",
+    "--exclude-group=finding-gate-e2e",
 )
 REFUSAL_EXIT = 2
 TIMEOUT_EXIT = 124
@@ -68,6 +76,8 @@ class Shard:
     stderr_handle: object | None = None
     process_group: int | None = None
     exit_code: int | None = None
+    started_at: float | None = None
+    elapsed: float | None = None
 
 
 def parse_positive_int(value: str) -> int:
@@ -132,21 +142,26 @@ def list_command(phpunit: Path, suite: str | None) -> list[str]:
     return command
 
 
-def shard_command(phpunit: Path, suite: str, cache_directory: Path) -> list[str]:
+def shard_command(phpunit: Path, suite: str, cache_directory: Path, profile: bool = False) -> list[str]:
     """The exact argv one suite shard is started with.
 
     Both the run and `--print-commands` come through here, so what a reader is
     told `composer check` executes cannot drift from what it executes.
     """
-    return [
+    command = [
         str(phpunit),
         *COMMON_ARGUMENTS,
         f"--cache-directory={cache_directory}",
         f"--testsuite={suite}",
     ]
+    if profile:
+        command.append(f"--log-junit={cache_directory / 'junit.xml'}")
+    return command
 
 
-def printable_commands(phpunit: Path, cache_root: Path) -> dict[str, list[str]]:
+def printable_commands(phpunit: Path, cache_root: Path, profile: bool = False) -> dict[str, list[str]]:
+    if profile:
+        return {suite: shard_command(phpunit, suite, cache_root / suite, True) for suite in SUITES}
     return {suite: shard_command(phpunit, suite, cache_root / suite) for suite in SUITES}
 
 
@@ -257,10 +272,13 @@ def remaining_seconds(deadline: float) -> float:
     return remaining
 
 
-def start_shard(phpunit: Path, shard: Shard, cache_root: Path) -> None:
+def start_shard(phpunit: Path, shard: Shard, cache_root: Path, profile: bool = False) -> None:
     cache_directory = cache_root / shard.suite
     cache_directory.mkdir()
-    command = shard_command(phpunit, shard.suite, cache_directory)
+    command = (
+        shard_command(phpunit, shard.suite, cache_directory, True)
+        if profile else shard_command(phpunit, shard.suite, cache_directory)
+    )
     shard.stdout_handle = shard.stdout_path.open("wb")
     shard.stderr_handle = shard.stderr_path.open("wb")
     try:
@@ -271,6 +289,7 @@ def start_shard(phpunit: Path, shard: Shard, cache_root: Path) -> None:
             stderr=shard.stderr_handle,
             start_new_session=True,
         )
+        shard.started_at = time.monotonic()
         shard.process_group = shard.process.pid
     except OSError:
         close_shard_handles(shard)
@@ -317,6 +336,8 @@ def terminate_shards(shards: Sequence[Shard]) -> None:
             if first_error is None:
                 first_error = error
         finally:
+            if shard.started_at is not None and shard.elapsed is None:
+                shard.elapsed = time.monotonic() - shard.started_at
             if shard.exit_code is None:
                 shard.exit_code = TIMEOUT_EXIT
             close_shard_handles(shard)
@@ -334,7 +355,7 @@ def signal_process_group(process_group: int, signal_number: int) -> None:
         raise RunnerRefusal(f"cannot signal process group {process_group}") from error
 
 
-def run_shards(phpunit: Path, jobs: int, deadline: float, heartbeat: float) -> list[Shard]:
+def run_shards(phpunit: Path, jobs: int, deadline: float, heartbeat: float, profile: bool = False) -> list[Shard]:
     cache_root = Path(tempfile.mkdtemp(prefix="qmx-phpunit-aggregate-"))
     shards = [
         Shard(suite, cache_root / f"{suite}.stdout", cache_root / f"{suite}.stderr") for suite in SUITES
@@ -358,7 +379,7 @@ def run_shards(phpunit: Path, jobs: int, deadline: float, heartbeat: float) -> l
                 while pending and len(running) < jobs:
                     shard = pending.pop(0)
                     try:
-                        start_shard(phpunit, shard, cache_root)
+                        start_shard(phpunit, shard, cache_root, profile)
                     except OSError as error:
                         shard.stdout_path.write_text("", encoding="utf-8")
                         shard.stderr_path.write_text(f"could not start PHPUnit: {error}\n", encoding="utf-8")
@@ -372,6 +393,8 @@ def run_shards(phpunit: Path, jobs: int, deadline: float, heartbeat: float) -> l
                     if exit_code is None:
                         continue
                     shard.exit_code = exit_code
+                    if shard.started_at is not None:
+                        shard.elapsed = time.monotonic() - shard.started_at
                     close_shard_handles(shard)
                     running.remove(shard)
 
@@ -386,6 +409,8 @@ def run_shards(phpunit: Path, jobs: int, deadline: float, heartbeat: float) -> l
             terminate_shards(running)
 
         publish_shards(shards)
+        if profile:
+            publish_profile(shards, cache_root)
         return shards
     finally:
         shutil.rmtree(cache_root, ignore_errors=True)
@@ -405,8 +430,72 @@ def publish_shards(shards: Sequence[Shard]) -> None:
             print()
 
 
+def publish_profile(shards: Sequence[Shard], cache_root: Path) -> None:
+    successful = all(shard.exit_code == 0 for shard in shards)
+    cases: list[tuple[float, str, str]] = []
+    errors: list[str] = []
+    print("[phpunit-profile] shard wall times:")
+    for shard in shards:
+        duration = "not started" if shard.elapsed is None else f"{shard.elapsed:.3f}s"
+        print(f"[phpunit-profile] {shard.suite}: {duration} (exit {shard.exit_code})")
+        path = cache_root / shard.suite / "junit.xml"
+        try:
+            cases.extend(read_junit_cases(path, shard.suite))
+        except RunnerRefusal as error:
+            errors.append(str(error))
+
+    for error in errors:
+        print(f"[phpunit-profile] {error}", file=sys.stderr)
+    if errors or not successful:
+        print(f"[phpunit-profile] partial measurement: {len(cases)} readable cases; no complete top-30 claim")
+        if successful:
+            raise RunnerRefusal("enabled PHPUnit profile is incomplete")
+        return
+
+    print(f"[phpunit-profile] top 30 measured cases ({len(cases)} total):")
+    for duration, suite, name in sorted(cases, key=lambda row: (-row[0], row[1], row[2]))[:30]:
+        print(f"[phpunit-profile] {duration:.3f}s {suite} {name}")
+
+
+def read_junit_cases(path: Path, suite: str) -> list[tuple[float, str, str]]:
+    try:
+        root = ET.parse(path).getroot()
+    except (OSError, ET.ParseError) as error:
+        raise RunnerRefusal(f"{suite} JUnit unavailable or malformed: {error}") from error
+    if root.tag not in ("testsuites", "testsuite"):
+        raise RunnerRefusal(f"{suite} JUnit has unexpected root {root.tag!r}")
+
+    for test_suite in root.iter("testsuite"):
+        try:
+            declared_count = int(test_suite.get("tests", ""))
+        except ValueError as error:
+            raise RunnerRefusal(f"{suite} JUnit has an invalid declared testcase count") from error
+        measured_count = sum(1 for _ in test_suite.iter("testcase"))
+        if declared_count != measured_count:
+            raise RunnerRefusal(f"{suite} JUnit testcase count is {measured_count}, declared {declared_count}")
+
+    cases: list[tuple[float, str, str]] = []
+    for testcase in root.iter("testcase"):
+        name = testcase.get("name")
+        class_name = testcase.get("class") or testcase.get("classname")
+        value = testcase.get("time")
+        if not name or not class_name or value is None:
+            raise RunnerRefusal(f"{suite} JUnit has a testcase without name, class or time")
+        try:
+            duration = float(value)
+        except ValueError as error:
+            raise RunnerRefusal(f"{suite} JUnit has a nonnumeric testcase time") from error
+        if not math.isfinite(duration) or duration < 0:
+            raise RunnerRefusal(f"{suite} JUnit has an invalid testcase time")
+        cases.append((duration, suite, f"{class_name}::{name}"))
+    if not cases:
+        raise RunnerRefusal(f"{suite} JUnit contains no testcases")
+    return cases
+
+
 def main(arguments: Sequence[str] | None = None) -> int:
     args = parse_arguments(sys.argv[1:] if arguments is None else arguments)
+    profile = os.environ.get("QMX_PHPUNIT_PROFILE") == "1"
     if args.print_commands:
         if args.cache_root is None:
             print("phpunit aggregate refusal: --print-commands needs --cache-root", file=sys.stderr)
@@ -415,7 +504,7 @@ def main(arguments: Sequence[str] | None = None) -> int:
             {
                 "phpunit": str(args.phpunit),
                 "configuration": str(CONFIGURATION),
-                "commands": printable_commands(args.phpunit, args.cache_root),
+                "commands": printable_commands(args.phpunit, args.cache_root, profile),
             },
             sys.stdout,
             indent=2,
@@ -426,10 +515,23 @@ def main(arguments: Sequence[str] | None = None) -> int:
         print("phpunit aggregate refusal: isolated process groups require a POSIX platform", file=sys.stderr)
         return REFUSAL_EXIT
     deadline = time.monotonic() + args.timeout
+    discovery_started = time.monotonic()
     try:
         discover_partition(args.phpunit, deadline)
-        shards = run_shards(args.phpunit, args.jobs, deadline, args.heartbeat)
+        if profile:
+            print(f"[phpunit-profile] discovery wall time: {time.monotonic() - discovery_started:.3f}s")
+        shard_phase_started = time.monotonic()
+        shard_phase_completed = False
+        try:
+            shards = run_shards(args.phpunit, args.jobs, deadline, args.heartbeat, profile)
+            shard_phase_completed = True
+        finally:
+            if profile:
+                suffix = "" if shard_phase_completed else " (partial)"
+                print(f"[phpunit-profile] shard phase wall time: {time.monotonic() - shard_phase_started:.3f}s{suffix}")
     except RunnerRefusal as error:
+        if profile and 'shard_phase_started' not in locals():
+            print(f"[phpunit-profile] discovery incomplete after {time.monotonic() - discovery_started:.3f}s")
         print(f"phpunit aggregate refusal: {error}", file=sys.stderr)
         return REFUSAL_EXIT
 

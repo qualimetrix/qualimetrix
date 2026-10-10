@@ -12,23 +12,13 @@ use Qualimetrix\Core\Pattern\PathPattern;
 /** Per-run rule options and exclusion state owned by Finding. */
 interface RuleConfigurationInterface
 {
+    public function resolvedOptions(): ResolvedRuleOptions;
+
+    public function enablement(): ?RuleEnablement;
+
+    public function channelUniverse(): ChannelUniverseInterface;
+
     public function replace(FindingConfiguration $configuration): void;
-
-    /** @param array<string, mixed> $options */
-    public function configureCli(string $ruleName, array $options): void;
-
-    /** @return array<string, mixed> */
-    public function configFileOptions(): array;
-
-    /** @return array<string, array<string, mixed>> */
-    public function cliOptions(): array;
-
-    /** @return array<string, mixed> */
-    public function all(): array;
-
-    public function configureSelection(RuleSelection $selection): void;
-
-    public function selection(): RuleSelection;
 
     public function captureExcludedFindings(): void;
 

@@ -1,6 +1,6 @@
 # Rules Overview
 
-Qualimetrix ships with a set of built-in rules that check your PHP code for common quality problems. Each rule looks at a specific aspect of your code -- complexity, size, coupling, design, maintainability, or common bad practices -- and reports violations when thresholds are exceeded.
+Qualimetrix ships with a set of built-in rules that check your PHP code for common quality problems. Each rule looks at a specific aspect of your code -- complexity, size, coupling, design, maintainability, or common bad practices -- and reports violations when thresholds are reached or crossed, according to each rule's direction.
 
 ## Rule IDs and Judged Metrics
 
@@ -102,10 +102,11 @@ These rules measure how tightly your classes depend on each other. Tightly coupl
 
 ### Architecture Rules
 
-| Rule                                     | ID                                 | What it checks                                            | Default Warning | Default Error |
-| ---------------------------------------- | ---------------------------------- | --------------------------------------------------------- | --------------- | ------------- |
-| [Circular Dependencies](architecture.md) | `architecture.circular-dependency` | Classes that depend on each other in a loop               | --              | Error         |
-| [Layer Violations](architecture.md)      | `architecture.layer-violation`     | Inter-layer dependencies that violate the declared policy | --              | Warning       |
+| Rule                                                               | ID                                 | What it checks                                                    | Default Warning | Default Error |
+| ------------------------------------------------------------------ | ---------------------------------- | ----------------------------------------------------------------- | --------------- | ------------- |
+| [Circular Dependencies](architecture.md)                           | `architecture.circular-dependency` | Classes that depend on each other in a loop                       | --              | Error         |
+| [Layer Violations](architecture.md)                                | `architecture.layer-violation`     | Inter-layer dependencies that violate the declared policy         | --              | Warning       |
+| [Layer declaration diagnostics](architecture.md#layer-declaration) | `architecture.layer-declaration`   | Layer criteria, coverage and the observed effects of declarations | —               | Per channel   |
 
 [Read more about Architecture rules --&gt;](architecture.md)
 
@@ -113,9 +114,9 @@ These rules measure how tightly your classes depend on each other. Tightly coupl
 
 These rules detect duplicated code blocks across your codebase using token-stream analysis.
 
-| Rule                               | ID                  | What it detects                                 | Default Warning | Default Error |
-| ---------------------------------- | ------------------- | ----------------------------------------------- | --------------- | ------------- |
-| [Code Duplication](duplication.md) | `duplication.clone` | Structurally identical code blocks across files | < 50 lines      | >= 50 lines   |
+| Rule                               | ID                  | What it detects                                 | Default Warning | Default Error    |
+| ---------------------------------- | ------------------- | ----------------------------------------------- | --------------- | ---------------- |
+| [Code Duplication](duplication.md) | `duplication.clone` | Structurally identical code blocks across files | < 50 code lines | >= 50 code lines |
 
 [Read more about Duplication rules --&gt;](duplication.md)
 
@@ -158,7 +159,9 @@ These rules detect patterns that may introduce security vulnerabilities.
 
 ### Annotation Rules
 
-This rule validates the `@qmx-ignore` / `@qmx-threshold` annotations written in your code, rather than the code itself. It reports through four channels — `annotation.unresolved-directive`, `annotation.unsupported-threshold`, and `annotation.invalid-threshold` are configuration errors that fail the run unconditionally; `annotation.unused-directive` is ordinary debt with a configurable severity, and the one channel no `@qmx-ignore` may address.
+This rule validates the `@qmx-ignore` / `@qmx-threshold` annotations written in your code, rather than the code itself. It reports through four channels — `annotation.unresolved-directive`, `annotation.unsupported-threshold`, and `annotation.invalid-threshold` are configuration errors that fail the run unconditionally; `annotation.unused-directive` is ordinary debt with a configurable severity, and cannot be addressed by `@qmx-ignore`.
+
+The duplication channel `duplication.clone` also cannot be addressed by `@qmx-ignore`.
 
 | Rule                                  | ID                     | What it detects                                                                               |
 | ------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------- |
@@ -248,7 +251,7 @@ Compact rule catalog. For warning/error thresholds, see [Default Thresholds Refe
 - **Cohesion:** `cohesion.lcom` (rule); `cohesion.tcc`, `cohesion.lcc` (metrics only, no rule — used as inputs by `design.god-class`)
 - **Coupling:** `coupling.cbo`, `coupling.instability`, `coupling.distance`, `coupling.class-rank`, `coupling.unmatched-framework-namespace`
 - **Maintainability:** `maintainability.mi`
-- **Architecture:** `architecture.circular-dependency`, `architecture.layer-violation`, `architecture.unassigned-class`
+- **Architecture:** `architecture.circular-dependency`, `architecture.layer-violation`, `architecture.layer-declaration`, `architecture.unassigned-class`
 - **Duplication:** `duplication.clone`
 - **Code Smell:** `code-smell.boolean-argument`, `code-smell.count-in-loop`, `code-smell.debug-code`, `code-smell.empty-catch`, `code-smell.error-suppression`, `code-smell.eval`, `code-smell.exit`, `code-smell.goto`, `code-smell.superglobals`, `code-smell.long-parameter-list`, `code-smell.unreachable-code`, `code-smell.identical-subexpression`, `code-smell.constructor-overinjection`, `code-smell.unused-private`
 - **Security:** `security.hardcoded-credentials`, `security.sql-injection`, `security.xss`, `security.command-injection`, `security.sensitive-parameter`
@@ -258,3 +261,7 @@ Compact rule catalog. For warning/error thresholds, see [Default Thresholds Refe
 
 Disable a single rule: `--disable-rule=complexity.npath`. Disable a whole group: `--disable-rule=code-smell.*` (wildcard; matches descendants only, not `code-smell` itself).
 -->
+
+## Producers and channels
+
+Rule metadata names producers; a producer may publish several channels. Computed/health channel names and reporting levels come from the invocation snapshot, not a fixed count. Bare producer selectors address the producer; channel-name:level uses a declared channel code with one real level witness. Diagnostic roles may admit additional publication under only filters. See [Rule selection](../usage/cli-options.md#rule-options).

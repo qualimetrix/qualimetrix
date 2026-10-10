@@ -417,7 +417,7 @@ PHP;
     {
         $definitions = $this->collector->getMetricDefinitions();
 
-        self::assertCount(19, $definitions);
+        self::assertCount(18, $definitions);
 
         $metricNames = array_map(fn($d) => $d->name, $definitions);
         self::assertContains('size.method-count', $metricNames);
@@ -437,7 +437,7 @@ PHP;
         self::assertContains('design.is-data-class', $metricNames);
         self::assertContains('design.is-abstract', $metricNames);
         self::assertContains('design.is-interface', $metricNames);
-        self::assertContains('design.is-exception', $metricNames);
+        self::assertNotContains('design.is-exception', $metricNames);
         self::assertContains('design.woc', $metricNames);
 
         // Check collected at level
@@ -979,6 +979,7 @@ PHP;
 
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        \Qualimetrix\Core\Ast\NameResolution::resolve($ast);
 
         $this->collector->useDeclarationIndex(new FileDeclarationIndex());
 
@@ -1010,10 +1011,41 @@ PHP;
         }
     }
 
+    #[Test]
+    public function itLeavesExceptionClassificationToGlobalInheritanceEvidence(): void
+    {
+        $metrics = $this->collectMetrics('<?php namespace App; use RuntimeException as Be; class Failure extends be {}');
+
+        self::assertNull($metrics->get('design.is-exception:App\\Failure'));
+    }
+
+    #[Test]
+    public function itKeepsDistinctCountsForSameFileClassDeclarations(): void
+    {
+        $this->collectMetrics(<<<'PHP'
+<?php
+namespace App;
+class Twin { public function one(): void {} }
+if (false) {
+    class Twin {
+        public function one(): void {}
+        public function two(): void {}
+    }
+}
+PHP);
+
+        $visitor = $this->collector->getVisitor();
+        self::assertInstanceOf(MethodCountVisitor::class, $visitor);
+        $classes = array_values($visitor->getClassMetrics());
+        self::assertCount(2, $classes);
+        self::assertSame([1, 2], array_map(static fn(MethodCountMetrics $class): int => $class->methodCount(), $classes));
+    }
+
     private function collectMetrics(string $code): MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        \Qualimetrix\Core\Ast\NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $traverser->addVisitor($this->collector->getVisitor());

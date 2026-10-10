@@ -23,6 +23,11 @@ Maintainability Index uses this metric as its method-size input. See
 
 ## LOC (Lines of Code)
 
+`size.class-loc` counts the own source span of every named class-like declaration:
+classes, interfaces, traits and enums. Anonymous classes stay excluded. It is
+separate from whole-file LOC and namespace aggregate LOC. HTML class-like area
+uses this own value.
+
 **Collector:** `LocCollector`
 **Provides:** `size.loc`, `size.lloc`, `size.cloc`
 **Level:** File (physical project totals) and namespace source spans
@@ -54,6 +59,11 @@ Maintainability Index uses this metric as its method-size input. See
 line break ends its last line and does not open another, so a file ending in a
 newline has exactly `wc -l` lines, and a last line without a newline still
 counts.
+
+`LocCollector` receives the Run-owned snapshot through
+Measurement-owned `SourceMeasuringCollectorInterface`. Collection resets it before byte handoff
+and AST traversal. LOC, parsing and Inline extraction use the same bytes; LOC
+does not reopen source. The line-count formula is unchanged.
 
 For files with namespace declarations, namespace LOC/LLOC/CLOC use each
 `Namespace_` AST node's inclusive source span. Declarations before the first
@@ -112,6 +122,17 @@ class Calculator  // LLOC +1
 Each namespace block contributes its own structural counts, including zero
 counts for empty blocks. The physical file bag retains the whole-file totals used
 at project level.
+
+`ClassCountRule` judges the own `size.class-count` of every namespace, including
+parents. The published `size.class-count.sum` remains a subtree total for other
+consumers. Equality with the configured warning or error boundary is a finding;
+the defaults are 15 and 25 respectively.
+
+Selected rule population distinguishes an unpublished own count from a measured
+zero. The former cannot be judged; the latter is outside the nonempty namespace
+population. A positive count below the finding threshold is a healthy judgement.
+These population outcomes travel separately from findings and do not change the
+exit status.
 
 ### Example
 
@@ -316,7 +337,11 @@ contracts rather than these implementations.
 
 Rule IDs remain stable. `MethodCountCollector` publishes the method/property
 metrics and the WOC input consumed by design policy, while WMC remains the
-Measurement aggregation of callable CCN.
+Complexity-owned sum of method CCN on each exact class declaration.
+
+Exception ancestry classification (`design.is-exception`) belongs to Design's
+`DitGlobalCollector`. Size publishes no exception flag; method, accessor,
+property and WOC measurement remain independent of that classification.
 
 `design.woc` follows Lanza & Marinescu: functional public methods — neither accessor
 nor constructor — over all other public members, which are public methods
@@ -348,6 +373,10 @@ Size/
 └── PropertyCountRule.php
 ```
 
+LOC classifies physical lines using native PHP tokens: punctuation beside a
+comment still makes a code line. Namespace file contributions retain integer
+totals and contributing-file counts through subtree aggregation.
+
 Collectors keep visitor state per file and reset it between files. Named classes
 only are counted; anonymous classes never create class, method, or property
 evidence.
@@ -364,23 +393,28 @@ anonymous classes, methods, properties, thresholds, and property exclusions.
   role-based subdirectory.
 - `size.class-count`, `size.method-count`, and `size.property-count` and their
   metric keys retain their existing behaviour. `design.woc` is the Lanza & Marinescu
-  ratio described above; WMC stays the Measurement aggregation of callable CCN.
+  ratio described above; WMC stays the Complexity-owned sum of method CCN on each exact class declaration.
 - The seven owned tests remain discovered and cover anonymous-class exclusion,
   LOC, statement, method, property, and class counts.
 
 
-## Rule option key declarations
+## Declared options
 
-`ClassCountOptions`, `MethodCountOptions` and `PropertyCountOptions` declare
-their accepted option keys through
-`RuleOptionsInterface::acceptedOptionKeys()`: `enabled`, `error`, `threshold`,
-`warning` for the first two; `PropertyCountOptions` adds
-`exclude-promoted-only` and `exclude-readonly`. Each declaration transcribes
-the class's own constructor parameters plus the `threshold` shorthand. Those
-declarations are what `RuleOptionKeyRecognition` compares an incoming key against: a
-key none of them knows is refused with exit 3, at the rule's own level and
-inside a level slot alike.
+Size options declare key/value forms and bands through `acceptedOptionKeys()`.
+`RuleOptionSurface` registers those forms in `RulesSection`; framework enabled
+and root suppression keys are added once by Finding. `fromResolved` reads the
+judged snapshot, not a constructor-reflected or raw-array dictionary. Unknown
+keys refuse with their authored full path before Discovery. Empty maps preserve
+lower writes and effective warning/error bands must be coherent. Existing size
+algorithms, levels and numeric defaults are unchanged.
 
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+Class method and property populations use the exact declaration roster. A published zero is judged before severity selection; an absent value remains unjudged. Property exclusions keep their native strict flag comparisons and configured order.
+
+Gate construction and lazy declaration-metric admission use Finding-owned
+`AbstractRule` operations. Each rule retains its raw metric keys, coordinate,
+ordered predicates and failure reasons; a refused coordinate never reads its
+metric bag.

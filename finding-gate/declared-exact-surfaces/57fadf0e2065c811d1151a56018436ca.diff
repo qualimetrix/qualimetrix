@@ -1,0 +1,16 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 20041
++visible 20129
+@@ -460,1 +460,1 @@
+-            "size.class-count.sum": 1,
++            "size.class-count": 1,
+@@ -466,1 +466,2 @@
+-                "maintainability": 53.61744328167159
++                "maintainability": 53.61744328167159,
++                "overall": 80.32348865633432
+@@ -492,1 +493,2 @@
+-                "maintainability": 72.17046596900295
++                "maintainability": 72.17046596900295,
++                "overall": 97.19999999999999

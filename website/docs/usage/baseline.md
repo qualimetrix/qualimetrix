@@ -1,51 +1,121 @@
 # Baseline
 
-A baseline records accepted debt so an existing project can adopt Qualimetrix without treating every current finding as new work. Version 13 is a **reported-magnitude ceiling**, not a list of hashes to ignore: an existing group stays accepted only while it does not grow or become worse.
+A version 14 baseline records accepted groups as reported-magnitude ceilings.
+It preserves a deliberate acceptance, including its discovery exclusions.
 
 ## Create and use a baseline
 
-Capture the current measured findings into a new file:
-
 ```bash
 bin/qmx baseline:generate baseline.json src/
-```
-
-Then check against it:
-
-```bash
 bin/qmx check src/ --baseline=baseline.json
 ```
 
-Commit the file with the project so local development and CI use the same accepted boundary.
+Commit the reviewed file with your project. A comparable breach is promoted to
+Error; an inapplicable or incomparable group retains its normal severity.
 
-!!! warning "A baseline can make a warning fail"
+## Migrating layer findings after the declaration-evidence change
 
-    A finding that currently fires but exceeds its accepted boundary is promoted to Error. With the default `--fail-on=error`, it fails the run even if the rule's configured severity was Warning. A malformed or inapplicable entry never promotes a finding: it is reported as inert and the finding keeps its normal severity.
+`architecture.layer-violation` now belongs to the exact **source declaration**,
+including its file and declaration ordinal. Owned targets still distinguish
+occurrences: target order, duplicate declarations and counts are preserved.
+Parameter/return dependencies keep `type_hint`; promoted-property dependencies
+use `property_type`, and constant declarations use `constant_type`. Former
+`union_type` and `intersection_type` relation entries are inert; these syntax
+forms now live in the graph's `shape` object.
+
+Review the findings before changing acceptance. Keep the existing baseline;
+add new source identities and remove only explicitly selected old identities:
+
+```bash
+vendor/bin/qmx check src/ --baseline=baseline.json
+vendor/bin/qmx baseline:cleanup baseline.json src/
+vendor/bin/qmx baseline:cleanup baseline.json src/ --disable-rule=architecture.layer-violation
+vendor/bin/qmx baseline:update baseline.json src/ --only-rule=architecture.layer-violation --accept-new=architecture.layer-violation
+vendor/bin/qmx baseline:cleanup baseline.json src/ --remove=SELECTOR_FROM_REPORT
+```
+
+The first two cleanup commands are **read-only reports**. The ordinary report
+can name retired relation entries as inert; an old valid target-subject entry
+can remain outside coverage when exclusions prevent proving its absence.
+The second report deliberately leaves layer violations unmeasured and publishes
+the old layer selectors as not measured or malformed. Copy those selectors from
+that report, then run the final command once for each old layer entry you choose
+to remove. Do not reuse hashes from another project or infer a selector from an
+occurrence id. `--accept-new` only adds previously unseen groups; it neither
+loosens nor tightens existing ceilings. Unrelated tightened and suppress entries,
+recorded scope and exclusions remain intact. Neither `--force` nor a regenerated
+baseline is needed.
+
+The migration fixture has four old layer entries and five current source
+findings: its target annotation no longer hides an incoming violation. Move an
+intended outgoing-edge exception to its source declaration. A target annotation
+is reported unused only when directive coverage can judge it; a baseline with
+exclusions does not guarantee that answer. See [layer suppression](../rules/architecture.md#suppression).
 
 ## What is measured
 
-Baseline lifecycle commands measure the findings after source/configuration `@qmx-ignore` suppression and configured path or namespace exclusions. `check` uses that same set; its `--suppress-path` and `--suppress-namespace` options can safely narrow it further, but can leave an entry inert. The lifecycle commands do not accept those CLI-only exclusions, so capture and maintenance cannot silently use a different option surface. `--no-suppression-annotations` is report-only: it restores annotated findings after baseline measurement and never widens the set. `--report=git:...` likewise narrows presentation only.
+Capture and comparison use the same post-rule findings after inline suppression
+and configured path/namespace suppression, before report Git projection.
+`--no-suppression-annotations` restores report findings after this seam and does
+not widen measurement. Audit and configuration-error channels are not captured.
+Magnitude entries store complete vectors; occurrence entries store counts.
+Identity includes typed subject, channel, optional occurrence and dependency edge.
 
-Each baseline entry identifies a canonical typed subject, a channel, an optional semantic occurrence, and an optional dependency edge. The subject distinguishes exact declarations from logical classes and file/namespace/project aggregates. For a magnitude channel, the file stores the group's reported values only — its count is the length of that list, not a separate field; for an occurrence channel, it stores the count. The current group is accepted when it has no more findings at every severity level than the stored group. This handles repairs without guessing which individual finding disappeared.
+The configuration errors include the five layer-policy diagnostics (
+`architecture.coverage-gap`, `architecture.unreachable-layer`,
+`architecture.potential-shadow`, `architecture.empty-template`,
+`architecture.pending-layer-matched`) and the three inline-directive diagnostics (
+`annotation.unresolved-directive`, `annotation.unsupported-threshold`,
+`annotation.invalid-threshold`).
 
-The baseline does not make a non-firing rule fire. A finding that vanishes is stale, not proven fixed.
+Comparison requires complete analysis and compatible evidence for the whole
+identity group. Baseline-owned `RunCoverage` combines current paths, recorded
+paths/exclusions, `AnalysisCoverage`, metadata and subject-region evidence.
+Exact files can be judged without a complete Composer roster; namespaces and
+run-dependent channels require their wider region. Unknown metadata does not
+mean absence. Equal path sets and exclusion definitions can establish equality
+without a metadata scan; changed definitions require evidence about their delta.
+A project subject always requires whole-region coverage.
 
-Configuration-error channels never enter a baseline on any path: the five layer-policy diagnostics (`architecture.coverage-gap`, `architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow`, `architecture.empty-template`) and the three inline-directive diagnostics (`annotation.unresolved-directive`, `annotation.unsupported-threshold`, `annotation.invalid-threshold`) end the run unconditionally instead — see [Inline suppression](#inline-suppression) below.
+A missing exact file or declaration needs a positively present recorded root
+that contains its path before absence becomes stale. A directory alias can
+supply that evidence when its canonical target contains the subject. A removed
+recorded root or unknown metadata cannot. A run-wide producer's deleted exact
+subject can still be stale; a present subject requires its wider population.
+Without a current member proving PSR-4 containment, namespace absence needs the
+whole region. Without a baseline entry, `baseline:explain` instead requires a
+captured source root, a selected containing root and positive directory presence.
+
+A complete comparable missing group is **stale**. An absent unselected producer
+is **unmeasured**; an absent incomparable entry is **outside coverage**. A present
+incomparable group is **not-compared** and keeps its own severity, accepted level
+and reason. Incomplete analysis never establishes acceptance, breach or staleness.
+One nonfinite magnitude makes the entire group's magnitude vector unavailable;
+no finite fragment is compared or captured. Occurrence groups count all members.
+A comparable breach promotes every group member to Error. Suppress mode waives
+quantitative comparison after identity applicability is established.
 
 ## Lifecycle commands
 
-All analysis-bearing baseline commands accept the same configuration options needed to reproduce the measured set:
+The four analysing commands accept configuration, presets, rule selection/options,
+include-generated/include-autoload-dev, cache, workers and memory options.
+They do not accept CLI suppression narrowings. Incomplete analysis returns 4
+before mutation, even with --force. Existing bytes remain untouched.
+Check, update, cleanup, explain and rename-channels preflight present documents
+once before analysis/carry. Invalid grammar refuses early; configured channel
+semantics are resolved later from the same immutable byte snapshot. Storage and
+lock failures are environment exit 3.
 
-```text
---preset=PRESET
---rule-opt=RULE-OPT
---only-rule=ONLY-RULE
---disable-rule=DISABLE-RULE
---include-generated
---include-autoload-dev
-```
-
-The two `--include-*` flags decide what the project is — the paths a run with no paths analyses and the scope it is judged against — so a baseline captured without the flag a later `check` uses does not measure the same set. They also accept `--config=CONFIG`. They do **not** accept `--suppress-path` or `--suppress-namespace`, because those safe `check` narrowings would otherwise make lifecycle operations asymmetric. They also do not accept `--no-suppression-annotations`, which is report-only and cannot widen the measured set.
+Generate, update and writing cleanup prepare a private sibling before analysis.
+The parent must permit creation and replacement even when the final file exists.
+They publish complete bytes atomically after identity and content-hash checks;
+no-op update/cleanup preserve the final bytes and inode. SIGINT/SIGTERM before
+publication discard the own sibling and return 128 + signal when pcntl and
+exclusive signal ownership are available. Otherwise ordinary atomic publication
+proceeds without replacing foreign handlers, and interruption may leave the
+private sibling. Replacing handlers during a guarded operation is unsupported.
+SIGKILL, cleanup failure and already published targets are also outside that
+guarantee.
 
 ### Generate
 
@@ -54,23 +124,76 @@ bin/qmx baseline:generate baseline.json src/
 bin/qmx baseline:generate baseline.json src/ --mode=suppress --force
 ```
 
-`baseline:generate <baseline> [<paths>...]` captures every currently measured finding. Its default `--mode=ratchet` records a ceiling; `--mode=suppress` accepts each captured identity regardless of later count or magnitude. `--force` overwrites an existing baseline file and discards its recorded acceptances.
+Ratchet is the default mode. Suppress accepts a captured applicable identity
+regardless of quantitative growth. Force replacement discards old acceptance;
+it is not a migration. The destination parent must exist and permit atomic
+sibling publication. File modes, locking and content-hash CAS are preserved.
 
 ### Replace an older baseline
 
-```bash
-bin/qmx baseline:generate baseline-v13.json src/
+Only v14 is loadable. For v13 retain entries, scope and generated time, change
+version to 14 and explicitly add the original exclusion definition:
+
+```json
+"exclusions": {"patterns": ["subtree:vendor"], "generated": "excluded"}
 ```
 
-Only version 13 is loadable. Neither a version 5 hash nor a version 10 logical symbol key can infer the exact declaration subject, semantic occurrence, or dependency edge now required; a version 11 file cannot supply the shortened occurrence key or the derived `count`; and a version 12 declaration key stores a byte offset from which the declaration it meant cannot be recovered — there is no converter from any prior version. Run a fresh analysis, map or split every previously accepted group deliberately, review the result, and write a new v13 file. `baseline:generate --force` may replace bytes only after that review; it is not an automatic converter and does not infer old identity. The removed migration command has no alias or compatibility shim.
+Patterns use explicit exact/subtree/regex selectors; generated is included or
+excluded. Do not infer the old acceptance definition from current configuration.
+Unknown envelope, entry, edge or exclusion keys refuse with their position.
+Known unusable entry values remain inert. Older identity formats require
+reviewed remapping; fresh generation accepts new debt rather than converting it.
+A malformed subject bucket written as a JSON object keeps its object container
+when other subjects are updated. Adding an entry at that same subject refuses
+before replacing the file. Review the cleanup candidates and remove that bucket
+with `baseline:cleanup --remove=<selector>` before accepting the new entry;
+cleanup only lists candidates by default.
 
 ### Tighten after repairs
 
 ```bash
 bin/qmx baseline:update baseline.json src/
+bin/qmx baseline:update baseline.json src/ --accept-new=architecture.layer-violation
+bin/qmx baseline:update baseline.json src/ --record-exclusions
 ```
 
-`baseline:update <baseline> [<paths>...]` only moves an entry toward a stricter boundary. It never adds identities and leaves an absent identity unchanged. It refuses a run whose analysed scope does not cover the scope recorded in the file; `--force` overrides that scope guard.
+Ordinary update only tightens existing accepted groups. Its recorded-scope guard
+can be bypassed with --force, which cannot establish comparability or permit
+incomplete analysis. It preserves recorded
+scope, exclusions, inert payload and modes. Equal acceptance is `unchanged`;
+a no-op does not publish, change generated time or acquire a writer lock.
+Absent or incomparable groups are retained rather than converted into zero.
+
+`--accept-new=channel` is repeatable and additive: only new complete comparable
+measured identities of named selected channels are admitted. Existing caps are
+not tightened by this mode. Exact channel admission follows configuration and
+precedes analysis; undeclared, wildcard, level-qualified, configuration-error
+and `baseline.unused-entry` names refuse with exit 3.
+
+`--record-exclusions` requires exactly the recorded paths even with `--force`.
+It records the complete current exclusion definition and recaptures only groups
+whose sole comparison obstacle is the exclusion change, preserving modes.
+Other entries follow ordinary tightening. Unknown delta, changed generated
+policy without sufficient proof, incomplete analysis or unavailable required
+groups refuses the whole write. The options cannot combine.
+
+An absent `file:` or exact `declaration:` entry is removable as
+`exclusions-removed-population` only
+when a complete inventory and the exact recorded-scope run prove its own
+present PHP file newly excluded, with unchanged generated policy. Cleanup
+offers the same selector. Relation entries without source provenance still
+refuse when their required group is unavailable. Update names every outcome
+before refusing the whole write; successful entries are never published alone.
+`--accept-new` uses the ordinary scope guard; `--force` bypasses only that guard.
+
+Repeated JSON member names refuse only for envelope and subject keys in a fully
+recognized canonical layout. Entry objects and noncanonical fallback retain
+native `json_decode` last-member behavior; duplicate detection is not guaranteed
+there, including a canonical prefix followed by a declined layout.
+
+Normalized accepted payload is preserved for arbitrary human JSON input.
+Exact unchanged entry bytes are guaranteed only for canonical writer-produced
+entries; arbitrary field order and numeric spelling may be normalized.
 
 ### Inspect and explicitly remove stale entries
 
@@ -79,7 +202,12 @@ bin/qmx baseline:cleanup baseline.json src/
 bin/qmx baseline:cleanup baseline.json src/ --remove=<selector>
 ```
 
-Without `--remove`, `baseline:cleanup <baseline> [<paths>...]` only lists candidates and never writes the file. Each candidate names its reason: `nothing reported for this identity` means the run measured the entry's channel at the level of its subject and reported nothing; `not measured: this invocation did not run the rule for this channel at this level` means the run left that channel out at that level, so its absence says nothing about the code. The level is the entry's own: `--disable-rule=coupling.cbo:namespace` marks a namespace entry of `coupling.cbo` as not measured while its class entries are still judged, and so does a level switched off in the rule's options (`class: { enabled: false }`), as well as `--only-rule`, `--disable-rule` or `enabled: false` for the whole rule. A copy of a duplicate block that nothing reports any more is named by its occurrence hash rather than by a file — `project: duplication.clone [<occurrence>]` — because that hash is all the baseline stores for it; each copy has a selector of its own. Repeat `--remove=<selector>` for exactly the entries you have reviewed. There is no bulk removal: absence can be caused by a configuration change, not only a repair. `--force` has the same scope-guard meaning as `baseline:update`.
+Default cleanup lists candidates without writing. Remove only reviewed selectors;
+repeat --remove for several entries. A shrinking group that still fires is not
+stale. Unmeasured/outside entries do not prove repair. Old undeclared subject
+levels remain inert rather than becoming zero-count groups. If a selector names
+only inert duplicate-identity contenders for the same identity, removing it
+removes every contender. Other selector collisions still refuse as ambiguous.
 
 ### Carry a baseline onto renamed channels
 
@@ -88,120 +216,40 @@ bin/qmx baseline:rename-channels baseline.json channels.tsv
 bin/qmx baseline:rename-channels baseline.json channels.tsv --format=json
 ```
 
-`baseline:rename-channels <baseline> <map>` rewrites the `channel` field of the
-entries a declared map names, and nothing else. It **runs no analysis**: subject
-keys, `occurrence`, `count`, `magnitudes`, `mode`, `edge`, `scope` and
-`generated` are carried through untouched, and no project code is read. Use it
-when an upgrade renames a channel you have accepted debt on, instead of
-regenerating — a regeneration silently accepts whatever the tree has
-accumulated since.
-
-The map is tab-separated with the header `old`, `new`, `reason`, one row per
-rename; blank lines and `#` comments are skipped:
-
-```text
-old	new	reason
-complexity.cyclomatic	complexity.ccn	renamed in vX.Y
-```
-
-Of the file itself it refuses exactly what loading it would refuse, and nothing
-more; the map has refusals of its own. So it is refused, with the file left
-byte-identical, when: the file is not version
-13; its envelope is not a readable baseline document, including a `generated`
-that is not an ISO 8601 datetime or a `scope` that is not a list of paths; two
-rows rename one name; two rows produce one name; a row's two sides are equal;
-one row's target is renamed again by another; or *this carry* would give two
-entries in one subject a single identity — a duplicate the file already held is
-carried, not refused, even when it stands on a renamed channel. A declared
-rename that matches nothing in this file is reported, not refused. Exit codes:
-`0` carried (including "nothing matched"), `3` refused — on content, on the
-baseline or the map not being a readable file, or on a malformed `--format`
-value; every refusal takes the same code regardless of which of those caused
-it. A refusal is reported in the chosen format: under `--format=json` it is
-the `{error, exit_code, position}` envelope every other machine-readable refusal in the
-tool uses, not a bespoke `error`-only object.
-
-Two consequences are worth knowing before you run it:
-
-- **A new name is not checked against the channels this build declares.** The
-  carry is released before the renames it exists to perform, so until the
-  release that declares the new name lands, `check` reports a carried entry as
-  one it cannot apply. That intermediate state is by design.
-- **Entry selectors change.** A selector is a digest of the identity, which the
-  channel name is part of, so a saved `baseline:cleanup --remove=<selector>`
-  stops addressing a carried entry. Re-read the selectors from a fresh
-  `baseline:cleanup` listing.
-
-Entries this build cannot read are carried rather than dropped, and counted in
-the report. The count is deliberately narrower than what `check` calls inert:
-the carry runs no analysis, so it only counts what the document itself
-shows. Of the five kinds it counts, two still have a readable `channel` and
-are renamed like any other entry — one whose `occurrence` or `edge` is
-malformed, and one that already shared its identity with another. The other
-three have no channel for the map to act on and are carried unchanged: an
-entry that is not an object, one without a readable `channel`, and a subject
-that stores its entries as something other than a JSON array. Being counted
-never means dropped either way — an unreadable entry is never removed from
-the file — but only the first two are renamed onto the new spelling.
-
-Renaming a channel can move an entry among its siblings. The carried file
-places every line in the same canonical order the product itself writes, so a
-later command that rewrites the file does not move a line again. Each line
-keeps the bytes the file spelled it in, which is what lets a file written by
-another build come through unreshaped; a hand-edited line whose fields are in
-an unusual order is therefore re-rendered in place — not moved — the next time
-a command rewrites the file.
+A tab-separated map has old/new channel names. The command analyses no source,
+substitutes only named channel values, preserves entries/scope/exclusions/generated,
+and refuses newly created identity collisions. Shared closed grammar applies;
+unknown keys are not carried. Entry selectors change when channel identity changes.
 
 ### Explain a boundary
 
 ```bash
-bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --baseline=baseline.json
-bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --channel=complexity.ccn
+bin/qmx baseline:explain 'class:App\OrderService' src/ --baseline=baseline.json
 ```
 
-`baseline:explain <symbol> [<paths>...]` shows the accepted level, what fires now, the configured threshold, and any `@qmx-threshold` override. Use `--baseline=BASELINE` to include accepted levels and `--channel=CHANNEL` to restrict the answer.
+Separate baseline and now lines show independent acceptance and current evidence,
+including without a baseline or with an inert entry. Current states are reported,
+nothing reported, not measured, outside coverage, not compared and level not
+reported. Undeclared levels list admitted levels. Unknown channel shape stays
+unknown; nonfinite magnitude groups show total/missing counts without inventing a
+partial vector. Stored caps, suppress mode and inert reason stay visible.
 
-A symbol absent from both the current analysis and the baseline is invalid input,
-not a clean result. A baseline-only symbol remains explainable and is labelled as
-absent from the current scope or result.
+### Intentionally empty excluded input
 
-The `baseline:` line says whether `check` compares the two numbers at all:
-
-| Output                                                                                                         | Meaning                                                                                                      |
-| -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `accepted 25; now 31`                                                                                          | The entry is applied: the current group is compared against the accepted level.                              |
-| `accepted 24 (mode: suppress, accepted whatever is reported); now 32`                                          | A `mode: suppress` entry: the numbers are shown, but the group is accepted whatever they are.                |
-| `accepted 25, 25; now 20, and 1 without a finite value, so the entry is not applied and the group is reported` | A member reports no finite number, so `check` does not compare the group and reports it at its own severity. |
-| `present but not applied (<reason> — <detail>) [<selector>]; now …`                                            | The file holds an entry for this identity that cannot be applied — the same entry `check` lists as inert.    |
-| `(none)`                                                                                                       | The file holds no entry for this identity.                                                                   |
-| `…; now not measured (this invocation did not run the rule for this channel at this level)`                    | The run left the channel out at the level of this subject, so an empty group says nothing about the code.    |
-
-A line about the symbol whose identity could not be read at all is listed separately as
-`Unreadable baseline entry [<selector>]`, with the reason `check` gives for it.
-
-A `--baseline` file (for `check` and `baseline:explain`) or a `<baseline>` argument (for
-`baseline:update` and `baseline:cleanup`) that does not exist, is not a regular file (a directory, for example) or cannot be read is
-refused with exit 3 before any analysis runs. `baseline:generate --force` refuses a destination
-it cannot read, or one that is not a regular file, the same way.
-
-All lifecycle commands require complete analysis. A parse or processing failure
-returns exit 4 before any baseline is interpreted, classified, created, or
-mutated. `--force` does not override this invariant; existing destinations remain
-byte-identical.
+A complete run with no analysed files but deliberate authored/generated exclusions
+can generate an empty baseline. Incomplete input still takes priority (exit 4).
+Unknown metadata or exclusion is never proof that an accepted subject disappeared.
 
 ## Stale, inert, and resolved entries
 
-With `--baseline`, `check` reports stale entries, inert entries, and a scope mismatch without failing the run or disabling other entries. Use `--show-resolved` to count entries whose complete identity no longer appears in the measured set. A group that shrinks but still fires is not resolved.
+--show-resolved counts complete comparable identities that disappeared, not
+individual members repaired inside a surviving group. Stale and inert entries
+produce the [baseline audit warning](../rules/baseline.md). Unselected audit and
+uncompared entries retain count-only stderr diagnostics, without path dumps.
+Full ceiling judgement precedes Git/hook projection; project audit warnings remain
+visible beside selected file findings. Narrow Run-dependent channels can be
+not-compared rather than accepted or promoted.
 
-An entry over a closure, over a member of an anonymous class, or over one of two
-declarations sharing a name in one file is keyed by a rank. Adding, removing, or
-moving the declarations that rank counts renumbers it, and the vacated number is
-reused — so the entry is not reported stale, its acceptance moves to whatever
-holds the number now. Regenerate after such an edit.
-
-```bash
-bin/qmx check src/ --baseline=baseline.json --show-resolved
-```
 
 ## Inline suppression
 
@@ -213,6 +261,95 @@ Use an inline suppression for an intentional exception rather than silently acce
 | `@qmx-ignore * [-- reason]`                   | All rules on a symbol | `@qmx-ignore * -- Generated mapper`                           |
 | `@qmx-ignore-next-line <channel> [-- reason]` | Next line             | `@qmx-ignore-next-line code-smell.exit -- CLI entry point`    |
 | `@qmx-ignore-file [channel] [-- reason]`      | Whole file            | `@qmx-ignore-file` or `@qmx-ignore-file -- Generated code`    |
+
+### Comment-line grammar
+
+A tag starts its **physical comment line**, after whitespace and comment
+decoration (`//`, `/*`, `*`, `#`). A one-line `/** @qmx-ignore ... */`
+is valid: PHP source may precede the comment, but prose inside the comment may
+not precede the tag. A later exact tag in prose is refused as
+`annotation.unresolved-directive`; write separate comment lines for separate
+tags. Arguments must stay on the tag's own line, and a closing `*/` is never
+an argument.
+
+The tag spellings `@qmx-ignore`, `@qmx-ignore-next-line`,
+`@qmx-ignore-file` and `@qmx-threshold` are exact. Near spellings at line start,
+including case changes, underscores, spaces or a missing separator/`@`,
+are reported as typos rather than silently ignored. Ordinary prose such as
+`qmx ignores` is not a directive.
+
+### Quote examples without addressing them
+
+On a single line, surround an example with matching runs of one or more
+backticks. They must have equal lengths; between the opening run and the tag
+there may be only whitespace, comment decoration or backticks. A lone tick,
+unequal lengths, or prose before the tag inside the span do not quote it.
+For example, `` Write `@qmx-ignore complexity.ccn` `` documents a tag,
+while `` `example @qmx-ignore complexity.ccn` `` is refused.
+
+For multiline examples, open a fence after whitespace/decoration with at least
+three backticks or tildes. The opener may carry an info suffix, but a backtick
+opener's suffix cannot contain a backtick. A closer uses the same character
+with at least the opening length, followed only by whitespace and an optional
+comment closer. A shorter or mixed closer does not close it. A closed fence
+quotes its contents; an unclosed fence reports directive-shaped lines inside
+it as refusals and names the opening line.
+
+### Declaration binding and member reach
+
+A declaration-form suppression binds to the measured declaration it stands
+on. Docblocks anywhere in a declaration header, including between attribute
+groups or between `function` and its name, belong to that declaration.
+Extraction reads the original source without modifying the cached AST.
+
+A closure or arrow function binds when it is the direct value of an argument,
+array element, return statement, expression statement or assignment chain
+(`=` or `??=`). A named argument or array key before that value is allowed.
+A call, ternary, array wrapper or other expression merely containing a closure
+does not bind to it: move the comment directly before `function` or `fn`.
+A statement containing no measured declaration is refused; use the physical
+next-line form when that is the intended scope.
+
+| Location of `@qmx-ignore`                           | Suppression reach                                                                |
+| --------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Class, interface, trait or enum                     | Whole class-like declaration and its measured callable members                   |
+| Method                                              | Whole method; class findings located on that method's lines                      |
+| Function, closure, arrow function or property hook  | Whole callable                                                                   |
+| Property with hooks                                 | Whole hooks; class findings on the property's lines                              |
+| Property without hooks, class constant or enum case | Class findings on that member's lines                                            |
+| Parameter                                           | Callable findings on that parameter's lines                                      |
+| Promoted parameter                                  | Parameter lines in callable and class findings; whole property hooks, if present |
+
+A member annotation cannot suppress a whole-class finding located on the class
+line or a finding on a neighbouring member. Reach uses inclusive **line**
+ranges, so parameters sharing a line cannot be distinguished by column.
+An explicit `:level` must be declared by the channel and reachable at this
+location: `:class` on a method or promoted parameter is lawful;
+`:callable` on a constant or property without hooks is refused.
+A bare channel selector covers the reachable levels without inventing another
+level check.
+
+`@qmx-threshold` does **not** gain member containment: class-like declarations
+retune themselves and their measured callables; methods/functions/closures/
+arrows/hooks retune themselves; a hooked property retunes its hooks.
+A plain property, constant, enum case or parameter has no threshold binding.
+
+### Physical sites and blanket controls
+
+Every read tag is one authored site even if it creates several declaration
+bindings. Suppressions and threshold diagnostics retain the tag's byte
+position: identical tags in two comments on one line remain separate sites.
+A next-line site's reported line is the tag line; its target is the line
+after the end of the comment, including for multiline comments.
+Threshold overrides do not carry a position, so overrides of the same rule on
+the same line still coalesce.
+
+`@qmx-ignore *` and a bare `@qmx-ignore-file` are judged effective when they
+silence a produced finding and inert when they do not. They cannot silence
+`annotation.unused-directive` or `duplication.clone`, and configuration-error
+findings remain exempt from annotation suppression. An explicit selector
+addressing either banned channel is refused; declaration/level reach is checked
+before the ban.
 
 ### Reason separator
 
@@ -245,7 +382,7 @@ A bare prefix without the star (`@qmx-ignore complexity`) is an error, not a gue
 Suppression "complexity" addresses no channel. Addressable names closest to it: complexity.wmc.
 ```
 
-Every rule now reports through exactly one channel, but the channel itself can report at more than one level of the symbol tree — a class-level and a namespace-level view of coupling, or a method-level and a class-level view of complexity. The bare channel name addresses **every** level at once; the rules below are the ones where that matters, because their two levels disagree often enough that suppressing only one is the common case:
+A producer can publish several channels. Each channel can also report at more than one level of the symbol tree — a class-level and a namespace-level view of coupling, or a method-level and a class-level view of complexity. The bare channel name addresses **every** level at once; the rules below are the ones where that matters, because their two levels disagree often enough that suppressing only one is the common case:
 
 | Channel                | Levels               |
 | ---------------------- | -------------------- |
@@ -273,11 +410,9 @@ A directive that names something invalid, or that no longer fires, is not silent
 | `annotation.invalid-threshold`     | the `@qmx-threshold` payload itself is malformed                                                                                                                                                                                                                                                       |
 | `annotation.unused-directive`      | the directive is valid but nothing it addressed fired this run — ordinary cleanup debt                                                                                                                                                                                                                 |
 
-Only `annotation.unused-directive` behaves like an ordinary finding: it defaults to `Info`, its severity is configurable via the `unused_directive_severity` rule option, and it can be baselined, dropped by the top-level `suppress_paths` or narrowed by a git scope like any other channel. `suppress_namespaces` does not reach it — the finding's subject is the file the annotation sits in, which carries no namespace — and neither do the rule's own exclusions, which run before this channel is assembled. It is the one channel no `@qmx-ignore` can silence — a directive addressing it is refused as an `annotation.unresolved-directive` — so a baseline entry is the way to accept it in place. `@qmx-threshold` never counts toward it.
+Only `annotation.unused-directive` behaves like an ordinary finding: it defaults to `Warning`, its severity is configurable via the `unused-directive-severity` rule option (set `info` explicitly for the former severity), and it can be baselined, dropped by the top-level `suppress_paths` or narrowed by a git scope like any other channel. `suppress_namespaces` does not reach it — the finding's subject is the file the annotation sits in, which carries no namespace — and neither do the rule's own exclusions, which run before this channel is assembled. Like `duplication.clone`, no `@qmx-ignore` can silence it — a directive addressing it is refused as an `annotation.unresolved-directive` — so a baseline entry is the way to accept it in place. `@qmx-threshold` never counts toward it.
 
-An inline same-line comment is not supported.
-
-A tag that is misspelled, and a `@qmx-ignore` written above a statement or on a property, used to do nothing quietly; both are now `annotation.unresolved-directive` errors. See [Forms that never become a directive](../rules/annotation.md#forms-that-never-become-a-directive).
+A tag with a typo, wrong line placement or no valid declaration binding is refused; a property suppression now has bounded member reach. See [Forms that never become a directive](../rules/annotation.md#forms-that-never-become-a-directive).
 
 ### View what annotations hide
 
@@ -306,6 +441,8 @@ final class ComplexStateMachine
 @qmx-threshold <rule> warning=<number> [error=<number>] [-- <reason>]
 ```
 
+Duplication is an explicit exception: `@qmx-threshold duplication.clone` is refused with `annotation.unsupported-threshold` because that rule does not support local overrides.
+
 `@qmx-threshold` addresses the **rule** by its exact name — never a channel, and never a level. A threshold belongs to the rule's one options object, not to an individual level, so `@qmx-threshold complexity.ccn:callable` is an error even though `complexity.ccn` reports at two levels; use the rule name `complexity.ccn` instead, or narrow with `--rule-opt` if only one level's options need to change:
 
 ```text
@@ -317,3 +454,17 @@ producing rule by its own name: it does not distinguish levels (ADR 0024). Retun
 This is the mirror image of `@qmx-ignore`, which always addresses the channel — the asymmetry is deliberate. `@qmx-threshold` on a disabled rule is valid and silent: enabledness is an execution filter, not a fact about whether the rule name exists.
 
 Numbers are non-negative. The explicit form accepts only `warning` and `error`; a non-empty reason follows `--` or an em dash. Class overrides apply inside the class (including methods), method overrides apply to that method, and the smallest matching source span wins. Prefer this to `@qmx-ignore` when a useful limit remains.
+
+### Byte-named entries
+
+Canonical subject components escape literal `%` as `%25`, invalid bytes as
+`%XX`, and reserved declaration-file `#` as `%23`. These identities remain
+byte-distinct. Old entries for affected paths can become unmatched after an
+upgrade: review and migrate only those entries, without regenerating the
+baseline wholesale.
+
+Scope and exclusion selectors still carry raw input facts. A baseline whose
+scope or selector is not UTF-8 refuses with a native encoding reason; these
+fields cannot be renamed without changing their comparisons. Analyse a
+containing UTF-8 directory to record a byte-named entry. Raw-byte JSON
+selectors remain unsupported.

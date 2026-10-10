@@ -193,7 +193,7 @@ final class ConsoleLoggerTest extends TestCase
 
         (new ConsoleLogger($output, LogLevel::WARNING))->warning('Failed to parse file', ['file' => "src/\xB1\x31.php"]);
 
-        self::assertStringContainsString("\"file\":\"src/\u{FFFD}1.php\"", $output->fetch());
+        self::assertStringContainsString("\"file\":\"src/%B11.php\"", $output->fetch());
     }
 
     #[Test]

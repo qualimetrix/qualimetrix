@@ -77,7 +77,10 @@ final class LcomCollector extends AbstractCollector implements DeclarationIndexA
 
         \assert($this->visitor instanceof LcomVisitor);
 
-        foreach ($this->visitor->getClassData() as $classFqn => $classData) {
+        foreach ($this->visitor->getClassData() as $classData) {
+            $classFqn = $classData->namespace !== null && $classData->namespace !== ''
+                ? $classData->namespace . '\\' . $classData->className
+                : $classData->className;
             $lcom = $this->adjustedLcom($classData);
 
             $bag = $bag->with(MetricName::COHESION_LCOM . ':' . $classFqn, $lcom);

@@ -31,18 +31,17 @@ final class JudgedMetricDeclarationGuard
      * declaration would buy a build-time check with a permanent dependency
      * edge between two capabilities. The composition root already holds both sides.
      *
-     * An aggregate spelling counts as existing: `size.class-count.sum` is what
-     * {@see \Qualimetrix\Analysis\Evidence\Size\ClassCountRule} actually
-     * reads, and {@see MetricName::base()} strips a suffix only when it is a
+     * An aggregate spelling counts as existing: {@see MetricName::base()}
+     * strips a suffix only when it is a
      * real {@see \Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy}
      * value — so `complexity.ccn.max` resolves and `complexity.ccn.mux` does
      * not. What this does **not** check is that the key is the one the rule
      * body actually reads: that is a property of an observed run, and only a
      * run comparing published magnitudes against the declaration can say it.
      *
-     * **The channels this check says nothing about — six, named, so the set
-     * cannot grow in silence.** Five are static channels that declare no
-     * judged metric at all, and the sixth is a whole run-time family:
+     * **The channels this check says nothing about — seven, named, so the set
+     * cannot grow in silence.** Six are static channels that declare no
+     * judged metric at all, and the seventh is a whole run-time family:
      *
      * 1. `architecture.circular-dependency` — magnitude, publishes a cycle's
      *    member count from the dependency graph.
@@ -57,7 +56,10 @@ final class JudgedMetricDeclarationGuard
      *    `occurrence` (ADR 0017 point 5), so this check stays silent over a
      *    live `coupling.class-rank` value. The trade is recorded, not
      *    overlooked.
-     * 6. every channel of the computed-metric family — resolved at run time
+     * 6. `cohesion.unmatched-exclude-method` — a secondary LCOM channel,
+     *    publishes magnitude 1 per unmatched configured method name from
+     *    whole-project declaration evidence, not the primary LCOM metric.
+     * 7. every channel of the computed-metric family — resolved at run time
      *    from configuration, so no build-time pass can see its keys at all.
      *
      * @param class-string $class
@@ -69,6 +71,10 @@ final class JudgedMetricDeclarationGuard
         ChannelShape $declaredShape,
         ChannelDeclaration $declaration,
     ): void {
+        if ($declaration->readsRunEvidence && $declaration->judges !== null) {
+            throw new LogicException(\sprintf('Channel "%s" declared by %s names catalog judges and explicit run evidence. Reach must have one source.', $key, $class));
+        }
+
         $judges = $declaration->judges;
 
         if ($judges === null) {

@@ -12,5 +12,5 @@ namespace Qualimetrix\Infrastructure\Console\Refusal;
 enum ConsoleExitCode: int
 {
     case Refusal = 3;
-    case InternalError = 1;
+    case InternalError = 5;
 }

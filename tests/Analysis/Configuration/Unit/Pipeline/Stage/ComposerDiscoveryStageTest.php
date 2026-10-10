@@ -9,26 +9,26 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
-use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
-use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ComposerDiscoveryStage;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
 
 #[CoversClass(ComposerDiscoveryStage::class)]
 final class ComposerDiscoveryStageTest extends TestCase
 {
-    private ComposerAutoloadPathReaderInterface&MockObject $reader;
+    private ComposerManifestReaderInterface&MockObject $reader;
 
     protected function setUp(): void
     {
-        $this->reader = $this->createMock(ComposerAutoloadPathReaderInterface::class);
+        $this->reader = $this->createMock(ComposerManifestReaderInterface::class);
     }
 
     #[Test]
     public function itHasComposerSourceIdentity(): void
     {
-        $this->reader->expects(self::never())->method('productionAutoloadTargets');
+        $this->reader->expects(self::never())->method('read');
         $stage = new ComposerDiscoveryStage($this->reader);
         self::assertSame(10, $stage->priority());
         self::assertSame('composer', $stage->name());
@@ -37,10 +37,9 @@ final class ComposerDiscoveryStageTest extends TestCase
     #[Test]
     public function itReturnsNullWhenComposerDeclaresNoAutoloadTargets(): void
     {
-        $this->reader->expects(self::once())->method('productionAutoloadTargets')
-            ->with('/project/composer.json')->willReturn(null);
-        $this->reader->expects(self::once())->method('developmentAutoloadTargets')
-            ->with('/project/composer.json')->willReturn(null);
+        $root = AbsolutePath::fromString('/project');
+        $this->reader->expects(self::once())->method('read')->with($root)
+            ->willReturn((new \Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestDecoder())->decode($root, '{}'));
 
         self::assertNull((new ComposerDiscoveryStage($this->reader))
             ->apply(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project'))));
@@ -49,10 +48,9 @@ final class ComposerDiscoveryStageTest extends TestCase
     #[Test]
     public function itPublishesDiscoveredPathsFromTheInvocationDirectory(): void
     {
-        $this->reader->expects(self::once())->method('productionAutoloadTargets')
-            ->with('/project/composer.json')->willReturn(['src', 'lib']);
-        $this->reader->expects(self::once())->method('developmentAutoloadTargets')
-            ->with('/project/composer.json')->willReturn(['tests']);
+        $root = AbsolutePath::fromString('/project');
+        $this->reader->expects(self::once())->method('read')->with($root)
+            ->willReturn((new \Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestDecoder())->decode($root, '{"autoload":{"classmap":["src","lib"]},"autoload-dev":{"classmap":["tests"]}}'));
 
         $layer = (new ComposerDiscoveryStage($this->reader))
             ->apply(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project')));
@@ -74,7 +72,7 @@ final class ComposerDiscoveryStageTest extends TestCase
     #[Test]
     public function itKeepsTheProductionAndDevelopmentTargetsApart(): void
     {
-        $this->reader->expects(self::never())->method('productionAutoloadTargets');
+        $this->reader->expects(self::never())->method('read');
         $directory = sys_get_temp_dir() . '/qmx-composer-discovery-' . bin2hex(random_bytes(6));
         mkdir($directory, 0777, true);
         file_put_contents($directory . '/composer.json', json_encode([
@@ -83,7 +81,7 @@ final class ComposerDiscoveryStageTest extends TestCase
         ], \JSON_THROW_ON_ERROR));
 
         try {
-            $layer = (new ComposerDiscoveryStage(new ComposerReader()))
+            $layer = (new ComposerDiscoveryStage(new ComposerManifestReader()))
                 ->apply(new ConfigurationResolutionRequest(AbsolutePath::fromString($directory)));
 
             self::assertNotNull($layer);

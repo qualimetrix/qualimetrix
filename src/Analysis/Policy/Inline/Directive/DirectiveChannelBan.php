@@ -21,18 +21,15 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
  * refused where it is written.
  *
  * `duplication.clone` reports one finding on each copy of a duplicate block,
- * and each copy has a project-level identity of its own — the block's
- * content, the copy's file and its place among the block's copies there
+ * with its file as the subject and the block content and copy position as
+ * its occurrence identity
  * ({@see \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule::channelDeclarations()}
- * declares {@see \Qualimetrix\Core\Symbol\SymbolLevel::Project} and nothing
- * else). A symbol directive binds to the declaration it is written on, and the
- * project is never that declaration, so it would silence nothing. A file or
- * next-line directive does reach the copy it is written beside, and that is
- * the reason it is refused rather than allowed: it silences one copy of a
- * block whose copies are the same debt, while every other copy still reports
- * the block and names the silenced one. The silenced copy never reaches a
- * baseline, so a copy pasted together with such a directive would pass it
- * unseen.
+ * declares {@see \Qualimetrix\Core\Symbol\SymbolLevel::File}). A symbol
+ * directive binds to a declaration, not the file aggregate. A file or
+ * next-line directive could silence only the nearby copy while other copies
+ * still report the block and name the silenced one. The silenced
+ * copy would never reach a baseline, so a copy pasted with such a directive
+ * could pass unseen. Every inline form that reaches this channel is refused.
  *
  * **Two questions, one list, and that is why they live together.** Can this
  * target be addressed at all ({@see problemWith()}, read by the two halves that
@@ -47,11 +44,10 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
  * channel is ordinary debt — ratchetable, dropped by the top-level
  * `suppress_paths`, inside a git scope like any other — and passes every stage
  * after suppression. Only the configuration errors are lifted out of the
- * pipeline, and neither channel is one. Two exclusions never reached
- * `annotation.unused-directive` and still do not: `suppress_namespaces`
- * matches a namespace, and this finding's subject is the file; the producer's
- * own `exclude_*` keys run inside rule execution, and the channel is
- * assembled after it. The working path for `duplication.clone` is
+ * pipeline, and neither channel is one. A file aggregate has no namespace
+ * for `suppress_namespaces` to match. The producer's own `exclude_*` keys run
+ * inside rule execution, while `annotation.unused-directive` is assembled
+ * afterward. The working path for `duplication.clone` is
  * channel-level: `disabled_rules: [duplication.clone]` /
  * `--disable-rule=duplication.clone`, or accepting the block — all of
  * its copies — in the baseline.
@@ -67,7 +63,7 @@ final readonly class DirectiveChannelBan
      * capability through the container and fails if a rename on the rule's
      * side leaves this file's copy unowned.
      */
-    private const string PROJECT_ONLY_DUPLICATION_NAME = 'duplication.clone';
+    private const string INTERFILE_DUPLICATION_NAME = 'duplication.clone';
 
     public function __construct(
         private ChannelIdentityInterface $identity,
@@ -77,7 +73,7 @@ final readonly class DirectiveChannelBan
     public static function covers(string $code): bool
     {
         return $code === InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME
-            || $code === self::PROJECT_ONLY_DUPLICATION_NAME;
+            || $code === self::INTERFILE_DUPLICATION_NAME;
     }
 
     /**
@@ -124,16 +120,16 @@ final readonly class DirectiveChannelBan
                 InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME,
                 Suppression::REASON_SEPARATOR,
             ),
-            self::PROJECT_ONLY_DUPLICATION_NAME => \sprintf(
-                'Suppression "%s" addresses "%s", which reports every copy of a duplicate block as one'
-                . ' project-wide debt: no declaration a symbol directive binds to is the project, and a file or'
+            self::INTERFILE_DUPLICATION_NAME => \sprintf(
+                'Suppression "%s" addresses "%s", which reports each copy of a block computed across the'
+                . ' selected file set on its own file: a symbol directive cannot bind to that file aggregate, and a file or'
                 . ' next-line directive would silence one copy while the others still report the block.'
                 . ' Disable the rule instead: "disabled_rules: [%s]" in the configuration, or'
                 . ' "--disable-rule=%s", or accept the block in the baseline. A reason goes after "%s".',
                 $raw,
-                self::PROJECT_ONLY_DUPLICATION_NAME,
-                self::PROJECT_ONLY_DUPLICATION_NAME,
-                self::PROJECT_ONLY_DUPLICATION_NAME,
+                self::INTERFILE_DUPLICATION_NAME,
+                self::INTERFILE_DUPLICATION_NAME,
+                self::INTERFILE_DUPLICATION_NAME,
                 Suppression::REASON_SEPARATOR,
             ),
             default => throw new LogicException(\sprintf(

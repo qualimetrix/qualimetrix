@@ -10,7 +10,6 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
-use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\CliStage;
@@ -19,14 +18,17 @@ use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
-use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
 use Qualimetrix\Reporting\Configuration\OutputFormatResolver;
+use Qualimetrix\Reporting\Configuration\OutputFormatSection;
+use Qualimetrix\Reporting\Configuration\OutputFormatVocabulary;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 use Symfony\Component\Yaml\Yaml;
 
 #[CoversClass(ConfigurationPipeline::class)]
@@ -62,16 +64,16 @@ final class FullPipelineIntegrationTest extends TestCase
 
         $document = $this->resolve(['paths' => ['app'], 'format' => 'json'], ['strict']);
 
-        $run = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerReader())))->resolve($document);
-        $finding = (new FindingConfigurationResolver())->resolve($document, new FindingCliOverrides());
+        $run = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerManifestReader())))->resolve($document);
+        $finding = FindingConfiguration::fromDocument($document);
 
         self::assertSame([$this->directory . '/app'], array_map(
             static fn($path): string => $path->value(),
             $run->paths,
         ));
-        self::assertSame('json', (new OutputFormatResolver(self::formatterRegistry()))->resolve($document)->value);
-        self::assertContains('complexity.npath', $finding->selection->disabled);
-        self::assertSame(12, $finding->ruleOptions->rules['complexity.ccn']['callable']['warning']);
+        self::assertSame('json', (new OutputFormatResolver(new OutputFormatVocabulary(self::formatterRegistry())))->resolve($document)->value);
+        self::assertContains('complexity.npath', $finding->document->get('disabled_rules')?->plain() ?? []);
+        self::assertSame(12, $finding->document->get('rules', 'complexity.ccn', 'callable', 'warning')?->plain());
         self::assertSame(
             ['defaults', 'composer.json', 'preset:strict', 'qmx.yaml', 'cli'],
             $document->appliedSources(),
@@ -85,9 +87,9 @@ final class FullPipelineIntegrationTest extends TestCase
     private function resolve(array $cliValues, array $presets): ConfigurationDocument
     {
         $loader = new YamlConfigLoader();
-        $pipeline = new ConfigurationPipeline();
+        $pipeline = new ConfigurationPipeline([...array_filter(LayeredDocument::standaloneSections(), static fn($section): bool => $section->declaration()->key !== 'format'), new OutputFormatSection(new OutputFormatVocabulary(self::formatterRegistry()))]);
         $pipeline->addStage(new DefaultsStage());
-        $pipeline->addStage(new ComposerDiscoveryStage(new ComposerReader()));
+        $pipeline->addStage(new ComposerDiscoveryStage(new ComposerManifestReader()));
         $pipeline->addStage(new PresetStage($loader, new PresetResolver()));
         $pipeline->addStage(new ConfigFileStage($loader));
         $pipeline->addStage(new CliStage());

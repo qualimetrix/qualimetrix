@@ -18,19 +18,29 @@
 DependencyModel/
 ├── Contract/
 │   ├── Dependency.php
+│   ├── AttributeSite.php
+│   ├── ClassLikeDeclaration.php
+│   ├── DependencyGraphBuild.php
 │   ├── DependencyGraphBuilderInterface.php
 │   ├── DependencyGraphInterface.php
 │   ├── DependencyLocationInterface.php
 │   ├── DependencyTraversalParticipantInterface.php
-│   └── DependencyType.php
+│   ├── DependencyType.php
+│   ├── ExternalClassSpellingInterface.php
+│   └── TypeShape.php
 ├── Extraction/
+│   ├── DependencyRecorder.php
 │   ├── DependencyResolver.php
 │   ├── DependencyVisitor.php
-│   └── Handler/                  # one internal extraction family
+│   └── Handler/                  # position/site-aware extraction family
+├── CanonicalGraphInput.php       # canonical logical projections plus spelling evidence
+├── DependencyIdentityCanonicalizer.php # PHP class identity folding for graph inputs
 ├── DependencyGraph.php
 ├── DependencyGraphBuilder.php
+├── NamespaceCouplingBuilder.php  # own and subtree namespace coupling construction
 ├── NamespaceCouplings.php        # both coupling scopes of every namespace
-└── StringSet.php                 # unique-dependency counting for coupling
+├── StringSet.php                 # unique-dependency counting for coupling
+└── UnplacedExternalClassSpelling.php
 ```
 
 ## Public surface
@@ -47,9 +57,36 @@ implements the contract; when dependency evidence already carries that type,
 findings preserve the same object identity.
 
 `DependencyGraphBuilderInterface` accepts dependency occurrences together with
-the logical class universe. The universe retains degree-zero declarations, while
-the builder derives all ancestor namespaces locally and preserves dependency
-encounter order and coupling semantics.
+named `ClassLikeDeclaration` facts. The facts retain degree-zero declarations,
+their exact `DeclarationPath`, declaration kind, direct `__toString()` state and
+trait-alias state. Each fact also has an independent logical projection for
+graph canonicalization. Rewriting that projection never rewrites the exact
+declaration identity. The builder derives all ancestor namespaces locally and
+preserves dependency encounter order and coupling semantics.
+
+PHP class identities are folded case-insensitively before the graph is built.
+For analysed declarations, the byte-smallest observed spelling is canonical.
+For external classes, `ExternalClassSpellingInterface` supplies an installed
+declaration's spelling only when at least one observed variant places with exact
+case. Otherwise the observed byte-smallest spelling is used. Mixed-spelling
+warnings describe only groups with two or more observed variants; a singleton
+has no placement-status warning. Both edge endpoints and the logical projection of declaration facts are
+rewritten, while every exact `DeclarationPath`, declaration kind and body fact
+is preserved. Canonical self dependencies are discarded from ordinary graph
+views. A named class's self-`extends` alone survives in the declaration view,
+with its original exact source ordinal and location; this preserves an
+inheritance-loop fact without adding a coupling edge.
+`DependencyGraphBuild` returns the graph together with deterministic
+`MixedSpelling` evidence; the evidence is kept outside
+`DependencyGraphInterface` because it describes construction input rather than
+a graph query.
+
+An edge keeps its source and target logical projections independently from its
+exact source declaration for the same reason. Type edges name a declaration
+position (`type_hint`, `property_type`, or `constant_type`) and carry a separate
+`TypeShape` (`single`, `nullable`, `union`, `intersection`, or `dnf`). Attribute
+edges carry an `AttributeSite`; member, promoted-parameter, hook, nested-callable
+and nested-class sites remain distinguishable without inventing relation kinds.
 
 ### The coupling view and the declaration view
 
@@ -57,8 +94,8 @@ The builder leaves every edge whose target is a class PHP itself declares out
 of the coupling view — `getAllDependencies()`, the per-class dependency lists,
 `getAllClasses()`, Ce/Ca and both namespace scopes — because coupling to the
 standard library is not architectural risk. An `extends` edge is kept in
-`getAllDependencies()` (and its target in `getAllClasses()`), because DIT and
-NOC read inheritance from it, but it is in no per-class dependency list and
+`getAllDependencies()` (and its target in `getAllClasses()`), because NOC
+reads inheritance from it, but it is in no per-class dependency list and
 counts toward no Ce, Ca or namespace scope: `extends \RuntimeException` is no
 more coupling than `implements \Countable`, and a consumer computing CBO from
 the per-class lists agrees with Ce and Ca without deciding again what a PHP
@@ -67,17 +104,24 @@ class is.
 `getDeclarationDependencies()` answers a different question — what a
 declaration states about itself — and keeps every `extends`, `implements`,
 `trait_use` and attribute edge, PHP target or not, in encounter order. Layer
-membership reads it (`Policy\Architecture\Layer\ClassContextFactory`): read from
+membership reads it (`Policy\Architecture\Layer\ClassContext\ClassContextFactory`): read from
 the coupling view, a class declaring `implements \JsonSerializable` is
 indistinguishable from one that does not. Adding an edge to this view moves no
-coupling metric; adding one to the coupling view does.
+coupling metric; adding one to the coupling view does. DIT also reads this
+declaration view, including named class self-`extends` after case folding, so a
+self cycle is distinguishable from a root. Ordinary self references, interface
+self-`extends`, and nested-anonymous declaration policy are not widened.
+`getAllDependencies()`, per-class lists, Ce/Ca, namespace coupling, ClassRank,
+export and circular-dependency views remain free of canonical self edges.
 
-`ClassLikeHandler` also records the interfaces PHP gives a declaration without
-their being written: `UnitEnum` on every enum, `BackedEnum` on a backed one,
-and `Stringable` on a class or interface declaring `__toString()` in its own
-body. They are `implements` edges to PHP's own interfaces, so they reach the
-declaration view and never the coupling view. A `__toString()` a class takes
-from a trait is not recorded: the trait's body is another declaration.
+`ClassLikeHandler` records the interfaces PHP gives an enum without their being
+written: `UnitEnum` on every enum and `BackedEnum` on a backed one. Direct
+`__toString()` declarations and direct trait adaptations that alias a method to
+`__toString` are stored on `ClassLikeDeclaration`; they are not synthetic
+`Stringable` edges. A declaration reader can therefore evaluate class, parent
+and trait closure without changing coupling or inventing an edge for a
+degree-zero trait. An anonymous class never publishes a declaration fact, so a
+nested `__toString()` cannot mark its named owner.
 
 ### The two namespace coupling scopes
 
@@ -115,7 +159,7 @@ anonymous class has no declaration identity of its own, so
 nothing about the edge's `DependencyType`, coupling, ClassRank, or `graph:export`
 representation: dependency readers keep reading it as-is. Declaration readers
 outside this module (`Design\Inheritance\DitGlobalCollector`, `NocCollector`,
-`Policy\Architecture\Layer\ClassContextFactory`) skip a flagged edge instead.
+`Policy\Architecture\Layer\ClassContext\ClassContextFactory`) skip a flagged edge instead.
 See ADR 0071.
 
 `Dependency::$interfaceExtends` marks an `extends` edge an interface declares
@@ -123,16 +167,14 @@ See ADR 0071.
 class when a class declares it, and the graph carries no declaration kind
 otherwise, so a reader asking which interfaces a declaration has needs the
 flag to count `J` for `I` without counting a parent class for its subclass.
-Only `ClassContextFactory` (layer `implements:` membership) reads it; DIT, NOC,
-coupling and `graph:export` treat both edges alike.
+Declaration readers use the flag to distinguish interface inheritance from
+class inheritance: DIT and NOC do not count an interface as a parent class or
+child class. Coupling and `graph:export` retain their dependency semantics.
 
-`DependencyGraphInterface` has raw CBO 27 and the inclusive point threshold 28,
-so one additional edge fails rather than being absorbed. Its five net consumers
-are `DependencyGraphBuilderInterface`, `DependencyGraphBuilder`,
-`AnalysisPipeline`, `DependencyGraphProjector`, and
-`MeasurementAggregationInterface`. The threshold documents this stable query
-boundary; it is not a namespace exclusion or permission to import extraction
-internals.
+`DependencyGraphInterface` exposes the named declaration stream beside edge and
+coupling queries. Declaration facts are graph evidence, not a lifecycle port or
+metric. The graph query boundary remains the stable contract used by graph
+builders, analysis, projection and measurement consumers.
 
 ## StringSet
 
@@ -158,12 +200,15 @@ to go back to `contract` and gain that consumer, both halves in the same edit.
 to its named consumers and extends php-parser's `NodeVisitor`. The caller invokes
 `beginFile(RelativePath, FileDeclarationIndex)` before traversal, feeds AST
 events through the visitor lifecycle, and reads the exact `list<Dependency>`
-from `dependencies()` after traversal. The index is handed over per file
+from `dependencies()` plus the exact `list<ClassLikeDeclaration>` from
+`classLikeDeclarations()` after traversal. The collection fold and worker wire
+format carry both streams; graph building must not reconstruct declarations
+from edge endpoints. The index is handed over per file
 because the same participant instance serves both traversal paths, and the
 number it puts in an edge's source declaration must belong to the path it is
 currently taking part in. `DependencyResolver`,
-`DependencyVisitor`, and their handlers remain private to the extraction
-family. Parallel worker bootstrapping reconstructs the participant from the
+`DependencyVisitor`, `DependencyRecorder`, and the handlers remain private to
+the extraction family. Parallel worker bootstrapping reconstructs the participant from the
 same internal configuration used sequentially; it does not serialize a visitor
 or allow other modules to import extraction internals.
 

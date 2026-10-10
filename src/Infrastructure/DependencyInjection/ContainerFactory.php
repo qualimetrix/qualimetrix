@@ -24,6 +24,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryComp
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ThresholdValidatorMapCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\AnalysisConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ArchitectureConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\BaselineConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CircularDependencyConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CodeSmellConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CohesionConfigurator;
@@ -44,6 +45,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ParserConfigurat
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\RuleConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\SecurityConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\SizeConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\ProjectManifest\ProjectManifestConfigurator;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -98,6 +100,7 @@ final class ContainerFactory
         $configurators = [
             new CoreServicesConfigurator(),
             new ConfigurationConfigurator($srcDir),
+            new ProjectManifestConfigurator(),
             new ParserConfigurator(),
             new CollectorConfigurator(),
             new CodeSmellConfigurator($srcDir),
@@ -116,6 +119,7 @@ final class ContainerFactory
             new ArchitectureConfigurator($srcDir),
             new CircularDependencyConfigurator($srcDir),
             new DuplicationConfigurator($srcDir),
+            new BaselineConfigurator($srcDir),
             new AnalysisConfigurator(),
             new OutputConfigurator($srcDir),
         ];
@@ -174,6 +178,11 @@ final class ContainerFactory
         // Configuration stages autoconfiguration
         $container->registerForAutoconfiguration('Qualimetrix\\Analysis\\Configuration\\Pipeline\\ConfigurationStageInterface')
             ->addTag(ConfigurationStageCompilerPass::TAG);
+
+        // An owner declares its configuration root by registering its section
+        // autoconfigured; the pipeline composes the document against it.
+        $container->registerForAutoconfiguration('Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\DocumentSectionSchemaInterface')
+            ->addTag(ConfigurationConfigurator::SECTION_TAG);
 
     }
 

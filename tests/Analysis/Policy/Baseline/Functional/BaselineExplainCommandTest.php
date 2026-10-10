@@ -22,7 +22,6 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
@@ -39,7 +38,6 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -47,7 +45,9 @@ use Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds;
 use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubBaselineRun;
@@ -83,6 +83,47 @@ final class BaselineExplainCommandTest extends TestCase
         TempDirectory::remove($this->tempDir);
     }
 
+    #[Test]
+    public function itRequiresCanonicalPercentSpellingAndSuggestsTheKnownSubject(): void
+    {
+        $canonical = 'file:src/100%25.php';
+        $this->writeBaseline([
+            new BaselineEntry(new BaselineIdentity($canonical, new FindingChannel('duplication.clone')), [10], 1),
+        ]);
+        $found = $this->execute([], ['--baseline' => $this->baselinePath], subjectKey: $canonical);
+        self::assertSame(0, $found->getStatusCode(), $found->getErrorOutput());
+        self::assertStringContainsString($canonical, $found->getDisplay());
+
+        $unknown = $this->execute([], ['--baseline' => $this->baselinePath], subjectKey: 'file:src/100%.php');
+        self::assertSame(3, $unknown->getStatusCode());
+        self::assertStringContainsString('Unknown subject', $unknown->getErrorOutput());
+        self::assertStringContainsString('Canonical spelling: ' . $canonical, $unknown->getErrorOutput());
+    }
+
+    #[Test]
+    public function itReportsAnIntentionallyEmptyRunWithoutClaimingSubjectRemediation(): void
+    {
+        mkdir($this->tempDir . '/src');
+        file_put_contents($this->tempDir . '/src/Legacy.php', '<?php namespace Sample; final class Legacy {}');
+        file_put_contents($this->tempDir . '/composer.json', '{"autoload":{"psr-4":{"Sample\\\\":"src/"}}}');
+        file_put_contents($this->tempDir . '/qmx.yaml', "paths: [src]\nexclude: [{subtree: src}]\ncache: {enabled: false}\n");
+        $previous = getcwd();
+        self::assertNotFalse($previous);
+        try {
+            chdir($this->tempDir);
+            $command = (new ContainerFactory())->create()->get(BaselineExplainCommand::class);
+            self::assertInstanceOf(BaselineExplainCommand::class, $command);
+            $tester = new CommandTester($command);
+            $tester->execute(['subject' => 'file:src/Legacy.php', '--workers' => '0'], ['capture_stderr_separately' => true]);
+        } finally {
+            chdir($previous);
+        }
+
+        self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('1 named path(s) left out by exclude patterns', $tester->getErrorOutput());
+        self::assertStringNotContainsString('Subject:', $tester->getDisplay());
+    }
+
     /**
      * All three sources on one line each: what the baseline accepted, what
      * `qmx.yaml` configures, and the annotation that moved the boundary for
@@ -116,7 +157,8 @@ final class BaselineExplainCommandTest extends TestCase
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
 
         $display = $tester->getDisplay();
-        self::assertStringContainsString('accepted 25; now 31', $display);
+        self::assertStringContainsString('baseline:      accepted 25', $display);
+        self::assertStringContainsString('now:           31', $display);
         self::assertStringContainsString('qmx.yaml:      10', $display);
         self::assertStringContainsString('warning=40 error=60', $display);
     }
@@ -161,7 +203,8 @@ final class BaselineExplainCommandTest extends TestCase
         );
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
-        self::assertStringContainsString('accepted 12; now 19', $tester->getDisplay());
+        self::assertStringContainsString('baseline:      accepted 12', $tester->getDisplay());
+        self::assertStringContainsString('now:           19', $tester->getDisplay());
     }
 
     /**
@@ -293,7 +336,8 @@ final class BaselineExplainCommandTest extends TestCase
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringContainsString('Baseline only', $tester->getDisplay());
         self::assertStringContainsString('absent from the current analysis scope or result', $tester->getDisplay());
-        self::assertStringContainsString('accepted 25; now nothing reported', $tester->getDisplay());
+        self::assertStringContainsString('baseline:      accepted 25 (stale)', $tester->getDisplay());
+        self::assertStringContainsString('now:           nothing reported', $tester->getDisplay());
     }
 
     /**
@@ -310,7 +354,7 @@ final class BaselineExplainCommandTest extends TestCase
         $symbol = SymbolPath::forMethod('App', 'OrderService', 'calculate');
 
         $metrics = new InMemoryMetricRepository();
-        $metrics->addCallable(new CallableWithMetrics(DeclarationPath::of($symbol, RelativePath::fromString(self::SYMBOL_FILE), DeclarationOrdinal::fromRank(0)), 12, CallableKind::Method, null, null, new LogicalClassPath(SymbolPath::forClass('App', 'OrderService')), new MetricBag(), 12));
+        $metrics->addCallable(new CallableWithMetrics(DeclarationPath::of($symbol, RelativePath::fromString(self::SYMBOL_FILE), DeclarationOrdinal::fromRank(0)), 12, CallableKind::Method, null, null, DeclarationPath::of(SymbolPath::forClass('App', 'OrderService'), DeclarationPath::of($symbol, RelativePath::fromString(self::SYMBOL_FILE), DeclarationOrdinal::fromRank(0))->file, DeclarationOrdinal::fromRank(0)), new MetricBag(), 12));
 
         $tester = $this->execute(
             measured: [],
@@ -369,9 +413,10 @@ final class BaselineExplainCommandTest extends TestCase
         $symbol = SymbolPath::forMethod('App', 'OrderService', 'calculate');
         $subjectKey = self::subject($symbol)->toCanonical();
         file_put_contents($this->baselinePath, json_encode([
-            'version' => 13,
+            'version' => 14,
             'generated' => '2026-09-01T00:00:00+00:00',
             'scope' => ['src'],
+            'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
             'entries' => [$subjectKey => [['channel' => 5, 'count' => 1]]],
         ], \JSON_THROW_ON_ERROR));
 
@@ -404,9 +449,10 @@ final class BaselineExplainCommandTest extends TestCase
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringContainsString(
-            'baseline:      accepted 24 (mode: suppress, accepted whatever is reported); now 32',
+            'baseline:      accepted 24 (mode: suppress, accepted whatever is reported)',
             $tester->getDisplay(),
         );
+        self::assertStringContainsString('now:           32', $tester->getDisplay());
     }
 
     /**
@@ -438,7 +484,7 @@ final class BaselineExplainCommandTest extends TestCase
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringContainsString(
-            'baseline:      accepted 25, 25; now 20, and 1 without a finite value, so the entry is not applied',
+            'now:           2 findings, 1 without a finite magnitude — not compared: the group has members without a finite magnitude',
             $tester->getDisplay(),
         );
     }
@@ -461,9 +507,29 @@ final class BaselineExplainCommandTest extends TestCase
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringContainsString(
-            'accepted 25; now not measured (this invocation did not run the rule for this channel at this level)',
+            'now:           not measured (this invocation did not measure this channel at this subject level)',
             $tester->getDisplay(),
         );
+    }
+
+    #[Test]
+    public function itExplainsAnOldProjectCopyWithoutClaimingTheFileProducerDidNotRun(): void
+    {
+        $channel = new FindingChannel('duplication.clone');
+        $project = SymbolPath::forProject()->toCanonical();
+        $this->writeBaseline([new BaselineEntry(new BaselineIdentity($project, $channel), [40], 1)]);
+
+        $tester = $this->execute(
+            [],
+            ['--baseline' => $this->baselinePath, '--channel' => $channel->code],
+            subjectKey: $project,
+        );
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('present but not applied (subject level is not declared by this channel in this configuration', $tester->getDisplay());
+        self::assertStringContainsString('now:           channel duplication.clone reports at file — not at project', $tester->getDisplay());
+        self::assertStringNotContainsString('nothing reported', $tester->getDisplay());
+        self::assertStringNotContainsString('did not run the rule', $tester->getDisplay());
     }
 
     /**
@@ -482,7 +548,34 @@ final class BaselineExplainCommandTest extends TestCase
         );
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
-        self::assertStringContainsString("baseline:      accepted 25; now 20\n", $tester->getDisplay());
+        self::assertStringContainsString("baseline:      accepted 25\n    now:           20\n", $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itPrintsAnIndependentNowLineForEveryBoundary(): void
+    {
+        $symbol = SymbolPath::forMethod('App', 'OrderService', 'calculate');
+        $subject = self::subject($symbol)->toCanonical();
+        file_put_contents($this->baselinePath, json_encode([
+            'version' => 14, 'generated' => '2026-09-01T00:00:00+00:00', 'scope' => ['src'],
+            'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
+            'entries' => [$subject => [
+                ['channel' => self::CCN_CHANNEL, 'magnitudes' => [25]],
+                ['channel' => self::CCN_CHANNEL, 'magnitudes' => [30]],
+            ]],
+        ], \JSON_THROW_ON_ERROR));
+        $findings = [self::finding($symbol, self::CCN_CHANNEL, 16), self::finding($symbol, 'code-smell.goto', 1)];
+        foreach ([[], ['--baseline' => $this->baselinePath]] as $options) {
+            $tester = $this->execute($findings, $options);
+            self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+            self::assertSame(2, substr_count($tester->getDisplay(), '    now:'));
+            self::assertStringContainsString('now:           16', $tester->getDisplay());
+            self::assertStringContainsString('now:           1 occurrence', $tester->getDisplay());
+            self::assertStringContainsString('baseline:      (none)', $tester->getDisplay());
+            if ($options !== []) {
+                self::assertStringContainsString('present but not applied (duplicate identity', $tester->getDisplay());
+            }
+        }
     }
 
     /**
@@ -503,13 +596,17 @@ final class BaselineExplainCommandTest extends TestCase
         ?SymbolPath $symbol = null,
         ?MetricRepositoryInterface $metrics = null,
         ?RunRuleCoverage $coverage = null,
+        ?string $subjectKey = null,
     ): CommandTester {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare(self::CBO_CHANNEL, ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_));
         $declarations->declare(self::LONG_PARAMETER_LIST_CHANNEL, ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable));
 
         $registry = new RuleOptionsRegistry();
-        $registry->setConfigFileOptions($ruleOptions);
+        $configuration = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::fromDocument(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::document([['source' => 'config', 'values' => ['rules' => $ruleOptions]]], \Qualimetrix\Core\Path\AbsolutePath::fromString('/project')));
+        $classes = $ruleClasses ?? ($registerRules ? [ComplexityRule::class] : []);
+        $metadata = array_map(static fn(string $class): \Qualimetrix\Analysis\Finding\Contract\RuleMetadata => new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata(\Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader::read($class), $class::getOptionsClass(), '', [], false), $classes);
+        $registry->replace(ResolvedOptionsFixture::ready($configuration, $metadata));
 
         $command = new BaselineExplainCommand(
             new StubBaselineRun(
@@ -520,10 +617,11 @@ final class BaselineExplainCommandTest extends TestCase
                 metrics: $metrics,
             ),
             new BaselineLoader(new BaselineEntryParser($declarations)),
-            new BoundaryExplanationService(self::producerEdge(), $coverage ?? StubRuleCoverage::everyRuleRan()),
+            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
+            new BoundaryExplanationService(self::producerEdge(), $coverage ?? StubRuleCoverage::everyRuleRan(), $declarations),
             new BaselineConfiguredThresholds(
                 self::ruleRegistry($ruleClasses ?? ($registerRules ? [ComplexityRule::class] : [])),
-                new RuleOptionsFactory($registry),
+                $registry,
             ),
             $declarations,
         );
@@ -532,7 +630,7 @@ final class BaselineExplainCommandTest extends TestCase
         $tester = new CommandTester($command);
         $tester->execute(
             [
-                'subject' => self::subject($symbol ?? SymbolPath::forMethod('App', 'OrderService', 'calculate'))->toCanonical(),
+                'subject' => $subjectKey ?? self::subject($symbol ?? SymbolPath::forMethod('App', 'OrderService', 'calculate'))->toCanonical(),
                 'paths' => ['src'],
                 ...$options,
             ],
@@ -556,8 +654,9 @@ final class BaselineExplainCommandTest extends TestCase
         $command = new BaselineExplainCommand(
             new StubBaselineRun($measured, ['src'], AbsolutePath::fromString($this->tempDir)),
             new BaselineLoader(new BaselineEntryParser($declarations)),
-            new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan()),
-            new BaselineConfiguredThresholds(self::ruleRegistry([]), new RuleOptionsFactory(new RuleOptionsRegistry())),
+            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
+            new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan(), $declarations),
+            new BaselineConfiguredThresholds(self::ruleRegistry([]), new RuleOptionsRegistry()),
             $declarations,
         );
         $command->setRefusalPresenter(self::refusalPresenter());
@@ -609,8 +708,8 @@ final class BaselineExplainCommandTest extends TestCase
     private function writeBaseline(array $entries): void
     {
         (new BaselineWriter())->write(
-            new Baseline(generated: (new FixedClock())->now(), scope: ['src'], entries: $entries),
-            $this->baselinePath,
+            new Baseline(generated: (new FixedClock())->now(), scope: ['src'], entries: $entries, exclusions: self::fixtureExclusions()),
+            \Qualimetrix\Core\FileTarget\TargetPath::resolve($this->baselinePath),
             AbsolutePath::fromString($this->tempDir),
         );
     }
@@ -662,5 +761,13 @@ final class BaselineExplainCommandTest extends TestCase
         });
 
         return $identity;
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
+        );
     }
 }

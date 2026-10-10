@@ -11,7 +11,7 @@ use PhpParser\Node\Stmt\Class_;
 /**
  * Shared scaffolding for structure visitors that track namespace/class context.
  *
- * Provides namespace tracking, class stack management, FQN building,
+ * Provides namespace tracking, class stack management,
  * and property name extraction. Used by LcomVisitor and TccLccVisitor.
  *
  * Expects the using class to call resetClassVisitorStack() in its reset() method
@@ -28,6 +28,9 @@ trait ClassVisitorStackTrait
      */
     private array $classStack = [];
 
+    /** @var list<int|null> */
+    private array $classPositionStack = [];
+
     protected function handleNamespaceEnter(Node\Stmt\Namespace_ $node): void
     {
         $this->currentNamespace = $node->name?->toString() ?? '';
@@ -38,14 +41,16 @@ trait ClassVisitorStackTrait
         $this->currentNamespace = null;
     }
 
-    protected function pushClass(?string $className): void
+    protected function pushClass(?string $className, ?int $position): void
     {
         $this->classStack[] = $className;
+        $this->classPositionStack[] = $position;
     }
 
     protected function popClass(): void
     {
         array_pop($this->classStack);
+        array_pop($this->classPositionStack);
     }
 
     /**
@@ -60,13 +65,11 @@ trait ClassVisitorStackTrait
         return $this->classStack[array_key_last($this->classStack)];
     }
 
-    protected function buildClassFqn(string $className): string
+    protected function getCurrentClassPosition(): ?int
     {
-        if ($this->currentNamespace !== null && $this->currentNamespace !== '') {
-            return $this->currentNamespace . '\\' . $className;
-        }
-
-        return $className;
+        return $this->classPositionStack === []
+            ? null
+            : $this->classPositionStack[array_key_last($this->classPositionStack)];
     }
 
     /**
@@ -102,5 +105,6 @@ trait ClassVisitorStackTrait
     {
         $this->currentNamespace = null;
         $this->classStack = [];
+        $this->classPositionStack = [];
     }
 }

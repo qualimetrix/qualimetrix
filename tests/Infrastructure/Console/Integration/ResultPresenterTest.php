@@ -23,10 +23,12 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Policy\Inline\Contract\DirectiveObservations;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\MeasuredRunResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -37,27 +39,104 @@ use Qualimetrix\Infrastructure\Console\ExitPolicy;
 use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
 use Qualimetrix\Infrastructure\Console\OutputHelper;
 use Qualimetrix\Infrastructure\Console\ProfilePresenter;
+use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
+use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Qualimetrix\Infrastructure\Profiler\ProfileSession;
 use Qualimetrix\Reporting\Contract\OutputFormat;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
+use Qualimetrix\Reporting\Formatter\FormattedReport;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
 use Qualimetrix\Reporting\Report;
+use Qualimetrix\Subprocess\ChildProcess;
 use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
-use ReflectionMethod;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\BufferedOutput;
 
+require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
+
 #[CoversClass(ResultPresenter::class)]
 #[CoversClass(OutputHelper::class)]
 final class ResultPresenterTest extends TestCase
 {
+    #[Test]
+    public function itMergesIndependentRunAndFilterPopulationsWithoutDoubleAdoption(): void
+    {
+        $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
+        $trace->record(
+            'complexity.ccn',
+            new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.ccn'),
+            \Qualimetrix\Core\Symbol\SymbolLevel::Callable,
+            \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::occurrence('missing', 0, 'callable'),
+            'callable-value',
+            'Callable complexity was not published.',
+        );
+        $population = $trace->freeze();
+        $summary = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence(
+                'computed.custom',
+                \Qualimetrix\Core\Symbol\SymbolLevel::Project,
+                noValueCount: 1,
+            ),
+        ]);
+        $otherTrace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
+        $otherTrace->record(
+            'complexity.ccn',
+            new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.ccn'),
+            \Qualimetrix\Core\Symbol\SymbolLevel::Callable,
+            \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::occurrence('missing', 0, 'callable'),
+            'callable-value',
+            'Callable complexity was not published.',
+        );
+        $filtered = new \Qualimetrix\Reporting\FindingProjection\FindingProjectionResult(
+            [],
+            new \Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionResult([], [], []),
+            population: $population->merge($otherTrace->freeze()),
+        );
+        $result = AnalysisResult::fromRun(
+            $this->analysisResult()->measured,
+            new DirectiveObservations([], []),
+            null,
+            [],
+            computedMetricEvaluation: $summary,
+            population: $population,
+        );
+        $formatter = $this->createMock(FormatterInterface::class);
+        $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
+        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Formatter\PublicationKind::JsonDocument);
+        $formatter->expects(self::once())->method('format')->with(
+            self::callback(static function (Report $report) use ($summary): bool {
+                self::assertSame($summary, $report->computedMetricEvaluation);
+                self::assertSame(2, $report->population->abstentions()[0]->count);
+                self::assertSame(['["missing",0]'], $report->population->abstentions()[0]->examples);
+                self::assertSame([], $report->findings);
+                return true;
+            }),
+            self::callback(static fn(\Qualimetrix\Reporting\FormatterContext $context): bool => $context->verbose),
+        )->willReturn(new FormattedReport('{}'));
+        $registry = self::createStub(FormatterRegistryInterface::class);
+        $registry->method('get')->willReturn($formatter);
+        $exit = $this->presenter($registry)->presentResults(
+            [],
+            $result,
+            $this->input(),
+            new BufferedOutput(\Symfony\Component\Console\Output\OutputInterface::VERBOSITY_VERBOSE),
+            AbsolutePath::fromString('/project'),
+            $this->targets(),
+            new OutputFormat('json'),
+            new ExitPolicy(),
+            filterResult: $filtered,
+        );
+        self::assertSame(0, $exit);
+    }
+
     #[Test]
     #[DataProvider('provideSerializedPayloads')]
     public function itWritesSerializedPayloadsByteForByte(string $payload): void
@@ -95,7 +174,8 @@ final class ResultPresenterTest extends TestCase
     {
         $formatter = $this->createMock(FormatterInterface::class);
         $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
-        $formatter->expects(self::once())->method('format')->willReturn('rendered');
+        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Formatter\PublicationKind::JsonDocument);
+        $formatter->expects(self::once())->method('format')->willReturn(new FormattedReport('rendered'));
 
         $registry = $this->createMock(FormatterRegistryInterface::class);
         $registry->expects(self::once())->method('get')->with('json')->willReturn($formatter);
@@ -107,6 +187,7 @@ final class ResultPresenterTest extends TestCase
             $this->input(['--format' => 'text']),
             $output,
             AbsolutePath::fromString('/project'),
+            $this->targets(),
             outputFormat: new OutputFormat('json'),
             exitPolicy: new ExitPolicy(),
         );
@@ -120,7 +201,8 @@ final class ResultPresenterTest extends TestCase
     {
         $formatter = self::createStub(FormatterInterface::class);
         $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
-        $formatter->method('format')->willReturn('');
+        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Formatter\PublicationKind::JsonDocument);
+        $formatter->method('format')->willReturn(new FormattedReport(''));
         $registry = self::createStub(FormatterRegistryInterface::class);
         $registry->method('get')->willReturn($formatter);
         $finding = $this->finding(Severity::Warning);
@@ -131,6 +213,7 @@ final class ResultPresenterTest extends TestCase
             $this->input(),
             new BufferedOutput(),
             AbsolutePath::fromString('/project'),
+            $this->targets(),
             outputFormat: new OutputFormat(),
             exitPolicy: new ExitPolicy(Severity::Warning),
         );
@@ -143,7 +226,8 @@ final class ResultPresenterTest extends TestCase
     {
         $formatter = self::createStub(FormatterInterface::class);
         $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
-        $formatter->method('format')->willReturn('');
+        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Formatter\PublicationKind::JsonDocument);
+        $formatter->method('format')->willReturn(new FormattedReport(''));
         $registry = self::createStub(FormatterRegistryInterface::class);
         $registry->method('get')->willReturn($formatter);
         $finding = $this->finding(Severity::Warning);
@@ -154,6 +238,7 @@ final class ResultPresenterTest extends TestCase
             $this->input(),
             new BufferedOutput(),
             AbsolutePath::fromString('/project'),
+            $this->targets(),
             new OutputFormat(),
             new ExitPolicy(),
         ));
@@ -164,15 +249,16 @@ final class ResultPresenterTest extends TestCase
     {
         $formatter = $this->createMock(FormatterInterface::class);
         $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
+        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Formatter\PublicationKind::JsonDocument);
         $formatter->expects(self::once())->method('format')->willReturnCallback(
-            static function (Report $report): string {
+            static function (Report $report): FormattedReport {
                 self::assertNotNull($report->coverage);
                 self::assertSame(
                     'Parse error in src/Broken.php; dependency /external/project/shared.php',
                     $report->coverage->failures[0]->message,
                 );
 
-                return '';
+                return new FormattedReport('');
             },
         );
         $registry = self::createStub(FormatterRegistryInterface::class);
@@ -189,14 +275,14 @@ final class ResultPresenterTest extends TestCase
             $this->input(),
             new BufferedOutput(),
             AbsolutePath::fromString('/project'),
+            $this->targets(),
             new OutputFormat(),
             new ExitPolicy(),
         );
     }
 
     /**
-     * An unwritable `--output` target is
-     * refused before analysis runs, not discovered afterward. The counter
+     * An unwritable `--output` target is refused before analysis runs. The counter
      * evidence that no analysis ran lives in {@see \Qualimetrix\Infrastructure\Console\Command\CheckCommand::doExecute()},
      * which calls this precheck before `runAnalysis()` — this test pins the
      * precheck itself, in isolation from that ordering.
@@ -210,10 +296,11 @@ final class ResultPresenterTest extends TestCase
 
         try {
             $this->presenter(self::createStub(FormatterRegistryInterface::class))
-                ->assertOutputIsWritable($this->input(['--output' => $dir . '/report.json']));
+                ->assertOutputIsWritable($this->input(['--output' => $dir . '/report.json']), $this->targets());
             self::fail('An unwritable --output directory must be refused before analysis runs.');
-        } catch (ConfigurationRefusal $refusal) {
+        } catch (EnvironmentRefusal $refusal) {
             self::assertStringContainsString($dir, $refusal->summary());
+            self::assertFileDoesNotExist($dir . '/report.json');
         } finally {
             chmod($dir, 0o755);
             rmdir($dir);
@@ -232,7 +319,7 @@ final class ResultPresenterTest extends TestCase
 
         try {
             $this->presenter(self::createStub(FormatterRegistryInterface::class))
-                ->assertOutputIsWritable($this->input(['--output' => $dir]));
+                ->assertOutputIsWritable($this->input(['--output' => $dir]), $this->targets());
             self::fail('A directory named by --output must be refused before analysis runs.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString('is a directory', $refusal->summary());
@@ -258,7 +345,7 @@ final class ResultPresenterTest extends TestCase
 
         try {
             $this->presenter(self::createStub(FormatterRegistryInterface::class))
-                ->assertOutputIsWritable($this->input(['--output' => $dir . '/report.json']));
+                ->assertOutputIsWritable($this->input(['--output' => $dir . '/report.json']), $this->targets());
         } finally {
             chmod($dir, 0o755);
             unlink($dir . '/report.json');
@@ -275,42 +362,76 @@ final class ResultPresenterTest extends TestCase
         $writableTarget = sys_get_temp_dir() . '/qmx-result-presenter-writable-' . bin2hex(random_bytes(6)) . '.json';
 
         // Neither call may throw — the assertion is that execution reaches the end.
-        $presenter->assertOutputIsWritable($this->input());
-        $presenter->assertOutputIsWritable($this->input(['--output' => $writableTarget]));
+        $presenter->assertOutputIsWritable($this->input(), $this->targets());
+        $presenter->assertOutputIsWritable($this->input(['--output' => $writableTarget]), $this->targets());
     }
 
     /**
-     * The second mechanism the precheck above cannot cover: a target that was
-     * writable when checked and stops being writable before the write
-     * happens, or a directory that never existed because the precheck was
-     * bypassed (as here, calling {@see ResultPresenter::presentResults()}
-     * directly). `writeOutput()` throws rather than reporting the findings'
-     * own exit code — the refusal beats the outcome, because a report that
-     * never reached disk cannot honestly be exit code 2.
+     * A target may fail after it passes judgement and claim. The refusal beats
+     * the findings' exit code because the report never reached disk.
      */
     #[Test]
     public function itRefusesInsteadOfSwallowingAWriteFailureAndBeatsTheFindingsExitCode(): void
     {
-        $formatter = self::createStub(FormatterInterface::class);
-        $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
-        $formatter->method('format')->willReturn('rendered');
-        $registry = self::createStub(FormatterRegistryInterface::class);
-        $registry->method('get')->willReturn($formatter);
-        $finding = $this->finding(Severity::Error);
-        $missingDirectoryTarget = sys_get_temp_dir() . '/qmx-result-presenter-missing-'
-            . bin2hex(random_bytes(6)) . '/report.json';
+        $target = sys_get_temp_dir() . '/qmx-result-presenter-fault-' . bin2hex(random_bytes(6)) . '.json';
+        file_put_contents($target, 'old');
+        $script = <<<'PHP'
+            namespace Qualimetrix\Core\FileTarget {
+                function fwrite($stream, string $bytes): int|false
+                {
+                    ++$GLOBALS['qmx_report_hit'];
+                    return 0;
+                }
+            }
+            namespace {
+                require $argv[1];
+                require $argv[2];
+                $GLOBALS['qmx_report_hit'] = 0;
+                $fixture = new \Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest('itRefusesInsteadOfSwallowingAWriteFailureAndBeatsTheFindingsExitCode');
+                $stub = new \ReflectionMethod(\PHPUnit\Framework\TestCase::class, 'createStub');
+                $formatter = $stub->invoke(null, \Qualimetrix\Reporting\Formatter\FormatterInterface::class);
+                $formatter->method('getDefaultGroupBy')->willReturn(\Qualimetrix\Reporting\GroupBy::None);
+                $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Formatter\PublicationKind::JsonDocument);
+                $formatter->method('format')->willReturn(new \Qualimetrix\Reporting\Formatter\FormattedReport('rendered'));
+                $registry = $stub->invoke(null, \Qualimetrix\Reporting\Formatter\FormatterRegistryInterface::class);
+                $registry->method('get')->willReturn($formatter);
+                $method = static fn (string $name, ...$args) => (new \ReflectionMethod($fixture, $name))->invoke($fixture, ...$args);
+                $finding = $method('finding', \Qualimetrix\Analysis\Finding\Contract\Severity::Error);
+                $targets = $method('targets');
+                $targets->judge('--output', $argv[3]);
+                $targets->claim();
+                try {
+                    $exit = $method('presenter', $registry)->presentResults(
+                        [$finding],
+                        $method('analysisResult', [$finding]),
+                        $method('input', ['--output' => $argv[3]]),
+                        new \Symfony\Component\Console\Output\BufferedOutput(),
+                        \Qualimetrix\Core\Path\AbsolutePath::fromString('/project'),
+                        $targets,
+                        new \Qualimetrix\Reporting\Contract\OutputFormat(),
+                        new \Qualimetrix\Infrastructure\Console\ExitPolicy(),
+                    );
+                    $failure = null;
+                } catch (\Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal $caught) {
+                    $exit = null;
+                    $failure = $caught->summary();
+                }
+                $targets->abandon();
+                echo json_encode(['hit' => $GLOBALS['qmx_report_hit'], 'exit' => $exit, 'failure' => $failure, 'content' => file_get_contents($argv[3])]);
+            }
+            PHP;
 
-        $this->expectException(ConfigurationRefusal::class);
-
-        $this->presenter($registry)->presentResults(
-            [$finding],
-            $this->analysisResult([$finding]),
-            $this->input(['--output' => $missingDirectoryTarget]),
-            new BufferedOutput(),
-            AbsolutePath::fromString('/project'),
-            new OutputFormat(),
-            new ExitPolicy(),
-        );
+        try {
+            $run = ChildProcess::run([\PHP_BINARY, '-r', $script, \dirname(__DIR__, 4) . '/vendor/autoload.php', __FILE__, $target]);
+            self::assertSame(0, $run['exitCode'], $run['stderr']);
+            $result = json_decode($run['stdout'], true, flags: \JSON_THROW_ON_ERROR);
+            self::assertGreaterThan(0, $result['hit']);
+            self::assertNull($result['exit']);
+            self::assertStringContainsString('--output', $result['failure']);
+            self::assertSame('old', $result['content']);
+        } finally {
+            unlink($target);
+        }
     }
 
     /**
@@ -390,6 +511,7 @@ final class ResultPresenterTest extends TestCase
     {
         $formatter = self::createStub(FormatterInterface::class);
         $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
+        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Formatter\PublicationKind::JsonDocument);
         $registry = self::createStub(FormatterRegistryInterface::class);
         $registry->method('get')->willReturn($formatter);
 
@@ -400,6 +522,7 @@ final class ResultPresenterTest extends TestCase
                 $this->input(['--namespace' => 'Zzz\\Nope', '--class' => 'Zzz\\Nope\\Thing']),
                 new BufferedOutput(),
                 AbsolutePath::fromString('/project'),
+                $this->targets(),
                 new OutputFormat(),
                 new ExitPolicy(),
             );
@@ -409,30 +532,44 @@ final class ResultPresenterTest extends TestCase
         }
     }
 
-    /**
-     * A failure message names paths from two worlds. A file inside the project
-     * is shown relative, because the rest of the report is; a dependency
-     * outside it has no relative form and keeps the absolute one.
-     *
-     * The method is private and its result reaches no public surface of this
-     * class, so reflection is the only oracle there is.
-     */
-    #[Test]
-    public function itRelativizesProjectPathsInAFailureMessageAndKeepsOutsidersAbsolute(): void
+    private function targets(): RunTargets
     {
-        $projectRoot = '/project';
-        $outsider = '/elsewhere/vendor/Dependency.php';
+        return new RunTargets(new LoggerFactory());
+    }
 
-        $relativized = (new ReflectionMethod(ResultPresenter::class, 'relativizeFailureMessage'))->invoke(
-            $this->presenter(self::createStub(FormatterRegistryInterface::class)),
-            'Parse error in ' . $projectRoot . '/src/Broken.php; dependency ' . $outsider,
-            AbsolutePath::fromString($projectRoot),
-        );
-
-        self::assertIsString($relativized);
-        self::assertStringNotContainsString($projectRoot . '/', $relativized);
-        self::assertStringContainsString('src/Broken.php', $relativized);
-        self::assertStringContainsString($outsider, $relativized);
+    #[Test]
+    public function itRepairsProseAtPublicationAndReportsStructuredRepairOnStderr(): void
+    {
+        foreach ([\Qualimetrix\Reporting\Formatter\PublicationKind::Prose, \Qualimetrix\Reporting\Formatter\PublicationKind::JsonDocument] as $kind) {
+            $formatter = self::createStub(FormatterInterface::class);
+            $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
+            $formatter->method('publicationKind')->willReturn($kind);
+            $body = $kind === \Qualimetrix\Reporting\Formatter\PublicationKind::Prose ? "Café K\xFF — body" : '{"message":"K%FF — body"}';
+            $formatter->method('format')->willReturn(new FormattedReport($body, $kind === \Qualimetrix\Reporting\Formatter\PublicationKind::Prose ? 0 : 3));
+            $registry = self::createStub(FormatterRegistryInterface::class);
+            $registry->method('get')->willReturn($formatter);
+            $output = new \Qualimetrix\Tests\Infrastructure\Console\Support\SplitStreamConsoleOutput(stderrDecorated: false);
+            $this->presenter($registry)->presentResults(
+                [],
+                $this->analysisResult(),
+                $this->input(),
+                $output,
+                AbsolutePath::fromString('/project'),
+                $this->targets(),
+                new OutputFormat(),
+                new ExitPolicy(),
+            );
+            $stream = $output->getStream();
+            rewind($stream);
+            $published = stream_get_contents($stream);
+            self::assertIsString($published);
+            self::assertTrue(mb_check_encoding($published, 'UTF-8'));
+            self::assertStringContainsString('K%FF', $published);
+            self::assertStringContainsString($kind === \Qualimetrix\Reporting\Formatter\PublicationKind::Prose ? '1 published string(s)' : '3 published string(s)', $output->errorOutputContent());
+            if ($kind === \Qualimetrix\Reporting\Formatter\PublicationKind::JsonDocument) {
+                self::assertSame($body, $published);
+            }
+        }
     }
 
     private function presenter(FormatterRegistryInterface $registry): ResultPresenter
@@ -448,7 +585,7 @@ final class ResultPresenterTest extends TestCase
             new SummaryEnricher(
                 new DebtCalculator($remediation),
                 new ImpactCalculator(new ClassRankResolver(), $remediation),
-                new HealthSummaryBuilder(new HealthMetricCatalog(), $definitions),
+                new HealthSummaryBuilder(new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())), $definitions),
             ),
             new ProfilePresenter($session, new ErrorStream()),
             new ExitCodeResolver(StubChannelDeclarationRegistry::withDefaults()),
@@ -486,12 +623,21 @@ final class ResultPresenterTest extends TestCase
         ?InMemoryMetricRepository $metrics = null,
         ?NamespaceTree $namespaceTree = null,
     ): AnalysisResult {
-        return new AnalysisResult(
-            $findings,
-            0.1,
-            $metrics ?? new InMemoryMetricRepository(),
-            $coverage ?? new AnalysisCoverage([], [], []),
-            namespaceTree: $namespaceTree,
+        return AnalysisResult::fromRun(
+            measured: new MeasuredRunResult(
+                repository: $metrics ?? new InMemoryMetricRepository(),
+                coverage: $coverage ?? new AnalysisCoverage([], [], []),
+                namespaceTree: $namespaceTree,
+                projectScope: null,
+                duration: 0.1,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
+            ),
+            directives: new DirectiveObservations(
+                suppressions: [],
+                thresholdOverrides: [],
+            ),
+            ruleExecution: null,
+            latePublished: $findings,
         );
     }
 
@@ -499,8 +645,12 @@ final class ResultPresenterTest extends TestCase
     private function analyzedRepository(): InMemoryMetricRepository
     {
         $repository = new InMemoryMetricRepository();
-        $repository->add(
-            SymbolPath::forClass('Demo\\Alpha', 'Widget'),
+        $repository->addSubject(
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(
+                SymbolPath::forClass('Demo\\Alpha', 'Widget'),
+                RelativePath::fromString('src/Alpha/Widget.php'),
+                \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0),
+            )),
             new MetricBag(),
             RelativePath::fromString('src/Alpha/Widget.php'),
             5,
@@ -513,7 +663,8 @@ final class ResultPresenterTest extends TestCase
     {
         $formatter = self::createStub(FormatterInterface::class);
         $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
-        $formatter->method('format')->willReturn('No violations found.');
+        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Formatter\PublicationKind::JsonDocument);
+        $formatter->method('format')->willReturn(new FormattedReport('No violations found.'));
         $registry = self::createStub(FormatterRegistryInterface::class);
         $registry->method('get')->willReturn($formatter);
 
@@ -523,6 +674,7 @@ final class ResultPresenterTest extends TestCase
             $this->input([$option => $option === '--namespace' ? 'subtree:' . $value : $value]),
             new BufferedOutput(),
             AbsolutePath::fromString('/project'),
+            $this->targets(),
             new OutputFormat(),
             new ExitPolicy(),
         );
@@ -543,4 +695,147 @@ final class ResultPresenterTest extends TestCase
             severity: $severity,
         );
     }
+
+    #[Test]
+    public function itCarriesSuccessfulAbsencesAndUsesOnlyTheResolvedJsonQuietRoute(): void
+    {
+        $summary = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence(
+                'computed.custom',
+                \Qualimetrix\Core\Symbol\SymbolLevel::Project,
+                2,
+                1,
+                ['missing.input'],
+                [\Qualimetrix\Core\Symbol\MetricSubject::aggregate(\Qualimetrix\Core\Symbol\SymbolPath::forProject())],
+            ),
+        ]);
+        $payload = "{\"custom\":\"<info>literal</info>\"}\n";
+        $formatter = $this->createMock(FormatterInterface::class);
+        $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
+        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Formatter\PublicationKind::JsonDocument);
+        $formatter->expects(self::exactly(2))->method('format')->with(self::callback(static fn(Report $report): bool => $report->computedMetricEvaluation === $summary), self::anything())->willReturn(new FormattedReport($payload));
+        $registry = self::createStub(FormatterRegistryInterface::class);
+        $registry->method('get')->willReturn($formatter);
+        $result = AnalysisResult::fromRun(
+            $this->analysisResult()->measured,
+            new DirectiveObservations([], []),
+            null,
+            [],
+            computedMetricEvaluation: $summary,
+        );
+        foreach (['json' => $payload, 'metrics-json' => ''] as $format => $expected) {
+            $output = new BufferedOutput(\Symfony\Component\Console\Output\OutputInterface::VERBOSITY_QUIET, true);
+            $exit = $this->presenter($registry)->presentResults([], $result, $this->input(['--format' => 'text']), $output, AbsolutePath::fromString('/project'), $this->targets(), new OutputFormat($format), new ExitPolicy());
+            self::assertSame(0, $exit);
+            self::assertSame($expected, $output->fetch());
+        }
+    }
+
+    #[Test]
+    public function itPublishesBothCustomAbsencesThroughTheNativeQuietJsonPipeline(): void
+    {
+        $directory = sys_get_temp_dir() . '/qmx_atomic_publication_' . bin2hex(random_bytes(6));
+        self::assertTrue(mkdir($directory));
+        try {
+            self::assertNotFalse(file_put_contents($directory . '/Fixture.php', <<<'PHP'
+                <?php
+                namespace NativePublication;
+                class One { public function run(): int { return 1; } }
+                class Two { public function run(): int { return 2; } }
+                class Pair {
+                    private int $shared = 0;
+                    public function first(): int { return $this->shared; }
+                    public function second(): int { return $this->shared; }
+                }
+                PHP));
+            self::assertNotFalse(file_put_contents($directory . '/qmx.yaml', <<<'YAML'
+                computed_metrics:
+                  computed.missing:
+                    formula: 'm["cohesion.tcc"]'
+                    levels: [class]
+                  computed.nil:
+                    formula: 'null'
+                    levels: [project]
+                YAML));
+            $process = new \Symfony\Component\Process\Process([
+                \PHP_BINARY, 'bin/qmx', '--working-dir=' . $directory, 'check', '.',
+                '--config=qmx.yaml', '--workers=0', '--no-cache', '--no-progress', '--format=json', '--quiet',
+            ], \dirname(__DIR__, 4));
+            self::assertSame(0, $process->run(), $process->getErrorOutput());
+            self::assertSame('', $process->getErrorOutput());
+            $document = json_decode($process->getOutput(), true, 512, \JSON_THROW_ON_ERROR);
+            self::assertCount(2, $document['computedMetricOutcomes']);
+            self::assertSame('computed.missing', $document['computedMetricOutcomes'][0]['metric']);
+            self::assertSame(2, $document['computedMetricOutcomes'][0]['missingKeysCount']);
+            self::assertSame(['cohesion.tcc'], $document['computedMetricOutcomes'][0]['missingKeys']);
+            self::assertCount(2, $document['computedMetricOutcomes'][0]['subjects']);
+            self::assertSame('computed.nil', $document['computedMetricOutcomes'][1]['metric']);
+            self::assertSame(1, $document['computedMetricOutcomes'][1]['noValueCount']);
+            self::assertArrayHasKey('cohesion', $document['health']);
+            $silent = new \Symfony\Component\Process\Process([
+                \PHP_BINARY, 'bin/qmx', '--working-dir=' . $directory, 'check', '.',
+                '--config=qmx.yaml', '--workers=0', '--no-cache', '--no-progress', '--format=json', '--silent',
+            ], \dirname(__DIR__, 4));
+            self::assertSame(0, $silent->run(), $silent->getErrorOutput());
+            self::assertSame('', $silent->getOutput());
+            self::assertSame('', $silent->getErrorOutput());
+            self::assertNotFalse(file_put_contents($directory . '/qmx.yaml', "\nformat: json\n", \FILE_APPEND));
+            $configured = new \Symfony\Component\Process\Process([
+                \PHP_BINARY, 'bin/qmx', '--working-dir=' . $directory, 'check', '.',
+                '--config=qmx.yaml', '--workers=0', '--no-cache', '--no-progress', '--quiet',
+            ], \dirname(__DIR__, 4));
+            self::assertSame(0, $configured->run(), $configured->getErrorOutput());
+            self::assertSame('', $configured->getErrorOutput());
+            $configuredDocument = json_decode($configured->getOutput(), true, 512, \JSON_THROW_ON_ERROR);
+            self::assertSame($document['computedMetricOutcomes'], $configuredDocument['computedMetricOutcomes']);
+
+        } finally {
+            foreach (['Fixture.php', 'qmx.yaml'] as $file) {
+                if (is_file($directory . '/' . $file)) {
+                    unlink($directory . '/' . $file);
+                }
+            }
+            rmdir($directory);
+        }
+    }
+
+    #[Test]
+    public function itPublishesRulePopulationThroughRealVerboseQuietSilentAndFileRoutes(): void
+    {
+        $directory = sys_get_temp_dir() . '/qmx_prose_population_' . bin2hex(random_bytes(6));
+        self::assertTrue(mkdir($directory));
+        try {
+            self::assertNotFalse(file_put_contents($directory . '/Fixture.php', '<?php function fixture(bool $isActive): void {}'));
+            self::assertNotFalse(file_put_contents($directory . '/qmx.yaml', "rules: {}\n"));
+            $base = [\PHP_BINARY, 'bin/qmx', '--working-dir=' . $directory, 'check', '.', '--config=qmx.yaml', '--workers=0', '--no-cache', '--no-progress', '--only-rule=code-smell.boolean-argument', '--format=text'];
+            $normal = new \Symfony\Component\Process\Process($base, \dirname(__DIR__, 4));
+            self::assertSame(0, $normal->run(), $normal->getErrorOutput());
+            self::assertSame(1, substr_count($normal->getOutput(), 'Rule population incomplete'));
+            self::assertStringContainsString('occurrence: 0 judged, 1 not judged', $normal->getOutput());
+            self::assertStringNotContainsString('gate allowed-extra', $normal->getOutput());
+            $verbose = new \Symfony\Component\Process\Process([...$base, '-v'], \dirname(__DIR__, 4));
+            self::assertSame(0, $verbose->run(), $verbose->getErrorOutput());
+            self::assertStringContainsString('code-smell.boolean-argument / code-smell.boolean-argument (callable), gate allowed-extra', $verbose->getOutput());
+            foreach (['--quiet', '--silent'] as $flag) {
+                $muted = new \Symfony\Component\Process\Process([...$base, $flag], \dirname(__DIR__, 4));
+                self::assertSame(0, $muted->run(), $muted->getErrorOutput());
+                self::assertSame('', $muted->getOutput());
+                self::assertSame('', $muted->getErrorOutput());
+            }
+            $file = new \Symfony\Component\Process\Process([...$base, '-v', '--output=report.txt'], \dirname(__DIR__, 4));
+            self::assertSame(0, $file->run(), $file->getErrorOutput());
+            $body = file_get_contents($directory . '/report.txt');
+            self::assertNotFalse($body);
+            self::assertStringContainsString('gate allowed-extra', $body);
+            self::assertStringNotContainsString('Rule population incomplete', $file->getOutput());
+        } finally {
+            foreach (['Fixture.php', 'qmx.yaml', 'report.txt'] as $name) {
+                if (is_file($directory . '/' . $name)) {
+                    unlink($directory . '/' . $name);
+                }
+            }
+            rmdir($directory);
+        }
+    }
+
 }

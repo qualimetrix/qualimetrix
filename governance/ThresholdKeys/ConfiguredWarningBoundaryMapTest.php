@@ -7,7 +7,8 @@ namespace Qualimetrix\Governance\ThresholdKeys;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
@@ -43,7 +44,7 @@ final class ConfiguredWarningBoundaryMapTest extends TestCase
         'complexity.npath' => ['callable' => 200, 'class' => 500],
         'complexity.wmc' => ['class' => 50],
         'coupling.cbo' => ['class' => 14, 'namespace' => 14],
-        'coupling.class-rank' => ['class' => 0.02],
+        'coupling.class-rank' => ['class' => 5.0],
         'coupling.distance' => ['namespace' => 0.3],
         'coupling.instability' => ['class' => 0.8, 'namespace' => 0.8],
         'design.data-class' => ['class' => 33],
@@ -53,7 +54,6 @@ final class ConfiguredWarningBoundaryMapTest extends TestCase
         'design.type-coverage.param' => ['class' => 80.0],
         'design.type-coverage.property' => ['class' => 80.0],
         'design.type-coverage.return' => ['class' => 80.0],
-        'duplication.clone' => ['project' => 5],
         'maintainability.mi' => ['callable' => 40.0],
         'size.class-count' => ['namespace' => 15],
         'size.method-count' => ['class' => 20],
@@ -111,8 +111,14 @@ final class ConfiguredWarningBoundaryMapTest extends TestCase
         $rules = $container->get(RuleRegistryInterface::class);
         \assert($rules instanceof RuleRegistryInterface);
 
-        $options = $container->get(RuleOptionsFactory::class);
-        \assert($options instanceof RuleOptionsFactory);
+        $options = $container->get(RuleConfigurationInterface::class);
+        \assert($options instanceof RuleConfigurationInterface);
+        $configuration = FindingConfiguration::none();
+        $execution = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class, $execution);
+        $channels = $container->get(\Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface::class, $channels);
+        $options->replace(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::ready($configuration, $execution->allRules(), channels: $channels));
 
         $map = (new BaselineConfiguredThresholds($rules, $options))->resolve();
         ksort($map);

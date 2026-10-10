@@ -100,7 +100,8 @@ final class JsonHealthSection
                     fn(DecompositionItem $item): array => [
                         'metric' => $item->metricKey,
                         'humanName' => $item->humanName,
-                        'value' => $this->sanitizer->sanitizeFloat($item->value),
+                        'value' => $item->value === null ? null : $this->sanitizer->sanitizeFloat($item->value),
+                        'coverage' => $this->formatCoverage($item->coverage),
                         'good' => $item->goodValue,
                         'direction' => $item->direction,
                     ],

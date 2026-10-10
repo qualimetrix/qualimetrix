@@ -15,8 +15,8 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Pattern\PathMatcher;
@@ -42,13 +42,13 @@ final class PathExclusionFilterTest extends TestCase
     }
 
     #[Test]
-    public function itKeepsLayerViolationRuleInExcludedPath(): void
+    public function itExcludesLayerViolationRuleInExcludedSourcePath(): void
     {
         $filter = new PathExclusionFilter(new PathMatcher([self::path(SelectorKind::Subtree, 'src/Entity')]), self::declaredFileScope());
 
         $finding = $this->createFinding('src/Entity/User.php', LayerViolationRule::NAME);
 
-        self::assertTrue($filter->shouldInclude($finding), 'architecture.* rules must not be silenced by suppress_paths');
+        self::assertFalse($filter->shouldInclude($finding));
     }
 
     #[Test]
@@ -58,7 +58,7 @@ final class PathExclusionFilterTest extends TestCase
 
         $finding = $this->createFinding('src/Entity/User.php', CircularDependencyRule::NAME);
 
-        self::assertTrue($filter->shouldInclude($finding), 'architecture.* rules must not be silenced by suppress_paths');
+        self::assertTrue($filter->shouldInclude($finding), 'Declared project-scoped channels remain exempt from suppress_paths');
     }
 
     #[Test]
@@ -213,7 +213,7 @@ final class PathExclusionFilterTest extends TestCase
     private static function declaredFileScope(): ChannelFileScope
     {
         return new ChannelFileScope([
-            ...LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS,
+            ...ArchitectureChannels::PROJECT_SCOPED_CHANNELS,
             ...CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS,
         ]);
     }
@@ -222,7 +222,7 @@ final class PathExclusionFilterTest extends TestCase
     private static function declaredProjectScopedChannelKeys(): array
     {
         return [
-            ...LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS,
+            ...ArchitectureChannels::PROJECT_SCOPED_CHANNELS,
             ...CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS,
         ];
     }

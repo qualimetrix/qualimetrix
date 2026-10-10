@@ -31,9 +31,25 @@ final class TopIssuesRendererTest extends TestCase
     }
 
     #[Test]
+    public function itKeepsTheNamespaceMessageAndRecommendationInTopIssues(): void
+    {
+        $finding = self::finding(Location::none(), SymbolPath::forNamespace('Shop'), 'computed', 'health.cohesion', 'Measured cohesion is low.', Severity::Warning, recommendation: 'Split the namespace.');
+        $report = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [$finding], 1, 0, 0, 0, 1, topIssues: [new RankedIssue($finding, 10, null, 5, 1)]);
+        $lines = [];
+        $this->renderer->render($report, new FormatterContext(useColor: false), $this->color, $lines);
+        $output = implode("\n", $lines);
+
+        self::assertStringContainsString('Shop', $output);
+        self::assertStringContainsString('Measured cohesion is low.', $output);
+        self::assertStringContainsString('Split the namespace.', $output);
+        self::assertStringNotContainsString('[project]', $output);
+    }
+
+    #[Test]
     public function itRendersTopIssues(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -75,6 +91,7 @@ final class TopIssuesRendererTest extends TestCase
     public function itSkipsRenderingWhenNoTopIssues(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -96,6 +113,7 @@ final class TopIssuesRendererTest extends TestCase
     public function itSkipsRenderingWhenLimitIsZero(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -119,6 +137,7 @@ final class TopIssuesRendererTest extends TestCase
     public function itRespectsLimit(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -156,6 +175,7 @@ final class TopIssuesRendererTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
@@ -166,7 +186,7 @@ final class TopIssuesRendererTest extends TestCase
                 new RankedIssue(
                     finding: $finding,
                     impactScore: 10.0,
-                    classRank: 0.05,
+                    classRankShare: 0.05,
                     debtMinutes: 30,
                     severityWeight: 3,
                 ),
@@ -184,6 +204,35 @@ final class TopIssuesRendererTest extends TestCase
     }
 
     #[Test]
+    public function itRendersScorePrecisionAtTenAndOneHundred(): void
+    {
+        foreach ([
+            [9.876, '9.88'],
+            [10.0, '10.0'],
+            [10.126, '10.1'],
+            [99.96, '100.0'],
+            [100.0, '100'],
+            [100.6, '101'],
+        ] as [$score, $formatted]) {
+            $report = new Report(
+                fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+                findings: [],
+                filesAnalyzed: 1,
+                filesSkipped: 0,
+                duration: 1.0,
+                errorCount: 1,
+                warningCount: 0,
+                topIssues: [$this->createRankedIssue($score, Severity::Error, 'Service', '/project/src/Service.php', 42, 30)],
+            );
+            $lines = [];
+
+            $this->renderer->render($report, new FormatterContext(), $this->color, $lines);
+
+            self::assertStringContainsString('1. [ERR] ' . $formatted . '  ', implode("\n", $lines));
+        }
+    }
+
+    #[Test]
     public function itRendersNamespaceLevelFindings(): void
     {
         $finding = self::finding(
@@ -196,6 +245,7 @@ final class TopIssuesRendererTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -206,7 +256,7 @@ final class TopIssuesRendererTest extends TestCase
                 new RankedIssue(
                     finding: $finding,
                     impactScore: 3.14,
-                    classRank: null,
+                    classRankShare: null,
                     debtMinutes: 45,
                     severityWeight: 3,
                 ),
@@ -243,6 +293,7 @@ final class TopIssuesRendererTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -253,7 +304,7 @@ final class TopIssuesRendererTest extends TestCase
                 new RankedIssue(
                     finding: $finding,
                     impactScore: 2.5,
-                    classRank: 0.03,
+                    classRankShare: 0.03,
                     debtMinutes: 30,
                     severityWeight: 1,
                 ),
@@ -287,6 +338,7 @@ final class TopIssuesRendererTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
@@ -294,7 +346,7 @@ final class TopIssuesRendererTest extends TestCase
             errorCount: 1,
             warningCount: 0,
             topIssues: [
-                new RankedIssue(finding: $finding, impactScore: 5.0, classRank: null, debtMinutes: 20, severityWeight: 3),
+                new RankedIssue(finding: $finding, impactScore: 5.0, classRankShare: null, debtMinutes: 20, severityWeight: 3),
             ],
         );
 
@@ -321,6 +373,7 @@ final class TopIssuesRendererTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
@@ -328,7 +381,7 @@ final class TopIssuesRendererTest extends TestCase
             errorCount: 1,
             warningCount: 0,
             topIssues: [
-                new RankedIssue(finding: $finding, impactScore: 8.0, classRank: null, debtMinutes: 15, severityWeight: 3),
+                new RankedIssue(finding: $finding, impactScore: 8.0, classRankShare: null, debtMinutes: 15, severityWeight: 3),
             ],
         );
 
@@ -357,6 +410,7 @@ final class TopIssuesRendererTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
@@ -364,7 +418,7 @@ final class TopIssuesRendererTest extends TestCase
             errorCount: 1,
             warningCount: 0,
             topIssues: [
-                new RankedIssue(finding: $finding, impactScore: 1.0, classRank: null, debtMinutes: 60, severityWeight: 3),
+                new RankedIssue(finding: $finding, impactScore: 1.0, classRankShare: null, debtMinutes: 60, severityWeight: 3),
             ],
         );
 
@@ -380,7 +434,7 @@ final class TopIssuesRendererTest extends TestCase
     }
 
     #[Test]
-    public function itPrefersRecommendationOverMessage(): void
+    public function itPublishesBothMessageAndRecommendation(): void
     {
         $finding = self::finding(
             location: new Location(RelativePath::fromString('project/src/Service.php'), 5),
@@ -393,6 +447,7 @@ final class TopIssuesRendererTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
@@ -400,7 +455,7 @@ final class TopIssuesRendererTest extends TestCase
             errorCount: 0,
             warningCount: 1,
             topIssues: [
-                new RankedIssue(finding: $finding, impactScore: 2.0, classRank: 0.01, debtMinutes: 45, severityWeight: 1),
+                new RankedIssue(finding: $finding, impactScore: 2.0, classRankShare: 0.01, debtMinutes: 45, severityWeight: 1),
             ],
         );
 
@@ -413,7 +468,7 @@ final class TopIssuesRendererTest extends TestCase
 
         // Should show recommendation, not technical message
         self::assertStringContainsString('Class could be split into 3 cohesive parts', $output);
-        self::assertStringNotContainsString('LCOM4 value 3 exceeds threshold', $output);
+        self::assertStringContainsString('LCOM4 value 3 exceeds threshold', $output);
     }
 
     /**
@@ -425,6 +480,7 @@ final class TopIssuesRendererTest extends TestCase
     public function itRendersTheRankingItIsGivenWithoutReapplyingTheDrillDown(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -461,7 +517,7 @@ final class TopIssuesRendererTest extends TestCase
         return new RankedIssue(
             finding: $finding,
             impactScore: $score,
-            classRank: 0.05,
+            classRankShare: 0.05,
             debtMinutes: $debt,
             severityWeight: $severity === Severity::Error ? 3 : 1,
         );

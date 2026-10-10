@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\CodeSmell;
 
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
@@ -19,13 +19,10 @@ final readonly class IdenticalSubExpressionOptions implements RuleOptionsInterfa
         public bool $enabled = true,
     ) {}
 
-    /**
-     * @param array<string, mixed> $config
-     */
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
         return new self(
-            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+            enabled: $config->boolean('enabled', true),
         );
     }
 
@@ -42,7 +39,6 @@ final readonly class IdenticalSubExpressionOptions implements RuleOptionsInterfa
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
         return RuleOptionKeySet::of([
-            'enabled' => RuleOptionShape::boolean()->orNull(),
         ]);
     }
 }

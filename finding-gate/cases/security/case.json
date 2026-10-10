@@ -1,6 +1,7 @@
 {
     "id": "security",
     "description": "The security family: hardcoded credentials, SQL injection, XSS, command injection and unmarked sensitive parameters.",
+    "coverage": "auxiliary",
     "paths": [
         "src"
     ],
@@ -13,6 +14,7 @@
     ],
     "channels": [
         "code-smell.superglobals@callable",
+        "code-smell.superglobals@file",
         "security.command-injection@callable",
         "security.hardcoded-credentials@class",
         "security.sensitive-parameter@callable",

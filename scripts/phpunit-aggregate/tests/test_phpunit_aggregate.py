@@ -48,12 +48,16 @@ class PhpunitAggregateTest(unittest.TestCase):
         configuration: dict[str, object],
         *arguments: str,
         record_directory: Path | None = None,
+        profile: bool = False,
     ) -> subprocess.CompletedProcess[str]:
         with tempfile.TemporaryDirectory(prefix="qmx-phpunit-aggregate-test-") as directory:
             configuration_path = Path(directory) / "configuration.json"
             configuration_path.write_text(json.dumps(configuration), encoding="utf-8")
             environment = os.environ.copy()
             environment["FAKE_PHPUNIT_CONFIGURATION"] = configuration_path.read_text(encoding="utf-8")
+            environment.pop("QMX_PHPUNIT_PROFILE", None)
+            if profile:
+                environment["QMX_PHPUNIT_PROFILE"] = "1"
             if record_directory is not None:
                 environment["FAKE_PHPUNIT_RECORD_DIRECTORY"] = str(record_directory)
             return subprocess.run(
@@ -158,6 +162,53 @@ class PhpunitAggregateTest(unittest.TestCase):
         cache_directories = [record["cache_directory"] for record in records]
         self.assertEqual(len(SUITES), len(set(cache_directories)))
         self.assertTrue(all(not Path(cache_directory).exists() for cache_directory in cache_directories))
+        self.assertTrue(all(not any(arg.startswith("--log-junit=") for arg in record["arguments"]) for record in records))
+
+    def test_profile_keeps_suite_selection_and_reports_measured_cases(self):
+        configuration = complete_configuration()
+        configuration["run"] = {"Tooling": {"case_time": 2.5}}
+        with tempfile.TemporaryDirectory(prefix="qmx-phpunit-profile-record-") as directory:
+            record_directory = Path(directory)
+            completed = self.run_runner(configuration, record_directory=record_directory, profile=True)
+            records = [json.loads((record_directory / f"{suite}.json").read_text(encoding="utf-8")) for suite in SUITES]
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertIn("discovery wall time:", completed.stdout)
+        self.assertIn("shard phase wall time:", completed.stdout)
+        self.assertIn("2.500s Tooling Example\\ToolingTest::itRuns", completed.stdout)
+        self.assertTrue(all(any(arg.startswith("--log-junit=") for arg in record["arguments"]) for record in records))
+        self.assertTrue(all(not Path(record["cache_directory"]).exists() for record in records))
+
+    def test_profile_refuses_missing_junit_only_after_success(self):
+        configuration = complete_configuration()
+        configuration["run"] = {"Tooling": {"junit": "missing"}}
+
+        successful = self.run_runner(configuration, profile=True)
+        self.assertEqual(2, successful.returncode)
+        self.assertIn("enabled PHPUnit profile is incomplete", successful.stderr)
+        self.assertIn("partial measurement", successful.stdout)
+
+        configuration["run"]["Tooling"]["exit"] = 7
+        failed = self.run_runner(configuration, profile=True)
+        self.assertEqual(1, failed.returncode)
+        self.assertIn("partial measurement", failed.stdout)
+        self.assertNotIn("enabled PHPUnit profile is incomplete", failed.stderr)
+
+    def test_profile_refuses_a_junit_population_smaller_than_its_declared_count(self):
+        runner = load_runner_module()
+        with tempfile.TemporaryDirectory(prefix="qmx-profile-count-") as directory:
+            path = Path(directory) / "junit.xml"
+            path.write_text('<testsuites><testsuite tests="2"><testcase class="Example" name="itRuns" time="0.1"/></testsuite></testsuites>', encoding="utf-8")
+            with self.assertRaisesRegex(runner.RunnerRefusal, "testcase count"):
+                runner.read_junit_cases(path, "Unit")
+
+    def test_records_elapsed_time_for_a_started_shard_that_is_terminated(self):
+        runner = load_runner_module()
+        shard = runner.Shard("Unit", Path("Unit.stdout"), Path("Unit.stderr"), started_at=100.0)
+        with mock.patch.object(runner, "terminate_shard"), mock.patch.object(runner.time, "monotonic", return_value=103.0):
+            runner.terminate_shards([shard])
+        self.assertEqual(runner.TIMEOUT_EXIT, shard.exit_code)
+        self.assertEqual(3.0, shard.elapsed)
 
     def test_terminates_overdue_shards_and_cleans_up_before_returning(self):
         configuration = complete_configuration()
@@ -248,6 +299,21 @@ class PhpunitAggregateTest(unittest.TestCase):
             self.assertEqual(str(FAKE_PHPUNIT), command[0])
             self.assertIn(f"--testsuite={suite}", command)
 
+    def test_print_commands_in_profile_mode_names_the_junit_each_shard_would_write(self):
+        with tempfile.TemporaryDirectory(prefix="qmx-print-profile-") as directory:
+            environment = os.environ.copy()
+            environment["QMX_PHPUNIT_PROFILE"] = "1"
+            completed = subprocess.run(
+                [sys.executable, str(RUNNER), f"--phpunit={FAKE_PHPUNIT}",
+                 "--print-commands", f"--cache-root={directory}"],
+                cwd=PROJECT_ROOT, env=environment, capture_output=True, text=True, check=False, timeout=10,
+            )
+
+            self.assertEqual(0, completed.returncode, completed.stderr)
+            printed = json.loads(completed.stdout)
+            for suite, command in printed["commands"].items():
+                self.assertIn(f"--log-junit={directory}/{suite}/junit.xml", command)
+
     def test_both_command_builders_select_from_one_argument_tuple(self):
         """The partition proof and the shard must not select differently.
 
@@ -273,6 +339,29 @@ class PhpunitAggregateTest(unittest.TestCase):
         ]
 
         self.assertEqual(listing, shard)
+
+    def test_phpunit_excludes_each_dedicated_group_and_keeps_ordinary_cases(self):
+        runner = load_runner_module()
+        with tempfile.TemporaryDirectory(prefix="qmx-group-selection-") as directory:
+            fixture = Path(directory) / "GroupSelectionTest.php"
+            fixture.write_text("""<?php
+namespace AggregateFixture;
+use PHPUnit\\Framework\\Attributes\\{Group, Test};
+use PHPUnit\\Framework\\TestCase;
+final class GroupSelectionTest extends TestCase {
+    #[Test] public function itRunsOrdinaryCases(): void {}
+    #[Test, Group('benchmark')] public function itRunsBenchmarks(): void {}
+    #[Test, Group('live-freshness')] public function itRunsLiveFreshness(): void {}
+    #[Test, Group('finding-gate-e2e')] public function itRunsGateCapture(): void {}
+}
+""", encoding="utf-8")
+            completed = subprocess.run(
+                [*runner.list_command(PROJECT_ROOT / "vendor/bin/phpunit", None), str(fixture)],
+                cwd=PROJECT_ROOT, capture_output=True, text=True, check=False, timeout=10,
+            )
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        cases = [line.strip() for line in completed.stdout.splitlines() if line.startswith(" - ")]
+        self.assertEqual(["- AggregateFixture\\GroupSelectionTest::itRunsOrdinaryCases"], cases)
 
     def test_every_command_names_the_configuration_instead_of_searching_for_it(self):
         """A local phpunit.xml outranks phpunit.xml.dist in PHPUnit's search.

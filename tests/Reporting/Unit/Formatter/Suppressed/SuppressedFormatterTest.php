@@ -102,12 +102,12 @@ final class SuppressedFormatterTest extends TestCase
     public function itRefusesToPublishAReportWhoseCompositionWasNeverBuilt(): void
     {
         $formatter = new SuppressedFormatter();
-        $report = new Report(findings: [], filesAnalyzed: 0, filesSkipped: 0, duration: 0.0, errorCount: 0, warningCount: 0);
+        $report = new Report(fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), findings: [], filesAnalyzed: 0, filesSkipped: 0, duration: 0.0, errorCount: 0, warningCount: 0);
 
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('suppression composition');
 
-        $formatter->format($report, new FormatterContext());
+        $formatter->format($report, new FormatterContext())->body;
     }
 
     /**
@@ -147,6 +147,7 @@ final class SuppressedFormatterTest extends TestCase
     public function itPublishesTheRunsCoverageLikeEveryOtherFormat(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 1,
             filesSkipped: 1,
@@ -157,7 +158,7 @@ final class SuppressedFormatterTest extends TestCase
             suppressionComposition: new SuppressionComposition([]),
         );
 
-        $coverage = $this->decode((new SuppressedFormatter())->format($report, new FormatterContext()))['coverage'];
+        $coverage = $this->decode((new SuppressedFormatter())->format($report, new FormatterContext())->body)['coverage'];
 
         self::assertFalse($coverage['complete']);
         self::assertSame(1, $coverage['failed']);
@@ -167,6 +168,7 @@ final class SuppressedFormatterTest extends TestCase
     private function format(SuppressionComposition $composition): string
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 0,
             filesSkipped: 0,
@@ -176,7 +178,7 @@ final class SuppressedFormatterTest extends TestCase
             suppressionComposition: $composition,
         );
 
-        return (new SuppressedFormatter())->format($report, new FormatterContext());
+        return (new SuppressedFormatter())->format($report, new FormatterContext())->body;
     }
 
     /**

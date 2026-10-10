@@ -37,6 +37,13 @@ final class AnalysisReportCommandDefinition
                 'Path to qmx.yaml (defaults to qmx.yaml in the current working directory)',
             )
             ->addOption(
+                'preset',
+                null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Apply a named preset (strict, legacy, ci) or path to preset file',
+                [],
+            )
+            ->addOption(
                 'format',
                 null,
                 InputOption::VALUE_REQUIRED,

@@ -11,7 +11,7 @@ use LogicException;
  *
  * A score whose narrowest input saw a third of the classes is a statement about
  * that third, and publishing it as a statement about the project is the defect
- * this type exists to close (ADR 0062). Two states, and the absent one carries
+ * this type exists to close (ADR 0062). Three states, and the inapplicable one carries
  * a reason: zero and "no field" are different claims, and a coverage that is
  * undefined must say so rather than render as 0.
  *
@@ -21,6 +21,8 @@ use LogicException;
  */
 final readonly class HealthCoverage
 {
+    public string $state;
+
     private function __construct(
         public bool $applicable,
         public ?int $measured,
@@ -29,7 +31,9 @@ final readonly class HealthCoverage
         public ?CoverageUnit $unit,
         public ?string $basis,
         public ?string $reason,
-    ) {}
+    ) {
+        $this->state = !$applicable ? 'not-applicable' : ($measured === 0 ? 'not-measured' : 'measured');
+    }
 
     /**
      * @param string $basis the `.count` metric the measured number was read from
@@ -40,9 +44,10 @@ final readonly class HealthCoverage
             throw new LogicException('An empty population is not a coverage of 0; use notApplicable().');
         }
 
-        // Deliberately unclamped: a ratio above 1 means the input counts
-        // symbols the population does not, and a silent clamp would publish a
-        // reassuring 100% over a broken pairing.
+        if ($measured < 0 || $measured > $eligible) {
+            throw new LogicException('Measured coverage must lie within its eligible population.');
+        }
+
         return new self(true, $measured, $eligible, $measured / $eligible, $unit, $basis, null);
     }
 

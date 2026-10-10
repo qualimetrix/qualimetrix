@@ -92,11 +92,12 @@ This page lists every rule's base estimate side by side, so a reader can ask whe
 
 ## Architecture Rules
 
-| Rule                  | ID                                 | Minutes |
-| --------------------- | ---------------------------------- | ------- |
-| Circular Dependencies | `architecture.circular-dependency` | 120     |
-| Layer Violations      | `architecture.layer-violation`     | 15      |
-| Unassigned Classes    | `architecture.unassigned-class`    | 15      |
+| Rule                          | ID                                 | Minutes |
+| ----------------------------- | ---------------------------------- | ------- |
+| Circular Dependencies         | `architecture.circular-dependency` | 120     |
+| Layer Violations              | `architecture.layer-violation`     | 15      |
+| Layer Declaration Diagnostics | `architecture.layer-declaration`   | 15      |
+| Unassigned Classes            | `architecture.unassigned-class`    | 15      |
 
 ## Discovery Rules
 
@@ -136,3 +137,9 @@ user-defined metric shares one, `computed`.
 ## Why These Values Differ From Default Thresholds
 
 This page is calibration, not detection. [Default Thresholds](default-thresholds.md) says *when* a rule fires; this page says *how long fixing one instance is expected to take*. `coupling.class-rank` scales its own thresholds by project size and is excluded from the overshoot scaling this page's model applies to every other magnitude channel — see [ClassRank](../rules/coupling.md#classrank) for why.
+
+## Baseline Rules
+
+| Rule         | ID                      | Minutes |
+| ------------ | ----------------------- | ------- |
+| Unused entry | `baseline.unused-entry` | 5       |

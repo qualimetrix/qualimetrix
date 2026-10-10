@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Size\Unit;
 
 use InvalidArgumentException;
+
+use LogicException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -15,15 +18,44 @@ use Qualimetrix\Analysis\Evidence\Size\MethodCountOptions;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(MethodCountRule::class)]
 #[CoversClass(MethodCountOptions::class)]
 final class MethodCountRuleTest extends TestCase
 {
+    #[Test]
+    public function itCountsMeasuredZeroBeforeSeverityAndDistinguishesMissingPublication(): void
+    {
+        $rule = new MethodCountRule(new MethodCountOptions());
+        $repository = new \Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository([new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName::SIZE_METHOD_COUNT, \Qualimetrix\Core\Symbol\SymbolLevel::Class_)]);
+        foreach (['Healthy' => (new MetricBag())->with(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName::SIZE_METHOD_COUNT, 0), 'Missing' => new MetricBag()] as $name => $bag) {
+            $info = self::subjectInfo(SymbolPath::forClass('Population', $name), RelativePath::fromString('src/' . $name . '.php'), 1);
+            $repository->addSubject($info->subject ?? throw new LogicException('Exact fixture subject is required.'), $bag, $info->file, 1);
+        }
+        $decisions = [];
+        foreach (MethodCountRule::channelDeclarations() as $channel => $declaration) {
+            foreach ($declaration->levels as $level) {
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
+                    new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(MethodCountRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable),
+                    new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
+                );
+            }
+        }
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+        $context = (new AnalysisContext($repository))->withPopulationTrace($session);
+        self::assertSame([], $rule->analyze($context));
+        self::assertSame(1, $session->freeze()->judgedCount());
+        self::assertSame(1, $session->freeze()->unjudgedCount());
+        self::assertSame('declaration', $session->freeze()->abstentions()[0]->unit);
+        self::assertStringContainsString('Missing', $session->freeze()->abstentions()[0]->examples[0]);
+    }
+
     #[Test]
     public function itGetsName(): void
     {
@@ -37,7 +69,7 @@ final class MethodCountRuleTest extends TestCase
     {
         $rule = new MethodCountRule(new MethodCountOptions());
 
-        self::assertSame('Checks number of methods per class', $rule->getDescription());
+        self::assertSame('Checks number of methods per class', $rule::getDescription());
     }
 
     #[Test]
@@ -61,7 +93,7 @@ final class MethodCountRuleTest extends TestCase
         self::expectException(InvalidArgumentException::class);
 
         new MethodCountRule(new class implements \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface {
-            public static function fromArray(array $config): static
+            public static function fromResolved(ResolvedRuleOptionValues $config): static
             {
                 return new static();
             }
@@ -89,7 +121,7 @@ final class MethodCountRuleTest extends TestCase
         $rule = new MethodCountRule(new MethodCountOptions(enabled: false));
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('allDeclarations');
+        $repository->expects(self::never())->method('allClassDeclarations');
 
         $context = new AnalysisContext($repository);
 
@@ -107,9 +139,9 @@ final class MethodCountRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('size.method-count', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -128,9 +160,9 @@ final class MethodCountRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('size.method-count', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -155,9 +187,9 @@ final class MethodCountRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('size.method-count', 25);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -184,9 +216,9 @@ final class MethodCountRuleTest extends TestCase
         $metricBag = (new MetricBag())->with('size.method-count', $methodCount);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$classInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -197,6 +229,8 @@ final class MethodCountRuleTest extends TestCase
         } else {
             self::assertCount(1, $findings);
             self::assertSame($expectedSeverity, $findings[0]->severity);
+            $selectedThreshold = $expectedSeverity === Severity::Error ? $error : $warning;
+            self::assertStringContainsString(($methodCount === $selectedThreshold ? 'reaches' : 'exceeds') . ' threshold of', $findings[0]->message);
         }
     }
 
@@ -215,7 +249,7 @@ final class MethodCountRuleTest extends TestCase
     #[Test]
     public function itLoadsOptionsDefaultsFromArray(): void
     {
-        $options = MethodCountOptions::fromArray(['enabled' => true]);
+        $options = MethodCountOptions::fromResolved(ResolvedOptionsFixture::values(MethodCountOptions::class, ['enabled' => true]));
 
         self::assertTrue($options->isEnabled());
         self::assertSame(20, $options->warning);
@@ -225,11 +259,11 @@ final class MethodCountRuleTest extends TestCase
     #[Test]
     public function itLoadsOptionsCustomValuesFromArray(): void
     {
-        $options = MethodCountOptions::fromArray([
+        $options = MethodCountOptions::fromResolved(ResolvedOptionsFixture::values(MethodCountOptions::class, [
             'enabled' => true,
             'warning' => 10,
             'error' => 20,
-        ]);
+        ]));
 
         self::assertTrue($options->isEnabled());
         self::assertSame(10, $options->warning);
@@ -237,22 +271,21 @@ final class MethodCountRuleTest extends TestCase
     }
 
     #[Test]
-    public function itDisablesOptionsWhenLoadedFromEmptyArray(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        $options = MethodCountOptions::fromArray([]);
-
-        self::assertFalse($options->isEnabled());
+        self::assertEquals(new MethodCountOptions(), MethodCountOptions::fromResolved(ResolvedOptionsFixture::values(MethodCountOptions::class, [])));
+        self::assertFalse(MethodCountOptions::fromResolved(ResolvedOptionsFixture::values(MethodCountOptions::class, ['enabled' => false]))->isEnabled());
     }
     #[Test]
     public function itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations(): void
     {
         $class = SymbolPath::forClass('App\\Service', 'Twin');
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([
+        $repository->method('allClassDeclarations')->willReturn([
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn((new MetricBag())->with('size.method-count', 15));
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('size.method-count', 15));
 
         $findings = (new MethodCountRule(new MethodCountOptions(warning: 10, error: 20)))
             ->analyze(new AnalysisContext($repository));
@@ -281,6 +314,7 @@ final class MethodCountRuleTest extends TestCase
             $file,
             $line,
             $kind,
+            $kind === \Qualimetrix\Core\Symbol\CallableKind::Method ? \Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forClass($symbolPath->namespace ?? '', $symbolPath->type ?? ''), $file, \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)) : null,
         );
     }
 }

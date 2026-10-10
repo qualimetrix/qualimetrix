@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit;
 
 use InvalidArgumentException;
+
 use LogicException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -18,6 +20,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
@@ -27,6 +30,7 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 /**
  * The VO cases here drive the rule from a hand-built MetricBag, so they say
@@ -38,6 +42,33 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 #[CoversClass(LongParameterListOptions::class)]
 final class LongParameterListRuleTest extends TestCase
 {
+    #[Test]
+    public function itCountsMeasuredZeroAndDistinguishesMissingPublication(): void
+    {
+        $infos = [];
+        foreach (['Healthy', 'Missing'] as $name) {
+            $file = \Qualimetrix\Core\Path\RelativePath::fromString('src/' . $name . '.php');
+            $subject = \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forMethod('Population', $name, 'run'), $file, \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)));
+            $infos[] = new \Qualimetrix\Core\Symbol\SymbolInfo($subject, $file, 1, \Qualimetrix\Core\Symbol\CallableKind::Method, \Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forClass(($subject)->toSymbolPath()->namespace ?? '', ($subject)->toSymbolPath()->type ?? ''), $file, \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)));
+        }
+        $repository = self::createStub(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface::class);
+        $repository->method('allCallables')->willReturn($infos);
+        $repository->method('getSubject')->willReturnCallback(static fn(\Qualimetrix\Core\Symbol\MetricSubject $subject): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag => $subject->toSymbolPath()->type === 'Healthy' ? (new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag())->with(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName::CODE_SMELL_PARAMETER_COUNT, 0) : new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag());
+        $decisions = [];
+        foreach (LongParameterListRule::channelDeclarations() as $channel => $declaration) {
+            foreach ($declaration->levels as $level) {
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(LongParameterListRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
+            }
+        }
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+        $rule = new LongParameterListRule(new LongParameterListOptions());
+        self::assertSame([], $rule->analyze((new \Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext($repository))->withPopulationTrace($session)));
+        self::assertSame(1, $session->freeze()->judgedCount());
+        self::assertSame(1, $session->freeze()->unjudgedCount());
+        self::assertSame('callable', $session->freeze()->abstentions()[0]->unit);
+        self::assertStringContainsString('Missing', $session->freeze()->abstentions()[0]->examples[0]);
+    }
+
     #[Test]
     public function itGetName(): void
     {
@@ -51,7 +82,7 @@ final class LongParameterListRuleTest extends TestCase
     {
         $rule = new LongParameterListRule(new LongParameterListOptions());
 
-        self::assertSame('Checks number of parameters per method', $rule->getDescription());
+        self::assertSame('Checks number of parameters per method', $rule::getDescription());
     }
 
     #[Test]
@@ -80,7 +111,7 @@ final class LongParameterListRuleTest extends TestCase
         self::expectException(InvalidArgumentException::class);
 
         new LongParameterListRule(new class implements \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface {
-            public static function fromArray(array $config): static
+            public static function fromResolved(ResolvedRuleOptionValues $config): static
             {
                 return new static();
             }
@@ -155,7 +186,7 @@ final class LongParameterListRuleTest extends TestCase
 
         self::assertCount(1, $findings);
         self::assertSame(Severity::Warning, $findings[0]->severity);
-        self::assertSame('Method has 4 parameters, exceeds threshold of 4. Consider introducing a parameter object', $findings[0]->message);
+        self::assertSame('Method has 4 parameters, reaches threshold of 4. Consider introducing a parameter object', $findings[0]->message);
         self::assertSame(4, $findings[0]->metricValue);
         self::assertSame('code-smell.long-parameter-list', $findings[0]->ruleName);
         self::assertSame('code-smell.long-parameter-list', $findings[0]->code);
@@ -181,7 +212,7 @@ final class LongParameterListRuleTest extends TestCase
 
         self::assertCount(1, $findings);
         self::assertSame(Severity::Error, $findings[0]->severity);
-        self::assertSame('Method has 6 parameters, exceeds threshold of 6. Consider introducing a parameter object', $findings[0]->message);
+        self::assertSame('Method has 6 parameters, reaches threshold of 6. Consider introducing a parameter object', $findings[0]->message);
     }
 
     #[Test]
@@ -253,7 +284,7 @@ final class LongParameterListRuleTest extends TestCase
     #[Test]
     public function itOptionsFromArrayDefaults(): void
     {
-        $options = LongParameterListOptions::fromArray(['enabled' => true]);
+        $options = LongParameterListOptions::fromResolved(ResolvedOptionsFixture::values(LongParameterListOptions::class, ['enabled' => true]));
 
         self::assertTrue($options->isEnabled());
         self::assertSame(4, $options->warning);
@@ -263,11 +294,11 @@ final class LongParameterListRuleTest extends TestCase
     #[Test]
     public function itOptionsFromArrayCustomValues(): void
     {
-        $options = LongParameterListOptions::fromArray([
+        $options = LongParameterListOptions::fromResolved(ResolvedOptionsFixture::values(LongParameterListOptions::class, [
             'enabled' => true,
             'warning' => 3,
             'error' => 5,
-        ]);
+        ]));
 
         self::assertTrue($options->isEnabled());
         self::assertSame(3, $options->warning);
@@ -275,11 +306,10 @@ final class LongParameterListRuleTest extends TestCase
     }
 
     #[Test]
-    public function itOptionsFromEmptyArrayDisabled(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        $options = LongParameterListOptions::fromArray([]);
-
-        self::assertFalse($options->isEnabled());
+        self::assertEquals(new LongParameterListOptions(), LongParameterListOptions::fromResolved(ResolvedOptionsFixture::values(LongParameterListOptions::class, [])));
+        self::assertFalse(LongParameterListOptions::fromResolved(ResolvedOptionsFixture::values(LongParameterListOptions::class, ['enabled' => false]))->isEnabled());
     }
 
     // -- VO Constructor Tests ------------------------------------------------
@@ -296,12 +326,12 @@ final class LongParameterListRuleTest extends TestCase
     #[Test]
     public function itOptionsFromArrayVoThresholds(): void
     {
-        $options = LongParameterListOptions::fromArray([
+        $options = LongParameterListOptions::fromResolved(ResolvedOptionsFixture::values(LongParameterListOptions::class, [
             'warning' => 4,
             'error' => 6,
             'vo-warning' => 10,
             'vo-error' => 15,
-        ]);
+        ]));
 
         self::assertSame(10, $options->voWarning);
         self::assertSame(15, $options->voError);
@@ -310,10 +340,10 @@ final class LongParameterListRuleTest extends TestCase
     #[Test]
     public function itOptionsFromArrayVoDefaultsWhenNotSpecified(): void
     {
-        $options = LongParameterListOptions::fromArray([
+        $options = LongParameterListOptions::fromResolved(ResolvedOptionsFixture::values(LongParameterListOptions::class, [
             'warning' => 3,
             'error' => 5,
-        ]);
+        ]));
 
         self::assertSame(8, $options->voWarning);
         self::assertSame(12, $options->voError);
@@ -541,9 +571,9 @@ final class LongParameterListRuleTest extends TestCase
     #[Test]
     public function itThresholdShorthandKeepsVoDefaults(): void
     {
-        $options = LongParameterListOptions::fromArray([
+        $options = LongParameterListOptions::fromResolved(ResolvedOptionsFixture::values(LongParameterListOptions::class, [
             'threshold' => 5,
-        ]);
+        ]));
 
         self::assertTrue($options->isEnabled());
         self::assertSame(5, $options->warning);
@@ -556,10 +586,10 @@ final class LongParameterListRuleTest extends TestCase
     #[Test]
     public function itThresholdShorthandWithExplicitVoWarning(): void
     {
-        $options = LongParameterListOptions::fromArray([
+        $options = LongParameterListOptions::fromResolved(ResolvedOptionsFixture::values(LongParameterListOptions::class, [
             'threshold' => 5,
             'vo-warning' => 10,
-        ]);
+        ]));
 
         self::assertSame(5, $options->warning);
         self::assertSame(5, $options->error);
@@ -570,10 +600,10 @@ final class LongParameterListRuleTest extends TestCase
     #[Test]
     public function itVoThresholdShorthand(): void
     {
-        $options = LongParameterListOptions::fromArray([
+        $options = LongParameterListOptions::fromResolved(ResolvedOptionsFixture::values(LongParameterListOptions::class, [
             'threshold' => 5,
             'vo-threshold' => 10,
-        ]);
+        ]));
 
         self::assertSame(5, $options->warning);
         self::assertSame(5, $options->error);
@@ -586,10 +616,10 @@ final class LongParameterListRuleTest extends TestCase
     {
         self::expectException(ConfigurationRefusal::class);
 
-        LongParameterListOptions::fromArray([
+        LongParameterListOptions::fromResolved(ResolvedOptionsFixture::values(LongParameterListOptions::class, [
             'vo-threshold' => 10,
             'vo-warning' => 8,
-        ]);
+        ]));
     }
 
     /**
@@ -604,12 +634,12 @@ final class LongParameterListRuleTest extends TestCase
     #[Test]
     public function itAcceptsCamelCaseVoWarningAndVoError(): void
     {
-        $options = LongParameterListOptions::fromArray([
+        $options = LongParameterListOptions::fromResolved(ResolvedOptionsFixture::values(LongParameterListOptions::class, [
             'warning' => 4,
             'error' => 6,
             'voWarning' => 10,
             'voError' => 15,
-        ]);
+        ]));
 
         self::assertSame(10, $options->voWarning);
         self::assertSame(15, $options->voError);
@@ -618,10 +648,10 @@ final class LongParameterListRuleTest extends TestCase
     #[Test]
     public function itAcceptsCamelCaseVoThresholdShorthand(): void
     {
-        $options = LongParameterListOptions::fromArray([
+        $options = LongParameterListOptions::fromResolved(ResolvedOptionsFixture::values(LongParameterListOptions::class, [
             'threshold' => 5,
             'voThreshold' => 10,
-        ]);
+        ]));
 
         self::assertSame(5, $options->warning);
         self::assertSame(5, $options->error);
@@ -798,10 +828,10 @@ final class LongParameterListRuleTest extends TestCase
 
         self::assertCount(2, $findings);
         self::assertSame($regularSubject->toCanonical(), $findings[0]->subject->toCanonical());
-        self::assertSame('Method has 4 parameters, exceeds threshold of 4. Consider introducing a parameter object', $findings[0]->message);
+        self::assertSame('Method has 4 parameters, reaches threshold of 4. Consider introducing a parameter object', $findings[0]->message);
         self::assertSame(4, $findings[0]->threshold);
         self::assertSame($voSubject->toCanonical(), $findings[1]->subject->toCanonical());
-        self::assertSame('VO constructor has 8 promoted parameters, exceeds threshold of 8. Consider splitting the value object', $findings[1]->message);
+        self::assertSame('VO constructor has 8 promoted parameters, reaches threshold of 8. Consider splitting the value object', $findings[1]->message);
         self::assertSame(8, $findings[1]->threshold);
     }
 

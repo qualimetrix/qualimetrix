@@ -29,7 +29,6 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
@@ -71,7 +70,7 @@ final class PropertyHookControlPrecedenceTest extends TestCase
             CallableKind::PropertyHook,
             null,
             $classDeclaration,
-            new LogicalClassPath(SymbolPath::forClass('App', 'Record')),
+            $classDeclaration,
             new MetricBag(),
             $hook->getStartLine(),
         );
@@ -79,11 +78,6 @@ final class PropertyHookControlPrecedenceTest extends TestCase
             new class (array_values($ast)) implements FileParserInterface {
                 /** @param list<Node> $ast */
                 public function __construct(private array $ast) {}
-
-                public function parse(SplFileInfo $file): array
-                {
-                    return $this->ast;
-                }
 
                 public function parseContent(SplFileInfo $file, string $content): array
                 {

@@ -14,18 +14,13 @@ use Qualimetrix\Analysis\Finding\Rule\Override\OverrideValidationFailure;
  * - {@see StandardOverrideValidator} — exceeding-threshold rules (W ≤ E)
  * - {@see InvertedOverrideValidator} — below-threshold rules (W ≥ E)
  * - {@see IndependentAxisValidator} — multi-metric rules (no W↔E relation)
- * - {@see WarningOnlyValidator} — single-threshold rules (error must be null)
+ * - {@see WarningOnlyValidator} — single-threshold rules (no authored error axis)
  *
  * Implementations MUST be stateless and safe to share across amphp/parallel
- * worker processes. Validators receive `$errorWasExplicit` to distinguish a
- * user-written `error=N` from the shorthand form (`@qmx-threshold X N`)
- * which expands to `W=N, E=N` at parse time.
+ * worker processes. The request distinguishes explicitly authored axes from
+ * a shorthand number, which applies equally to warning and error.
  */
 interface OverrideValidatorInterface
 {
-    public function validate(
-        int|float|null $warning,
-        int|float|null $error,
-        bool $errorWasExplicit,
-    ): ?OverrideValidationFailure;
+    public function validate(ThresholdOverrideRequest $request): ?OverrideValidationFailure;
 }

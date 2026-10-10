@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Configuration\Fixtures;
 
+use LogicException;
+
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -18,10 +21,14 @@ final readonly class TestRuleOptionsWithUnionType implements RuleOptionsInterfac
         public int|string|null $value,
     ) {}
 
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
+        $value = $config->node('value')?->plain();
+        if ($value !== null && !\is_int($value) && !\is_string($value)) {
+            throw new LogicException('The resolved fixture value must be an integer or a string.');
+        }
         return new self(
-            value: $config['value'] ?? null,
+            value: $value,
         );
     }
 

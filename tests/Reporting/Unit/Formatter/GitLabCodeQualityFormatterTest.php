@@ -33,6 +33,24 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     }
 
     #[Test]
+    public function itNamesAnUncomparedEntryWithoutClaimingABreach(): void
+    {
+        $finding = self::finding(
+            location: new Location(RelativePath::fromString('src/A.php'), 1),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/A.php')),
+            ruleName: 'code-smell.goto',
+            code: 'code-smell.goto',
+            message: 'Original message',
+            severity: Severity::Warning,
+            metricValue: 31,
+            recommendation: 'Recommended repair',
+        )->reportedUncompared(new \Qualimetrix\Analysis\Finding\Contract\AcceptedLevel([25.0], 1), 'analysis-incomplete');
+        $output = $this->formatter->format(ReportBuilder::create()->addFinding($finding)->filesAnalyzed(1)->build(), new FormatterContext())->body;
+        self::assertStringContainsString('accepted at 25; not compared: analysis-incomplete', $output);
+        self::assertStringNotContainsString('now 31', $output);
+    }
+
+    #[Test]
     public function itReturnsGitlabAsName(): void
     {
         self::assertSame('gitlab', $this->formatter->getName());
@@ -47,7 +65,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.5)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         self::assertJson($output);
     }
@@ -61,7 +79,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.15)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Empty report should return empty array
@@ -96,7 +114,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.23)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Should have 2 issues
@@ -146,7 +164,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Verify GitLab severity mapping
@@ -171,7 +189,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame('info', $data[0]['severity']);
@@ -198,8 +216,8 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->build();
 
         // Format twice
-        $output1 = $this->formatter->format($report, new FormatterContext());
-        $output2 = $this->formatter->format($report, new FormatterContext());
+        $output1 = $this->formatter->format($report, new FormatterContext())->body;
+        $output2 = $this->formatter->format($report, new FormatterContext())->body;
 
         $data1 = json_decode($output1, true, 512, \JSON_THROW_ON_ERROR);
         $data2 = json_decode($output2, true, 512, \JSON_THROW_ON_ERROR);
@@ -228,7 +246,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         $data = json_decode($this->formatter->format(
             ReportBuilder::create()->addFindings([$make(101), $make(202)])->build(),
             new FormatterContext(),
-        ), true, 512, \JSON_THROW_ON_ERROR);
+        )->body, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertNotSame($data[0]['fingerprint'], $data[1]['fingerprint']);
 
@@ -243,7 +261,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         $withUnrelated = json_decode($this->formatter->format(
             ReportBuilder::create()->addFindings([$make(101), $unrelated])->build(),
             new FormatterContext(),
-        ), true, 512, \JSON_THROW_ON_ERROR);
+        )->body, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame($data[0]['fingerprint'], $withUnrelated[0]['fingerprint']);
     }
@@ -262,7 +280,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         $data = json_decode($this->formatter->format(
             ReportBuilder::create()->addFindings($findings)->build(),
             new FormatterContext(),
-        ), true, 512, \JSON_THROW_ON_ERROR);
+        )->body, true, 512, \JSON_THROW_ON_ERROR);
         $fingerprints = array_column($data, 'fingerprint', 'description');
         $prefix = 'r.edge:file:src/Foo.php';
 
@@ -306,7 +324,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // All fingerprints should be unique
@@ -342,7 +360,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Presentation text does not participate in the canonical identity.
@@ -368,11 +386,13 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $issue = $data[0];
         // Namespace findings without line should default to line 1
+        self::assertCount(1, $data);
+        self::assertSame('src/Service/UserService.php', $issue['location']['path']);
         self::assertSame(1, $issue['location']['lines']['begin']);
     }
 
@@ -393,7 +413,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $issue = $data[0];
@@ -436,7 +456,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $issue = $data[0];
@@ -444,31 +464,45 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itUsesDescriptiveSyntheticPathForProjectLevelFinding(): void
+    public function itPublishesOnlySourceLocatedFindingsInMixedAndFilelessReports(): void
     {
-        $report = ReportBuilder::create()
-            ->addFinding(self::finding(
+        $fileless = [];
+        foreach ([SymbolPath::forNamespace('App'), SymbolPath::forNamespace(''), SymbolPath::forProject()] as $symbol) {
+            $fileless[] = self::finding(
                 location: Location::none(),
-                symbolPath: SymbolPath::forNamespace('App'),
-                ruleName: 'architecture',
-                code: 'architecture.circular',
-                message: 'Circular dependency detected',
-                severity: Severity::Error,
-            ))
-            ->filesAnalyzed(10)
-            ->filesSkipped(0)
-            ->duration(0.1)
-            ->build();
+                symbolPath: $symbol,
+                ruleName: 'aggregate.rule',
+                code: 'aggregate.rule',
+                message: 'Aggregate finding',
+                severity: Severity::Warning,
+            );
+        }
 
-        $output = $this->formatter->format($report, new FormatterContext());
-        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
-
-        $issue = $data[0];
-        // Project-level findings must use a descriptive synthetic path, not '.' or ''
-        // '.' is not a valid file path per GitLab Code Quality spec
-        self::assertSame('_project', $issue['location']['path']);
-        self::assertNotSame('.', $issue['location']['path']);
-        self::assertNotSame('', $issue['location']['path']);
+        foreach ([true, false] as $includeSource) {
+            $builder = ReportBuilder::create()->addFindings($fileless);
+            if ($includeSource) {
+                $builder->addFinding(self::finding(
+                    location: new Location(RelativePath::fromString('src/A.php'), 12),
+                    symbolPath: SymbolPath::forClass('App', 'A'),
+                    ruleName: 'source.rule',
+                    code: 'source.rule',
+                    message: 'Source finding',
+                    severity: Severity::Error,
+                ));
+            }
+            $output = $this->formatter->format($builder->build(), new FormatterContext())->body;
+            $issues = json_decode($output, true, flags: \JSON_THROW_ON_ERROR);
+            self::assertIsList($issues);
+            self::assertCount($includeSource ? 1 : 0, $issues);
+            if ($includeSource) {
+                self::assertSame(['description', 'check_name', 'fingerprint', 'severity', 'location'], array_keys($issues[0]));
+                self::assertSame('Source finding', $issues[0]['description']);
+                self::assertSame('source.rule', $issues[0]['check_name']);
+                self::assertSame('critical', $issues[0]['severity']);
+                self::assertMatchesRegularExpression('/^[a-f0-9]{32}$/', $issues[0]['fingerprint']);
+                self::assertSame(['path' => 'src/A.php', 'lines' => ['begin' => 12]], $issues[0]['location']);
+            }
+        }
     }
 
     #[Test]
@@ -497,7 +531,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame(
@@ -513,7 +547,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->filesSkipped(0)
             ->duration(0.1)
             ->build();
-        $plainOutput = $this->formatter->format($plainReport, new FormatterContext());
+        $plainOutput = $this->formatter->format($plainReport, new FormatterContext())->body;
         $plainData = json_decode($plainOutput, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame($plainData[0]['fingerprint'], $data[0]['fingerprint']);
@@ -537,7 +571,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->build();
 
         $context = new FormatterContext(basePath: '/home/user/project');
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame('src/Service/UserService.php', $data[0]['location']['path']);

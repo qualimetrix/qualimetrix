@@ -12,9 +12,10 @@
         "--rule-opt=coupling.distance:max_distance_error=2"
     ],
     "channels": [
-        "duplication.clone@project"
+        "duplication.clone@file"
     ],
     "explainSubjects": [
-        "project:"
+        "file:src/ReportBuilder.php",
+        "file:src/SummaryBuilder.php"
     ]
 }

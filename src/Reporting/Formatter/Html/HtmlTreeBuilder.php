@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Html;
 
+use LogicException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -25,7 +24,6 @@ use Qualimetrix\Reporting\Report;
  *
  * Delegates to focused helpers:
  * - {@see HtmlFindingPartitioner} — finding partitioning and attachment
- * - {@see HtmlMetricAggregator} — bottom-up metric aggregation
  * - {@see HtmlDebtCalculator} — debt computation and aggregation
  */
 final class HtmlTreeBuilder
@@ -33,15 +31,15 @@ final class HtmlTreeBuilder
     private const string NO_NAMESPACE_LABEL = '(no namespace)';
 
     private readonly HtmlFindingPartitioner $findingPartitioner;
-    private readonly HtmlMetricAggregator $metricAggregator;
     private readonly HtmlDebtCalculator $htmlDebtCalculator;
 
     public function __construct(
         private readonly DebtCalculator $debtCalculator,
         private readonly ComputedMetricDefinitionCatalogInterface $definitionCatalog,
+        private readonly HtmlProjectMetadata $projectMetadata,
+        \Qualimetrix\Reporting\Formatter\FindingRecord $findingRecord,
     ) {
-        $this->findingPartitioner = new HtmlFindingPartitioner();
-        $this->metricAggregator = new HtmlMetricAggregator();
+        $this->findingPartitioner = new HtmlFindingPartitioner($findingRecord);
         $this->htmlDebtCalculator = new HtmlDebtCalculator($this->debtCalculator);
     }
 
@@ -64,23 +62,20 @@ final class HtmlTreeBuilder
             $nodesByPath,
             $report->metrics,
         );
-        $this->findingPartitioner->attach($nodesByPath, $findingsByNode, $context);
+        $this->findingPartitioner->attach($nodesByPath, $findingsByNode, $context, $report->fileNamespaces);
 
-        // 3. Compute debt per node
-        $this->htmlDebtCalculator->computeDebt($findingsByNode, $nodesByPath);
+        // 3. Complete debt and finding totals; every finding is attached,
+        // so the root's totals are the report's.
+        $this->htmlDebtCalculator->calculate($root, $findingsByNode, $nodesByPath);
 
-        // 4. Compute violationCountTotal and aggregate debt bottom-up; every
-        // finding is attached, so the root's totals are the report's.
-        $this->htmlDebtCalculator->aggregateBottomUp($root);
-
-        // 5. Build summary
+        // 4. Build summary
         $summary = $this->buildSummary($report, $root, $nodesByPath);
 
-        // 6. Build computed metric definitions
+        // 5. Build computed metric definitions
         $definitions = $this->buildComputedMetricDefinitions();
 
-        // 7. Build project metadata
-        $project = HtmlProjectMetadata::of($scopedReporting, $projectName, $context->basePath);
+        // 6. Build project metadata
+        $project = $this->projectMetadata->of($scopedReporting, $projectName, $context->basePath);
 
         return [
             'project' => $project,
@@ -111,16 +106,15 @@ final class HtmlTreeBuilder
 
         foreach ($namespaces as $namespace) {
             if ($namespace === '') {
-                continue; // Empty namespace classes go to "(no namespace)" node
+                $this->getNoNamespaceNode($root, $nodesByPath, $metrics);
+
+                continue;
             }
             $this->ensureNamespaceChain($root, $namespace, $nodesByPath, $metrics);
         }
 
-        // Build file LOC index: file path -> loc value
-        $fileLoc = $this->buildFileLocIndex($metrics);
-
         // Add classes
-        foreach ($metrics->all(SymbolLevel::Class_) as $symbolInfo) {
+        foreach ($metrics->allClassDeclarations() as $symbolInfo) {
             $symbolPath = $symbolInfo->symbolPath;
             $namespace = $symbolPath->namespace ?? '';
             $className = $symbolPath->type ?? '';
@@ -132,25 +126,15 @@ final class HtmlTreeBuilder
             // Determine parent node
             $parentNode = $namespace !== ''
                 ? ($nodesByPath[$namespace] ?? $this->ensureNamespaceChain($root, $namespace, $nodesByPath, $metrics))
-                : $this->getNoNamespaceNode($root, $nodesByPath);
+                : $this->getNoNamespaceNode($root, $nodesByPath, $metrics);
 
-            $classNode = new HtmlTreeNode($className, $symbolPath->toString(), SymbolLevel::Class_->value);
-            $classBag = $metrics->get($symbolPath);
+            $subject = $symbolInfo->subject ?? throw new LogicException('HTML classes require exact declaration subjects');
+            $classNode = new HtmlTreeNode($className, $symbolPath->toString(), SymbolLevel::Class_->value, $subject->toCanonical());
+            $classBag = $metrics->getSubject($subject);
             $classNode->metrics = $this->filterMetrics($classBag->all());
-
-            // Class-level MetricBag doesn't have LOC — get it from the file
-            if (!isset($classNode->metrics[MetricName::agg(MetricName::SIZE_LOC, AggregationStrategy::Sum)]) && $symbolInfo->file !== null) {
-                $loc = $fileLoc[$symbolInfo->file->value()] ?? null;
-                if ($loc !== null) {
-                    $classNode->metrics[MetricName::agg(MetricName::SIZE_LOC, AggregationStrategy::Sum)] = $loc;
-                }
-            }
 
             $parentNode->children[] = $classNode;
         }
-
-        // Aggregate metrics bottom-up for intermediate namespace nodes
-        $this->metricAggregator->aggregateBottomUp($root);
 
         return $root;
     }
@@ -202,41 +186,18 @@ final class HtmlTreeBuilder
      *
      * @param array<string, HtmlTreeNode> $nodesByPath
      */
-    private function getNoNamespaceNode(HtmlTreeNode $root, array &$nodesByPath): HtmlTreeNode
+    private function getNoNamespaceNode(HtmlTreeNode $root, array &$nodesByPath, MetricRepositoryInterface $metrics): HtmlTreeNode
     {
         if (isset($nodesByPath[self::NO_NAMESPACE_LABEL])) {
             return $nodesByPath[self::NO_NAMESPACE_LABEL];
         }
 
         $node = new HtmlTreeNode(self::NO_NAMESPACE_LABEL, self::NO_NAMESPACE_LABEL, SymbolLevel::Namespace_->value);
+        $node->metrics = $this->filterMetrics($metrics->get(SymbolPath::forNamespace(''))->all());
         $root->children[] = $node;
         $nodesByPath[self::NO_NAMESPACE_LABEL] = $node;
 
         return $node;
-    }
-
-    /**
-     * Builds an index of file path -> LOC value from file-level metrics.
-     *
-     * @return array<string, int|float>
-     */
-    private function buildFileLocIndex(MetricRepositoryInterface $metrics): array
-    {
-        $index = [];
-
-        foreach ($metrics->all(SymbolLevel::File) as $symbolInfo) {
-            if ($symbolInfo->file === null) {
-                continue;
-            }
-
-            $bag = $metrics->get($symbolInfo->symbolPath);
-            $loc = $bag->get(MetricName::SIZE_LOC);
-            if ($loc !== null) {
-                $index[$symbolInfo->file->value()] = $loc;
-            }
-        }
-
-        return $index;
     }
 
     /**
@@ -283,7 +244,7 @@ final class HtmlTreeBuilder
      */
     private function indexNodesRecursive(HtmlTreeNode $node, array &$index): void
     {
-        $index[$node->path] = $node;
+        $index[$node->id] = $node;
 
         foreach ($node->children as $child) {
             $this->indexNodesRecursive($child, $index);
@@ -314,12 +275,27 @@ final class HtmlTreeBuilder
             }
         }
 
+        foreach ($report->healthScores as $name => $score) {
+            $healthScores['health.' . $name] = $score->score;
+        }
+
         return [
             'totalFiles' => $report->filesAnalyzed,
             'totalClasses' => $classCount,
             'totalViolations' => $report->getTotalFindings(),
             'totalDebtMinutes' => $root->debtMinutes,
             'healthScores' => (object) $healthScores,
+            'healthDecomposition' => (object) array_combine(
+                array_map(static fn(HealthScore $score): string => 'health.' . $score->name, array_values($report->healthScores)),
+                array_map(static fn(HealthScore $score): array => array_map(static fn(DecompositionItem $item): array => [
+                    'metric' => $item->metricKey,
+                    'humanName' => $item->humanName,
+                    'value' => $item->value,
+                    'good' => $item->goodValue,
+                    'direction' => $item->direction,
+                    'coverage' => HealthCoverageNarrator::record($item->coverage),
+                ], $score->decomposition), array_values($report->healthScores)),
+            ),
             // ADR 0062 publishes coverage alongside the score, and this
             // surface used to carry the bare values alone: a score over a tenth
             // of the classes arrived indistinguishable from one over all of

@@ -11,6 +11,7 @@ use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
 use Qualimetrix\Infrastructure\Console\RuntimeLoggerConfigurator;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
@@ -51,7 +52,8 @@ final class ErrorStreamOwnershipTest extends TestCase
         $errorStream = new ErrorStream();
         $frame = self::frameOn($errorStream, $output);
 
-        $logger = (new RuntimeLoggerConfigurator(new LoggerFactory(), new LoggerHolder(), $errorStream))
+        $factory = new LoggerFactory();
+        $logger = (new RuntimeLoggerConfigurator($factory, new LoggerHolder(), $errorStream, new RunTargets($factory)))
             ->configure(self::input(), $output);
         $logger->debug('a line from the collection phase');
 
@@ -68,15 +70,20 @@ final class ErrorStreamOwnershipTest extends TestCase
         $report = self::createStub(ProfileReportInterface::class);
         $report->method('isEnabled')->willReturn(true);
         $target = sys_get_temp_dir() . '/qmx-profile-frame-' . bin2hex(random_bytes(6)) . '.json';
+        $targets = new RunTargets(new LoggerFactory());
+        $targets->judge('--profile', $target);
+        $targets->claim();
 
         try {
             (new ProfilePresenter($report, errorStream: $errorStream))->present(
                 self::input(['profile-format' => 'json'], ['profile' => $target]),
                 $output,
+                $targets,
             );
 
             self::assertSurvivesAboveFrame($output, $frame, 'Profile exported to');
         } finally {
+            $targets->abandon();
             @unlink($target);
         }
     }
@@ -91,7 +98,7 @@ final class ErrorStreamOwnershipTest extends TestCase
         // Symfony hands `renderThrowable()` the already-resolved error stream,
         // never the console output, which is why the owner is asked for the
         // writer it is already bound to.
-        (new Application($errorStream, new RefusalPresenter($errorStream)))->renderThrowable(
+        (new Application($errorStream, new RefusalPresenter($errorStream), new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()))->renderThrowable(
             new RuntimeException('a failure with the frame still up'),
             $output->getErrorOutput(),
         );
@@ -138,19 +145,19 @@ final class ErrorStreamOwnershipTest extends TestCase
     {
         // The fallback drops *diagnostics*, not the message that ends the run.
         // A run bound to a single-channel output has no diagnostic writer at
-        // all, and an uncaught throwable would then leave exit code 1 and an
+        // all, and an uncaught throwable would then leave exit code 5 and an
         // empty screen — strictly worse than folding the trace into the one
         // channel the caller gave, which is what Symfony itself does.
         $errorStream = new ErrorStream();
         $output = new BufferedOutput();
 
-        $application = new Application($errorStream, new RefusalPresenter($errorStream));
+        $application = new Application($errorStream, new RefusalPresenter($errorStream), new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $application->setAutoExit(false);
         $application->addCommand(self::commandThatBindsThenThrows($errorStream, 'a failure with nowhere to go'));
 
         $exitCode = $application->run(new ArrayInput(['command' => 'boom']), $output);
 
-        self::assertSame(1, $exitCode);
+        self::assertSame(5, $exitCode);
         self::assertStringContainsString('a failure with nowhere to go', $output->fetch());
     }
 

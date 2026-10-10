@@ -11,7 +11,6 @@ Git integration enables filtering findings to show only those related to changed
 Wrapper around git commands for obtaining the list of changed files.
 
 **Methods:**
-- `isRepository(): bool` — check if directory is a git repository
 - `getRoot(): AbsolutePath` — get git top-level (`git rev-parse --show-toplevel`); may differ from the project root passed to the constructor when the project sits in a git subdirectory
 - `getChangedFiles(string $scope): array` — get list of changed files by scope
 
@@ -69,25 +68,11 @@ the walk with a `RuntimeException` rather than resynchronising — git's machine
 format is a contract with the tool, so a stream this cannot walk is a broken
 environment, not bad user input.
 
-**One name this build still cannot carry.** POSIX allows every byte but `/` and
-NUL in a name, and `-z` hands them all over; `Core\Path\RelativePath` does not
-carry `\`, which it rewrites as a directory separator, so the one file
-`back\slash.php` is stored as the two segments `back/slash.php`.
-
-Discovery rewrites it the same way, so the two sides agree and the findings are
-published — measured, with the guard removed: two violations, filed under
-`back/slash.php`. That is the reason to refuse, not a reason not to. The stored
-value is a key that baselines, suppression maps and every reader of the report
-index by, and `back/slash.php` is a name that file does not have and that a
-real `back/slash.php` already owns, so the two would silently share one
-identity. `ChangedFile::isRepresentableGitPath()` therefore refuses such a row,
-and the row leaves a warning naming both the name and the reason.
-
-This is containment, not a repair, and it is deliberately asymmetric: a plain
-`bin/qmx check` still publishes such a file under the rewritten name, and only
-the git boundary declines to take part. The repair belongs in the path model —
-`RelativePath::normalize()` applies a Windows-separator rewrite to values whose
-own docblocks declare a POSIX model.
+**POSIX path identity.** Literal backslashes remain filename bytes in
+`RelativePath` and published paths; `back\slash.php` does not become the two
+segments `back/slash.php`. Git's NUL-separated names, discovery and report/baseline
+identities agree without a second separator rewrite. Unsupported names and paths
+outside the captured project still retain their named refusal diagnostics.
 
 ### GitRepositoryLocator
 
@@ -99,7 +84,12 @@ Locates the `.git` directory for the current repository. Used by hook commands
 2. Fallback: manual directory traversal (when git is not in PATH)
 
 **Methods:**
-- `findGitDir(?AbsolutePath $workingDir = null): ?AbsolutePath` — find `.git` directory path
+- `findGitDir(AbsolutePath $workingDir): ?AbsolutePath` — locate `.git` from an explicit root
+- `findHooksDir(AbsolutePath $workingDir): ?AbsolutePath` — locate hooks from that root
+
+The sole hook delivery boundary captures effective cwd once after Application
+applies `--working-dir` and passes it explicitly. The locator has no ambient cwd
+fallback; nullable results still mean no repository was found.
 
 ### GitScopeParser
 
@@ -118,33 +108,41 @@ The Infrastructure adapter for Reporting's
 - Resolves changed PHP paths and their declared namespaces for Reporting
 - By default includes parent namespaces when a changed file declares one
 - Indexes every namespace declaration in a changed PHP file, including multiple bracketed blocks
-- `--report-strict` requests no parent-namespace expansion
+- Uses `lstat` and does not read namespace source through file links
+- `--report-strict` requests no namespace/project widening of file-scoped findings
+- Keeps declared project-scoped findings independently of changed files in both modes; this currently includes `architecture.circular-dependency` cycle findings and `architecture.layer-violation` findings
+- Keeps file-scoped findings located in changed files. In non-strict mode also keeps namespace findings in changed namespaces and ancestors even when their location names another file, and location-free project findings when changed PHP files are nonempty.
+
+Diff paths use `--no-relative` from the captured repository context. Empty range
+endpoints become `HEAD` before reference validation. A refusal of this flag names
+the Git 2.28 requirement; there is no separate version probe. See the
+[Git reporting guide](../../../website/docs/usage/git-integration.md).
 
 ## Use Cases
 
-| Scenario      | --report        | Description                                        |
-| ------------- | --------------- | -------------------------------------------------- |
-| Full analysis | (not specified) | Analyze everything, show all findings              |
-| Pre-commit    | git:staged      | Full analysis, show findings in staged files only  |
-| PR review     | git:main..HEAD  | Full analysis, show findings in changed files only |
+| Scenario      | --report        | Description                                                           |
+| ------------- | --------------- | --------------------------------------------------------------------- |
+| Full analysis | (not specified) | Analyze everything, show all findings                                 |
+| Pre-commit    | git:staged      | Full analysis, show staged-file and declared project-scoped findings  |
+| PR review     | git:main..HEAD  | Full analysis, show changed-file and declared project-scoped findings |
 
 ## CLI Options
 
-| Option             | Description                                 |
-| ------------------ | ------------------------------------------- |
-| `--report=<scope>` | Which findings to show in the report        |
-| `--report-strict`  | Show only findings exactly in changed files |
+| Option             | Description                                                                                                     |
+| ------------------ | --------------------------------------------------------------------------------------------------------------- |
+| `--report=<scope>` | Which findings to show in the report                                                                            |
+| `--report-strict`  | Changed-file findings plus declared project-scoped findings, including architecture cycles and layer violations |
 
 ## Examples
 
 ```bash
-# Pre-commit: show findings in staged files only
+# Pre-commit: show staged-file and declared project-scoped findings
 bin/qmx check src/ --report=git:staged
 
-# PR review: show findings in changed files only
+# PR review: show changed-file and declared project-scoped findings
 bin/qmx check src/ --report=git:main..HEAD
 
-# Strict mode: only findings in changed files (exclude parent namespaces)
+# Strict mode: changed-file and declared project-scoped findings
 bin/qmx check src/ --report=git:main..HEAD --report-strict
 
 # Combined with baseline

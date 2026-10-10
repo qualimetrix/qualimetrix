@@ -13,6 +13,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassExclusionCheck;
 use Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassOptions;
 use Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassRule;
+use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationHelper;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountCollector;
@@ -20,6 +22,7 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\FileDeclarationIndex;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * Drives the rule from PHP source rather than from a hand-written metric bag.
@@ -251,24 +254,54 @@ final class DataClassDetectionTest extends TestCase
         self::assertStringContainsString('only 0% of the public interface is behavior', $findings[0]->message);
     }
 
+    #[Test]
+    public function itExcludesProjectGrandchildrenOfThrowableButJudgesProjectExceptionNames(): void
+    {
+        $dataBody = '{ public int $a = 0; public int $b = 0; public int $c = 0; public function getA(): int { return $this->a; } public function getB(): int { return $this->b; } public function getC(): int { return $this->c; } }';
+        $throwable = '<?php namespace App; class Failure extends \\RuntimeException {} class Mid extends Failure {} class Grand extends Mid ' . $dataBody;
+        self::assertSame([], $this->analyze($throwable));
+        $plain = '<?php namespace App; class Exception {} class Error extends Exception {} class Grand extends Error ' . $dataBody;
+        $findings = $this->analyze($plain);
+        self::assertCount(1, $findings);
+        self::assertSame('App\\Grand', $findings[0]->symbolPath->toString());
+    }
+
+    #[Test]
+    public function itJudgesAnUnreadParentOnlyWhenExceptionExclusionIsDisabled(): void
+    {
+        $code = '<?php namespace App; class Row extends \\Vendor\\Unread { public int $a = 0; public int $b = 0; public int $c = 0; public function getA(): int { return $this->a; } public function getB(): int { return $this->b; } public function getC(): int { return $this->c; } }';
+        self::assertSame([], $this->analyze($code));
+        self::assertCount(1, $this->analyze($code, options: new DataClassOptions(excludeExceptions: false)));
+    }
+
     /**
      * @return list<Finding>
      */
-    private function analyze(string $code, int $wmc = 5): array
+    private function analyze(string $code, int $wmc = 5, ?DataClassOptions $options = null): array
     {
         $collector = new MethodCountCollector();
-        $collector->useDeclarationIndex(new FileDeclarationIndex());
+        $index = new FileDeclarationIndex();
+        $collector->useDeclarationIndex($index);
 
+        $dependencyVisitor = new \Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor(new \Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver());
         $ast = (new ParserFactory())->createForHostVersion()->parse($code) ?? [];
+        \Qualimetrix\Core\Ast\NameResolution::resolve($ast);
         $traverser = new NodeTraverser();
+        $dependencyVisitor->beginFile(RelativePath::fromString('src/Subject.php'), $index);
         $traverser->addVisitor($collector->getVisitor());
+        $traverser->addVisitor($dependencyVisitor);
         $traverser->traverse($ast);
 
-        $repository = new InMemoryMetricRepository();
+        $inheritance = new \Qualimetrix\Analysis\Evidence\Design\Inheritance\DitGlobalCollector(new \Qualimetrix\Analysis\Evidence\Design\Inheritance\ExternalAncestry(\Qualimetrix\Tests\Analysis\Evidence\Design\Support\FixedParentSource::unconfigured()));
+        $repository = new InMemoryMetricRepository([
+            ...$inheritance->getMetricDefinitions(),
+            ...AggregationHelper::collectDefinitions([$collector]),
+            new MetricDefinition(MetricName::COMPLEXITY_WMC, SymbolLevel::Class_),
+        ]);
 
         foreach ($collector->getClassesWithMetrics(RelativePath::fromString('src/Subject.php')) as $class) {
-            // WMC is the rule's other axis; it is aggregated from callable CCN
-            // in Measurement, which this collector-only stand does not run.
+            // This fixture supplies the rule's WMC gate independently of its
+            // MethodCount collector.
             $repository->addSubject(
                 $class->subject,
                 $class->metrics->with(MetricName::COMPLEXITY_WMC, $wmc),
@@ -277,6 +310,9 @@ final class DataClassDetectionTest extends TestCase
             );
         }
 
-        return (new DataClassRule(new DataClassOptions()))->analyze(new AnalysisContext($repository));
+        $graph = (new \Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder(new \Qualimetrix\Analysis\Evidence\DependencyModel\UnplacedExternalClassSpelling()))->build($dependencyVisitor->dependencies(), $dependencyVisitor->classLikeDeclarations())->graph;
+        $inheritance->calculate($graph, $repository);
+
+        return (new DataClassRule($options ?? new DataClassOptions()))->analyze(new AnalysisContext($repository));
     }
 }

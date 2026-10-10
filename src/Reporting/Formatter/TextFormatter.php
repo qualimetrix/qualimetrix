@@ -13,6 +13,8 @@ use Qualimetrix\Core\Version;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
 use Qualimetrix\Reporting\Formatter\Detail\DetailedFindingRenderer;
 use Qualimetrix\Reporting\Formatter\Ordering\FindingSorter;
+use Qualimetrix\Reporting\Formatter\Prose\ComputedMetricAbsenceNarrator;
+use Qualimetrix\Reporting\Formatter\Prose\RuleAbstentionNarrator;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
@@ -36,18 +38,23 @@ final class TextFormatter implements FormatterInterface
         private readonly DetailedFindingRenderer $detailedRenderer,
     ) {}
 
-    public function format(Report $report, FormatterContext $context): string
+    public function format(Report $report, FormatterContext $context): FormattedReport
     {
         $formatted = $context->isDetailEnabled()
             ? $this->formatDetailed($report, $context)
             : $this->formatFlat($report, $context);
 
-        // The single point every `text` path reaches, flat or --detail alike —
-        // `text-verbose` delegates here too, so it inherits the pointer rather
-        // than needing its own.
         $color = new AnsiColor($context->useColor);
 
-        return $formatted . $color->dim(ProductIdentity::pointerText()) . "\n";
+        $populationLines = ($context->verbose ? RuleAbstentionNarrator::verboseLines($report) : RuleAbstentionNarrator::lines($report));
+        $absenceLines = [...$populationLines, ...ComputedMetricAbsenceNarrator::lines($report)];
+
+        return new FormattedReport($formatted . implode("\n", $absenceLines) . ($absenceLines === [] ? '' : "\n") . $color->dim(ProductIdentity::pointerText()) . "\n");
+    }
+
+    public function publicationKind(): PublicationKind
+    {
+        return PublicationKind::Prose;
     }
 
     public function getName(): string
@@ -63,7 +70,7 @@ final class TextFormatter implements FormatterInterface
     private function formatFlat(Report $report, FormatterContext $context): string
     {
         $color = new AnsiColor($context->useColor);
-        $sorted = FindingSorter::sort($report->findings, $context->groupBy);
+        $sorted = FindingSorter::sort($report->findings, $context->groupBy, $report->fileNamespaces);
 
         $lines = [];
 
@@ -90,7 +97,7 @@ final class TextFormatter implements FormatterInterface
         $color = new AnsiColor($context->useColor);
         $lines = [];
 
-        $lines[] = $this->detailedRenderer->renderCapped($report->findings, $context);
+        $lines[] = $this->detailedRenderer->renderCapped($report, $context);
         $lines[] = '';
 
         // Summary line
@@ -103,7 +110,7 @@ final class TextFormatter implements FormatterInterface
     private function formatFinding(Finding $finding, AnsiColor $color, FormatterContext $context): string
     {
         $file = $finding->location->file === null
-            ? '[project]'
+            ? PublishedFinding::place($finding)->name
             : $context->relativizePath($finding->location->file);
         $line = $finding->location->line;
         $severity = $this->formatSeverity($finding->severity, $color);

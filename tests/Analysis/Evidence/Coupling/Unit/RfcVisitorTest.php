@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Coupling\ClassRfcData;
 use Qualimetrix\Analysis\Evidence\Coupling\RfcVisitor;
 
 #[CoversClass(RfcVisitor::class)]
@@ -30,7 +31,7 @@ final class RfcVisitorTest extends TestCase
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
-        $classesData = $visitor->getClassesData();
+        $classesData = self::byName($visitor->getClassesData());
 
         foreach ($expected as $classFqn => $expectedData) {
             self::assertArrayHasKey($classFqn, $classesData, "Missing data for class $classFqn");
@@ -560,7 +561,7 @@ PHP;
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
-        $classesData = $visitor->getClassesData();
+        $classesData = self::byName($visitor->getClassesData());
 
         self::assertArrayHasKey('NullsafeService', $classesData);
         $data = $classesData['NullsafeService'];
@@ -596,7 +597,7 @@ PHP;
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
-        $classesData = $visitor->getClassesData();
+        $classesData = self::byName($visitor->getClassesData());
 
         self::assertArrayHasKey('NullsafeMulti', $classesData);
         $data = $classesData['NullsafeMulti'];
@@ -646,7 +647,7 @@ PHP;
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
-        $classesData = $visitor->getClassesData();
+        $classesData = self::byName($visitor->getClassesData());
 
         self::assertArrayHasKey('SelfFactory', $classesData);
         $data = $classesData['SelfFactory'];
@@ -682,7 +683,7 @@ PHP;
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
-        $classesData = $visitor->getClassesData();
+        $classesData = self::byName($visitor->getClassesData());
 
         self::assertArrayHasKey('ChainService', $classesData);
         $data = $classesData['ChainService'];
@@ -717,7 +718,7 @@ PHP;
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
-        $classesData = $visitor->getClassesData();
+        $classesData = self::byName($visitor->getClassesData());
 
         self::assertArrayHasKey('NullsafeDedup', $classesData);
         $data = $classesData['NullsafeDedup'];
@@ -752,7 +753,7 @@ PHP;
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
-        $data = $visitor->getClassesData()['Profile'];
+        $data = self::byName($visitor->getClassesData())['Profile'];
 
         // Two hooks are own callables; load() and normalize() are external calls.
         self::assertSame(4, $data->getRfc());
@@ -783,7 +784,7 @@ PHP;
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
-        $data = $visitor->getClassesData()['Profile'];
+        $data = self::byName($visitor->getClassesData())['Profile'];
 
         self::assertSame(3, $data->getRfc());
         self::assertSame(2, $data->getOwnMethodsCount());
@@ -819,7 +820,7 @@ PHP;
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
-        $data = $visitor->getClassesData()['Captures'];
+        $data = self::byName($visitor->getClassesData())['Captures'];
 
         // M = 2; first-class callable captures and clone-with create values but
         // do not invoke external RFC response targets.
@@ -850,7 +851,7 @@ PHP;
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast1);
 
-        self::assertArrayHasKey('First', $visitor->getClassesData());
+        self::assertArrayHasKey('First', self::byName($visitor->getClassesData()));
 
         // Reset
         $visitor->reset();
@@ -868,10 +869,29 @@ PHP;
         $traverser2->addVisitor($visitor);
         $traverser2->traverse($ast2);
 
-        $classesData = $visitor->getClassesData();
+        $classesData = self::byName($visitor->getClassesData());
 
         // Should only contain Second class
         self::assertArrayNotHasKey('First', $classesData);
         self::assertArrayHasKey('Second', $classesData);
+    }
+
+    /**
+     * @param array<int, ClassRfcData> $classes
+     *
+     * @return array<string, ClassRfcData>
+     */
+    private static function byName(array $classes): array
+    {
+        $result = [];
+        foreach ($classes as $data) {
+            $name = $data->namespace !== null && $data->namespace !== ''
+                ? $data->namespace . '\\' . $data->className
+                : $data->className;
+            self::assertArrayNotHasKey($name, $result);
+            $result[$name] = $data;
+        }
+
+        return $result;
     }
 }

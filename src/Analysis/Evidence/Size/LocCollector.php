@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Size;
 
+use LogicException;
 use Override;
 use PhpParser\Node;
+use PhpToken;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
@@ -17,6 +19,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceMetricProviderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SourceMeasuringCollectorInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -30,13 +33,14 @@ use SplFileInfo;
  *   unterminated last line: a file's final line break does not open a line
  * - lloc:{path} — Logical lines (lines with at least one code token)
  * - cloc:{path} — Pure comment lines (no code tokens on the same line)
- * - classLoc — Physical LOC per class (endLine - startLine + 1)
+ * - classLoc — Physical LOC per named class, interface, trait, or enum
+ *   (endLine - startLine + 1)
  *
  * A line with both code and an inline comment (e.g., `$a = 1; // note`)
  * counts as LLOC but NOT as CLOC. Only lines where ALL tokens are
  * comments/whitespace count as CLOC.
  */
-final class LocCollector extends AbstractCollector implements DeclarationIndexAwareInterface, ClassMetricsProviderInterface, NamespaceMetricProviderInterface
+final class LocCollector extends AbstractCollector implements DeclarationIndexAwareInterface, ClassMetricsProviderInterface, NamespaceMetricProviderInterface, SourceMeasuringCollectorInterface
 {
     use DeclarationIndexAwareTrait;
 
@@ -44,6 +48,13 @@ final class LocCollector extends AbstractCollector implements DeclarationIndexAw
 
     /** @var list<NamespaceWithMetrics> */
     private array $namespaceMetrics = [];
+
+    private ?string $source = null;
+
+    public function measureSource(string $source): void
+    {
+        $this->source = $source;
+    }
 
     public function __construct()
     {
@@ -73,21 +84,7 @@ final class LocCollector extends AbstractCollector implements DeclarationIndexAw
      */
     public function collect(SplFileInfo $file, array $ast): MetricBag
     {
-        if (!$file->isFile() || !$file->isReadable()) {
-            return (new MetricBag())
-                ->with(MetricName::SIZE_LOC, 0)
-                ->with(MetricName::SIZE_LLOC, 0)
-                ->with(MetricName::SIZE_CLOC, 0);
-        }
-
-        $content = file_get_contents($file->getPathname());
-
-        if ($content === false) {
-            return (new MetricBag())
-                ->with(MetricName::SIZE_LOC, 0)
-                ->with(MetricName::SIZE_LLOC, 0)
-                ->with(MetricName::SIZE_CLOC, 0);
-        }
+        $content = $this->source ?? throw new LogicException('Source bytes must be measured before LOC collection');
 
         $metrics = $this->calculateMetrics($content);
         $this->namespaceMetrics = $this->calculateNamespaceMetrics($content);
@@ -97,10 +94,12 @@ final class LocCollector extends AbstractCollector implements DeclarationIndexAw
             ->with(MetricName::SIZE_LLOC, $metrics[MetricName::SIZE_LLOC])
             ->with(MetricName::SIZE_CLOC, $metrics[MetricName::SIZE_CLOC]);
 
-        // Store class-level LOC with class FQN as key
         \assert($this->visitor instanceof LocVisitor);
 
-        foreach ($this->visitor->getClassRanges() as $classFqn => $range) {
+        foreach ($this->visitor->getClassRanges() as $range) {
+            $classFqn = $range['namespace'] !== null && $range['namespace'] !== ''
+                ? $range['namespace'] . '\\' . $range['className']
+                : $range['className'];
             $classLoc = $range['endLine'] - $range['startLine'] + 1;
             $bag = $bag->with(MetricName::SIZE_CLASS_LOC . ':' . $classFqn, $classLoc);
         }
@@ -120,6 +119,7 @@ final class LocCollector extends AbstractCollector implements DeclarationIndexAw
     {
         parent::reset();
         $this->namespaceMetrics = [];
+        $this->source = null;
     }
 
     /**
@@ -175,8 +175,6 @@ final class LocCollector extends AbstractCollector implements DeclarationIndexAw
 
         // A "pure comment line" has comment tokens but NO code tokens.
         // Lines with both code and comments (inline comments) are code lines, not CLOC.
-        // Lines that are non-empty and not marked as either code or comment must have
-        // single-character code tokens (braces, semicolons, etc.) — they are code lines.
         // LLOC = LOC - empty lines - pure comment lines
         $emptyCount = $this->countLinesInRange($emptyLines, $startLine, $endLine);
         $pureCommentLineCount = 0;
@@ -207,23 +205,14 @@ final class LocCollector extends AbstractCollector implements DeclarationIndexAw
         /** @var array<int, true> */
         $codeLines = [];
 
-        foreach (@token_get_all($content) as $token) {
-            if (!\is_array($token)) {
-                // Single-character tokens ('{', '}', ';', etc.) don't carry line
-                // information in token_get_all. Lines containing only such tokens
-                // are handled by the caller as non-empty, non-comment lines.
-                continue;
-            }
-
-            [$tokenId, $tokenContent, $tokenLine] = $token;
-
-            if ($tokenId === \T_COMMENT || $tokenId === \T_DOC_COMMENT) {
-                $this->markLines($commentLines, $tokenLine, $tokenContent);
-            } elseif ($tokenId !== \T_WHITESPACE
-                && $tokenId !== \T_OPEN_TAG
-                && $tokenId !== \T_CLOSE_TAG
+        foreach (PhpToken::tokenize($content) as $token) {
+            if ($token->id === \T_COMMENT || $token->id === \T_DOC_COMMENT) {
+                $this->markLines($commentLines, $token->line, $token->text);
+            } elseif ($token->id !== \T_WHITESPACE
+                && $token->id !== \T_OPEN_TAG
+                && $token->id !== \T_CLOSE_TAG
             ) {
-                $this->markLines($codeLines, $tokenLine, $tokenContent);
+                $this->markLines($codeLines, $token->line, $token->text);
             }
         }
 

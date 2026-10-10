@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Size\Unit;
 
+use LogicException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -17,11 +19,52 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(PropertyCountRule::class)]
 #[CoversClass(PropertyCountOptions::class)]
 final class PropertyCountRuleTest extends TestCase
 {
+    #[Test]
+    public function itUsesReadonlyAndPromotedPublicationInsteadOfAStaleInterfaceFlag(): void
+    {
+        foreach (['design.is-readonly', 'design.is-promoted-properties-only'] as $flag) {
+            $repository = self::createStub(MetricRepositoryInterface::class);
+            $info = self::subjectInfo(SymbolPath::forClass('Population', 'Readonly'), RelativePath::fromString('src/Readonly.php'), 1);
+            $repository->method('allClassDeclarations')->willReturn([$info]);
+            $repository->method('getSubject')->willReturn((new MetricBag())->with('size.property-count', 20)->with($flag, 1)->with('design.is-interface', 0));
+            self::assertSame([], (new PropertyCountRule(new PropertyCountOptions()))->analyze(new AnalysisContext($repository)));
+            self::assertCount(1, (new PropertyCountRule(new PropertyCountOptions(excludeReadonly: false, excludePromotedOnly: false)))->analyze(new AnalysisContext($repository)));
+        }
+    }
+
+    #[Test]
+    public function itCountsMeasuredZeroBeforeSeverityAndDistinguishesMissingPublication(): void
+    {
+        $rule = new PropertyCountRule(new PropertyCountOptions(excludeReadonly: false, excludePromotedOnly: false));
+        $repository = new \Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository([new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName::SIZE_PROPERTY_COUNT, \Qualimetrix\Core\Symbol\SymbolLevel::Class_)]);
+        foreach (['Healthy' => (new MetricBag())->with(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName::SIZE_PROPERTY_COUNT, 0), 'Missing' => new MetricBag()] as $name => $bag) {
+            $info = self::subjectInfo(SymbolPath::forClass('Population', $name), RelativePath::fromString('src/' . $name . '.php'), 1);
+            $repository->addSubject($info->subject ?? throw new LogicException('Exact fixture subject is required.'), $bag, $info->file, 1);
+        }
+        $decisions = [];
+        foreach (PropertyCountRule::channelDeclarations() as $channel => $declaration) {
+            foreach ($declaration->levels as $level) {
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
+                    new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(PropertyCountRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable),
+                    new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
+                );
+            }
+        }
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+        $context = (new AnalysisContext($repository))->withPopulationTrace($session);
+        self::assertSame([], $rule->analyze($context));
+        self::assertSame(1, $session->freeze()->judgedCount());
+        self::assertSame(1, $session->freeze()->unjudgedCount());
+        self::assertSame('declaration', $session->freeze()->abstentions()[0]->unit);
+        self::assertStringContainsString('Missing', $session->freeze()->abstentions()[0]->examples[0]);
+    }
+
     #[Test]
     public function itGetsName(): void
     {
@@ -141,9 +184,9 @@ final class PropertyCountRuleTest extends TestCase
         );
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$symbolInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($bag);
 
         $context = new AnalysisContext($repository);
@@ -163,8 +206,8 @@ final class PropertyCountRuleTest extends TestCase
         $subject = $classInfo->subject;
         self::assertNotNull($subject);
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn((new MetricBag())->with('size.property-count', 12));
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('size.property-count', 12));
         $context = new AnalysisContext(
             metrics: $repository,
             thresholdOverrides: [
@@ -177,7 +220,7 @@ final class PropertyCountRuleTest extends TestCase
         self::assertCount(1, $findings);
         self::assertSame(Severity::Error, $findings[0]->severity);
         self::assertSame(12, $findings[0]->threshold);
-        self::assertSame('Property count is 12, exceeds threshold of 12. Consider splitting the class or using composition', $findings[0]->message);
+        self::assertSame('Property count is 12, reaches threshold of 12. Consider splitting the class or using composition', $findings[0]->message);
         self::assertSame($subject->toCanonical(), $findings[0]->subject->toCanonical());
     }
 
@@ -320,9 +363,9 @@ final class PropertyCountRuleTest extends TestCase
         );
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([$symbolInfo]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn($bag);
 
         return new AnalysisContext($repository);
@@ -332,11 +375,11 @@ final class PropertyCountRuleTest extends TestCase
     {
         $class = SymbolPath::forClass('App\\Service', 'Twin');
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([
+        $repository->method('allClassDeclarations')->willReturn([
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn(
+        $repository->method('getSubject')->willReturn(
             (new MetricBag())
                 ->with('size.property-count', 12)
                 ->with('design.is-readonly', 0)
@@ -355,6 +398,13 @@ final class PropertyCountRuleTest extends TestCase
         ], $subjects);
     }
 
+    #[Test]
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
+    {
+        self::assertEquals(new PropertyCountOptions(), PropertyCountOptions::fromResolved(ResolvedOptionsFixture::values(PropertyCountOptions::class, [])));
+        self::assertFalse(PropertyCountOptions::fromResolved(ResolvedOptionsFixture::values(PropertyCountOptions::class, ['enabled' => false]))->isEnabled());
+    }
+
     private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
     {
         $type = $symbolPath->getType();
@@ -370,6 +420,7 @@ final class PropertyCountRuleTest extends TestCase
             $file,
             $line,
             $kind,
+            $kind === \Qualimetrix\Core\Symbol\CallableKind::Method ? \Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forClass($symbolPath->namespace ?? '', $symbolPath->type ?? ''), $file, \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)) : null,
         );
     }
 }

@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationSt
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityIndexCollector;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
@@ -125,6 +126,43 @@ final class AmphpParallelStrategyTest extends TestCase
         foreach ($results as $result) {
             self::assertInstanceOf(FileProcessingResult::class, $result);
             self::assertTrue($result->isSuccessful());
+        }
+    }
+
+    #[Test]
+    public function itPublishesTheNamedLinkInAWorkerForSuccessAndReadFailure(): void
+    {
+        if (!$this->strategy->isAvailable()) {
+            self::markTestSkipped('Parallel worker transport is unavailable.');
+        }
+
+        $outside = $this->tempDir . '-outside';
+        mkdir($this->tempDir . '/src');
+        mkdir($outside);
+        file_put_contents($outside . '/Actual.php', '<?php class Actual {}');
+        symlink($outside . '/Actual.php', $this->tempDir . '/src/Named.php');
+        symlink($outside . '/Missing.php', $this->tempDir . '/src/Missing.php');
+
+        try {
+            $this->strategy->setProjectRoot(AbsolutePath::fromString($this->tempDir));
+            $this->strategy->setMinFilesForParallel(1);
+            $this->strategy->setWorkerCount(2);
+
+            $results = $this->strategy->execute(
+                [new SplFileInfo($this->tempDir . '/src/Named.php'), new SplFileInfo($this->tempDir . '/src/Missing.php')],
+                static fn(): never => throw new LogicException('Parallel execution must not use the fallback.'),
+            );
+
+            self::assertCount(2, $results);
+            self::assertInstanceOf(FileProcessingResult::class, $results[0]);
+            self::assertTrue($results[0]->isSuccessful());
+            self::assertSame('src/Named.php', $results[0]->filePath->value());
+            self::assertInstanceOf(FileProcessingResult::class, $results[1]);
+            self::assertFalse($results[1]->isSuccessful());
+            self::assertSame('src/Missing.php', $results[1]->filePath->value());
+        } finally {
+            unlink($outside . '/Actual.php');
+            rmdir($outside);
         }
     }
 
@@ -462,6 +500,7 @@ final class AmphpParallelStrategyTest extends TestCase
         return new AmphpParallelStrategy(
             new FileProcessingTaskFactory(
                 new LcomCollectionConfigurationStore(),
+                new RuleOptionDocumentForms(),
                 DependencyVisitor::class,
                 $collectorClasses,
                 $derivedCollectorClasses,

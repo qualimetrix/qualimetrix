@@ -10,8 +10,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\TccLccCollector;
+use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector;
 use Qualimetrix\Analysis\Evidence\Coupling\RfcCollector;
-use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthCollector;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
@@ -50,15 +50,15 @@ final class ClassProducerCensusTest extends TestCase
         UnusedPrivateCollector::class => 'src/Analysis/Evidence/CodeSmell/UnusedPrivateCollector.php',
         LcomCollector::class => 'src/Analysis/Evidence/Cohesion/LcomCollector.php',
         TccLccCollector::class => 'src/Analysis/Evidence/Cohesion/TccLccCollector.php',
+        CyclomaticComplexityCollector::class => 'src/Analysis/Evidence/Complexity/CyclomaticComplexityCollector.php',
         RfcCollector::class => 'src/Analysis/Evidence/Coupling/RfcCollector.php',
-        InheritanceDepthCollector::class => 'src/Analysis/Evidence/Design/Inheritance/InheritanceDepthCollector.php',
         TypeCoverageCollector::class => 'src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageVisitor.php',
         LocCollector::class => 'src/Analysis/Evidence/Size/LocCollector.php',
         MethodCountCollector::class => 'src/Analysis/Evidence/Size/MethodCountCollector.php',
     ];
 
     /**
-     * A ninth class-metric producer is one no fixture above covers.
+     * A tenth class-metric producer is one no fixture above covers.
      *
      * The producers are enumerated by what makes them producers — the contract
      * they implement, resolved through the autoloader — and not by the text of

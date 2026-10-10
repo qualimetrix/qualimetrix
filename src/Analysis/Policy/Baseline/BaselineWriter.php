@@ -5,9 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use InvalidArgumentException;
+use Qualimetrix\Core\FileTarget\PreparedTarget;
+use Qualimetrix\Core\FileTarget\ResolvedTarget;
+use Qualimetrix\Core\FileTarget\TargetKind;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use RuntimeException;
+use stdClass;
 
 /**
  * Turns a {@see Baseline} into the bytes of a baseline file and puts them in
@@ -47,22 +52,35 @@ final readonly class BaselineWriter
      * the token a caller passes on if it goes on to modify and write again,
      * via {@see Baseline::withSourceContentHash()}.
      *
+     * @param ?callable(): void $beforePublish
+     *
      * @throws BaselineConflictException if the target changed or vanished since it was read
      * @throws RuntimeException if the write fails
      */
-    public function write(Baseline $baseline, string $path, AbsolutePath $projectRoot): string
+    public function write(Baseline $baseline, ResolvedTarget $target, AbsolutePath $projectRoot, ?PreparedTarget $prepared = null, ?callable $beforePublish = null): string
     {
+        if ($baseline->expectsSourceAbsence && $target->kind !== TargetKind::Absent) {
+            throw new BaselineConflictException(\sprintf(
+                'Baseline file %s appeared since it was read as absent; refusing to overwrite. '
+                . 'Re-run the command to pick up the current file.',
+                $target->spelling,
+            ));
+        }
+        if ($baseline->sourceContentHash !== null && $target->kind !== TargetKind::Regular) {
+            throw new BaselineConflictException(\sprintf(
+                'Baseline file %s no longer exists; refusing to recreate it from a stale reading. '
+                . 'Regenerate the baseline if its removal was intended.',
+                $target->spelling,
+            ));
+        }
+
         $serialized = $this->serializeBaseline($baseline, $projectRoot);
         $entries = $serialized['entries'];
         unset($serialized['entries']);
 
         $json = BaselineDocumentLayout::render($serialized, $entries);
 
-        if ($baseline->expectsSourceAbsence) {
-            $this->documents->create($path, $json);
-        } else {
-            $this->documents->replace($path, $json, $baseline->sourceContentHash);
-        }
+        $this->documents->replace($target, $json, $baseline->sourceContentHash, $prepared, $beforePublish);
 
         return hash('sha256', $json);
     }
@@ -73,9 +91,11 @@ final readonly class BaselineWriter
      *
      * Answered by {@see BaselineDocumentWriter::snapshot()}, which owns the guard the token feeds.
      *
-     * @throws \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal if the destination is not a readable regular file
+     * @throws \Qualimetrix\Core\FileTarget\FileTargetFailure if the destination cannot be prepared safely
+     *
+     * @return array{target: ResolvedTarget, hash: ?string}
      */
-    public function destinationSnapshot(string $path): string
+    public function destinationSnapshot(string $path): array
     {
         return BaselineDocumentWriter::snapshot($path);
     }
@@ -89,15 +109,29 @@ final readonly class BaselineWriter
      *     version: int,
      *     generated: string,
      *     scope: list<string>,
-     *     entries: array<string, list<mixed>>
+     *     exclusions: array{patterns: list<string>, generated: 'included'|'excluded'},
+     *     entries: array<string, list<mixed>|stdClass>
      * }
      */
     private function serializeBaseline(Baseline $baseline, AbsolutePath $projectRoot): array
     {
+        if (!mb_check_encoding($baseline->scope, 'UTF-8')) {
+            throw new InvalidArgumentException(
+                'Baseline scope contains a path that is not valid UTF-8; the JSON format cannot record raw byte paths. '
+                . 'Analyze a containing UTF-8 directory instead.',
+            );
+        }
+        if (!mb_check_encoding($baseline->exclusions->patterns, 'UTF-8')) {
+            throw new InvalidArgumentException(
+                'Baseline exclusions contain a selector that is not valid UTF-8; the JSON format cannot record raw byte selectors.',
+            );
+        }
+
         return [
             'version' => BaselineFormatVersion::CURRENT,
             'generated' => $baseline->generated->format('c'),
             'scope' => $baseline->scope,
+            'exclusions' => $baseline->exclusions->toArray(),
             'entries' => $this->serializeEntries($baseline, $projectRoot),
         ];
     }
@@ -133,7 +167,7 @@ final readonly class BaselineWriter
      * @throws InvalidArgumentException when two entries collapse onto one identity after
      *                                  their subject keys are relativized
      *
-     * @return array<string, list<mixed>>
+     * @return array<string, list<mixed>|stdClass>
      */
     private function serializeEntries(Baseline $baseline, AbsolutePath $projectRoot): array
     {
@@ -171,12 +205,16 @@ final readonly class BaselineWriter
         foreach ($grouped as $key => $items) {
             usort($items, static fn(array $a, array $b): int => strcmp($a['sort'], $b['sort']));
 
-            $payloads = [];
-            foreach ($items as $item) {
-                $payloads[] = $item['payload'];
+            if (\count($items) !== 1 && array_any($items, static fn(array $item): bool => $item['payload'] instanceof stdClass)) {
+                throw new InvalidArgumentException(\sprintf(
+                    'Baseline subject %s contains a malformed object bucket alongside another entry; '
+                    . 'clean up the malformed bucket before adding entries to this subject.',
+                    $key,
+                ));
             }
 
-            $serialized[$key] = $payloads;
+            $payloads = array_column($items, 'payload');
+            $serialized[$key] = $payloads[0] instanceof stdClass ? $payloads[0] : $payloads;
         }
 
         ksort($serialized, \SORT_STRING);
@@ -229,7 +267,7 @@ final readonly class BaselineWriter
             return $canonical;
         }
 
-        $filePath = substr($canonical, 5);
+        $filePath = rawurldecode(substr($canonical, 5));
 
         if ($filePath === '') {
             return $canonical;
@@ -237,6 +275,6 @@ final readonly class BaselineWriter
 
         $relative = PathFactory::tryProjectRelative($filePath, $projectRoot);
 
-        return $relative !== null ? 'file:' . $relative->value() : $canonical;
+        return $relative !== null ? SymbolPath::forFile($relative)->toCanonical() : $canonical;
     }
 }

@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -19,18 +20,22 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateDisposition;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateRefusalReason;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateResult;
 use Qualimetrix\Analysis\Policy\Baseline\EntrySelector;
 use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FindingFactory;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 
 /**
  * ADR 0017 rules for `baseline:update`, exercised through the domain service
@@ -61,7 +66,7 @@ final class BaselineUpdaterTest extends TestCase
 
         $current = FindingFactory::magnitude($symbol, 100, 'duplication.clone', 'duplication.clone');
 
-        $result = $this->updater()->update(self::baselineOf($stored), [$current], RunScope::fromRecorded(['src']));
+        $result = $this->update(self::baselineOf($stored), [$current], RunScope::fromRecorded(['src']));
 
         self::assertSame(BaselineUpdateDisposition::Updated, $result->outcomes[0]->disposition);
         self::assertSame([100.0], $result->baseline->entries[0]->magnitudes);
@@ -71,11 +76,9 @@ final class BaselineUpdaterTest extends TestCase
 
     /**
      * **`$changed` reads the payload, not the disposition (ADR 0017).** A
-     * measured group that reports exactly what is already stored still gets
-     * `Updated` — {@see BaselineUpdater::reconcileMagnitude()} does not
-     * special-case an unchanged group — but nothing was actually written
-     * differently, so the caller deciding whether to touch the file must see
-     * `false` here.
+     * measured group that reports exactly what is already stored is
+     * `Unchanged`, and the caller deciding whether to touch the file sees
+     * `false`.
      */
     #[Test]
     public function itReportsNoChangeWhenAnUpdatedEntryWritesBackTheSamePayload(): void
@@ -92,9 +95,9 @@ final class BaselineUpdaterTest extends TestCase
             FindingFactory::magnitude($symbol, 100, 'duplication.clone', 'duplication.clone'),
         ];
 
-        $result = $this->updater()->update(self::baselineOf($stored), $current, RunScope::fromRecorded(['src']));
+        $result = $this->update(self::baselineOf($stored), $current, RunScope::fromRecorded(['src']));
 
-        self::assertSame(BaselineUpdateDisposition::Updated, $result->outcomes[0]->disposition);
+        self::assertSame(BaselineUpdateDisposition::Unchanged, $result->outcomes[0]->disposition);
         self::assertFalse($result->changed, 'the measured group reports exactly what was already stored');
     }
 
@@ -104,7 +107,7 @@ final class BaselineUpdaterTest extends TestCase
         $symbol = SymbolPath::forMethod('App', 'Foo', 'bar');
         $stored = new BaselineEntry(BaselineIdentity::forFinding(FindingFactory::magnitude($symbol, 25)), [25], 1);
 
-        $result = $this->updater()->update(self::baselineOf($stored), [], RunScope::fromRecorded(['src']));
+        $result = $this->update(self::baselineOf($stored), [], RunScope::fromRecorded(['src']));
 
         self::assertSame(BaselineUpdateDisposition::Skipped, $result->outcomes[0]->disposition);
         self::assertFalse($result->changed);
@@ -138,7 +141,7 @@ final class BaselineUpdaterTest extends TestCase
             FindingFactory::magnitude($symbol, 70, 'maintainability.mi', 'maintainability.index.class'),
         ];
 
-        $result = $this->updater()->update(self::baselineOf($stored), $current, RunScope::fromRecorded(['src']));
+        $result = $this->update(self::baselineOf($stored), $current, RunScope::fromRecorded(['src']));
 
         self::assertSame(BaselineUpdateDisposition::Refused, $result->outcomes[0]->disposition);
         self::assertSame(BaselineUpdateRefusalReason::Worsened, $result->outcomes[0]->refusalReason);
@@ -152,7 +155,7 @@ final class BaselineUpdaterTest extends TestCase
         $symbol = SymbolPath::forMethod('App', 'Foo', 'bar');
         $stored = new BaselineEntry(BaselineIdentity::forFinding(FindingFactory::magnitude($symbol, 25)), [25], 1);
 
-        $result = $this->updater()->update(self::baselineOf($stored), [], RunScope::fromRecorded(['src']));
+        $result = $this->update(self::baselineOf($stored), [], RunScope::fromRecorded(['src']));
 
         self::assertSame(BaselineUpdateDisposition::Skipped, $result->outcomes[0]->disposition);
         self::assertSame($stored, $result->baseline->entries[0], 'the untouched entry is the exact same object, not a rebuilt copy');
@@ -161,10 +164,10 @@ final class BaselineUpdaterTest extends TestCase
     #[Test]
     public function itNeverAddsAnIdentityTheBaselineDidNotAlreadyHold(): void
     {
-        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: [], entries: []);
+        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: [], entries: [], exclusions: self::fixtureExclusions());
         $found = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 25);
 
-        $result = $this->updater()->update($baseline, [$found], RunScope::fromRecorded(['src']));
+        $result = $this->update($baseline, [$found], RunScope::fromRecorded(['src']));
 
         self::assertSame(0, $result->baseline->count());
         self::assertSame([], $result->outcomes);
@@ -183,9 +186,9 @@ final class BaselineUpdaterTest extends TestCase
             raw: 'garbage',
         );
 
-        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], inertEntries: [$inert]);
+        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], inertEntries: [$inert], exclusions: self::fixtureExclusions());
 
-        $result = $this->updater()->update($baseline, [], RunScope::fromRecorded(['src']));
+        $result = $this->update($baseline, [], RunScope::fromRecorded(['src']));
 
         self::assertSame([$inert], $result->baseline->inertEntries);
     }
@@ -203,7 +206,7 @@ final class BaselineUpdaterTest extends TestCase
 
         $current = FindingFactory::magnitude($symbol, 20);
 
-        $result = $this->updater()->update(self::baselineOf($stored), [$current], RunScope::fromRecorded(['src']));
+        $result = $this->update(self::baselineOf($stored), [$current], RunScope::fromRecorded(['src']));
 
         self::assertSame(BaselineEntryMode::Suppress, $result->baseline->entries[0]->mode);
     }
@@ -227,7 +230,7 @@ final class BaselineUpdaterTest extends TestCase
             BaselineEntryMode::Suppress,
         );
 
-        $result = $this->updater()->update(
+        $result = $this->update(
             self::baselineOf($stored),
             [FindingFactory::magnitude($symbol, 40)],
             RunScope::fromRecorded(['src']),
@@ -256,7 +259,7 @@ final class BaselineUpdaterTest extends TestCase
         $symbol = SymbolPath::forMethod('App', 'Foo', 'bar');
         $stored = new BaselineEntry(BaselineIdentity::forFinding(FindingFactory::magnitude($symbol, 25)), [25], 1);
 
-        $result = $this->updater()->update(
+        $result = $this->update(
             self::baselineOf($stored),
             [FindingFactory::magnitude($symbol, 40)],
             RunScope::fromRecorded(['src']),
@@ -276,7 +279,7 @@ final class BaselineUpdaterTest extends TestCase
         $identity = new BaselineIdentity($symbol->toCanonical(), self::gotoChannel());
         $stored = new BaselineEntry($identity, null, 1, BaselineEntryMode::Suppress);
 
-        $result = $this->updater()->update(
+        $result = $this->update(
             self::baselineOf($stored),
             [FindingFactory::occurrence($symbol), FindingFactory::occurrence($symbol)],
             RunScope::fromRecorded(['src']),
@@ -297,7 +300,7 @@ final class BaselineUpdaterTest extends TestCase
         $stored = new BaselineEntry(BaselineIdentity::forFinding($finding), [5], 1);
 
         $result = (new BaselineUpdater(new StubChannelDeclarationRegistry(), new FixedClock()))
-            ->update(self::baselineOf($stored), [$finding], RunScope::fromRecorded(['src']));
+            ->update(self::baselineOf($stored), [$finding], StubRuleCoverage::completeFor(self::baselineOf($stored)), []);
 
         self::assertSame(BaselineUpdateDisposition::Refused, $result->outcomes[0]->disposition);
         self::assertSame(BaselineUpdateRefusalReason::UndeclaredChannel, $result->outcomes[0]->refusalReason);
@@ -309,7 +312,7 @@ final class BaselineUpdaterTest extends TestCase
      * disagrees with what the channel currently declares — the loader would
      * refuse such a line, but a lifecycle command building a `Baseline`
      * directly bypasses the loader entirely (mirrors
-     * {@see \Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage}'s identical
+     * {@see \Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage}'s identical
      * reachability note).
      */
     #[Test]
@@ -324,7 +327,7 @@ final class BaselineUpdaterTest extends TestCase
 
         $current = FindingFactory::occurrence($symbol);
 
-        $result = $this->updater()->update(self::baselineOf($stored), [$current], RunScope::fromRecorded(['src']));
+        $result = $this->update(self::baselineOf($stored), [$current], RunScope::fromRecorded(['src']));
 
         self::assertSame(BaselineUpdateDisposition::Refused, $result->outcomes[0]->disposition);
         self::assertSame(BaselineUpdateRefusalReason::ShapeMismatch, $result->outcomes[0]->refusalReason);
@@ -346,36 +349,39 @@ final class BaselineUpdaterTest extends TestCase
             severity: Severity::Warning,
         );
 
-        $result = $this->updater()->update(self::baselineOf($stored), [$noNumber], RunScope::fromRecorded(['src']));
+        $result = $this->update(self::baselineOf($stored), [$noNumber], RunScope::fromRecorded(['src']));
 
-        self::assertSame(BaselineUpdateDisposition::Refused, $result->outcomes[0]->disposition);
-        self::assertSame(BaselineUpdateRefusalReason::CurrentMagnitudeUnavailable, $result->outcomes[0]->refusalReason);
+        self::assertSame(BaselineUpdateDisposition::NotCompared, $result->outcomes[0]->disposition);
+        self::assertSame('magnitude-unavailable', $result->outcomes[0]->reasonCode);
         self::assertSame([15.0], $result->baseline->entries[0]->magnitudes);
     }
 
     #[Test]
     public function itStampsTheResultFromTheInjectedClock(): void
     {
-        $baseline = new Baseline(generated: new DateTimeImmutable('2020-01-01T00:00:00+00:00'), scope: ['src'], entries: []);
+        $finding = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 10);
+        $entry = new BaselineEntry(BaselineIdentity::forFinding($finding), [15], 1);
+        $baseline = new Baseline(generated: new DateTimeImmutable('2020-01-01T00:00:00+00:00'), scope: ['src'], entries: [$entry], exclusions: self::fixtureExclusions());
 
-        $result = $this->updater()->update($baseline, [], RunScope::fromRecorded(['src']));
+        $result = $this->update($baseline, [$finding], RunScope::fromRecorded(['src']));
 
         self::assertSame('2026-08-05T12:00:00+03:00', $result->baseline->generated->format('c'));
     }
 
     /**
-     * A run at least as wide as the file's recorded scope records its own:
-     * the entries it wrote are backed by at least as much measurement, so
-     * widening the file's claim is the honest direction.
+     * Ordinary update retains the recorded scope even when a run is wider
+     * and tightens a measured entry.
      */
     #[Test]
-    public function itRecordsTheRunScopeWhenTheRunCoversWhatTheFileRecords(): void
+    public function itRetainsTheRecordedScopeWhenTheRunIsWiderAndTightensAnEntry(): void
     {
-        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: []);
+        $finding = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 10);
+        $entry = new BaselineEntry(BaselineIdentity::forFinding($finding), [15], 1);
+        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [$entry], exclusions: self::fixtureExclusions());
 
-        $result = $this->updater()->update($baseline, [], RunScope::fromRecorded(['src', 'tests']));
+        $result = $this->update($baseline, [$finding], RunScope::fromRecorded(['src', 'tests']));
 
-        self::assertSame(['src', 'tests'], $result->baseline->scope);
+        self::assertSame(['src'], $result->baseline->scope);
     }
 
     /**
@@ -389,9 +395,9 @@ final class BaselineUpdaterTest extends TestCase
     #[Test]
     public function itKeepsTheRecordedScopeWhenTheRunDoesNotCoverIt(): void
     {
-        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src', 'tests'], entries: []);
+        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src', 'tests'], entries: [], exclusions: self::fixtureExclusions());
 
-        $result = $this->updater()->update($baseline, [], RunScope::fromRecorded(['src/Legacy']));
+        $result = $this->update($baseline, [], RunScope::fromRecorded(['src/Legacy']));
 
         self::assertSame(['src', 'tests'], $result->baseline->scope);
     }
@@ -399,21 +405,190 @@ final class BaselineUpdaterTest extends TestCase
     #[Test]
     public function itCarriesTheSourceContentHashForward(): void
     {
-        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], sourceContentHash: 'abc123');
+        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], sourceContentHash: 'abc123', exclusions: self::fixtureExclusions());
 
-        $result = $this->updater()->update($baseline, [], RunScope::fromRecorded(['src']));
+        $result = $this->update($baseline, [], RunScope::fromRecorded(['src']));
 
         self::assertSame('abc123', $result->baseline->sourceContentHash);
     }
 
+    #[Test]
+    public function itOnlyAddsNewIdentitiesOfExplicitChannels(): void
+    {
+        $old = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 30);
+        $entry = new BaselineEntry(BaselineIdentity::forFinding($old), [40], 1, BaselineEntryMode::Suppress);
+        $new = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'added'), 20);
+        $held = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'held'), 35);
+        $inert = InertBaselineEntry::forIdentity(BaselineIdentity::forFinding($held), InertEntryReason::Malformed, 'invalid count', ['channel' => 'complexity.ccn', 'count' => 0]);
+        $baseline = new Baseline(new DateTimeImmutable('2000-01-01'), ['src'], [$entry], self::fixtureExclusions(), [$inert], 'held-hash');
+        $other = FindingFactory::magnitude(SymbolPath::forFile(RelativePath::fromString('src/Foo.php')), 100, 'duplication.clone', 'duplication.clone');
+
+        $occurrence = FindingFactory::occurrence(SymbolPath::forMethod('App', 'Foo', 'gotoMethod'));
+        $result = $this->updater()->acceptNew($baseline, [$old, $held, $other, $new, $occurrence], [new FindingChannel('complexity.ccn'), new FindingChannel('code-smell.goto')], StubRuleCoverage::completeFor($baseline), StubRuleCoverage::everyRuleRan());
+
+        self::assertTrue($result->changed);
+        self::assertCount(3, $result->baseline->entries);
+        self::assertNull($result->baseline->entries[2]->magnitudes);
+        self::assertSame(1, $result->baseline->entries[2]->count);
+        self::assertSame($entry, $result->baseline->entries[0]);
+        self::assertSame(BaselineIdentity::forFinding($new)->key(), $result->baseline->entries[1]->identity->key());
+        self::assertSame([$inert], $result->baseline->inertEntries);
+        self::assertSame($baseline->scope, $result->baseline->scope);
+        self::assertSame($baseline->exclusions, $result->baseline->exclusions);
+        self::assertSame('held-hash', $result->baseline->sourceContentHash);
+        self::assertNotEquals($baseline->generated, $result->baseline->generated);
+        self::assertSame(['existing-entry', 'inert-holds-identity', null, null], array_map(static fn($outcome) => $outcome->reasonCode, $result->outcomes));
+        self::assertSame([], $result->channelNotes);
+    }
+
+    #[Test]
+    public function itSkipsNewGroupsWithoutComparableCompleteEvidence(): void
+    {
+        $baseline = new Baseline(new DateTimeImmutable(), ['src'], [], self::fixtureExclusions());
+        $channel = new FindingChannel('duplication.clone');
+        $finding = FindingFactory::magnitude(SymbolPath::forFile(RelativePath::fromString('src/Foo.php')), 20, 'duplication.clone', $channel->code);
+        $narrow = StubRuleCoverage::completeFor($baseline, ['src/Other.php'], scope: RunScope::fromRecorded(['src/Foo.php']));
+        $result = $this->updater()->acceptNew($baseline, [$finding], [$channel], $narrow, StubRuleCoverage::everyRuleRan());
+        self::assertFalse($result->changed);
+        self::assertSame('outside-coverage', $result->outcomes[0]->reasonCode);
+
+        foreach ([\NAN, \INF, -\INF] as $value) {
+            $invalid = FindingFactory::magnitude(SymbolPath::forFile(RelativePath::fromString('src/Foo.php')), $value, 'duplication.clone', $channel->code);
+            $result = $this->updater()->acceptNew($baseline, [$invalid], [$channel], StubRuleCoverage::completeFor($baseline), StubRuleCoverage::everyRuleRan());
+            self::assertFalse($result->changed);
+            self::assertSame('magnitude-unavailable', $result->outcomes[0]->reasonCode);
+        }
+        $missing = new Finding(location: $finding->location, subject: $finding->subject, symbolPath: $finding->symbolPath, ruleName: $finding->ruleName, code: $finding->code, message: $finding->message, severity: $finding->severity);
+        $result = $this->updater()->acceptNew($baseline, [$missing], [$channel], StubRuleCoverage::completeFor($baseline), StubRuleCoverage::everyRuleRan());
+        self::assertFalse($result->changed);
+        self::assertSame('magnitude-unavailable', $result->outcomes[0]->reasonCode);
+        $unknown = $this->coverageWithExclusions($baseline, ['exact:src/Foo.php'], unknown: true);
+        $result = $this->updater()->acceptNew($baseline, [$finding], [$channel], $unknown, StubRuleCoverage::everyRuleRan());
+        self::assertFalse($result->changed);
+        self::assertSame('metadata-unknown', $result->outcomes[0]->reasonCode);
+    }
+
+    #[Test]
+    public function itRerecordsOnlyExclusionAffectedGroupsWithTheirModes(): void
+    {
+        $affected = FindingFactory::magnitude(SymbolPath::forFile(RelativePath::fromString('src/Foo.php')), 120, 'duplication.clone', 'duplication.clone');
+        $entry = new BaselineEntry(BaselineIdentity::forFinding($affected), [40], 1, BaselineEntryMode::Suppress);
+        $unaffected = FindingFactory::magnitude(SymbolPath::forMethod('App', 'New', 'bar'), 20);
+        $other = new BaselineEntry(BaselineIdentity::forFinding($unaffected), [30], 1);
+        $baseline = new Baseline(new DateTimeImmutable(), ['src'], [$entry, $other], self::fixtureExclusions());
+        $coverage = $this->coverageWithExclusions($baseline, ['exact:src/Excluded.php']);
+
+        $result = $this->updater()->recordExclusions($baseline, [$affected, $unaffected], $coverage, []);
+
+        self::assertTrue($result->changed);
+        self::assertNull($result->writeRefusal);
+        self::assertSame([120.0], $result->baseline->entries[0]->magnitudes);
+        self::assertSame(BaselineEntryMode::Suppress, $result->baseline->entries[0]->mode);
+        self::assertSame([20.0], $result->baseline->entries[1]->magnitudes);
+        self::assertSame(BaselineUpdateDisposition::ReRecorded, $result->outcomes[0]->disposition);
+        self::assertNotNull($result->outcomes[0]->previousLevel);
+        self::assertNotNull($result->outcomes[0]->currentLevel);
+        self::assertSame('40', $result->outcomes[0]->previousLevel->describe());
+        self::assertSame('120', $result->outcomes[0]->currentLevel->describe());
+        self::assertSame($coverage->exclusions, $result->baseline->exclusions);
+    }
+
+    #[Test]
+    public function itRemovesOnlyTheGroupProvenGoneByTheNewExclusion(): void
+    {
+        $excluded = FindingFactory::magnitude(SymbolPath::forFile(RelativePath::fromString('src/Foo.php')), 40, 'duplication.clone', 'duplication.clone');
+        $survivor = FindingFactory::magnitude(SymbolPath::forMethod('App', 'New', 'bar'), 20);
+        $excludedEntry = new BaselineEntry(BaselineIdentity::forFinding($excluded), [40], 1);
+        $survivorEntry = new BaselineEntry(BaselineIdentity::forFinding($survivor), [30], 1);
+        $baseline = new Baseline(new DateTimeImmutable(), ['src'], [$excludedEntry, $survivorEntry], self::fixtureExclusions());
+        $coverage = $this->coverageWithExclusions($baseline, ['exact:src/Foo.php']);
+
+        $result = $this->updater()->recordExclusions($baseline, [$survivor], $coverage, []);
+
+        self::assertNull($result->writeRefusal);
+        self::assertTrue($result->changed);
+        self::assertCount(1, $result->baseline->entries);
+        self::assertSame($survivorEntry->identity->key(), $result->baseline->entries[0]->identity->key());
+        self::assertSame($excludedEntry->identity->key(), $result->outcomes[0]->identity->key());
+        self::assertSame('exclusions-removed-population', $result->outcomes[0]->reasonCode);
+    }
+
+    #[Test]
+    public function itRefusesTheWholeExclusionRecordWhenItsProofIsUnavailable(): void
+    {
+        $finding = FindingFactory::magnitude(SymbolPath::forFile(RelativePath::fromString('src/Foo.php')), 100, 'duplication.clone', 'duplication.clone');
+        $entry = new BaselineEntry(BaselineIdentity::forFinding($finding), [40], 1);
+        $baseline = self::baselineOf($entry);
+        $coverage = $this->coverageWithExclusions($baseline, ['exact:src/Excluded.php']);
+        foreach ([[], [FindingFactory::magnitude(SymbolPath::forFile(RelativePath::fromString('src/Foo.php')), \INF, 'duplication.clone', 'duplication.clone')]] as $findings) {
+            $result = $this->updater()->recordExclusions($baseline, $findings, $coverage, []);
+            self::assertSame($baseline, $result->baseline);
+            self::assertFalse($result->changed);
+            self::assertSame(BaselineUpdateRefusalReason::RequiredGroupUnavailable, $result->writeRefusal);
+        }
+        $result = $this->updater()->recordExclusions($baseline, [$finding], $this->coverageWithExclusions($baseline, ['exact:src/Excluded.php'], unknown: true), []);
+        self::assertSame($baseline, $result->baseline);
+        self::assertSame(BaselineUpdateRefusalReason::ComparisonMetadataUnknown, $result->writeRefusal);
+        $result = $this->updater()->recordExclusions($baseline, [$finding], $this->coverageWithExclusions($baseline, ['exact:src/Excluded.php'], includeGenerated: true), []);
+        self::assertSame($baseline, $result->baseline);
+        self::assertSame(BaselineUpdateRefusalReason::ComparisonMetadataUnknown, $result->writeRefusal);
+        $partial = new \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage([RelativePath::fromString('src/Foo.php')], [], [new \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure(RelativePath::fromString('src/Broken.php'), \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind::Parse, 'broken fixture')]);
+        $result = $this->updater()->recordExclusions($baseline, [$finding], $this->coverageWithExclusions($baseline, ['exact:src/Excluded.php'], analysis: $partial), []);
+        self::assertSame($baseline, $result->baseline);
+        self::assertFalse($result->changed);
+        self::assertNotNull($result->writeRefusal);
+        $result = $this->updater()->recordExclusions($baseline, [$finding], $coverage, [$entry->identity->key() => \Qualimetrix\Analysis\Policy\Baseline\RunCoverageGap::NotMeasured]);
+        self::assertFalse($result->changed);
+        self::assertNotNull($result->writeRefusal);
+    }
+
+    /** @param list<string> $patterns */
+    private function coverageWithExclusions(Baseline $baseline, array $patterns, bool $unknown = false, bool $includeGenerated = false, ?\Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage $analysis = null): \Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage
+    {
+        $current = StubRuleCoverage::completeFor($baseline, ['src/Excluded.php'], analysis: $analysis);
+        $tree = new class ($unknown) implements \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface {
+            public function __construct(private bool $unknown) {}
+
+            public function snapshot(\Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse $universe): \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeSnapshot
+            {
+                return new \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeSnapshot([RelativePath::fromString('src/Foo.php'), RelativePath::fromString('src/Excluded.php')], [], !$this->unknown);
+            }
+
+            public function hasFile(AbsolutePath $root, RelativePath $file): \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence
+            {
+                return \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence::Present;
+            }
+
+            public function hasDirectory(AbsolutePath $directory): \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence
+            {
+                return \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence::Present;
+            }
+        };
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage($current->scope, $current->analysis, new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions($patterns, $includeGenerated ? \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include : \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude), $current->universe, $current->psr4Roots, $tree, $current->subjectCoverage);
+    }
+
+    /** @param list<\Qualimetrix\Analysis\Finding\Contract\Finding> $measured */
+    private function update(Baseline $baseline, array $measured, RunScope $scope): BaselineUpdateResult
+    {
+        return $this->updater()->update(
+            $baseline,
+            $measured,
+            StubRuleCoverage::completeFor($baseline, scope: $scope),
+            [],
+        );
+    }
+
     private function updater(): BaselineUpdater
     {
-        return new BaselineUpdater(StubChannelDeclarationRegistry::withDefaults(), new FixedClock());
+        $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $declarations->declare('code-smell.goto', ChannelDeclaration::occurrence(SymbolLevel::Callable, SymbolLevel::File));
+
+        return new BaselineUpdater($declarations, new FixedClock());
     }
 
     private static function baselineOf(BaselineEntry $entry): Baseline
     {
-        return new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [$entry]);
+        return new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [$entry], exclusions: self::fixtureExclusions());
     }
 
     private static function duplicationChannel(): FindingChannel
@@ -424,5 +599,13 @@ final class BaselineUpdaterTest extends TestCase
     private static function gotoChannel(): FindingChannel
     {
         return new FindingChannel('code-smell.goto');
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
+        );
     }
 }

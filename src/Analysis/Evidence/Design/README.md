@@ -36,16 +36,15 @@ Design/
 │   ├── ExternalAncestry.php
 │   ├── ExternalChainOutcome.php
 │   ├── ExternalDepth.php
-│   ├── InheritanceClassInfo.php
-│   ├── InheritanceDepthCollector.php
 │   ├── InheritanceDepthResolver.php
-│   ├── InheritanceDepthVisitor.php
 │   ├── InheritanceOptions.php
+│   ├── InheritanceOutcome.php
+│   ├── InheritanceResolution.php
+│   ├── ThrowableReach.php
 │   ├── InheritanceRule.php
 │   ├── NocCollector.php
 │   ├── NocOptions.php
-│   ├── NocRule.php
-│   └── UnreadChainTally.php
+│   └── NocRule.php
 └── TypeCoverage/
     ├── AbstractTypeCoverageRule.php
     ├── ParamTypeCoverageRule.php
@@ -67,65 +66,80 @@ own. Do not recreate `Metrics/`, `Rules/`, or a generic helper subdirectory
 inside any of them, and do not put a type back in the root: a type that would
 belong to no family is the signal that a fifth family is being named.
 
-Because they read one tree, DIT and NOC are measured on one population: the
-named classes the per-file pass measured. `NocCollector` recognises them by the
-`design.dit` that pass left on them, so an interface, a trait or an enum gets
-no `design.noc` (not 0), and `interface B extends A` is not a subclass of `A`
-(the edge carries `Dependency::$interfaceExtends`). Otherwise every NOC
-aggregate would divide by a larger count than its DIT neighbour.
+DIT and NOC start from DependencyModel's positive named-class declaration
+facts, including abstract classes and degree-zero roots. Interfaces, traits and
+enums receive neither metric. DIT resolves an answer for each exact declaration;
+NOC counts distinct logical child names from the ordinary graph. A loop has no
+numeric DIT but still belongs to NOC's class population, so numeric DIT and NOC
+aggregate sample counts can differ.
 
-`Inheritance/Contract/` is the one public surface here. It exists because
-following a chain out of the analysed path needs a file placed and read, which
-is delivery: the port is promised to the composer adapter in
-`Infrastructure\Composer`, and this capability imports neither a composer type
-nor a parser (ADR 0074).
+`Inheritance/Contract/` is the one public surface here. Following a chain out
+of the analysed path requires a file placed and read, which is delivery: the
+port is promised to the composer adapter in `Infrastructure\Composer`, and
+this capability imports neither a composer type nor a parser (ADR 0074).
 
-`ExternalAncestry` decides what counts as a depth and how a chain ended;
-`UnreadChainTally` collects those endings for one `calculate()` call so the
-collector can say once what the run could not read. The tally is deliberately
-not a service: it lives and dies inside the call, which is why nothing resets
-it.
+`InheritanceResolution` represents a private complete answer with
+`InheritanceOutcome`: nullable depth, `Exact`/`Floor`/`Loop`, and explicit
+`ThrowableReach::Yes`/`No`/`Unknown` evidence about PHP's `Throwable`.
+`withPrefix()` extends either a declaration or external rejoin answer with the
+same nullable-depth and positive-Throwable evidence policy.
+Obstruction causes and names travel alongside those independent facts, through
+structured entries on `design.dit-unresolved`. `ExternalDepth` and `ExternalChainOutcome`
+carry external-tail evidence, including an explicit continuation to an already
+analysed name. The same resolver resumes that continuation using every known
+declaration; Composer never chooses one body from that roster. Depth completeness
+and exception classification are independent; a finite exact depth can still have
+unknown exception status when duplicate parent declarations disagree.
 
 ## Behaviour and lifecycle
 
 - `TypeCoverageCollector` and `TypeCoverageVisitor` collect parameter, return,
   and property declaration counts and coverage percentages for named
   class-like declarations. `TypeCoveragePercentCollector` derives the combined
-  percentage from those raw counts.
-- `InheritanceDepthCollector` provides per-file DIT evidence. Its visitor
-  resolves local and imported parents; `DitGlobalCollector` recalculates DIT
-  through `DependencyGraphInterface` so cross-file inheritance stays correct.
-- The external half of a chain is followed by `ExternalAncestry`, which counts
-  depth and decides where a chain ends. It reads through
-  `Contract\ExternalParentSourceInterface`; placing a class and parsing its
-  declaration are delivery and live in `Infrastructure\Composer` (ADR 0074).
-  Nothing here loads a class, which is what stopped the tool from executing the
-  code it measures.
-- A chain ends three ways -- it reaches a root, finds no install to read, or
-  breaks partway -- and `ExternalDepth` keeps them apart even though the metric
-  publishes one number.
-- DIT's `MetricDefinition` belongs to `DitGlobalCollector`, not to the per-file
-  collector, because re-aggregation runs over the definitions the global
-  collectors declare (ADR 0069). The per-file pass still decides DIT's
-  population: `DitGlobalCollector` corrects the depth of symbols that already
-  carry a per-file `design.dit` and leaves the rest alone, which is what keeps
-  interfaces, traits and enums out of the metric and its aggregates. That makes
-  the global pass depend on the file pass's keys, which `requires()` cannot
-  express — it orders global collectors against each other. Removing the
-  per-file write would empty DIT rather than fail.
-- `InheritanceDepthResolver` owns the walk: it indexes the graph's `extends`
-  edges by declaration and by name, and answers the depth of one declaration.
-  It was split out of `DitGlobalCollector`, which the product's own god-class
-  rule flagged once the walk grew a second index — the collector now keeps the
-  protocol and the repository pass, and the campaign that replaces external
-  ancestry has one class to replace instead of a method inside a collector.
-- `DitGlobalCollector` resolves and writes a depth per class **declaration**,
-  and only then writes one value per name onto the logical class — the maximum
-  over that name's declarations. One name can be declared in two files with two
-  different parents, and the name-keyed map it used before let the file read
-  last decide for all of them. `InheritanceRule` reads the declaration subject
-  it iterates, because the logical projection cannot hold two answers
-  (ADR 0073).
+  percentage from those raw counts. All six raw typed/total counters retain
+  measured 0. A combined typeable total of zero omits percentage fields; a
+  positive total with no typed declarations publishes 0%. Aggregate typing
+  health uses the actual summed parameter, return and property totals.
+- `DitGlobalCollector` is the sole writer and definition owner of
+  `design.dit`, `design.dit-unresolved`, and `design.is-exception`. It requires
+  an exact Measurement subject for every named class graph fact; a missing
+  subject is an invariant failure, not a silently omitted measurement.
+- `InheritanceDepthResolver` indexes every named class declaration before its
+  declaration-view `extends` edges. Root declarations remain candidates when
+  a parent name has several declarations. Each child retains its own immediate
+  parent; a logical parent merges all candidate answers. Finite depths merge
+  by maximum, any floor makes the result a floor, and any loop removes numeric
+  depth from the descendant. Completed answers are memoized by exact
+  declaration, separately from canonical identities active in the walk. A chain
+  returning from external sources to an analysed name uses the same roster,
+  active path and memo; its external prefix contributes each parent link once.
+- Registered PHP builtin ancestry is followed transitively through Core's
+  static hierarchy before asking whether Composer source placement is
+  configured. External project ancestry is read through
+  `Contract\ExternalParentSourceInterface`, never loaded. Unregistered
+  extension classes remain unknown unless readable source supplies evidence;
+  loaded extensions on the analysing machine do not decide the result. The
+  64-visit budget applies to each consecutive external segment. A known analysed
+  target reached by the 64th link continues through graph evidence without a
+  65th external read; a still-external target remains a floor.
+- An unread, unplaced, unconfigured, or 64-step-capped tail yields a numeric
+  floor. A canonical inheritance loop, including a named class's own
+  self-`extends`, yields no `design.dit`. Every named class receives
+  `design.dit-unresolved`: 0 for exact, 1 for floor or loop. Namespace and
+  project DIT aggregates include only published numeric depths, including zero
+  roots, through Measurement's existing exact-declaration aggregation.
+- `design.is-exception` is 1 when all parent alternatives prove `Throwable`,
+  0 when all prove otherwise, and absent when their answers disagree or remain
+  unknown. Proven `Throwable` evidence survives a later unread tail.
+  Interfaces, traits and enums receive 0. Size does not classify exceptions.
+- `InheritanceRule` emits at most one warning per enabled `analyze()` call,
+  distinguishing floors, loops, or both. Its `design.dit-unresolved` pointer
+  names at most five distinct obstruction/cause pairs and the exact remainder:
+  absent Composer installation, unread or unplaced source, or a cycle member.
+  Missing installation includes a `composer install` hint. Disabling the rule silences this
+  warning while collection still publishes the metric evidence. A numeric
+  floor can cross the unchanged thresholds; both its finding and recommendation
+  say the DIT is at least the published value. A loop emits no numeric finding.
 - `NocCollector` derives direct-child counts from the same DependencyModel
   graph and retains its collector name, definitions, ordering, and aggregation
   semantics. It counts distinct child **names**: a subclass declared in two
@@ -161,8 +175,32 @@ it.
   members at all score 100 and are never flagged, and the size floor
   (`minMembers`) counts declared methods plus declared properties so a struct
   of public fields stays in reach. Traits are in the population; only
-  interfaces, abstract classes, exceptions and property-less classes are
-  excluded.
+  interfaces, abstract classes and property-less classes are excluded. With
+  `excludeExceptions=true`, proven exceptions and unknown exception status
+  cannot be judged; `false` ignores that classification and applies the
+  remaining criteria. Readonly and promoted-only exclusions remain configurable.
+- Each rule's full channel declaration owns its ordered population gates. The
+  same declaration evaluates eligibility in direct calls and during traced
+  execution; publication selection controls accounting only. Admitted classes
+  count as judged even when their substantive thresholds produce no finding.
+  Inputs are yielded in source order and stop at the first failed gate.
+- Data-class population gates retain interface, abstract, property, exception,
+  readonly, promoted-only and member-floor order before WOC presence.
+  `DataClassExclusionCheck::populationGates()` receives the channel name and declares the class-shape portion;
+  `populationInputs()` supplies its current metric bag and effective options.
+  Disabled exception exclusion bypasses both presence and nonzero checks;
+  unconditional interface and abstract flags exclude only the integer value 1.
+- God-class population requires a class declaration, an admitted readonly flag,
+  the method floor and enough evaluable criteria. Criteria are evaluated once
+  after the earlier gates, and their results are reused for the finding. Enough
+  evaluable but unmatched criteria is a healthy judgement, not an abstention.
+- DIT zero is a judged root depth; missing DIT is an abstention and retains the
+  independently published exact/floor/loop diagnostic. NOC absence and measured
+  zero have separate gates; negative direct-child counts refuse judgement.
+- Each type-coverage dimension distinguishes a missing total from a measured
+  nonpositive total. A positive total admits judgement even when coverage is
+  absent, preserving the substantive 0% fallback. Parameter, return and property
+  totals are never substituted for each other.
 - Per-file visitors implement Measurement reset semantics. Global collectors
   are stateless across runs; the worker wire payload remains Measurement-owned.
 
@@ -191,8 +229,8 @@ Unit/
 │   └── GodClassRuleTest.php
 ├── Inheritance/
 │   ├── DitGlobalCollectorTest.php
-│   ├── InheritanceDepthCollectorTest.php
-│   ├── InheritanceDepthUseAliasTest.php
+│   ├── ExternalAncestryTest.php
+│   ├── InheritanceDepthResolverTest.php
 │   ├── InheritanceRuleTest.php
 │   ├── NocCollectorTest.php
 │   └── NocRuleTest.php
@@ -214,8 +252,10 @@ hand-written metric bag: the unit suite can only assert what the rule does with
 a WOC number, never what that number means, which is how an inverted WOC
 survived it. The tests cover type-coverage
 projection and scale, data/god-class criteria, local/imported/external
-inheritance fallback, DIT/NOC global graph behavior, thresholds, and finding
-identity. Shared container, worker, and cross-capability integration tests stay
+inheritance floors and loops, static builtin ancestry, duplicate-parent merges,
+exception classification, DIT/NOC global graph behavior, thresholds, and finding
+identity, healthy population accounting, conditional bypasses, missing-versus-zero
+reasons, and reached-input timing. Shared container, worker, and cross-capability integration tests stay
 with their owning integration subjects.
 
 ## Change recipe
@@ -231,3 +271,8 @@ than exposing a concrete collector or rule.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+> **Note:** `design.noc` is computed on logical class names. Namespace
+> aggregates sample physical declarations, so a logical name's graph value
+> contributes once per declaration. Namespace sums/counts/averages are
+> declaration-weighted, rather than graph-node or inheritance-edge counts.

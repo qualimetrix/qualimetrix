@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace QmxFindingGateControls;
 
 use QmxFindingGate\FailureClass;
+use QmxFindingGate\GateReport;
 use RuntimeException;
 
 /**
@@ -28,14 +29,13 @@ use RuntimeException;
  * Everything else the gate reports is unexpected, and an unexpected failure
  * means the control did not do what it claims, even though the gate went red.
  *
- * One more shape is refused, and it is refused before a single clone is made:
- * an expectation pinned to a surface the repository declares a delta for. A
- * declared surface is compared against that exact diff and never for equality,
- * so `surface-mismatch` cannot arise there and a control asking for one is
- * asserting about a comparison that no longer happens. This is the failure the
- * step that first declared a delta walked into on two controls at once, and it
- * cost a full controls run to find out — twenty minutes to learn something a
- * substring comparison knows. {@see assertNotPinnedToDeclaredDelta}.
+ * One more shape is refused before a single clone is made: an expectation
+ * pinned to an ordinary structural delta surface. That surface is compared
+ * against its declared diff rather than for equality, so `surface-mismatch`
+ * cannot arise there. An exact-surface intention is conditional: an invalid
+ * trial can still take the equality route and report `surface-mismatch` there.
+ * Exact intentions are judged against the run, not excluded by this preflight.
+ * {@see assertNotPinnedToDeclaredDelta}.
  *
  * And a toleration that lands nowhere is a failure of the control too. Pinning it
  * to a surface made the claim precise; it did not make it true. A toleration no
@@ -55,6 +55,10 @@ final class Control
      * @param array<string, string> $restoredContent restoredAfterRun path => the exact bytes it must be restored
      *                                               to, where the repository's own file cannot state that byte —
      *                                               see {@see rewriting()}
+     * @param array<string, int> $declarationCounts a report key of {@see GateReport::DECLARATION_COUNTS} => the
+     *                                              count a green run of this control must report, where its
+     *                                              mutation plants a declaration; every other key is held to the
+     *                                              repository's own
      */
     private function __construct(
         public readonly string $id,
@@ -67,7 +71,14 @@ final class Control
         public readonly array $unchangedAfterRun = [],
         public readonly array $restoredAfterRun = [],
         public readonly array $restoredContent = [],
+        public readonly array $declarationCounts = [],
     ) {
+        foreach (array_keys($declarationCounts) as $reportKey) {
+            if (!isset(GateReport::DECLARATION_COUNTS[$reportKey])) {
+                throw new RuntimeException(\sprintf('Control "%s" expects a count of "%s", which no report publishes.', $id, $reportKey));
+            }
+        }
+
         foreach ($tolerated as $expectation) {
             if ($expectation->scopeContains === null) {
                 throw new RuntimeException(\sprintf(
@@ -211,9 +222,10 @@ final class Control
      * "the row absorbed it" would be indistinguishable from "a blob of hashes
      * absorbed it".
      */
-    public static function greenWith(string $id, string $subject, Mutation $mutation): self
+    /** @param array<string, int> $declarationCounts see the constructor */
+    public static function greenWith(string $id, string $subject, Mutation $mutation, array $declarationCounts = []): self
     {
-        return new self($id, $subject, $mutation, [], [], expectsGreen: true);
+        return new self($id, $subject, $mutation, [], [], expectsGreen: true, declarationCounts: $declarationCounts);
     }
 
     /**
@@ -226,16 +238,17 @@ final class Control
         FailureClass::DELTA_OVERREACH,
         FailureClass::DELTA_TOO_LARGE,
         FailureClass::FIELD_MOVE_STALE,
+        FailureClass::RECORD_STALE,
     ];
 
     /**
-     * Refuses a control whose expectation is pinned to a surface the repository
-     * declares a delta for, unless the class is a statement about a declaration.
+     * Refuses a control whose expectation is pinned to an ordinary structural
+     * delta surface, unless the class is a statement about a declaration.
      *
      * Exact equality, not substring containment, and that is the whole
      * calibration. A pin naming one artifact of one case (`case:coupling|format:sarif`)
      * claims that artifact and nothing else; a broader pin (`case:coupling`)
-     * spans twelve formats plus the baseline file, eleven of which are still
+     * spans eleven formats and detailed text plus the baseline file, eleven of which are still
      * compared for equality, so the control keeps its subject and the declared
      * one among them is absorbed as declaration noise by
      * {@see Outcome::isDeclarationNoise()}. Refusing the broad pin too would
@@ -245,7 +258,7 @@ final class Control
      * declarations are not in its scratch tree at all, so its own pins are
      * judged against the declaration it plants.
      *
-     * @param list<string> $declaredSurfaces
+     * @param list<string> $declaredSurfaces ordinary structural delta surfaces only
      */
     public function assertNotPinnedToDeclaredDelta(array $declaredSurfaces, bool $declarationReplaced): void
     {

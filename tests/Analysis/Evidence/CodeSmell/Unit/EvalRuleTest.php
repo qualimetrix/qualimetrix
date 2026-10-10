@@ -28,7 +28,7 @@ final class EvalRuleTest extends TestCase
         $rule = new EvalRule(new CodeSmellOptions());
 
         self::assertSame('code-smell.eval', $rule->getName());
-        self::assertSame('Detects usage of eval() function', $rule->getDescription());
+        self::assertSame('Detects usage of eval() function', $rule::getDescription());
     }
 
     #[Test]

@@ -93,6 +93,40 @@ final class GitSubdirScopeTest extends TestCase
     }
 
     #[Test]
+    public function itIgnoresRepositoryRelativeDiffConfiguration(): void
+    {
+        file_put_contents($this->projectRoot . '/Inside.php', "<?php\n");
+        $this->exec('git add -A', $this->gitToplevel);
+        $this->exec('git config diff.relative true', $this->gitToplevel);
+
+        $client = new GitClient(AbsolutePath::fromString($this->projectRoot));
+        self::assertSame(['Inside.php'], array_map(
+            static fn(ChangedFile $file): string => $file->path->value(),
+            $client->getChangedFiles('staged'),
+        ));
+
+        $previous = [];
+        foreach (['GIT_CONFIG_COUNT', 'GIT_CONFIG_KEY_0', 'GIT_CONFIG_VALUE_0'] as $key) {
+            $previous[$key] = getenv($key);
+        }
+
+        try {
+            putenv('GIT_CONFIG_COUNT=1');
+            putenv('GIT_CONFIG_KEY_0=diff.relative');
+            putenv('GIT_CONFIG_VALUE_0=true');
+
+            self::assertSame(['Inside.php'], array_map(
+                static fn(ChangedFile $file): string => $file->path->value(),
+                $client->getChangedFiles('staged'),
+            ));
+        } finally {
+            foreach ($previous as $key => $value) {
+                putenv($value === false ? $key : $key . '=' . $value);
+            }
+        }
+    }
+
+    #[Test]
     public function itHandlesAddedModifiedAndDeletedDiffRowShapes(): void
     {
         // Modified / Deleted require a prior commit. Use distinct content per

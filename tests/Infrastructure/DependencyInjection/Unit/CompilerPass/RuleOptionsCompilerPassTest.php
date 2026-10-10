@@ -22,7 +22,7 @@ use Qualimetrix\Analysis\Evidence\Security\SecurityPatternOptions;
 use Qualimetrix\Analysis\Evidence\Security\SqlInjectionRule;
 use Qualimetrix\Analysis\Evidence\Security\XssRule;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountRule;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -32,10 +32,10 @@ use Symfony\Component\DependencyInjection\Reference;
 final class RuleOptionsCompilerPassTest extends TestCase
 {
     #[Test]
-    public function itRegistersAnOptionsServiceThatDelegatesToTheFactory(): void
+    public function itRegistersAnOptionsServiceThatReadsTheReadySnapshot(): void
     {
         $container = new ContainerBuilder();
-        $container->register(RuleOptionsFactory::class)->setSynthetic(true);
+        $container->register(RuleOptionsRegistry::class)->setSynthetic(true);
         $container->register(ComplexityRule::class)
             ->setClass(ComplexityRule::class)
             ->addTag(RuleCompilerPass::TAG);
@@ -50,22 +50,22 @@ final class RuleOptionsCompilerPassTest extends TestCase
             (string) $optionsReference,
         );
 
-        // Options should use RuleOptionsFactory::create as factory
         $optionsDef = $container->getDefinition((string) $optionsReference);
         self::assertSame(ComplexityOptions::class, $optionsDef->getClass());
         $factory = $optionsDef->getFactory();
         self::assertIsArray($factory);
         self::assertInstanceOf(Reference::class, $factory[0]);
-        self::assertSame('create', $factory[1]);
+        self::assertSame('optionsFor', $factory[1]);
+        self::assertSame(RuleOptionsRegistry::class, (string) $factory[0]);
+        self::assertFalse($optionsDef->isShared());
 
-        // Factory arguments should be rule name and options class
         $args = $optionsDef->getArguments();
         self::assertSame(ComplexityRule::NAME, $args[0]);
         self::assertSame(ComplexityOptions::class, $args[1]);
     }
 
     #[Test]
-    public function itDoesNothingWhenTheFactoryIsNotRegistered(): void
+    public function itDoesNothingWhenTheSnapshotRegistryIsNotRegistered(): void
     {
         $container = new ContainerBuilder();
         $container->register(ComplexityRule::class)
@@ -75,7 +75,6 @@ final class RuleOptionsCompilerPassTest extends TestCase
         $pass = new RuleOptionsCompilerPass();
         $pass->process($container);
 
-        // No Options registered since factory is missing
         self::assertFalse($container->hasDefinition(
             self::optionsServiceId(ComplexityRule::NAME, ComplexityOptions::class),
         ));
@@ -85,7 +84,7 @@ final class RuleOptionsCompilerPassTest extends TestCase
     public function itSkipsTaggedServicesWithoutAClass(): void
     {
         $container = new ContainerBuilder();
-        $container->register(RuleOptionsFactory::class)->setSynthetic(true);
+        $container->register(RuleOptionsRegistry::class)->setSynthetic(true);
         $container->register('rule.null_class')
             ->addTag(RuleCompilerPass::TAG);
 
@@ -98,7 +97,7 @@ final class RuleOptionsCompilerPassTest extends TestCase
         // with.
         self::assertSame([], $container->getDefinition('rule.null_class')->getArguments());
         self::assertSame(
-            ['service_container', RuleOptionsFactory::class, 'rule.null_class'],
+            ['service_container', RuleOptionsRegistry::class, 'rule.null_class'],
             array_keys($container->getDefinitions()),
         );
     }
@@ -107,7 +106,7 @@ final class RuleOptionsCompilerPassTest extends TestCase
     public function itInjectsOptionsIntoEveryTaggedRule(): void
     {
         $container = new ContainerBuilder();
-        $container->register(RuleOptionsFactory::class)->setSynthetic(true);
+        $container->register(RuleOptionsRegistry::class)->setSynthetic(true);
         $container->register(ComplexityRule::class)
             ->setClass(ComplexityRule::class)
             ->addTag(RuleCompilerPass::TAG);
@@ -130,7 +129,7 @@ final class RuleOptionsCompilerPassTest extends TestCase
     public function itKeepsTheOptionsServiceIdentitySeparateForEveryProducer(): void
     {
         $container = new ContainerBuilder();
-        $container->register(RuleOptionsFactory::class)->setSynthetic(true);
+        $container->register(RuleOptionsRegistry::class)->setSynthetic(true);
 
         $producers = [
             CountInLoopRule::class => CodeSmellOptions::class,
@@ -174,13 +173,13 @@ final class RuleOptionsCompilerPassTest extends TestCase
     public function itKeepsAnExistingOptionsServiceDefinitionInsteadOfOverwritingIt(): void
     {
         $container = new ContainerBuilder();
-        $container->register(RuleOptionsFactory::class)->setSynthetic(true);
+        $container->register(RuleOptionsRegistry::class)->setSynthetic(true);
 
         $optionsServiceId = self::optionsServiceId(ComplexityRule::NAME, ComplexityOptions::class);
 
         // Pre-register this producer's Options with a custom factory
         $container->register($optionsServiceId, ComplexityOptions::class)
-            ->setFactory([new Reference(RuleOptionsFactory::class), 'create'])
+            ->setFactory([new Reference(RuleOptionsRegistry::class), 'optionsFor'])
             ->setArguments(['custom.name', ComplexityOptions::class]);
 
         $container->register(ComplexityRule::class)

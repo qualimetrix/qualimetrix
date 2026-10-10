@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules;
 
 use LogicException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -12,29 +13,48 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyLocationInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder;
+use Qualimetrix\Analysis\Evidence\DependencyModel\UnplacedExternalClassSpelling;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
+use Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch;
+use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationOptions;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationRule;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationFinding;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidenceCollector;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\OwnedLayerTargets;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
+use Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidenceCollector;
+use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassOptions;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
@@ -72,7 +92,7 @@ final class LayerViolationRuleTest extends TestCase
     public function itExposesItsNameCliAliasesChannelsAndDescriptionPerContract(): void
     {
         $options = new LayerViolationOptions();
-        $rule = new LayerViolationRule($options, new LayerEvidenceCollector($options, new UnassignedClassOptions(), $this->processor));
+        $rule = new LayerViolationRule($options, new LayerEvidenceCollector($options, new UnassignedClassOptions(), new LayerDeclarationOptions(), $this->processor));
 
         self::assertSame('architecture.layer-violation', $rule->getName());
         self::assertSame(LayerViolationOptions::class, LayerViolationRule::getOptionsClass());
@@ -82,17 +102,11 @@ final class LayerViolationRuleTest extends TestCase
             'layer-violation' => 'enabled',
             'layer-violation-severity' => 'severity',
         ], CliAliasReader::read(LayerViolationRule::class));
-        // Three channels, and the second and third are the rule's rather than
-        // the configuration validator's on purpose: an `exclude:` clause that
-        // removed nothing leaves the run's conclusions wider than asked for,
-        // which is debt a project may accept, and an assignment in doubt is
-        // information that must never gate — neither is a declaration that
-        // cannot be honoured.
         self::assertSame(
-            ['architecture.layer-violation', 'architecture.unmatched-exclude', 'architecture.doubted-assignment'],
+            ['architecture.layer-violation'],
             array_keys(LayerViolationRule::channelDeclarations()),
         );
-        self::assertStringContainsString('layer', strtolower($rule->getDescription()));
+        self::assertStringContainsString('layer', strtolower($rule::getDescription()));
     }
 
     #[Test]
@@ -252,9 +266,8 @@ final class LayerViolationRuleTest extends TestCase
         $target = SymbolPath::forClass('App\\Repository', 'UserRepository');
         $location = new Location(RelativePath::fromString('src/Controller/UserController.php'), 42, precise: true);
 
-        $graph = $this->buildGraph([
-            $this->dependency($source, $target, DependencyType::New_, $location),
-        ]);
+        $dependency = $this->dependency($source, $target, DependencyType::New_, $location);
+        $graph = $this->buildGraph([$dependency]);
 
         $findings = $this->filterByRule($rule->analyze($this->buildContext($graph, $arch, $repo)), LayerViolationRule::NAME);
 
@@ -265,7 +278,7 @@ final class LayerViolationRuleTest extends TestCase
         self::assertSame(Severity::Error, $finding->severity);
         self::assertSame($source, $finding->symbolPath);
         self::assertSame(
-            $this->findDeclarationSubject($repo, $target)->toCanonical(),
+            MetricSubject::declaration($dependency->source)->toCanonical(),
             $finding->subject->toCanonical(),
         );
         self::assertNotNull($finding->occurrenceKey);
@@ -279,15 +292,7 @@ final class LayerViolationRuleTest extends TestCase
         $recommendation = $finding->recommendation;
         self::assertNotNull($recommendation);
         self::assertStringContainsString('Allowed targets for layer "controller": service', $recommendation);
-        self::assertStringContainsString('Dep data: {', $recommendation);
-
-        $jsonStart = strpos($recommendation, 'Dep data: ');
-        self::assertIsInt($jsonStart);
-        $payload = substr($recommendation, $jsonStart + \strlen('Dep data: '));
-        $decoded = json_decode($payload, true);
-        self::assertIsArray($decoded);
-        self::assertSame('controller', $decoded['fromLayer']);
-        self::assertSame('repository', $decoded['toLayer']);
+        self::assertStringNotContainsString('Dep data:', $recommendation);
     }
 
     #[Test]
@@ -455,7 +460,7 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function itProjectsOneFindingToTheOwnedTargetDeclaration(): void
+    public function itAttributesAnOwnedTargetViolationToItsExactSource(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
         $architecture = $this->buildArchitecture([
@@ -473,7 +478,12 @@ final class LayerViolationRuleTest extends TestCase
         );
 
         self::assertCount(1, $findings);
-        self::assertSame($targetSubject->toCanonical(), $findings[0]->subject->toCanonical());
+        self::assertSame(MetricSubject::declaration($dependency->source)->toCanonical(), $findings[0]->subject->toCanonical());
+        self::assertSame(OccurrenceKey::semantic('architecture.layer-violation', [
+            'source' => $dependency->source->toCanonical(),
+            'target' => $dependency->targetLogical()->toCanonical(),
+            'type' => $dependency->type->value,
+        ])->value, $findings[0]->occurrenceKey?->value);
         self::assertSame($dependency->sourceLogical(), $findings[0]->symbolPath);
     }
 
@@ -492,8 +502,8 @@ final class LayerViolationRuleTest extends TestCase
         $firstSubject = MetricSubject::declaration($firstSource);
         $secondSubject = MetricSubject::declaration($secondSource);
         $dependencies = [
-            new Dependency($firstSource, $target, DependencyType::New_, new Location(RelativePath::fromString('src/ControllerFirst.php'), 5)),
-            new Dependency($secondSource, $target, DependencyType::New_, new Location(RelativePath::fromString('src/ControllerSecond.php'), 5)),
+            Dependency::ofKind($firstSource, $target, DependencyType::New_, new Location(RelativePath::fromString('src/ControllerFirst.php'), 5)),
+            Dependency::ofKind($secondSource, $target, DependencyType::New_, new Location(RelativePath::fromString('src/ControllerSecond.php'), 5)),
         ];
 
         $findings = $this->filterByRule(
@@ -511,7 +521,8 @@ final class LayerViolationRuleTest extends TestCase
             reason: 'Only the first exact source declaration is accepted.',
             line: 1,
             type: SuppressionType::Symbol,
-            binding: new DeclarationBinding($firstSubject, ControlScope::Class_),
+            position: 0,
+            binding: new DeclarationBinding($firstSubject, ControlScope::Class_, DeclarationReach::whole(null, 'test')),
         )]]);
         self::assertSame([false, true], array_map(
             static fn($finding): bool => \in_array($finding, $result->retained, true),
@@ -520,7 +531,7 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function itProjectsEveryOwnedDuplicateTargetInCanonicalOrder(): void
+    public function itCountsOwnedTargetsWithinTheSameSourceLogicalTargetOccurrence(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
         $architecture = $this->buildArchitecture([
@@ -540,10 +551,14 @@ final class LayerViolationRuleTest extends TestCase
 
         self::assertCount(2, $findings);
         self::assertSame(
-            [$first->toCanonical(), $second->toCanonical()],
+            array_fill(0, 2, MetricSubject::declaration($dependency->source)->toCanonical()),
             array_map(static fn(\Qualimetrix\Analysis\Finding\Contract\Finding $finding): string => $finding->subject->toCanonical(), $findings),
         );
-        self::assertNotSame($findings[0]->occurrenceKey?->value, $findings[1]->occurrenceKey?->value);
+        self::assertSame([
+            $this->targetOccurrence($dependency),
+            $this->targetOccurrence($dependency),
+        ], array_map(static fn(\Qualimetrix\Analysis\Finding\Contract\Finding $finding): ?string => $finding->occurrenceKey?->value, $findings));
+        self::assertSame($findings[0]->occurrenceKey?->value, $findings[1]->occurrenceKey?->value);
     }
 
     #[Test]
@@ -575,14 +590,65 @@ final class LayerViolationRuleTest extends TestCase
 
         self::assertCount(4, $findings);
         self::assertSame([
-            'class:App\\Controller\\FirstController|' . $firstTarget->toCanonical(),
-            'class:App\\Controller\\FirstController|' . $secondTarget->toCanonical(),
-            'class:App\\Controller\\SecondController|' . $firstTarget->toCanonical(),
-            'class:App\\Controller\\SecondController|' . $secondTarget->toCanonical(),
+            $this->targetOccurrence($dependencies[0]),
+            $this->targetOccurrence($dependencies[0]),
+            $this->targetOccurrence($dependencies[2]),
+            $this->targetOccurrence($dependencies[2]),
         ], array_map(
-            static fn(\Qualimetrix\Analysis\Finding\Contract\Finding $finding): string => $finding->symbolPath->toCanonical() . '|' . $finding->subject->toCanonical(),
+            static fn(\Qualimetrix\Analysis\Finding\Contract\Finding $finding): ?string => $finding->occurrenceKey?->value,
             $findings,
         ));
+        self::assertSame([
+            MetricSubject::declaration($dependencies[0]->source)->toCanonical(),
+            MetricSubject::declaration($dependencies[0]->source)->toCanonical(),
+            MetricSubject::declaration($dependencies[2]->source)->toCanonical(),
+            MetricSubject::declaration($dependencies[2]->source)->toCanonical(),
+        ], array_map(
+            static fn(\Qualimetrix\Analysis\Finding\Contract\Finding $finding): string => $finding->subject->toCanonical(),
+            $findings,
+        ));
+    }
+
+    #[Test]
+    public function itKeepsDuplicateExactSourcesWhenTheLogicalTargetIsOwned(): void
+    {
+        $source = SymbolPath::forClass('App\\Controller', 'Controller');
+        $target = SymbolPath::forClass('App\\Repository', 'Repository');
+        $targetSubject = MetricSubject::declaration(DeclarationPath::of($target, RelativePath::fromString('src/Repository.php'), DeclarationOrdinal::fromRank(0)));
+        $first = DeclarationPath::of($source, RelativePath::fromString('src/First.php'), DeclarationOrdinal::fromRank(0));
+        $second = DeclarationPath::of($source, RelativePath::fromString('src/Second.php'), DeclarationOrdinal::fromRank(1));
+        $registry = new LayerRegistry([
+            new LayerDefinition('controller', new MembershipSpec(['App\\Controller'])),
+            new LayerDefinition('repository', new MembershipSpec(['App\\Repository'])),
+        ]);
+        $findings = [];
+        foreach ([$first, $second] as $declaration) {
+            $dependency = Dependency::ofKind($declaration, new LogicalClassPath($target), DependencyType::New_, new Location(RelativePath::fromString('src/UseSite.php'), 5));
+            $findings[] = (new LayerViolationFinding(
+                dependency: $dependency,
+                fromMatch: $registry->resolveAll($source)[0],
+                toMatch: $registry->resolveAll($target)[0],
+                ownedTargets: [$targetSubject],
+                ruleName: LayerViolationRule::NAME,
+                severity: Severity::Warning,
+                recommendation: 'Use an allowed dependency.',
+            ))->toFindings()[0];
+        }
+
+        self::assertSame([MetricSubject::declaration($first)->toCanonical(), MetricSubject::declaration($second)->toCanonical()], array_map(
+            static fn(\Qualimetrix\Analysis\Finding\Contract\Finding $finding): string => $finding->subject->toCanonical(),
+            $findings,
+        ));
+        self::assertNotSame($findings[0]->occurrenceKey?->value, $findings[1]->occurrenceKey?->value);
+    }
+
+    private function targetOccurrence(Dependency $dependency): string
+    {
+        return OccurrenceKey::semantic('architecture.layer-violation', [
+            'source' => $dependency->source->toCanonical(),
+            'target' => $dependency->targetLogical()->toCanonical(),
+            'type' => $dependency->type->value,
+        ])->value;
     }
 
     #[Test]
@@ -655,15 +721,22 @@ final class LayerViolationRuleTest extends TestCase
         $manyFindings = $many->toFindings();
 
         self::assertSame(MetricSubject::declaration($dependency->source)->toCanonical(), $fallbackFindings[0]->subject->toCanonical());
-        self::assertSame([$first->toCanonical()], array_map(
+        self::assertSame([MetricSubject::declaration($dependency->source)->toCanonical()], array_map(
             static fn(\Qualimetrix\Analysis\Finding\Contract\Finding $finding): string => $finding->subject->toCanonical(),
             $oneFindings,
         ));
-        self::assertSame([$first->toCanonical(), $second->toCanonical()], array_map(
+        self::assertSame(array_fill(0, 2, MetricSubject::declaration($dependency->source)->toCanonical()), array_map(
             static fn(\Qualimetrix\Analysis\Finding\Contract\Finding $finding): string => $finding->subject->toCanonical(),
             $manyFindings,
         ));
-        self::assertNotSame($manyFindings[0]->occurrenceKey?->value, $manyFindings[1]->occurrenceKey?->value);
+        self::assertCount(1, $fallbackFindings);
+        self::assertCount(1, $oneFindings);
+        self::assertCount(2, $manyFindings);
+        self::assertSame([$this->targetOccurrence($dependency), $this->targetOccurrence($dependency)], array_map(
+            static fn(\Qualimetrix\Analysis\Finding\Contract\Finding $finding): ?string => $finding->occurrenceKey?->value,
+            $manyFindings,
+        ));
+        self::assertSame($manyFindings[0]->occurrenceKey?->value, $manyFindings[1]->occurrenceKey?->value);
         self::assertSame($dependency->location, $manyFindings[0]->location);
         self::assertSame($target, $manyFindings[0]->dependencyTarget);
         self::assertSame(DependencyType::New_, $manyFindings[0]->dependencyType);
@@ -690,7 +763,7 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function itKeepsTargetSymbolControlsIndependentWhileUseSitePhysicalControlsApplyToEveryProjection(): void
+    public function itControlsOwnedTargetOccurrencesByTheSourceDeclaration(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
         $architecture = $this->buildArchitecture([
@@ -719,27 +792,31 @@ final class LayerViolationRuleTest extends TestCase
             reason: 'Source declaration is independently controlled.',
             line: 1,
             type: SuppressionType::Symbol,
-            binding: new DeclarationBinding($sourceSubject, ControlScope::Class_),
+            position: 0,
+            binding: new DeclarationBinding($sourceSubject, ControlScope::Class_, DeclarationReach::whole(null, 'test')),
         )]];
         $result = $filter->apply($findings, $suppressions);
-        self::assertSame([true, true], array_map(static fn($v): bool => \in_array($v, $result->retained, true), $findings));
+        self::assertSame([false, false], array_map(static fn($v): bool => \in_array($v, $result->retained, true), $findings));
 
-        $suppressions['src/RepositoryOne.php'] = [new Suppression(
+        $suppressions = ['src/RepositoryOne.php' => [new Suppression(
             rule: LayerViolationRule::NAME,
             reason: 'Target declaration control is independent.',
             line: 1,
             type: SuppressionType::Symbol,
-            binding: new DeclarationBinding($firstTargetSubject, ControlScope::Class_),
-        )];
+            position: 0,
+            binding: new DeclarationBinding($firstTargetSubject, ControlScope::Class_, DeclarationReach::whole(null, 'test')),
+        )]];
         $result = $filter->apply($findings, $suppressions);
-        self::assertSame([false, true], array_map(static fn($v): bool => \in_array($v, $result->retained, true), $findings));
+        self::assertSame([true, true], array_map(static fn($v): bool => \in_array($v, $result->retained, true), $findings));
 
-        $suppressions['src/Controller.php'] = [new Suppression(
+        $suppressions = ['src/Controller.php' => [new Suppression(
             rule: LayerViolationRule::NAME,
             reason: 'Physical use-site control applies to every projection.',
             line: 10,
             type: SuppressionType::NextLine,
-        )];
+            position: 0,
+            silencedLine: 10 + 1,
+        )]];
         $result = $filter->apply($findings, $suppressions);
         self::assertSame([false, false], array_map(static fn($v): bool => \in_array($v, $result->retained, true), $findings));
     }
@@ -1252,10 +1329,8 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function itKeepsTheDiagnosticWhenTheTwoCriteriaAreNotComparable(): void
+    public function itTreatsAnIncomparableNonPatternPairAsPrecedence(): void
     {
-        // A suffix criterion has no namespace subtree to compare against a
-        // pattern — the pair is undecidable and must stay reported.
         $rule = $this->buildRule(new LayerViolationOptions());
 
         $arch = new ArchitectureConfiguration(
@@ -1270,13 +1345,16 @@ final class LayerViolationRuleTest extends TestCase
         $repo = new InMemoryMetricRepository();
         $this->registerClass($repo, 'App\\Domain', 'UserService');
 
+        $findings = $rule->analyze($this->buildContext(null, $arch, $repo));
         $shadow = $this->filterByRule(
-            $rule->analyze($this->buildContext(null, $arch, $repo)),
+            $findings,
             LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
         );
 
-        self::assertCount(1, $shadow);
-        self::assertStringContainsString('suffix "UserService"', $shadow[0]->message);
+        self::assertSame([], $shadow);
+        $unreachable = $this->filterByRule($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
+        self::assertCount(1, $unreachable);
+        self::assertStringContainsString('taken by earlier layer "svc"', $unreachable[0]->message);
     }
 
     // -------------------------------------------------------------------------
@@ -1462,7 +1540,7 @@ final class LayerViolationRuleTest extends TestCase
             }
         };
         $finding = new LayerViolationFinding(
-            dependency: new Dependency(
+            dependency: Dependency::ofKind(
                 DeclarationPath::of($source, RelativePath::fromString('src/Controller.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath($target),
                 DependencyType::New_,
@@ -1505,7 +1583,7 @@ final class LayerViolationRuleTest extends TestCase
             }
         };
         $finding = new LayerViolationFinding(
-            dependency: new Dependency(
+            dependency: Dependency::ofKind(
                 DeclarationPath::of($source, RelativePath::fromString('src/Controller.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath($target),
                 DependencyType::New_,
@@ -1524,9 +1602,101 @@ final class LayerViolationRuleTest extends TestCase
         $finding->toFindings();
     }
 
-    /**
-     * @param list<Dependency> $dependencies
-     */
+    #[Test]
+    public function itAccountsAllowedEdgesAndBothUnassignedEndpointsFromTheSharedWalkOnlyOnce(): void
+    {
+        $options = new LayerViolationOptions();
+        $collector = new LayerEvidenceCollector($options, new UnassignedClassOptions(), new LayerDeclarationOptions(), $this->processor);
+        $rule = new LayerViolationRule($options, $collector);
+        $architecture = $this->buildArchitecture(['controller' => ['App\Controller'], 'repository' => ['App\Repository']], ['controller' => []]);
+        $graph = $this->buildGraph([
+            $this->buildDependency('App\Controller', 'One', 'App\Controller', 'Two'),
+            $this->buildDependency('App\Controller', 'One', 'App\Repository', 'Two'),
+            $this->buildDependency('App\Unknown', 'One', 'App\Repository', 'Two'),
+            $this->buildDependency('App\Controller', 'One', 'App\Unknown', 'Two'),
+        ]);
+        $session = new PopulationSession((new ChannelPublication(new RuleEnablement([
+            new EnablementDecision(
+                new SelectionCellAddress(LayerViolationRule::NAME, new FindingChannel(LayerViolationRule::NAME), SymbolLevel::Class_, ChannelSelectionRole::Selectable),
+                new AuthoredCellDecision(CellSwitch::On, CellAdmission::Direct),
+            ),
+        ], null)))->publishes(...));
+        $context = $this->buildContext($graph, $architecture)->withPopulationTrace($session);
+
+        $collector->collect($context);
+        self::assertCount(1, $rule->analyze($context));
+        $population = $session->freeze();
+        self::assertSame(2, $population->judgedCount());
+        self::assertSame(2, $population->unjudgedCount());
+        self::assertSame(['source-assigned', 'target-assigned'], array_column($population->abstentions(), 'gate'));
+        self::assertSame(['dependency-edge'], array_unique(array_column($population->abstentions(), 'unit')));
+    }
+
+    #[Test]
+    public function itJudgesAuthoredExcludeClausesOnceWithScopeBeforePendingLifecycle(): void
+    {
+        $channel = 'architecture.unmatched-exclude';
+        foreach ([[], [ProjectScopeDoor::Paths]] as $doors) {
+            $processor = new ArchitecturePolicy();
+            $repository = new InMemoryMetricRepository();
+            $this->registerClass($repository, 'App', 'Subject');
+            $graph = $this->buildGraph([]);
+            $architecture = new ArchitectureConfiguration(new LayerRegistry([
+                new LayerDefinition('active', new MembershipSpec(['App'], exclude: new ExcludeSpec(patterns: ['Gone']))),
+                new LayerDefinition('pending', new MembershipSpec(['Future'], exclude: new ExcludeSpec(patterns: ['Gone'])), LayerLifecycle::Pending),
+                new LayerDefinition('without-exclude', new MembershipSpec(['Other'])),
+            ]), AllowListBuilder::policyFromExactMap([]), CoverageMode::Ignore);
+            ProcessorBuilder::prepared($architecture, $graph, $repository, $processor);
+            $session = new PopulationSession((new ChannelPublication(new RuleEnablement([
+                new EnablementDecision(
+                    new SelectionCellAddress(LayerDeclarationRule::NAME, new FindingChannel($channel), SymbolLevel::Project, ChannelSelectionRole::Selectable),
+                    new AuthoredCellDecision(CellSwitch::On, CellAdmission::Direct),
+                ),
+            ], null)))->publishes(...));
+            $context = (new AnalysisContext($repository, $graph, projectScope: new ProjectScopeJudgement($doors)))->withPopulationTrace($session);
+            $options = new LayerDeclarationOptions();
+            $collector = new LayerEvidenceCollector(new LayerViolationOptions(enabled: false), new UnassignedClassOptions(), $options, $processor);
+            $findings = (new LayerDeclarationRule($options, $collector))->analyze($context);
+            $inert = array_filter($findings, static fn($finding): bool => $finding->code === $channel);
+            self::assertCount($doors === [] ? 1 : 0, $inert);
+            self::assertSame($doors === [] ? 1 : 0, $session->freeze()->judgedCount());
+            self::assertSame($doors === [] ? 1 : 2, $session->freeze()->unjudgedCount());
+            self::assertSame($doors === [] ? 'active-clause' : 'namespace-scope', $session->freeze()->abstentions()[0]->gate);
+        }
+    }
+
+    #[Test]
+    public function itCountsNativeDependencyEventsWithoutTreatingTheirSharedExampleAsOneJudgement(): void
+    {
+        $dependency = $this->buildDependency('App\Unknown', 'Source', 'App\Repository', 'Target');
+        $builder = new DependencyGraphBuilder(new UnplacedExternalClassSpelling());
+        foreach ([[], [$dependency, $dependency]] as $dependencies) {
+            $options = new LayerViolationOptions();
+            $collector = new LayerEvidenceCollector($options, new UnassignedClassOptions(), new LayerDeclarationOptions(), $this->processor);
+            $rule = new LayerViolationRule($options, $collector);
+            $architecture = $this->buildArchitecture(['repository' => ['App\Repository']], []);
+            $graph = $builder->build($dependencies, [])->graph;
+            self::assertCount(\count($dependencies), $graph->getAllDependencies());
+            $session = new PopulationSession((new ChannelPublication(new RuleEnablement([
+                new EnablementDecision(
+                    new SelectionCellAddress(LayerViolationRule::NAME, new FindingChannel(LayerViolationRule::NAME), SymbolLevel::Class_, ChannelSelectionRole::Selectable),
+                    new AuthoredCellDecision(CellSwitch::On, CellAdmission::Direct),
+                ),
+            ], null)))->publishes(...));
+            $context = $this->buildContext($graph, $architecture)->withPopulationTrace($session);
+            self::assertSame([], $rule->analyze($context));
+            self::assertSame(0, $session->freeze()->judgedCount());
+            self::assertSame(\count($dependencies), $session->freeze()->unjudgedCount());
+            if ($dependencies !== []) {
+                $absence = $session->freeze()->abstentions()[0];
+                self::assertSame(2, $absence->count);
+                self::assertCount(1, $absence->examples);
+                self::assertSame('dependency-edge', $absence->unit);
+            }
+        }
+    }
+
+    /** @param list<Dependency> $dependencies */
     private function buildGraph(array $dependencies): DependencyGraphInterface
     {
         $stub = self::createStub(DependencyGraphInterface::class);
@@ -1542,7 +1712,7 @@ final class LayerViolationRuleTest extends TestCase
         string $targetClass,
         DependencyType $type = DependencyType::New_,
     ): Dependency {
-        return new Dependency(
+        return Dependency::ofKind(
             source: DeclarationPath::of(SymbolPath::forClass($sourceNamespace, $sourceClass), RelativePath::fromString('src/dummy.php'), DeclarationOrdinal::fromRank(0)),
             target: new LogicalClassPath(SymbolPath::forClass($targetNamespace, $targetClass)),
             type: $type,
@@ -1552,7 +1722,7 @@ final class LayerViolationRuleTest extends TestCase
 
     private function dependency(SymbolPath $source, SymbolPath $target, DependencyType $type, Location $location): Dependency
     {
-        return new Dependency(
+        return Dependency::ofKind(
             DeclarationPath::of($source, $location->file ?? RelativePath::fromString('src/dummy.php'), DeclarationOrdinal::fromRank(0)),
             new LogicalClassPath($target),
             $type,
@@ -1614,17 +1784,6 @@ final class LayerViolationRuleTest extends TestCase
         );
 
         return $subject;
-    }
-
-    private function findDeclarationSubject(InMemoryMetricRepository $repository, SymbolPath $logical): MetricSubject
-    {
-        foreach ($repository->allDeclarations() as $declarationInfo) {
-            if ($declarationInfo->subject?->toSymbolPath()->toCanonical() === $logical->toCanonical()) {
-                return $declarationInfo->subject;
-            }
-        }
-
-        self::fail('Expected an owned declaration for ' . $logical->toString());
     }
 
     /**

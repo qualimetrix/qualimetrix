@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Configuration\Pipeline\Stage;
 
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
+use Qualimetrix\Analysis\Configuration\Loader\CommandLineLayer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface;
 
@@ -29,10 +30,11 @@ final class CliStage implements ConfigurationStageInterface
 
     public function apply(ConfigurationResolutionRequest $request): ?ConfigurationLayer
     {
-        if ($request->cliValues === []) {
+        if ($request->cliValues === [] && $request->cliPathWrites === []) {
             return null;
         }
 
-        return new ConfigurationLayer('cli', $request->cliValues);
+        $layer = CommandLineLayer::of($request);
+        return new ConfigurationLayer('cli', $request->cliValues, authored: [$layer]);
     }
 }

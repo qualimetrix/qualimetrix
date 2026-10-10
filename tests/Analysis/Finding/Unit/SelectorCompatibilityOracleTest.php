@@ -4,14 +4,23 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
-use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
+use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
 use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 /**
  * The compatibility oracle for selector semantics — and it is **synthetic on
@@ -31,7 +40,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * swallowed `demo.rule.leaf.deep`. `demo.other` is an unrelated sibling
  * producer that must never be caught by a `demo`-shaped selector.
  */
-#[CoversClass(RuleSelector::class)]
+#[CoversClass(RuleEnablementResolver::class)]
 final class SelectorCompatibilityOracleTest extends TestCase
 {
     private const string PRODUCER = 'demo.rule';
@@ -39,12 +48,11 @@ final class SelectorCompatibilityOracleTest extends TestCase
     private const string SIBLING_PRODUCER = 'demo.other';
 
     /**
-     * @return iterable<string, array{string, list<string>}>
+     * @return iterable<string, array{string, list<string>, ?string}>
      */
     public static function provideSelectorCases(): iterable
     {
-        // The producer is named `demo.rule` and so is one of its channels —
-        // the shape 38 of the project's 51 channels have. A selector equal to
+        // The producer is named `demo.rule` and so is one of its channels. A selector equal to
         // the producer name addresses the *rule*, so it takes every channel
         // the rule emits; that is selection's documented "rule and/or channel"
         // reading, not a prefix match, and `demo.rule.*` below shows the
@@ -52,46 +60,55 @@ final class SelectorCompatibilityOracleTest extends TestCase
         yield 'exact producer name selects every channel of that producer' => [
             'demo.rule',
             ['demo.rule', 'demo.rule.leaf', 'demo.rule.leaf.deep'],
+            null,
         ];
 
         yield 'group selector selects strict descendants and not the parent' => [
             'demo.rule.*',
             ['demo.rule.leaf', 'demo.rule.leaf.deep'],
+            null,
         ];
 
         yield 'exact descendant does not swallow its own descendant' => [
             'demo.rule.leaf',
             ['demo.rule.leaf'],
+            null,
         ];
 
-        yield 'bare prefix without a star selects nothing' => [
+        yield 'bare prefix without a star is refused' => [
             'demo',
             [],
+            "Rule selector \"demo\" does not match any registered producer or channel. Write \"demo.*\" to select its descendants.",
         ];
 
-        yield 'lone wildcard is not a selector' => [
+        yield 'lone wildcard is refused' => [
             '*',
             [],
+            "Rule selector \"*\" does not match any registered producer or channel.",
         ];
 
-        yield 'selector deeper than any channel selects nothing' => [
+        yield 'selector deeper than any channel is refused' => [
             'demo.rule.leaf.deeper',
             [],
+            "Rule selector \"demo.rule.leaf.deeper\" does not match any registered producer or channel.",
         ];
 
         yield 'group selector on the sibling does not reach this producer' => [
             'demo.other.*',
             [],
+            null,
         ];
 
         yield 'explicit two-part form addresses both halves exactly' => [
             'demo.rule.leaf',
             ['demo.rule.leaf'],
+            null,
         ];
 
-        yield 'explicit two-part form takes no wildcard' => [
+        yield 'retired two-part form is refused' => [
             'demo.rule#demo.rule.*',
             [],
+            "Rule selector \"demo.rule#demo.rule.*\" is written in the retired channel-pair form. The \"ruleName#code\" spelling of a channel is gone: a channel is named by its code alone. Write \"demo.rule.*\".",
         ];
     }
 
@@ -100,13 +117,24 @@ final class SelectorCompatibilityOracleTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideSelectorCases')]
-    public function itSelectsExactlyTheseChannels(string $selector, array $expectedChannelKeys): void
+    public function itSelectsExactlyTheseChannels(string $selector, array $expectedChannelKeys, ?string $refusal): void
     {
-        $rules = new RuleSelector(self::registry());
+        if ($refusal !== null) {
+            try {
+                self::enablement([$selector]);
+                self::fail('An unknown or retired selector must be refused.');
+            } catch (ConfigurationRefusal $exception) {
+                self::assertSame($refusal, $exception->getMessage());
+            }
+
+            return;
+        }
+
+        $rules = self::enablement([$selector]);
 
         $selected = [];
         foreach (self::channels() as $channel) {
-            if ($rules->isChannelEnabled(self::PRODUCER, $channel, SymbolLevel::Class_, [$selector], [])) {
+            if ($rules->publishes($channel, SymbolLevel::Class_)) {
                 $selected[] = $channel->code;
             }
         }
@@ -122,13 +150,24 @@ final class SelectorCompatibilityOracleTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideSelectorCases')]
-    public function itDisablesExactlyTheseChannels(string $selector, array $expectedChannelKeys): void
+    public function itDisablesExactlyTheseChannels(string $selector, array $expectedChannelKeys, ?string $refusal): void
     {
-        $rules = new RuleSelector(self::registry());
+        if ($refusal !== null) {
+            try {
+                self::enablement(disabled: [$selector]);
+                self::fail('An unknown or retired selector must be refused.');
+            } catch (ConfigurationRefusal $exception) {
+                self::assertSame($refusal, $exception->getMessage());
+            }
+
+            return;
+        }
+
+        $rules = self::enablement(disabled: [$selector]);
 
         $removed = [];
         foreach (self::channels() as $channel) {
-            if (!$rules->isChannelEnabled(self::PRODUCER, $channel, SymbolLevel::Class_, [], [$selector])) {
+            if (!$rules->publishes($channel, SymbolLevel::Class_)) {
                 $removed[] = $channel->code;
             }
         }
@@ -145,13 +184,20 @@ final class SelectorCompatibilityOracleTest extends TestCase
     #[Test]
     public function itEnablesTheProducerThroughItsChannelsAndNotByReversePrefix(): void
     {
-        $rules = new RuleSelector(self::registry());
-
-        self::assertTrue($rules->isProducerEnabled(self::PRODUCER, ['demo.rule.leaf'], []));
-        self::assertTrue($rules->isProducerEnabled(self::PRODUCER, ['demo.rule.*'], []));
-        self::assertFalse($rules->isProducerEnabled(self::PRODUCER, ['demo'], []));
-        self::assertFalse($rules->isProducerEnabled(self::PRODUCER, ['*'], []));
-        self::assertFalse($rules->isProducerEnabled(self::SIBLING_PRODUCER, ['demo.rule.*'], []));
+        self::assertTrue(self::enablement(['demo.rule.leaf'])->runs(self::PRODUCER));
+        self::assertTrue(self::enablement(['demo.rule.*'])->runs(self::PRODUCER));
+        self::assertFalse(self::enablement(['demo.rule.*'])->runs(self::SIBLING_PRODUCER));
+        foreach ([
+            'demo' => 'Rule selector "demo" does not match any registered producer or channel. Write "demo.*" to select its descendants.',
+            '*' => 'Rule selector "*" does not match any registered producer or channel.',
+        ] as $selector => $refusal) {
+            try {
+                self::enablement([$selector]);
+                self::fail('A reverse prefix or lone wildcard must not become a selector.');
+            } catch (ConfigurationRefusal $exception) {
+                self::assertSame($refusal, $exception->getMessage());
+            }
+        }
     }
 
     /**
@@ -161,14 +207,13 @@ final class SelectorCompatibilityOracleTest extends TestCase
     #[Test]
     public function itAcceptsOnlyExactProducerNamesAsOptionOwners(): void
     {
-        $rules = new RuleSelector(self::registry());
-        $producers = [self::PRODUCER, self::SIBLING_PRODUCER];
+        $rules = self::registry();
 
-        self::assertTrue($rules->matchesKnownProducer('demo.rule', $producers));
-        self::assertFalse($rules->matchesKnownProducer('demo', $producers));
-        self::assertFalse($rules->matchesKnownProducer('demo.*', $producers));
-        self::assertFalse($rules->matchesKnownProducer('demo.rule.leaf', $producers));
-        self::assertFalse($rules->matchesKnownProducer('*', $producers));
+        self::assertTrue($rules->hasRule('demo.rule'));
+        self::assertFalse($rules->hasRule('demo'));
+        self::assertFalse($rules->hasRule('demo.*'));
+        self::assertFalse($rules->hasRule('demo.rule.leaf'));
+        self::assertFalse($rules->hasRule('*'));
     }
 
     /** @return list<FindingChannel> */
@@ -181,11 +226,58 @@ final class SelectorCompatibilityOracleTest extends TestCase
         ];
     }
 
-    private static function registry(): InMemoryRuleChannelRegistry
+    private static function registry(): ChannelUniverse
     {
-        return new InMemoryRuleChannelRegistry([
-            self::PRODUCER => self::channels(),
-            self::SIBLING_PRODUCER => [new FindingChannel(self::SIBLING_PRODUCER)],
-        ]);
+        return new ChannelUniverse(
+            [
+                'demo.rule' => ChannelDeclaration::occurrence(SymbolLevel::Class_),
+                'demo.rule.leaf' => ChannelDeclaration::occurrence(SymbolLevel::Class_),
+                'demo.rule.leaf.deep' => ChannelDeclaration::occurrence(SymbolLevel::Class_),
+                self::SIBLING_PRODUCER => ChannelDeclaration::occurrence(SymbolLevel::Class_),
+                'demo.other.leaf' => ChannelDeclaration::occurrence(SymbolLevel::Class_),
+            ],
+            [
+                self::PRODUCER => array_map(static fn(FindingChannel $channel): string => $channel->code, self::channels()),
+                self::SIBLING_PRODUCER => [self::SIBLING_PRODUCER, 'demo.other.leaf'],
+            ],
+            [self::PRODUCER => false, self::SIBLING_PRODUCER => false],
+            new ResolvedComputedMetricDefinitions([]),
+            ...self::unusedReachPorts(),
+        );
+    }
+
+    /** @param list<string> $only
+     * @param list<string> $disabled
+     */
+    private static function enablement(array $only = [], array $disabled = []): RuleEnablement
+    {
+        $metadata = [
+            new RuleMetadata(self::PRODUCER, CodeDuplicationOptions::class, '', [], false),
+            new RuleMetadata(self::SIBLING_PRODUCER, CodeDuplicationOptions::class, '', [], false),
+        ];
+        return ResolvedOptionsFixture::ready(FindingConfiguration::none(), $metadata, channels: self::registry(), only: $only, disabled: $disabled)->enablement
+            ?? throw new LogicException('The fixture must carry final enablement.');
+    }
+
+    /** @return array{\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface} */
+    private static function unusedReachPorts(): array
+    {
+        return [
+            new class implements \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface {
+                public function metricReach(string $metricKey): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach
+                {
+                    throw new LogicException('This fixture does not query measured-metric reach.');
+                }
+            },
+            new class implements \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface {
+                public function reachAt(
+                    string $metricName,
+                    \Qualimetrix\Core\Symbol\SymbolLevel $level,
+                    \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface $definitions,
+                ): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach {
+                    throw new LogicException('This fixture does not query computed-metric reach.');
+                }
+            },
+        ];
     }
 }

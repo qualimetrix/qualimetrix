@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage;
 
 use InvalidArgumentException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -17,17 +18,29 @@ use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageOptions;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
+use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
+use Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch;
+use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use ReflectionClass;
@@ -50,6 +63,58 @@ use ReflectionClass;
 #[CoversClass(PropertyTypeCoverageRule::class)]
 final class TypeCoverageRuleTest extends TestCase
 {
+    /** @param Dimension $dimension */
+    #[Test]
+    #[DataProvider('dimensions')]
+    public function itAccountsForWrongLogicalKindsBeforeReadingClassMetrics(array $dimension): void
+    {
+        $info = self::subjectInfo(SymbolPath::forMethod('App', 'Service', 'run'), RelativePath::fromString('service.php'), 1);
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->expects(self::once())->method('allClassDeclarations')->willReturn([$info]);
+        $repository->expects(self::never())->method('getSubject');
+        $session = self::populationSession($dimension['name']);
+        self::assertSame([], (new $dimension['class'](new TypeCoverageOptions()))->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
+        self::assertSame(0, $session->freeze()->judgedCount());
+        self::assertSame(1, $session->freeze()->unjudgedCount());
+        self::assertSame('logical-class-kind', $session->freeze()->abstentions()[0]->gate);
+    }
+
+    /** @param Dimension $dimension */
+    #[Test]
+    #[DataProvider('dimensions')]
+    public function itSeparatesMissingAndNonpositiveTotalsFromHealthyAndUntypedJudgements(array $dimension): void
+    {
+        $info = self::subjectInfo(SymbolPath::fromClassFqn('App\\TypedClass'), RelativePath::fromString('typed.php'), 1);
+        $reasons = [];
+        foreach ([[null, null], [0, null], [-1, null], [1, 100.0], [1, null]] as [$total, $coverage]) {
+            $metrics = new MetricBag();
+            if ($total !== null) {
+                $metrics = $metrics->with($dimension['total'], $total);
+            }
+            if ($coverage !== null) {
+                $metrics = $metrics->with($dimension['coverage'], $coverage);
+            }
+            $repository = self::createStub(MetricRepositoryInterface::class);
+            $repository->method('allClassDeclarations')->willReturn([$info]);
+            $repository->method('getSubject')->willReturn($metrics);
+            $session = self::populationSession($dimension['name']);
+            $findings = (new $dimension['class'](new TypeCoverageOptions()))->analyze((new AnalysisContext($repository))->withPopulationTrace($session));
+            self::assertCount($total === 1 && $coverage === null ? 1 : 0, $findings);
+            self::assertSame($total === 1 ? 1 : 0, $session->freeze()->judgedCount());
+            self::assertSame($total === 1 ? 0 : 1, $session->freeze()->unjudgedCount());
+            if ($total !== 1) {
+                $absence = $session->freeze()->abstentions()[0];
+                self::assertSame('typeable-total', $absence->gate);
+                $reasons[] = $absence->reason;
+            }
+            if ($findings !== []) {
+                self::assertSame(0.0, $findings[0]->metricValue);
+            }
+        }
+        self::assertNotSame($reasons[0], $reasons[1]);
+        self::assertSame($reasons[1], $reasons[2]);
+    }
+
     /**
      * One argument, a struct, rather than seven positional ones: PHPUnit warns
      * when a data set carries more arguments than the case reads, and most of
@@ -110,7 +175,7 @@ final class TypeCoverageRuleTest extends TestCase
         $rule = new $ruleClass(new TypeCoverageOptions());
 
         self::assertSame($dimension['name'], $rule->getName());
-        self::assertSame($dimension['description'], $rule->getDescription());
+        self::assertSame($dimension['description'], $rule::getDescription());
         // The literals in this table are the second witness; this is where they
         // are tied back to the constants, so a renamed constant fails here
         // rather than leaving the table quietly measuring a key nothing produces.
@@ -164,7 +229,7 @@ final class TypeCoverageRuleTest extends TestCase
         self::expectException(InvalidArgumentException::class);
 
         new $ruleClass(new class implements RuleOptionsInterface {
-            public static function fromArray(array $config): static
+            public static function fromResolved(ResolvedRuleOptionValues $config): static
             {
                 return new static();
             }
@@ -195,7 +260,7 @@ final class TypeCoverageRuleTest extends TestCase
     {
         $ruleClass = $dimension['class'];
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('allDeclarations');
+        $repository->expects(self::never())->method('allClassDeclarations');
 
         $rule = new $ruleClass(new TypeCoverageOptions(enabled: false));
 
@@ -347,11 +412,11 @@ final class TypeCoverageRuleTest extends TestCase
     {
         $class = SymbolPath::forClass('App\\Service', 'Twin');
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([
+        $repository->method('allClassDeclarations')->willReturn([
             self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
-        $repository->method('get')->willReturn(MetricBag::fromArray([
+        $repository->method('getSubject')->willReturn(MetricBag::fromArray([
             MetricName::DESIGN_TYPE_COVERAGE_PARAM_TOTAL => 4,
             MetricName::DESIGN_TYPE_COVERAGE_PARAM => 25.0,
         ]));
@@ -383,10 +448,18 @@ final class TypeCoverageRuleTest extends TestCase
         );
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('get')->willReturn(MetricBag::fromArray($metrics));
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn(MetricBag::fromArray($metrics));
 
         return (new $ruleClass($options ?? new TypeCoverageOptions()))->analyze(new AnalysisContext($repository));
+    }
+
+    private static function populationSession(string $producer, bool $selected = true): PopulationSession
+    {
+        return new PopulationSession((new ChannelPublication(new RuleEnablement([new EnablementDecision(
+            new SelectionCellAddress($producer, new FindingChannel($producer), SymbolLevel::Class_, ChannelSelectionRole::Selectable),
+            new AuthoredCellDecision($selected ? CellSwitch::On : CellSwitch::Off, CellAdmission::Direct),
+        )], null)))->publishes(...));
     }
 
     private static function subjectInfo(SymbolPath $symbolPath, RelativePath $file, int $line): SymbolInfo
@@ -401,6 +474,7 @@ final class TypeCoverageRuleTest extends TestCase
             $file,
             $line,
             $kind,
+            $kind === \Qualimetrix\Core\Symbol\CallableKind::Method ? \Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forClass($symbolPath->namespace ?? '', $symbolPath->type ?? ''), $file, \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)) : null,
         );
     }
 }

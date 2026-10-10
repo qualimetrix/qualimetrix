@@ -7,11 +7,11 @@ declare(strict_types=1);
  *
  * Table A — per rule Options class: which level slots it accepts and which keys
  * are allowed *inside* each slot. That inner set is what each slot's level
- * options class declares for itself and `RuleOptionsFactory` compares against.
+ * options class declares for itself and `RuleOptionSurface` compares against.
  *
  * Table B — per rule Options class: the key set DECLARED to the product
  * (`acceptedOptionKeys()`, the class's own single statement), the key set
- * actually READ by `fromArray()`, and the two differences between them.
+ * actually READ by `fromResolved()`, and the two differences between them.
  *
  * Table C — what this script could not reduce to a literal key, per class. It is
  * printed rather than reasoned about afterwards: a blind spot counted by hand is
@@ -44,7 +44,7 @@ require __DIR__ . '/../vendor/autoload.php';
  */
 final class RuleOptionKeyEnumeration
 {
-    /** Keys the factory strips before `fromArray()` ever sees them. */
+    /** Keys the factory strips before `fromResolved()` ever sees them. */
     /**
      * Read off the product's owner rather than written out here: a fifth copy
      * of this list is how it goes out of step in silence, which is the defect
@@ -192,14 +192,12 @@ final class RuleOptionKeyEnumeration
      */
     private function rowsD(string $optionsClass, FromArrayKeyReader $reader): array
     {
-        $options = $optionsClass::fromArray([]);
-        if (!$options instanceof HierarchicalRuleOptionsInterface) {
+        if (!is_a($optionsClass, HierarchicalRuleOptionsInterface::class, true)) {
             return [];
         }
 
         $rows = [];
-        foreach ($options->getSupportedLevels() as $level) {
-            $levelClass = $options->forLevel($level)::class;
+        foreach ($optionsClass::levelOptionsClasses() as $slot => $levelClass) {
             $reading = $reader->read($levelClass);
             $read = array_keys($reading->keys);
             sort($read);
@@ -220,7 +218,7 @@ final class RuleOptionKeyEnumeration
             $rows[] = implode("\t", [
                 $levelClass,
                 $optionsClass,
-                $level->value,
+                $slot,
                 self::set($declaredNames),
                 self::set(array_map(static fn(string $key): string => $key . ':' . $declared[$key], $declaredNames)),
                 self::set($unguarded),
@@ -240,9 +238,7 @@ final class RuleOptionKeyEnumeration
      */
     private function rowA(string $optionsClass, array $rules, FromArrayKeyReader $reader): string
     {
-        $options = $optionsClass::fromArray([]);
-
-        if (!$options instanceof HierarchicalRuleOptionsInterface) {
+        if (!is_a($optionsClass, HierarchicalRuleOptionsInterface::class, true)) {
             return implode("\t", [$optionsClass, implode(',', $rules), 'no', '-', '-', '-', '-']);
         }
 
@@ -250,17 +246,15 @@ final class RuleOptionKeyEnumeration
         $sets = [];
         $sources = [];
 
-        foreach ($options->getSupportedLevels() as $level) {
-            $levelOptions = $options->forLevel($level);
-            $levelClass = $levelOptions::class;
+        foreach ($optionsClass::levelOptionsClasses() as $slot => $levelClass) {
             $reading = $reader->read($levelClass);
 
             $keys = array_values(array_diff(array_keys($reading->keys), self::frameworkKeys()));
             sort($keys);
 
-            $slots[] = $level->value;
-            $sets[] = $level->value . '={' . implode(',', $keys) . '}';
-            $sources[] = $level->value . '=' . self::sourceOf($levelClass);
+            $slots[] = $slot;
+            $sets[] = $slot . '={' . implode(',', $keys) . '}';
+            $sources[] = $slot . '=' . self::sourceOf($levelClass);
         }
 
         return implode("\t", [
@@ -287,13 +281,13 @@ final class RuleOptionKeyEnumeration
      * an omission of the walk.
      *
      * @param class-string<RuleOptionsInterface|LevelOptionsInterface> $optionsClass
-     * @param list<string> $read keys the AST saw `fromArray()` read
+     * @param list<string> $read keys the AST saw `fromResolved()` read
      *
      * @return array<string, string> canonical key => which half declares it
      */
     private function declaredKeys(string $optionsClass, array $read): array
     {
-        $keySet = $optionsClass::acceptedOptionKeys();
+        $keySet = \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface::declaredFor($optionsClass);
 
         $declared = [];
         foreach ($keySet->acceptedForDisplay() as $key) {
@@ -386,7 +380,7 @@ final class RuleOptionKeyEnumeration
     {
         $reflection = new \ReflectionClass($class);
         $file = $reflection->getFileName();
-        $method = $reflection->hasMethod('fromArray') ? $reflection->getMethod('fromArray') : null;
+        $method = $reflection->hasMethod('fromResolved') ? $reflection->getMethod('fromResolved') : null;
 
         if ($file === false || $method === null) {
             return '-';

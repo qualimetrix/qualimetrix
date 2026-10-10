@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalPa
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 
 /** Creates serializable tasks with compile-time metadata and current runtime configuration. */
@@ -23,6 +24,7 @@ final readonly class FileProcessingTaskFactory
      */
     public function __construct(
         private LcomCollectionConfigurationStoreInterface $lcomConfigurationStore,
+        private RuleOptionDocumentFormsInterface $documentForms,
         private string $dependencyTraversalParticipantClass,
         private array $collectorClasses = [],
         private array $derivedCollectorClasses = [],
@@ -53,6 +55,7 @@ final readonly class FileProcessingTaskFactory
                 derivedCollectorClasses: $this->derivedCollectorClasses,
                 ruleClasses: $this->ruleClasses,
             ),
+            documentForms: $this->documentForms,
             // Read per task rather than once: the coordinator applies the
             // run's limit after the container that built this factory.
             memoryLimit: (string) \ini_get('memory_limit'),

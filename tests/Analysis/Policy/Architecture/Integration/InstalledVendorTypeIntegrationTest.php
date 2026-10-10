@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Integration;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\KnownTypes;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\KnownTypes;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -19,11 +20,9 @@ use Symfony\Component\Console\Tester\CommandTester;
  * repository extends a vendor base class, the base class implements the
  * vendor interface the layer names, and no analysed code names that interface.
  *
- * The run cannot answer the criterion about the repository — its chain leaves
- * the analysed paths — so what keeps the layer from being called empty is
- * whether the named type is one the run met at all. The analysed project's
- * own composer install places it, read as data, which tells it apart from a
- * mistyped name that nothing places.
+ * The analysed project's Composer install is read as data, so Architecture
+ * follows the vendor chain without loading it and tells the declared interface
+ * apart from a mistyped name that nothing places.
  */
 #[CoversClass(KnownTypes::class)]
 #[CoversClass(LayerDeclarationValidator::class)]
@@ -44,7 +43,9 @@ final class InstalledVendorTypeIntegrationTest extends TestCase
             ]],
         ], \JSON_THROW_ON_ERROR));
         $this->write('vendor/vend/orm/src/ObjectRepository.php', "<?php\n\nnamespace Vend\\Orm;\n\ninterface ObjectRepository {}\n");
-        $this->write('vendor/vend/orm/src/EntityRepository.php', "<?php\n\nnamespace Vend\\Orm;\n\nabstract class EntityRepository implements ObjectRepository {}\n");
+        $this->write('vendor/vend/orm/src/StringTrait.php', "<?php\n\nnamespace Vend\\Orm;\n\ntrait StringTrait { public function __toString(): string { return ''; } }\n");
+        $this->write('vendor/vend/orm/src/NestedStringTrait.php', "<?php\n\nnamespace Vend\\Orm;\n\ntrait NestedStringTrait { use StringTrait; }\n");
+        $this->write('vendor/vend/orm/src/EntityRepository.php', "<?php\n\nnamespace Vend\\Orm;\n\nabstract class EntityRepository implements ObjectRepository { use NestedStringTrait; }\n");
         $this->write('vendor/vend/orm/src/ServiceRepository.php', "<?php\n\nnamespace Vend\\Orm;\n\nabstract class ServiceRepository extends EntityRepository {}\n");
         $this->write('src/Repository/UserRepository.php', "<?php\n\nnamespace Sample\\Repository;\n\nuse Vend\\Orm\\ServiceRepository;\n\nfinal class UserRepository extends ServiceRepository {}\n");
         $this->write('src/Web/Controller.php', "<?php\n\nnamespace Sample\\Web;\n\nuse Sample\\Repository\\UserRepository;\n\nfinal class Controller\n{\n    public function __construct(private UserRepository \$users) {}\n}\n");
@@ -56,15 +57,22 @@ final class InstalledVendorTypeIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function itDoesNotCallALayerEmptyWhenTheInstallDeclaresTheTypeItNames(): void
+    public function itFollowsTheInstalledVendorChainToTheTypeTheLayerNames(): void
     {
         $tester = $this->check('Vend\Orm\ObjectRepository');
 
         self::assertSame([], $this->findingsOn($tester, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME));
 
-        $doubt = $this->findingsOn($tester, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME);
-        self::assertCount(1, $doubt, 'The layer kept out of the error is named where the doubt is.');
-        self::assertStringContainsString('"repositories"', (string) ($doubt[0]['message'] ?? ''));
+        self::assertSame([], $this->findingsOn($tester, ArchitectureChannels::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME));
+    }
+
+    #[Test]
+    public function itFollowsNestedInstalledTraitsToImplicitStringable(): void
+    {
+        $tester = $this->check('\\Stringable');
+
+        self::assertSame([], $this->findingsOn($tester, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME));
+        self::assertSame([], $this->findingsOn($tester, ArchitectureChannels::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME));
     }
 
     /**
@@ -80,6 +88,11 @@ final class InstalledVendorTypeIntegrationTest extends TestCase
         self::assertCount(1, $unreachable);
         self::assertStringContainsString('Vend\Orm\ObjectRepositry', (string) ($unreachable[0]['message'] ?? ''));
         self::assertStringContainsString('placed by the analysed project\'s composer install', (string) ($unreachable[0]['message'] ?? ''));
+
+        $unmatched = $this->findingsOn($tester, 'architecture.unmatched-type');
+        self::assertCount(1, $unmatched);
+        self::assertStringContainsString('Vend\Orm\ObjectRepositry', (string) ($unmatched[0]['message'] ?? ''));
+        self::assertStringContainsString('qmx.yaml', (string) ($unmatched[0]['message'] ?? ''));
     }
 
     /** A name that differs only in case is not the declared type. */
@@ -88,11 +101,29 @@ final class InstalledVendorTypeIntegrationTest extends TestCase
     {
         $tester = $this->check('Vend\Orm\Objectrepository');
 
-        self::assertCount(1, $this->findingsOn($tester, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME));
+        $unreachable = $this->findingsOn($tester, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
+        self::assertCount(1, $unreachable);
+        self::assertStringContainsString('did you mean Vend\Orm\ObjectRepository', (string) ($unreachable[0]['message'] ?? ''));
+        $unmatched = $this->findingsOn($tester, 'architecture.unmatched-type');
+        self::assertCount(1, $unmatched);
+        self::assertStringContainsString('did you mean Vend\Orm\ObjectRepository', (string) ($unmatched[0]['message'] ?? ''));
     }
 
-    private function check(string $implements): CommandTester
+    #[Test]
+    public function itReportsOnlyTheUnmatchedTypeWhenAnotherCriterionTypeWasMet(): void
     {
+        $tester = $this->check(['Vend\Orm\ObjectRepository', 'Vend\Orm\ObjectRepositry']);
+
+        self::assertSame([], $this->findingsOn($tester, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME));
+        $unmatched = $this->findingsOn($tester, 'architecture.unmatched-type');
+        self::assertCount(1, $unmatched);
+        self::assertStringContainsString('Vend\Orm\ObjectRepositry', (string) ($unmatched[0]['message'] ?? ''));
+    }
+
+    /** @param string|list<string> $implements */
+    private function check(string|array $implements): CommandTester
+    {
+        $implements = \is_array($implements) ? implode("', '", $implements) : $implements;
         $this->write('qmx.yaml', <<<YAML
             architecture:
               layers:

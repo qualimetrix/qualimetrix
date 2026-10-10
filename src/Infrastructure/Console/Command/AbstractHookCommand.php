@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction;
 use Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
 use Symfony\Component\Console\Command\Command;
@@ -20,19 +22,13 @@ use Symfony\Component\Console\Output\OutputInterface;
  * spell `hooks/pre-commit` for itself. The three copies of that had already
  * drifted — one checked that the hooks directory exists and two did not, and
  * the refusal read differently in each.
- *
- * @qmx-ignore health.cohesion -- the final execute() / abstract doExecute()
- * split is a template-method seam: this base class carries the shared
- * ladder and none of a subcommand's own state, so it measures as low
- * cohesion by construction, not as a defect. `@qmx-threshold` cannot retune
- * this instead: `health.cohesion` is a computed metric with no per-symbol
- * override support.
  */
 abstract class AbstractHookCommand extends Command
 {
     public function __construct(
         private readonly GitRepositoryLocatorInterface $gitRepositoryLocator,
         protected readonly RunningBinaryLocatorInterface $runningBinaryLocator,
+        protected readonly HookFileTransaction $files,
     ) {
         parent::__construct();
     }
@@ -53,6 +49,7 @@ abstract class AbstractHookCommand extends Command
      */
     final protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $this->files->begin();
         $exitCode = $this->doExecute($input, $output);
 
         $output->writeln(\sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));
@@ -69,7 +66,12 @@ abstract class AbstractHookCommand extends Command
      */
     final protected function hookPath(): string
     {
-        $hooksDir = $this->gitRepositoryLocator->findHooksDir();
+        $workingDirectory = getcwd();
+        if ($workingDirectory === false) {
+            throw $this->refusal('Cannot determine the current working directory. Point --working-dir at a git repository.');
+        }
+
+        $hooksDir = $this->gitRepositoryLocator->findHooksDir(AbsolutePath::fromString($workingDirectory));
 
         if ($hooksDir === null) {
             throw $this->refusal(
@@ -97,44 +99,4 @@ abstract class AbstractHookCommand extends Command
         return ConfigurationRefusal::aboutCommandLineInput((string) $this->getName(), $summary);
     }
 
-    /**
-     * Runs a filesystem call and keeps the system's reason for a failure, as
-     * PHP words it in the warning, instead of letting the warning out: under
-     * `display_errors` it reached stdout ahead of the refusal that already
-     * says what failed, and the refusal lacked the reason.
-     *
-     * @template T
-     *
-     * @param callable(): T $operation
-     *
-     * @return array{T, string}
-     */
-    final protected static function attempt(callable $operation): array
-    {
-        $reason = 'unknown reason';
-        set_error_handler(static function (int $level, string $message) use (&$reason): bool {
-            $reason = preg_match('~^[a-z_]+\([^)]*\): (.+)$~s', $message, $match) === 1 ? $match[1] : $message;
-
-            return true;
-        });
-
-        try {
-            $result = $operation();
-        } finally {
-            restore_error_handler();
-        }
-
-        return [$result, $reason];
-    }
-
-    /**
-     * Whether git would run something at this path.
-     *
-     * `file_exists` alone follows a symlink and answers false for a broken
-     * one, and git runs a broken symlink all the same — it just fails.
-     */
-    final protected static function hookExists(string $hookPath): bool
-    {
-        return is_link($hookPath) || file_exists($hookPath);
-    }
 }

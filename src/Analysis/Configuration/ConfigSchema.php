@@ -6,26 +6,21 @@ namespace Qualimetrix\Analysis\Configuration;
 
 use LogicException;
 use Qualimetrix\Analysis\Configuration\Loader\SectionNormalizationPolicy;
-use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
-use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
 
 /**
- * Single source of truth for all configuration keys.
+ * Vocabulary for current configuration keys and legacy ingress mappings.
  *
- * Every config key used anywhere in the pipeline is defined here as a constant.
- * The ENTRIES array unifies YAML-to-flat-key mappings with root key type constraints.
+ * Constants name the keys still carried through the legacy flat projection.
+ * ENTRIES maps YAML paths to those keys and preserves their ingress constraints.
+ * Declared owner sections receive their form validation and merge policy from
+ * the configuration document engine.
  *
- * Consumers (YamlConfigLoader, ConfigDataNormalizer, source stages, and owner resolvers)
- * all reference these constants instead of string literals.
+ * Delivery adapters reference these constants instead of string literals.
  *
  * Adding a new config option:
  * 1. Add a constant below
  * 2. Add an entry to ENTRIES (if YAML-configurable)
  * 3. Add handling in the appropriate consumer
- *
- * @qmx-threshold coupling.cbo warning=24 -- Afferent by rule: every consumer names a
- * key through these constants instead of a literal, so CBO counts adoption, not
- * entanglement (Ce=1). Raw CBO 23 gets one-edge headroom.
  */
 final class ConfigSchema
 {
@@ -34,7 +29,7 @@ final class ConfigSchema
     // -------------------------------------------------------------------------
 
     public const string PATHS = 'paths';
-    public const string EXCLUDES = 'excludes';
+    public const string EXCLUDE = 'exclude';
     public const string FORMAT = 'format';
     public const string RULES = 'rules';
     public const string DISABLED_RULES = 'disabled_rules';
@@ -44,11 +39,12 @@ final class ConfigSchema
     public const string FAIL_ON = 'fail_on';
     public const string CACHE_DIR = 'cache.dir';
     public const string CACHE_ENABLED = 'cache.enabled';
+    public const string PARALLEL = 'parallel';
     public const string PARALLEL_WORKERS = 'parallel.workers';
     public const string COUPLING = 'coupling';
     public const string COUPLING_FRAMEWORK_NAMESPACES = 'coupling.framework_namespaces';
-    public const string COMPUTED_METRICS = 'computedMetrics';
-    public const string EXCLUDE_HEALTH = 'excludeHealth';
+    public const string COMPUTED_METRICS = 'computed_metrics';
+    public const string EXCLUDE_HEALTH = 'exclude_health';
     public const string INCLUDE_GENERATED = 'include_generated';
     public const string INCLUDE_AUTOLOAD_DEV = 'include_autoload_dev';
     public const string MEMORY_LIMIT = 'memory_limit';
@@ -80,7 +76,7 @@ final class ConfigSchema
     public const array INTERNAL_KEYS = [self::DISCOVERED_AUTOLOAD_PATHS, self::DISCOVERED_AUTOLOAD_DEV_PATHS];
 
     /** Capability-owned roots transported in ordered configuration documents. */
-    public const array DOCUMENT_ROOTS = [self::COUPLING, self::COMPUTED_METRICS, self::EXCLUDE_HEALTH, self::ARCHITECTURE];
+    public const array DOCUMENT_ROOTS = [self::COUPLING, self::COMPUTED_METRICS, self::EXCLUDE_HEALTH, self::ARCHITECTURE, self::FORMAT, self::PARALLEL, self::RULES];
 
     // -------------------------------------------------------------------------
     // Root key types
@@ -96,8 +92,8 @@ final class ConfigSchema
     /**
      * Unified config entries: [sourcePath, resultKey, rootKeyType, scalarType].
      *
-     * Source key path (camelCase — YamlConfigLoader normalizes snake_case before
-     * ConfigDataNormalizer sees the data, so only camelCase paths are needed):
+     * Source key paths retain the dictionary spelling; owner declarations
+     * govern accepted spellings in authored documents:
      * - 'key'           — top-level key
      * - 'section.key'   — nested key (dot = nesting level; root is auto-typed as section)
      *
@@ -107,18 +103,16 @@ final class ConfigSchema
      * - 'mixed'   — array with special structure (rules, computed_metrics)
      * - null      — sub-key of a section (root is auto-typed as section)
      *
-     * Scalar type (only for keys whose leaf value must be a precise scalar):
-     * - 'boolean' — must be a bool (cache.enabled, include_generated, include_autoload_dev)
-     * - 'integer' — must be an int (parallel.workers)
-     * - 'string'  — must be a string (memory_limit)
-     * - null      — no precise scalar type (list/mixed/section/loose-scalar keys)
+     * Scalar type: no longer read. The form of a root's value is declared by
+     * {@see ConfigurationRoot} and judged by the document engine; the column
+     * stays until the rows themselves go.
      *
      * @var list<array{string, string, string|null, string|null}>
      */
     public const array ENTRIES = [
         // Top-level keys with explicit types
         [self::PATHS, self::PATHS, self::LIST, null],
-        ['exclude', self::EXCLUDES, self::LIST, null],
+        [self::EXCLUDE, self::EXCLUDE, self::LIST, null],
         [self::FORMAT, self::FORMAT, self::SCALAR, null],
         [self::RULES, self::RULES, self::MIXED, null],
         ['disabledRules', self::DISABLED_RULES, self::LIST, null],
@@ -370,38 +364,5 @@ final class ConfigSchema
         $lists[self::EXCLUDE_HEALTH] = true;
 
         return array_keys($lists);
-    }
-
-    /**
-     * True when {@code $value} is well-typed for the given scalar marker
-     * (one of the boolean|integer|string markers carried by {@see ENTRIES}).
-     *
-     * A marker unknown to the schema is a programming error and throws.
-     */
-    public static function matchesScalarType(mixed $value, string $scalarType): bool
-    {
-        return match ($scalarType) {
-            self::BOOLEAN => \is_bool($value),
-            self::INTEGER => \is_int($value),
-            self::STRING => \is_string($value),
-            default => throw new LogicException(\sprintf('Unknown scalar type marker "%s" in ConfigSchema::ENTRIES.', $scalarType)),
-        };
-    }
-
-    /**
-     * Human-readable scalar type name in the schema vocabulary (boolean,
-     * integer, string, float, array, null), used in validation messages.
-     */
-    public static function scalarTypeName(mixed $value): string
-    {
-        return match (true) {
-            \is_bool($value) => self::BOOLEAN,
-            \is_int($value) => self::INTEGER,
-            \is_float($value) => 'float',
-            \is_string($value) => self::STRING,
-            \is_array($value) => 'array',
-            $value === null => 'null',
-            default => get_debug_type($value),
-        };
     }
 }

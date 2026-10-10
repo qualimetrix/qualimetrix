@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanation;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationStatus;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\CurrentMeasurement;
 use Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundary;
 use Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundaryBaselineSource;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -59,6 +60,7 @@ final class BaselineExplanationRenderer
             self::renderOccurrence($boundary, $output);
 
             $output->writeln(\sprintf('    baseline:      %s', self::describeBaseline($boundary->baseline)));
+            $output->writeln(\sprintf('    now:           %s', self::describeCurrent($boundary)));
             $output->writeln(\sprintf('    qmx.yaml:      %s', self::describeConfigured($boundary)));
             $output->writeln(\sprintf('    annotation:    %s', self::describeAnnotation($boundary->annotation)));
         }
@@ -83,62 +85,73 @@ final class BaselineExplanationRenderer
         }
     }
 
-    /**
-     * Both numbers, always: the level the entry stores and the level being
-     * compared against it in this run (ADR 0017) — and, where the ceiling
-     * does not compare them, the reason it does not, since the pair alone
-     * reads as a verdict the ceiling never reaches.
-     */
     private static function describeBaseline(?EffectiveBoundaryBaselineSource $source): string
     {
         if ($source === null) {
             return '(none)';
         }
-
         if ($source->inert !== null) {
             return \sprintf(
-                'present but not applied (%s — %s) [%s]; now %s',
+                'present but not applied (%s — %s) [%s]',
                 $source->inert->reason->description(),
                 $source->inert->detail,
                 $source->inert->selector->value,
-                self::describeCurrent($source),
             );
         }
 
         return \sprintf(
-            'accepted %s%s; now %s',
+            'accepted %s%s%s',
             $source->accepted?->describe() ?? '',
             $source->mode === BaselineEntryMode::Suppress ? ' (mode: suppress, accepted whatever is reported)' : '',
-            self::describeCurrent($source),
+            $source->verdict === 'stale' ? ' (stale)' : '',
         );
     }
 
-    private static function describeCurrent(EffectiveBoundaryBaselineSource $source): string
+    private static function describeCurrent(EffectiveBoundary $boundary): string
     {
-        if ($source->currentCount === 0) {
-            return $source->producerRan
-                ? 'nothing reported'
-                : 'not measured (this invocation did not run the rule for this channel at this level)';
+        $now = $boundary->now;
+
+        return match ($now->state) {
+            CurrentMeasurement::NOTHING_REPORTED => 'nothing reported',
+            CurrentMeasurement::NOT_MEASURED => 'not measured (' . self::describeReason($now->reason) . ')',
+            CurrentMeasurement::OUTSIDE_COVERAGE => "outside this run's coverage (" . self::describeReason($now->reason) . ')',
+            CurrentMeasurement::LEVEL_NOT_REPORTED => \sprintf(
+                'channel %s reports at %s — not at %s',
+                $boundary->identity->channel->code,
+                implode(', ', $now->declaredLevels),
+                $now->subjectLevel,
+            ),
+            CurrentMeasurement::NOT_COMPARED => self::describeMeasurement($now) . ' — not compared: ' . self::describeReason($now->reason),
+            default => self::describeMeasurement($now),
+        };
+    }
+
+    private static function describeMeasurement(CurrentMeasurement $now): string
+    {
+        if ($now->membersWithoutMagnitude > 0) {
+            return \sprintf('%d findings, %d without a finite magnitude', $now->count, $now->membersWithoutMagnitude);
         }
-
-        if ($source->currentMagnitudes === null) {
-            return $source->currentCount === 1 ? '1 occurrence' : $source->currentCount . ' occurrences';
+        if ($now->shape === 'magnitude') {
+            return implode(', ', array_map(self::formatNumber(...), $now->magnitudes ?? []));
         }
+        $unit = $now->shape === 'occurrence' ? 'occurrence' : 'finding';
 
-        $measured = $source->currentMagnitudes === []
-            ? 'no member with a value'
-            : implode(', ', array_map(self::formatNumber(...), $source->currentMagnitudes));
+        return $now->count . ' ' . $unit . ($now->count === 1 ? '' : 's');
+    }
 
-        if ($source->membersWithoutMagnitude === 0) {
-            return $measured;
-        }
+    private static function describeReason(?string $reason): string
+    {
+        $descriptions = [
+            'producer-not-measured' => 'this invocation did not measure this channel at this subject level',
+            'analysis-incomplete' => 'analysis is incomplete',
+            'paths-differ' => "this run's coverage differs from the recorded one",
+            'exclusions-differ' => 'discovery exclusions differ from the recorded ones',
+            'metadata-unknown' => 'project metadata is unknown',
+            'magnitude-unavailable' => 'the group has members without a finite magnitude',
+            'channel-not-declared' => 'the channel is not declared in this configuration',
+        ];
 
-        return \sprintf(
-            '%s, and %d without a finite value%s',
-            $measured,
-            $source->membersWithoutMagnitude,
-            $source->mode === BaselineEntryMode::Suppress ? '' : ', so the entry is not applied and the group is reported',
-        );
+        return $descriptions[$reason ?? ''] ?? $reason ?? 'the subject was not analyzed';
     }
 
     private static function describeConfigured(EffectiveBoundary $boundary): string

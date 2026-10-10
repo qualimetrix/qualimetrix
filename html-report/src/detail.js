@@ -2,7 +2,7 @@
  * Detail panel — renders health bars, worst offenders, metrics, violations.
  */
 
-import { getWorstOffenders } from './tree.js';
+import { getWorstOffenders, getLoc } from './tree.js';
 import { getWorstSubNamespaces } from './subtree.js';
 import { getMetricHint, getHealthHint } from './hints.js';
 
@@ -64,6 +64,10 @@ export function coverageRecordFor(node, summary, metric) {
 export function formatHealthCoverage(record) {
   if (!record || typeof record !== 'object') return null;
 
+  if (record.state === 'not-measured') {
+    return { short: `not measured ${record.measured}/${record.eligible}`, full: `Coverage: not measured ${record.measured}/${record.eligible} ${record.unit ?? 'symbols'}` };
+  }
+
   if (record.state !== 'measured') {
     return {
       short: 'n/a',
@@ -115,7 +119,7 @@ function renderHealthBars(node, summary) {
 
   for (const metric of healthMetrics) {
     const value = source?.[metric];
-    if (value == null) continue;
+    if (value == null && (node.type !== 'project' || !Object.hasOwn(summary?.healthCoverage ?? {}, metric))) continue;
 
     const label = metric.replace('health.', '');
     const row = document.createElement('div');
@@ -130,12 +134,12 @@ function renderHealthBars(node, summary) {
 
     const barInner = document.createElement('div');
     barInner.className = 'health-bar-inner';
-    barInner.style.width = `${Math.max(0, Math.min(100, value))}%`;
-    barInner.setAttribute('data-score', Math.round(value));
+    barInner.style.width = value == null ? '0%' : `${Math.max(0, Math.min(100, value))}%`;
+    if (value != null) barInner.setAttribute('data-score', Math.round(value));
 
     const valueEl = document.createElement('span');
     valueEl.className = 'health-bar-value';
-    valueEl.textContent = Math.round(value);
+    valueEl.textContent = value == null ? 'not measured' : Math.round(value);
 
     barOuter.appendChild(barInner);
     row.appendChild(nameEl);
@@ -158,7 +162,7 @@ function renderHealthBars(node, summary) {
     // For project nodes, health scores live in summary.healthScores, not node.metrics
     // `type` travels with the metrics: the decomposition is chosen by the
     // node's level, and a project node reads its scores from the summary.
-    const hintNode = source === node.metrics ? node : { type: node.type, metrics: { ...node.metrics, ...source } };
+    const hintNode = source === node.metrics ? node : { type: node.type, metrics: { ...node.metrics, ...source }, preparedDecomposition: summary.healthDecomposition, preparedCoverage: summary.healthCoverage };
     const hint = getHealthHint(metric, hintNode);
     if (hint || coverage) {
       // The coverage sentence rides in the same tooltip as the decomposition:
@@ -187,8 +191,8 @@ function renderNodeSummary(node) {
 
   const items = [];
 
-  const loc = node.metrics?.['size.loc.sum'];
-  if (loc != null) items.push(['Lines of Code', loc.toLocaleString()]);
+  const loc = getLoc(node);
+  if (loc > 0) items.push(['Lines of Code', loc.toLocaleString()]);
 
   const violations = node.violationCountTotal;
   if (violations != null) items.push(['Violations', violations.toLocaleString()]);
@@ -252,14 +256,14 @@ function renderWorstSubNamespaces(node, metric) {
 
   const hint = document.createElement('p');
   hint.className = 'section-hint';
-  hint.textContent = 'Scores aggregated recursively across entire subtree';
+  hint.textContent = 'Published namespace score — uses the repository metric bag';
   container.appendChild(hint);
 
   const table = document.createElement('table');
   table.className = 'worst-offenders-table';
 
   const thead = document.createElement('thead');
-  thead.innerHTML = '<tr><th>Namespace</th><th>Subtree Score</th><th>LOC</th><th>Violations</th></tr>';
+  thead.innerHTML = '<tr><th>Namespace</th><th>Published Score</th><th>LOC</th><th>Violations</th></tr>';
   table.appendChild(thead);
 
   const tbody = document.createElement('tbody');
@@ -267,9 +271,9 @@ function renderWorstSubNamespaces(node, metric) {
     const tr = document.createElement('tr');
     tr.className = 'clickable-row';
     tr.innerHTML = `<td>${escapeHtml(ns.name)}</td>` +
-      `<td>${Math.round(ns._subtree.metrics[metric] ?? 0)}</td>` +
-      `<td>${ns._subtree.loc}</td>` +
-      `<td>${ns._subtree.violationCount}</td>`;
+      `<td>${formatMetricValue(ns.metrics[metric])}</td>` +
+      `<td>${getLoc(ns)}</td>` +
+      `<td>${ns.violationCountTotal ?? 0}</td>`;
     tr.addEventListener('click', () => {
       if (_navigateTo) _navigateTo(ns);
     });
@@ -292,7 +296,7 @@ function renderWorstClasses(node, metric) {
 
   container.style.display = '';
 
-  const worst = getWorstOffenders(node, 10, metric);
+  const { visible: worst, available } = getWorstOffenders(node, 10, metric);
   if (worst.length === 0) {
     container.innerHTML = '<p class="empty-state">No classes with health scores</p>';
     return;
@@ -302,7 +306,7 @@ function renderWorstClasses(node, metric) {
   details.className = 'worst-classes-toggle';
 
   const summary = document.createElement('summary');
-  summary.textContent = `Worst Classes (${worst.length})`;
+  summary.textContent = `Worst Classes (${worst.length} of ${available} in subtree)`;
   details.appendChild(summary);
 
   const table = document.createElement('table');
@@ -317,7 +321,7 @@ function renderWorstClasses(node, metric) {
     const tr = document.createElement('tr');
     tr.innerHTML = `<td>${escapeHtml(cls.name)}</td>` +
       `<td>${Math.round(cls.metrics[metric] ?? 0)}</td>` +
-      `<td>${cls.metrics['size.loc.sum'] ?? 0}</td>` +
+      `<td>${getLoc(cls)}</td>` +
       `<td>${cls.violationCountTotal}</td>`;
     tbody.appendChild(tr);
   }
@@ -343,7 +347,7 @@ function renderMetricsTable(node) {
   if (node.type === 'namespace') {
     const hint = document.createElement('p');
     hint.className = 'section-hint';
-    hint.textContent = 'This namespace only — excludes sub-namespaces';
+    hint.textContent = 'Published namespace metrics; -own keys refer to this namespace only, other keys retain their published scope';
     container.appendChild(hint);
   }
 
@@ -400,7 +404,7 @@ function renderViolationsTable(node) {
   table.className = 'violations-table';
 
   const thead = document.createElement('thead');
-  thead.innerHTML = '<tr><th>Rule</th><th>File</th><th>Severity</th><th>Message</th><th>Line</th></tr>';
+  thead.innerHTML = '<tr><th>Rule</th><th>File</th><th>Severity</th><th>Message</th><th>Recommendation</th><th>Accepted Level</th><th>Line</th></tr>';
   table.appendChild(thead);
 
   const tbody = document.createElement('tbody');
@@ -408,17 +412,19 @@ function renderViolationsTable(node) {
   const sorted = [...node.violations].sort((a, b) => {
     // Errors first
     if (a.severity !== b.severity) return a.severity === 'error' ? -1 : 1;
-    return (a.violationCode || a.ruleName).localeCompare(b.violationCode || b.ruleName);
+    return (a.code || a.rule).localeCompare(b.code || b.rule);
   });
 
   for (const v of sorted) {
     const tr = document.createElement('tr');
     tr.className = `violation-${v.severity}`;
-    const message = v.recommendation || v.message;
-    tr.innerHTML = `<td>${escapeHtml(v.violationCode || v.ruleName)}</td>` +
+    const message = findingMessage(v);
+    tr.innerHTML = `<td>${escapeHtml(v.code || v.rule)}</td>` +
       `<td>${escapeHtml(v.file || '')}</td>` +
       `<td>${escapeHtml(v.severity)}</td>` +
       `<td>${escapeHtml(message)}</td>` +
+      `<td>${escapeHtml(v.recommendation || '')}</td>` +
+      `<td>${escapeHtml(acceptedLevelMessage(v))}</td>` +
       `<td>${v.line ?? ''}</td>`;
     tbody.appendChild(tr);
   }
@@ -427,15 +433,31 @@ function renderViolationsTable(node) {
   container.appendChild(table);
 }
 
+export function findingMessage(finding) {
+  return finding.message;
+}
+
+export function acceptedLevelMessage(finding) {
+  const accepted = finding.acceptedLevel;
+  if (!accepted) return '';
+  if (finding.baselineVerdict === 'not-compared') {
+    return `accepted at ${accepted.describe}; not compared: ${finding.baselineReason}`;
+  }
+  if (finding.baselineVerdict !== 'breached') return '';
+  const current = finding.metricValue;
+  const now = accepted.shape === 'magnitude' && Number.isFinite(current)
+    ? `, now ${current.toFixed(6).replace(/\.0+$|(\.\d*?[1-9])0+$/, '$1')}`
+    : '';
+  return `accepted at ${accepted.describe}${now}`;
+}
+
 function formatMetricValue(value) {
   if (Number.isInteger(value)) return String(value);
   return value.toFixed(2);
 }
 
 function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+  return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 // ---------------------------------------------------------------------------

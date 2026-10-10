@@ -3,10 +3,9 @@
 ## Overview
 
 Core contains neutral primitives with no natural capability owner. It imports
-nothing from the project outside `Core`, and outside PHP itself it names two
-external types: `PhpParser\Node` (`Ast/FileParserInterface.php`) and
-`Composer\InstalledVersions` (`Version.php`, served by the declared
-`composer-runtime-api` platform package).
+nothing from the project outside `Core`. PHP-parser types are confined to
+`Core/Ast/`; `Version.php` uses `Composer\InstalledVersions` from the declared
+`composer-runtime-api` platform package.
 
 No control holds Core to that list. The generated `qmx.yaml` lets every owner
 reach its `external` layer, and
@@ -18,14 +17,56 @@ external import in Core is a review decision, and this paragraph is its record.
 > declared-layer policy now belong to
 > [`Analysis\\Policy\\Architecture`](../Analysis/Policy/Architecture/README.md).
 
+`Ast/NameResolution` is the neutral wrapper around PHP-Parser's name resolver.
+It preserves original nodes (`replaceNodes=false`) and uses a collecting error
+handler by default, so collection keeps its established best-effort behaviour.
+Readers that publish declaration metadata may pass PHP-Parser's throwing error
+handler and turn an ambiguous or duplicate import into an explicit unreadable
+answer. Both modes use the same resolver; no consumer implements PHP name
+grammar itself.
+
 ## Structure
 
 ```
 Core/
 ├── Ast/
-│   └── FileParserInterface.php            # AST parsing contract
+│   ├── FileParserInterface.php            # AST parsing contract
+│   ├── NameResolution.php                 # Class-name resolution before collection
+│   ├── ResolvedName.php                   # Resolved declaration-name query
+│   └── SuperglobalRead.php               # Finite direct superglobal read shapes
 ├── Exception/
 │   └── ParseException.php                 # Parse error value
+├── Environment/
+│   └── EnvironmentFailureInterface.php    # Neutral delivery/storage failure marker
+├── FileTarget/
+│   ├── CreatedDirectoryOwnership.php
+│   ├── DirectoryFacts.php
+│   ├── EntryControl.php
+│   ├── EntryFacts.php
+│   ├── FileIdentity.php
+│   ├── FileReplacement.php
+│   ├── FileTargetFailure.php
+│   ├── FileTargetFailureKind.php
+│   ├── HeldLock.php
+│   ├── PreparedTarget.php
+│   ├── HeldTarget.php
+│   ├── NativeCall.php
+│   ├── NativePrivateGroupMembership.php
+│   ├── NativeNssEnumerator.php
+│   ├── NssPrivateGroupRoster.php
+│   ├── NssSourceSelection.php
+│   ├── NewName.php
+│   ├── PathAbsenceProof.php
+│   ├── PathExposure.php
+│   ├── PathInspection.php
+│   ├── PathWalk.php
+│   ├── ProcessOwner.php
+│   ├── PrivateGroupMembership.php
+│   ├── ResolvedTarget.php
+│   ├── TargetClaim.php
+│   ├── TargetKind.php
+│   ├── TargetPath.php
+│   └── TemporarySibling.php
 ├── Observation/
 │   └── WorseDirection.php                 # Enum: higher-is-worse / lower-is-worse + the comparison operators
 ├── Path/
@@ -46,6 +87,7 @@ Core/
 ├── Profiler/
 │   └── Contract/
 │       └── ProfilerInterface.php          # Neutral instrumentation vocabulary
+├── SourceText/                             # SourceBytes: UTF-8 publication and reversible byte representation
 ├── Symbol/
 │   ├── CallableKind.php                   # PHP callable declaration kind enum
 │   ├── ClassType.php
@@ -175,7 +217,7 @@ Value Object — one concrete callable declaration with collected metrics.
 - `kind: CallableKind` — method, function, property hook, or anonymous callable
 - `anonymousSyntax: ?string` — `closure` or `arrow` for anonymous callables
 - `lexicalClassContext: ?DeclarationPath` — enclosing class declaration where applicable
-- `classAggregationOwner: ?LogicalClassPath` — explicit owner for method/property-hook class roll-up
+- `classAggregationOwner: ?DeclarationPath` — one exact named-class owner for method/property-hook class roll-up; derive its logical name from `owner->logical`. Anonymous contexts have no aggregation owner even when lexical context exists. Construction checks kind, ownership and anonymous-class context together.
 - `metrics: MetricBag` — collected metrics
 
 ### ClassWithMetrics
@@ -210,12 +252,12 @@ Access to collected metrics for rules. Aggregate APIs remain `SymbolPath`-based;
 typed APIs preserve declaration and logical-class identity without collapsing them.
 
 **Methods:**
-- `get(SymbolPath $symbol): MetricBag` — metrics for any symbol
-- `all(SymbolLevel $level): iterable<SymbolInfo>` — iterator over symbols measured at a given aggregation level; `SymbolLevel::Callable` is the same enumeration as `allCallables()`
-- `has(SymbolPath $symbol): bool` — check if metrics exist
+- `get(SymbolPath $symbol): MetricBag` / `has(SymbolPath $symbol): bool` — aggregate lookup; class, method and function paths refuse, even with one declaration
+- `all(SymbolLevel $level): iterable<SymbolInfo>` — aggregation-level iteration except `Class_`, which refuses; `Callable` is the same enumeration as `allCallables()`
 - `getSubject(MetricSubject $subject): MetricBag` / `hasSubject(...)` — typed lookup
 - `addSubject(...)` and `addCallable(CallableWithMetrics $callable)` — typed writes
-- `allDeclarations()`, `allCallables()`, `allLogicalClasses()` — typed iteration
+- `allDeclarations()`, `allCallables()`, `allClassDeclarations()` — exact declaration iteration
+- `allLogicalClasses()` — the separate logical graph-name population
 
 All symbol levels (Callable, Class, File, Namespace, Project) return `MetricBag`.
 Aggregated metrics use naming convention: `{metric}.{strategy}` (e.g., `complexity.ccn.sum`, `size.loc.avg`).
@@ -275,11 +317,14 @@ Value Object — describes a metric and its aggregation strategies.
 - `name: string` — base name (`complexity.ccn`, `size.loc`, `size.class-count`)
 - `collectedAt: SymbolLevel` — collection level
 - `aggregations: array<string, list<AggregationStrategy>>` — strategies by level
+- `classKeyScope: ?ClassKeyScope` — declared class area, declaration or logical name
+- `namespaceFileContribution: bool` — namespace totals with a file population, not arbitrary class samples
 
 **Methods:**
 - `aggregatedName(AggregationStrategy $strategy): string` — `{name}.{strategy}`
 - `getStrategiesForLevel(SymbolLevel $level): list<AggregationStrategy>`
 - `hasAggregationsForLevel(SymbolLevel $level): bool`
+- `publishedSuffixes(SymbolLevel $level): list<string>` — declared publication, including the count accompanying an average
 
 **Example:**
 ```php
@@ -331,7 +376,7 @@ instance API, factory, registration mechanism, or optional reflection metadata.
 Base options interface for all rules.
 
 **Methods:**
-- `fromArray(array $config): self` — create options from configuration array (static)
+- `fromResolved(ResolvedRuleOptionValues $config): self` — construct from judged resolved values (static)
 - `acceptedOptionKeys(): RuleOptionKeySet` — the option keys this class answers for (static)
 - `isEnabled(): bool` — whether the rule is enabled
 - `getSeverity(int|float $value): ?Severity` — severity for a metric value (null if acceptable)
@@ -351,7 +396,7 @@ Extends `RuleOptionsInterface` with level-specific capabilities.
 Options for a specific level of a hierarchical rule.
 
 **Methods:**
-- `fromArray(array $config): self` — create from configuration array (static)
+- `fromResolved(ResolvedRuleOptionValues $config): self` — construct level options from judged resolved values (static)
 - `acceptedOptionKeys(): RuleOptionKeySet` — the option keys this slot answers for (static)
 - `isEnabled(): bool` — whether this level is enabled
 - `getSeverity(int|float $value): ?Severity` — severity for the given metric value
@@ -367,26 +412,27 @@ Note that whether a rule *supports* an override is no longer read off this inter
 
 ### RuleOptionKeySet
 
-The value `acceptedOptionKeys()` returns: the option keys one options class — or one level
-slot of one — answers for. It replaces the old derivation from constructor parameters plus
-`ShorthandOptionKeysInterface` / `AdditionalOptionKeysInterface`, both of which are gone.
-Reflection cannot see into a method body, and `fromArray()` is a method body, so the class
-states its keys instead of the reader guessing them (ADR 0038's pattern, applied in ADR 0049).
+Finding owns the declaration returned by `acceptedOptionKeys()`. Each rule or
+level states its admitted keys and value forms before an Options instance
+exists; constructor reflection is not another schema. `RuleOptionSurface`
+combines the owner declaration with framework keys and declared level slots.
 
-A key is in exactly one of three states, disjoint and exhaustive:
+A key has exactly one of four states:
 
-- **accepted** — read here, and printed in the "options here" sentence of a refusal
-- **answered by the class** — recognised only so that `fromArray()` may refuse it in its own
-  words, or accept a spelling meaning "leave things as they are"; a reader must neither warn
-  nor refuse on these (`UnassignedClassOptions::assertNoContradictoryEnabled()` is the case
-  that forces the state to exist)
-- **unknown** — everything else, which `RuleOptionKeyRecognition` refuses with a
-  `ConfigurationRefusal` at whichever depth it was written (exit 3 under `check`, uniformly
-  across commands)
+- **accepted** — writable with its declared value form and printed as allowed;
+- **accepted and validated by the class** — writable with a declared coarse
+  ingress form; the owning Options class judges its detailed semantics;
+- **answered by the class** — recognized so its owner can give the declared
+  refusal rather than a guessed unknown-key message;
+- **unknown** — not admitted by this owner at this depth.
 
-Keys are declared in the canonical kebab spelling users type. Comparison folds both sides
-through `ConfigKeySpelling::normalize()`, so snake, camel and kebab spellings of one key stay
-the same key — and a refusal therefore quotes the key in its folded spelling.
+The same declaration carries threshold bands, shorthand spreading, override
+axes and retired-option hints. `RulesSection` uses it for each authored layer;
+`fromResolved` constructs options from the resulting values and judges effective
+bands with their real contributing writers. Declared snake, camel and kebab
+spellings denote one key; other case variants refuse. Diagnostics retain the
+authored spelling and position when available instead of guessing them from a
+normalized runtime array. These contracts remain Finding-owned, not Core types.
 
 ### NameSelector
 
@@ -690,13 +736,13 @@ Foundation for baseline and suppression.
 
 ### PathExclusionFilter
 
-Suppresses findings whose file path matches configured exclusion patterns (the global `suppress_paths` / `--suppress-path` mechanism). Findings without a file (e.g., namespace-level or project-wide architectural diagnostics) are never filtered. Findings on a channel its owner declared **project-scoped** (e.g. `architecture.*`) are always exempt for the same reason as `NamespaceExclusionFilter` below — the exemption is declared per channel via `ChannelFileScope`, not derived from the rule name's spelling.
+Suppresses findings whose file path matches configured exclusion patterns (the global `suppress_paths` / `--suppress-path` mechanism). Findings without a file (e.g., namespace-level or project-wide architectural diagnostics) are never filtered. Findings on a channel its owner declared **project-scoped**, such as `architecture.circular-dependency` and declaration diagnostics, remain exempt. `architecture.layer-violation` follows the physical source dependency site's file. Scope is declared per channel via `ChannelFileScope`, not derived from the rule name's spelling.
 
 **Constructor:** `__construct(PathMatcher $pathMatcher)`
 
 ### NamespaceExclusionFilter
 
-Suppresses findings whose symbol namespace matches configured exclusion patterns (the global `suppress_namespaces` / `--suppress-namespace` mechanism). `architecture.*` rule findings (e.g., `architecture.layer-violation`, `architecture.circular-dependency`) are always exempt — a layer-policy violation is not a metric, so a namespace exclusion aimed at quieting noisy metrics must not double as a silent way to disable architecture enforcement. The exemption is **declared per channel**, not derived from the `architecture.` spelling: each capability publishes its project-scoped channel keys (`LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS`, `CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS`) and the filter consults `ChannelFileScope`. A channel nobody declared is file-scoped, which is the right default for the open `computed.*` vocabulary. Occurrence-style findings (code-smell, security) carry a file symbol path whose namespace is `null`; the filter falls back to the declaring namespace on `Finding::$subject` so those findings are still suppressible per namespace.
+Suppresses findings whose symbol namespace matches configured exclusion patterns (the global `suppress_namespaces` / `--suppress-namespace` mechanism). Declared project-scoped channels, including `architecture.circular-dependency` and declaration diagnostics, remain exempt. `architecture.layer-violation` follows its source declaration's namespace; excluding only its target does not suppress it. The exemption is **declared per channel**, not derived from the `architecture.` spelling: each capability publishes its project-scoped channel keys (`ArchitectureChannels::PROJECT_SCOPED_CHANNELS`, `CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS`) and the filter consults `ChannelFileScope`. A channel nobody declared is file-scoped, which is the right default for the open `computed.*` vocabulary. Occurrence-style findings (code-smell, security) carry a file symbol path whose namespace is `null`; the filter falls back to the declaring namespace on `Finding::$subject` so those findings are still suppressible per namespace.
 
 **Constructor:** `__construct(NamespaceMatcher $namespaceMatcher)`
 
@@ -812,29 +858,39 @@ that controls with different declaration scopes remain distinct.
 
 ### Suppression
 
-Value Object representing a suppression tag from a docblock (e.g., `@qmx-ignore complexity.wmc Reason`). The authored text names a channel exactly, or `X.*` for its strict descendants; a bare prefix such as `complexity` is rejected.
+Inline-owned value object representing a suppression tag from a comment (e.g., `@qmx-ignore complexity.wmc Reason`). The authored text names a channel exactly, or `X.*` for its strict descendants; a bare prefix such as `complexity` is rejected.
 
 **Fields:**
 - `rule: string` — the authored text: a fully qualified `code`, `X.*`, or `*` for "no rule filter"
 - `reason: ?string` — optional reason for suppression
 - `line: int` — line number of the suppression tag
 - `type: SuppressionType` — scope of suppression
-- `endLine: ?int` — end line for scoped suppressions
+- `position: int` — required nonnegative byte position of the authored tag
+- `binding: ?DeclarationBinding` — Inline-owned subject, scope and required reach
+- `refusal: ?DirectiveRefusal` — the authored control could not bind or be admitted
+- `silencedLine: ?int` — required for a non-refused next-line control; separate from the tag line
 
 **Methods:**
 - `matches(string $code, ?SymbolLevel $level): bool` — checks if suppression applies to a finding on that channel at that level
 - `target(): SuppressionTarget` — what the directive filters on: a `ChannelLevelSelector`, or the
   explicit "no rule filter" state that `@qmx-ignore *` and a bare `@qmx-ignore-file` carry
 
+Inline owns `DeclarationReach`, not Core: `whole(endLine, standsOn)` covers
+the bound declaration; `lines(start, end, standsOn)` requires the finding's
+location in the authored file and its line in that inclusive range. Member
+reach is Inline policy.
+`authoredSite()` includes physical position, form, argument and refusal,
+so identical comments on one line do not collapse.
+
 ### SuppressionType (Enum)
 
 Defines the scope of a suppression tag.
 
-| Value      | Description                                      |
-| ---------- | ------------------------------------------------ |
-| `Symbol`   | Suppress at symbol level (class/method docblock) |
-| `NextLine` | Suppress the next line only                      |
-| `File`     | Suppress all matching findings in entire file    |
+| Value      | Description                                                  |
+| ---------- | ------------------------------------------------------------ |
+| `Symbol`   | Suppress through an Inline declaration binding and its reach |
+| `NextLine` | Suppress the next line only                                  |
+| `File`     | Suppress all matching findings in entire file                |
 
 ### ThresholdOverride
 
@@ -892,13 +948,100 @@ Epsilon is a tolerance band around the allowance, never a shift of it: inside th
 
 ---
 
+
+## File targets
+
+`Core\\FileTarget` is the first filesystem writer in Core. It owns target
+resolution, entry-control judgement, held descriptors, temporary siblings and
+publication; `Core\\Path` only represents paths and its lexical normalization
+is not a safety judgement. `Core\\Environment\\EnvironmentFailureInterface`
+marks storage or delivery failures with complete user-facing messages.
+
+`TargetPath::resolve()` delegates component inspection to internal `PathWalk`.
+`PathInspection` preserves directory identities and exposure facts in each
+`ResolvedTarget`, alongside target kind, resolved path or process descriptor
+and inode identity. `EntryControl` judges placement and replacement from directory and entry
+facts. `HeldTarget::claim(ResolvedTarget)` uses internal `TargetClaim` to hold
+an unchanged regular file, an exclusively created name or a supplied stream; `write()`, `append()` and `release()` own the
+resource lifecycle. `HeldTarget::writeToStream()` borrows an already opened
+stream and checks complete writes and flush without closing, seeking or truncating
+it; a successful write advances its existing offset. `PreparedTarget` creates a
+private sibling before a long operation and publishes its completed bytes only
+after identity and mode checks. `FileReplacement::replace()` uses that same
+publication primitive for immediate replacement,
+and `HeldLock::acquire()` holds a named lock without truncating it, using a
+monotonic acquisition deadline. Native lock contention waits; another native
+lock failure refuses immediately with its cause.
+`TemporarySibling`, `ProcessOwner`, `FileIdentity`, the facts and enum values
+support these operations. `NativeCall` captures the warning of one filesystem
+call and restores the previous PHP error handler even when the call throws.
+`FileTargetFailure` carries an explicit kind, path,
+reason and optional detail. Its failure carrier and kind vocabulary are public
+only to declared exact consumers; publication and lifecycle policy remain
+with each consuming subject. A failed temporary-sibling preparation retains the
+requested destination and the native temporary-path cause. An inaccessible
+existing parent cannot establish that the final name is absent.
+
+Group write is exposure unless `PrivateGroupMembership` proves that the group
+is the effective user's sole primary group, with no other primary or
+supplementary members. `NativePrivateGroupMembership` checks keyed POSIX facts
+against complete per-source NSS enumeration for supported `files` and `systemd`
+configurations; unavailable or ambiguous evidence stays exposed.
+`NssSourceSelection` recognizes the supported source configuration, while
+`NssPrivateGroupRoster` proves membership from all selected source rows.
+`NativeNssEnumerator` owns bounded native enumeration; its two-second deadline
+and output cap retain conservative refusal on incomplete evidence. The private
+group proof rereads the configuration after its first enumeration. Positive and
+conservative negative answers are retained per effective UID/GID for the process;
+a fork starts a fresh native membership owner. `PathAbsenceProof`
+classifies failed path inspection only after checking the parent evidence.
+`TargetPath::resolve()` accepts an optional membership port, and `ResolvedTarget`
+retains it through claim, replacement and lock rechecks.
+`TargetPath::rememberCreatedDirectory()` lets Cache retain ownership of a private
+directory it just created. Internal `CreatedDirectoryOwnership` retains these
+process-owned facts separately from the component walk. `PathWalk` reuses its
+judgement only while the physical directory's inode, mode, UID, GID and effective
+process owner agree.
+A changed directory returns to ordinary judgement; a fork drops these facts.
+The directory walk and publication identity checks still run on every write.
+
+Held regular files open without truncation and are checked against their judged
+inode before a write. Staged replacement preserves the final bytes until atomic
+publication; it changes the final inode while preserving the existing mode.
+Replacement siblings are created with mode 0600, restricted further by the
+caller's umask, before any payload is written. Creation temporarily restricts
+the process umask around the synchronous exclusive open and restores it even
+on failure. New held targets and locks explicitly retain ordinary 0666 creation
+restricted by the caller's umask; replacement publication sets its final mode.
+Temporary and held-target cleanup is fenced to its owning process, so an inherited
+child does not remove a parent's sibling or log. An unwritten exclusive name is
+removed on release only if it still identifies the held file. An attached log
+retains its name even when it receives no records. Sticky directory mode protects
+existing owned entries from replacement but does not make a link trustworthy.
+Without POSIX, effective-uid discovery uses an empty diagnostic temporary file
+that must be removed immediately; unsafe cleanup refuses the operation.
+
+A duplicated `php://fd/N` preserves stream offset but may survive `proc_open`;
+descriptor and stream handles use blocking writes to complete delivery to a slow
+reader. Path-held handles opened with `e` are close-on-exec. Mode-bit judgement does not
+cover ACLs, authorized hard-link placement or all component-swap races. A
+same-uid swap before FIFO `we` can truncate a replacement before identity
+refusal. [ADR 0096](../../docs/adr/0096-file-target-claims.md) records these limits.
+
+## File publication
+
+`PathFactory::published(AbsolutePath file, AbsolutePath canonicalRoot)` publishes
+canonical parent plus lexical final basename. Outside or unresolvable parents
+throw `LogicException`; `bestEffortRelative()` and `structurePreservingFallback()`
+are removed. POSIX backslashes remain literal characters. Run owns input-directory
+preflight and captured aliases; Core publication does not reclassify input policy.
+
 ## Other Contracts
 
 ### FileParserInterface
 
 **Methods:**
-- `parse(SplFileInfo $file): array<Node>` — parse PHP file into AST
-- `parseContent(SplFileInfo $file, string $content): array<Node>` — parse an already-read source snapshot while retaining the original file for diagnostics
+- `parseContent(SplFileInfo $file, string $content): array<Node>` — parse caller-supplied bytes with original absolute file identity for diagnostics; no source IO
 - Throws: `ParseException`
 
 ### NamespaceDetectorInterface
@@ -930,6 +1073,8 @@ Determines whether a namespace belongs to the project (not an external dependenc
 - `symbolPath: SymbolPath`
 - `file: ?RelativePath`
 - `line: ?int`
+- `subject: ?MetricSubject` — exact declaration or aggregate identity when present
+- `classAggregationOwner: ?DeclarationPath` — one exact callable owner preserved during registration and merge; its logical name is derived from the declaration
 
 ---
 
@@ -964,6 +1109,14 @@ Determines whether a namespace belongs to the project (not an external dependenc
 - Unit tests for MetricDefinition::aggregatedName()
 - PHPStan level 8 with no errors
 
+## Integer boundary overrides
+
+Finding and Inline own the rule-specific threshold grammar. An integer boundary
+refuses a fractional annotation override instead of truncating it and reports
+annotation.invalid-threshold; floating boundaries preserve their declared numeric
+form. Core supplies neutral values only: typed options, producer enablement and
+rule-specific validation do not move into Core.
+
 ## Locality
 
 Core publishes only neutral primitives that lack a natural leaf owner. Any new
@@ -980,3 +1133,7 @@ documentation.
 - SymbolPath with null namespace — starts with `::` for global functions
 - MetricBag::get() for non-existent metric — null
 - MetricBag::merge() with key conflict — value from `$other`
+
+Callable SymbolInfo retains the traversal's `anonymousClassContext` fact.
+It distinguishes a valid unowned anonymous-class method from a named method
+whose owner metadata is missing; consumers do not infer this from the name.

@@ -8,6 +8,9 @@ The analysis evidence, occurrence decoding, and rules are co-located in the
 `Analysis\Evidence\CodeSmell` capability. Rule IDs and configuration remain
 unchanged.
 
+Findings inside named declarations carry the class, method, or function symbol;
+file-scope and anonymous evidence retain a file symbol and null namespace.
+
 Function names are matched as they are written in the call. Imports are not
 resolved, so a function called through an alias (`use function var_dump as vd;
 vd($x);`) is not recognized by the rules that look for a function by name
@@ -155,7 +158,7 @@ foreach ($items as $item) {
 
 Detects debugging functions left in production code: `var_dump()`, `print_r()`, `var_export()`, `dd()`, `dump()`, `debug_print_backtrace()`, and `debug_zval_dump()`.
 
-Calls in return mode (`var_export($value, true)`, `print_r($value, return: true)`) and calls inside debug API methods (`dump()`, `dd()`, `debug()`, `dumpRawSql()`, `dumpSql()`, `debugInfo()`, `__debugInfo()`) are not flagged. A positional `true` means return mode only for `print_r()` and `var_export()`, the two functions that have a `$return` parameter: `var_dump($value, true)`, `dd($value, true)` and `dump($value, true)` print both arguments and are flagged.
+Return mode (`var_export($value, true)`, `print_r($value, return: true)`) is exempt only for `print_r()` and `var_export()`. A positional or named `true` does not exempt `var_dump()`, `dd()`, or `dump()`. Calls inside debug API methods such as `dump()` or `debug()` are also flagged; use a reasoned `@qmx-ignore code-smell.debug-code` for an intentional call.
 
 `debug_backtrace()` is not flagged: it returns the trace instead of printing it and is a common part of error handling.
 
@@ -204,7 +207,7 @@ Detects `catch` blocks that are completely empty -- they catch an exception and 
 
 A catch that holds only a comment is still empty: the comment explains the silence but does not end it.
 
-**Chain of attempts.** One shape is not flagged: a `foreach` that tries each item until one succeeds. The `try` must be a direct statement of the loop body and must be able to end the search on success: it holds a `return`, or a `continue` that skips statements following the `try` -- at its top level or inside its `if` branches:
+**Chain of attempts.** One shape is not flagged: a `foreach` that tries each item until one succeeds. The `try` must be a direct statement of the loop body and must be able to end the search after successful work: it holds a `return` or `break`, or a `continue` that skips statements following the `try` -- at its top level or inside its `if` branches:
 
 ```php
 foreach ($this->resolvers as $resolver) {
@@ -217,6 +220,9 @@ foreach ($this->resolvers as $resolver) {
 ```
 
 A `try` nested deeper in the loop body, one inside a closure, or one whose only way out is a `continue` with nothing after the `try` (so it skips nothing) is flagged as usual.
+An early guard inside the `try`, after a preparatory call but before useful
+work, can still make the empty `catch` look like a valid chain of attempts:
+`$y = prepare($x); if ($y === null) continue; work($y);`.
 
 <!-- llms:skip-end -->
 
@@ -488,7 +494,7 @@ Use loops, functions, early returns, or exceptions -- they all express intent mo
 <!-- llms:skip-begin -->
 ### What it measures
 
-Detects direct access to PHP superglobal variables: `$_GET`, `$_POST`, `$_REQUEST`, `$_SERVER`, `$_SESSION`, `$_COOKIE`, `$_FILES`, `$_ENV`, and `$GLOBALS`. Only the plain variable name is read: a variable-variable spelling (`${'_GET'}`, `$$name`) is not detected.
+Detects direct access to PHP superglobal variables: `$_GET`, `$_POST`, `$_REQUEST`, `$_SERVER`, `$_SESSION`, `$_COOKIE`, `$_FILES`, `$_ENV`, and `$GLOBALS`. Literal variable-variable names (`${'_GET'}`, `${'_'.'GET'}`) and literal `$GLOBALS['_GET']` reads are detected too. An unknown dynamic name such as `$$name` cannot be identified.
 
 Direct superglobal access creates hidden dependencies on the global state, making code hard to test and unpredictable.
 
@@ -888,7 +894,7 @@ The rule is smart about edge cases:
 - **Anonymous classes:** private members in anonymous classes are isolated and don't leak to the parent class
 - **Analyzed types:** classes and enums; interfaces and traits are not analyzed
 - **Access patterns:** recognizes `$this->method()`, `self::method()`, `static::method()`, property access, and constant access. Method names are matched case-insensitively, as PHP resolves them; property and constant names are case-sensitive
-- **Callables:** a literal callable array counts as a use of the method: `[$this, 'method']`, `[self::class, 'method']`, `[static::class, 'method']`, `[__CLASS__, 'method']`, also inside `Closure::fromCallable()` or `array_map()`. A method named by a variable (`[$this, $name]`, `$this->$name()`) or by a string such as `'self::method'` is not recognized, and such a method is reported as unused
+- **Callables:** a literal callable array counts as a use of the method: `[$this, 'method']`, `[self::class, 'method']`, `[static::class, 'method']`, `[__CLASS__, 'method']`, also inside `Closure::fromCallable()` or `array_map()`. Literal callable strings naming the same class, such as `'self::method'` or `'App\Subject::method'`, count too. A method named by a variable (`[$this, $name]`, `$this->$name()`) remains unknown; short callable strings such as `'Subject::method'` are not resolved through the current namespace
 - **Recursion:** a private method that is only called from its own body is reported as unused; a callable array naming the method inside its own body is a self-reference too
 - **Trait resolution:** calls to methods defined in traits used by the same class (in the same file) are recognized, reducing false positives
 
@@ -923,7 +929,7 @@ class OrderService
 
 - **Remove** the unused member if it is truly dead code.
 - **Change visibility** to `protected` or `public` if the member is used by subclasses or external code.
-- If the member is intentionally kept for future use, suppress the warning with `@qmx-ignore code-smell.unused-private`.
+- If the member is intentionally kept, place `@qmx-ignore code-smell.unused-private` on that member. It reaches findings on the member's lines only; a promoted parameter also reaches its corresponding property finding. See [member reach](../usage/baseline.md#declaration-binding-and-member-reach).
 
 ---
 
@@ -1069,3 +1075,7 @@ bin/qmx check src/ --disable-rule=code-smell.exit
 # Disable all code smell rules at once (wildcard match; matches descendants only, not "code-smell" itself)
 bin/qmx check src/ --disable-rule=code-smell.*
 ```
+
+## Authored enabling and forms
+
+A written enabled:true can reverse a lower preset disable; retain it when that is intended. Empty maps preserve lower options, and a rule true writes enabled only rather than resetting severity/options. All malformed lower writes refuse before discovery. Code-smell algorithms and fixed severities are unchanged. See [Configuration](../getting-started/configuration.md#declared-rule-forms-and-prepared-execution).

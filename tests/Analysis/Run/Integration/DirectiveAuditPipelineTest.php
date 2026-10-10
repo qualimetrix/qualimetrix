@@ -8,8 +8,14 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureFactoryResult;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
@@ -22,6 +28,8 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\AllowListBuilder;
 
 /**
@@ -73,7 +81,25 @@ final class DirectiveAuditPipelineTest extends TestCase
         self::assertGreaterThan(0, $report->producedFindings);
     }
 
-    private static function audit(): DirectiveAuditReport
+    #[Test]
+    public function itMergesRefusedSitesOnceWithMeasuredVerdicts(): void
+    {
+        $report = self::audit(__DIR__ . '/../../Policy/Inline/Fixtures/NarrowControl');
+        $sites = array_map(static fn(DirectiveVerdict $verdict): string => $verdict->site->file->value() . ':' . $verdict->site->line . ':' . $verdict->site->form . ':' . $verdict->site->target, $report->verdicts);
+        self::assertSame(\count($sites), \count(array_unique($sites)));
+        $refused = array_values(array_filter($report->verdicts, static fn(DirectiveVerdict $verdict): bool => $verdict->effect === DirectiveEffect::Refused));
+        self::assertCount(1, $refused);
+        self::assertSame('narrow-control.no-such-channel', $refused[0]->site->target);
+        self::assertCount(1, $refused[0]->refusals);
+        self::assertSame('annotation.unresolved-directive', $refused[0]->refusals[0]->channel->code);
+        self::assertContains(DirectiveEffect::Effective, array_column($report->verdicts, 'effect'));
+        $files = array_map(static fn(DirectiveVerdict $verdict): string => $verdict->site->file->value(), $report->verdicts);
+        $sorted = $files;
+        sort($sorted);
+        self::assertSame($sorted, $files);
+    }
+
+    private static function audit(string $fixture = self::FIXTURE): DirectiveAuditReport
     {
         $container = (new ContainerFactory())->create();
 
@@ -83,19 +109,34 @@ final class DirectiveAuditPipelineTest extends TestCase
         // smallest binding that lets every other rule run.
         $architecture = $container->get(LayerPolicyPreparationInterface::class);
         self::assertInstanceOf(ArchitecturePolicy::class, $architecture);
-        $architecture->bind(new ArchitectureConfiguration(
+        $architecture->replace(new ArchitectureFactoryResult(new ArchitectureConfiguration(
             new LayerRegistry([]),
             AllowListBuilder::policyFromExactMap([]),
             CoverageMode::Ignore,
-        ));
+        )));
 
         $pipeline = $container->get(AnalysisPipelineInterface::class);
         self::assertInstanceOf(AnalysisPipeline::class, $pipeline);
+        $registry = $container->get(RuleConfigurationInterface::class);
+        $execution = $container->get(RuleExecutionInterface::class);
+        $factory = $container->get(ChannelUniverseInterface::class);
+        self::assertInstanceOf(RuleConfigurationInterface::class, $registry);
+        self::assertInstanceOf(RuleExecutionInterface::class, $execution);
+        self::assertInstanceOf(RuleChannelSnapshotFactoryInterface::class, $factory);
+        $channels = $factory->snapshot(new ResolvedComputedMetricDefinitions([]));
+        $registry->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), $execution->allRules(), channels: $channels, disabled: $fixture === self::FIXTURE ? [] : ['complexity.cognitive', 'coupling.distance']));
 
-        $root = AbsolutePath::fromString(self::FIXTURE);
+        $root = AbsolutePath::fromString($fixture);
 
         return $pipeline->auditDirectives(
-            new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []),
+            new RunConfiguration(
+                pathExcludes: [],
+                projectRoot: $root,
+                generatedFilePolicy: GeneratedFilePolicy::Include,
+                projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
+                authoredPathExcludes: [],
+                autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
+            ),
         );
     }
 

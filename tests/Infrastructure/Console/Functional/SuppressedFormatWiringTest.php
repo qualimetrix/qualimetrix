@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use RuntimeException;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -26,6 +27,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 final class SuppressedFormatWiringTest extends TestCase
 {
     private string $tempDir;
+    private string $originalWorkingDirectory;
 
     protected function setUp(): void
     {
@@ -57,10 +59,20 @@ final class SuppressedFormatWiringTest extends TestCase
                   - {exact: src/DoesNotExist.php}
             YAML,
         );
+        $workingDirectory = getcwd();
+        if ($workingDirectory === false || !chdir($this->tempDir)) {
+            throw new RuntimeException('Cannot enter the fixture working directory');
+        }
+        $this->originalWorkingDirectory = $workingDirectory;
+
     }
 
     protected function tearDown(): void
     {
+        if (!chdir($this->originalWorkingDirectory)) {
+            throw new RuntimeException('Cannot restore the working directory');
+        }
+
         $this->removeDirectory($this->tempDir);
     }
 
@@ -157,7 +169,8 @@ final class SuppressedFormatWiringTest extends TestCase
             '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation'],
         ], $diagnostics);
 
-        self::assertStringContainsString('0 error(s), 0 warning(s)', $display);
+        self::assertStringContainsString('0 error(s), 1 warning(s)', $display);
+        self::assertStringContainsString('suppression.unmatched-rule-ledger', $display);
         self::assertStringContainsString(
             'suppressed by per-rule suppress_namespaces/suppress_namespace_channels/suppress_paths',
             $diagnostics,

@@ -25,7 +25,6 @@ use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -53,7 +52,7 @@ final class GlobalFunctionAggregationTest extends TestCase
     #[Test]
     public function itReachesAGlobalFunctionThroughTheCallableLevelAndKeepsItsDeclarationKind(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         // Add a global function (namespace + member, no type)
         $functionPath = SymbolPath::forGlobalFunction('App\\Utils', 'helper');
@@ -72,7 +71,7 @@ final class GlobalFunctionAggregationTest extends TestCase
     #[Test]
     public function itSkipsGlobalFunctionsDuringMethodToClassAggregation(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         // Add a global function
         $functionPath = SymbolPath::forGlobalFunction('App\\Utils', 'helper');
@@ -85,18 +84,17 @@ final class GlobalFunctionAggregationTest extends TestCase
 
         // No class-level metrics should be created for the function
         // (there's no class to aggregate to)
-        $classPath = SymbolPath::forClass('App\\Utils', '');
-        self::assertSame([], $repository->get($classPath)->all());
+        self::assertCount(0, iterator_to_array($repository->allClassDeclarations(), false));
 
         // The function metrics should remain untouched
-        $functionBag = $repository->get($functionPath);
+        $functionBag = $repository->getSubject(self::subject($functionPath, RelativePath::fromString('src/Utils/helpers.php')));
         self::assertSame(5, $functionBag->get('complexity.ccn'));
     }
 
     #[Test]
     public function itExcludesGlobalFunctionsFromClassLevelAggregation(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         // Add a global function in same namespace
         $functionPath = SymbolPath::forGlobalFunction('App\\Service', 'utility');
@@ -112,7 +110,7 @@ final class GlobalFunctionAggregationTest extends TestCase
         $aggregator->aggregate($repository, $definitions);
 
         // Class aggregation should only include the method, not the function
-        $classMetrics = $repository->get(SymbolPath::forClass('App\\Service', 'UserService'));
+        $classMetrics = $repository->getSubject(self::subject(SymbolPath::forClass('App\\Service', 'UserService'), RelativePath::fromString('src/Service/UserService.php')));
         self::assertSame(3, (int) $classMetrics->get('complexity.ccn.sum'));
         self::assertSame(1, $classMetrics->get(MetricName::SIZE_SYMBOL_METHOD_COUNT));
 
@@ -122,7 +120,7 @@ final class GlobalFunctionAggregationTest extends TestCase
     #[Test]
     public function itAggregatesAGlobalFunctionWithoutANamespaceWithoutError(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         // Global function without namespace
         $functionPath = SymbolPath::forGlobalFunction('', 'globalHelper');
@@ -138,14 +136,14 @@ final class GlobalFunctionAggregationTest extends TestCase
         $aggregator->aggregate($repository, $definitions);
 
         // Function metrics should remain intact
-        $functionBag = $repository->get($functionPath);
+        $functionBag = $repository->getSubject(self::subject($functionPath, RelativePath::fromString('src/global.php')));
         self::assertSame(7, $functionBag->get('complexity.ccn'));
     }
 
     #[Test]
     public function itRollsUpAGlobalFunctionsCcnToItsNamespace(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         // A standalone function with CCN
         $functionPath = SymbolPath::forGlobalFunction('App\\Utils', 'helper');
@@ -169,7 +167,7 @@ final class GlobalFunctionAggregationTest extends TestCase
     #[Test]
     public function itRollsUpAGlobalFunctionsCcnAllTheWayToTheProject(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         $functionPath = SymbolPath::forGlobalFunction('App\\Utils', 'helper');
         $this->addCallable($repository, $functionPath, (new MetricBag())->with('complexity.ccn', 8), RelativePath::fromString('src/Utils/helpers.php'), 100);
@@ -194,14 +192,11 @@ final class GlobalFunctionAggregationTest extends TestCase
     #[Test]
     public function itCountsAGlobalFunctionInTheNamespaceSymbolMethodCount(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         // A method and a function in the same namespace
         $methodPath = SymbolPath::forMethod('App\\Service', 'UserService', 'find');
         $this->addCallable($repository, $methodPath, (new MetricBag())->with('complexity.ccn', 3), RelativePath::fromString('src/Service/UserService.php'), 200);
-
-        $classPath = SymbolPath::forClass('App\\Service', 'UserService');
-        $repository->add($classPath, new MetricBag(), RelativePath::fromString('src/Service/UserService.php'), 1);
 
         $functionPath = SymbolPath::forGlobalFunction('App\\Service', 'utility');
         $this->addCallable($repository, $functionPath, (new MetricBag())->with('complexity.ccn', 10), RelativePath::fromString('src/Service/helpers.php'), 50);
@@ -217,7 +212,7 @@ final class GlobalFunctionAggregationTest extends TestCase
     #[Test]
     public function itSumsClassAndGlobalFunctionCcnAtTheNamespaceLevel(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository();
 
         // Class method with CCN=3
         $methodPath = SymbolPath::forMethod('App\\Service', 'UserService', 'find');
@@ -247,7 +242,10 @@ final class GlobalFunctionAggregationTest extends TestCase
     #[Test]
     public function itProjectsDuplicateClassDeclarationsToOneLogicalClassWithoutLosingExactFacts(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repository([
+            new MetricDefinition('firstProviderMetric', SymbolLevel::Class_, [SymbolLevel::Namespace_->value => [AggregationStrategy::Sum]]),
+            new MetricDefinition('secondProviderMetric', SymbolLevel::Class_, [SymbolLevel::Namespace_->value => [AggregationStrategy::Sum]]),
+        ]);
         $class = SymbolPath::forClass('App\\Service', 'Duplicate');
 
         $first = new ClassWithMetrics(
@@ -273,7 +271,7 @@ final class GlobalFunctionAggregationTest extends TestCase
         $logicalClasses = iterator_to_array($repository->allLogicalClasses(), false);
         self::assertCount(1, $logicalClasses);
         self::assertSame($class->toCanonical(), $logicalClasses[0]->symbolPath->toCanonical());
-        self::assertCount(1, iterator_to_array($repository->all(SymbolLevel::Class_), false));
+        self::assertCount(2, iterator_to_array($repository->allClassDeclarations(), false));
 
         $definitions = [
             new MetricDefinition('firstProviderMetric', SymbolLevel::Class_, [
@@ -288,12 +286,41 @@ final class GlobalFunctionAggregationTest extends TestCase
         $namespace = $repository->get(SymbolPath::forNamespace('App\\Service'));
         self::assertSame(7, $namespace->get('firstProviderMetric.sum'));
         self::assertSame(11, $namespace->get('secondProviderMetric.sum'));
-        self::assertSame(1, $namespace->get(MetricName::SIZE_SYMBOL_CLASS_COUNT));
+        self::assertSame(2, $namespace->get(MetricName::SIZE_SYMBOL_CLASS_COUNT));
     }
 
     private function addCallable(InMemoryMetricRepository $repository, SymbolPath $symbol, MetricBag $metrics, RelativePath $file, int $startFilePos): void
     {
-        $owner = $symbol->getType() === SymbolType::Method ? new LogicalClassPath(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? '')) : null;
-        $repository->addCallable(new CallableWithMetrics(DeclarationPath::of($symbol, $file, DeclarationOrdinal::fromRank(0)), $startFilePos, $symbol->getType() === SymbolType::Method ? CallableKind::Method : CallableKind::Function, null, null, $owner, $metrics));
+        $class = $symbol->getType() === SymbolType::Method
+            ? DeclarationPath::of(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? ''), $file, DeclarationOrdinal::fromRank(0))
+            : null;
+        if ($class !== null) {
+            $repository->addSubject(MetricSubject::declaration($class), new MetricBag(), $file, 1);
+        }
+        $repository->addCallable(new CallableWithMetrics(
+            DeclarationPath::of($symbol, $file, DeclarationOrdinal::fromRank(0)),
+            $startFilePos,
+            $class === null ? CallableKind::Function : CallableKind::Method,
+            null,
+            $class,
+            $class,
+            $metrics,
+            null,
+        ));
+    }
+
+    /** @param list<MetricDefinition> $extraDefinitions */
+    private function repository(array $extraDefinitions = []): InMemoryMetricRepository
+    {
+        return new InMemoryMetricRepository([
+            ...AggregationHelper::collectDefinitions([new CyclomaticComplexityCollector()]),
+            new MetricDefinition(MetricName::SIZE_SYMBOL_METHOD_COUNT, SymbolLevel::Class_),
+            ...$extraDefinitions,
+        ]);
+    }
+
+    private static function subject(SymbolPath $logical, RelativePath $file): MetricSubject
+    {
+        return MetricSubject::declaration(DeclarationPath::of($logical, $file, DeclarationOrdinal::fromRank(0)));
     }
 }

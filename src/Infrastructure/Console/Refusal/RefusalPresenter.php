@@ -4,10 +4,17 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Refusal;
 
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
+use Qualimetrix\Core\Environment\EnvironmentFailureInterface;
+use Qualimetrix\Core\FileTarget\FileTargetFailure;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Reporting\Formatter\PublishedUtf8;
 use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Output\StreamOutput;
@@ -16,35 +23,30 @@ use Throwable;
 /**
  * Where and how the message that ends a run is written.
  *
- * Three outcomes, each with its own factory-shaped method rather than one
- * method with a kind flag, so a caller cannot pass the wrong exit code for
- * the throwable it caught. A run that ends after its command has already
- * published a document on stdout uses the `…AfterPublishedReport()` twin of
- * its outcome instead, which never writes a second document there:
+ * Refusals and internal errors have separate frames. An uncaught failure goes
+ * through unhandled(), which classifies the two refusal families and Core
+ * environment failures before treating an unrelated throwable as internal.
+ * After report publication, the refusal goes only to stderr:
  *
- * - {@see self::refusal()} — {@see ConfigurationRefusal}, the carrier for
- *   exit code 3.
+ * - {@see self::refusal()} — a typed refusal, exit code 3.
  * - {@see self::fallbackRefusal()} — a caught `InvalidArgumentException` that
  *   never became a carrier. A named secondary signal for code 3, kept
  *   separate so how many inputs still take
  *   this path is a call count, not an inference.
- * - {@see self::internalError()} — anything else: a product defect, exit
- *   code 1.
+ * - {@see self::unhandled()} — a classified refusal or an internal error.
  *
  * Framing lives here and only here: callers pass an unframed `summary()` or
- * `getMessage()`, never a pre-built `<error>…</error>` string. Every write
- * happens at {@see OutputInterface::VERBOSITY_QUIET}: the message that ends a
- * run is not report payload that `-q` is allowed to swallow — only the
- * progress frame and the report are.
+ * `getMessage()`, never a pre-built `<error>…</error>` string. The terminal
+ * message survives `-q`; the progress frame and report may be hidden.
  */
 final class RefusalPresenter
 {
     public function __construct(private readonly ErrorStream $errorStream) {}
 
-    /** A refusal caused by user input: a configuration key, value, file, or selector. */
-    public function refusal(OutputInterface $output, ?string $format, ConfigurationRefusal $refusal): int
+    /** A typed configuration or environment refusal. */
+    public function refusal(OutputInterface $output, ?string $format, RefusalInterface $refusal): int
     {
-        $this->present($output, $format, self::refusalSentence($refusal->summary()), ConsoleExitCode::Refusal, $refusal->position());
+        $this->present($output, $format, self::refusalSentence($refusal), ConsoleExitCode::Refusal, $refusal->position(), $refusal->sources());
 
         return ConsoleExitCode::Refusal->value;
     }
@@ -60,7 +62,7 @@ final class RefusalPresenter
      */
     public function fallbackRefusal(OutputInterface $output, ?string $format, Throwable $failure): int
     {
-        $this->present($output, $format, self::refusalSentence($failure->getMessage()), ConsoleExitCode::Refusal, null);
+        $this->present($output, $format, \sprintf('Configuration error: %s', $failure->getMessage()), ConsoleExitCode::Refusal, null, null);
 
         return ConsoleExitCode::Refusal->value;
     }
@@ -70,20 +72,34 @@ final class RefusalPresenter
      * stdout. Written to stderr whatever the format: an envelope appended to
      * a JSON report would leave neither document parseable.
      */
-    public function refusalAfterPublishedReport(OutputInterface $output, ConfigurationRefusal $refusal): int
+    public function refusalAfterPublishedReport(OutputInterface $output, RefusalInterface $refusal): int
     {
         return $this->refusal($output, null, $refusal);
     }
 
-    /** The internal-error twin of {@see self::refusalAfterPublishedReport()}. */
-    public function internalErrorAfterPublishedReport(OutputInterface $output, Throwable $failure): int
+    public function unhandled(OutputInterface $output, ?string $format, Throwable $failure): int
     {
-        return $this->internalError($output, null, $failure);
+        if ($failure instanceof RefusalInterface) {
+            return $this->refusal($output, $format, $failure);
+        }
+        if ($failure instanceof FileTargetFailure) {
+            return $this->refusal($output, $format, FileTargetRefusal::from(null, $failure));
+        }
+        if ($failure instanceof EnvironmentFailureInterface) {
+            return $this->refusal($output, $format, EnvironmentRefusal::fromFailure($failure));
+        }
+
+        return $this->internalError($output, $format, $failure);
     }
 
-    private static function refusalSentence(string $message): string
+    public function unhandledAfterPublishedReport(OutputInterface $output, Throwable $failure): int
     {
-        return \sprintf('Configuration error: %s', $message);
+        return $this->unhandled($output, null, $failure);
+    }
+
+    private static function refusalSentence(RefusalInterface $refusal): string
+    {
+        return \sprintf('%s error: %s', $refusal instanceof EnvironmentRefusal ? 'Environment' : 'Configuration', $refusal->summary());
     }
 
     /**
@@ -93,9 +109,9 @@ final class RefusalPresenter
      * refusal never gets, because a refusal is the user's problem to fix and
      * an internal error is ours.
      */
-    public function internalError(OutputInterface $output, ?string $format, Throwable $failure): int
+    private function internalError(OutputInterface $output, ?string $format, Throwable $failure): int
     {
-        $this->present($output, $format, \sprintf('Internal error: %s', $failure->getMessage()), ConsoleExitCode::InternalError, null);
+        $this->present($output, $format, \sprintf('Internal error: %s', $failure->getMessage()), ConsoleExitCode::InternalError, null, null);
 
         if ($output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
             $this->writeStderr($output, '<comment>Stack trace:</comment>');
@@ -105,20 +121,20 @@ final class RefusalPresenter
         return ConsoleExitCode::InternalError->value;
     }
 
+    /** @param ?list<ConfigurationOrigin> $sources */
     private function present(
         OutputInterface $output,
         ?string $format,
         string $message,
         ConsoleExitCode $code,
         ?RefusedPosition $position,
+        ?array $sources,
     ): void {
         // Erase the progress frame first: printed on top of a live frame, the
         // message is destroyed by the frame's next redraw.
         $this->errorStream->stopProgress();
 
-        if (MachineReadableFormats::carriesJson($format)) {
-            $this->writeEnvelope($output, $message, $code->value, $position);
-
+        if (MachineReadableFormats::carriesJson($format) && $this->writeEnvelope($output, $message, $code->value, $position, $sources)) {
             return;
         }
 
@@ -129,6 +145,17 @@ final class RefusalPresenter
         // the exit ladder above reports that instead of this refusal. Only
         // the frame below is ours to have the formatter read.
         $this->writeStderr($output, \sprintf('<error>%s</error>', OutputFormatter::escape($message)));
+
+        $unmentioned = array_filter(
+            array_map(
+                static fn(ConfigurationOrigin $source): string => $source->describe(),
+                array_filter($sources ?? [], static fn(ConfigurationOrigin $source): bool => $source->source() !== ConfigurationSource::Resolved),
+            ),
+            static fn(string $source): bool => stripos($message, $source) === false,
+        );
+        if ($unmentioned !== []) {
+            $this->writeStderr($output, OutputFormatter::escape('Source: ' . implode('; ', $unmentioned) . '.'));
+        }
 
         // The `--quiet` rule that hides the pointer on a report does not apply
         // here: this presenter writes at VERBOSITY_QUIET on purpose, because a
@@ -159,8 +186,9 @@ final class RefusalPresenter
     }
 
     /**
-     * Writes the `{error, exit_code, position}` envelope to stdout — the shape
-     * every command's refusal and internal-error path shares.
+     * Writes the `{error, exit_code, position, source}` envelope to stdout.
+     * A failed stream write returns false so the terminal message can fall
+     * back to stderr; Symfony's StreamOutput ignores a false fwrite result.
      *
      * `position` is the refusal's {@see RefusedPosition} — `{path, written,
      * accepted, closed}` — and `null` whenever the run ended without one: a
@@ -171,35 +199,83 @@ final class RefusalPresenter
      * does not depend on what ended the run. The text path does not print it:
      * the wording of `$message` already names the key for a reader.
      *
-     * `JSON_INVALID_UTF8_SUBSTITUTE`: `$message` can embed raw CLI input
-     * (an option value, a path) that the user typed, and PHP argv bytes are
-     * not guaranteed valid UTF-8. Without this flag, `JSON_THROW_ON_ERROR`
-     * turns a malformed-input refusal into a `JsonException` that escapes
-     * this method and is caught by the outer ladder as an internal error —
-     * exit code 1 instead of the exit code 3 this refusal already committed
-     * to returning. Substituting the invalid bytes keeps the envelope valid
-     * JSON and keeps the refusal a refusal.
+     * `source` lists every source a {@see ConfigurationRefusal} names —
+     * `{kind, name, imported_by}`, one entry, or each contributing layer of a
+     * refusal across layers — and is `null` for an outcome that is not one.
+     *
+     * Invalid bytes are percent-escaped because a refusal can quote raw argv
+     * bytes. A JSON encoding failure would turn the refused input into
+     * ConsoleExitCode::InternalError instead of its committed refusal status.
      */
-    private function writeEnvelope(OutputInterface $output, string $message, int $exitCode, ?RefusedPosition $position): void
+    /** @param ?list<ConfigurationOrigin> $sources */
+    private function writeEnvelope(OutputInterface $output, string $message, int $exitCode, ?RefusedPosition $position, ?array $sources): bool
     {
-        $payload = json_encode(
-            ['error' => $message, 'exit_code' => $exitCode, 'position' => self::positionDocument($position)],
-            \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_INVALID_UTF8_SUBSTITUTE | \JSON_THROW_ON_ERROR,
+        $payload = PublishedUtf8::encodeJsonObject(
+            [
+                'error' => $message,
+                'exit_code' => $exitCode,
+                'position' => self::positionDocument($position),
+                'source' => $sources === null ? null : array_map(self::sourceDocument(...), $sources),
+            ],
+            \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES,
         ) . "\n";
 
-        // Mirrors OutputHelper::write()'s blocking-mode restore (amphp leaves
-        // STDOUT non-blocking after worker communication), duplicated locally
-        // because that helper's signature has no verbosity parameter and this
-        // write must carry VERBOSITY_QUIET to survive `-q` (see class docblock).
+        // amphp can leave STDOUT non-blocking after worker communication. A
+        // direct full write is needed here because StreamOutput ignores false
+        // and short fwrite results, leaving an exit with no diagnostic.
         if ($output instanceof StreamOutput) {
-            stream_set_blocking($output->getStream(), true);
+            $stream = $output->getStream();
+            if (!\is_resource($stream)) {
+                return false;
+            }
+
+            return self::writeStream($stream, $payload);
         }
 
-        // `OUTPUT_RAW`: the payload is already JSON and has nothing for the
-        // console formatter to do. Left to read it, the formatter would parse
-        // markup embedded in `$message` and throw on a malformed style, and
-        // the envelope this refusal promised would never be written at all.
+        // Non-stream outputs retain their own raw, quiet write semantics.
         $output->write($payload, false, OutputInterface::OUTPUT_RAW | OutputInterface::VERBOSITY_QUIET);
+
+        return true;
+    }
+
+    /** @param resource $stream */
+    private static function writeStream($stream, string $payload): bool
+    {
+        set_error_handler(static fn(int $severity, string $message): bool => true);
+
+        try {
+            if (!stream_set_blocking($stream, true)) {
+                return false;
+            }
+            $length = \strlen($payload);
+            $offset = 0;
+            while ($offset < $length) {
+                $written = fwrite($stream, substr($payload, $offset));
+                if ($written === false || $written === 0) {
+                    return false;
+                }
+                $offset += $written;
+            }
+
+            return fflush($stream);
+        } finally {
+            restore_error_handler();
+        }
+    }
+
+    /**
+     * One source as every structured document publishes it: the refusal
+     * envelope's `source` entries and a report's configuration diagnostics.
+     *
+     * @return array{kind: string, name: ?string, imported_by: ?array<string, mixed>}
+     */
+    public static function sourceDocument(ConfigurationOrigin $origin): array
+    {
+        return [
+            'kind' => $origin->source()->value,
+            'name' => $origin->locator(),
+            'imported_by' => $origin->importer() === null ? null : self::sourceDocument($origin->importer()),
+        ];
     }
 
     /** @return ?array{path: list<string>, written: string, accepted: list<string>, closed: bool} */
@@ -210,10 +286,10 @@ final class RefusalPresenter
         }
 
         return [
-            'path' => $position->segments(),
-            'written' => $position->written(),
-            'accepted' => $position->accepted(),
-            'closed' => $position->isClosed(),
+            'path' => $position->segments,
+            'written' => $position->written,
+            'accepted' => $position->accepted,
+            'closed' => $position->closed,
         ];
     }
 }

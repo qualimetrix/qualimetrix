@@ -19,9 +19,8 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 final class AcceptedLevelNarrator
 {
     /**
-     * Returns the breach fragment, or `null` for every finding that is
-     * not a measured breach — {@see Finding::$acceptedLevel} is `null` on
-     * all of them, including findings a baseline never judged.
+     * Returns the accepted-level fragment, distinguishing a measured breach
+     * from an entry whose comparison the run could not complete.
      */
     public static function describe(Finding $finding): ?string
     {
@@ -29,6 +28,10 @@ final class AcceptedLevelNarrator
 
         if ($accepted === null) {
             return null;
+        }
+
+        if ($finding->uncomparedReason !== null) {
+            return \sprintf('accepted at %s; not compared: %s', $accepted->describe(), $finding->uncomparedReason);
         }
 
         if ($accepted->shape() === ChannelShape::Occurrence) {

@@ -1232,6 +1232,34 @@ PHP;
         self::assertNotContains(\Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface::class, class_implements($this->collector));
     }
 
+    #[Test]
+    public function itKeepsDistinctPropertySharingForSameFileDeclarations(): void
+    {
+        $this->collectMetrics(<<<'PHP'
+<?php
+namespace App;
+class Twin {
+    private int $a = 0;
+    public function one(): int { return $this->a; }
+    public function two(): int { return $this->a; }
+}
+if (false) {
+    class Twin {
+        private int $a = 0;
+        private int $b = 0;
+        public function one(): int { return $this->a; }
+        public function two(): int { return $this->b; }
+    }
+}
+PHP);
+
+        $visitor = $this->collector->getVisitor();
+        self::assertInstanceOf(TccLccVisitor::class, $visitor);
+        $classes = array_values($visitor->getClassData());
+        self::assertCount(2, $classes);
+        self::assertSame([1.0, 0.0], array_map(static fn(TccLccClassData $class): float => $class->calculateTcc(), $classes));
+    }
+
     private function collectMetrics(string $code): MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();

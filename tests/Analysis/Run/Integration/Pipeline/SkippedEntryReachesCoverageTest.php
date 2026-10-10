@@ -10,31 +10,36 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyDetector;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MeasurementAggregationService;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
-use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry;
-use Qualimetrix\Analysis\Run\Contract\Discovery\SkipReportingDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
+use Qualimetrix\Analysis\Run\Discovery\ScopeFacts;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Infrastructure\Profiler\ProfileSession;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Qualimetrix\Tests\Analysis\Run\Support\Pipeline\TestPipelineBuilder;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -77,14 +82,14 @@ final class SkippedEntryReachesCoverageTest extends TestCase
             ),
         ]);
 
-        self::assertFalse($result->coverage->isComplete());
-        self::assertSame(2, $result->coverage->discoveredFiles());
-        self::assertSame(1, $result->coverage->analyzedFilesCount());
+        self::assertFalse($result->measured->coverage->isComplete());
+        self::assertSame(2, $result->measured->coverage->discoveredFiles());
+        self::assertSame(1, $result->measured->coverage->analyzedFilesCount());
         self::assertSame(
             [['src/linked', AnalysisFailureKind::DirectorySymlink]],
             array_map(
                 static fn($failure): array => [$failure->path->value(), $failure->kind],
-                $result->coverage->failures,
+                $result->measured->coverage->failures,
             ),
         );
     }
@@ -94,8 +99,8 @@ final class SkippedEntryReachesCoverageTest extends TestCase
     {
         $result = $this->analyze([]);
 
-        self::assertTrue($result->coverage->isComplete());
-        self::assertSame(1, $result->coverage->discoveredFiles());
+        self::assertTrue($result->measured->coverage->isComplete());
+        self::assertSame(1, $result->measured->coverage->discoveredFiles());
     }
 
     /** @param list<SkippedEntry> $skips */
@@ -103,22 +108,21 @@ final class SkippedEntryReachesCoverageTest extends TestCase
     {
         $analyzed = new SplFileInfo($this->root . '/src/Analyzed.php');
 
-        $discovery = new class ($analyzed, $skips) implements FileDiscoveryInterface, SkipReportingDiscoveryInterface {
+        $discovery = new class ($analyzed, $skips) implements ProjectFilesInterface {
             /** @param list<SkippedEntry> $skips */
-            public function __construct(
-                private readonly SplFileInfo $file,
-                private readonly array $skips,
-            ) {}
+            public function __construct(private readonly SplFileInfo $file, private readonly array $skips) {}
 
-            /** @return iterable<AbsolutePath, SplFileInfo> */
-            public function discover(AbsolutePath|array $paths): iterable
+            public function discover(RunConfiguration $configuration): DiscoveredProjectFiles
             {
-                yield AbsolutePath::fromString($this->file->getPathname()) => $this->file;
-            }
-
-            public function skippedEntries(): array
-            {
-                return $this->skips;
+                return new DiscoveredProjectFiles(
+                    [$this->file],
+                    [],
+                    [],
+                    $this->skips,
+                    [],
+                    new ScopeFacts([], [], [], false),
+                    1,
+                );
             }
         };
 
@@ -126,7 +130,8 @@ final class SkippedEntryReachesCoverageTest extends TestCase
         $orchestrator = self::createStub(CollectionOrchestratorInterface::class);
         $orchestrator->method('collect')->willReturnCallback(
             static fn(array $files): CollectionPhaseOutput => new CollectionPhaseOutput(
-                [PathFactory::bestEffortRelative($files[0]->getPathname(), $root)],
+                [PathFactory::published(AbsolutePath::fromString($files[0]->getPathname()), $root)],
+                [],
                 [],
             ),
         );
@@ -135,36 +140,44 @@ final class SkippedEntryReachesCoverageTest extends TestCase
         $ruleExecutor->method('execute')->willReturn(
             new RuleExecutionResult([], [], new RuleExclusionStats(), LevelActivity::empty()),
         );
+        $ruleExecutor->method('publication')->willReturn(new ChannelPublication(new RuleEnablement([], null)));
         $ruleExecutor->method('publishable')->willReturnCallback(
             static fn(array $findings): array => $findings,
         );
 
+        $configuration = new RuleOptionsRegistry();
+        $configuration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), []));
+
+        $computed = self::createStub(ComputedMetricEvaluator::class);
+        $computed->method('evaluate')->willReturn(new ComputedMetricEvaluationSummary());
+
         $pipeline = TestPipelineBuilder::create()
-            ->withDefaultDiscovery($discovery)
+            ->withProjectFiles($discovery)
             ->withCollectionOrchestrator($orchestrator)
             ->withRuleExecution($ruleExecutor)
+            ->withRuleConfiguration($configuration)
             ->withMeasurementAggregation(new MeasurementAggregationService(
                 [],
                 new CompositeCollector([], new DeclarationRegistrarFactory()),
                 $this->profiler,
             ))
-            ->withComputedMetricEvaluation(self::createStub(ComputedMetricEvaluator::class))
+            ->withComputedMetricEvaluation($computed)
             ->withCircularDependencyPreparation(new CircularDependencyAnalysis(new CircularDependencyDetector()))
             ->withFileSetInspection(new FileSetInspectionComposite(
                 [],
-                new RuleSelectorProducerGate(new RuleSelector(new InMemoryRuleChannelRegistry())),
+                new RuleSelectorProducerGate($configuration),
                 $this->profiler,
             ))
             ->withProfiler($this->profiler)
             ->build();
 
         return $pipeline->analyze(new RunConfiguration(
-            paths: [AbsolutePath::fromString($this->root . '/src')],
             pathExcludes: [],
             projectRoot: $root,
             generatedFilePolicy: GeneratedFilePolicy::Exclude,
-            coversProjectScope: true,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [AbsolutePath::fromString($this->root . '/src')], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
             authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         ));
     }
 

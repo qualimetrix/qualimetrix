@@ -1,7 +1,10 @@
 # 0051. Refusal Is Not Routed by Command
 
 **Date:** 2026-09-09
-**Status:** Accepted
+**Status:** Accepted; the environment-failure classification is extended by
+[ADR 0096](0096-file-target-claims.md). Its shared `unhandled()` entry point
+replaces the public `internalError()` route described below; an unmarked tool
+defect still exits 1, while a typed filesystem environment failure exits 3.
 
 ## Context
 

@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCo
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
@@ -49,11 +50,11 @@ final class SummaryFormatterTest extends TestCase
     {
         $registry = new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues());
         $debtCalculator = new DebtCalculator($registry);
-        $hintProvider = new HealthMetricCatalog();
+        $hintProvider = new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
         $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $namespaceDrillDown = new HealthScoreDrillDown($definitionCatalog);
+        $namespaceDrillDown = new HealthScoreDrillDown($definitionCatalog, new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
         $findingFilter = new FindingFilter();
-        $offenderListRenderer = new OffenderListRenderer($findingFilter, new WorstClassDrillDown($definitionCatalog));
+        $offenderListRenderer = new OffenderListRenderer($findingFilter, new WorstClassDrillDown());
         $this->formatter = new SummaryFormatter(
             new DetailedFindingRenderer($debtCalculator),
             new HealthBarRenderer(new HealthScoreResolver($namespaceDrillDown)),
@@ -63,6 +64,60 @@ final class SummaryFormatterTest extends TestCase
             new HintRenderer($offenderListRenderer),
         );
         $this->plainContext = new FormatterContext(useColor: false, terminalWidth: 120);
+    }
+
+    #[Test]
+    public function itPublishesPopulationBeforeEmptyDataReturnsAndKeepsReasonsVerbose(): void
+    {
+        $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
+        $trace->record('fixture.rule', new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('fixture.channel'), \Qualimetrix\Core\Symbol\SymbolLevel::Project, \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::selector('project:fixture', 'project'), 'published', 'The fixture value is absent.');
+        $report = new \Qualimetrix\Reporting\Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 0, 0, 0, 0, 0, population: $trace->freeze());
+        $compact = $this->formatter->format($report, new FormatterContext(useColor: false))->body;
+        self::assertSame(1, substr_count($compact, 'Rule population incomplete'));
+        self::assertStringContainsString('project: 0 judged, 1 not judged', $compact);
+        self::assertStringNotContainsString('The fixture value is absent.', $compact);
+        $verbose = $this->formatter->format($report, (new FormatterContext(useColor: false, verbose: true))->withDetail(true))->body;
+        self::assertStringContainsString('fixture.rule / fixture.channel (project), gate published: The fixture value is absent.', $verbose);
+        self::assertStringContainsString('examples: project:fixture', $verbose);
+    }
+
+    #[Test]
+    public function itSelectsTheWorstDetailFindingBeforeGroupingByFile(): void
+    {
+        $warning = self::finding(new Location(RelativePath::fromString('src/A.php'), 1), SymbolPath::forClass('Shop', 'A'), 'complexity.ccn', 'complexity.ccn', 'Hidden warning', Severity::Warning);
+        $low = self::finding(new Location(RelativePath::fromString('src/B.php'), 1), SymbolPath::forClass('Shop', 'B'), 'complexity.ccn', 'complexity.ccn', 'Hidden low impact', Severity::Error);
+        $high = self::finding(new Location(RelativePath::fromString('src/Z.php'), 1), SymbolPath::forClass('Shop', 'Z'), 'complexity.ccn', 'complexity.ccn', 'Shown high impact', Severity::Error);
+        $ranked = [new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($high, 50, null, 5, 3), new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($low, 10, null, 5, 3)];
+        $report = new \Qualimetrix\Reporting\Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [$warning, $low, $high], 3, 0, 0, 2, 1, topIssues: $ranked);
+        $output = $this->formatter->format($report, new FormatterContext(useColor: false, detailLimit: 1, topIssuesLimit: 0))->body;
+
+        self::assertStringContainsString('Shown high impact', $output);
+        self::assertStringNotContainsString('Hidden warning', $output);
+        self::assertStringNotContainsString('Hidden low impact', $output);
+        self::assertStringContainsString('... and 2 more.', $output);
+    }
+
+    #[Test]
+    public function itNamesAnUncomparedEntryWithoutClaimingABreach(): void
+    {
+        $finding = self::finding(
+            location: new Location(RelativePath::fromString('src/A.php'), 1),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/A.php')),
+            ruleName: 'code-smell.goto',
+            code: 'code-smell.goto',
+            message: 'Original message',
+            severity: Severity::Warning,
+            metricValue: 31,
+            recommendation: 'Recommended repair',
+        )->reportedUncompared(new \Qualimetrix\Analysis\Finding\Contract\AcceptedLevel([25.0], 1), 'analysis-incomplete');
+        $output = $this->formatter->format($this->createReport(findings: [$finding]), $this->plainContext->withDetail(true))->body;
+        self::assertStringContainsString('accepted at 25; not compared: analysis-incomplete', $output);
+        self::assertStringNotContainsString('now 31', $output);
+        $ranked = new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($finding, 1.0, null, 5, 1);
+        $report = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [$finding], 1, 0, 0.0, 0, 1, topIssues: [$ranked, $ranked]);
+        $topOutput = $this->formatter->format($report, new FormatterContext(useColor: false, topIssuesLimit: 1))->body;
+        self::assertSame(1, substr_count($topOutput, 'accepted at 25; not compared: analysis-incomplete'));
+        self::assertStringNotContainsString('now 31', $topOutput);
     }
 
     #[Test]
@@ -82,7 +137,7 @@ final class SummaryFormatterTest extends TestCase
     {
         $report = $this->createReport(findings: [], filesAnalyzed: 42, duration: 1.5);
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringContainsString('Qualimetrix', $output);
         self::assertStringContainsString('42 files analyzed', $output);
@@ -101,8 +156,7 @@ final class SummaryFormatterTest extends TestCase
             duration: 0.1,
             worstNamespaces: [
                 new WorstOffender(
-                    symbolPath: SymbolPath::forNamespace('App'),
-                    file: null,
+                    subject: \Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App')),
                     healthOverall: 30.0,
                     label: 'Poor',
                     reason: 'test',
@@ -110,12 +164,12 @@ final class SummaryFormatterTest extends TestCase
                         violationCount: 1,
                         classCount: 1,
                     ),
+                    overallThresholds: [50.0, 30.0],
                 ),
             ],
             worstClasses: [
                 new WorstOffender(
-                    symbolPath: SymbolPath::forClass('App', 'Foo'),
-                    file: RelativePath::fromString('src/Foo.php'),
+                    subject: \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App', 'Foo'), RelativePath::fromString('src/Foo.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
                     healthOverall: 30.0,
                     label: 'Poor',
                     reason: 'test',
@@ -123,11 +177,12 @@ final class SummaryFormatterTest extends TestCase
                         violationCount: 1,
                         classCount: 0,
                     ),
+                    overallThresholds: [50.0, 30.0],
                 ),
             ],
         );
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringContainsString('1 file analyzed', $output);
         self::assertStringNotContainsString('1 files', $output);
@@ -152,7 +207,7 @@ final class SummaryFormatterTest extends TestCase
             ],
         );
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringContainsString('Health', $output);
         self::assertStringContainsString('72%', $output);
@@ -184,8 +239,7 @@ final class SummaryFormatterTest extends TestCase
             duration: 2.0,
             worstNamespaces: [
                 new WorstOffender(
-                    symbolPath: SymbolPath::forNamespace('App\Service'),
-                    file: null,
+                    subject: \Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\Service')),
                     healthOverall: 35.0,
                     label: 'Poor',
                     reason: 'high complexity, low cohesion',
@@ -193,12 +247,12 @@ final class SummaryFormatterTest extends TestCase
                         violationCount: 15,
                         classCount: 8,
                     ),
+                    overallThresholds: [50.0, 30.0],
                 ),
             ],
             worstClasses: [
                 new WorstOffender(
-                    symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
-                    file: RelativePath::fromString('src/Service/UserService.php'),
+                    subject: \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App\Service', 'UserService'), RelativePath::fromString('src/Service/UserService.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
                     healthOverall: 22.0,
                     label: 'Critical',
                     reason: 'high coupling',
@@ -206,15 +260,16 @@ final class SummaryFormatterTest extends TestCase
                         violationCount: 5,
                         classCount: 0,
                     ),
+                    overallThresholds: [50.0, 30.0],
                 ),
             ],
         );
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringContainsString('Worst namespaces', $output);
         self::assertStringContainsString('App\Service', $output);
-        self::assertStringContainsString('8 classes', $output);
+        self::assertStringContainsString('8 classes in subtree', $output);
         self::assertStringContainsString('15 violations', $output);
 
         self::assertStringContainsString('Worst classes', $output);
@@ -249,7 +304,7 @@ final class SummaryFormatterTest extends TestCase
             techDebtMinutes: 90,
         );
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringContainsString('2 violations', $output);
         self::assertStringContainsString('1 error', $output);
@@ -270,7 +325,7 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(useColor: false, scopedReporting: true, terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         // Header annotated with scoped label
         self::assertStringContainsString('(scoped)', $output);
@@ -290,7 +345,7 @@ final class SummaryFormatterTest extends TestCase
             healthScores: [],
         );
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringContainsString('Health: insufficient data', $output);
     }
@@ -315,7 +370,7 @@ final class SummaryFormatterTest extends TestCase
             duration: 0.1,
         );
 
-        $output = $this->formatter->format($report, $colorContext);
+        $output = $this->formatter->format($report, $colorContext)->body;
 
         self::assertStringContainsString("\e[", $output);
         // Error summary should be bold red
@@ -340,7 +395,7 @@ final class SummaryFormatterTest extends TestCase
             duration: 0.1,
         );
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringNotContainsString("\e[", $output);
     }
@@ -362,9 +417,14 @@ final class SummaryFormatterTest extends TestCase
                 ],
             );
 
-            $output = $this->formatter->format($report, $this->plainContext);
+            $output = $this->formatter->format($report, $this->plainContext)->body;
 
-            self::assertStringContainsString('[', $output);
+            $unicodeLines = explode("\n", $output);
+            $output = \Qualimetrix\Reporting\Formatter\Prose\ProseText::publish($output, \Qualimetrix\Reporting\Formatter\Prose\GlyphMode::Ascii)->body;
+            $asciiLines = explode("\n", $output);
+            foreach ($unicodeLines as $line => $unicode) {
+                self::assertSame(mb_strpos($unicode, '%'), mb_strpos($asciiLines[$line], '%'));
+            }
             self::assertStringContainsString('#', $output);
             self::assertStringNotContainsString('█', $output);
             self::assertStringNotContainsString('░', $output);
@@ -395,7 +455,7 @@ final class SummaryFormatterTest extends TestCase
             duration: 0.1,
         );
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringContainsString('--detail', $output);
     }
@@ -412,8 +472,7 @@ final class SummaryFormatterTest extends TestCase
             ],
             worstNamespaces: [
                 new WorstOffender(
-                    symbolPath: SymbolPath::forNamespace('App\Service'),
-                    file: null,
+                    subject: \Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\Service')),
                     healthOverall: 35.0,
                     label: 'Poor',
                     reason: 'high complexity',
@@ -421,11 +480,12 @@ final class SummaryFormatterTest extends TestCase
                         violationCount: 5,
                         classCount: 3,
                     ),
+                    overallThresholds: [50.0, 30.0],
                 ),
             ],
         );
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         // Uses single quotes for shell escaping
         self::assertStringContainsString("--namespace='subtree:App\\Service'", $output);
@@ -435,8 +495,7 @@ final class SummaryFormatterTest extends TestCase
     public function itAppliesNamespaceFilterBoundaryAware(): void
     {
         $offenderMatch = new WorstOffender(
-            symbolPath: SymbolPath::forNamespace('App\Payment\Gateway'),
-            file: null,
+            subject: \Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\Payment\Gateway')),
             healthOverall: 30.0,
             label: 'Poor',
             reason: 'test',
@@ -444,11 +503,11 @@ final class SummaryFormatterTest extends TestCase
                 violationCount: 3,
                 classCount: 2,
             ),
+            overallThresholds: [50.0, 30.0],
         );
 
         $offenderNoMatch = new WorstOffender(
-            symbolPath: SymbolPath::forNamespace('App\PaymentGateway'),
-            file: null,
+            subject: \Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\PaymentGateway')),
             healthOverall: 25.0,
             label: 'Critical',
             reason: 'test',
@@ -456,6 +515,7 @@ final class SummaryFormatterTest extends TestCase
                 violationCount: 5,
                 classCount: 4,
             ),
+            overallThresholds: [50.0, 30.0],
         );
 
         $report = $this->createReport(
@@ -469,7 +529,7 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Payment'), terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('App\Payment\Gateway', $output);
         self::assertStringNotContainsString('App\PaymentGateway', $output);
@@ -502,7 +562,7 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'), terminalWidth: 120);
-        $output = $this->formatter->format($this->selected($report, $context), $context);
+        $output = $this->formatter->format($this->selected($report, $context), $context)->body;
 
         // Only 1 finding in scope; the other is named as outside it
         self::assertStringContainsString('1 violation in this scope (1 error)', $output);
@@ -536,7 +596,7 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(useColor: false, class: 'App\Service\UserService', terminalWidth: 120);
-        $output = $this->formatter->format($this->selected($report, $context), $context);
+        $output = $this->formatter->format($this->selected($report, $context), $context)->body;
 
         self::assertStringContainsString('1 violation in this scope (1 error)', $output);
         self::assertStringContainsString('1 outside it (1 warning) decide the exit code', $output);
@@ -561,7 +621,7 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'), terminalWidth: 120);
-        $output = $this->formatter->format($this->selected($report, $context), $context);
+        $output = $this->formatter->format($this->selected($report, $context), $context)->body;
 
         self::assertStringContainsString('No violations in this scope.', $output);
     }
@@ -570,8 +630,7 @@ final class SummaryFormatterTest extends TestCase
     public function itAppliesClassFilterWithExactMatch(): void
     {
         $offenderMatch = new WorstOffender(
-            symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
-            file: RelativePath::fromString('src/Service/UserService.php'),
+            subject: \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App\Service', 'UserService'), RelativePath::fromString('src/Service/UserService.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
             healthOverall: 22.0,
             label: 'Critical',
             reason: 'test',
@@ -579,11 +638,11 @@ final class SummaryFormatterTest extends TestCase
                 violationCount: 5,
                 classCount: 0,
             ),
+            overallThresholds: [50.0, 30.0],
         );
 
         $offenderNoMatch = new WorstOffender(
-            symbolPath: SymbolPath::forClass('App\Service', 'OrderService'),
-            file: RelativePath::fromString('src/Service/OrderService.php'),
+            subject: \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App\Service', 'OrderService'), RelativePath::fromString('src/Service/OrderService.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
             healthOverall: 30.0,
             label: 'Poor',
             reason: 'test',
@@ -591,6 +650,7 @@ final class SummaryFormatterTest extends TestCase
                 violationCount: 3,
                 classCount: 0,
             ),
+            overallThresholds: [50.0, 30.0],
         );
 
         $report = $this->createReport(
@@ -605,7 +665,7 @@ final class SummaryFormatterTest extends TestCase
 
         $userServiceCanonical = $offenderMatch->symbolPath->toString();
         $context = new FormatterContext(useColor: false, class: $userServiceCanonical, terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('UserService', $output);
         self::assertStringNotContainsString('OrderService', $output);
@@ -617,8 +677,7 @@ final class SummaryFormatterTest extends TestCase
         $offenders = [];
         for ($i = 0; $i < 5; $i++) {
             $offenders[] = new WorstOffender(
-                symbolPath: SymbolPath::forNamespace('App\Ns' . $i),
-                file: null,
+                subject: \Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\Ns' . $i)),
                 healthOverall: 20.0 + $i * 5,
                 label: 'Poor',
                 reason: 'test',
@@ -626,6 +685,7 @@ final class SummaryFormatterTest extends TestCase
                     violationCount: $i + 1,
                     classCount: $i + 2,
                 ),
+                overallThresholds: [50.0, 30.0],
             );
         }
 
@@ -639,7 +699,7 @@ final class SummaryFormatterTest extends TestCase
             worstNamespaces: $offenders,
         );
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         // First 3 shown
         self::assertStringContainsString('App\Ns0', $output);
@@ -658,8 +718,7 @@ final class SummaryFormatterTest extends TestCase
         $offenders = [];
         for ($i = 0; $i < 3; $i++) {
             $offenders[] = new WorstOffender(
-                symbolPath: SymbolPath::forNamespace('App\Ns' . $i),
-                file: null,
+                subject: \Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\Ns' . $i)),
                 healthOverall: 20.0 + $i * 5,
                 label: 'Poor',
                 reason: 'test',
@@ -667,6 +726,7 @@ final class SummaryFormatterTest extends TestCase
                     violationCount: 1,
                     classCount: 1,
                 ),
+                overallThresholds: [50.0, 30.0],
             );
         }
 
@@ -680,7 +740,7 @@ final class SummaryFormatterTest extends TestCase
             worstNamespaces: $offenders,
         );
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringNotContainsString('+', $output);
     }
@@ -704,7 +764,7 @@ final class SummaryFormatterTest extends TestCase
             techDebtMinutes: 0,
         );
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringNotContainsString('Tech debt', $output);
     }
@@ -715,7 +775,7 @@ final class SummaryFormatterTest extends TestCase
         // Even without health scores
         $report = $this->createReport(findings: [], filesAnalyzed: 10, duration: 0.5);
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringContainsString('--format=html', $output);
     }
@@ -726,7 +786,7 @@ final class SummaryFormatterTest extends TestCase
         $report = $this->createReport(findings: [], filesAnalyzed: 5, duration: 0.5);
 
         $context = new FormatterContext(useColor: false, scopedReporting: true, terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('scoped analysis', $output);
     }
@@ -737,7 +797,7 @@ final class SummaryFormatterTest extends TestCase
         $report = $this->createReport(findings: [], filesAnalyzed: 10, duration: 0.5);
 
         $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'), terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('[namespace: subtree:App\Service]', $output);
     }
@@ -748,7 +808,7 @@ final class SummaryFormatterTest extends TestCase
         $report = $this->createReport(findings: [], filesAnalyzed: 10, duration: 0.5);
 
         $context = new FormatterContext(useColor: false, class: 'App\Service\UserService', terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('[class: App\Service\UserService]', $output);
     }
@@ -765,7 +825,7 @@ final class SummaryFormatterTest extends TestCase
             ],
         );
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringContainsString('—%', $output);
         self::assertStringNotContainsString('NAN', $output);
@@ -786,7 +846,7 @@ final class SummaryFormatterTest extends TestCase
             ],
         );
 
-        $output = $this->formatter->format($report, $colorContext);
+        $output = $this->formatter->format($report, $colorContext)->body;
 
         // Yellow = \e[33m, Green = \e[32m
         // 50.0 is NOT > 50.0, so should be yellow
@@ -807,7 +867,7 @@ final class SummaryFormatterTest extends TestCase
             ],
         );
 
-        $output = $this->formatter->format($report, $colorContext);
+        $output = $this->formatter->format($report, $colorContext)->body;
 
         // 50.1 > 50.0 → green
         self::assertStringContainsString("\e[32m", $output);
@@ -827,7 +887,7 @@ final class SummaryFormatterTest extends TestCase
             ],
         );
 
-        $output = $this->formatter->format($report, $colorContext);
+        $output = $this->formatter->format($report, $colorContext)->body;
 
         // 30.0 is NOT > 30.0 → red
         self::assertStringContainsString("\e[31m30%\e[0m", $output);
@@ -861,7 +921,7 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'), terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         // Scoped tech debt computed from filtered findings (30min + 45min = 1h 15min)
         self::assertStringContainsString('Tech debt: 1h 15min', $output);
@@ -894,7 +954,7 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(useColor: false, class: 'App\Service\UserService', terminalWidth: 120);
-        $output = $this->formatter->format($this->selected($report, $context), $context);
+        $output = $this->formatter->format($this->selected($report, $context), $context)->body;
 
         // Only god-class finding matches (120min = 2h)
         self::assertStringContainsString('Tech debt: 2h', $output);
@@ -921,7 +981,7 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'), terminalWidth: 120);
-        $output = $this->formatter->format($this->selected($report, $context), $context);
+        $output = $this->formatter->format($this->selected($report, $context), $context)->body;
 
         // No findings in scope, so no tech debt line
         self::assertStringNotContainsString('Tech debt', $output);
@@ -947,7 +1007,7 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120, detailLimit: 0);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         // Should contain summary section
         self::assertStringContainsString('1 violation', $output);
@@ -970,7 +1030,7 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120, detailLimit: 0);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringNotContainsString('Violations', $output);
         self::assertStringContainsString('No violations found.', $output);
@@ -997,7 +1057,7 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'), terminalWidth: 120, detailLimit: 0);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('In scope', $output);
         self::assertStringNotContainsString('Out of scope', $output);
@@ -1022,7 +1082,7 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120, detailLimit: 0);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         // Should NOT hint --detail since we're already in detail mode
         self::assertStringNotContainsString('--detail to', $output);
@@ -1058,6 +1118,7 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 50,
             filesSkipped: 0,
@@ -1072,7 +1133,7 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'), terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         // Should show namespace-level score (45%) not project-level (72%)
         self::assertStringContainsString('45%', $output);
@@ -1083,7 +1144,7 @@ final class SummaryFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itBuildsWorstClassesFromMetricsWhenFilteringByNamespace(): void
+    public function itSelectsReportWorstClassesWithoutRebuildingFromMetrics(): void
     {
         $classPath = SymbolPath::forClass('App\Service', 'UserService');
         $classMetrics = \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag::fromArray([
@@ -1109,13 +1170,12 @@ final class SummaryFormatterTest extends TestCase
                 default => new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag(),
             },
         );
-        $metrics->method('all')->willReturnCallback(
-            static fn(\Qualimetrix\Core\Symbol\SymbolLevel $level): array => $level === \Qualimetrix\Core\Symbol\SymbolLevel::Class_
-                ? [new \Qualimetrix\Core\Symbol\SymbolInfo($classPath, \Qualimetrix\Core\Path\RelativePath::fromString('src/Service/UserService.php'), 1)]
-                : [],
-        );
+        $subject = \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($classPath, \Qualimetrix\Core\Path\RelativePath::fromString('src/Service/UserService.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)));
+        $metrics->method('allClassDeclarations')->willReturn([new \Qualimetrix\Core\Symbol\SymbolInfo($subject, \Qualimetrix\Core\Path\RelativePath::fromString('src/Service/UserService.php'), 1)]);
+        $metrics->method('getSubject')->willReturn($classMetrics);
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 50,
             filesSkipped: 0,
@@ -1126,13 +1186,20 @@ final class SummaryFormatterTest extends TestCase
             healthScores: [
                 'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
             ],
-            worstClasses: [],
+            worstClasses: [new WorstOffender(
+                $subject,
+                42.0,
+                'Poor',
+                'carried reason',
+                new WorstOffenderEvidence(2, 0, ['size.method-count' => 32], ['complexity' => 20.0, 'cohesion' => 15.0]),
+                [50.0, 30.0],
+            )],
         );
 
         $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'), terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
-        // Should show UserService as worst class even though it's not in global top
+        // Namespace selection reads the complete report snapshot.
         self::assertStringContainsString('UserService', $output);
         self::assertStringContainsString('Worst classes', $output);
     }
@@ -1146,6 +1213,7 @@ final class SummaryFormatterTest extends TestCase
         $metrics->method('all')->willReturn([]);
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 50,
             filesSkipped: 0,
@@ -1159,7 +1227,7 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\NonExistent'), terminalWidth: 120);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         // No health data for non-existent namespace — shows "insufficient data"
         self::assertStringContainsString('Health: insufficient data', $output);
@@ -1189,7 +1257,7 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(useColor: false, terminalWidth: 120, detailLimit: 5);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         // Should show truncation message: 8 total - 5 shown = 3 remaining
         self::assertStringContainsString('... and 3 more. Use --detail=all', $output);
@@ -1224,7 +1292,7 @@ final class SummaryFormatterTest extends TestCase
 
         $report = $this->createReport(findings: $findings, filesAnalyzed: 4, duration: 0.01);
         $context = new FormatterContext(useColor: false, terminalWidth: 120, detailLimit: 2);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         // Debt breakdown must show ALL rules, not just those within the display limit
         self::assertStringContainsString('Technical debt by rule:', $output);
@@ -1270,7 +1338,7 @@ final class SummaryFormatterTest extends TestCase
             isGroupByExplicit: true,
         );
 
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $listing = (string) strstr((string) strstr($output, 'Violations'), 'Technical debt by rule:', true);
 
         self::assertStringContainsString('Errors (1)', $listing);
@@ -1284,9 +1352,10 @@ final class SummaryFormatterTest extends TestCase
      */
     private function selected(Report $report, FormatterContext $context): Report
     {
-        $selected = (new FindingFilter())->filterFindings($report->findings, $context);
+        $selected = (new FindingFilter())->filterFindings($report->findings, $context, FileNamespaceIndex::fromRepository($report->metrics));
 
         return new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: $selected,
             filesAnalyzed: $report->filesAnalyzed,
             filesSkipped: $report->filesSkipped,
@@ -1328,6 +1397,7 @@ final class SummaryFormatterTest extends TestCase
         }
 
         return new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: $findings,
             filesAnalyzed: $filesAnalyzed,
             filesSkipped: 0,
@@ -1349,6 +1419,38 @@ final class SummaryFormatterTest extends TestCase
             default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
         };
         return new Finding(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, code: $code, message: $message, severity: $severity, metricValue: $metricValue, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
+    }
+
+    #[Test]
+    public function itShowsBothNonfailureAbsencesBeforeReturningWithoutScores(): void
+    {
+        $summary = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence(
+                'computed.custom',
+                \Qualimetrix\Core\Symbol\SymbolLevel::Project,
+                2,
+                1,
+                ['missing.input'],
+                [\Qualimetrix\Core\Symbol\MetricSubject::aggregate(\Qualimetrix\Core\Symbol\SymbolPath::forProject())],
+            ),
+        ]);
+        $report = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 1, 0, 0.0, 0, 0, computedMetricEvaluation: $summary);
+        $body = $this->formatter->format($report, new FormatterContext(useColor: false))->body;
+        self::assertStringContainsString('Computed metric computed.custom (project): not measured', $body);
+        self::assertStringContainsString('missing keys [missing.input] for 2 subject(s)', $body);
+        self::assertStringContainsString('no value for 1 subject(s)', $body);
+        $withScores = new \Qualimetrix\Reporting\Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 1, 0, 0.0, 0, 0, healthScores: [
+            'overall' => new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore('overall', 0.0, 'Critical', 50.0, 25.0, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage::notApplicable('composes dimensions')),
+        ], computedMetricEvaluation: $summary);
+        $alongside = $this->formatter->format($withScores, new FormatterContext(useColor: false))->body;
+        self::assertStringContainsString('missing keys [missing.input] for 2 subject(s)', $alongside);
+        self::assertStringContainsString('no value for 1 subject(s)', $alongside);
+        $expected = 'Computed metric computed.custom (project): not measured — missing keys [missing.input] for 2 subject(s); no value for 1 subject(s); examples: project:';
+        self::assertContains($expected, explode("\n", $body));
+        self::assertContains($expected, explode("\n", $alongside));
+        self::assertSame(1, substr_count($body, 'Computed metric computed.custom'));
+        self::assertSame(1, substr_count($alongside, 'Computed metric computed.custom'));
+
     }
 
 }

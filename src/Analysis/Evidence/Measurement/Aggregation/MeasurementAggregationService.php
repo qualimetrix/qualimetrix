@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Measurement\Aggregation;
 
+use LogicException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
@@ -13,12 +14,17 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInt
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /** Owns initial aggregation, global collection, and global re-aggregation. */
-final class MeasurementAggregationService implements MeasurementAggregationInterface
+final class MeasurementAggregationService implements MeasurementAggregationInterface, MetricReachCatalogInterface, MetricDefinitionCatalogInterface
 {
     /** @var list<GlobalContextCollectorInterface> */
     private readonly array $sortedCollectors;
@@ -29,6 +35,9 @@ final class MeasurementAggregationService implements MeasurementAggregationInter
     /** @var list<MetricDefinition> */
     private readonly array $globalDefinitions;
 
+    /** @var array<string, MetricReach> */
+    private readonly array $reachByMetric;
+
     /** @param iterable<GlobalContextCollectorInterface> $collectors */
     public function __construct(
         iterable $collectors,
@@ -36,26 +45,57 @@ final class MeasurementAggregationService implements MeasurementAggregationInter
         private readonly ProfilerInterface $profiler,
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {
+        $regularCollectors = $fileCollector->getCollectors();
+        $derivedCollectors = $fileCollector->getDerivedCollectors();
         $this->sortedCollectors = (new GlobalCollectorSorter())->sort(
             $collectors,
-            self::providedMetrics($fileCollector->getCollectors(), $fileCollector->getDerivedCollectors()),
+            self::providedMetrics($regularCollectors, $derivedCollectors),
         );
-        $regularDefinitions = AggregationHelper::collectDefinitions($fileCollector->getCollectors());
-        $derivedDefinitions = self::definitions($fileCollector->getDerivedCollectors());
+        $regularDefinitions = AggregationHelper::collectDefinitions($regularCollectors);
+        $derivedDefinitions = self::definitions($derivedCollectors);
         $this->globalDefinitions = self::definitions($this->sortedCollectors);
-        $this->allDefinitions = [...$regularDefinitions, ...$derivedDefinitions, ...$this->globalDefinitions];
+        $this->allDefinitions = [
+            ...$regularDefinitions,
+            ...$derivedDefinitions,
+            ...$this->globalDefinitions,
+            new MetricDefinition(name: MetricName::SIZE_SYMBOL_METHOD_COUNT, collectedAt: SymbolLevel::Class_, directPublicationLevels: [SymbolLevel::Namespace_, SymbolLevel::Project]),
+            new MetricDefinition(name: MetricName::SIZE_SYMBOL_CLASS_COUNT, collectedAt: SymbolLevel::Namespace_, directPublicationLevels: [SymbolLevel::Project]),
+            new MetricDefinition(name: MetricName::SIZE_SYMBOL_DECLARING_NAMESPACE_COUNT, collectedAt: SymbolLevel::Project),
+        ];
+        $reachByMetric = array_fill_keys(self::providedMetrics($regularCollectors, $derivedCollectors), MetricReach::Members);
+        // Aggregation writes these metrics directly rather than through a collector.
+        foreach ([MetricName::SIZE_SYMBOL_METHOD_COUNT, MetricName::SIZE_SYMBOL_CLASS_COUNT, MetricName::SIZE_SYMBOL_DECLARING_NAMESPACE_COUNT, MetricName::COMPLEXITY_WMC] as $key) {
+            $reachByMetric[$key] = MetricReach::Members;
+        }
+        foreach ($this->sortedCollectors as $collector) {
+            foreach ($collector->provides() as $key) {
+                $reachByMetric[$key] = MetricReach::Run;
+            }
+        }
+        $this->reachByMetric = $reachByMetric;
+    }
+
+    public function metricReach(string $metricKey): MetricReach
+    {
+        return $this->reachByMetric[MetricName::base($metricKey)]
+            ?? throw new LogicException(\sprintf('Unknown measured metric "%s".', $metricKey));
+    }
+
+    public function all(): array
+    {
+        return $this->allDefinitions;
     }
 
     public function aggregate(MetricRepositoryInterface $repository, DependencyGraphInterface $dependencies): NamespaceTree
     {
         $profiler = $this->profiler;
-        $phaseStartTime = microtime(true);
+        $phaseStartTime = hrtime(true);
         $this->logger->debug('Starting aggregation phase');
         self::start($profiler, 'aggregation');
         $namespaceTree = (new MetricAggregator($this->allDefinitions, $profiler))->aggregate($repository);
         self::stop($profiler, 'aggregation');
         $this->logger->info('Aggregation completed', [
-            'duration' => \sprintf('%.2fs', microtime(true) - $phaseStartTime),
+            'duration' => \sprintf('%.2fs', (hrtime(true) - $phaseStartTime) / 1e9),
         ]);
 
         if ($this->sortedCollectors !== []) {

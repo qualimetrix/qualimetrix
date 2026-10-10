@@ -14,6 +14,16 @@ use Qualimetrix\Reporting\FormatterContext;
 final class FormatterContextTest extends TestCase
 {
     #[Test]
+    public function itPreservesVerboseThroughDetailCopies(): void
+    {
+        self::assertFalse((new FormatterContext())->verbose);
+        $context = new FormatterContext(verbose: true);
+        self::assertSame($context, $context->withDetailLimit(null));
+        self::assertTrue($context->withDetailLimit(5)->verbose);
+        self::assertTrue($context->withDetail(true)->withDetail(false)->verbose);
+    }
+
+    #[Test]
     public function itHasNullDefaultFilterValues(): void
     {
         $context = new FormatterContext();

@@ -10,19 +10,14 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
-use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\AllowListBuilder;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureViolationProjector;
+use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
 
 /**
  * End-to-end test: runs the real {@see AnalysisPipelineInterface} against a
@@ -45,13 +40,10 @@ final class LayerViolationIntegrationTest extends TestCase
     #[Test]
     public function itShortCircuitsToZeroLayerViolationsWhenNoLayersAreDeclared(): void
     {
-        $pipeline = $this->createPipelineWithArchitecture(null);
+        $result = $this->analyze(null);
 
-        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-        $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []));
-
-        $layerViolations = $this->filterByRule($result->findings, LayerViolationRule::NAME);
-        $coverageDiagnostics = $this->filterByRule($result->findings, LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME);
+        $layerViolations = $this->filterByRule($result->findings(), LayerViolationRule::NAME);
+        $coverageDiagnostics = $this->filterByRule($result->findings(), LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME);
 
         self::assertSame([], $layerViolations, 'No layers declared → rule must short-circuit.');
         self::assertSame([], $coverageDiagnostics, 'Empty config → no coverage diagnostic.');
@@ -60,12 +52,9 @@ final class LayerViolationIntegrationTest extends TestCase
     #[Test]
     public function itDetectsAControllerToRepositoryLayerViolation(): void
     {
-        $pipeline = $this->createPipelineWithArchitecture($this->buildPolicy(CoverageMode::Ignore));
+        $result = $this->analyze($this->buildPolicy(CoverageMode::Ignore));
 
-        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-        $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []));
-
-        $layerViolations = $this->filterByRule($result->findings, LayerViolationRule::NAME);
+        $layerViolations = $this->filterByRule($result->findings(), LayerViolationRule::NAME);
         self::assertNotEmpty(
             $layerViolations,
             'Controller depends on Repository — at least one layer-violation expected.',
@@ -79,6 +68,11 @@ final class LayerViolationIntegrationTest extends TestCase
                 'Unexpected violation message: ' . $finding->message,
             );
             self::assertSame(Severity::Warning, $finding->severity);
+            $declaration = $finding->subject->declarationPath();
+            self::assertNotNull($declaration);
+            self::assertSame($finding->symbolPath->toCanonical(), $declaration->logical->toCanonical());
+            self::assertNotNull($finding->location->file);
+            self::assertSame($finding->location->file->value(), $declaration->file->value());
             self::assertNotNull($finding->dependencyTarget);
             self::assertNotNull($finding->dependencyType);
             self::assertStringContainsString(
@@ -103,17 +97,15 @@ final class LayerViolationIntegrationTest extends TestCase
     public function itReportsACoverageDiagnosticInWarnModeWhenOnlyOneLayerIsDeclared(): void
     {
         // Only declare 'controller'; service/repository/domain become out-of-layer
-        $registry = new LayerRegistry([
-            new LayerDefinition('controller', new MembershipSpec(['Fixtures\\Sample\\Controller'])),
-        ]);
-        $policy = AllowListBuilder::policyFromExactMap(['controller' => []]);
-        $architecture = new ArchitectureConfiguration($registry, $policy, CoverageMode::Warn);
+        $architecture = [
+            'layers' => [['name' => 'controller', 'patterns' => ['Fixtures\\Sample\\Controller']]],
+            'allow' => ['controller' => []],
+            'coverage-gap' => 'warn',
+        ];
 
-        $pipeline = $this->createPipelineWithArchitecture($architecture);
-        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-        $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []));
+        $result = $this->analyze($architecture);
 
-        $diagnostics = $this->filterByRule($result->findings, LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME);
+        $diagnostics = $this->filterByRule($result->findings(), LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME);
         self::assertCount(1, $diagnostics, 'Exactly one coverage diagnostic expected in warn mode.');
 
         $diagnostic = $diagnostics[0];
@@ -135,11 +127,9 @@ final class LayerViolationIntegrationTest extends TestCase
     #[Test]
     public function itMatchesTheGoldenFileForTheFullPolicysOutput(): void
     {
-        $pipeline = $this->createPipelineWithArchitecture($this->buildPolicy(CoverageMode::Ignore));
-        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-        $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []));
+        $result = $this->analyze($this->buildPolicy(CoverageMode::Ignore));
 
-        $actual = ArchitectureViolationProjector::project($result->findings);
+        $actual = ArchitectureViolationProjector::project($result->findings());
         $goldenPath = self::FIXTURE_PATH . '/expected-violations.json';
 
         if (getenv('QMX_GOLDEN_UPDATE') === '1') {
@@ -169,56 +159,56 @@ final class LayerViolationIntegrationTest extends TestCase
     #[Test]
     public function itSuppressesTheCoverageDiagnosticInIgnoreModeEvenWithUnmatchedEnds(): void
     {
-        $registry = new LayerRegistry([
-            new LayerDefinition('controller', new MembershipSpec(['Fixtures\\Sample\\Controller'])),
-        ]);
-        $policy = AllowListBuilder::policyFromExactMap(['controller' => []]);
-        $architecture = new ArchitectureConfiguration($registry, $policy, CoverageMode::Ignore);
+        $architecture = [
+            'layers' => [['name' => 'controller', 'patterns' => ['Fixtures\\Sample\\Controller']]],
+            'allow' => ['controller' => []],
+            'coverage-gap' => 'ignore',
+        ];
 
-        $pipeline = $this->createPipelineWithArchitecture($architecture);
-        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-        $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []));
+        $result = $this->analyze($architecture);
 
-        $diagnostics = $this->filterByRule($result->findings, LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME);
+        $diagnostics = $this->filterByRule($result->findings(), LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME);
         self::assertSame([], $diagnostics);
     }
 
-    private function createPipelineWithArchitecture(?ArchitectureConfiguration $architecture): AnalysisPipelineInterface
+    /** @param ?array<string, mixed> $architecture */
+    private function analyze(?array $architecture): \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult
     {
-        $container = (new ContainerFactory())->create();
-
-        $holder = $container->get(ArchitecturePolicyConfiguratorInterface::class);
-        self::assertInstanceOf(ArchitecturePolicy::class, $holder);
-
-        // ADR 0008 §3: bind() is mandatory before prepare(). Empty
-        // configuration mirrors the production flow when the user does
-        // not declare an `architecture:` YAML section.
-        $holder->bind($architecture ?? ArchitectureConfiguration::empty());
-
-        $pipeline = $container->get(AnalysisPipelineInterface::class);
-        self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
-
-        return $pipeline;
+        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
+        $config = ['include_generated' => true];
+        if ($architecture !== null) {
+            $config['architecture'] = $architecture;
+        }
+        $fixture = PreparedAnalysis::start($root, [$root], $config);
+        try {
+            $holder = $fixture->container()->get(ArchitecturePolicyConfiguratorInterface::class);
+            self::assertInstanceOf(ArchitecturePolicy::class, $holder);
+            $pipeline = $fixture->container()->get(AnalysisPipelineInterface::class);
+            self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
+            return $pipeline->analyze($fixture->prepared()->runConfiguration);
+        } finally {
+            $fixture->close();
+        }
     }
 
-    private function buildPolicy(CoverageMode $coverage): ArchitectureConfiguration
+    /** @return array<string, mixed> */
+    private function buildPolicy(CoverageMode $coverage): array
     {
-        $registry = new LayerRegistry([
-            new LayerDefinition('controller', new MembershipSpec(['Fixtures\\Sample\\Controller'])),
-            new LayerDefinition('service', new MembershipSpec(['Fixtures\\Sample\\Service'])),
-            new LayerDefinition('repository', new MembershipSpec(['Fixtures\\Sample\\Repository'])),
-            new LayerDefinition('domain', new MembershipSpec(['Fixtures\\Sample\\Domain'])),
-        ]);
-
-        $policy = AllowListBuilder::policyFromExactMap([
-            // Controllers may use domain DTOs for I/O typing, but not the data access layer.
-            'controller' => ['service', 'domain'],
-            'service' => ['repository', 'domain'],
-            'repository' => ['domain'],
-            'domain' => [],
-        ]);
-
-        return new ArchitectureConfiguration($registry, $policy, $coverage);
+        return [
+            'layers' => [
+                ['name' => 'controller', 'patterns' => ['Fixtures\\Sample\\Controller']],
+                ['name' => 'service', 'patterns' => ['Fixtures\\Sample\\Service']],
+                ['name' => 'repository', 'patterns' => ['Fixtures\\Sample\\Repository']],
+                ['name' => 'domain', 'patterns' => ['Fixtures\\Sample\\Domain']],
+            ],
+            'allow' => [
+                'controller' => ['service', 'domain'],
+                'service' => ['repository', 'domain'],
+                'repository' => ['domain'],
+                'domain' => [],
+            ],
+            'coverage-gap' => $coverage->value,
+        ];
     }
 
     /**

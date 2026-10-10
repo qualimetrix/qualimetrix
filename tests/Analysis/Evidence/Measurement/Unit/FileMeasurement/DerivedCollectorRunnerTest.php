@@ -22,7 +22,6 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -259,6 +258,21 @@ final class DerivedCollectorRunnerTest extends TestCase
         );
     }
 
+    #[Test]
+    public function itRejectsValidCallableRecordsWithDifferentExactOwners(): void
+    {
+        $file = RelativePath::fromString('DerivedCollectorRunnerTest.php');
+        $declaration = DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'run'), $file, DeclarationOrdinal::fromRank(0));
+        $firstOwner = DeclarationPath::of(SymbolPath::forClass('App', 'Service'), $file, DeclarationOrdinal::fromRank(0));
+        $secondOwner = DeclarationPath::of($firstOwner->logical, $file, DeclarationOrdinal::fromRank(1));
+        $first = new CallableWithMetrics($declaration, 10, CallableKind::Method, null, $firstOwner, $firstOwner, new MetricBag());
+        $second = new CallableWithMetrics($declaration, 10, CallableKind::Method, null, $firstOwner, $secondOwner, new MetricBag());
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('Collectors disagree on class owner');
+        (new DerivedCollectorRunner([]))->apply(new MetricBag(), [$this->baseCollector([$first, $second])], $file);
+    }
+
     /**
      * @param list<string> $requires
      * @param list<string> $provides
@@ -349,7 +363,7 @@ final class DerivedCollectorRunnerTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            new LogicalClassPath(SymbolPath::forClass('App', 'Service')),
+            DeclarationPath::of(SymbolPath::forClass('App', 'Service'), DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'run'), $file, DeclarationOrdinal::fromRank($ordinal))->file, DeclarationOrdinal::fromRank(0)),
             MetricBag::fromArray(['raw' => $raw]),
         );
     }

@@ -198,7 +198,7 @@ final readonly class VerdictReport
      *
      * Population agreement alone does not prove that: a directive stays in the
      * population even after the audit gives up on judging it, because it is
-     * reported back as `unmeasured` rather than dropped.
+     * reported back as `unmeasured` or `refused` rather than dropped.
      */
     public function measuredThresholdCount(): int
     {

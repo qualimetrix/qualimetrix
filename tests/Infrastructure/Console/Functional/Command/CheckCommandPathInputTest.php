@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional\Command;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
@@ -58,6 +59,7 @@ final class CheckCommandPathInputTest extends TestCase
     #[Test]
     public function itAcceptsAbsolutePath(): void
     {
+        chdir($this->tempDir);
         $tester = $this->createCommandTester();
         $tester->execute([
             'paths' => [$this->tempDir . '/src'],
@@ -124,6 +126,7 @@ final class CheckCommandPathInputTest extends TestCase
     #[Test]
     public function itAcceptsSymlinkedPath(): void
     {
+        chdir($this->tempDir);
         $link = $this->tempDir . '/link-to-src';
         symlink($this->tempDir . '/src', $link);
 
@@ -142,6 +145,7 @@ final class CheckCommandPathInputTest extends TestCase
     #[Test]
     public function itRejectsNonExistentPath(): void
     {
+        chdir($this->tempDir);
         $tester = $this->createCommandTester();
         $tester->execute([
             'paths' => [$this->tempDir . '/no-such-directory'],
@@ -153,6 +157,140 @@ final class CheckCommandPathInputTest extends TestCase
         self::assertSame(3, $tester->getStatusCode());
         self::assertSame('', $tester->getDisplay());
         self::assertStringContainsString('does not exist', $tester->getErrorOutput());
+    }
+
+    #[Test]
+    public function itAcceptsEverySpellingOfTheProjectRoot(): void
+    {
+        chdir($this->tempDir);
+
+        foreach (['.', './', $this->tempDir] as $path) {
+            $tester = $this->createCommandTester();
+            $tester->execute([
+                'paths' => [$path],
+                '--format' => 'text',
+                '--no-progress' => true,
+                '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
+            ]);
+
+            self::assertSame(0, $tester->getStatusCode(), $path);
+            self::assertStringContainsString('1 file', $tester->getDisplay());
+        }
+
+        file_put_contents($this->tempDir . '/qmx.yaml', "paths: [.]\n");
+        $fromConfig = $this->createCommandTester();
+        $fromConfig->execute([
+            '--format' => 'text',
+            '--no-progress' => true,
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
+        ]);
+        self::assertSame(0, $fromConfig->getStatusCode());
+        self::assertStringContainsString('1 file', $fromConfig->getDisplay());
+
+        unlink($this->tempDir . '/qmx.yaml');
+        $fallback = $this->createCommandTester();
+        $fallback->execute([
+            '--format' => 'text',
+            '--no-progress' => true,
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
+        ]);
+        self::assertSame(0, $fallback->getStatusCode());
+        self::assertStringContainsString('1 file', $fallback->getDisplay());
+    }
+
+    #[Test]
+    public function itRefusesAnExistingCliPathOutsideTheProjectRoot(): void
+    {
+        $outside = $this->tempDir . '-outside';
+        mkdir($outside);
+        file_put_contents($outside . '/Other.php', '<?php class Other {}');
+        chdir($this->tempDir);
+
+        try {
+            $tester = $this->createCommandTester();
+            $tester->execute([
+                'paths' => ['../' . basename($outside)],
+                '--format' => 'json',
+                '--no-progress' => true,
+            ], ['capture_stderr_separately' => true]);
+
+            self::assertSame(3, $tester->getStatusCode());
+            $envelope = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+            self::assertIsArray($envelope);
+            self::assertSame('cli', $envelope['source'][0]['kind']);
+            self::assertStringContainsString($this->tempDir, $envelope['error']);
+            self::assertStringContainsString('--working-dir', $envelope['error']);
+        } finally {
+            unlink($outside . '/Other.php');
+            rmdir($outside);
+        }
+    }
+
+    #[Test]
+    public function itRefusesAnExistingConfiguredPathOutsideTheProjectRoot(): void
+    {
+        $outside = $this->tempDir . '-outside';
+        mkdir($outside);
+        file_put_contents($outside . '/Other.php', '<?php class Other {}');
+        file_put_contents($this->tempDir . '/qmx.yaml', 'paths: ["../' . basename($outside) . '"]' . "\n");
+        chdir($this->tempDir);
+
+        try {
+            $tester = $this->createCommandTester();
+            $tester->execute(['--format' => 'json', '--no-progress' => true], ['capture_stderr_separately' => true]);
+
+            self::assertSame(3, $tester->getStatusCode());
+            $envelope = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+            self::assertIsArray($envelope);
+            self::assertSame('file', $envelope['source'][0]['kind']);
+            self::assertStringContainsString($this->tempDir, $envelope['error']);
+            self::assertStringContainsString('--working-dir', $envelope['error']);
+        } finally {
+            unlink($outside . '/Other.php');
+            rmdir($outside);
+        }
+    }
+
+    /**
+     * The refusal names the layer that wrote the missing path, not the command
+     * line whatever wrote it: a path from `qmx.yaml` or a preset is fixed there.
+     *
+     * @return iterable<string, array{array<string, string>, array<string, mixed>, array{kind: string, name: non-empty-string}}>
+     */
+    public static function provideWritersOfAMissingPath(): iterable
+    {
+        yield 'command line' => [[], ['paths' => ['no-such-directory']], ['kind' => 'cli', 'name' => 'paths']];
+        yield 'configuration file' => [['qmx.yaml' => "paths: [no-such-directory]\n"], [], ['kind' => 'file', 'name' => 'qmx.yaml']];
+        yield 'preset' => [['team.yaml' => "paths: [no-such-directory]\n"], ['--preset' => ['./team.yaml']], ['kind' => 'preset', 'name' => './team.yaml']];
+    }
+
+    /**
+     * @param array<string, string> $files
+     * @param array<string, mixed> $arguments
+     * @param array{kind: string, name: non-empty-string} $source
+     */
+    #[Test]
+    #[DataProvider('provideWritersOfAMissingPath')]
+    public function itNamesTheLayerThatWroteAMissingPath(array $files, array $arguments, array $source): void
+    {
+        foreach ($files as $name => $content) {
+            file_put_contents($this->tempDir . '/' . $name, $content);
+        }
+        chdir($this->tempDir);
+
+        $tester = $this->createCommandTester();
+        $tester->execute($arguments + ['--format' => 'json', '--no-progress' => true], ['capture_stderr_separately' => true]);
+
+        self::assertSame(3, $tester->getStatusCode());
+        $envelope = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($envelope);
+        self::assertIsString($envelope['error']);
+        self::assertStringContainsString('does not exist', $envelope['error']);
+        self::assertIsArray($envelope['source']);
+        self::assertCount(1, $envelope['source']);
+        self::assertSame($source['kind'], $envelope['source'][0]['kind']);
+        // A discovered configuration file is named by its absolute path.
+        self::assertStringEndsWith($source['name'], $envelope['source'][0]['name']);
     }
 
     #[Test]
@@ -173,7 +311,7 @@ final class CheckCommandPathInputTest extends TestCase
         // The refusal envelope is the only stdout document: no report was started.
         $envelope = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertIsArray($envelope);
-        self::assertSame(['error', 'exit_code', 'position'], array_keys($envelope));
+        self::assertSame(['error', 'exit_code', 'position', 'source'], array_keys($envelope));
         self::assertIsString($envelope['error']);
         self::assertStringContainsString('"lib/vendor" is a vendor, node_modules or .git directory', $envelope['error']);
     }

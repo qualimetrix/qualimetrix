@@ -6,9 +6,11 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineChannelRenamer;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader;
 use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameMap;
 use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameRefusal;
 use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameReport;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
@@ -40,6 +42,7 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
 {
     public function __construct(
         private readonly BaselineChannelRenamer $renamer,
+        private readonly BaselineDocumentReader $documentReader,
     ) {
         parent::__construct();
     }
@@ -102,11 +105,11 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
         $baselinePath = CommandLineSpelling::requiredArgument($input, 'baseline');
         $mapPath = CommandLineSpelling::requiredArgument($input, 'map');
 
-        self::assertBaselineReadable($baselinePath);
+        $document = $this->documentReader->preflight($baselinePath);
         self::assertMapReadable($mapPath);
 
         $map = self::loadMap($mapPath);
-        $report = $this->carryBaseline($baselinePath, $map);
+        $report = $this->carryBaseline($document, $map);
 
         ChannelRenameReporter::report($report, $format, $output);
 
@@ -124,17 +127,6 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
         }
 
         return $format;
-    }
-
-    /** @throws ConfigurationRefusal */
-    private static function assertBaselineReadable(string $baselinePath): void
-    {
-        if (!is_file($baselinePath) || !is_readable($baselinePath)) {
-            throw ConfigurationRefusal::aboutBaselineFileDocument(
-                $baselinePath,
-                \sprintf('Not a readable file: %s', $baselinePath),
-            );
-        }
     }
 
     /** @throws ConfigurationRefusal */
@@ -163,19 +155,19 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
     }
 
     /** @throws ConfigurationRefusal */
-    private function carryBaseline(string $baselinePath, ChannelRenameMap $map): ChannelRenameReport
+    private function carryBaseline(BaselineDocument $document, ChannelRenameMap $map): ChannelRenameReport
     {
         // `ChannelRenameRefusal` is a plain `RuntimeException`, but the carry
         // understood the baseline envelope and declined, which is the user's
         // to fix, so it is normalized here rather than left for the shared
-        // ladder's generic `RuntimeException` clause to answer with code 1.
+        // ladder's generic `RuntimeException` clause to classify it as internal.
         // Keep this normalization until `BaselineChannelRenamer` throws the
         // shared carrier directly.
         try {
-            return $this->renamer->carry($baselinePath, $map);
+            return $this->renamer->carry($document, $map);
         } catch (ChannelRenameRefusal $e) {
             throw ConfigurationRefusal::aboutBaselineFileDocument(
-                $baselinePath,
+                $document->path,
                 $e->getMessage(),
                 $e,
             );

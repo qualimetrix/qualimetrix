@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
-use ReflectionClass;
-use ReflectionNamedType;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
@@ -25,7 +25,7 @@ final class CheckCommandDefinition
      *
      * @return list<string> Names of rule-specific options (to be hidden from --help)
      */
-    public static function addOptions(Command $command, RuleRegistryInterface $ruleRegistry): array
+    public static function addOptions(RuleOptionDocumentFormsInterface $documentForms, Command $command, RuleRegistryInterface $ruleRegistry): array
     {
         self::addPresetOptions($command);
         self::addPathArgument($command);
@@ -39,7 +39,7 @@ final class CheckCommandDefinition
         self::addProfileOptions($command);
         self::addFormatterOptions($command);
         self::addHealthOptions($command);
-        $ruleOptionNames = self::addDynamicRuleOptions($command, $ruleRegistry);
+        $ruleOptionNames = self::addDynamicRuleOptions($command, $ruleRegistry, $documentForms);
         self::addGenericRuleOptions($command);
 
         return $ruleOptionNames;
@@ -129,7 +129,7 @@ final class CheckCommandDefinition
                 'fail-on',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Minimum severity to trigger non-zero exit code (none, warning, error). Default: error. Exit codes: 0 = clean, 1 = warnings, 2 = errors, 3 = config/input error',
+                'Minimum severity to trigger non-zero exit code (none, warning, error). Default: error. Exit codes: 0 = clean, 1 = warnings, 2 = errors, 3 = input/configuration/environment refusal, 4 = incomplete analysis, 5 = internal error',
             )
             ->addOption(
                 'namespace',
@@ -241,7 +241,7 @@ final class CheckCommandDefinition
                 'log-file',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Write debug log to file',
+                'Write run log to file (default level: info)',
             )
             ->addOption(
                 'log-level',
@@ -324,9 +324,9 @@ final class CheckCommandDefinition
     /**
      * @return list<string> Names of dynamically registered rule options
      */
-    private static function addDynamicRuleOptions(Command $command, RuleRegistryInterface $ruleRegistry): array
+    private static function addDynamicRuleOptions(Command $command, RuleRegistryInterface $ruleRegistry, RuleOptionDocumentFormsInterface $documentForms): array
     {
-        $booleanAliases = self::detectBooleanAliases($ruleRegistry);
+        $booleanAliases = self::detectBooleanAliases($ruleRegistry, $documentForms);
         $optionNames = [];
 
         foreach ($ruleRegistry->getAllCliAliases() as $alias => $info) {
@@ -355,11 +355,11 @@ final class CheckCommandDefinition
     /**
      * Detects CLI aliases that map to boolean options.
      *
-     * Uses reflection on rule Options classes to find boolean constructor parameters.
+     * Uses the same declared scalar form as the document and CLI reader.
      *
      * @return list<string>
      */
-    private static function detectBooleanAliases(RuleRegistryInterface $ruleRegistry): array
+    private static function detectBooleanAliases(RuleRegistryInterface $ruleRegistry, RuleOptionDocumentFormsInterface $documentForms): array
     {
         $booleanAliases = [];
 
@@ -370,33 +370,16 @@ final class CheckCommandDefinition
             }
 
             $optionsClass = $ruleClass::getOptionsClass();
-            $reflection = new ReflectionClass($optionsClass);
+            $surface = RuleOptionSurface::of($optionsClass);
 
             foreach ($aliases as $alias => $optionName) {
-                if (self::isBooleanOption($reflection, $optionName)) {
+                if (CliRuleOptionAddressing::acceptsText($surface, $optionName, $documentForms) === false) {
                     $booleanAliases[] = $alias;
                 }
             }
         }
 
         return $booleanAliases;
-    }
-
-    /**
-     * @param ReflectionClass<covariant object> $options
-     */
-    private static function isBooleanOption(ReflectionClass $options, string $optionName): bool
-    {
-        // Option name may be nested (e.g., 'callable.warning'), use the leaf
-        $leafName = str_contains($optionName, '.') ? substr($optionName, (int) strrpos($optionName, '.') + 1) : $optionName;
-
-        if (!$options->hasProperty($leafName)) {
-            return false;
-        }
-
-        $type = $options->getProperty($leafName)->getType();
-
-        return $type instanceof ReflectionNamedType && $type->getName() === 'bool';
     }
 
     private static function addHealthOptions(Command $command): void

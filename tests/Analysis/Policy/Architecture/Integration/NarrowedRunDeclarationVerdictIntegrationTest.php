@@ -6,8 +6,10 @@ namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Integration;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -90,16 +92,118 @@ final class NarrowedRunDeclarationVerdictIntegrationTest extends TestCase
         $scope = $this->projectScope($this->check(self::CONFIG, ['src/Web']));
 
         self::assertSame('narrowed', $scope['state'] ?? null);
-        self::assertSame(['src'], $scope['uncoveredAutoloadTargets'] ?? null);
+        self::assertSame(['src/Module/Billing/Domain/Invoice.php', 'src/Shared/Clock.php'], $scope['uncoveredAutoloadTargets'] ?? null);
         self::assertIsList($scope['unjudgedChannels'] ?? null);
         self::assertContains(LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME, $scope['unjudgedChannels']);
         self::assertContains(LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME, $scope['unjudgedChannels']);
+        self::assertContains(ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME, $scope['unjudgedChannels']);
+    }
+
+    #[Test]
+    public function itWarnsOnceWhenAnUnmatchedTypeCannotBeJudged(): void
+    {
+        $yaml = <<<'YAML'
+            architecture:
+              layers:
+                - name: typed
+                  extends: ['Vendor\NoSuchBase']
+                - name: rest
+                  patterns: ['Sample\**']
+              coverage-gap: ignore
+            YAML;
+
+        $tester = $this->check($yaml, ['src/Web']);
+
+        self::assertSame([], $this->findingsOn($tester, ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME));
+        self::assertSame(1, substr_count($tester->getErrorOutput(), 'Architecture unmatched type names were not judged'));
+        self::assertStringContainsString('project scope is narrowed', $tester->getErrorOutput());
+    }
+
+    #[Test]
+    public function itWarnsWhenNoComposerInstallCanJudgeAnUnmatchedType(): void
+    {
+        unlink($this->fixture . '/composer.json');
+        $yaml = <<<'YAML'
+            architecture:
+              layers:
+                - name: typed
+                  extends: ['Vendor\NoSuchBase']
+              coverage-gap: ignore
+            YAML;
+
+        $tester = $this->check($yaml, ['.']);
+
+        self::assertSame([], $this->findingsOn($tester, ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME));
+        self::assertSame(1, substr_count($tester->getErrorOutput(), 'Architecture unmatched type names were not judged'));
+        self::assertStringContainsString('Composer install was not read', $tester->getErrorOutput());
+    }
+
+    /** @param array<string, list<string>> $options */
+    #[Test]
+    #[TestWith([['--only-rule' => ['complexity.ccn']]])]
+    #[TestWith([['--disable-rule' => ['architecture.unmatched-type']]])]
+    #[TestWith([['--disable-rule' => ['architecture.unmatched-type:project']]])]
+    #[TestWith([['--disable-rule' => ['architecture.layer-declaration']]])]
+    #[TestWith([['--disable-rule' => ['architecture.*']]])]
+    public function itDoesNotWarnForAnUnselectedArchitectureChannel(array $options): void
+    {
+        $yaml = <<<'YAML'
+            architecture:
+              layers:
+                - name: typed
+                  extends: ['Vendor\NoSuchBase']
+              coverage-gap: ignore
+            YAML;
+
+        $tester = $this->check($yaml, ['src/Web'], $options);
+
+        self::assertSame([], $this->findingsOn($tester, ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME));
+
+        self::assertStringNotContainsString('Architecture unmatched type names were not judged', $tester->getErrorOutput());
+    }
+
+    #[Test]
+    public function itNamesBothWithheldReasonsInOneWarning(): void
+    {
+        unlink($this->fixture . '/composer.json');
+        $yaml = <<<'YAML'
+            architecture:
+              layers:
+                - name: typed
+                  extends: ['Vendor\NoSuchBase']
+              coverage-gap: ignore
+            YAML;
+
+        $tester = $this->check($yaml, ['src/Web']);
+
+        self::assertSame([], $this->findingsOn($tester, ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME));
+        self::assertSame(1, substr_count($tester->getErrorOutput(), 'Architecture unmatched type names were not judged'));
+        self::assertStringContainsString('project scope is narrowed', $tester->getErrorOutput());
+        self::assertStringContainsString('Composer install was not read', $tester->getErrorOutput());
+    }
+
+    #[Test]
+    public function itDoesNotWarnWithoutAnInstallWhenAllNamedTypesWereMet(): void
+    {
+        unlink($this->fixture . '/composer.json');
+        $yaml = <<<'YAML'
+            architecture:
+              layers:
+                - name: typed
+                  extends: ['Sample\Web\Controller']
+              coverage-gap: ignore
+            YAML;
+
+        $tester = $this->check($yaml, ['.']);
+
+        self::assertSame([], $this->findingsOn($tester, ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME));
+        self::assertStringNotContainsString('Architecture unmatched type names were not judged', $tester->getErrorOutput());
     }
 
     /**
-     * Without a manifest there is no project beyond the paths the user named,
-     * so the paths are judged as the project: a typo in a layer is an error
-     * again, and the document says the scope was taken from the paths.
+     * Without a manifest, an explicitly selected whole root is judged with
+     * unknown scope: a typo in a layer is an error again. A subset would
+     * withhold project-wide judgement.
      */
     #[Test]
     public function itJudgesAProjectWithoutAManifestAgainstTheAnalysedPaths(): void
@@ -107,7 +211,7 @@ final class NarrowedRunDeclarationVerdictIntegrationTest extends TestCase
         unlink($this->fixture . '/composer.json');
         $yaml = str_replace("'Sample\Web\**'", "'Sample\Webb\**'", self::CONFIG);
 
-        $tester = $this->check($yaml, ['src']);
+        $tester = $this->check($yaml, ['.']);
 
         $unreachable = $this->findingsOn($tester, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
         self::assertCount(1, $unreachable);
@@ -136,6 +240,17 @@ final class NarrowedRunDeclarationVerdictIntegrationTest extends TestCase
         self::assertCount(1, $unreachable);
         self::assertStringContainsString('Layer "web"', (string) ($unreachable[0]['message'] ?? ''));
         self::assertCount(1, $this->findingsOn($tester, LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME));
+    }
+
+    #[Test]
+    public function itSuggestsTheObservedSpellingForAnUnreachablePattern(): void
+    {
+        $yaml = str_replace("'Sample\\Web\\**'", "'sample\\web\\**'", self::CONFIG);
+
+        $unreachable = $this->findingsOn($this->check($yaml, ['src']), LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
+
+        self::assertCount(1, $unreachable);
+        self::assertStringContainsString('did you mean "Sample\\Web\\**"', (string) ($unreachable[0]['message'] ?? ''));
     }
 
     /**
@@ -194,8 +309,9 @@ final class NarrowedRunDeclarationVerdictIntegrationTest extends TestCase
 
     /**
      * @param list<string> $paths
+     * @param array<string, list<string>> $options
      */
-    private function check(string $yaml, array $paths): CommandTester
+    private function check(string $yaml, array $paths, array $options = []): CommandTester
     {
         file_put_contents($this->fixture . '/qmx.yaml', $yaml . "\n");
 
@@ -209,13 +325,13 @@ final class NarrowedRunDeclarationVerdictIntegrationTest extends TestCase
 
         try {
             $tester->execute(
-                [
+                [...[
                     'paths' => $paths,
                     '--workers' => '0',
                     '--format' => 'json',
                     '--fail-on' => 'none',
                     '--disable-rule' => ['coupling.*'],
-                ],
+                ], ...$options],
                 ['capture_stderr_separately' => true],
             );
         } finally {

@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\CircularDependency;
 
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -26,15 +27,12 @@ final readonly class CircularDependencyOptions implements RuleOptionsInterface
         public bool $directAsError = true,
     ) {}
 
-    /**
-     * @param array<string, mixed> $config
-     */
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
         return new self(
-            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
-            maxCycleSize: (int) ($config['max_cycle_size'] ?? $config['maxCycleSize'] ?? 0),
-            directAsError: (bool) ($config['direct_as_error'] ?? $config['directAsError'] ?? true),
+            enabled: $config->boolean('enabled', true),
+            maxCycleSize: $config->integer('max-cycle-size', 0),
+            directAsError: $config->boolean('direct-as-error', true),
         );
     }
 
@@ -50,14 +48,9 @@ final readonly class CircularDependencyOptions implements RuleOptionsInterface
      * Medium cycles (6-20 classes): warning
      * Large cycles (21+ classes): warning (too large for error-level urgency)
      */
-    public function getSeverity(int|float $value): ?Severity
+    public function getSeverity(int|float $value): Severity
     {
         $cycleSize = (int) $value;
-
-        // Check if cycle exceeds max size (if configured)
-        if ($this->maxCycleSize > 0 && $cycleSize > $this->maxCycleSize) {
-            return null; // Too large, don't report
-        }
 
         // Direct cycle (A→B→A) is typically more severe
         if ($cycleSize <= 2 && $this->directAsError) {
@@ -73,7 +66,6 @@ final readonly class CircularDependencyOptions implements RuleOptionsInterface
     {
         return RuleOptionKeySet::of([
             'direct-as-error' => RuleOptionShape::boolean()->orNull(),
-            'enabled' => RuleOptionShape::boolean()->orNull(),
             'max-cycle-size' => RuleOptionShape::integer()->orNull(),
         ]);
     }

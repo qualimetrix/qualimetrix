@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance;
 
 use InvalidArgumentException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -13,17 +14,108 @@ use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceOptions;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
+use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
+use Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch;
+use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(InheritanceRule::class)]
 #[CoversClass(InheritanceOptions::class)]
 final class InheritanceRuleTest extends TestCase
 {
+    #[Test]
+    public function itAccountsForWrongLogicalKindsBeforeReadingClassMetrics(): void
+    {
+        $info = self::subjectInfo(SymbolPath::forMethod('App', 'Service', 'run'), RelativePath::fromString('service.php'), 1);
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->expects(self::once())->method('allDeclarations')->willReturn([$info]);
+        $repository->expects(self::never())->method('getSubject');
+        $session = self::populationSession(InheritanceRule::NAME);
+        self::assertSame([], (new InheritanceRule(new InheritanceOptions()))->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
+        self::assertSame(0, $session->freeze()->judgedCount());
+        self::assertSame(1, $session->freeze()->unjudgedCount());
+        self::assertSame('logical-class-kind', $session->freeze()->abstentions()[0]->gate);
+    }
+
+    #[Test]
+    public function itCountsZeroDepthAsJudgedAndKeepsMissingDepthSeparateFromLoopEvidence(): void
+    {
+        $info = self::subjectInfo(SymbolPath::fromClassFqn('App\\RootClass'), RelativePath::fromString('root.php'), 1);
+        foreach ([0, null] as $depth) {
+            $repository = self::createStub(MetricRepositoryInterface::class);
+            $repository->method('allDeclarations')->willReturn([$info]);
+            $repository->method('getSubject')->willReturn($depth === null ? new MetricBag() : MetricBag::fromArray(['design.dit' => $depth]));
+            $logger = new \Qualimetrix\Tests\TestSupport\Logging\Support\RecordingLogger();
+            $session = self::populationSession(InheritanceRule::NAME);
+            self::assertSame([], (new InheritanceRule(new InheritanceOptions(), $logger))->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
+            self::assertSame($depth === null ? 0 : 1, $session->freeze()->judgedCount());
+            self::assertSame($depth === null ? 1 : 0, $session->freeze()->unjudgedCount());
+            if ($depth === null) {
+                self::assertSame('dit-present', $session->freeze()->abstentions()[0]->gate);
+            }
+            self::assertSame([], $logger->records);
+        }
+    }
+
+    /** @return iterable<string, array{list<?int>, bool}> */
+    public static function incompleteCases(): iterable
+    {
+        yield 'floor' => [[5, 6], true];
+        yield 'loop' => [[null, null], true];
+        yield 'mixed' => [[5, null], true];
+        yield 'disabled' => [[5, null], false];
+    }
+
+    /** @param list<?int> $depths */
+    #[Test]
+    #[DataProvider('incompleteCases')]
+    public function itWarnsOncePerEnabledInvocationAndQualifiesFloorFindings(array $depths, bool $enabled): void
+    {
+        $logger = new \Qualimetrix\Tests\TestSupport\Logging\Support\RecordingLogger();
+        $rule = new InheritanceRule(new InheritanceOptions(enabled: $enabled), $logger);
+        $infos = [];
+        $bags = [];
+        foreach ($depths as $i => $depth) {
+            $info = self::subjectInfo(SymbolPath::fromClassFqn('App\\C' . $i), RelativePath::fromString('classes.php'), $i + 1);
+            $infos[] = $info;
+            self::assertNotNull($info->subject);
+            $bag = (new MetricBag())->with('design.dit-unresolved', 1);
+            $bags[$info->subject->toCanonical()] = $depth === null ? $bag : $bag->with('design.dit', $depth);
+        }
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn($infos);
+        $repository->method('getSubject')->willReturnCallback(static fn(MetricSubject $subject): MetricBag => $bags[$subject->toCanonical()]);
+        $findings = $rule->analyze(new AnalysisContext($repository));
+        self::assertCount($enabled ? 1 : 0, $logger->records);
+        self::assertCount($enabled ? \count(array_filter($depths, static fn(?int $depth): bool => $depth !== null)) : 0, $findings);
+        foreach ($findings as $finding) {
+            self::assertStringContainsString('DIT is at least ', $finding->message);
+            self::assertStringContainsString('DIT is at least ', $finding->recommendation ?? '');
+        }
+        if ($enabled) {
+            $message = $logger->records[0]['message'];
+            self::assertSame('warning', $logger->records[0]['level']);
+            self::assertSame(\in_array(null, $depths, true), str_contains($message, 'no numeric DIT'));
+            self::assertSame(\count(array_filter($depths, static fn(?int $depth): bool => $depth !== null)) > 0, str_contains($message, 'lower bounds'));
+        }
+        $rule->analyze(new AnalysisContext($repository));
+        self::assertCount($enabled ? 2 : 0, $logger->records);
+    }
+
     #[Test]
     public function itGetsName(): void
     {
@@ -39,7 +131,7 @@ final class InheritanceRuleTest extends TestCase
 
         self::assertSame(
             'Checks Depth of Inheritance Tree (deep hierarchies increase complexity)',
-            $rule->getDescription(),
+            $rule::getDescription(),
         );
     }
 
@@ -195,11 +287,11 @@ final class InheritanceRuleTest extends TestCase
     #[Test]
     public function itLoadsOptionsFromArray(): void
     {
-        $options = InheritanceOptions::fromArray([
+        $options = InheritanceOptions::fromResolved(ResolvedOptionsFixture::values(InheritanceOptions::class, [
             'enabled' => false,
             'warning' => 4,
             'error' => 6,
-        ]);
+        ]));
 
         self::assertFalse($options->enabled);
         self::assertSame(4, $options->warning);
@@ -207,11 +299,10 @@ final class InheritanceRuleTest extends TestCase
     }
 
     #[Test]
-    public function itDisablesOptionsWhenLoadedFromEmptyArray(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        $options = InheritanceOptions::fromArray([]);
-
-        self::assertFalse($options->enabled);
+        self::assertEquals(new InheritanceOptions(), InheritanceOptions::fromResolved(ResolvedOptionsFixture::values(InheritanceOptions::class, [])));
+        self::assertFalse(InheritanceOptions::fromResolved(ResolvedOptionsFixture::values(InheritanceOptions::class, ['enabled' => false]))->isEnabled());
     }
 
     #[Test]
@@ -258,6 +349,8 @@ final class InheritanceRuleTest extends TestCase
         } else {
             self::assertCount(1, $findings);
             self::assertSame($expectedSeverity, $findings[0]->severity);
+            $selectedThreshold = $expectedSeverity === Severity::Error ? $error : $warning;
+            self::assertStringContainsString(($dit === $selectedThreshold ? 'reaches' : 'exceeds') . ' threshold of', $findings[0]->message);
         }
     }
 
@@ -324,6 +417,14 @@ final class InheritanceRuleTest extends TestCase
         ], $reported);
     }
 
+    private static function populationSession(string $producer, bool $selected = true): PopulationSession
+    {
+        return new PopulationSession((new ChannelPublication(new RuleEnablement([new EnablementDecision(
+            new SelectionCellAddress($producer, new FindingChannel($producer), SymbolLevel::Class_, ChannelSelectionRole::Selectable),
+            new AuthoredCellDecision($selected ? CellSwitch::On : CellSwitch::Off, CellAdmission::Direct),
+        )], null)))->publishes(...));
+    }
+
     private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
     {
         $type = $symbolPath->getType();
@@ -339,6 +440,7 @@ final class InheritanceRuleTest extends TestCase
             $file,
             $line,
             $kind,
+            $kind === \Qualimetrix\Core\Symbol\CallableKind::Method ? \Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forClass($symbolPath->namespace ?? '', $symbolPath->type ?? ''), $file, \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)) : null,
         );
     }
 }

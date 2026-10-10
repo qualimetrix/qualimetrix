@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Finding\Support;
 
 use PHPUnit\Framework\Assert;
+use QmxFindingGate\CaseDefinition;
+use QmxFindingGate\CaseOutcome;
+use QmxFindingGate\Corpus;
 use Qualimetrix\Subprocess\ChildProcess;
 use RuntimeException;
 
 require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
+require_once \dirname(__DIR__, 4) . '/scripts/finding-gate/classes.php';
 
 /**
  * Runs the external corpus in `finding-gate/cases/` and hands back one
@@ -37,42 +41,23 @@ final class CorpusCaseRun
     /**
      * Every corpus case, keyed by its directory.
      *
-     * @return array<string, array<string, mixed>> case directory => case definition
+     * @return array<string, CaseDefinition> case directory => authoritative case
      */
-    public static function cases(): array
+    public static function cases(string $repositoryRoot): array
     {
-        $root = self::repositoryRoot() . '/finding-gate/cases';
-        $directories = glob($root . '/*', \GLOB_ONLYDIR);
-
-        if ($directories === false || $directories === []) {
-            throw new RuntimeException(\sprintf('No corpus cases under %s.', $root));
-        }
-
         $cases = [];
-
-        foreach ($directories as $directory) {
-            $definition = file_get_contents($directory . '/case.json');
-
-            if ($definition === false) {
-                throw new RuntimeException(\sprintf('Corpus case %s has no case.json.', $directory));
-            }
-
-            /** @var array<string, mixed> $decoded */
-            $decoded = json_decode($definition, true, flags: \JSON_THROW_ON_ERROR);
-            $cases[$directory] = $decoded;
+        foreach (Corpus::load($repositoryRoot)->cases as $case) {
+            $cases[$case->directory] = $case;
         }
-
         return $cases;
     }
 
     /**
      * The findings a case emits, from a `--format=json` run.
      *
-     * @param array<string, mixed> $case
-     *
      * @return list<array<string, mixed>>
      */
-    public static function findings(string $directory, array $case): array
+    public static function findings(string $directory, CaseDefinition $case): array
     {
         $report = self::report($directory, $case, 'json');
         $violations = $report['violations'] ?? null;
@@ -95,11 +80,9 @@ final class CorpusCaseRun
      * the raw catalog values, before any rule published one as a finding's
      * magnitude.
      *
-     * @param array<string, mixed> $case
-     *
      * @return list<array<string, mixed>> one entry per symbol: `type`, `name`, `metrics`
      */
-    public static function metrics(string $directory, array $case): array
+    public static function metrics(string $directory, CaseDefinition $case): array
     {
         $report = self::report($directory, $case, 'metrics');
         $symbols = $report['symbols'] ?? null;
@@ -110,50 +93,37 @@ final class CorpusCaseRun
         return array_values($symbols);
     }
 
+    public static function isAnalysis(CaseDefinition $case): bool
+    {
+        return CaseOutcome::of($case, 'candidate') === CaseOutcome::ANALYSIS;
+    }
+
     public static function repositoryRoot(): string
     {
         return \dirname(__DIR__, 4);
     }
 
-    /**
-     * @param array<string, mixed> $case
-     */
-    public static function stringField(array $case, string $field): string
+    /** @return array<string,mixed> */
+    private static function report(string $directory, CaseDefinition $case, string $format): array
     {
-        $value = $case[$field] ?? null;
 
-        if (!\is_string($value)) {
-            throw new RuntimeException(\sprintf('Corpus case is missing the string field "%s".', $field));
+        if (!self::isAnalysis($case)) {
+            throw new RuntimeException('A declared refusal or incomplete case is not a complete channel observation.');
         }
-
-        return $value;
-    }
-
-    /**
-     * @param array<string, mixed> $case
-     *
-     * @return array<string, mixed>
-     */
-    private static function report(string $directory, array $case, string $format): array
-    {
-        /** @var list<string> $paths */
-        $paths = $case['paths'] ?? [];
-        /** @var list<string> $extra */
-        $extra = $case['args'] ?? [];
 
         $command = array_merge(
             [\PHP_BINARY, self::repositoryRoot() . '/bin/qmx', 'check'],
-            $paths,
+            $case->paths,
             [
                 '-c',
-                self::stringField($case, 'config'),
+                $case->config,
                 '--format=' . $format,
                 '--workers=0',
                 '--no-cache',
                 '--no-ansi',
                 '--fail-on=none',
             ],
-            $extra,
+            $case->args,
         );
 
         $result = ChildProcess::run($command, $directory);

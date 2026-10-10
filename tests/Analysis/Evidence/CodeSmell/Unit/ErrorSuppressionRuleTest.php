@@ -28,7 +28,7 @@ final class ErrorSuppressionRuleTest extends TestCase
         $rule = new ErrorSuppressionRule(new ErrorSuppressionOptions());
 
         self::assertSame('code-smell.error-suppression', $rule->getName());
-        self::assertSame('Detects usage of error suppression operator (@)', $rule->getDescription());
+        self::assertSame('Detects usage of error suppression operator (@)', $rule::getDescription());
     }
 
     #[Test]
@@ -186,8 +186,17 @@ final class ErrorSuppressionRuleTest extends TestCase
         $repository->method('get')
             ->willReturn($metricBag);
 
-        $context = new AnalysisContext($repository);
+        $channel = new \Qualimetrix\Analysis\Finding\Contract\FindingChannel(ErrorSuppressionRule::NAME);
+        $publication = new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement([
+            new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(ErrorSuppressionRule::NAME, $channel, SymbolLevel::File, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct)),
+        ], null));
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(($publication)->publishes(...));
+        $context = (new AnalysisContext($repository))->withPopulationTrace($session);
         $findings = $rule->analyze($context);
+        self::assertSame(2, $session->freeze()->judgedCount());
+        self::assertSame(1, $session->freeze()->unjudgedCount());
+        self::assertSame('allowed-extra', $session->freeze()->abstentions()[0]->gate);
+        self::assertSame('occurrence', $session->freeze()->abstentions()[0]->unit);
 
         // fopen is allowed, so only exec and the no-function entry should produce findings
         self::assertCount(2, $findings);

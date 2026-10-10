@@ -29,25 +29,36 @@ Baseline/
 ├── BaselineCapture.php          # VO/factory: baseline plus materialized rejected-group outcomes
 ├── UncapturedGroup.php          # VO: a group that produced no entry, and why
 ├── UncapturedReason.php         # Enum: undeclared / configuration-error channel / no finite magnitude
-├── BaselineLoader.php           # Loads the exact typed-subject version 13 file; envelope failures throw ConfigurationRefusal (Analysis/Configuration)
-├── CanonicalBaselineReader.php  # Reads the canonical one-entry-per-line layout without decoding the whole document, or declines so the loader decodes it
+├── BaselineFileShape.php        # Shared closed document grammar
+├── BaselineExclusionShape.php   # Closed recorded-exclusion grammar and indexed refusals
+├── BaselineEntryShape.php       # Closed raw entry and edge keys before value normalization
+├── GroupAcceptance.php          # Acceptance policy over complete groups
+├── BaselineDocumentReader.php   # Acquires and judges held document bytes before analysis
+├── BaselineLoader.php           # Semantically loads entries from the held version 14 document
+├── CanonicalBaselineReader.php  # Reads the held canonical bytes, or declines to the full-document decoder
+├── CanonicalSubjectReader.php   # Existing canonical subject blocks and entry admission through the reader's line source
+├── CanonicalEnvelope.php        # Pure canonical envelope-line recognition and depth-bounded decoding
 ├── BaselineWriter.php           # Turns a Baseline into the document's fields, and refuses two entries of one identity
 ├── BaselineDocumentLayout.php   # How a baseline document is spelled: one entry per line, float representation pinned
-├── BaselineDocumentWriter.php   # How a baseline file is replaced: sibling lock, compare-and-swap, atomic rename, the snapshot a forced replacement compares; an unusable path throws ConfigurationRefusal
+├── BaselineDocumentWriter.php   # How a baseline file is replaced: sibling lock, compare-and-swap, atomic rename, the snapshot a forced replacement compares; an unusable path throws Core FileTargetFailure
 ├── BaselineEntryOrder.php       # Where an entry sorts among its siblings, computed identically by the writer and the carry
 ├── BaselineEntryPayload.php     # One entry line as the file spells it: the identity and ordering the document alone decides, built from the real types
 ├── RunScope.php                 # VO: a run's analysed paths in the portable form the file records, plus the coverage predicate the scope guard reads
-├── RunRuleCoverage.php          # The rule axis beside RunScope: which entries' channel, at the level of their subject, this invocation did not publish
+├── RunRuleCoverage.php          # Classifies whether an identity's producer did not run or its stored level is no longer declared
+├── RunCoverageGap.php           # Enum: producer/publication coverage gaps
 │
 ├── BaselineUpdater.php          # `baseline:update`: direction-aware monotonic tightening
+├── BaselineEntryTightening.php  # Reconciles one existing entry against the whole ceiling outcome
+├── ExclusionRemovedPopulation.php # Proves that a file identity's own population was newly excluded
+├── NewIdentityAcceptance.php    # Captures complete comparable identities of explicitly selected channels
 ├── BaselineUpdateResult.php     # VO: the updated baseline, one outcome per entry, and whether anything actually changed
 ├── BaselineEntryUpdateOutcome.php # VO: what update did to one entry, and why
-├── BaselineUpdateDisposition.php  # Enum: updated / refused / skipped
+├── BaselineUpdateDisposition.php  # Enum: updated / unchanged / removed / refused / skipped / accepted / re-recorded
 ├── BaselineUpdateRefusalReason.php # Enum: why update refused to tighten an entry
 │
 ├── BaselineCleaner.php          # `baseline:cleanup`: candidate enumeration and selector removal
 ├── BaselineCleanupCandidate.php # VO: one removal candidate — selector, description, reason
-├── BaselineCleanupReason.php    # Enum: stale / producer did not run / channel no longer declared / configuration-error channel / inert
+├── BaselineCleanupReason.php    # Enum: stale / producer did not run / level not declared / channel no longer declared / configuration-error channel / inert
 ├── BaselineCleanupRemoval.php   # VO: what one `--remove` run did — removed/not-found/ambiguous
 │
 ├── BaselineChannelRenamer.php   # `baseline:rename-channels`: carries a raw document onto renamed channels, analysing nothing
@@ -55,16 +66,44 @@ Baseline/
 ├── ChannelRenameReport.php      # VO: what a carry did — entries moved, idle rows, lines this build cannot read
 ├── ChannelRenameRefusal.php     # A carry the product understood and declined; the file is left byte-identical
 │
-├── BoundaryExplanationService.php # `baseline:explain`: builds a BoundaryExplanation from the baseline, qmx.yaml-configured thresholds, and @qmx-threshold annotations
+├── BoundaryExplanationService.php # `baseline:explain`: assembles the explained identities and sources
+├── BoundaryThresholdSources.php # readonly invocation configured and inline thresholds
+├── BoundaryRunFacts.php         # readonly measured findings, coverage and optional symbol locations
+├── CurrentBoundaryMeasurement.php # Projects independent current evidence and the whole ceiling verdict
+├── CurrentAbsentMeasurement.php # Proves file or aggregate absence only for unrecorded identities
+├── IdentityBoundaryExplanation.php # Joins one identity with its configured threshold and annotation
 ├── ExplainedSubject.php         # What the run knows about the explained symbol: its relevant identities, its typed repository index, its exact subject
-├── EffectiveBoundary.php        # VO: one identity's boundary — baseline source, configured threshold, annotation, each independently nullable
-├── EffectiveBoundaryBaselineSource.php # VO: the baseline half of an EffectiveBoundary — the entry's state (inert, mode, unmeasurable members), the accepted level, and what the measured set currently compares against it
+├── EffectiveBoundary.php        # VO: one identity's boundary — mandatory current measurement plus nullable baseline, threshold and annotation
+├── EffectiveBoundaryBaselineSource.php # VO: the baseline half of an EffectiveBoundary — inert state, mode, acceptance and comparison verdict/reason
 ├── BoundaryExplanation.php      # VO: every boundary bearing on one symbol, plus the subject's lines whose identity could not be read — what the command prints
 ├── BoundaryExplanationStatus.php # Current, baseline-only, or unknown symbol classification
 │
-├── Filter/
+├── Ceiling/
 │   ├── BaselineCeilingStage.php # FindingFilterStageInterface: applies entries as ceilings over groups
+│   ├── Absence.php              # Proven absence classification
+│   ├── EntryComparability.php   # Full-group comparison evidence
+│   ├── EntryJudgement.php       # Present-group acceptance
+│   ├── EntryAbsenceProof.php    # Positive evidence and ordered reasons for absent entries
+│   ├── RecordedRootPresence.php # Recorded-root containment and tri-state directory evidence
+│   ├── ExclusionDelta.php       # Changed discovery definition evidence
+│   ├── GroupCapture.php         # Complete finite-vector capture
+│   ├── GroupMeasurement.php     # Declared group measurement
+│   ├── IncomparabilityReason.php # Why a group cannot be compared
+│   ├── Region.php               # File or whole comparison region
+│   ├── SubjectRegion.php        # Exact subject placement
 │   └── GroupCeilingVerdict.php  # VO: accepted / measured breach / reported, for one group
+├── EntryBinding/
+│   ├── UnusedEntryAudit.php     # Streams post-ceiling diagnostic records into the captured publication
+│   ├── UnusedEntryFinding.php   # Stale/inert diagnostic messages and stable occurrence identity
+│   ├── UnusedEntryOptions.php   # Audit enablement
+│   └── UnusedEntryRule.php      # Declared warning channel metadata
+└── Contract/
+    ├── BaselineAuditChannels.php # Audit channel identity
+    ├── BaselineDocument.php     # Immutable bytes and target provenance
+    ├── CurrentMeasurement.php   # Independent explain-now evidence
+    ├── RecordedExclusions.php   # Explicit stored discovery definition
+    ├── RunCoverage.php          # Baseline-specific invocation evidence
+    └── CeilingOutcome.php      # VO: the ceiling result with stale and inert entries from one measured set
 ```
 
 ## Baseline Workflow
@@ -77,8 +116,14 @@ JSON file -> BaselineLoader -> Baseline -> BaselineCeilingStage -> Findings
                                                                     breaches promoted)
 ```
 
+For file and declaration identities, `SubjectRegion` restores the canonical file
+component to its raw path bytes before comparing it with analyzed-file coverage.
+For declarations it removes the terminal occurrence ordinal before decoding,
+so a literal filename ending in `#2` remains distinct from an ordinal suffix.
+
 The stage runs **fourth** in Reporting's finding-projection sequence, after `@qmx-ignore` and the
-`suppress_paths` / `suppress_namespaces` filters and immediately before git scope. That
+`suppress_paths` / `suppress_namespaces` filters; `UnusedEntryAudit` follows ceiling judgement, then optional annotation
+rejoin and Git scope. That
 position is what gives the run a single measured set: suppression is per line while an
 identity spans a file or a class, so a baseline placed first would judge *n* findings
 where capture recorded *n−1*. A consequence worth stating: a hand-written `@qmx-ignore`
@@ -94,6 +139,7 @@ and named in the output. A dropped group is written nowhere, so nothing downstre
 report it otherwise, and "Baseline with 0 entries written" would read as success.
 
 **Version history:**
+- **Version 14**: Required recorded discovery exclusions and closed document grammar
 - **Version 2**: Introduced canonical symbol path keys
 - **Version 3**: Rule naming scheme update (`group.rule-name` format)
 - **Version 4**: 16-char finding hashes (was 8-char in v3)
@@ -113,22 +159,20 @@ identity with another in the same file (ADR 0026) — move when the siblings the
 are counted against change. Such an entry does not become stale: the vacated rank
 is reused, so its acceptance silently rebinds to whatever holds that number now.
 
-Only version 13 is loadable. Versions 5, 10, 11 and 12 are rejected with guidance
-to run a fresh analysis, deliberately map or split accepted entries, review the
-mapping, and write a version 13 baseline. Versions 5, 10 and 11 cannot supply
-exact declaration identity at all; version 12 stores a position from which the
-declaration it meant cannot be recovered, so no converter can exist for it
-either.
+Only version 14 is loadable. For a v13 file, retain entries, scope and generated
+time, change version to 14 and explicitly add the original discovery exclusion
+definition. Do not infer an old definition from new configuration. Earlier formats
+also require deliberate identity migration; regenerating is a new acceptance.
 
 ## Parsing, Capture, and Explanation Boundaries
 
-| Owner                        | Typed input and output                                                                                                                | Responsibility and invariant                                                                                                                                                                                                                                                                                                                                                                                                                        | Focused contract                                         |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| `BaselineEntryParser`        | `parse(string, mixed): BaselineEntry\|InertBaselineEntry`                                                                             | Reads the outer JSON object and exact identity/occurrence/edge, delegates count/magnitudes/mode to `BaselineEntryValues`, validates channel declaration shape, and converts every rejection into a raw-preserving inert entry. Known identities retain their exact v13 selector; unknown identities receive a deterministic raw selector.                                                                                                           | `BaselineEntryParserTest`, `BaselineWorkflowTest`        |
-| `BaselineEntryValues`        | `decode(array): BaselineEntryValues` exposing readonly `count`, `?list<int\|float> magnitudes`, and `?BaselineEntryMode mode`         | Owns only strict JSON value decoding. `count` is required and must be an integer for an occurrence-shaped entry, and is rejected as malformed when it appears (non-null) alongside `magnitudes`; it also rejects non-list/empty/non-numeric magnitudes and unknown modes, with the parser's existing reason/detail. `BaselineEntry` remains the owner of positive count, finite values, and count/list agreement.                                   | `BaselineEntryValuesTest`, `BaselineEntryParserTest`     |
-| `BaselineGenerator`          | `generate(list<Finding>, list<string>): BaselineCapture`                                                                              | Groups once by complete `BaselineIdentity`, preserves first-seen group/refusal order, asks the channel registry only while capturing a group, and reads the injected clock exactly once after grouping. It passes typed rejected records to `BaselineCapture::fromRejectedGroups`, which alone materializes `UncapturedGroup`. Occurrence is identified by the declaration's null direction; magnitude groups require one finite number per member. | `BaselineGeneratorTest`, `BaselineWorkflowTest`          |
-| `ExplainedSubject`           | `identities()`, `index()`, `recordFor()`, `subjectFor()` over baseline, measured findings and an optional `MetricRepositoryInterface` | Answers which identities bear on the requested symbol and which exact subject and location the run measured for it. Builds one typed repository index from declarations, callables, logical classes, and aggregate rows. Measured evidence wins over the repository; a logical projection invents no declaration subject. Static because the answer is a pure function of the run data handed in.                                                   | `BoundaryExplanationServiceTest`, `BaselineWorkflowTest` |
-| `BoundaryExplanationService` | measured findings, threshold maps, optional `MetricRepositoryInterface` -> `BoundaryExplanation`                                      | Turns the identities and subject `ExplainedSubject` resolved into boundaries: status, baseline source, configured threshold and annotation. Annotation matching requires the exact subject and `ThresholdOverride::matches()`; highest control specificity wins, then smallest finite span, then first extraction on a tie. Baseline, configured, and annotation sources stay independently nullable and zero remains a value.                      | `BoundaryExplanationServiceTest`, `BaselineWorkflowTest` |
+| Owner                        | Typed input and output                                                                                                                | Responsibility and invariant                                                                                                                                                                                                                                                                                                                                                                                                                                   | Focused contract                                         |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `BaselineEntryParser`        | `parse(string, mixed): BaselineEntry\|InertBaselineEntry`                                                                             | Reads the outer JSON object and exact identity/occurrence/edge, delegates count/magnitudes/mode to `BaselineEntryValues`, validates channel declaration shape, and demotes known-key semantic/value rejections into raw-preserving inert entries; unknown keys refuse in preflight. Known identities retain their exact selector; unknown identities receive a deterministic raw selector.                                                                     | `BaselineEntryParserTest`, `BaselineWorkflowTest`        |
+| `BaselineEntryValues`        | `decode(array): BaselineEntryValues` exposing readonly `count`, `?list<int\|float> magnitudes`, and `?BaselineEntryMode mode`         | Owns only strict JSON value decoding. `count` is required and must be an integer for an occurrence-shaped entry, and is rejected as malformed when it appears (non-null) alongside `magnitudes`; it also rejects non-list/empty/non-numeric magnitudes and unknown modes, with the parser's existing reason/detail. `BaselineEntry` remains the owner of positive count, finite values, and count/list agreement.                                              | `BaselineEntryValuesTest`, `BaselineEntryParserTest`     |
+| `BaselineGenerator`          | `generate(list<Finding>, list<string>, RecordedExclusions): BaselineCapture`                                                          | Groups once by complete `BaselineIdentity`, preserves first-seen group/refusal order, asks the channel registry only while capturing a group, and reads the injected clock exactly once after grouping. It passes typed rejected records to `BaselineCapture::fromRejectedGroups`, which alone materializes `UncapturedGroup`. Occurrence is identified by the declaration's null direction; magnitude groups require one finite number per member.            | `BaselineGeneratorTest`, `BaselineWorkflowTest`          |
+| `ExplainedSubject`           | `identities()`, `index()`, `recordFor()`, `subjectFor()` over baseline, measured findings and an optional `MetricRepositoryInterface` | Answers which identities bear on the requested symbol and which exact subject and location the run measured for it. Builds one typed repository index from declarations, callables, logical classes, and aggregate rows. Measured evidence wins over the repository; a logical projection invents no declaration subject. Static because the answer is a pure function of the run data handed in.                                                              | `BoundaryExplanationServiceTest`, `BaselineWorkflowTest` |
+| `BoundaryExplanationService` | `BoundaryThresholdSources`, `BoundaryRunFacts` with constructor declarations -> `BoundaryExplanation`                                 | Turns the identities and subject `ExplainedSubject` resolved into boundaries: status, independent CurrentMeasurement, baseline source, configured threshold and annotation. Annotation matching requires the exact subject and `ThresholdOverride::matches()`; highest control specificity wins, then smallest finite span, then first extraction on a tie. Baseline, configured, and annotation sources stay independently nullable and zero remains a value. | `BoundaryExplanationServiceTest`, `BaselineWorkflowTest` |
 
 These owners retain only their subject dependencies: baseline and capture VOs,
 channel declarations and the clock, or repository/subject/path and Finding-owned
@@ -137,65 +181,47 @@ second definition of identity, matching, or precedence.
 
 ## Applying a Baseline: the Ceiling
 
-An entry bounds the **group** of findings sharing its identity, and `BaselineCeilingStage`
-returns one of three verdicts per group:
+Comparison requires complete analysis and compatible evidence for the whole
+identity group. Baseline-owned `RunCoverage` combines current paths, recorded
+paths/exclusions, `AnalysisCoverage`, metadata and subject-region evidence.
+It receives the run's required `SubjectCoverageFacts`; its analyzed-file lookup
+uses that shared index. A missing exact file or declaration becomes stale only
+after a recorded containing root is positively present and exclusions permit
+the proof. This also applies to a run-wide producer whose exact subject file
+has disappeared. Without a current member proving PSR-4 containment, namespace
+absence requires whole-region evidence. For `baseline:explain` without a recorded
+entry, missing-file authority instead needs a captured source root, a selected
+containing root and positive directory presence.
+Exact files can be judged without a complete Composer roster; namespaces and
+run-dependent channels require their wider region. Unknown metadata does not
+mean absence. Equal path sets and exclusion definitions can establish equality
+without a metadata scan; changed definitions require evidence about their delta.
+A project subject always requires whole-region coverage. A complete project-tree snapshot covers only the
+Composer denominator, not every explicitly analyzed path. When path or exclusion
+definitions differ, a whole region remains not-compared unless other evidence
+establishes equality; a namespace needs positive denominator coverage of all
+its roots before a snapshot can establish that its population is unchanged.
 
-| Verdict             | What happens                                                                                                    |
-| ------------------- | --------------------------------------------------------------------------------------------------------------- |
-| **Accepted**        | Every member is removed from the report                                                                         |
-| **Measured breach** | Every member is reported and **promoted to `Severity::Error`**, carrying the `AcceptedLevel` it was accepted at |
-| **Reported**        | Every member is reported at the severity its own rule gave it                                                   |
+A complete comparable missing group is **stale**. An absent unselected producer
+is **unmeasured**; an absent incomparable entry is **outside coverage**. A present
+incomparable group is **not-compared** and keeps its own severity, accepted level
+and reason. Incomplete analysis never establishes acceptance, breach or staleness.
+One nonfinite magnitude makes the entire group's magnitude vector unavailable;
+no finite fragment is compared or captured. Occurrence groups count all members.
+A comparable breach promotes every group member to Error. Suppress mode waives
+quantitative comparison after identity applicability is established.
 
-**Acceptance is cumulative, never rank-paired.** A group is accepted when every current
-magnitude is finite and, for every value `t`, the number of current members at least as
-bad as `t` is no greater than the number of stored members at least as bad as `t` —
-`>=` on a `higher` channel, `<=` on a `lower` one. On an `occurrence` channel there are
-no magnitudes and one level: the group holds no more members than `count`.
-
-Counting rather than pairing is what makes a repair safe. With `[40, 100]` stored for a
-group of two and the member at `40` repaired, a rank comparison from the best end would
-measure the surviving `100` against the vacated `40` and fail the build on code nobody
-touched. The price of counting is recorded rather than hidden: a survivor may grow into a
-slot a repair vacated, bounded above by the worst magnitude already accepted.
-
-**The shape decides, not the value.** A `marker` channel emits a fixed `1.0` and
-`coupling.class-rank` emits a real PageRank score; both are declared `occurrence`, and
-both numbers are ignored by contract.
-
-**An entry that cannot be applied does not suppress — and does not promote.** An
-undeclared channel, a shape mismatch in either direction, a group whose magnitude is
-absent or non-finite, an entry the loader turned inert, a renamed symbol: each reports
-the findings unchanged. None of them is evidence that the debt got worse, so promoting
-on one would fail a build over a stale file.
-
-**A configuration error may not be accepted at all.** A channel declared by a
-`ConfigurationValidatorInterface` — today the five layer-declaration verdicts and the
-three inline-directive errors —
-reports a mistake in the configuration rather than debt in the code, so no entry bounds
-it on any of the five paths: the loader refuses the line
-(`InertEntryReason::ConfigurationErrorChannel`), `generate` does not capture it
-(`UncapturedReason::ConfigurationErrorChannel`), `update` refuses it
-(`BaselineUpdateRefusalReason::ConfigurationErrorChannel`), `cleanup` lists it for
-removal (`BaselineCleanupReason::ChannelIsConfigurationError`), and the ceiling reports
-the group while naming the entry inert. This is stronger than inapplicability: the
-others say *this* entry cannot be applied, this one says none could be. The finding
-also fails the run without consulting `fail_on`.
-
-The invariant has no `mode` exception, so applicability is settled before `mode` is
-read: `mode: suppress` waives the comparison of magnitudes and count, not the question
-of whether the entry bounds that channel at all. An entry naming an undeclared channel
-or disagreeing with its channel's shape does not suppress, whatever its `mode`.
-
-**Both sides of the comparison are normalised.** The stored side is rounded to six
-decimal places by `BaselineEntry`'s constructor and the recomputed side by the same
-`BaselineEntry::normalizeMagnitude()`, which is what earns the comparison's zero
-tolerance.
-
-`judgeAll()` judges a whole list in one pass and returns a `CeilingOutcome` bundling
-the filtered/promoted result together with the stale entries and the entries the
-loader could not apply, as ADR 0017 requires — one call, one measured set, so the three cannot be read
-from different lists by accident. `apply()`, required by `FindingFilterStageInterface`,
-is `judgeAll()->result`.
+`EntryBinding\UnusedEntryAudit` emits `baseline.unused-entry` project-level
+Warnings for stale and inert entries after the full ceiling and before Git
+projection. Inert contenders for one duplicate identity produce one warning
+with their contender count, rather than indistinguishable repeated findings. The rule's remediation estimate is 5 minutes. Audit findings never
+enter the measured set, capture or accept-new; authored path/namespace
+suppression and Git projection cannot hide them. When unselected, stderr reports
+counts only. Uncompared entries likewise produce count diagnostics, not path dumps.
+Nine finding formats publish the audit; Metrics, Health and Suppressed retain
+their own subjects. All twelve preserve the ordinary failure policy: an isolated
+audit warning exits 0 by default, with `--fail-on=error` or `none`, and 1 with
+`--fail-on=warning`. Incomplete analysis has priority and exits 4.
 
 ## The Writing Commands' Domain Services
 
@@ -205,193 +231,108 @@ that call these services (Infrastructure, a later package) own argument
 parsing, the scope-guard refusal message, and writing the result through
 `BaselineWriter`.
 
+### Intentionally excluded empty input
+
+An authored exclusion can remove a written file or directory without an input
+refusal. `analyzed=0`, `failed=0`, `excluded + generatedExcluded > 0` identifies
+a complete intentionally empty result. `baseline:generate` writes an empty file
+and exits 0 with the measured scope explanation on stderr. Update/cleanup retain
+their existing complete-run and recorded-scope checks; `--force` still has only
+its existing meaning. Explain returns 0 after the scope observation without
+claiming the requested subject was remediated. Any incomplete input wins with
+exit 4 before semantic classification or destination mutation.
+
+Full-universe metadata participates in the shared RunCoverage judgement.
+Exclusion or unknown presence is not remediation; unknown/outside entries remain
+retained with an explicit reason.
+
 ### The scope guard
 
-Before the recorded-scope guard is even constructed, `BaselineRun` requires
-the analysis coverage to be complete. A parse or processing failure stops all
-lifecycle commands with the dedicated analysis-failure outcome: no requested
-path is recorded as proven coverage, no baseline is interpreted, no cleanup
-candidate is reported, and no destination is created or mutated. `--force`
-does not override this invariant; it applies only to the narrower recorded-
-scope check below.
+Writing operations retain their recorded-scope preconditions. `--force` may
+bypass the ordinary scope guard, but cannot establish comparability or make
+incomplete evidence acceptable. `--record-exclusions` always requires exact
+recorded paths. Full ceiling judgement precedes report Git scope and hook
+projection; narrow run-dependent channels can therefore become not-compared.
+The ordinary guard also applies to `--accept-new`; `--force` bypasses only that
+guard, never acceptance coverage.
 
-`RunScope` owns both halves of the guard: the **portable form** a run records
-and the **coverage predicate** every reader of that form applies. They are one
-type because they are one rule — while they lived apart, each side derived the
-portable form itself and the two disagreed about the project root.
-
-```php
-$scope = RunScope::record($absolutePaths, $projectRoot);  // what a run writes
-$scope = RunScope::fromRecorded($baseline->scope);        // what a file holds
-$scope->paths();                                          // list<string>
-$scope->covers($baseline->scope);                         // bool
-$scope->uncoveredPaths($baseline->scope);                 // list<string>
-```
-
-`record()` writes each path project-relatively where it can. **A path equal to
-the project root records as `.`**, never as the absolute machine path it sits
-at: a baseline is a tracked file, and `/Users/<you>/...` in one both breaks
-portability between checkouts and violates the repository's own rule on
-absolute home paths (CLAUDE.md §10). A path genuinely *outside* the project
-root has no relative form and is kept as given — the analysed tree really is
-elsewhere.
-
-Coverage is by whole path segment: `src` covers `src/Foo` but neither covers
-nor is covered by `srcfoo` or by `src/Foo` itself. Two paths cover
-unconditionally — `.` (every project-relative path) and `/` (everything).
-
-Both writing commands check the predicate before doing anything else (ADR 0017):
-**the current run's scope must cover the file's recorded `scope`**, overridable
-with `--force`. The hazard is one-directional — a run *narrower* than the
-recorded scope makes every identity outside it look absent, so `cleanup` would
-offer to delete the rest of the file and `update` would silently believe
-nothing changed. A *wider* run is harmless. `check` reports the same mismatch
-and never fails on it.
+`RunCoverage` uses the measured subject index for analyzed paths and memoizes
+exact file and directory answers. The first distinct file lookup remains exact;
+repeated PHP lookups inside the Composer denominator share one complete snapshot
+and path set. Incomplete/unknown inventories, paths outside the denominator and
+built-in omitted directory floors retain exact metadata queries.
 
 ### `BaselineUpdater` — direction-aware monotonic tightening
 
-`BaselineUpdater::update(Baseline $baseline, list<Finding> $measured, RunScope $scope): BaselineUpdateResult`
-reconciles every entry the loaded baseline holds against the run's measured
-set (ADR 0017):
+Ordinary update only tightens existing accepted groups. It preserves recorded
+scope, exclusions, inert payload and modes. Equal acceptance is `unchanged`;
+a no-op does not publish, change generated time or acquire a writer lock.
+Absent or incomparable groups are retained rather than converted into zero.
 
-- an identity **absent from the measured set is left untouched** — a
-  vanished group is `cleanup`'s business, not a reason to rewrite an entry;
-- `update` **never adds an identity** — a measured finding with no existing
-  entry is ignored;
-- a measured group **replaces the stored one exactly when `GroupAcceptance`
-  accepts it against the stored one** — the identical primitive
-  `BaselineCeilingStage` uses at `check` time, never a second definition of
-  "not more permissive". Because the cumulative rule subsumes the count
-  condition (ADR 0017), a magnitude channel needs no separate "count may only
-  shrink" check — the comparison already refuses a group that grew, even
-  when every individual member improved.
+`--accept-new=channel` is repeatable and additive: only new complete comparable
+measured identities of named selected channels are admitted. Existing caps are
+not tightened by this mode. Exact channel admission follows configuration and
+precedes analysis; undeclared, wildcard, level-qualified, configuration-error
+and `baseline.unused-entry` names refuse with exit 3.
 
-Every other measured group is **refused** and its entry is written back
-byte-for-byte unchanged — never partially adjusted, since a partial write
-disguised as a refusal would be an undocumented second acceptance rule.
-`BaselineUpdateResult::$outcomes` names, per entry, one of `Updated`,
-`Refused` (with a `BaselineUpdateRefusalReason`: `UndeclaredChannel`,
-`ConfigurationErrorChannel`, `ShapeMismatch`, `CurrentMagnitudeUnavailable`, `Worsened`,
-`WorsenedUnderSuppression`) or `Skipped`. The last two are the same declined
-comparison: a `mode: suppress` entry is tested like any other — otherwise
-`update` would be a way to widen an acceptance — but calling its refusal
-"worsened" would point a user at a red build that cannot happen, since the
-ceiling never compares that entry's numbers at `check` time. `mode` and
-`Baseline::$inertEntries` are carried forward verbatim; `update` does not read
-either to decide anything.
+`--record-exclusions` requires exactly the recorded paths even with `--force`.
+It records the complete current exclusion definition and recaptures only groups
+whose sole comparison obstacle is the exclusion change, preserving modes.
+Other entries follow ordinary tightening. Unknown delta, changed generated
+policy without sufficient proof, incomplete analysis or unavailable required
+groups refuses the whole write. The options cannot combine.
 
-**`BaselineUpdateResult::$changed`** answers "does the file need rewriting",
-which is a narrower question than `$outcomes` alone can answer: an entry
-whose measured group reports exactly what it already recorded still carries
-the `Updated` disposition, so counting dispositions would rewrite (and move
-`generated` on) a file nothing actually moved in. `update()` computes it by
-comparing each written entry's serialized form against the loaded one as it
-builds the result, so the command that decides whether to call
-`BaselineWriter` reads one field instead of re-deriving the comparison from
-`$baseline->entries` and an ordering invariant of this class.
+An absent `file:` or exact `declaration:` entry can instead be removed as
+`exclusions-removed-population` when its own PHP file is present in a complete
+inventory, the run covers exactly the recorded paths, generated policy is
+unchanged, and the new authored exclusion alone removes that file. Cleanup
+offers the same selector for review. `SubjectRegion::subjectFile()` resolves
+file and declaration provenance, including escaped path bytes and declaration
+ordinals. A source-owned architecture declaration qualifies through its own
+file; an occurrence hash or relation counterpart alone cannot establish the
+proof, and identities without file provenance still refuse. Update prints every named outcome
+before refusing the whole write and never publishes only the successful entries.
 
-**The recorded `scope` is not overwritten by a narrower run.** `update` writes
-the run's own scope only when it covers what the file already records, and
-otherwise keeps the recorded one. The guard above is a per-invocation
-override; if one `--force` over `src/Legacy` also narrowed the file's claim,
-every later narrow run would cover it and the guard would never fire again.
+Normalized accepted payload is preserved for arbitrary human JSON input.
+Exact unchanged entry bytes are guaranteed only for canonical writer-produced
+entries; arbitrary field order and numeric spelling may be normalized.
 
 ### `BaselineCleaner` — candidate enumeration and selector removal
 
-`BaselineCleaner::candidates(Baseline $baseline, list<Finding> $measured, ChannelDeclarationRegistryInterface $declarations, array<string, true> $unmeasuredIdentities): list<BaselineCleanupCandidate>`
-lists every entry `cleanup` would offer to remove — **and changes nothing**.
-A valid entry is offered for `Stale` (absent from the measured set, via
-`Baseline::staleEntries()`), `ProducerDidNotRun`, `ChannelNotDeclared`, or
-`ChannelIsConfigurationError`. `ProducerDidNotRun` is the absent entry whose
-channel this invocation did not publish at the level of the entry's subject —
-`--only-rule`, `--disable-rule` (a level-narrowed `X:namespace` included),
-`enabled: false`, or a level switched off in the rule's options — as answered
-by `RunRuleCoverage`, the rule axis beside `RunScope`'s path axis: such an
-entry is absent because nothing looked, and "nothing reported" would state a
-measurement that was not made. The level is read off the entry's subject key
-by `MetricSubject::levelOfCanonical()`, and the question is put to
-`RuleExecutionInterface::publishesAt()`, which asks both the selection and the
-rule's own level configuration. A subject key no subject is written as is
-refused at load as a malformed, inert entry.
-
-An entry whose channel is no longer declared is reported as
-`ChannelNotDeclared` even when it is also stale, since a channel nothing
-declares can never produce a measured finding and the more permanent cause is
-the more useful answer. `ChannelIsConfigurationError` holds even while the
-finding is still being measured: a channel whose declaration answers
-`isConfigurationError()` may never be accepted by any
-entry, so the entry can only be removed. Every
-`InertBaselineEntry` is offered too, under `Inert`, carrying its own
-`InertEntryReason` — it already has a selector, and the user is entitled to
-delete an unreadable line.
-
-`BaselineCleaner::remove(Baseline $baseline, list<EntrySelector> $selectors): BaselineCleanupRemoval`
-is the only method that writes anything, and only for the selectors it is
-given — **there is no bulk "remove everything listed" form**. ADR 0017's
-cleanup decision rejects the withdrawn `--all-listed` shape: the candidate list is recomputed
-inside the same call that would consume it, so a bulk flag would be
-inference-by-absence wearing a flag). Each selector resolves through the
-selector index the cleaner builds for the call into exactly one of three
-outcomes — `removed`, `notFound`, or `ambiguous` (more than one entry shares
-the selector; neither is removed, since the digest is not a proof of
-uniqueness). A selector addresses the *complete* identity including the
-dependency edge, so it can remove one of two entries differing only by edge
-without touching the other.
+Cleanup lists reviewed removal candidates without writing by default. A stale
+candidate requires complete comparable absence; an unmeasured/outside entry is
+retained and named as such. Unknown channel, undeclared level, malformed payload
+and audit entries are inert. Repeated `--remove=<selector>` removes exactly the
+reviewed entries; no bulk removal infers remediation from missing findings.
+A selector shared only by inert DuplicateIdentity contenders for the same
+identity removes all of those contenders. Other selector collisions remain
+ambiguous and refuse.
+Incomplete analysis exits 4 before classification or mutation.
 
 ## Explaining a Boundary
 
-`BoundaryExplanationService` shares this package's "read-only against the
-measured set" shape: `baseline:explain`
-gives it the loaded baseline, the run's findings, and configuration read
-by its own command (thresholds, annotations), and it answers with one
-`EffectiveBoundary` per relevant identity — never touching a file itself.
-Which identities those are, and which exact subject each is about, is
-`ExplainedSubject`'s question: resolving the subject and explaining its
-boundary are two jobs, and `explain()` asks the first before doing the
-second.
+`BoundaryExplanationService` answers one `EffectiveBoundary` per identity.
+Channel declarations are constructor dependencies. `BoundaryThresholdSources`
+retains the invocation's configured and inline threshold arrays;
+`BoundaryRunFacts` retains measured findings, coverage and optional repository
+locations. These readonly carriers are invocation evidence and are excluded
+from the service prototype.
+Its mandatory `Contract\CurrentMeasurement now` is independent of its nullable
+baseline source, configured threshold and inline override. No baseline or an
+inert entry can still have a current measured group. Known valid entries read
+one full `CeilingOutcome`; stored acceptance does not cause a second absence
+classification or synthetic baseline.
 
-The explanation also classifies the requested symbol explicitly. `Current`
-means the run measured the symbol (whether or not a rule currently fires),
-`BaselineOnly` means only the baseline still names it, and `Unknown` means
-neither source does. The command rejects `Unknown` as input instead of
-presenting a misspelling as a clean symbol; `BaselineOnly` remains explainable
-and is labelled as absent from the current scope or result.
-
-It also takes the run's `MetricRepositoryInterface` (optional, last argument)
-as exact typed-subject evidence for symbols with no current finding. Current
-findings take precedence by canonical subject alone: a different semantic
-occurrence or dependency edge does not change annotation ownership. The
-repository then supplies the exact declaration/callable subject when needed;
-logical and aggregate projections may prove that a subject is current but do
-not invent a declaration subject. Without either exact source, annotation is
-reported absent rather than guessed.
-
-**The baseline source carries the entry's state, not only its numbers.** A
-pair of numbers alone reads as a verdict, and three states make the ceiling
-reach a different one, so each is carried as the fact the ceiling reads
-rather than left for the reader to infer from an absence:
-
-- an entry the loader turned inert but whose identity it read is a boundary
-  source of its own (`EffectiveBoundaryBaselineSource::$inert`), printed as
-  present but not applied, with the reason `check` names — never as "(none)".
-  A line whose identity could not be read at all has no boundary and is listed
-  beside them (`BoundaryExplanation::$unidentifiedEntries`);
-- `mode: suppress` travels with the level, because it waives the comparison
-  the pair of numbers invites;
-- a magnitude group member with no finite value is counted
-  (`$membersWithoutMagnitude`) rather than dropped, because the ceiling reports
-  such a group instead of comparing it. The members that do measure are still
-  listed — this is a report, not a re-judgement of acceptance.
-
-**An identity with an occurrence names it, and where its findings sit now.**
-Several identities of one channel and subject can differ only in an
-occurrence hash — every copy of a duplicate block is one under the project
-subject — and their sections would otherwise read the same.
-`EffectiveBoundary::$currentLocations` carries the `file:line` of each current
-finding in the identity's group, and `baseline:explain` prints it beside the
-occurrence. An entry nothing reports any more has no current location: its
-occurrence hash is all the baseline stores, so `baseline:explain`,
-`baseline:cleanup` and the stale-entry list can name no file for it.
+The renderer prints separate baseline and now lines. Current states are
+`reported`, `nothing-reported`, `not-measured`, `outside-coverage`,
+`not-compared` and `level-not-reported`. Undeclared subject levels are identified
+before coverage classification, with the currently declared levels. Current
+channel declarations determine shape; an inert payload does not. Unknown
+channels retain an unknown shape. A nonfinite magnitude group retains its total
+count and count without a finite magnitude, but no partial magnitude vector.
+Accepted caps, suppress mode and inert reason remain on the baseline source.
+Unreadable identities are listed separately. Exact subject/repository evidence
+continues to own annotation binding; logical identity never invents a declaration.
 
 ## Entry Identity
 
@@ -418,7 +359,7 @@ user copies rather than composes it. `<symbol>#<channel>` cannot serve: `#` alre
 separates the two halves of a channel key, and two forbidden edges out of one class on
 one channel agree on everything else.
 
-## File Contract (version 13)
+## File Contract (version 14)
 
 The file is one JSON document, written in a canonical layout: **one entry per
 line**, two-space indentation, a subject key on the line above the entries it
@@ -426,9 +367,10 @@ owns.
 
 ```json
 {
-  "version": 13,
+  "version": 14,
   "generated": "2026-08-05T12:00:00+03:00",
   "scope": ["src"],
+  "exclusions": {"patterns": [], "generated": "excluded"},
   "entries": {
     "declaration:callable:App\\OrderService::calculate@src/OrderService.php": [
       {"channel":"complexity.ccn","occurrence":"bd41b8a3f6cad9e1","magnitudes":[25]}
@@ -454,12 +396,13 @@ magnitude list's length), and the semantic `occurrence` key is 16 hex
 characters instead of 64 (its discrimination domain is one (subject, channel)
 pair, not the whole file).
 
-| Field       | Contract                                                      |
-| ----------- | ------------------------------------------------------------- |
-| `version`   | Exactly `13`                                                  |
-| `generated` | ISO 8601, from an injected clock (`Core\Time\ClockInterface`) |
-| `scope`     | The analysed path set that produced this file, normalized     |
-| `entries`   | Canonical symbol keys → deterministic entry lists             |
+| Field        | Contract                                                                                                                          |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| `version`    | Exactly `14`                                                                                                                      |
+| `generated`  | ISO 8601, from an injected clock (`Core\Time\ClockInterface`)                                                                     |
+| `exclusions` | Required `{patterns, generated}`; explicit `exact:`, `subtree:` or `regex:` selectors, and `included`/`excluded` generated policy |
+| `scope`      | The analysed path set that produced this file, normalized                                                                         |
+| `entries`    | Canonical symbol keys → deterministic entry lists                                                                                 |
 
 Entry invariants:
 
@@ -510,35 +453,40 @@ error, a shape mismatch in either direction, an unrecognized `mode`, a component
 carrying the identity key separator, or a duplicated identity makes an entry **inert**: it does not
 suppress, and it does not fail the load — refusing to load would punish a whole run
 for one bad line. An inert entry keeps its symbol, channel, selector and reason for
-reporting, and its raw payload so a rewrite preserves the line verbatim.
+reporting, and its raw payload so a rewrite preserves its normalized contents.
+A malformed subject bucket written as a JSON object retains that object container
+when another subject is updated. A valid entry cannot share its portable subject
+with that whole-bucket payload: the writer refuses before replacing the file.
+Review and remove the malformed bucket with `baseline:cleanup --remove=<selector>`
+before admitting an entry at the same subject. Updates to other subjects remain
+available.
 
 ### Reads
 
-Two paths, one meaning. A file in the canonical layout is read by
-`CanonicalBaselineReader` a line at a time, so no entry is held in decoded form
-beyond the line it came from; the content hash is accumulated over the raw bytes
-as they go past. Any other layout — including a canonical file someone
-reformatted — is decoded whole by `BaselineLoader` instead.
+`BaselineDocumentReader::preflight()` physically acquires one immutable
+`Contract\BaselineDocument` before analysis for check, update, cleanup, explain
+and rename-channels. `BaselineFileShape` judges closed document grammar, including
+unknown envelope, entry, edge and exclusion keys, before configured semantics.
+`load(document)` resolves channel and level semantics against the configured run.
+The canonical recognizer scans held bytes line by line; a declined layout uses
+full-document decoding over those same bytes. No second path acquisition or
+alternate grammar is introduced. The snapshot's target and content hash remain
+the publication/CAS provenance.
 
-The line reader is a **recogniser, not a second parser**. Every shape it does not
-recognise it declines, and the whole-document path answers instead; it never
-interprets, never repairs, and never throws on layout. That asymmetry is what
-makes it safe to rely on: a shape wrongly declined costs one full decode, while a
-shape wrongly accepted would mean reading a file as something it is not. A
-repeated subject key is declined for that reason — `json_decode` keeps the last
-of two identical object keys, and a streaming reader that kept both would apply
-ceilings the other path discards.
+Repeated member names refuse only at the envelope and subject-key levels of a
+fully recognized canonical layout, where the existing reader observes decoded
+names. Entry objects and noncanonical fallback use native `json_decode`, which
+keeps the last repeated member; duplicate detection is not promised there. A
+canonical prefix followed by a declined layout retains the same fallback limit.
 
-Beyond that split the two paths share everything: the same entry parser, the same
-envelope checks in the same order, the same duplicate demotion. Which path read
-the bytes is not observable in what the caller gets, whether that is a baseline or
-a refusal.
-
-What this does **not** buy is a `Baseline` that holds less: it still materializes
-every entry, because the ceiling stage asks it for stale entries, which are only
-computable against the whole set. Reading a 23 MB, 100 000-entry file peaks at
-2 MB in the scan itself against 131 MB for the decoded document — the saving is in
-how the file is turned into entries, not in what is kept afterwards.
+A single local measurement on identical 185,517-entry inputs compared the old
+load(path) with preflight(path) plus configured load(document). Canonical input
+changed from 1.302083 to 1.443789 seconds and peak memory from 181,452,800 to
+205,586,432 bytes: 24,133,632 additional bytes, roughly 23 MiB of retained raw
+content. Pretty input changed from 45.362897 to 90.528244 seconds with the same
+436,125,696-byte peak. These are single samples, not statistical or portable
+performance promises. Acquisition happens once; grammar and semantic validation
+still walk the retained document separately in memory.
 
 ### Writes
 
@@ -549,7 +497,17 @@ the same document without ever building a `Baseline`, and a second spelling of e
 half would show up as an unexplained diff in a user's baseline rather than as a
 failing test. `BaselineEntryOrder` is shared for the same reason.
 
-`BaselineDocumentWriter` writes to a temporary file and renames. A sibling `<baseline>.lock`
+Generate, update and writing cleanup prepare a private sibling before measuring
+the project. Existing final bytes remain untouched and a new final name remains
+absent until publication. No-op update/cleanup discard the sibling without
+changing the final bytes or inode. Console scopes SIGINT/SIGTERM cleanup to the
+operation when pcntl and exclusive handler ownership are available. Otherwise
+ordinary staged publication proceeds without replacing foreign handlers;
+interruption may leave the private sibling. Replacing handlers during a guarded
+operation is unsupported. Cleanup also does not cover SIGKILL, cleanup failure
+or a target already published.
+
+`BaselineDocumentWriter` publishes the complete sibling atomically. A sibling `<baseline>.lock`
 file (worth adding to `.gitignore`) holds an exclusive lock across both the
 content-hash check and the rename, so a read-modify-write cannot silently discard a
 concurrent writer: a `Baseline` loaded from a file carries that file's content hash,
@@ -560,21 +518,23 @@ check. The provenance is a property of the guard, never a field of the file.
 `write()` returns the token for the bytes it wrote, and
 `Baseline::withSourceContentHash()` carries it back — without which a caller writing one
 instance twice would be refused by its own first write.
-A caller that replaces a file it never loaded — `baseline:generate --force` — takes the
-token from `BaselineWriter::destinationSnapshot()` before the analysis; a destination
-that is not a regular file (a directory, a symbolic link) or cannot be read has no token
-the guard could compare, and is refused there as input rather than after the run.
+`BaselineWriter::destinationSnapshot()` returns `{target: ResolvedTarget, hash:
+?string}` before analysis, including an explicitly absent target. Pass that target
+as the second argument of `write()`; the writer does not resolve an independent
+string again. Existing targets must be readable and claimable without truncation.
+The parent directory must already exist and permit sibling publication: create it
+before invoking the command. Replacement preserves an existing file's mode.
+Closed symbolic links retain their own entry and publish their resolved referent;
+exposed links refuse through Core. An occupied name still needs `--force` when
+generating, including a dangling link. Update and cleanup keep the loaded content
+hash as their compare-and-swap expectation.
 
-The wait for the lock is bounded (10 seconds by default): a crashed writer releases
-through the OS, but a hung one would otherwise stop the next `qmx` invocation with no
-output at all, which in CI reads as a job timeout rather than a baseline problem.
-
-A path that cannot be written — a directory that cannot be created, a lock file that
-cannot be opened, a temporary file that cannot be written, a target the rename cannot
-replace — is refused as the baseline file with `ConfigurationRefusal` (exit code 3),
-quoting the reason the system gave. The filesystem call's own PHP warning is kept out of
-the output. A lock held past the wait stays a `RuntimeException`: it is contention, not
-input.
+The sibling lock is held across the identity/content check and publication. Its
+wait is bounded (10 seconds by default) with monotonic `hrtime`, and its named
+entry is retained after release. FileTarget failures preserve the requested path
+and available system cause without printing PHP warnings; Console classifies
+storage and lock contention as environment exit 3. Configuration refusal remains
+the loader's response to an invalid document.
 
 **Every entry read is an entry written.** The writer never groups entries under a key two
 of them can share, because resolving such a clash by overwriting would delete a line
@@ -584,56 +544,15 @@ than merged.
 
 ### Carrying a baseline onto renamed channels
 
-`baseline:rename-channels` substitutes the `channel` field of the entries a declared
-map names. It **runs no analysis**, and it works on the raw decoded document rather
-than on a loaded `Baseline`.
-
-Both are load-bearing. A rename cannot recompute `occurrence`, which is frozen against
-the channel name and is not derivable from a baseline at all — so a carry that measured
-would be recomputing identities against a tree that is not the one the entries were
-accepted against. And a load-rewrite-save cycle would be lossy in exactly the case that
-matters: the loader demotes a line it cannot apply to an `InertBaselineEntry` keyed by
-*this* build's declarations, so carrying a file written for another build through it
-would quietly reshape lines nobody decided to touch.
-
-What a carry changes is therefore exactly: the value of a named `channel`, the position
-of an entry among its siblings when the new name sorts differently, and the order of
-subject keys if the file was not already canonical. Everything else — subject keys,
-`occurrence`, `count`, `magnitudes`, `mode`, `edge`, `scope`, `generated`, and any
-envelope field this build does not know — is carried through untouched.
-
-Reading raw is not a licence to hold a private opinion of what a baseline is, so three
-owners decide what a carried file is and the carry is only one of them:
-
-- **`BaselineLoader` owns what a document is.** The carry refuses exactly the
-  document-level defects it refuses — invalid JSON, a root that is not an object, a
-  version this build does not hold, a missing `entries` object, an unreadable `generated`
-  or `scope` — so a carry cannot write an envelope this build's `check` then declines to
-  load. `generated` and `scope` ask the loader's own checks directly
-  (`BaselineLoader::parseGenerated()`/`parseScope()`); JSON validity, root-object shape,
-  version and the `entries` object are a second, independently written set of checks that
-  agrees with the loader's verdict today but is not the same code path — a future change
-  to the loader's rules there needs its counterpart here updated by hand. What the loader
-  merely demotes, the carry merely counts: a subject whose entries are not a JSON array
-  becomes the same single unreadable line the loader makes of it, and the writer puts
-  that line back as a one-element block.
-- **`BaselineWriter` owns what a file looks like** — block shape and line order, through
-  the shared `BaselineDocumentLayout` and `BaselineEntryOrder`.
-- **The file owns each line's bytes.** A payload is echoed in the field order it was
-  decoded in; a later command that loads and rewrites the file may re-render such a line
-  in place, but will not move it.
-
-One guard is the carry's own: the writer's refusal of two entries collapsing onto one
-identity is bypassed by the raw path, so the carry checks the *resulting* set itself,
-before it writes. It refuses only a collision the carry would create — measured by
-whether the lines now sharing a key were distinct beforehand, not by counting entries
-under a key, because a rename moves the key itself. A pair the file already held is
-carried, including when it stands on the renamed channel.
-
-A new name is validated for *form* only, never against the channel registry: the carry
-is released before the renames it exists to perform, so an entry it writes is normally
-on a name this build has never heard of, and `check` reporting it as inapplicable until
-the naming release lands is the intended intermediate state.
+`baseline:rename-channels` runs no analysis and does not build a loaded Baseline.
+It substitutes named channel values, preserves subject, occurrence, count,
+magnitudes, mode, edge, scope, exclusions and generated payload, and uses the
+shared `BaselineDocumentLayout`/`BaselineEntryOrder`. Unknown keys refuse through
+the same closed `BaselineFileShape` grammar; known unusable entry values remain
+carried and counted. Formatting is rendered, not promised byte-for-byte for
+arbitrary human input. A newly created identity collision refuses the write;
+pre-existing duplicates are retained. No renamed entries means no publication.
+New channel names are validated for form, not current registry membership.
 
 ## Related Documents
 
@@ -646,3 +565,17 @@ the naming release lands is the intended intermediate state.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+### Byte-named entries
+
+Canonical subject components escape literal `%` as `%25`, invalid bytes as
+`%XX`, and reserved declaration-file `#` as `%23`. These identities remain
+byte-distinct. Old entries for affected paths can become unmatched after an
+upgrade: review and migrate only those entries, without regenerating the
+baseline wholesale.
+
+Scope and exclusion selectors still carry raw input facts. A baseline whose
+scope or selector is not UTF-8 refuses with a native encoding reason; these
+fields cannot be renamed without changing their comparisons. Analyse a
+containing UTF-8 directory to record a byte-named entry. Raw-byte JSON
+selectors remain unsupported.

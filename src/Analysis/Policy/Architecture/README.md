@@ -1,7 +1,7 @@
 # Architecture policy
 
-`Analysis\\Policy\\Architecture` owns declared-layer policy: YAML contribution
-parsing, layer membership preparation, diagnostics, and
+`Analysis\\Policy\\Architecture` owns declared-layer policy: the `architecture:`
+configuration section, layer membership preparation, diagnostics, and
 `architecture.layer-violation`. It is a leaf capability, not the old combined
 Architecture vertical slice; circular-dependency evidence is owned separately
 by [`Analysis\\Evidence\\CircularDependency`](../../Evidence/CircularDependency/README.md).
@@ -14,52 +14,153 @@ External owners use only the contracts in `Contract/`:
   immutable `ConfigurationDocument` and returns configuration
   warnings after the Console logger is available.
 - `LayerPolicyPreparationInterface` is the Run-owned sequential preparation
-  boundary. Disabling the rule clears state and does no class-universe or
-  template-expansion work. It also carries the literal names of the diagnostic
-  channels the producer emits under rule names other than its own — three from
-  the rules (`unassigned-class`, `unmatched-exclude`, `doubted-assignment`),
-  five from its configuration validator — and the project-scoped
-  subset of them.
-- `LayerAssignmentInspectorInterface`, `LayerAssignment`, and
-  `LayerAssignmentMatch` form the Console debug projection.
+  boundary. When no layer-policy producer runs, it clears state and does no
+  class-universe or template-expansion work.
+- `ArchitectureChannels` owns the literal channel names, the three preparation
+  producer names, and their project-scoped subset; it carries no lifecycle.
+- `UnassignedClassLayerRequirementInterface` judges completed Finding options and
+  enablement before Console discovers files. Its implementation and mode semantics
+  stay in `UnassignedClass/`.
+- `UnmatchedTypeWarningInterface` answers Run's post-execution query with one
+  nullable explanation when authored layer types could not be judged. Run asks
+  only after final publication selects the exact unmatched-type project channel.
+- `ShadowExemption` names established first-match exemptions for inspection.
+- `LayerAssignmentInspectorInterface`, `LayerAssignment`,
+  `LayerAssignmentMatch`, and `LayerAssignmentShadowVerdict` form the Console
+  debug projection. The assignment carries the observed declaration spelling,
+  edge-end-only provenance, final policy enablement, and typed shadow
+  exemptions without a Console-owned array contract.
+- `ExternalSupertypeSourceInterface` and `ExternalSupertypes` expose source
+  facts from the analysed Composer install: exact placement and declaration
+  spelling, declaration kind, parent, interfaces, traits, direct
+  `__toString`, and a direct trait alias to `__toString`.
 - Configuration and preparation failures are surfaced as
-  `Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal`,
-  built through its `atResolvedKey()`/`aboutResolvedInput()` shorthands, which
-  address `ConfigurationSource::Resolved` because Architecture validates the
-  already-merged document and cannot attribute a rejected value back to one
-  file or CLI option. The two capability-owned exception classes this
-  replaced are retired and kept only until a later cleanup removes them and
-  their remaining Console-side callers.
+  `Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal`.
+  A configuration refusal names the layer that wrote the refused value —
+  through the resolved node it was read from, see below. Template expansion
+  (`Layer/Expansion/`) still refuses through `atResolvedKey()`, addressing
+  `ConfigurationSource::Resolved`: it judges the expanded layers at
+  preparation time, after the document's provenance is no longer at hand.
+  The two capability-owned exception classes this replaced are retired and
+  kept only until a later cleanup removes them and their remaining
+  Console-side callers.
 
 The concrete `ArchitecturePolicy` owns configured and prepared state for one
-run. It resets before a new configuration and before disabled preparation; no
+run. `replace()` installs the resolved policy. Every assignment inspection
+prepares the supplied graph and class universe afresh, including its observed
+name index, so a repeated call cannot retain names from an earlier project.
+It resets before a new configuration and before disabled preparation; no
 policy state enters the worker or cache payload.
+
+The declaration-evidence, producer-selection and consumer migration decisions
+are recorded in [ADR 0103](../../../../docs/adr/0103-layer-policy-declaration-evidence-and-selection.md).
+Debug shadow verdicts are mandatory typed projections of the same authority;
+disabled policy output retains observed spelling without claiming a reported
+shadow or publishing a diagnostic hint.
 
 ## Layout
 
 ```text
 Architecture/
 ├── Contract/                  # exact external promises and debug values
-├── Configuration/              # contributed `architecture:` document parser
+│   ├── ExternalSupertypeSourceInterface.php
+│   ├── ExternalSupertypes.php
+│   ├── LayerAssignment.php
+│   ├── LayerAssignmentInspectorInterface.php
+│   ├── LayerAssignmentMatch.php
+│   ├── LayerAssignmentShadowVerdict.php
+│   ├── ShadowExemption.php
+│   ├── UnassignedClassLayerRequirementInterface.php
+│   └── UnmatchedTypeWarningInterface.php
+├── Configuration/              # the `architecture:` section: its schema and validators
 │   └── Allow/                  # allow selectors and binding values
 ├── Layer/                      # membership, capture-pattern compilation, and registry primitives
+│   ├── ClassContext/           # one run's declaration relations, ancestry and observed names
+│   │   ├── Ancestry.php
+│   │   ├── ClassContext.php
+│   │   ├── ClassContextFactory.php
+│   │   ├── DeclarationRelationIndex.php
+│   │   ├── DeclarationRelations.php
+│   │   ├── ImplicitStringability.php
+│   │   ├── KnownTypes.php
+│   │   └── NameSpellingIndex.php
+│   ├── LayerShadowVerdict.php
+│   ├── UnmatchedTypeOccurrence.php
+│   ├── UnmatchedTypeJudgement.php
 │   └── Expansion/              # observed-template expansion
-├── LayerViolation/             # two rules, declaration validator
-│   └── Observation/            # the shared walk and the evidence it records
+├── LayerAssignment/
+│   └── LayerAssignmentProjection.php # prepared assignment facts for the public debug value
+├── Observation/                # class/edge walks, evidence tally and bounded samples
+├── LayerViolation/             # forbidden dependency edges and routing guidance
+├── LayerDeclaration/           # declaration diagnostics and configuration validator
+│   ├── LayerOverlapDiagnostic.php
+│   └── UnmatchedTypeDiagnostic.php
+├── UnassignedClass/            # analysed-class assignment summary and mode
+│   └── UnassignedClassLayerRequirement.php
 └── ArchitecturePolicy.php      # instance-owned configuration/preparation
 ```
 
-`Configuration/`, `Layer/`, `Layer/Expansion/`, `LayerViolation/` (with its
-`Observation/`), and the policy coordinator are internal zones of one leaf. The
+`Configuration/`, `Layer/`, `Layer/ClassContext/`, `Layer/Expansion/`,
+`LayerAssignment/`, `Observation/`,
+`LayerViolation/`, `LayerDeclaration/`, `UnassignedClass/`, and the policy coordinator are internal zones of one leaf. The
 manifest-backed Architecture topology test enforces their exact DAG; sibling
 internals are not a public API. The generated qmx projection enforces the leaf owner boundary.
 
 ## Configuration and lifecycle
 
-`ConfigurationDocument` preserves ordered source contributions.
-`ArchitecturePolicy` alone merges its `architecture` contributions and turns
-them into typed policy configuration. The central Configuration merger has no
-Architecture-specific branch or deferred-warning transport.
+`ArchitectureSection` declares the `architecture:` section to the
+configuration document engine (`DocumentSectionSchemaInterface::declaration()`),
+returning an atomic `SectionDeclaration`: its keys at every level, the form of each value and how the configuration layers that
+wrote it merge. The engine recognises and shapes every layer before merging,
+so a misspelt key — in the section, a `layers[i]` entry or its `exclude:` — is
+refused with its writer and spelling whatever its value, `~` included. The
+same policies are published, generated from `ArchitectureSection`, in the table
+of `website/docs/getting-started/configuration.md`; the decision is
+[ADR 0086](../../../../docs/adr/0086-one-configuration-document-merged-by-declared-policy.md).
+
+| Node                                  | Merge                                                                 |
+| ------------------------------------- | --------------------------------------------------------------------- |
+| `layers`                              | the last layer that writes it replaces the whole list                 |
+| `allow`                               | merged by source layer name; one name's target list is replaced whole |
+| `coverage-gap`, `max_expanded_layers` | the last layer that writes it wins                                    |
+
+`~` anywhere is "not written": the lower layer's value stands, and a key no
+layer wrote takes its default — `relations: ~` on a long-form allow target is
+"any relation", exactly like a target without `relations`. An empty map
+(`exclude: {}`, `allow: {}`) writes nothing and changes nothing.
+
+Two values the engine carries unread, because each has two written shapes: a
+criterion (`patterns`, `suffix`, … — one string or a list) and an allow target
+(a layer name or a long-form map). `LayerCriterionNormalizer` and
+`LongFormAllowEntryNormalizer` judge them; the latter recognises the long-form
+keys by the document's spelling rule (snake_case, kebab-case or camelCase).
+Their form is judged in every layer that writes them, before the merge —
+`ArchitectureSection` declares `LayerCriterionNormalizer::ofLayerEntry()` on a layer
+entry and `CarriedValueForm::ofAllowTarget()` on a target — so a preset's
+malformed criterion or target is refused even under a file that replaces
+`layers` or the target list. Static-layer name grammar, fixed exclude capture
+placement, pattern and selector syntax, match and relation kinds, the coverage
+mode and a positive expansion ceiling are also judged in each writing layer,
+using the same parsers as the resolved validators. `LayersValidator` also judges
+each written list for duplicate names or patterns, missing membership criteria
+and invalid template bindings before another list can replace it. Allow-layer
+references, source/target capture compatibility and cycles require the merged
+document and are judged there.
+An allow source name's syntax is judged even when its value is `~`. Its
+membership is judged after merging against the names the merged `layers`
+declares, in the words of its writing layer (`allow: {infrq: ~}` is refused):
+an exact name must be declared; a glob or captured selector may name layers
+only template expansion produces. A source written `~` keeps the
+targets a lower layer gave it; with none, it allows nothing.
+
+`ArchitectureConfigurationFactory::fromResolved()` reads the section from
+`ConfigurationDocument::resolved()` through `SectionSpot`, which pairs each
+value with the resolved node it came from: every validator refuses through the
+spot, so a refusal names the file or preset that wrote the value — the one
+that won a leaf or wrote a list, every contributor of a merged map, and both
+halves of a relation (an allow cycle, a `coverage-gap` without `layers`). The
+central Configuration merger has no Architecture-specific branch or
+deferred-warning transport.
 
 Run prepares the policy after graph construction. Neither verdict traverses the
 AST or constructs lifecycle state.
@@ -85,14 +186,45 @@ or namespaces.
 
 ### What the analysed set can and cannot answer
 
-`extends`, `implements` and `attributes` are answered from the declaration
-edges this run recorded, so the answer is bounded by what the run analysed.
-`ClassContextFactory` is bound to the run's **class universe** alongside its
-graph (`ArchitecturePolicy::prepare()` is the single binding point) and reports
-where the facts ran out: `ClassContext::$declarationAnalysed` says whether the
-subject's own declaration was read, and `ClassContext::$ancestryCuts` names
-where the parent-class chain was cut and, separately, every interface the walk
-reached without facts of its own.
+`extends`, `implements`, class `attributes`, and `member_attributes` are
+answered first from the declaration edges this run recorded.
+A layer violation belongs to its exact source declaration. Its occurrence uses
+that source, the referenced logical target and dependency kind, so source-only
+selection or renaming a target file cannot move the accepted identity. Multiple
+owned target declarations remain count units within the same occurrence group.
+When the run does not know the target declaration, it emits one logical-target
+unit; it cannot infer that target's physical file or declaration cardinality.
+A narrowed Run-reach population remains `not-compared` with the matched accepted
+level and its ordinary severity; it does not tighten the baseline count.
+
+`ClassContextFactory` coordinates the run's **class universe** alongside its
+graph and Architecture's external-supertype source
+(`ArchitecturePolicy::prepare()` is the single binding point). It follows a
+non-analysed link through an exactly placed Composer source file, without
+loading the declaration. An unmapped, unreadable, conditional, or unresolved
+declaration remains a cut: `ClassContext::$declarationAnalysed` says whether
+the subject's own declaration header was read, independently of whether
+external supertype facts completed its ancestry, and `ClassContext::$ancestryCuts`
+names where the parent-class chain was cut and, separately, every interface
+the walk reached without readable facts. Per-run external facts and contexts
+are memoised by the factory and cleared at every binding; Composer placement
+and directory-listing snapshots are cleared when the analysed project is
+reanchored. `DeclarationRelations` owns declaration identity, kind and observed
+spelling; `DeclarationRelationIndex` ingests and indexes direct relation and
+attribute facts from graph, external and implicit sources.
+`Ancestry` owns the bounded parent/interface/trait closure, and
+`ImplicitStringability` derives PHP's implicit interface without making the
+factory a second graph model. `NameSpellingIndex` and `KnownTypes` stay in the
+same class-context subject because both answers are rebuilt from that run's
+observed identities.
+
+Each parent or interface branch follows at most 256 links. If the declaration
+at that depth names another relation, the next FQN is recorded as an ancestry
+cut, so a missing criterion remains undecidable instead of becoming a false
+negative. This is a per-branch recursion boundary, not a global source-read
+budget: independent branches may visit more than 256 declarations in total.
+Implicit `Stringable` follows the same per-branch boundary and does not preload
+external declarations past it.
 
 A class or interface PHP declares is not a cut. Its parent, interfaces and
 class-level attributes come from `Core\Symbol\PhpBuiltinClassHierarchy`, a
@@ -101,19 +233,27 @@ whichever PHP runs the analysis and whichever extensions it loads. Nothing in
 this slice reads reflection. For an interface, `extends` follows the
 interfaces it extends, as PHP's own keyword does.
 
-The interfaces PHP adds unwritten — `UnitEnum` and `BackedEnum` on an enum,
-`Stringable` on a class or interface declaring `__toString()` — arrive as
-declaration edges from `ClassLikeHandler`. The interface walk also follows an
-interface's own `implements` edge, since that edge can only be the `Stringable`
-PHP gave it. A `__toString()` a class takes from a trait is not seen, and
-`extends: ['\Stringable']` does not see the one an interface gets.
+`UnitEnum` and `BackedEnum` remain declaration edges. Implicit `Stringable` is
+derived from `ClassLikeDeclaration` facts and the same mandatory facts read
+from external declarations. The derivation follows parents, implemented or
+extended interfaces, and nested trait uses, so a direct or inherited
+`__toString()` produces the same answer PHP does. An interface gets
+`Stringable` in both its interface and interface-parent closure; a class gets
+it only in the interface closure. A trait supplies evidence to a class that
+uses it but is not itself `Stringable`. A trait adaptation that
+aliases some method to `__toString` is carried as a narrow doubt until another
+fact proves the result; it does not make unrelated `implements` or `extends`
+criteria undecidable.
 Criterion FQNs are stored without a leading `\`, which is how a class in the
 global namespace is written (`\Throwable`) and how the run records none of
 them. A class PHP declares is one name whatever its case, so both sides of the
 comparison carry it in `PhpBuiltinClassRegistry::spelling()`:
 `LayerCriterionNormalizer` stores a criterion that way, and
-`ClassContextFactory` names a graph-backed class subject and both ends of every
-declaration edge that way. Project and vendor names are compared as written.
+`NameSpellingIndex` chooses one observed spelling for every project class-name
+identity from analysed declarations and graph endpoints; `ClassContextFactory`
+uses it consistently across a closure. Criteria and `KnownTypes::met()` remain
+case-sensitive, and an external type is known only when placement and the
+declaration's spelling both equal the requested name.
 
 `LayerCriteriaMatcher` turns that into a third answer beside match and
 non-match. `CriterionOutcome::Undecidable` is what a declared criterion returns
@@ -126,8 +266,9 @@ decided walk may report a match. A hit found on a truncated chain still counts,
 because truncation can hide evidence but never invent it.
 
 Which kinds this reaches, and why exactly those: `patterns` and `suffix` are
-derived from the FQN and are always decided; `attributes` is decided whenever
-the subject's own declaration was analysed; `extends` is decided when the
+derived from the FQN and are always decided; `attributes` and
+`member_attributes` are decided whenever the subject's own declaration was
+analysed; `extends` is decided when the
 parent-class chain was not cut, and `implements` when neither that chain nor
 the interfaces above it were. The two are kept apart because an unread parent
 class can hide both a parent and an interface, while an unread interface can
@@ -189,51 +330,68 @@ the walk instead of the bare match list. `LayerEvidence::reachedCounts()` is
 the one place that decides which of the `contended` column keeps a layer out of
 `architecture.unreachable-layer`. An analysed class the layer's own criteria
 matched counts. An analysed class the layer could not answer about counts only
-while some type its `attributes:`/`implements:`/`extends:` criteria name is one
+while some type its `attributes:`/`member_attributes:`/`implements:`/`extends:` criteria name is one
 the run met — declared in the analysed paths, built into PHP, at an end of a
 dependency edge, or declared by the analysed project's composer install
 (`KnownTypes`): a class with an unread parent leaves every such criterion
-unanswered, a mistyped name included. The install is read through Design's
-`ExternalParentSourceInterface`, the port DIT's ancestor walk reads it by,
-which `ArchitecturePolicy` takes by autowiring and hands down as a lookup when
-it binds the run; it answers only whether the type exists, so a criterion over
-a vendor chain stays undecidable and the layer is named by
-`architecture.doubted-assignment` rather than called empty. A
+unanswered, a mistyped name included. The install is read through
+Architecture's `ExternalSupertypeSourceInterface`; readable vendor chains are
+answered fully, while an unreadable or unmapped link remains undecidable and
+is named by `architecture.doubted-assignment` rather than called empty. A
 symbol outside the analysed paths never counts, for the same reason. The
 finding says what it left out in the words true of each share: the unanswered
 symbols and the named types the run never met — a typo, or, when no install
 was found to ask, a type only unanalysed code reaches — or the outside symbols the layer matched that an earlier
 unanswered `exclude:` holds. `LayerShadowing` draws a shadow only
 between `establishedMatches()`, the first of them shadowing the rest, and
-`debug:layer-assignment` reports its `shadowed` list and hint by the same rule.
+`debug:layer-assignment` reports typed shadow verdicts and their exact
+`ShadowExemption` by the same rule. A later match whose own `exclude:` remains
+unanswered is still shown as an additional, contending match; it is not
+labelled as an established shadow.
 A layer repeating the pattern of one that does not take every class it names
 (`MembershipSpec::ownsItsPatterns()` — an `exclude:`, or `match: all` beside
 another criterion) is the recipient of what that layer leaves over and is not
 shadowed by it; `DuplicatePatternRejector` accepts a repeated pattern by the
 same predicate, so a configuration that loads is never failed for it.
+`LayerShadowing::verdicts()` judges each established late match against the
+first established match. A narrower pattern first and a repeating pattern that
+receives the earlier layer's residue are exempt before the universal `**` case.
+A universal `**` that owns its patterns reports every later match; other
+pattern/pattern pairs retain the existing comparison. A non-pattern side is
+`NonPatternPrecedence`, rather than a declaration error. The internal
+`LayerShadowVerdict` carries the pair and its `ShadowExemption`, if any; the
+inspection shadow list projects the same verdicts.
+
+A later non-pattern layer with its own analysed classes and observed precedence
+losses emits `architecture.layer-overlap` at `info`, one occurrence per pair,
+with the class count and bounded examples. A fully lost layer instead reports
+`unreachable-layer` with the named earlier layers. Late pattern layers, including
+a catch-all, never emit overlap, but their complete precedence losses still
+explain an unreachable layer. An unanswered exclusion establishes no shadow
+pair. The walk also retains display names for symbols removed by a layer's own
+exclude, so an empty layer can name that cause without reparsing canonical keys.
+
 `architecture.doubted-assignment` names every layer a contest keeps out of
 `unreachable-layer`: those that could not answer, and — from the walk's
 `ownsIfExcluded` column — those that would own a symbol if an unanswered
 `exclude:` in front of them removed it.
 
-Four declarations that used to be accepted are now refused at config load,
+Three declarations that used to be accepted are now refused at config load,
 because there is no correct silent reading of any of them. A template layer may
-not declare `suffix`, `attributes`, `implements` or `extends` under
+not declare `suffix`, `attributes`, `member_attributes`, `implements` or `extends` under
 `match: any`: only `patterns` carries capture variables, so the criterion would
 be copied into every expanded instance as one project-wide net and the instance
 that wins a class would be decided by binding-value order. A non-`ignore`
 `coverage-gap:` requires at least one `layers:` entry, because with no layers
 every class is outside every layer while the walk short-circuits and the run
-exits 0 — the strictest setting producing the quietest outcome. An allow entry's
-`relations:` written without a value takes the same refusal as `relations: []`
-instead of reading as "every relation allowed". And an `attributes`,
-`implements` or `extends` entry that is nothing but `\` passed the
+exits 0 — the strictest setting producing the quietest outcome. And an `attributes`,
+`member_attributes`, `implements` or `extends` entry that is nothing but `\` passed the
 namespace-separator check while naming no class; with the leading separator now
 dropped it is refused as such.
 
 `ClassContextFactory` skips a `Dependency` flagged
 `describesNestedAnonymousClass` when it builds `extendsMap`, `implementsMap`
-and `attributesMap`: that edge is a declaration fact about an anonymous class
+and the class/member attribute maps: that edge is a declaration fact about an anonymous class
 nested inside the source, not about the source itself, so counting it would
 match the enclosing class — including transitively, since membership walks
 `extendsMap` as a BFS closure — into a layer whose criteria describe the
@@ -241,79 +399,107 @@ nested anonymous class instead (ADR 0071). The dependency the edge still
 represents is unaffected; only its reading as a declaration fact about its
 recorded source is narrowed.
 
-`LayerViolation/` is four subjects, not one. The first is `Observation/`:
-`LayerEvidenceCollector` walks the analysed classes and the dependency graph
-**once per run** — memoised weakly by
-the run's `AnalysisContext`, so nothing survives into the next run — and returns
-one `LayerEvidence`: the edges the allow-list rejects, per-layer tallies of what
-each layer was ASSIGNED, what it MATCHED at all and what its `exclude:` clause
-REMOVED, the shadow evidence, the classes outside every layer, and the coverage
-state. The exclusion tally exists because membership collapses "the clause
-removed it" and "no criterion caught it" into the same absence:
-`MembershipResult::excluded()` keeps the two apart and `LayerRegistry::excludedLayers()`
-is the second exit of the one cached walk `resolveAll()` already performs;
-`undecidedLayers()` is the third, for the gap the run could not decide.
-Assignment is untouched by that — `resolveAll()` still returns no layer for an
-excluded class, so `debug:layer-assignment` and the shadow evidence read
-exactly what they read before. It short-circuits to `null`
-when the producer is disabled or no layers are declared, so "report nothing" has
-one answer rather than two. It answers to both consumer gates — the rule's
-`enabled` and `UnassignedClassOptions::$mode` — and materialises the
-outside-every-layer set when either of them, or the coverage mode, has a use
-for it. The class walk and the edge walk each hand their half to the merge as a
-typed value (`ClassWalkEvidence`, `EdgeWalkEvidence`) — each carrying the same
-six symbol-set columns and the undecidable and doubted symbols it booked — and a rejected edge and a
-shadowed class travel as `ForbiddenEdge` and `ShadowedClass` rather than array
-shapes, so the `Dependency` and `MatchedCriterion` they carry count as coupling
-of those value objects; the lists that hold them are still typed in PHPDoc
-only. `Observation/` reads its two consumers' gates through the generic
-`RuleOptionsInterface` and its code references nothing in `LayerViolation/`,
-which the topology test enforces as a zone of its own; the two rules, the validator and
-the diagnostics built from the evidence read it.
+`Observation/` owns `LayerEvidenceCollector`: one `ClassEvidenceWalk` and one
+`EdgeEvidenceWalk` per `AnalysisContext`, memoised weakly so nothing survives
+into the next run. `LayerEvidenceTally` performs the shared hit and symbol-set
+combination after the two walks. Its `LayerEvidence` carries forbidden edges, assignment/match/exclusion
+tallies, contested symbols, coverage, shadows, own-exclude samples and precedence
+losses. Analysed-class assignments remain separate from dependency-edge hits,
+because overlap requires at least one class owned by the late layer. `ClassWalkEvidence` and
+`EdgeWalkEvidence` carry the two halves of that observation; `ForbiddenEdge`
+and `ShadowedClass` retain their exact dependency and criterion facts.
+`DiagnosticSampleList` formats bounded samples without policy semantics.
+The collector reads three independent enabled gates through `RuleOptionsInterface`
+and returns no evidence when all three are off or no layers are declared.
+The edge walk takes its complete population declaration from
+`LayerViolationRule::channelDeclarations()`. Its `populationGates()` supplies
+only the ordered graph/source/target predicates attached by that authority.
+Both endpoints are resolved and tallied before source and target admission.
+Every native dependency-list event is one judgement attempt, even when repeated
+events share the same logical source, target and type. The canonical triple
+identifies bounded examples; it does not collapse judgement counts. Allowed
+edges and forbidden edges both complete judgement; unassigned endpoints
+withhold it. A memoized collection does not account those edges again.
 
-Two rules report on the **code** over that one walk. `LayerViolationRule` emits
-`architecture.layer-violation` per forbidden edge and
-`architecture.unmatched-exclude` per layer whose `exclude:` clause removed
-nothing while the layer's own criteria caught something — a layer wider than
-its declaration asks for, which is debt rather than a broken configuration, so
-it is the rule's channel at a fixed `warning` and not the validator's. The
-"caught something" half of the predicate is what keeps it from restating
-`architecture.unreachable-layer`: the clause is evaluated only after the
-positive criteria succeed, so a layer that matched nothing never offered it
-anything to remove. A clause that could not be answered for some symbol its
-layer caught is not reported: "removed nothing" has not been shown for it.
-The rule's third channel, `architecture.doubted-assignment`, is built by
-`DoubtedAssignmentDiagnostic`, reading the same population the coverage text
-names.
-`UnassignedClassRule` emits the magnitude channel
-`architecture.unassigned-class`, gated by its own single `mode` option and built
-by `UnassignedClassSummary`; both are ordinary debt a baseline may accept. Being
-a producer of its own is why `LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES`
-names two rules: the run prepares the policy when either is selected, and asking
-about one of two left `--only-rule=architecture.unassigned-class` reaching an
-unprepared collector.
+`LayerAssignmentProjection` turns the prepared configuration and the observed
+class context into the public debug value's assignment, contender and typed
+shadow facts. `ArchitecturePolicy` supplies only the final producer-enablement
+fact and owns the public inspection lifecycle; the projection does not publish
+findings or duplicate Console rendering.
 
-`LayerDeclarationValidator` is the verdict on the **declaration** and is a
-`ConfigurationValidatorInterface`, not a rule — which is the whole statement
-that its five channels are configuration errors. `DeclaredLayerReachability`
-builds four of them: `architecture.coverage-gap`, `architecture.unreachable-layer`,
-`architecture.pending-layer-matched` and `architecture.empty-template`;
-`PotentialShadowDiagnostic` renders `architecture.potential-shadow` from the
-shadow evidence, which no other verdict reads. `unreachable-layer` and
-`empty-template` say that no class matches a declaration, so the validator
-withholds them on a run whose paths do not cover the project's autoload roots
-(`AnalysisContext::$coversProjectScope`, the gate `architecture.unmatched-exclude`
-reads); the run's scope warning and the report's `projectScope` say so. A
-project whose manifest declares no readable production autoload is judged,
-with its analysed paths taken as the whole project. The validator declares `architecture.layer-violation`
-as its producer, so all five are registered, addressed, excluded, described and
-switched off exactly as they were while the rule declared them, and it runs in
-the rule's slot so their position in an unsorted report is unchanged.
-`DiagnosticSampleList` formats the bounded FQN samples
-`architecture.coverage-gap`, `architecture.doubted-assignment` and
-`architecture.unassigned-class` print, and is the
-one piece of code shared across the code/declaration split — a narrow
-formatting utility with no policy semantics of its own.
+`LayerViolation/` owns only forbidden-edge findings. `LayerViolationRule` emits
+`architecture.layer-violation` per forbidden edge; its CLI aliases and severity
+option still govern that producer alone.
+
+`LayerDeclaration/` owns `LayerDeclarationRule`, its enabled-only
+`LayerDeclarationOptions`, and `LayerDeclarationValidator`. The rule emits
+`architecture.unmatched-exclude` at fixed warning when an exclusion removed
+nothing despite positive matches, and `architecture.doubted-assignment` at
+fixed info from the contested population. `LayerOverlapDiagnostic` emits the
+third ordinary channel, `architecture.layer-overlap`, at fixed info for partial
+non-pattern precedence losses. `UnmatchedTypeDiagnostic` emits `architecture.unmatched-type` at fixed warning
+for each authored positive or exclude type this complete run did not meet,
+provided the analysed project's Composer install was read. A known neighbour
+never conceals a missing type. Occurrences retain source kind, locator and
+importer chain, authored key path, document layer index, line and exact FQN;
+expanded template copies share the original occurrence, and an empty template
+still has its authored types judged. Messages name the configuration writer and
+position. An undecidable exclusion cannot be
+called inert. These are ordinary occurrence findings a baseline may accept.
+The validator belongs to `architecture.layer-declaration` and emits five
+configuration-error occurrences: `architecture.coverage-gap`,
+`architecture.unreachable-layer`, `architecture.pending-layer-matched`,
+`architecture.empty-template`, and `architecture.potential-shadow`.
+`DeclaredLayerReachability` builds the first four; `PotentialShadowDiagnostic`
+renders the last from observed shadows.
+
+All five validator channels declare `ChannelSelectionRole::FilterExempt`.
+An unrelated `--only-rule` filter cannot hide them. Selecting
+just one still leaves the other four live; explicitly disabling those four
+isolates it. Disabling a diagnostic, its `:project` cell, the declaration
+producer or its group still works, as does `enabled: false`. Disabled
+layer-violation options do not control declaration findings. The channel names,
+levels, descriptions, severities, occurrence shape, documentation page and
+15-minute remediation stay unchanged. The declaration producer has no channel
+named after itself. Existing channel publication order is retained.
+
+`UnassignedClass/` owns the separate magnitude producer
+`architecture.unassigned-class`, its mode options and summary. Preparation
+reads `ArchitectureChannels::PRODUCERS` and the final `RuleEnablement::runs`
+answer for all three producers. The collector's disjunction permits declaration
+judgement when the forbidden-edge and unassigned-class consumers are disabled.
+
+`UnassignedClassLayerRequirement` rejects a merged configuration with an enabled
+`warn`/`error` mode and no declared layers, including an explicitly empty list.
+It reads final `RuleEnablement::isEnabled`, so an `only` filter does not conceal
+the invalid document. `ignore`, a disabled producer and a disabled Architecture
+group are accepted. The refusal names the mode's writer and the authored empty
+list, or the merged missing key when no layer wrote it. Console invokes the
+public requirement after options and enablement are complete and before
+discovery; it never reads the private options itself.
+
+`unreachable-layer`, `empty-template`, `unmatched-exclude` and `unmatched-type` infer absence and
+require measured `ProjectScopeJudgement::judgesNamespaceClaims()`. Missing
+observed PHP, authored/generated removal and an unknown denominator can withhold
+that judgement. A whole-root fallback can establish filesystem completeness;
+a subset cannot assume it. Coverage, matched pending layers and observed shadows
+remain valid on the measured slice. Selection does not manufacture scope.
+
+`unmatched-type` also asks the declaration-absence question and requires the
+project Composer install to have been read. Withheld scope or an unread install
+produces no finding; after execution Run prints one warning naming the reasons,
+only if the exact channel is published and unresolved authored types remain.
+Rules and preparation do not log, queue messages or alter the execution result.
+The policy's query reads already prepared state and fails before preparation.
+
+Spelling suggestions leave matching case-sensitive. Named types use observed
+full-name spelling, with exactly placed installed declarations as an additional
+source. `unreachable-layer` and `unmatched-exclude` retain their findings and add
+these hints as well as pattern hints. The existing capture-pattern compiler
+projects only wildcard-free inclusive subtrees and strict trailing `\**`
+subtrees. The observed prefix index replaces only that literal prefix; universal,
+mid-segment wildcard, `?` and capture patterns receive no suggestion. No second
+pattern parser or PHP grammar is involved.
 
 A layer declared `pending: true` — reserved for code not
 written yet — is exempt from `architecture.unreachable-layer` and is reported
@@ -321,22 +507,6 @@ by `architecture.pending-layer-matched` once its criteria match, which the
 matched tally sees even when a broader layer wins every assignment.
 The Console debug command invokes the inspector contract over the same collected
 graph and class universe.
-
-## Rule option key declarations
-
-`LayerViolationOptions` and `UnassignedClassOptions` declare their accepted
-option keys through `RuleOptionsInterface::acceptedOptionKeys()`.
-`LayerViolationOptions` accepts `enabled`, `severity`, and additionally
-declares `empty-template-severity`, `potential-shadow-severity` and
-`unreachable-layer-severity` as answered-by-the-class: `fromArray()` refuses
-these three in its own words (the diagnostics they used to tune now gate the
-run unconditionally) rather than through the generic "unknown option"
-warning. `UnassignedClassOptions` accepts only `mode`, and declares `enabled`
-as answered-by-the-class: `fromArray()` accepts `enabled: false` when it
-agrees with `mode: ignore` and refuses it otherwise, naming `mode` as the
-replacement. `RuleOptionsFactory` reads these declarations and refuses an
-unrecognised key by name — an answered-by-the-class key reaches the class's own
-bespoke refusal unchallenged; anything else is rejected before construction.
 
 ## Definition of Done
 
@@ -348,6 +518,55 @@ bespoke refusal unchallenged; anything else is rejected before construction.
   generated projection whenever the leaf surface or zone DAG changes.
 
 
+## Declared options and preparation
+
+`LayerViolationOptions`, `LayerDeclarationOptions` and `UnassignedClassOptions`
+use `fromResolved` and owner-declared forms. Framework `enabled` is legal for all three producers. Unassigned
+mode independently determines reportability: false+warn is lawful and off,
+explicit true+ignore refuses, and warn/error activates an otherwise enabled
+producer. Retired severity keys refuse through their declared replacement hint.
+
+Preparation reads final `RuleEnablement::runs` for each producer. The shared
+layer evidence walk is needed when any lawful producer runs; it must not gate
+one producer through a sibling's options. Reset, no-layer short-circuiting, the captured project universe and all layer assignment judgments are unchanged.
+DoD retains three-producer preparation, no work for muted/off producers and
+full authored provenance of malformed options.
+
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+## Rule populations
+
+Every ordinary channel declares and executes its ordered population predicates
+through the same full `ChannelDeclaration`, including unbound rule calls and
+channels omitted by publication selection. Selection affects accounting only.
+The shared `LayerEvidenceCollector` memo remains keyed by the run's exact
+`AnalysisContext`; rules and helpers reuse that context rather than deriving a
+new context for each coordinate.
+
+Missing prepared evidence yields one invocation abstention for layer violation,
+layer overlap, doubted assignment and unassigned class at their own collection
+sites. An unprepared `ArchitecturePolicy` still refuses. A missing graph after
+prepared evidence yields one layer-violation invocation abstention; a known
+empty edge roster yields zero members. Successful checks never add an invocation
+preflight. Doubted assignment is itself one actual invocation summary. Overlap
+accounts native precedence pairs, including pairs that produce no warning;
+unassigned class accounts logical class-like identities, including assigned
+classes and collapsing duplicate exact declarations through the repository's
+native logical roster.
+
+`UnmatchedExcludeDiagnostic::forInertClauses(evidence, channelName, context, populationDeclaration)`
+aggregates expanded instances before one admission per authored exclude clause.
+`clauses(evidence, context)` tests namespace scope before pending lifecycle; an
+inactive pending clause is unjudged, while an absent exclude is outside the
+roster. Its `populationGates()` contributes the lifecycle predicate to the
+producer's complete declaration. The matched/excluded/unanswered comparison
+remains the finding decision after admission.
+
+`UnmatchedTypeDiagnostic::forEvidence(evidence, scope, context, declaration)` judges the full
+native authored-type roster once, including met types that emit no finding.
+`populationGates()` contributes the complete-scope-and-consulted-install
+predicate. Authored provenance distinguishes equal FQNs at separate positions;
+expanded copies retain the native coalescing. The five configuration-validator
+channels stay outside ordinary rule population accounting.

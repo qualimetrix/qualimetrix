@@ -9,8 +9,10 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Core\Symbol\MetricSubjectCodec;
@@ -35,6 +37,18 @@ final class HardcodedCredentialsRule extends AbstractRule
      */
     private const string OCCURRENCE_KIND = 'security.hardcoded-credentials';
 
+    private const array PATTERN_MESSAGES = [
+        'variable' => 'Hardcoded credential in variable assignment',
+        'array_key' => 'Hardcoded credential in array key',
+        'class_const' => 'Hardcoded credential in class constant',
+        'file_const' => 'Hardcoded credential in file constant',
+        'define' => 'Hardcoded credential in define() call',
+        'property' => 'Hardcoded credential in property default',
+        'property_assignment' => 'Hardcoded credential in property assignment',
+        'parameter' => 'Hardcoded credential in parameter default',
+        'enum_case' => 'Hardcoded credential in enum case',
+    ];
+
     public const int REMEDIATION_MINUTES = 30;
 
     public const ChannelShape SHAPE = ChannelShape::Occurrence;
@@ -43,7 +57,7 @@ final class HardcodedCredentialsRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Detects hardcoded credentials in code';
     }
@@ -66,6 +80,7 @@ final class HardcodedCredentialsRule extends AbstractRule
         }
 
         $findings = [];
+        $declaration = self::channelDeclarations()[self::NAME];
 
         foreach ($context->metrics->all(SymbolLevel::File) as $fileInfo) {
             $metrics = $context->metrics->get($fileInfo->symbolPath);
@@ -75,7 +90,7 @@ final class HardcodedCredentialsRule extends AbstractRule
                 continue;
             }
 
-            array_push($findings, ...$this->findingsForEntries($fileInfo, $entries, $context));
+            array_push($findings, ...$this->findingsForEntries($fileInfo, $entries, $context, $declaration));
         }
 
         return $findings;
@@ -86,16 +101,17 @@ final class HardcodedCredentialsRule extends AbstractRule
      *
      * @return list<Finding>
      */
-    private function findingsForEntries(SymbolInfo $fileInfo, array $entries, AnalysisContext $context): array
+    private function findingsForEntries(SymbolInfo $fileInfo, array $entries, AnalysisContext $context, ChannelDeclaration $declaration): array
     {
         \assert($this->options instanceof HardcodedCredentialsOptions);
         $file = $fileInfo->file ?? throw new LogicException('File symbol must carry a relative path');
         $findings = [];
 
-        foreach ($entries as $entry) {
+        foreach ($entries as $entryOrdinal => $entry) {
             $line = (int) $entry['line'];
             $pattern = (string) $entry['pattern'];
             $subject = MetricSubjectCodec::decodeEntry($entry, $file);
+            $context->admit(self::NAME, new FindingChannel(self::NAME), $subject::levelOfCanonical($subject->toCanonical()), PopulationIdentity::occurrence($subject->toCanonical(), $entryOrdinal), $declaration, []);
             $severity = $this->getEffectiveSeverity($context, $this->options, $subject, 1);
             if ($severity === null) {
                 continue;
@@ -103,7 +119,7 @@ final class HardcodedCredentialsRule extends AbstractRule
             $findings[] = new Finding(
                 location: new Location($file, $line, precise: true),
                 subject: $subject,
-                symbolPath: $fileInfo->symbolPath,
+                symbolPath: $subject->toSymbolPath(),
                 ruleName: $this->getName(),
                 code: self::NAME,
                 message: $this->messageForPattern($pattern),
@@ -119,17 +135,8 @@ final class HardcodedCredentialsRule extends AbstractRule
 
     private function messageForPattern(string $pattern): string
     {
-        $message = match ($pattern) {
-            'variable' => 'Hardcoded credential in variable assignment',
-            'array_key' => 'Hardcoded credential in array key',
-            'class_const' => 'Hardcoded credential in class constant',
-            'define' => 'Hardcoded credential in define() call',
-            'property' => 'Hardcoded credential in property default',
-            'property_assignment' => 'Hardcoded credential in property assignment',
-            'parameter' => 'Hardcoded credential in parameter default',
-            'enum_case' => 'Hardcoded credential in enum case',
-            default => 'Hardcoded credential found',
-        };
+        $message = self::PATTERN_MESSAGES[$pattern]
+            ?? throw new LogicException(\sprintf('Unknown credential pattern "%s"', $pattern));
 
         return $message . ' — use environment variables or a secrets manager';
     }
@@ -148,7 +155,7 @@ final class HardcodedCredentialsRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Class_),
+            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::File, SymbolLevel::Callable, SymbolLevel::Class_),
         ];
     }
 }

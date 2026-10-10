@@ -11,8 +11,12 @@ use Qualimetrix\Analysis\Evidence\Size\MethodCountOptions;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\Override\WarningOnlyValidator;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleOptionForms;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory;
 use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass;
@@ -33,8 +37,8 @@ use Symfony\Component\DependencyInjection\Definition;
  *    registry — proves the factory recognises every ThresholdAware
  *    Options class and yields the validator each returns.
  * 2. {@see ThresholdValidatorMapCompilerPass} on a synthetic container —
- *    proves the pass collects tagged rule services and writes the
- *    resolved map onto the Extractor's `$validators` argument.
+ *    proves the pass collects tagged rule services and resolves the
+ *    map through Finding's document forms service.
  *
  * The two layers compose: production wiring runs the same factory with
  * the same rule class list against the same Extractor service.
@@ -53,7 +57,7 @@ final class ThresholdValidatorWiringTest extends TestCase
         \assert($registry instanceof RuleRegistryInterface);
 
         $ruleClasses = $registry->getClasses();
-        $validatorMap = RuleValidatorMapFactory::build($ruleClasses);
+        $validatorMap = RuleValidatorMapFactory::build(new RuleOptionDocumentForms(), $ruleClasses);
 
         $checkedThresholdAware = 0;
 
@@ -71,11 +75,18 @@ final class ThresholdValidatorWiringTest extends TestCase
                 $validatorMap,
                 "Rule '{$ruleName}' supports threshold overrides but the factory did not emit a validator for it.",
             );
+            self::assertInstanceOf(RuleOptionForms::class, $validatorMap[$ruleName]);
             self::assertSame(
                 $expectedValidator,
-                $validatorMap[$ruleName],
+                $validatorMap[$ruleName]->strategy,
                 "Factory-emitted validator for '{$ruleName}' differs from the expected validator for {$optionsClass}.",
             );
+            foreach ($validatorMap[$ruleName]->levels() as $level) {
+                self::assertTrue($validatorMap[$ruleName]->hasAxis($ruleName, $level, 'warning'));
+                if (!$expectedValidator instanceof WarningOnlyValidator) {
+                    self::assertTrue($validatorMap[$ruleName]->hasAxis($ruleName, $level, 'error'));
+                }
+            }
 
             ++$checkedThresholdAware;
         }
@@ -103,19 +114,27 @@ final class ThresholdValidatorWiringTest extends TestCase
         $container->setDefinition('test.rule.method_count', $ruleDefinition);
 
         $extractorDefinition = new Definition(ThresholdOverrideExtractor::class);
-        $extractorDefinition->setArgument('$validators', []);
+        $extractorDefinition->setArgument('$validators', [])->setPublic(true);
         $container->setDefinition(ThresholdOverrideExtractor::class, $extractorDefinition);
+        $container->register(RuleOptionDocumentForms::class);
+        $container->setAlias(RuleOptionDocumentFormsInterface::class, RuleOptionDocumentForms::class);
 
         (new ThresholdValidatorMapCompilerPass())->process($container);
+        $container->compile();
 
-        /** @var array<string, OverrideValidatorInterface> $validators */
-        $validators = $extractorDefinition->getArgument('$validators');
+        $extractor = $container->get(ThresholdOverrideExtractor::class);
+        self::assertInstanceOf(ThresholdOverrideExtractor::class, $extractor);
+        $validators = (new ReflectionClass($extractor))->getProperty('validators')->getValue($extractor);
+        self::assertIsArray($validators);
 
         self::assertArrayHasKey(MethodCountRule::NAME, $validators);
+        self::assertInstanceOf(RuleOptionForms::class, $validators[MethodCountRule::NAME]);
         self::assertSame(
             MethodCountOptions::getOverrideValidator(),
-            $validators[MethodCountRule::NAME],
+            $validators[MethodCountRule::NAME]->strategy,
         );
+        self::assertSame('integer at least 0', $validators[MethodCountRule::NAME]->formOf(MethodCountRule::NAME, null, 'warning')->describe());
+        self::assertSame('integer at least 0', $validators[MethodCountRule::NAME]->formOf(MethodCountRule::NAME, null, 'error')->describe());
     }
 
     #[Test]
@@ -148,13 +167,9 @@ final class ThresholdValidatorWiringTest extends TestCase
             return null;
         }
 
-        $rootOptions = $optionsClass::fromArray([]);
-        \assert($rootOptions instanceof HierarchicalRuleOptionsInterface);
-
-        foreach ($rootOptions->getSupportedLevels() as $level) {
-            $levelOptions = $rootOptions->forLevel($level);
-            if ($levelOptions instanceof ThresholdAwareOptionsInterface) {
-                return $levelOptions::getOverrideValidator();
+        foreach ($optionsClass::levelOptionsClasses() as $levelOptionsClass) {
+            if (is_a($levelOptionsClass, ThresholdAwareOptionsInterface::class, true)) {
+                return $levelOptionsClass::getOverrideValidator();
             }
         }
 

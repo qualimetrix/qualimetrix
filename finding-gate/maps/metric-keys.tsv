@@ -1,1 +1,3 @@
 old	new	reason
+# A plain key expands over the closed strategies. strategy:avg -> strategy:mean names an exact suffix rename.
+# Both tree vocabularies must agree after the declared injective strategy correspondence.

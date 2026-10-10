@@ -56,14 +56,16 @@ final class FindingFieldCensusTest extends TestCase
             'dependencyTarget' => [$original->dependencyTarget, $promoted->dependencyTarget],
             'dependencyType' => [$original->dependencyType, $promoted->dependencyType],
             'occurrenceKey' => [$original->occurrenceKey, $promoted->occurrenceKey],
+            'addressedProducer' => [$original->addressedProducer, $promoted->addressedProducer],
         ];
 
         foreach ($copied as $field => [$before, $after]) {
             self::assertSame($before, $after, \sprintf('reportedAsBreach() did not carry over $%s', $field));
         }
 
-        // The two the promotion is *about*, asserted by the case above.
-        $rewritten = ['severity', 'acceptedLevel'];
+        // Promotion replaces the verdict and clears a former comparison refusal.
+        $rewritten = ['severity', 'acceptedLevel', 'uncomparedReason'];
+        self::assertNull($promoted->uncomparedReason);
         $accounted = [...array_keys($copied), ...$rewritten];
         $parameters = self::constructorParametersOfFinding();
 
@@ -110,6 +112,8 @@ final class FindingFieldCensusTest extends TestCase
             threshold: 10,
             dependencyTarget: SymbolPath::forClass('App', 'Bar'),
             dependencyType: DependencyType::New_,
+            addressedProducer: 'complexity.ccn',
+            uncomparedReason: 'analysis-incomplete',
         );
     }
 

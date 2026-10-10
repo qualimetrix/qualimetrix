@@ -14,7 +14,7 @@ use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
@@ -26,6 +26,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
@@ -322,6 +323,9 @@ final class NamespaceFoldCountsEachDeclarationOnceTest extends TestCase
             }
         }
 
+        $canonicalRoot = realpath($root);
+        $root = $canonicalRoot === false ? throw new RuntimeException('Cannot resolve the fold fixture root') : $canonicalRoot;
+
         self::write($root . '/Own.php', <<<'PHP'
             <?php
 
@@ -408,7 +412,9 @@ final class NamespaceFoldCountsEachDeclarationOnceTest extends TestCase
         }
 
         $container = (new ContainerFactory())->create();
-        $document = new ConfigurationDocument([], AbsolutePath::fromString($root));
+        $configurationPipeline = $container->get(ConfigurationPipelineInterface::class);
+        \assert($configurationPipeline instanceof ConfigurationPipelineInterface);
+        $document = LayeredDocument::of([], AbsolutePath::fromString($root), ...LayeredDocument::sectionsOf($configurationPipeline));
 
         /** @var ArchitecturePolicyConfiguratorInterface $architecturePolicy */
         $architecturePolicy = $container->get(ArchitecturePolicyConfiguratorInterface::class);
@@ -418,22 +424,47 @@ final class NamespaceFoldCountsEachDeclarationOnceTest extends TestCase
         $computedMetrics = $container->get(ComputedMetricConfiguratorInterface::class);
         $computedMetrics->replace($computedMetrics->resolve($document));
 
+        $execution = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class, $execution);
+        $channels = $container->get(\Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface::class, $channels);
+        $rules = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface::class, $rules);
+        $rules->replace(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::ready(
+            \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::fromDocument($document),
+            $execution->allRules(),
+            channels: $channels,
+        ));
+
         /** @var AnalysisPipelineInterface $pipeline */
         $pipeline = $container->get(AnalysisPipelineInterface::class);
 
         $result = $pipeline->analyze(new RunConfiguration(
-            [AbsolutePath::fromString($root)],
-            [],
-            AbsolutePath::fromString((string) getcwd()),
-            GeneratedFilePolicy::Include,
-            coversProjectScope: true,
+            pathExcludes: [],
+            projectRoot: AbsolutePath::fromString($root),
+            generatedFilePolicy: GeneratedFilePolicy::Include,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(
+                universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(
+                    projectRoot: AbsolutePath::fromString($root),
+                    pathsAuthored: true,
+                    denominator: [],
+                    prunedTargets: [],
+                    reasons: [],
+                    namespaceMapUsable: true,
+                    pathResolutions: [],
+                ),
+                paths: [AbsolutePath::fromString($root)],
+                scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered,
+                uncoveredRoots: [],
+            ),
             authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         ));
 
         self::removeDirectory($root);
-        self::$runs[$variant] = $result->metrics;
+        self::$runs[$variant] = $result->measured->repository;
 
-        return $result->metrics;
+        return $result->measured->repository;
     }
 
     private static function write(string $path, string $contents): void

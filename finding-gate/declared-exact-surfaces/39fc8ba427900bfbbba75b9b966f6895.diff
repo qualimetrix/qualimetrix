@@ -1,0 +1,19 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 17300
++visible 17361
+@@ -410,4 +410,5 @@
+-            "size.class-count.sum": 1,
+-            "healthScores": {
+-                "cohesion": 100,
+-                "coupling": 75
++            "size.class-count": 1,
++            "healthScores": {
++                "cohesion": 100,
++                "coupling": 75,
++                "overall": 87.5
+@@ -434,1 +435,2 @@
+-                "coupling": 100
++                "coupling": 100,
++                "overall": 100

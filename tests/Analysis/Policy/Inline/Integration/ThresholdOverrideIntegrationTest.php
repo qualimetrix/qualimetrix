@@ -25,7 +25,6 @@ use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\ParamTypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\PropertyTypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\ReturnTypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageOptions;
-use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityOptions;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
@@ -51,7 +50,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
- * Integration tests for @qmx-threshold overrides applied to rules.
+ * Integration tests for `@qmx-threshold` overrides applied to rules.
  */
 #[CoversClass(MethodCountRule::class)]
 #[CoversClass(ComplexityRule::class)]
@@ -62,7 +61,6 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 #[CoversClass(ClassCboOptions::class)]
 #[CoversClass(DistanceOptions::class)]
 #[CoversClass(NamespaceInstabilityOptions::class)]
-#[CoversClass(CodeDuplicationOptions::class)]
 #[CoversClass(MaintainabilityOptions::class)]
 #[CoversClass(PropertyCountOptions::class)]
 #[CoversClass(LcomOptions::class)]
@@ -123,8 +121,8 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         $symbolInfo = new SymbolInfo($subject, RelativePath::fromString('src/Service/BigService.php'), 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$symbolInfo]);
-        $repository->method('get')->willReturn(
+        $repository->method('allClassDeclarations')->willReturn([$symbolInfo]);
+        $repository->method('getSubject')->willReturn(
             MetricBag::fromArray([MetricName::SIZE_METHOD_COUNT => 25]),
         );
 
@@ -163,6 +161,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             RelativePath::fromString('src/Service/BigService.php'),
             20,
             CallableKind::Method,
+            \Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forClass(($subject)->toSymbolPath()->namespace ?? '', ($subject)->toSymbolPath()->type ?? ''), RelativePath::fromString('src/Service/BigService.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)),
         );
 
         $repository = self::createStub(MetricRepositoryInterface::class);
@@ -205,6 +204,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             RelativePath::fromString('src/Service/Service.php'),
             20,
             CallableKind::Method,
+            \Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forClass(($method1Subject)->toSymbolPath()->namespace ?? '', ($method1Subject)->toSymbolPath()->type ?? ''), RelativePath::fromString('src/Service/Service.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)),
         );
 
         $method2Path = SymbolPath::forMethod('App\\Service', 'Service', 'otherMethod');
@@ -214,6 +214,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             RelativePath::fromString('src/Service/Service.php'),
             60,
             CallableKind::Method,
+            \Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forClass(($method2Subject)->toSymbolPath()->namespace ?? '', ($method2Subject)->toSymbolPath()->type ?? ''), RelativePath::fromString('src/Service/Service.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)),
         );
 
         $repository = self::createStub(MetricRepositoryInterface::class);
@@ -304,18 +305,18 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         self::assertFalse($cboOverridden->enabled, 'CBO: enabled must be preserved');
         self::assertSame('application', $cboOverridden->scope, 'CBO: scope must be preserved');
 
-        // DistanceOptions — has includeNamespaces, minClassCount
+        // DistanceOptions — has includeNamespaces, minTypeCount
         $dist = new DistanceOptions(
             enabled: false,
             maxDistanceWarning: 0.4,
             maxDistanceError: 0.6,
             includeNamespaces: [new NamespacePattern(new SelectorDefinition(SelectorKind::Subtree, 'App\\Domain'))],
-            minClassCount: 5,
+            minTypeCount: 5,
         );
         $distOverridden = $dist->withOverride(0.5, 0.7);
         self::assertFalse($distOverridden->enabled, 'Distance: enabled must be preserved');
         self::assertSame($dist->includeNamespaces, $distOverridden->includeNamespaces, 'Distance: includeNamespaces must be preserved');
-        self::assertSame(5, $distOverridden->minClassCount, 'Distance: minClassCount must be preserved');
+        self::assertSame(5, $distOverridden->minTypeCount, 'Distance: minTypeCount must be preserved');
 
         // NamespaceInstabilityOptions — has minClassCount
         $nsi = new NamespaceInstabilityOptions(
@@ -327,19 +328,6 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         $nsiOverridden = $nsi->withOverride(0.75, 0.85);
         self::assertFalse($nsiOverridden->enabled, 'NSI: enabled must be preserved');
         self::assertSame(5, $nsiOverridden->minClassCount, 'NSI: minClassCount must be preserved');
-
-        // CodeDuplicationOptions — has min_lines, min_tokens
-        $dup = new CodeDuplicationOptions(
-            enabled: false,
-            min_lines: 10,
-            min_tokens: 100,
-            warning: 3,
-            error: 20,
-        );
-        $dupOverridden = $dup->withOverride(5, 30);
-        self::assertFalse($dupOverridden->enabled, 'Dup: enabled must be preserved');
-        self::assertSame(10, $dupOverridden->min_lines, 'Dup: min_lines must be preserved');
-        self::assertSame(100, $dupOverridden->min_tokens, 'Dup: min_tokens must be preserved');
 
         // PropertyCountOptions — has excludeReadonly, excludePromotedOnly
         $prop = new PropertyCountOptions(
@@ -449,8 +437,8 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         $symbolInfo = new SymbolInfo($subject, RelativePath::fromString('src/Service/BigService.php'), 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$symbolInfo]);
-        $repository->method('get')->willReturn(
+        $repository->method('allClassDeclarations')->willReturn([$symbolInfo]);
+        $repository->method('getSubject')->willReturn(
             MetricBag::fromArray([MetricName::SIZE_METHOD_COUNT => 35]),
         );
 
@@ -499,6 +487,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             RelativePath::fromString('src/Service/BigService.php'),
             20,
             CallableKind::Method,
+            \Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forClass(($subject)->toSymbolPath()->namespace ?? '', ($subject)->toSymbolPath()->type ?? ''), RelativePath::fromString('src/Service/BigService.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)),
         );
 
         $repository = self::createStub(MetricRepositoryInterface::class);
@@ -536,10 +525,10 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\\Service', 'Hub');
         $subject = self::declarationSubject($symbolPath, 'src/Service/Hub.php', 100);
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([
+        $repository->method('allClassDeclarations')->willReturn([
             new SymbolInfo($subject, RelativePath::fromString('src/Service/Hub.php'), 10),
         ]);
-        $repository->method('get')->willReturn(
+        $repository->method('getSubject')->willReturn(
             MetricBag::fromArray([MetricName::COUPLING_CBO => 18, MetricName::COUPLING_CA => 8, MetricName::COUPLING_CE => 10]),
         );
         $context = new AnalysisContext(
@@ -570,10 +559,10 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\\Service', 'TypedService');
         $subject = self::declarationSubject($symbolPath, 'src/Service/TypedService.php', 100);
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([
+        $repository->method('allClassDeclarations')->willReturn([
             new SymbolInfo($subject, RelativePath::fromString('src/Service/TypedService.php'), 10),
         ]);
-        $repository->method('get')->willReturn(MetricBag::fromArray([
+        $repository->method('getSubject')->willReturn(MetricBag::fromArray([
             MetricName::DESIGN_TYPE_COVERAGE_PARAM_TOTAL => 1,
             MetricName::DESIGN_TYPE_COVERAGE_PARAM => 70.0,
             MetricName::DESIGN_TYPE_COVERAGE_RETURN_TOTAL => 1,

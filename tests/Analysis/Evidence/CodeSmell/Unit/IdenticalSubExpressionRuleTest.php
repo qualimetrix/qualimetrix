@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\CodeSmell\BooleanArgumentRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\IdenticalSubExpressionOptions;
 use Qualimetrix\Analysis\Evidence\CodeSmell\IdenticalSubExpressionRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
@@ -18,6 +20,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(IdenticalSubExpressionRule::class)]
 #[CoversClass(IdenticalSubExpressionOptions::class)]
@@ -34,7 +37,7 @@ final class IdenticalSubExpressionRuleTest extends TestCase
     public function itGetDescription(): void
     {
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
-        self::assertNotEmpty($rule->getDescription());
+        self::assertNotEmpty($rule::getDescription());
     }
 
     #[Test]
@@ -83,6 +86,30 @@ final class IdenticalSubExpressionRuleTest extends TestCase
         self::assertStringContainsString('operator', $findings[0]->message);
         self::assertSame('code-smell.identical-subexpression', $findings[0]->code);
         self::assertSame(1.0, $findings[0]->metricValue);
+        self::assertSame(SymbolLevel::File, $findings[0]->subject::levelOfCanonical($findings[0]->subject->toCanonical()));
+        self::assertSame(
+            [SymbolLevel::Callable, SymbolLevel::File],
+            IdenticalSubExpressionRule::channelDeclarations()['code-smell.identical-subexpression']->levels,
+        );
+        self::assertSame(
+            [SymbolLevel::Callable, SymbolLevel::File],
+            BooleanArgumentRule::channelDeclarations()['code-smell.boolean-argument']->levels,
+        );
+    }
+
+    #[Test]
+    public function itProjectsADeclarationEntryToItsLogicalSymbol(): void
+    {
+        $entry = [
+            'subjectKind' => 'declaration', 'logicalKind' => 'method',
+            'namespace' => 'App', 'class' => 'Example', 'member' => 'run',
+            'line' => 10, 'detail' => '',
+        ];
+        $findings = (new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions()))
+            ->analyze($this->createContext((new MetricBag())->withEntry('identicalSubExpression.identical_operands', $entry)));
+
+        self::assertCount(1, $findings);
+        self::assertSame($findings[0]->subject->toSymbolPath()->toString(), $findings[0]->symbolPath->toString());
     }
 
     /**
@@ -186,21 +213,21 @@ final class IdenticalSubExpressionRuleTest extends TestCase
     #[Test]
     public function itOptionsFromArrayEnabled(): void
     {
-        $options = IdenticalSubExpressionOptions::fromArray(['enabled' => true]);
+        $options = IdenticalSubExpressionOptions::fromResolved(ResolvedOptionsFixture::values(IdenticalSubExpressionOptions::class, ['enabled' => true]));
         self::assertTrue($options->isEnabled());
     }
 
     #[Test]
     public function itOptionsFromArrayDisabled(): void
     {
-        $options = IdenticalSubExpressionOptions::fromArray(['enabled' => false]);
+        $options = IdenticalSubExpressionOptions::fromResolved(ResolvedOptionsFixture::values(IdenticalSubExpressionOptions::class, ['enabled' => false]));
         self::assertFalse($options->isEnabled());
     }
 
     #[Test]
     public function itOptionsFromEmptyArray(): void
     {
-        $options = IdenticalSubExpressionOptions::fromArray([]);
+        $options = IdenticalSubExpressionOptions::fromResolved(ResolvedOptionsFixture::values(IdenticalSubExpressionOptions::class, []));
         self::assertTrue($options->isEnabled());
     }
 

@@ -4,18 +4,25 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Reporting\Integration\FindingProjection;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
+use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
@@ -32,6 +39,7 @@ use Qualimetrix\Infrastructure\Git\ReportingGitScopeQuery;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use RuntimeException;
 use Symfony\Component\Process\Process;
@@ -63,8 +71,18 @@ final class ProjectScopedChannelProjectionTest extends TestCase
 
     private const string NAMESPACE = 'App\\Service';
 
+    private ChannelPublication $publication;
+
     /** @var list<string> */
     private array $tempDirs = [];
+
+    protected function setUp(): void
+    {
+        $configuration = ResolvedOptionsFixture::ready(FindingConfiguration::none(), [
+            new RuleMetadata(UnusedEntryRule::NAME, UnusedEntryRule::getOptionsClass(), UnusedEntryRule::getDescription(), [], false),
+        ]);
+        $this->publication = new ChannelPublication($configuration->enablement ?? throw new LogicException('Fixture requires resolved publication.'));
+    }
 
     protected function tearDown(): void
     {
@@ -101,7 +119,7 @@ final class ProjectScopedChannelProjectionTest extends TestCase
     {
         foreach (self::declaredProjectScopedKeys() as $key) {
             $channel = new FindingChannel($key);
-            $result = $this->createProjector()->project([$this->finding($channel)], [], $options);
+            $result = $this->createProjector()->project([$this->finding($channel)], [], $options, $this->publication);
 
             self::assertCount(
                 1,
@@ -115,8 +133,10 @@ final class ProjectScopedChannelProjectionTest extends TestCase
     private static function declaredProjectScopedKeys(): array
     {
         return [
-            ...LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS,
+            ...ArchitectureChannels::PROJECT_SCOPED_CHANNELS,
             ...CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS,
+            ...ProjectScopeChannels::PROJECT_SCOPED_CHANNELS,
+            ...\Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineAuditChannels::PROJECT_SCOPED_CHANNELS,
         ];
     }
 
@@ -132,6 +152,13 @@ final class ProjectScopedChannelProjectionTest extends TestCase
             new BaselineLoader(new BaselineEntryParser($declarations)),
             $declarations,
             new ReportingGitScopeQuery(),
+            unusedEntryAudit: new UnusedEntryAudit((function () {
+                $execution = self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+                $execution->method('publishable')->willReturnCallback(static fn(array $findings): array => $findings);
+
+                return $execution;
+            })()),
+            fileScope: \Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope::create(),
         );
     }
 

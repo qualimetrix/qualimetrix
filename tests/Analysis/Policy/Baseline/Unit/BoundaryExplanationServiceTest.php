@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Unit;
 
+use Closure;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -14,6 +15,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
@@ -27,8 +30,13 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineEdge;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanation;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationStatus;
+use Qualimetrix\Analysis\Policy\Baseline\BoundaryRunFacts;
+use Qualimetrix\Analysis\Policy\Baseline\BoundaryThresholdSources;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\CurrentMeasurement;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
 use Qualimetrix\Analysis\Policy\Baseline\ExplainedSubject;
 use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
@@ -41,6 +49,7 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 
 #[CoversClass(BoundaryExplanationService::class)]
@@ -53,7 +62,7 @@ final class BoundaryExplanationServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->service = new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan());
+        $this->service = new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan(), StubChannelDeclarationRegistry::withDefaults());
     }
 
     /**
@@ -88,7 +97,7 @@ final class BoundaryExplanationServiceTest extends TestCase
             14,
         );
 
-        $current = $this->service->explain(
+        $current = $this->explain(
             self::SYMBOL_KEY,
             $channel,
             $baseline,
@@ -97,8 +106,8 @@ final class BoundaryExplanationServiceTest extends TestCase
             [],
             $currentRepository,
         );
-        $baselineOnly = $this->service->explain(self::SYMBOL_KEY, $channel, $baseline, [], [], []);
-        $inertBaselineOnly = $this->service->explain(
+        $baselineOnly = $this->explain(self::SYMBOL_KEY, $channel, $baseline, [], [], []);
+        $inertBaselineOnly = $this->explain(
             self::SYMBOL_KEY,
             $channel,
             new Baseline(
@@ -112,12 +121,13 @@ final class BoundaryExplanationServiceTest extends TestCase
                     'test fixture',
                     'garbage',
                 )],
+                exclusions: self::fixtureExclusions(),
             ),
             [],
             [],
             [],
         );
-        $unknown = $this->service->explain('callable:App\Missing::method', $channel, $baseline, [], [], [], $currentRepository);
+        $unknown = $this->explain('callable:App\Missing::method', $channel, $baseline, [], [], [], $currentRepository);
 
         self::assertSame(BoundaryExplanationStatus::Current, $current->status);
         self::assertSame(BoundaryExplanationStatus::BaselineOnly, $baselineOnly->status);
@@ -137,7 +147,7 @@ final class BoundaryExplanationServiceTest extends TestCase
         $baseline = $this->baselineWithEntry($channel, magnitudes: [25], count: 1);
         $currentFinding = $this->finding($channel, metricValue: 31);
 
-        $explanation = $this->service->explain(
+        $explanation = $this->explain(
             subjectKey: self::SYMBOL_KEY,
             channelFilter: null,
             baseline: $baseline,
@@ -172,7 +182,7 @@ final class BoundaryExplanationServiceTest extends TestCase
         $baseline = $this->baselineWithEntry($channel, magnitudes: [25], count: 1);
         $currentFinding = $this->finding($channel, metricValue: 31);
 
-        $explanation = $this->service->explain(
+        $explanation = $this->explain(
             subjectKey: self::SYMBOL_KEY,
             channelFilter: $channel,
             baseline: $baseline,
@@ -186,9 +196,10 @@ final class BoundaryExplanationServiceTest extends TestCase
         self::assertNotNull($source);
         self::assertNotNull($source->accepted);
         self::assertSame([25.0], $source->accepted->magnitudes);
-        self::assertSame([31.0], $source->currentMagnitudes);
-        self::assertNotSame($source->accepted->magnitudes, $source->currentMagnitudes);
-        self::assertSame(1, $source->currentCount);
+        $now = $explanation->boundaries[0]->now;
+        self::assertSame([31.0], $now->magnitudes);
+        self::assertNotSame($source->accepted->magnitudes, $now->magnitudes);
+        self::assertSame(1, $now->count);
     }
 
     /**
@@ -202,7 +213,7 @@ final class BoundaryExplanationServiceTest extends TestCase
         $channel = new FindingChannel('complexity.ccn');
         $baseline = $this->baselineWithEntry($channel, magnitudes: [25, 25, 25], count: 3);
 
-        $explanation = $this->service->explain(
+        $explanation = $this->explain(
             subjectKey: self::SYMBOL_KEY,
             channelFilter: $channel,
             baseline: $baseline,
@@ -218,9 +229,12 @@ final class BoundaryExplanationServiceTest extends TestCase
         $source = $explanation->boundaries[0]->baseline;
 
         self::assertNotNull($source);
-        self::assertSame([20.0], $source->currentMagnitudes);
-        self::assertSame(2, $source->membersWithoutMagnitude);
-        self::assertSame(3, $source->currentCount);
+        $now = $explanation->boundaries[0]->now;
+        self::assertNull($now->magnitudes);
+        self::assertSame(2, $now->membersWithoutMagnitude);
+        self::assertSame(3, $now->count);
+        self::assertSame(CurrentMeasurement::NOT_COMPARED, $now->state);
+        self::assertSame([25.0, 25.0, 25.0], $source->accepted?->magnitudes);
     }
 
     /**
@@ -237,7 +251,7 @@ final class BoundaryExplanationServiceTest extends TestCase
         $unreadable = InertBaselineEntry::forRaw(self::SYMBOL_KEY, null, InertEntryReason::Malformed, 'no channel', ['channel' => 5]);
         $elsewhere = InertBaselineEntry::forRaw('file:src/Other.php', null, InertEntryReason::Malformed, 'no channel', ['channel' => 6]);
 
-        $explanation = $this->service->explain(
+        $explanation = $this->explain(
             subjectKey: self::SYMBOL_KEY,
             channelFilter: null,
             baseline: new Baseline(
@@ -245,6 +259,7 @@ final class BoundaryExplanationServiceTest extends TestCase
                 scope: ['src'],
                 entries: [],
                 inertEntries: [$inert, $unreadable, $elsewhere],
+                exclusions: self::fixtureExclusions(),
             ),
             measuredFindings: [],
             thresholdOverridesByFile: [],
@@ -272,9 +287,10 @@ final class BoundaryExplanationServiceTest extends TestCase
             generated: new DateTimeImmutable('2026-08-05T12:00:00+03:00'),
             scope: ['src'],
             entries: [new BaselineEntry($identity, [24], 1, BaselineEntryMode::Suppress)],
+            exclusions: self::fixtureExclusions(),
         );
 
-        $explanation = $this->service->explain(
+        $explanation = $this->explain(
             subjectKey: self::SYMBOL_KEY,
             channelFilter: $channel,
             baseline: $baseline,
@@ -286,7 +302,7 @@ final class BoundaryExplanationServiceTest extends TestCase
         $source = $explanation->boundaries[0]->baseline;
         self::assertNotNull($source);
         self::assertSame(BaselineEntryMode::Suppress, $source->mode);
-        self::assertSame(0, $source->membersWithoutMagnitude);
+        self::assertSame(0, $explanation->boundaries[0]->now->membersWithoutMagnitude);
         self::assertNull($source->inert);
         self::assertSame([], $explanation->unidentifiedEntries);
     }
@@ -301,7 +317,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     {
         $channel = new FindingChannel('coupling.cbo');
 
-        $explanation = $this->service->explain(
+        $explanation = $this->explain(
             subjectKey: self::SYMBOL_KEY,
             channelFilter: $channel,
             baseline: $this->baselineWithEntry(
@@ -331,7 +347,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     {
         $channel = new FindingChannel('code-smell.goto');
 
-        $withZero = $this->service->explain(
+        $withZero = $this->explain(
             subjectKey: self::SYMBOL_KEY,
             channelFilter: $channel,
             baseline: null,
@@ -340,7 +356,7 @@ final class BoundaryExplanationServiceTest extends TestCase
             configuredThresholds: [$channel->code => [SymbolLevel::Callable->value => 0]],
         );
 
-        $withoutEntry = $this->service->explain(
+        $withoutEntry = $this->explain(
             subjectKey: self::SYMBOL_KEY,
             channelFilter: $channel,
             baseline: null,
@@ -367,7 +383,7 @@ final class BoundaryExplanationServiceTest extends TestCase
         $baseline = $this->baselineWithEntry($baselinedChannel, magnitudes: [25], count: 1);
         $firingOnly = $this->finding($firingOnlyChannel, metricValue: 12);
 
-        $explanation = $this->service->explain(
+        $explanation = $this->explain(
             subjectKey: self::SYMBOL_KEY,
             channelFilter: null,
             baseline: $baseline,
@@ -395,7 +411,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     {
         $channel = new FindingChannel('complexity.ccn');
 
-        $explanation = $this->service->explain(
+        $explanation = $this->explain(
             subjectKey: self::SYMBOL_KEY,
             channelFilter: $channel,
             baseline: null,
@@ -421,7 +437,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     {
         $channel = new FindingChannel('complexity.ccn');
 
-        $explanation = $this->service->explain(
+        $explanation = $this->explain(
             subjectKey: self::SYMBOL_KEY,
             channelFilter: $channel,
             baseline: null,
@@ -450,13 +466,14 @@ final class BoundaryExplanationServiceTest extends TestCase
             new DateTimeImmutable('2026-08-05T12:00:00+03:00'),
             ['src'],
             [new BaselineEntry($baselineIdentity, [25], 1)],
+            exclusions: self::fixtureExclusions(),
         );
         $measured = $this->findingWithIdentityParts(
             $channel,
             OccurrenceKey::semantic('measured', ['slot' => 2]),
         );
 
-        $explanation = $this->service->explain(
+        $explanation = $this->explain(
             self::SYMBOL_KEY,
             null,
             $baseline,
@@ -468,7 +485,7 @@ final class BoundaryExplanationServiceTest extends TestCase
         self::assertSame($baselineIdentity->key(), $explanation->boundaries[0]->identity->key());
         self::assertNotNull($explanation->boundaries[0]->annotation);
         self::assertSame(40, $explanation->boundaries[0]->annotation->error);
-        self::assertSame(0, $explanation->boundaries[0]->baseline?->currentCount);
+        self::assertSame(0, $explanation->boundaries[0]->now->count);
     }
 
     #[Test]
@@ -486,10 +503,11 @@ final class BoundaryExplanationServiceTest extends TestCase
             new DateTimeImmutable('2026-08-05T12:00:00+03:00'),
             ['src'],
             [new BaselineEntry($baselineIdentity, [25], 1)],
+            exclusions: self::fixtureExclusions(),
         );
         $measured = $this->findingWithIdentityParts($channel, dependencyTarget: $target);
 
-        $explanation = $this->service->explain(
+        $explanation = $this->explain(
             self::SYMBOL_KEY,
             null,
             $baseline,
@@ -500,7 +518,7 @@ final class BoundaryExplanationServiceTest extends TestCase
 
         self::assertSame(DependencyType::New_, $explanation->boundaries[0]->identity->edge?->type);
         self::assertNotNull($explanation->boundaries[0]->annotation);
-        self::assertSame(0, $explanation->boundaries[0]->baseline?->currentCount);
+        self::assertSame(0, $explanation->boundaries[0]->now->count);
     }
 
     /**
@@ -512,7 +530,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     {
         $channel = new FindingChannel('complexity.ccn');
 
-        $explanation = $this->service->explain(
+        $explanation = $this->explain(
             subjectKey: self::SYMBOL_KEY,
             channelFilter: $channel,
             baseline: null,
@@ -542,7 +560,7 @@ final class BoundaryExplanationServiceTest extends TestCase
             $endLine,
         );
 
-        $explanation = $this->service->explain(
+        $explanation = $this->explain(
             self::SYMBOL_KEY,
             $channel,
             null,
@@ -616,14 +634,41 @@ final class BoundaryExplanationServiceTest extends TestCase
         self::assertSame(2, $repository->calls['allCallables']);
         self::assertSame(4, $repository->iterations['allCallables']);
         self::assertArrayNotHasKey('all:' . SymbolLevel::Callable->value, $repository->calls);
+        self::assertArrayNotHasKey('all:' . SymbolLevel::Class_->value, $repository->calls);
         foreach (SymbolLevel::cases() as $level) {
-            if ($level === SymbolLevel::Callable) {
+            if ($level === SymbolLevel::Callable || $level === SymbolLevel::Class_) {
                 continue;
             }
 
             self::assertSame(1, $repository->calls['all:' . $level->value]);
         }
         self::assertSame(1, $repository->iterations['all:' . SymbolLevel::Namespace_->value]);
+    }
+
+    #[Test]
+    public function itEnumeratesOnlyExactClassDeclarationsWithoutReadingOtherSources(): void
+    {
+        $file = RelativePath::fromString('src/Multiple.php');
+        $class = SymbolPath::forClass('App', 'Multiple');
+        $classSubject = MetricSubject::declaration(DeclarationPath::of($class, $file, DeclarationOrdinal::fromRank(0)));
+        $methodSubject = MetricSubject::declaration(DeclarationPath::of(
+            SymbolPath::forMethod('App', 'Multiple', 'run'),
+            $file,
+            DeclarationOrdinal::fromRank(0),
+        ));
+        $repository = new CountingBoundaryRepository(
+            declarations: [new SymbolInfo($classSubject, $file, 1), new SymbolInfo($methodSubject, $file, 2)],
+            logicalClasses: [new SymbolInfo(MetricSubject::logicalClass(new LogicalClassPath($class)), null, null)],
+        );
+
+        $classes = iterator_to_array($repository->allClassDeclarations(), false);
+
+        self::assertCount(1, $classes);
+        self::assertSame($classSubject, $classes[0]->subject);
+        self::assertSame(1, $repository->calls['allClassDeclarations']);
+        self::assertSame(1, $repository->iterations['allClassDeclarations']);
+        self::assertArrayNotHasKey('allDeclarations', $repository->calls);
+        self::assertArrayNotHasKey('allLogicalClasses', $repository->calls);
     }
 
     #[Test]
@@ -638,13 +683,226 @@ final class BoundaryExplanationServiceTest extends TestCase
         ExplainedSubject::index($repository);
     }
 
+    #[Test]
+    public function itMarksARetiredProjectCopyUnmeasuredWithoutMarkingADeclaredFileCopy(): void
+    {
+        $channel = new FindingChannel('duplication.clone');
+        $project = new BaselineEntry(new BaselineIdentity('project:', $channel), [40], 1);
+        $file = new BaselineEntry(new BaselineIdentity('file:src/Foo.php', $channel), [40], 1);
+        $baseline = new Baseline(new DateTimeImmutable(), ['src'], [$project, $file], exclusions: self::fixtureExclusions());
+        $service = new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan(), StubChannelDeclarationRegistry::withDefaults());
+
+        $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $coverage = StubRuleCoverage::completeFor($baseline);
+        $old = $service->explain('project:', $channel, $baseline, new BoundaryThresholdSources([], []), new BoundaryRunFacts([], $coverage, null));
+        $current = $service->explain('file:src/Foo.php', $channel, $baseline, new BoundaryThresholdSources([], []), new BoundaryRunFacts([], $coverage, null));
+
+        self::assertSame(CurrentMeasurement::LEVEL_NOT_REPORTED, $old->boundaries[0]->now->state);
+        self::assertSame(['file'], $old->boundaries[0]->now->declaredLevels);
+        self::assertSame(CurrentMeasurement::NOTHING_REPORTED, $current->boundaries[0]->now->state);
+    }
+
+    #[Test]
+    public function itReportsNowIndependentlyOfAbsentAndInertBaselineSources(): void
+    {
+        $channel = new FindingChannel('complexity.ccn');
+        $inert = InertBaselineEntry::forIdentity(
+            new BaselineIdentity(self::SYMBOL_KEY, $channel),
+            InertEntryReason::DuplicateIdentity,
+            'duplicated',
+            null,
+        );
+        $baseline = new Baseline(new DateTimeImmutable(), ['elsewhere'], [], self::fixtureExclusions(), [$inert]);
+        foreach ([null, $baseline] as $source) {
+            $explanation = $this->explain(self::SYMBOL_KEY, $channel, $source, [$this->finding($channel, 16)], [], []);
+            self::assertSame(CurrentMeasurement::REPORTED, $explanation->boundaries[0]->now->state);
+            self::assertSame([16.0], $explanation->boundaries[0]->now->magnitudes);
+            self::assertSame($source === null ? null : $inert, $explanation->boundaries[0]->baseline?->inert);
+        }
+        $clean = $this->explain(self::SYMBOL_KEY, $channel, null, [], [], []);
+        self::assertSame(CurrentMeasurement::NOTHING_REPORTED, $clean->boundaries[0]->now->state);
+    }
+
+    #[Test]
+    public function itDoesNotInferCurrentAbsenceForAnUnrecordedFileOutsideTheCapturedUniverse(): void
+    {
+        $channel = new FindingChannel('duplication.clone');
+        $explanation = $this->explain(
+            'file:src/Gone.php',
+            $channel,
+            null,
+            [],
+            [],
+            [],
+            coverage: $this->currentRun([], [], captured: false),
+        );
+
+        self::assertSame(CurrentMeasurement::OUTSIDE_COVERAGE, $explanation->boundaries[0]->now->state);
+    }
+
+    #[Test]
+    public function itReportsCurrentAbsenceForAnUnrecordedFileInsideAKnownSelectedRoot(): void
+    {
+        $channel = new FindingChannel('duplication.clone');
+        $explanation = $this->explain('file:src/Gone.php', $channel, null, [], [], [], coverage: $this->currentRun([], []));
+
+        self::assertSame(CurrentMeasurement::NOTHING_REPORTED, $explanation->boundaries[0]->now->state);
+    }
+
+    #[Test]
+    public function itReadsKnownEntryNowFromTheCeilingOutcome(): void
+    {
+        $channel = new FindingChannel('complexity.ccn');
+        $baseline = $this->baselineWithEntry($channel, [25], 1);
+        $queries = 0;
+        $coverage = $this->currentRun([], [], presence: static function () use (&$queries): \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence {
+            return ++$queries === 1
+                ? \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence::Absent
+                : \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence::Present;
+        });
+        $removed = $this->explain(self::SYMBOL_KEY, $channel, $baseline, [], [], [], coverage: $coverage);
+        self::assertSame('stale', $removed->boundaries[0]->baseline?->verdict);
+        self::assertSame(CurrentMeasurement::NOTHING_REPORTED, $removed->boundaries[0]->now->state);
+        self::assertSame(1, $queries);
+
+        $outside = $this->explain(self::SYMBOL_KEY, $channel, $baseline, [], [], [], coverage: $this->currentRun([], ['src/Foo.php']));
+        self::assertSame(CurrentMeasurement::OUTSIDE_COVERAGE, $outside->boundaries[0]->now->state);
+        $this->service = new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::withSkipped(notSelected: ['complexity.ccn']), StubChannelDeclarationRegistry::withDefaults());
+        $disabled = $this->explain(self::SYMBOL_KEY, $channel, $baseline, [], [], []);
+        self::assertSame(CurrentMeasurement::NOT_MEASURED, $disabled->boundaries[0]->now->state);
+        self::assertSame('producer-not-measured', $disabled->boundaries[0]->now->reason);
+        $this->service = new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan(), StubChannelDeclarationRegistry::withDefaults());
+
+        $aggregateChannel = new FindingChannel('size.class-count');
+        $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $declarations->declare($aggregateChannel->code, ChannelDeclaration::magnitude(\Qualimetrix\Core\Observation\WorseDirection::Higher, SymbolLevel::Namespace_));
+        $finding = new Finding(
+            subject: MetricSubject::aggregate(SymbolPath::forNamespace('App')),
+            location: new Location(RelativePath::fromString('src/Foo.php'), 1),
+            symbolPath: SymbolPath::forNamespace('App'),
+            ruleName: 'size.class-count',
+            code: 'size.class-count',
+            message: 'class count',
+            severity: Severity::Warning,
+            metricValue: 3,
+        );
+        foreach ([
+            'paths-differ' => [['src/Sub'], self::fixtureExclusions()],
+            'exclusions-differ' => [['src'], new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(['exact:src/Bar.php'], \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude)],
+        ] as $reason => [$recordedScope, $currentExclusions]) {
+            $aggregate = new Baseline(new DateTimeImmutable(), $recordedScope, [new BaselineEntry(BaselineIdentity::forFinding($finding), [5], 1)], self::fixtureExclusions());
+            $explanation = $this->explain(
+                'ns:App',
+                $aggregateChannel,
+                $aggregate,
+                [$finding],
+                [],
+                [],
+                declarations: $declarations,
+                coverage: $this->currentRun(['src/Foo.php'], ['src/Foo.php', 'src/Bar.php'], exclusions: $currentExclusions),
+            );
+            self::assertSame(CurrentMeasurement::NOT_COMPARED, $explanation->boundaries[0]->now->state, $reason);
+            self::assertSame($reason, $explanation->boundaries[0]->now->reason);
+            self::assertSame([3.0], $explanation->boundaries[0]->now->magnitudes);
+            self::assertSame([5.0], $explanation->boundaries[0]->baseline?->accepted?->magnitudes);
+        }
+        $unknown = $this->explain(self::SYMBOL_KEY, $channel, $baseline, [], [], [], coverage: $this->currentRun(
+            [],
+            [],
+            presence: static fn() => \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence::Unknown,
+        ));
+        self::assertSame(CurrentMeasurement::OUTSIDE_COVERAGE, $unknown->boundaries[0]->now->state);
+        self::assertSame('metadata-unknown', $unknown->boundaries[0]->now->reason);
+    }
+
+    #[Test]
+    public function itNamesAnUndeclaredSubjectLevelBeforeClassifyingCoverage(): void
+    {
+        $this->service = new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::withSkipped(notSelected: ['complexity.ccn', 'duplication.clone']), StubChannelDeclarationRegistry::withDefaults());
+        foreach ([['ns:App', 'complexity.ccn', ['callable', 'class']], ['project:', 'duplication.clone', ['file']]] as [$subject, $code, $levels]) {
+            $explanation = $this->explain($subject, new FindingChannel($code), null, [], [], []);
+            self::assertSame(CurrentMeasurement::LEVEL_NOT_REPORTED, $explanation->boundaries[0]->now->state);
+            self::assertSame($levels, $explanation->boundaries[0]->now->declaredLevels);
+        }
+    }
+
+    #[Test]
+    public function itUsesTheDeclaredChannelShapeForNowEvenWhenItsEntryIsInert(): void
+    {
+        $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $declarations->declare('code-smell.eval', ChannelDeclaration::occurrence(SymbolLevel::Callable));
+        foreach (['code-smell.eval' => 'occurrence', 'code-smell.renamed-eval' => null] as $code => $shape) {
+            $channel = new FindingChannel($code);
+            $inert = InertBaselineEntry::forIdentity(new BaselineIdentity(self::SYMBOL_KEY, $channel), InertEntryReason::ShapeMismatch, 'magnitude payload', ['magnitudes' => [25]]);
+            $baseline = new Baseline(new DateTimeImmutable(), ['src'], [], self::fixtureExclusions(), [$inert]);
+            $explanation = $this->explain(
+                self::SYMBOL_KEY,
+                $channel,
+                $baseline,
+                [$this->finding($channel, \NAN), $this->finding($channel, 9)],
+                [],
+                [],
+                declarations: $declarations,
+            );
+            self::assertSame(CurrentMeasurement::REPORTED, $explanation->boundaries[0]->now->state);
+            self::assertSame($shape, $explanation->boundaries[0]->now->shape);
+            self::assertSame(2, $explanation->boundaries[0]->now->count);
+            self::assertSame(0, $explanation->boundaries[0]->now->membersWithoutMagnitude);
+            self::assertNull($explanation->boundaries[0]->now->magnitudes);
+        }
+    }
+
+    /**
+     * @param list<string> $analyzed
+     * @param list<string> $present
+     * @param ?Closure(): \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence $presence
+     */
+    private function currentRun(array $analyzed, array $present, ?\Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions $exclusions = null, ?Closure $presence = null, bool $captured = true): RunCoverage
+    {
+        $root = \Qualimetrix\Core\Path\AbsolutePath::fromString('/tmp/qmx-explain-fixture');
+        $files = array_map(RelativePath::fromString(...), $present);
+        $tree = new class ($files, $presence) implements \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface {
+            /**
+             * @param list<RelativePath> $files
+             * @param ?Closure(): \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence $presence
+             */
+            public function __construct(private array $files, private ?Closure $presence) {}
+            public function hasDirectory(\Qualimetrix\Core\Path\AbsolutePath $directory): \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence
+            {
+                return \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence::Present;
+            }
+            public function hasFile(\Qualimetrix\Core\Path\AbsolutePath $root, RelativePath $file): \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence
+            {
+                if ($this->presence !== null) {
+                    return ($this->presence)();
+                }
+                return array_any($this->files, static fn(RelativePath $present): bool => $present->equals($file))
+                    ? \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence::Present
+                    : \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence::Absent;
+            }
+            public function snapshot(\Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse $universe): \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeSnapshot
+            {
+                return new \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeSnapshot($this->files, [], true);
+            }
+        };
+        return new RunCoverage(
+            \Qualimetrix\Analysis\Policy\Baseline\RunScope::fromRecorded(['src']),
+            new \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage(array_map(RelativePath::fromString(...), $analyzed), [], []),
+            $exclusions ?? self::fixtureExclusions(),
+            new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse($root, true, $captured ? [['target' => 'src', 'path' => $root->joinRelative(RelativePath::fromString('src'))]] : [], [], [], true, []),
+            ['App\\' => ['src/']],
+            $tree,
+            \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), array_map(RelativePath::fromString(...), $analyzed), []),
+        );
+    }
+
     /**
      * A repository retaining exactly one callable declaration subject.
      */
     private function repositoryWithCallableSubject(SymbolPath $symbol, string $file, int $line): MetricRepositoryInterface
     {
         $repository = new InMemoryMetricRepository();
-        $repository->addCallable(new CallableWithMetrics(DeclarationPath::of($symbol, RelativePath::fromString($file), DeclarationOrdinal::fromRank(0)), 0, CallableKind::Method, null, null, new LogicalClassPath(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? '')), new MetricBag(), $line));
+        $repository->addCallable(new CallableWithMetrics(DeclarationPath::of($symbol, RelativePath::fromString($file), DeclarationOrdinal::fromRank(0)), 0, CallableKind::Method, null, null, DeclarationPath::of(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? ''), DeclarationPath::of($symbol, RelativePath::fromString($file), DeclarationOrdinal::fromRank(0))->file, DeclarationOrdinal::fromRank(0)), new MetricBag(), $line));
 
         return $repository;
     }
@@ -660,6 +918,7 @@ final class BoundaryExplanationServiceTest extends TestCase
             generated: new DateTimeImmutable('2026-08-05T12:00:00+03:00'),
             scope: ['src'],
             entries: [new BaselineEntry($identity, $magnitudes, $count)],
+            exclusions: self::fixtureExclusions(),
         );
     }
 
@@ -709,6 +968,45 @@ final class BoundaryExplanationServiceTest extends TestCase
             MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Foo', 'bar'), RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             ControlScope::Class_,
             50,
+        );
+    }
+
+    /**
+     * @param list<Finding> $measuredFindings
+     * @param array<string, list<ThresholdOverride>> $thresholdOverridesByFile
+     * @param array<string, array<string, int|float>> $configuredThresholds
+     */
+    private function explain(
+        string $subjectKey,
+        ?FindingChannel $channelFilter,
+        ?Baseline $baseline,
+        array $measuredFindings,
+        array $thresholdOverridesByFile,
+        array $configuredThresholds,
+        ?MetricRepositoryInterface $symbolLocations = null,
+        ?ChannelDeclarationRegistryInterface $declarations = null,
+        ?RunCoverage $coverage = null,
+    ): BoundaryExplanation {
+        $fixture = $baseline ?? new Baseline(new DateTimeImmutable(), ['src'], [], self::fixtureExclusions());
+
+        $service = $declarations === null
+            ? $this->service
+            : new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan(), $declarations);
+
+        return $service->explain(
+            $subjectKey,
+            $channelFilter,
+            $baseline,
+            new BoundaryThresholdSources($thresholdOverridesByFile, $configuredThresholds),
+            new BoundaryRunFacts($measuredFindings, $coverage ?? StubRuleCoverage::completeFor($fixture), $symbolLocations),
+        );
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
         );
     }
 }
@@ -804,6 +1102,20 @@ final class CountingBoundaryRepository implements MetricRepositoryInterface
         return $this->iterate(__FUNCTION__, $this->logicalClasses);
     }
 
+    public function allClassDeclarations(): iterable
+    {
+        $this->count($this->calls, __FUNCTION__);
+
+        foreach ($this->declarations as $info) {
+            if ($info->symbolPath->getType() !== \Qualimetrix\Core\Symbol\SymbolType::Class_) {
+                continue;
+            }
+
+            $this->count($this->iterations, __FUNCTION__);
+            yield $info;
+        }
+    }
+
     public function addScalar(SymbolPath $symbol, string $key, int|float $value): void {}
 
     public function getNamespaces(): array
@@ -812,6 +1124,11 @@ final class CountingBoundaryRepository implements MetricRepositoryInterface
     }
 
     public function forNamespace(string $namespace): array
+    {
+        return [];
+    }
+
+    public function mixedSpellings(): array
     {
         return [];
     }
@@ -834,4 +1151,5 @@ final class CountingBoundaryRepository implements MetricRepositoryInterface
     {
         $counter[$key] = ($counter[$key] ?? 0) + 1;
     }
+
 }

@@ -4,26 +4,39 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Run\Unit;
 
+use LogicException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions;
+use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
+use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
-use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
-use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\UnmatchedTypeWarningInterface;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationOptions;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationRule;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
+use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassOptions;
+use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassRule;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput;
@@ -31,11 +44,15 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAudi
 use Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
+use Qualimetrix\Analysis\Run\InlineDirectiveRun;
 use Qualimetrix\Analysis\Run\RuleProducerPreparation;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(RuleProducerPreparation::class)]
+#[CoversClass(InlineDirectiveRun::class)]
 final class RuleProducerPreparationTest extends TestCase
 {
     #[Test]
@@ -71,14 +88,14 @@ final class RuleProducerPreparationTest extends TestCase
 
         $preparation = $this->preparation(
             circular: $circular,
-            selection: new RuleSelection(disabled: [CircularDependencyPreparationInterface::PRODUCER_RULE_NAME]),
+            disabled: [CircularDependencyPreparationInterface::PRODUCER_RULE_NAME],
             participants: [$participant],
         );
         $preparation->prepareCircularDependencies(
             self::createStub(DependencyGraphInterface::class),
             self::createStub(ProfilerInterface::class),
         );
-        $preparation->inspectFiles([], AbsolutePath::fromString('/project'));
+        $preparation->inspectFiles([], AbsolutePath::fromString('/project'), []);
 
         self::assertSame(1, $participant->resetCalls);
         self::assertSame(0, $participant->inspectCalls);
@@ -93,7 +110,7 @@ final class RuleProducerPreparationTest extends TestCase
     #[Test]
     public function itResetsArchitecturePreparationWithoutDoingWorkWhenEveryLayerPolicyProducerIsDisabled(): void
     {
-        $architecture = $this->createMock(LayerPolicyPreparationInterface::class);
+        $architecture = $this->architectureMock();
         $architecture->expects(self::never())->method('prepare');
         $architecture->expects(self::once())->method('reset');
         $profiler = $this->createMock(ProfilerInterface::class);
@@ -101,7 +118,7 @@ final class RuleProducerPreparationTest extends TestCase
 
         $this->preparation(
             architecture: $architecture,
-            selection: new RuleSelection(disabled: LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES),
+            disabled: ArchitectureChannels::PRODUCERS,
         )->prepareArchitecture(
             self::createStub(DependencyGraphInterface::class),
             [],
@@ -113,18 +130,20 @@ final class RuleProducerPreparationTest extends TestCase
      * @param list<string> $only
      */
     #[Test]
-    #[TestWith([[LayerPolicyPreparationInterface::PRODUCER_RULE_NAME]])]
-    #[TestWith([[LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME]])]
+    #[TestWith([[ArchitectureChannels::PRODUCER_RULE_NAME]])]
+    #[TestWith([[ArchitectureChannels::UNASSIGNED_CLASS_DIAGNOSTIC_NAME]])]
+    #[TestWith([[ArchitectureChannels::LAYER_DECLARATION_PRODUCER_NAME]])]
     public function itPreparesArchitecturePolicyForEitherOfItsProducersAlone(array $only): void
     {
         $graph = self::createStub(DependencyGraphInterface::class);
-        $architecture = $this->createMock(LayerPolicyPreparationInterface::class);
+        $architecture = $this->architectureMock();
         $architecture->expects(self::once())->method('prepare')->with($graph, []);
         $architecture->expects(self::never())->method('reset');
 
         $this->preparation(
             architecture: $architecture,
-            selection: new RuleSelection(only: $only),
+            only: $only,
+            ruleOptions: [ArchitectureChannels::UNASSIGNED_CLASS_DIAGNOSTIC_NAME => ['mode' => 'warn']],
         )->prepareArchitecture($graph, [], self::createStub(ProfilerInterface::class));
     }
 
@@ -132,7 +151,7 @@ final class RuleProducerPreparationTest extends TestCase
     public function itPreparesArchitecturePolicyWhenLayerViolationRuleIsEnabled(): void
     {
         $graph = self::createStub(DependencyGraphInterface::class);
-        $architecture = $this->createMock(LayerPolicyPreparationInterface::class);
+        $architecture = $this->architectureMock();
         $architecture->expects(self::once())->method('prepare')->with($graph, []);
         $architecture->expects(self::never())->method('reset');
         $profiler = $this->createMock(ProfilerInterface::class);
@@ -153,7 +172,7 @@ final class RuleProducerPreparationTest extends TestCase
 
         $this->preparation(
             circular: $circular,
-            selection: new RuleSelection(disabled: [CircularDependencyPreparationInterface::PRODUCER_RULE_NAME]),
+            disabled: [CircularDependencyPreparationInterface::PRODUCER_RULE_NAME],
         )->prepareCircularDependencies(
             self::createStub(DependencyGraphInterface::class),
             $profiler,
@@ -189,16 +208,18 @@ final class RuleProducerPreparationTest extends TestCase
      */
     #[Test]
     #[TestWith([[
-        LayerPolicyPreparationInterface::PRODUCER_RULE_NAME => ['enabled' => false],
-        LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME => false,
+        ArchitectureChannels::PRODUCER_RULE_NAME => ['enabled' => false],
+        ArchitectureChannels::UNASSIGNED_CLASS_DIAGNOSTIC_NAME => false,
+        ArchitectureChannels::LAYER_DECLARATION_PRODUCER_NAME => false,
     ]])]
     #[TestWith([[
-        LayerPolicyPreparationInterface::PRODUCER_RULE_NAME => false,
-        LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME => ['enabled' => false],
+        ArchitectureChannels::PRODUCER_RULE_NAME => false,
+        ArchitectureChannels::UNASSIGNED_CLASS_DIAGNOSTIC_NAME => ['enabled' => false],
+        ArchitectureChannels::LAYER_DECLARATION_PRODUCER_NAME => ['enabled' => false],
     ]])]
-    public function itSkipsArchitecturePreparationWhenBothProducersAreSwitchedOffByTheirOptions(array $ruleOptions): void
+    public function itSkipsArchitecturePreparationWhenAllThreeProducersAreSwitchedOffByTheirOptions(array $ruleOptions): void
     {
-        $architecture = $this->createMock(LayerPolicyPreparationInterface::class);
+        $architecture = $this->architectureMock();
         $architecture->expects(self::never())->method('prepare');
         $architecture->expects(self::once())->method('reset');
         $profiler = $this->createMock(ProfilerInterface::class);
@@ -211,23 +232,16 @@ final class RuleProducerPreparationTest extends TestCase
         );
     }
 
-    /**
-     * The edge this gate does not reach, asserted rather than left to be
-     * rediscovered: `architecture.unassigned-class` has no `enabled` option —
-     * `mode` is its only switch and `mode: ignore` is its default — so the
-     * gate answers "active" for it and the policy is still prepared. The
-     * selectors have always answered the same way, so the two spellings agree;
-     * what neither reaches is a producer that is off by its own default.
-     */
     #[Test]
-    public function itStillPreparesArchitecturePolicyWhenOnlyTheLayerViolationRuleIsSwitchedOff(): void
+    public function itPreparesArchitecturePolicyForDeclarationWhenTheOldProducersAreInactive(): void
     {
-        $architecture = $this->createMock(LayerPolicyPreparationInterface::class);
+        $architecture = $this->architectureMock();
         $architecture->expects(self::once())->method('prepare');
+        $architecture->expects(self::never())->method('reset');
 
         $this->preparation(
             architecture: $architecture,
-            ruleOptions: [LayerPolicyPreparationInterface::PRODUCER_RULE_NAME => ['enabled' => false]],
+            ruleOptions: [ArchitectureChannels::PRODUCER_RULE_NAME => ['enabled' => false]],
         )->prepareArchitecture(
             self::createStub(DependencyGraphInterface::class),
             [],
@@ -266,7 +280,7 @@ final class RuleProducerPreparationTest extends TestCase
         $this->preparation(
             participants: [$participant],
             ruleOptions: ['duplication.clone' => ['enabled' => false]],
-        )->inspectFiles([], AbsolutePath::fromString('/project'));
+        )->inspectFiles([], AbsolutePath::fromString('/project'), []);
 
         self::assertSame(1, $participant->resetCalls);
         self::assertSame(0, $participant->inspectCalls);
@@ -275,21 +289,11 @@ final class RuleProducerPreparationTest extends TestCase
     #[Test]
     public function itPreparesTheArchitectureProducerWhenOnlyADiagnosticChannelIsSelected(): void
     {
-        $architecture = $this->createMock(LayerPolicyPreparationInterface::class);
+        $architecture = $this->architectureMock();
         $architecture->expects(self::once())->method('prepare');
-        $channels = new class implements RuleChannelRegistryInterface {
-            public function channelsProducedBy(string $producerRuleName): array
-            {
-                return $producerRuleName === LayerPolicyPreparationInterface::PRODUCER_RULE_NAME
-                    ? [new FindingChannel('architecture.coverage-gap')]
-                    : [];
-            }
-        };
-
         $this->preparation(
             architecture: $architecture,
-            selector: new RuleSelector($channels),
-            selection: new RuleSelection(only: ['architecture.coverage-gap']),
+            only: ['architecture.coverage-gap'],
         )->prepareArchitecture(
             self::createStub(DependencyGraphInterface::class),
             [],
@@ -298,7 +302,7 @@ final class RuleProducerPreparationTest extends TestCase
     }
 
     /**
-     * `auditThresholdDirectives()` is the last hop of a value that also lands,
+     * `InlineDirectiveRun::verdicts()` is the last hop of a value that also lands,
      * independently, in `DirectiveAuditReport::$sweep`
      * ({@see \Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline::auditDirectives()}).
      * A mutation that hardcodes the scope passed into the audit — while
@@ -328,48 +332,117 @@ final class RuleProducerPreparationTest extends TestCase
         $executor = self::createStub(RuleExecutionInterface::class);
         $baseline = new RuleExecutionResult([], [], new RuleExclusionStats(), LevelActivity::empty());
 
-        $this->preparation(thresholdAudit: $spy)
-            ->auditThresholdDirectives($context, $executor, $baseline, $sweep);
+        (new InlineDirectiveRun(self::createStub(InlineDirectivePolicyInterface::class), $spy))
+            ->verdicts([], LevelActivity::empty(), \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []), $context, $executor, $baseline, $sweep);
 
         self::assertSame($sweep, $spy->received?->sweep);
     }
 
     /**
-     * @param (LayerPolicyPreparationInterface&MockObject)|null $architecture
+     * @param (LayerPolicyPreparationInterface&UnmatchedTypeWarningInterface&MockObject)|null $architecture
      * @param (CircularDependencyPreparationInterface&MockObject)|null $circular
+     * @param list<string> $only
+     * @param list<string> $disabled
      * @param list<FileSetInspectionParticipantInterface> $participants
      * @param array<string, mixed> $ruleOptions
      */
     private function preparation(
-        ?LayerPolicyPreparationInterface $architecture = null,
+        (LayerPolicyPreparationInterface&UnmatchedTypeWarningInterface)|null $architecture = null,
         ?CircularDependencyPreparationInterface $circular = null,
-        ?RuleSelector $selector = null,
-        ?RuleSelection $selection = null,
+        array $only = [],
+        array $disabled = [],
         array $participants = [],
-        ?ThresholdDirectiveAuditInterface $thresholdAudit = null,
         array $ruleOptions = [],
     ): RuleProducerPreparation {
-        $selector ??= new RuleSelector(new InMemoryRuleChannelRegistry());
+        $metadata = [
+            new RuleMetadata(ArchitectureChannels::LAYER_DECLARATION_PRODUCER_NAME, LayerDeclarationOptions::class, '', [], false),
+            new RuleMetadata(ArchitectureChannels::PRODUCER_RULE_NAME, LayerViolationOptions::class, '', [], false),
+            new RuleMetadata(ArchitectureChannels::UNASSIGNED_CLASS_DIAGNOSTIC_NAME, UnassignedClassOptions::class, '', [], false),
+            new RuleMetadata(CircularDependencyPreparationInterface::PRODUCER_RULE_NAME, CircularDependencyOptions::class, '', [], false),
+            new RuleMetadata('duplication.clone', CodeDuplicationOptions::class, '', [], false),
+        ];
+        $channelsByProducer = [
+            ArchitectureChannels::PRODUCER_RULE_NAME => LayerViolationRule::channelDeclarations(),
+            ArchitectureChannels::LAYER_DECLARATION_PRODUCER_NAME => [
+                ...LayerDeclarationRule::channelDeclarations(),
+                ...LayerDeclarationValidator::channelDeclarations(),
+            ],
+            ArchitectureChannels::UNASSIGNED_CLASS_DIAGNOSTIC_NAME => UnassignedClassRule::channelDeclarations(),
+            CircularDependencyPreparationInterface::PRODUCER_RULE_NAME => CircularDependencyRule::channelDeclarations(),
+            'duplication.clone' => CodeDuplicationRule::channelDeclarations(),
+        ];
+        $declarations = [];
+        $channelKeys = [];
+        $support = [];
+        foreach ($channelsByProducer as $producer => $channels) {
+            $declarations = [...$declarations, ...$channels];
+            $channelKeys[$producer] = array_keys($channels);
+            $support[$producer] = false;
+        }
+        $universe = new ChannelUniverse($declarations, $channelKeys, $support, new ResolvedComputedMetricDefinitions([]), ...self::unusedReachPorts());
+        $document = ResolvedOptionsFixture::document([['source' => 'config', 'values' => [
+            'rules' => $ruleOptions,
+            'only_rules' => $only,
+            'disabled_rules' => $disabled,
+        ]]], AbsolutePath::fromString('/project'), $metadata);
         $registry = new RuleOptionsRegistry();
-        $registry->configureSelection($selection ?? new RuleSelection());
-        $registry->setConfigFileOptions($ruleOptions);
+        $registry->replace(ResolvedOptionsFixture::ready(FindingConfiguration::fromDocument($document), $metadata, channels: $universe));
 
-        // One gate, handed to both collaborators, exactly as the container
-        // composes them.
-        $producerGate = new RuleSelectorProducerGate($selector);
+        $producerGate = new RuleSelectorProducerGate($registry);
 
         return new RuleProducerPreparation(
-            $architecture ?? self::createStub(LayerPolicyPreparationInterface::class),
+            $architecture ?? self::architectureStub(),
             $circular ?? self::createStub(CircularDependencyPreparationInterface::class),
-            self::createStub(InlineDirectivePolicyInterface::class),
-            $thresholdAudit ?? self::createStub(ThresholdDirectiveAuditInterface::class),
             new FileSetInspectionComposite(
                 $participants,
                 $producerGate,
                 self::createStub(ProfilerInterface::class),
             ),
             $producerGate,
-            $registry,
         );
+    }
+
+    private function architectureMock(): LayerPolicyPreparationInterface&UnmatchedTypeWarningInterface&MockObject
+    {
+        return $this->createMockForIntersectionOfInterfaces([
+            LayerPolicyPreparationInterface::class,
+            UnmatchedTypeWarningInterface::class,
+        ]);
+    }
+
+    /** @return array{\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface} */
+    private static function unusedReachPorts(): array
+    {
+        return [
+            new class implements \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface {
+                public function metricReach(string $metricKey): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach
+                {
+                    throw new LogicException('This fixture does not query measured-metric reach.');
+                }
+            },
+            new class implements \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface {
+                public function reachAt(
+                    string $metricName,
+                    \Qualimetrix\Core\Symbol\SymbolLevel $level,
+                    \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface $definitions,
+                ): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach {
+                    throw new LogicException('This fixture does not query computed-metric reach.');
+                }
+            },
+        ];
+    }
+
+    private static function architectureStub(): LayerPolicyPreparationInterface&UnmatchedTypeWarningInterface
+    {
+        return new class implements LayerPolicyPreparationInterface, UnmatchedTypeWarningInterface {
+            public function prepare(DependencyGraphInterface $graph, iterable $classUniverse): void {}
+
+            public function reset(): void {}
+
+            public function notJudgedWarning(\Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement $scope): ?string
+            {
+                return null;
+            }
+        };
     }
 }

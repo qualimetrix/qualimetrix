@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract;
 
 use InvalidArgumentException;
+use Qualimetrix\Core\SourceText\SourceBytes;
 
 /**
  * Stable semantic discriminator for findings sharing one channel and subject.
@@ -34,7 +35,9 @@ final readonly class OccurrenceKey
      * SHA-256 digest of the same material — never computed from a shorter or
      * different hash.
      *
-     * @param array<string, bool|float|int|string> $scalarEvidence
+     * Numeric string names retain PHP's native conversion to integer keys.
+     *
+     * @param array<array-key, bool|float|int|string> $scalarEvidence
      */
     public static function semantic(string $kind, array $scalarEvidence): self
     {
@@ -49,8 +52,17 @@ final readonly class OccurrenceKey
             }
         }
 
+        $framed = [];
+        $names = [];
+        $invalidName = false;
+        foreach ($scalarEvidence as $name => $value) {
+            $framed[$name] = \is_string($value) ? SourceBytes::framed($value) : $value;
+            $names[] = [SourceBytes::framed((string) $name), $framed[$name]];
+            $invalidName = $invalidName || !SourceBytes::isUtf8((string) $name);
+        }
+
         $payload = json_encode(
-            ['kind' => $kind, 'evidence' => $scalarEvidence],
+            ['kind' => SourceBytes::framed($kind), 'evidence' => $invalidName ? ['%' => $names] : $framed],
             \JSON_THROW_ON_ERROR | \JSON_PRESERVE_ZERO_FRACTION | \JSON_UNESCAPED_SLASHES,
         );
 

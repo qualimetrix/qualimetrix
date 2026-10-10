@@ -3,6 +3,57 @@
 This is the Symfony composition root. References to private declarations are
 recorded as exact manifest composition bindings and do not widen public APIs.
 
+## Subject composition
+
+`ProjectManifest/ProjectManifestConfigurator` composes the analysed Composer
+snapshot behind both exact public contracts. The existing `Configurator/`
+services compose their named subjects; `CohesionConfigurator` owns the LCOM
+resolver, store and tagged collectors. `OutputConfigurator` keeps ordinary
+services explicitly registered and autowired, with named loggers, the synthetic
+logger holder, lazy Options, factories and tagged collections bound explicitly.
+Run preparation and observed scope reasons are services; their immutable result
+records are values constructed by the operation, never container services.
+
+`Registration/EvidenceRegistration` creates a fresh loader and fresh collector
+and lazy rule prototypes for Cohesion, Complexity, Coupling, Maintainability
+and Size. Their configurators retain the literal `registerClasses()` calls,
+namespace and exact owned resource roots. LCOM tagged collections and Coupling
+aliases remain explicit in their respective configurators. Prototypes and
+loaders are not cached or registered as services.
+
+`ComputedMetricsConfigurator` registers configuration and evaluation separately.
+Its expression and evaluator aliases retain their explicit shared implementation
+bindings; configuration and Health consume those same expression services.
+
+## Invocation source bindings
+
+`ComposerManifestReaderInterface` and `ManifestSnapshotControlInterface` alias
+one Infrastructure Composer reader. `Application` begins its snapshot after
+working-directory selection and before the first read; each root caches success,
+absence and failure for that invocation. The next invocation clears them.
+Measurement's namespace resolver is likewise composed under both its read port
+and `ProjectNamespaceSourceControlInterface`. Console's
+`ProjectSourceConfigurator` binds current facts and the analysed install anchor
+before collection. No configuration field transports a feature's runtime state.
+`OutputConfigurator` composes Run's existing `AnalysisFileDiscovery` for graph
+export with discovery, generated-file filtering and the lazy exclude audit.
+Exact private composition bindings and named public consumers remain manifest
+entries rather than wildcard visibility.
+
+`AnalysisConfigurator` binds DependencyModel's
+`ExternalClassSpellingInterface` to Composer's `InstalledExternalClassSpelling`.
+It uses the same stateless `DeclaredSupertypeReader` as Architecture's external
+facts binding. Placement and directory listings share the captured install
+anchor; `pointAt()` refreshes that snapshot. Parsed external facts are not a
+shared memo: the reader can parse again, while Architecture's factory memo
+belongs to its own prepared run.
+
+`ArchitectureConfigurator` binds preparation, assignment inspection and the pure
+`UnmatchedTypeWarningInterface` query to the same policy instance. Run requires
+the preparation/query intersection and checks exact channel publication before
+requesting a warning. Console requires final Finding enablement before projecting
+`policyDisabled`; neither consumer infers enablement from private rule options.
+
 ## Compiler passes that write into named services
 
 A pass that writes into a service it names by id implements

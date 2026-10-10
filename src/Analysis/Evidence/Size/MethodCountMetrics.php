@@ -35,7 +35,6 @@ final class MethodCountMetrics
     public bool $isReadonly = false;
     public bool $isAbstract = false;
     public bool $isInterface = false;
-    public bool $isException = false;
     public bool $hasConstructor = false;
     public bool $hasPublicConstructor = false;
 

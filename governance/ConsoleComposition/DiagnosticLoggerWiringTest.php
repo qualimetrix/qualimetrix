@@ -73,9 +73,9 @@ final class DiagnosticLoggerWiringTest extends TestCase
      * @var list<class-string>
      */
     private const array COMPOSED_HOLDERS = [
-        'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluator',
+        'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Evaluation\\ComputedMetricEvaluator',
         'Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceRule',
-        'Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector',
+        'Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule',
         'Qualimetrix\\Analysis\\Evidence\\Duplication\\DuplicationDetector',
         'Qualimetrix\\Analysis\\Evidence\\Measurement\\Aggregation\\MeasurementAggregationService',
         'Qualimetrix\\Analysis\\Run\\Collection\\CollectionOrchestrator',

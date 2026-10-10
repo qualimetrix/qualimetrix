@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
@@ -20,24 +21,66 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
+use Qualimetrix\Analysis\Policy\Inline\Contract\DirectiveObservations;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\MeasuredRunResult;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(AnalysisResult::class)]
+#[CoversClass(MeasuredRunResult::class)]
+#[CoversClass(DirectiveObservations::class)]
 final class AnalysisResultTest extends TestCase
 {
+    #[Test]
+    public function itMergesComputedAbsenceBesideMeasuredResultsAndPreservesEmptyIdentity(): void
+    {
+        $base = $this->createResult([], filesAnalyzed: 0);
+        $subjects = array_map(static fn(string $file): MetricSubject => MetricSubject::declaration(DeclarationPath::of(
+            SymbolPath::forClass('App', 'Duplicate'),
+            RelativePath::fromString($file),
+            DeclarationOrdinal::fromRank(0),
+        )), ['z.php', 'a.php', 'b.php', 'c.php']);
+        $left = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence('computed.x', SymbolLevel::Class_, 2, 1, ['z', 'a'], [$subjects[0], $subjects[1]]),
+        ]);
+        $right = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence('computed.x', SymbolLevel::Class_, 3, 2, ['b', 'a'], [$subjects[2], $subjects[3]]),
+        ]);
+        $leftResult = AnalysisResult::fromRun($base->measured, $base->directives, null, [], $left);
+        $rightResult = AnalysisResult::fromRun($base->measured, $base->directives, null, [], $right);
+        self::assertSame($left, $leftResult->computedMetricEvaluation);
+        self::assertSame([], $base->computedMetricEvaluation->absences);
+        self::assertSame($left, $leftResult->merge($base)->computedMetricEvaluation);
+        self::assertSame($left, $base->merge($leftResult)->computedMetricEvaluation);
+        $merged = $leftResult->merge($rightResult);
+        self::assertSame([], $merged->findings());
+        $absence = $merged->computedMetricEvaluation->absences[0];
+        self::assertSame(5, $absence->missingKeysCount);
+        self::assertSame(3, $absence->noValueCount);
+        self::assertSame(['a', 'b', 'z'], $absence->missingKeys);
+        self::assertSame(
+            ['declaration:class:App\Duplicate@a.php', 'declaration:class:App\Duplicate@b.php', 'declaration:class:App\Duplicate@c.php'],
+            array_map(static fn(MetricSubject $subject): string => $subject->toCanonical(), $absence->subjects),
+        );
+        self::assertSame($merged->computedMetricEvaluation->absences[0]->subjects, $rightResult->merge($leftResult)->computedMetricEvaluation->absences[0]->subjects);
+    }
+
     #[Test]
     public function itHasErrorsWhenErrorFindingPresent(): void
     {
@@ -107,10 +150,10 @@ final class AnalysisResultTest extends TestCase
 
         $merged = $result1->merge($result2);
 
-        self::assertCount(2, $merged->findings);
-        self::assertSame(8, $merged->filesAnalyzed);
-        self::assertSame(3, $merged->filesSkipped);
-        self::assertSame(2.0, $merged->duration);
+        self::assertCount(2, $merged->findings());
+        self::assertSame(8, $merged->measured->coverage->analyzedFilesCount());
+        self::assertSame(3, $merged->measured->coverage->skippedFilesCount());
+        self::assertSame(2.0, $merged->measured->duration);
     }
 
     #[Test]
@@ -124,7 +167,7 @@ final class AnalysisResultTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            new LogicalClassPath(SymbolPath::forClass('App', 'ServiceA')),
+            DeclarationPath::of(SymbolPath::forClass('App', 'ServiceA'), DeclarationPath::of(SymbolPath::forMethod('App', 'ServiceA', 'method1'), RelativePath::fromString('ServiceA.php'), DeclarationOrdinal::fromRank(0))->file, DeclarationOrdinal::fromRank(0)),
             $metrics1,
         ));
 
@@ -136,27 +179,66 @@ final class AnalysisResultTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            new LogicalClassPath(SymbolPath::forClass('App', 'ServiceB')),
+            DeclarationPath::of(SymbolPath::forClass('App', 'ServiceB'), DeclarationPath::of(SymbolPath::forMethod('App', 'ServiceB', 'method2'), RelativePath::fromString('ServiceB.php'), DeclarationOrdinal::fromRank(0))->file, DeclarationOrdinal::fromRank(0)),
             $metrics2,
         ));
 
-        $result1 = new AnalysisResult([], 1.0, $repo1, self::coverage(5));
-        $result2 = new AnalysisResult([], 2.0, $repo2, self::coverage(3, prefix: 'other'));
+        $result1 = AnalysisResult::fromRun(
+            measured: new MeasuredRunResult(
+                repository: $repo1,
+                coverage: self::coverage(5),
+                namespaceTree: null,
+                projectScope: null,
+                duration: 1.0,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
+            ),
+            directives: new DirectiveObservations(
+                suppressions: [],
+                thresholdOverrides: [],
+            ),
+            ruleExecution: null,
+            latePublished: [],
+        );
+        $result2 = AnalysisResult::fromRun(
+            measured: new MeasuredRunResult(
+                repository: $repo2,
+                coverage: self::coverage(3, prefix: 'other'),
+                namespaceTree: null,
+                projectScope: null,
+                duration: 2.0,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
+            ),
+            directives: new DirectiveObservations(
+                suppressions: [],
+                thresholdOverrides: [],
+            ),
+            ruleExecution: null,
+            latePublished: [],
+        );
 
         $merged = $result1->merge($result2);
 
-        // Both metrics should be present in merged result
-        self::assertInstanceOf(InMemoryMetricRepository::class, $merged->metrics);
-        self::assertTrue($merged->metrics->has(SymbolPath::forMethod('App', 'ServiceA', 'method1')));
-        self::assertTrue($merged->metrics->has(SymbolPath::forMethod('App', 'ServiceB', 'method2')));
+        $subjectA = MetricSubject::declaration(DeclarationPath::of(
+            SymbolPath::forMethod('App', 'ServiceA', 'method1'),
+            RelativePath::fromString('ServiceA.php'),
+            DeclarationOrdinal::fromRank(0),
+        ));
+        $subjectB = MetricSubject::declaration(DeclarationPath::of(
+            SymbolPath::forMethod('App', 'ServiceB', 'method2'),
+            RelativePath::fromString('ServiceB.php'),
+            DeclarationOrdinal::fromRank(0),
+        ));
+        self::assertInstanceOf(InMemoryMetricRepository::class, $merged->measured->repository);
+        self::assertTrue($merged->measured->repository->hasSubject($subjectA));
+        self::assertTrue($merged->measured->repository->hasSubject($subjectB));
 
         self::assertSame(
             5,
-            $merged->metrics->get(SymbolPath::forMethod('App', 'ServiceA', 'method1'))->get('complexity.ccn'),
+            $merged->measured->repository->getSubject($subjectA)->get('complexity.ccn'),
         );
         self::assertSame(
             10,
-            $merged->metrics->get(SymbolPath::forMethod('App', 'ServiceB', 'method2'))->get('complexity.ccn'),
+            $merged->measured->repository->getSubject($subjectB)->get('complexity.ccn'),
         );
     }
 
@@ -167,10 +249,40 @@ final class AnalysisResultTest extends TestCase
         $right = self::createStub(MetricRepositoryInterface::class);
         $left->expects(self::once())->method('mergedWith')->with($right)->willReturn(null);
 
-        $merged = (new AnalysisResult([], 0.1, $left, self::coverage(1)))
-            ->merge(new AnalysisResult([], 0.1, $right, self::coverage(1, prefix: 'right')));
+        $merged = (AnalysisResult::fromRun(
+            measured: new MeasuredRunResult(
+                repository: $left,
+                coverage: self::coverage(1),
+                namespaceTree: null,
+                projectScope: null,
+                duration: 0.1,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
+            ),
+            directives: new DirectiveObservations(
+                suppressions: [],
+                thresholdOverrides: [],
+            ),
+            ruleExecution: null,
+            latePublished: [],
+        ))
+            ->merge(AnalysisResult::fromRun(
+                measured: new MeasuredRunResult(
+                    repository: $right,
+                    coverage: self::coverage(1, prefix: 'right'),
+                    namespaceTree: null,
+                    projectScope: null,
+                    duration: 0.1,
+                    subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
+                ),
+                directives: new DirectiveObservations(
+                    suppressions: [],
+                    thresholdOverrides: [],
+                ),
+                ruleExecution: null,
+                latePublished: [],
+            ));
 
-        self::assertSame($left, $merged->metrics);
+        self::assertSame($left, $merged->measured->repository);
     }
 
     #[Test]
@@ -238,43 +350,63 @@ final class AnalysisResultTest extends TestCase
             null,
             10,
             SuppressionType::Symbol,
-            binding: new DeclarationBinding($sharedSubject, ControlScope::Callable),
+            position: 0,
+            binding: new DeclarationBinding($sharedSubject, ControlScope::Callable, DeclarationReach::whole(null, 'test')),
         );
-        $suppression2 = new Suppression('size', null, 20, SuppressionType::NextLine);
+        $suppression2 = new Suppression('size', null, 20, SuppressionType::NextLine, position: 0, silencedLine: 20 + 1);
         $suppression3 = new Suppression(
             'cohesion.lcom',
             null,
             30,
             SuppressionType::Symbol,
-            binding: new DeclarationBinding(MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'measure'), RelativePath::fromString('shared.php'), DeclarationOrdinal::fromRank(0))), ControlScope::Callable),
+            position: 0,
+            binding: new DeclarationBinding(MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'measure'), RelativePath::fromString('shared.php'), DeclarationOrdinal::fromRank(0))), ControlScope::Callable, DeclarationReach::whole(null, 'test')),
         );
 
-        $result1 = new AnalysisResult(
-            findings: [],
-            duration: 0.1,
-            metrics: self::createStub(MetricRepositoryInterface::class),
-            coverage: self::coverage(1),
-            suppressions: ['shared.php' => [$suppression1], 'only1.php' => [$suppression2]],
+        $result1 = AnalysisResult::fromRun(
+            measured: new MeasuredRunResult(
+                repository: self::createStub(MetricRepositoryInterface::class),
+                coverage: self::coverage(1),
+                namespaceTree: null,
+                projectScope: null,
+                duration: 0.1,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
+            ),
+            directives: new DirectiveObservations(
+                suppressions: ['shared.php' => [$suppression1], 'only1.php' => [$suppression2]],
+                thresholdOverrides: [],
+            ),
+            ruleExecution: null,
+            latePublished: [],
         );
 
-        $result2 = new AnalysisResult(
-            findings: [],
-            duration: 0.1,
-            metrics: self::createStub(MetricRepositoryInterface::class),
-            coverage: self::coverage(1, prefix: 'other'),
-            suppressions: ['shared.php' => [$suppression3], 'only2.php' => [$suppression2]],
+        $result2 = AnalysisResult::fromRun(
+            measured: new MeasuredRunResult(
+                repository: self::createStub(MetricRepositoryInterface::class),
+                coverage: self::coverage(1, prefix: 'other'),
+                namespaceTree: null,
+                projectScope: null,
+                duration: 0.1,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
+            ),
+            directives: new DirectiveObservations(
+                suppressions: ['shared.php' => [$suppression3], 'only2.php' => [$suppression2]],
+                thresholdOverrides: [],
+            ),
+            ruleExecution: null,
+            latePublished: [],
         );
 
         $merged = $result1->merge($result2);
 
         // shared.php should have both suppressions combined, not overwritten
-        self::assertCount(2, $merged->suppressions['shared.php']);
-        self::assertSame($suppression1, $merged->suppressions['shared.php'][0]);
-        self::assertSame($suppression3, $merged->suppressions['shared.php'][1]);
+        self::assertCount(2, $merged->directives->suppressions['shared.php']);
+        self::assertSame($suppression1, $merged->directives->suppressions['shared.php'][0]);
+        self::assertSame($suppression3, $merged->directives->suppressions['shared.php'][1]);
 
         // Non-overlapping files preserved
-        self::assertCount(1, $merged->suppressions['only1.php']);
-        self::assertCount(1, $merged->suppressions['only2.php']);
+        self::assertCount(1, $merged->directives->suppressions['only1.php']);
+        self::assertCount(1, $merged->directives->suppressions['only2.php']);
     }
 
     #[Test]
@@ -285,30 +417,48 @@ final class AnalysisResultTest extends TestCase
         $override2 = new ThresholdOverride('coupling.cbo', 10, 20, 20, $subject, ControlScope::Callable);
         $override3 = new ThresholdOverride('size.method-count', 5, 10, 30, $subject, ControlScope::Callable);
 
-        $result1 = new AnalysisResult(
-            findings: [],
-            duration: 0.1,
-            metrics: self::createStub(MetricRepositoryInterface::class),
-            coverage: self::coverage(1),
-            thresholdOverrides: ['shared.php' => [$override1], 'only1.php' => [$override2]],
+        $result1 = AnalysisResult::fromRun(
+            measured: new MeasuredRunResult(
+                repository: self::createStub(MetricRepositoryInterface::class),
+                coverage: self::coverage(1),
+                namespaceTree: null,
+                projectScope: null,
+                duration: 0.1,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
+            ),
+            directives: new DirectiveObservations(
+                suppressions: [],
+                thresholdOverrides: ['shared.php' => [$override1], 'only1.php' => [$override2]],
+            ),
+            ruleExecution: null,
+            latePublished: [],
         );
 
-        $result2 = new AnalysisResult(
-            findings: [],
-            duration: 0.1,
-            metrics: self::createStub(MetricRepositoryInterface::class),
-            coverage: self::coverage(1, prefix: 'other'),
-            thresholdOverrides: ['shared.php' => [$override3], 'only2.php' => [$override2]],
+        $result2 = AnalysisResult::fromRun(
+            measured: new MeasuredRunResult(
+                repository: self::createStub(MetricRepositoryInterface::class),
+                coverage: self::coverage(1, prefix: 'other'),
+                namespaceTree: null,
+                projectScope: null,
+                duration: 0.1,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
+            ),
+            directives: new DirectiveObservations(
+                suppressions: [],
+                thresholdOverrides: ['shared.php' => [$override3], 'only2.php' => [$override2]],
+            ),
+            ruleExecution: null,
+            latePublished: [],
         );
 
         $merged = $result1->merge($result2);
 
-        self::assertCount(2, $merged->thresholdOverrides['shared.php']);
-        self::assertSame($override1, $merged->thresholdOverrides['shared.php'][0]);
-        self::assertSame($override3, $merged->thresholdOverrides['shared.php'][1]);
+        self::assertCount(2, $merged->directives->thresholdOverrides['shared.php']);
+        self::assertSame($override1, $merged->directives->thresholdOverrides['shared.php'][0]);
+        self::assertSame($override3, $merged->directives->thresholdOverrides['shared.php'][1]);
 
-        self::assertCount(1, $merged->thresholdOverrides['only1.php']);
-        self::assertCount(1, $merged->thresholdOverrides['only2.php']);
+        self::assertCount(1, $merged->directives->thresholdOverrides['only1.php']);
+        self::assertCount(1, $merged->directives->thresholdOverrides['only2.php']);
     }
 
     /**
@@ -321,31 +471,57 @@ final class AnalysisResultTest extends TestCase
     {
         $left = $this->createFinding(Severity::Warning);
         $right = $this->createFinding(Severity::Error);
+        $leftLate = $this->createFinding(Severity::Info, 'left-late.php');
+        $rightLate = $this->createFinding(Severity::Info, 'right-late.php');
+        $leftTree = new NamespaceTree(['Left']);
+        $rightTree = new NamespaceTree(['Right']);
+        $root = AbsolutePath::fromString(sys_get_temp_dir());
+        $universe = new ProjectScopeUniverse($root, true, [], [], [], true, []);
+        $leftScope = new ProjectScopeMeasurement($universe, [$root], ProjectScopeState::Covered, [], new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement());
+        $rightScope = new ProjectScopeMeasurement($universe, [$root], ProjectScopeState::Narrowed, [], new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement());
 
-        $result1 = new AnalysisResult(
-            findings: [$left],
-            duration: 0.1,
-            metrics: self::createStub(MetricRepositoryInterface::class),
-            coverage: self::coverage(1),
+        $result1 = AnalysisResult::fromRun(
+            measured: new MeasuredRunResult(
+                repository: self::createStub(MetricRepositoryInterface::class),
+                coverage: self::coverage(1),
+                namespaceTree: $leftTree,
+                projectScope: $leftScope,
+                duration: 0.1,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
+            ),
+            directives: new DirectiveObservations(
+                suppressions: [],
+                thresholdOverrides: [],
+            ),
             ruleExecution: new RuleExecutionResult(
                 produced: [$left],
                 published: [$left],
                 exclusions: new RuleExclusionStats(namespaceExclusionsByRule: ['rule1' => 1]),
                 levelActivity: LevelActivity::empty(),
             ),
+            latePublished: [$leftLate],
         );
 
-        $result2 = new AnalysisResult(
-            findings: [$right],
-            duration: 0.1,
-            metrics: self::createStub(MetricRepositoryInterface::class),
-            coverage: self::coverage(1, prefix: 'other'),
+        $result2 = AnalysisResult::fromRun(
+            measured: new MeasuredRunResult(
+                repository: self::createStub(MetricRepositoryInterface::class),
+                coverage: self::coverage(1, prefix: 'other'),
+                namespaceTree: $rightTree,
+                projectScope: $rightScope,
+                duration: 0.1,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
+            ),
+            directives: new DirectiveObservations(
+                suppressions: [],
+                thresholdOverrides: [],
+            ),
             ruleExecution: new RuleExecutionResult(
                 produced: [$right],
                 published: [$right],
                 exclusions: new RuleExclusionStats(pathExclusionsByRule: ['rule2' => 2]),
                 levelActivity: LevelActivity::empty(),
             ),
+            latePublished: [$rightLate],
         );
 
         $merged = $result1->merge($result2);
@@ -355,6 +531,13 @@ final class AnalysisResultTest extends TestCase
         self::assertSame([$left, $right], $merged->ruleExecution->published);
         self::assertSame(['rule1' => 1], $merged->ruleExecution->exclusions->namespaceExclusionsByRule);
         self::assertSame(['rule2' => 2], $merged->ruleExecution->exclusions->pathExclusionsByRule);
+        self::assertSame([$left, $leftLate, $right, $rightLate], $merged->findings());
+        self::assertSame($leftTree, $merged->measured->namespaceTree);
+        self::assertSame($leftScope, $merged->measured->projectScope);
+        $result3 = $this->createResult([$left, $leftLate], coveragePrefix: 'third');
+        $expected = [$left, $leftLate, $right, $rightLate, $left, $leftLate];
+        self::assertSame($expected, $merged->merge($result3)->findings());
+        self::assertSame($expected, $result1->merge($result2->merge($result3))->findings());
     }
 
     /**
@@ -391,6 +574,11 @@ final class AnalysisResultTest extends TestCase
     public function itKeepsTheOtherSidesRuleExecutionWhenOneSideHasNone(): void
     {
         $finding = $this->createFinding(Severity::Warning);
+        $late = $this->createFinding(Severity::Info, 'late.php');
+        $tree = new NamespaceTree(['App']);
+        $root = AbsolutePath::fromString(sys_get_temp_dir());
+        $universe = new ProjectScopeUniverse($root, true, [], [], [], true, []);
+        $scope = new ProjectScopeMeasurement($universe, [$root], ProjectScopeState::Covered, [], new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement());
         $ruleExecution = new RuleExecutionResult(
             produced: [$finding],
             published: [$finding],
@@ -398,23 +586,46 @@ final class AnalysisResultTest extends TestCase
             levelActivity: LevelActivity::empty(),
         );
 
-        $withRuleExecution = new AnalysisResult(
-            findings: [$finding],
-            duration: 0.1,
-            metrics: self::createStub(MetricRepositoryInterface::class),
-            coverage: self::coverage(1),
+        $withRuleExecution = AnalysisResult::fromRun(
+            measured: new MeasuredRunResult(
+                repository: self::createStub(MetricRepositoryInterface::class),
+                coverage: self::coverage(1),
+                namespaceTree: null,
+                projectScope: null,
+                duration: 0.1,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
+            ),
+            directives: new DirectiveObservations(
+                suppressions: [],
+                thresholdOverrides: [],
+            ),
             ruleExecution: $ruleExecution,
+            latePublished: [],
         );
 
-        $withoutRuleExecution = new AnalysisResult(
-            findings: [],
-            duration: 0.1,
-            metrics: self::createStub(MetricRepositoryInterface::class),
-            coverage: self::coverage(1, prefix: 'other'),
+        $withoutRuleExecution = AnalysisResult::fromRun(
+            measured: new MeasuredRunResult(
+                repository: self::createStub(MetricRepositoryInterface::class),
+                coverage: self::coverage(1, prefix: 'other'),
+                namespaceTree: $tree,
+                projectScope: $scope,
+                duration: 0.1,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
+            ),
+            directives: new DirectiveObservations(
+                suppressions: [],
+                thresholdOverrides: [],
+            ),
+            ruleExecution: null,
+            latePublished: [$late],
         );
 
         self::assertSame($ruleExecution, $withRuleExecution->merge($withoutRuleExecution)->ruleExecution);
         self::assertSame($ruleExecution, $withoutRuleExecution->merge($withRuleExecution)->ruleExecution);
+        self::assertSame([$finding, $late], $withRuleExecution->merge($withoutRuleExecution)->findings());
+        self::assertSame([$late, $finding], $withoutRuleExecution->merge($withRuleExecution)->findings());
+        self::assertSame($tree, $withRuleExecution->merge($withoutRuleExecution)->measured->namespaceTree);
+        self::assertSame($scope, $withRuleExecution->merge($withoutRuleExecution)->measured->projectScope);
     }
 
     #[Test]
@@ -438,11 +649,21 @@ final class AnalysisResultTest extends TestCase
         float $duration = 0.1,
         string $coveragePrefix = 'result',
     ): AnalysisResult {
-        return new AnalysisResult(
-            findings: $findings,
-            duration: $duration,
-            metrics: self::createStub(MetricRepositoryInterface::class),
-            coverage: self::coverage($filesAnalyzed, $filesSkipped, $coveragePrefix),
+        return AnalysisResult::fromRun(
+            measured: new MeasuredRunResult(
+                repository: self::createStub(MetricRepositoryInterface::class),
+                coverage: self::coverage($filesAnalyzed, $filesSkipped, $coveragePrefix),
+                namespaceTree: null,
+                projectScope: null,
+                duration: $duration,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
+            ),
+            directives: new DirectiveObservations(
+                suppressions: [],
+                thresholdOverrides: [],
+            ),
+            ruleExecution: null,
+            latePublished: $findings,
         );
     }
 

@@ -22,6 +22,10 @@ final readonly class HealthCoverageNarrator
             return \sprintf('    Computed over: not applicable — %s', $coverage->reason);
         }
 
+        if ($coverage->state === 'not-measured') {
+            return \sprintf('    Computed over: not measured %d/%d %s', $coverage->measured, $coverage->eligible, $coverage->unit?->value);
+        }
+
         return \sprintf(
             '    Computed over %d of %d %s (%.0f%%), from %s',
             $coverage->measured,
@@ -43,6 +47,10 @@ final readonly class HealthCoverageNarrator
     {
         if (!$coverage->applicable) {
             return \sprintf('coverage: not applicable — %s', $coverage->reason);
+        }
+
+        if ($coverage->state === 'not-measured') {
+            return \sprintf('not measured %d/%d %s', $coverage->measured, $coverage->eligible, $coverage->unit?->value);
         }
 
         return \sprintf(
@@ -87,7 +95,7 @@ final readonly class HealthCoverageNarrator
     public static function record(HealthCoverage $coverage): array
     {
         return [
-            'state' => $coverage->applicable ? 'measured' : 'not-applicable',
+            'state' => $coverage->state,
             'measured' => $coverage->measured,
             'eligible' => $coverage->eligible,
             'ratio' => $coverage->ratio,
@@ -103,6 +111,10 @@ final readonly class HealthCoverageNarrator
      */
     public static function share(HealthCoverage $coverage): string
     {
+        if ($coverage->state === 'not-measured') {
+            return \sprintf('not measured %d/%d', $coverage->measured, $coverage->eligible);
+        }
+
         return $coverage->applicable
             ? \sprintf('%.0f%%', ($coverage->ratio ?? 0.0) * 100)
             : 'n/a';

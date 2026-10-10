@@ -13,11 +13,11 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
 
 /**
  * End-to-end test for Phase 2 direction 2 (template layers). Loads a YAML
@@ -47,13 +47,13 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
 
         $analysis = $this->runPipelineWithConfig($config);
 
-        $emptyTemplates = $this->filterByRule($analysis->findings, LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
+        $emptyTemplates = $this->filterByRule($analysis->findings(), LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
         self::assertSame([], $emptyTemplates, 'A non-typo template should expand and not raise empty-template.');
 
         // Customer depends on Logger (shared) — under allow rules
         // `domain-Order -> shared` this is permitted; ensure no layer-violation
         // fires for the expanded layer pair.
-        $allowedEdges = $this->filterByRule($analysis->findings, LayerViolationRule::NAME);
+        $allowedEdges = $this->filterByRule($analysis->findings(), LayerViolationRule::NAME);
         self::assertSame([], $allowedEdges, 'Allowed edge under expanded names must not produce violations.');
     }
 
@@ -69,7 +69,7 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
 
         $analysis = $this->runPipelineWithConfig($config);
 
-        $emptyTemplates = $this->filterByRule($analysis->findings, LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
+        $emptyTemplates = $this->filterByRule($analysis->findings(), LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
         self::assertCount(1, $emptyTemplates, 'A typo template must emit exactly one empty-template diagnostic.');
         self::assertSame(Severity::Error, $emptyTemplates[0]->severity);
         self::assertStringContainsString('noop-{module}', $emptyTemplates[0]->message);
@@ -137,7 +137,7 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
 
         $analysis = $this->runPipelineWithConfig($configFits);
 
-        $emptyTemplates = $this->filterByRule($analysis->findings, LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
+        $emptyTemplates = $this->filterByRule($analysis->findings(), LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
         self::assertCount(
             1,
             $emptyTemplates,
@@ -158,7 +158,7 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
 
         $analysis = $this->runPipelineWithConfig($config);
 
-        $layerViolations = $this->filterByRule($analysis->findings, LayerViolationRule::NAME);
+        $layerViolations = $this->filterByRule($analysis->findings(), LayerViolationRule::NAME);
         self::assertNotEmpty($layerViolations, 'Expected the Customer -> Logger edge to violate the empty allow list.');
 
         $messages = array_map(static fn(Finding $v): string => $v->message, $layerViolations);
@@ -177,20 +177,21 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
      */
     private function runPipelineWithConfig(array $configArray): \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult
     {
-        $factory = new ArchitectureConfigurationFactory();
-        $result = $factory->fromArray($configArray);
-
-        $container = (new ContainerFactory())->create();
+        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
+        $fixture = PreparedAnalysis::start($root, [$root], ['architecture' => $configArray, 'include_generated' => true]);
+        $container = $fixture->container();
 
         $holder = $container->get(ArchitecturePolicyConfiguratorInterface::class);
         self::assertInstanceOf(ArchitecturePolicy::class, $holder);
-        $holder->bind($result->configuration);
 
         $pipeline = $container->get(AnalysisPipelineInterface::class);
         self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
 
-        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-        return $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []));
+        try {
+            return $pipeline->analyze($fixture->prepared()->runConfiguration);
+        } finally {
+            $fixture->close();
+        }
     }
 
     /**

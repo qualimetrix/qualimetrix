@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
+use LogicException;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 
 /**
@@ -28,7 +29,7 @@ use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 final readonly class RuleOptionSurface
 {
     /**
-     * @param class-string<RuleOptionsInterface> $optionsClass
+     * @param class-string<RuleOptionsInterface|LevelOptionsInterface> $optionsClass
      * @param array<string, class-string<LevelOptionsInterface>> $levelOptionsClasses slot name => the class answering there
      */
     private function __construct(
@@ -37,7 +38,7 @@ final readonly class RuleOptionSurface
     ) {}
 
     /**
-     * @param class-string<RuleOptionsInterface> $optionsClass
+     * @param class-string<RuleOptionsInterface|LevelOptionsInterface> $optionsClass
      */
     public static function of(string $optionsClass): self
     {
@@ -64,7 +65,7 @@ final readonly class RuleOptionSurface
     /** What the rule's own options class declares. */
     public function ownKeySet(): RuleOptionKeySet
     {
-        return $this->optionsClass::acceptedOptionKeys();
+        return self::declaredFor($this->optionsClass);
     }
 
     /**
@@ -78,7 +79,7 @@ final readonly class RuleOptionSurface
     {
         $slot = $this->levelNamed($level);
 
-        return $slot === null ? null : $this->levelOptionsClasses[$slot]::acceptedOptionKeys();
+        return $slot === null ? null : self::declaredFor($this->levelOptionsClasses[$slot]);
     }
 
     /**
@@ -92,10 +93,8 @@ final readonly class RuleOptionSurface
      */
     public function levelNamed(string $writtenKey): ?string
     {
-        $normalized = ConfigKeySpelling::normalize($writtenKey);
-
         foreach ($this->levelOptionsClasses as $slot => $_) {
-            if (ConfigKeySpelling::normalize((string) $slot) === $normalized) {
+            if (\in_array($writtenKey, ConfigKeySpelling::acceptedSpellings((string) $slot), true)) {
                 return (string) $slot;
             }
         }
@@ -109,7 +108,7 @@ final readonly class RuleOptionSurface
      *
      * At the rule's own depth that is what the class declared — the slot names
      * among them, since a slot is written exactly where an option is — plus the
-     * three keys {@see FrameworkOptionKeys} owns, which no options class
+     * framework keys {@see FrameworkOptionKeys} owns, which no options class
      * declares and which are legal only here. Inside a slot it is that level
      * class's accepted set and nothing else: a framework key written one level
      * down is not a framework key, it is a mistake.
@@ -118,7 +117,7 @@ final readonly class RuleOptionSurface
      */
     public function writableAt(?string $level): array
     {
-        $keySet = $level === null ? $this->ownKeySet() : $this->keySetAtLevel($level);
+        $keySet = $this->declarationAt($level);
 
         if ($keySet === null) {
             return [];
@@ -128,9 +127,40 @@ final readonly class RuleOptionSurface
             ? [...$keySet->acceptedForDisplay(), ...FrameworkOptionKeys::all()]
             : $keySet->acceptedForDisplay();
 
+        $keys = array_values(array_unique($keys));
         sort($keys);
 
         return $keys;
+    }
+
+    /** The producer's declaration at an admitted option address. */
+    public function shapeAt(RuleOptionAddress $address): RuleOptionShape
+    {
+        $set = $this->declarationAt($address->level);
+        $shape = $set?->shapeOf(ConfigKeySpelling::normalize($address->key));
+
+        if ($shape === null && $address->level === null) {
+            $shape = FrameworkOptionKeys::declared()->shapeOf(ConfigKeySpelling::normalize($address->key));
+        }
+
+        return $shape ?? throw new LogicException(\sprintf('Rule option "%s" has no declared form.', $address->written()));
+    }
+
+    /** @param class-string<RuleOptionsInterface|LevelOptionsInterface> $optionsClass */
+    public static function declaredFor(string $optionsClass): RuleOptionKeySet
+    {
+        return $optionsClass::acceptedOptionKeys();
+    }
+
+    /** @param class-string<RuleOptionsInterface|LevelOptionsInterface> $optionsClass */
+    public static function bandFor(string $optionsClass, string $shorthand): RuleOptionBand
+    {
+        foreach (self::declaredFor($optionsClass)->bands() as $band) {
+            if ($band->shorthand === $shorthand) {
+                return $band;
+            }
+        }
+        throw new LogicException(\sprintf('Options class "%s" declares no band "%s".', $optionsClass, $shorthand));
     }
 
     /**
@@ -138,16 +168,9 @@ final readonly class RuleOptionSurface
      * carries, which is written by hand in an attribute and is kebab, snake or
      * camel depending on who wrote it, dotted when it addresses a slot.
      *
-     * Null covers three cases on purpose, because a caller joining an alias to
-     * a declaration has no use for the difference between them. A key nothing
-     * here knows. A key the class recognises only in order to answer about it
-     * in its own words — the class's to speak for, not an alias's to reach. And
-     * a framework key, which {@see self::writableAt()} does report as writable
-     * at the rule's own depth: it is legal there, but no options class declares
-     * it and no alias targets one, because the factory takes all three out of
-     * the configuration before any rule is built. The asymmetry with
-     * `writableAt()` is the point rather than an oversight — one method answers
-     * "may a user write this here", the other "which declaration owns this".
+     * Null means no accepted address: an unknown key or one the class knows
+     * only to give a bespoke refusal. Framework keys are located at the root
+     * depth through their own declaration, never inside a level slot.
      */
     public function locate(string $target): ?RuleOptionAddress
     {
@@ -166,9 +189,21 @@ final readonly class RuleOptionSurface
 
     private function addressIn(?string $level, string $key): ?RuleOptionAddress
     {
-        $keySet = $level === null ? $this->ownKeySet() : $this->keySetAtLevel($level);
+        $keySet = $this->declarationAt($level);
         $spelling = $keySet?->spellingOf(ConfigKeySpelling::normalize($key));
+        if ($spelling === null && $level === null) {
+            $spelling = FrameworkOptionKeys::declared()->spellingOf(ConfigKeySpelling::normalize($key));
+        }
+
+        if ($spelling !== null && !\in_array($key, ConfigKeySpelling::acceptedSpellings($spelling), true)) {
+            return null;
+        }
 
         return $spelling === null ? null : new RuleOptionAddress($level, $spelling);
+    }
+
+    private function declarationAt(?string $level): ?RuleOptionKeySet
+    {
+        return $level === null ? $this->ownKeySet() : $this->keySetAtLevel($level);
     }
 }

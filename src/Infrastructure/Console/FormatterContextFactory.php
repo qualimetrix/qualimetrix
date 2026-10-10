@@ -69,6 +69,7 @@ final class FormatterContextFactory
             detailLimit: $detailLimit,
             isGroupByExplicit: $isGroupByExplicit,
             topIssuesLimit: $topIssuesLimit,
+            verbose: $output->isVerbose(),
         );
     }
 
@@ -107,6 +108,14 @@ final class FormatterContextFactory
     private function refuseSelectionUnder(string $format, ?string $namespaceFilter, ?string $classFilter): void
     {
         $selector = $namespaceFilter !== null ? '--namespace' : ($classFilter !== null ? '--class' : null);
+        if ($selector !== null && $format === 'suppressed') {
+            throw ConfigurationRefusal::aboutCommandLineInput($selector, \sprintf(
+                'Format "suppressed" describes the whole run; %s cannot narrow its suppression document. Drop %s, or use a selected findings format such as json.',
+                $selector,
+                $selector,
+            ));
+        }
+
         if ($selector === null || !\in_array($format, OutOfScopeFindings::FORMATS_WITHOUT_A_PLACE, true)) {
             return;
         }

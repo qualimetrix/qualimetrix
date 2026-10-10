@@ -50,11 +50,24 @@ final class ProjectNamespaceResolverTest extends TestCase
     }
 
     #[Test]
+    public function itReplacesPrefixesWithAcceptedRecordsFromTheCurrentProject(): void
+    {
+        $decoder = new \Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestDecoder();
+        $root = AbsolutePath::fromString($this->tempDir);
+        $resolver = new ProjectNamespaceResolver(['Old']);
+        $resolver->bind($decoder->decode($root, '{"autoload":{"psr-4":{"Current\\\\":"src","Dropped\\\\":false}}}'));
+        self::assertSame(['Current'], $resolver->getProjectPrefixes());
+        self::assertFalse($resolver->isProjectNamespace('Old\\Thing'));
+        self::assertFalse($resolver->isProjectNamespace('Dropped\\Thing'));
+        $resolver->bind($decoder->decode($root, '{"autoload":{"psr-4":{"Next\\\\":"next"}}}'));
+        self::assertSame(['Next'], $resolver->getProjectPrefixes());
+    }
+
+    #[Test]
     public function itOverridePrefixesTakePrecedence(): void
     {
         $resolver = new ProjectNamespaceResolver(
-            composerJsonPath: null,
-            overridePrefixes: ['App\\', 'Tests\\'],
+            prefixes: ['App\\', 'Tests\\'],
         );
 
         self::assertTrue($resolver->isProjectNamespace('App\\Service\\UserService'));
@@ -85,7 +98,8 @@ JSON;
         $path = $this->tempDir . '/composer.json';
         file_put_contents($path, $composerJson);
 
-        $resolver = new ProjectNamespaceResolver(composerJsonPath: AbsolutePath::fromString($path));
+        $resolver = new ProjectNamespaceResolver();
+        $resolver->bind((new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read(AbsolutePath::fromString(\dirname($path))));
 
         self::assertTrue($resolver->isProjectNamespace('App\\Service'));
         self::assertTrue($resolver->isProjectNamespace('Tests\\Unit'));
@@ -96,8 +110,7 @@ JSON;
     public function itSortsPrefixesByLengthDescending(): void
     {
         $resolver = new ProjectNamespaceResolver(
-            composerJsonPath: null,
-            overridePrefixes: ['A\\', 'App\\', 'App\\Service\\'],
+            prefixes: ['A\\', 'App\\', 'App\\Service\\'],
         );
 
         $prefixes = $resolver->getProjectPrefixes();
@@ -109,8 +122,7 @@ JSON;
     public function itRemovesDuplicatePrefixes(): void
     {
         $resolver = new ProjectNamespaceResolver(
-            composerJsonPath: null,
-            overridePrefixes: ['App\\', 'App\\', 'Tests\\'],
+            prefixes: ['App\\', 'App\\', 'Tests\\'],
         );
 
         self::assertSame(['Tests', 'App'], $resolver->getProjectPrefixes());
@@ -120,8 +132,7 @@ JSON;
     public function itConsidersEmptyNamespaceAsProjectNamespace(): void
     {
         $resolver = new ProjectNamespaceResolver(
-            composerJsonPath: null,
-            overridePrefixes: ['App\\'],
+            prefixes: ['App\\'],
         );
 
         self::assertTrue($resolver->isProjectNamespace(''));
@@ -132,8 +143,7 @@ JSON;
     public function itMatchesNamespace(string $prefix, string $namespace, bool $expected): void
     {
         $resolver = new ProjectNamespaceResolver(
-            composerJsonPath: null,
-            overridePrefixes: [$prefix],
+            prefixes: [$prefix],
         );
 
         self::assertSame($expected, $resolver->isProjectNamespace($namespace));
@@ -159,7 +169,8 @@ JSON;
     #[Test]
     public function itGracefullyDegradeIfComposerJsonNotFound(): void
     {
-        $resolver = new ProjectNamespaceResolver(composerJsonPath: AbsolutePath::fromString($this->tempDir . '/nonexistent.json'));
+        $resolver = new ProjectNamespaceResolver();
+        $resolver->bind((new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read(AbsolutePath::fromString(\dirname($this->tempDir . '/nonexistent.json'))));
 
         // All namespaces treated as project when composer.json is missing
         self::assertTrue($resolver->isProjectNamespace('Any\\Namespace'));
@@ -172,7 +183,8 @@ JSON;
         $path = $this->tempDir . '/composer.json';
         file_put_contents($path, 'invalid json');
 
-        $resolver = new ProjectNamespaceResolver(composerJsonPath: AbsolutePath::fromString($path));
+        $resolver = new ProjectNamespaceResolver();
+        $resolver->bind((new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read(AbsolutePath::fromString(\dirname($path))));
 
         self::assertTrue($resolver->isProjectNamespace('Any\\Namespace'));
         self::assertSame([], $resolver->getProjectPrefixes());
@@ -190,14 +202,15 @@ JSON;
         $path = $this->tempDir . '/composer.json';
         file_put_contents($path, $composerJson);
 
-        $resolver = new ProjectNamespaceResolver(composerJsonPath: AbsolutePath::fromString($path));
+        $resolver = new ProjectNamespaceResolver();
+        $resolver->bind((new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read(AbsolutePath::fromString(\dirname($path))));
 
         self::assertTrue($resolver->isProjectNamespace('Any\\Namespace'));
         self::assertSame([], $resolver->getProjectPrefixes());
     }
 
     #[Test]
-    public function itUsesComposerJsonFromCwdWhenNoPathGiven(): void
+    public function itDoesNotReadComposerJsonFromCwdInTheConstructor(): void
     {
         $composerJson = <<<JSON
 {
@@ -221,6 +234,7 @@ JSON;
 
         try {
             $resolver = new ProjectNamespaceResolver();
+            self::assertSame([], $resolver->getProjectPrefixes());
             self::assertTrue($resolver->isProjectNamespace('TestApp\\Service'));
         } finally {
             chdir($originalCwd);
@@ -269,7 +283,8 @@ JSON;
         $path = $this->tempDir . '/composer.json';
         file_put_contents($path, $composerJson);
 
-        $resolver = new ProjectNamespaceResolver(composerJsonPath: AbsolutePath::fromString($path));
+        $resolver = new ProjectNamespaceResolver();
+        $resolver->bind((new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read(AbsolutePath::fromString(\dirname($path))));
 
         self::assertTrue($resolver->isProjectNamespace('App\\Service'));
         self::assertTrue($resolver->isProjectNamespace('Domain\\Entity'));
@@ -285,8 +300,7 @@ JSON;
     public function itMatchesEverythingWithEmptyPrefix(): void
     {
         $resolver = new ProjectNamespaceResolver(
-            composerJsonPath: null,
-            overridePrefixes: [''],
+            prefixes: [''],
         );
 
         self::assertTrue($resolver->isProjectNamespace('App\\Service'));

@@ -14,9 +14,12 @@ declare(strict_types=1);
 namespace Qualimetrix\PromiseEffect;
 
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
+use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionShapeMatcher;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionShapeWording;
 
 final readonly class Cell
 {
@@ -514,7 +517,7 @@ final class Stand
             // `isPathExcluded()` / `isNamespaceExcluded()`, and a path that is
             // not in the fixture excludes nothing. The form the write stands
             // for is unchanged.
-            $hit = $reference === null ? '' : $this->hitFor($option);
+            $hit = $reference === null ? '' : $this->hitFor($row, $option, $reference);
             $referenceSpelling = $reference === null
                 ? null
                 : ($hit === '' ? $this->declarations->forms[$reference] : new FormSpelling($reference, $hit, $hit, '', ''));
@@ -526,6 +529,13 @@ final class Stand
             $this->record('A', $row->key(), 'equivalent', $equivalent['object']);
 
             foreach ($this->declarations->formNames() as $form) {
+                if ($row->door === 'cli-alias' && !$this->inProcess->aliasAcceptsValue($row->alias) && $form !== 'bool') {
+                    $cells[] = new Cell('A', $row->key() . '|' . $form, $form, 'optionsObject', Verdict::NOT_OBSERVABLE, self::UNWRITABLE, $row->status, false);
+                    $this->record('A', $row->key() . '|' . $form, 'unwritable', new Observation(Observation::ACCEPTED, ''));
+
+                    continue;
+                }
+
                 // The hit is the reference form's own write too. Substituting
                 // it only into `equivalent` would leave this cell writing a
                 // magnitude that names nothing, and the stand would read the
@@ -539,7 +549,8 @@ final class Stand
                 // The comparand costs a probe and only ever decides a cell the
                 // product accepted and moved; taking it for a refused form buys
                 // nothing and, on axis D, buys it with a process.
-                $collapse = $spelling->collapseYaml === '' || !$value['object']->accepted() || $value['object']->text === $omitted['object']->text
+                $collapse = ($row->door === 'cli-alias' && !$this->inProcess->aliasAcceptsValue($row->alias))
+                    || $spelling->collapseYaml === '' || !$value['object']->accepted() || $value['object']->text === $omitted['object']->text
                     ? null
                     : $this->write($row, $rule, $option, $spelling->comparand());
 
@@ -1227,17 +1238,19 @@ final class Stand
      */
     private function write(FormRow $row, string $rule, string $option, ?FormSpelling $spelling, bool $respell = false): array
     {
+        $base = $this->axisABase($row);
+
         if ($spelling === null) {
-            return $this->inProcess->take([], [], [], $rule);
+            return $this->inProcess->take($base, [], [], $rule);
         }
 
         $key = $respell ? self::respell($option) : $option;
 
         return match ($row->door) {
-            'rule-opt' => $this->inProcess->take([], [$rule . ':' . $key . '=' . $spelling->cliWrite], [], $rule),
-            'cli-alias' => $this->inProcess->take([], [], [ltrim($row->alias, '-') => $spelling->cliWrite], $rule),
+            'rule-opt' => $this->inProcess->take($base, [$rule . ':' . $key . '=' . $spelling->cliWrite], [], $rule),
+            'cli-alias' => $this->inProcess->take($base, [], [ltrim($row->alias, '-') => $spelling->cliWrite], $rule),
             default => $this->inProcess->take(
-                ['rules' => [$rule => self::place([], explode('.', $key), self::parse($spelling->yamlWrite))]],
+                self::place($base, ['rules', $rule, ...explode('.', $key)], self::parse($spelling->yamlWrite)),
                 [],
                 [],
                 $rule,
@@ -1301,16 +1314,26 @@ final class Stand
         return array_values(array_map(static fn(string $segment): string => str_replace('\\.', '.', $segment), $segments));
     }
 
-    /**
-     * The declared hit for an option leaf, or the empty string when the
-     * canonical magnitude is fine. Keyed on the LEAF rather than the whole
-     * path: the three framework keys repeat under all 54 producers, and an
-     * enumeration of 162 paths would be the same four statements written 162
-     * times.
-     */
-    private function hitFor(string $option): string
+    /** The exact door and form take precedence; legacy leaf hits remain valid. */
+    private function hitFor(FormRow $row, string $option, string $form): string
     {
-        return $this->declarations->axisAHits[self::leafOf($option)] ?? '';
+        $hits = $this->declarations->axisAHits;
+        $leaf = self::leafOf($option);
+
+        return $hits[$row->door . '|' . $row->path . '|' . $form]
+            ?? $hits[$row->door . '|' . $leaf . '|' . $form]
+            ?? $hits[$row->door . '|' . $row->path]
+            ?? $hits[$row->door . '|' . $leaf]
+            ?? $hits[$leaf]
+            ?? '';
+    }
+
+    /** @return array<string, mixed> */
+    private function axisABase(FormRow $row): array
+    {
+        return $this->declarations->axisABases[$row->door . '|' . $row->path]
+            ?? $this->declarations->axisABases[$row->path]
+            ?? [];
     }
 
     /**
@@ -1327,12 +1350,16 @@ final class Stand
     private function referenceForm(FormRow $row, string $rule, string $option, array $omitted): ?string
     {
         foreach ($row->promisedForms as $form) {
-            if ($form !== 'null') {
+            if ($form !== 'null' && ($row->door !== 'cli-alias' || $this->inProcess->aliasAcceptsValue($row->alias) || $form === 'bool')) {
                 return $form;
             }
         }
 
         foreach (['int', 'bool', 'string-nonnumber', 'list', 'map'] as $form) {
+            if ($row->door === 'cli-alias' && !$this->inProcess->aliasAcceptsValue($row->alias) && $form !== 'bool') {
+                continue;
+            }
+
             $probe = $this->write($row, $rule, $option, $this->declarations->forms[$form]);
 
             if ($probe['object']->accepted() && $probe['object']->text !== $omitted['object']->text) {
@@ -1494,25 +1521,17 @@ final class Stand
      * The key set that answers is found through exactly the same two-depth
      * walk {@see CrossCheck::resolveKey()} already asks of axis A: the rule's
      * own declaration, or — when the head segment names a level slot — that
-     * slot's own. A key nothing declares is not a guess this stand makes on
+     * slot's own. Framework declarations supply root keys independently of
+     * an options class; they are never consulted inside a level slot.
+     * A key nothing declares is not a guess this stand makes on
      * its behalf: it is a `LedgerError`, because a silent fallback here would
      * reproduce the defect S8 removes (an int written under a text/list/bool
      * key, read as a composition failure that was really a form mismatch).
      *
-     * A key the class recognises only to answer about ITSELF —
-     * `RuleOptionKeySet::alsoAnsweredByTheClass()`, `knows()` true and
-     * `shapeOf()` null — carries no general form to search: measured against
-     * every `same-source` pair in the ledger, this is exactly two rules.
-     * `UnassignedClassOptions` accepts `enabled: false` as "leave things as
-     * they are" and refuses `enabled: true` outright; `LayerViolationOptions`
-     * refuses its three removed severity keys for ANY value at all. `false`
-     * is therefore the write this stand asks for the whole bucket: it is the
-     * "leave things as they are" spelling the vocabulary itself documents for
-     * this state, not a guess read off the key's spelling — the two real
-     * occurrences (`architecture.unassigned-class.enabled`, and the three
-     * `architecture.layer-violation` removed-severity keys) are accepted and
-     * refused respectively either way, because their answer does not depend
-     * on the value at all.
+     * A declared retirement has no writable shape, but still owes the pair
+     * probe a refusal. It is written with false so the probe reaches that
+     * refusal without guessing a value form or mistaking the key for unknown.
+     * A recognised key without a shape keeps the same scalar probe.
      *
      * `$sideLiterals` is the ONE argument axis E must never pass. Both of its
      * call sites are in {@see self::neighbourWrite()} and leave it null, so
@@ -1544,16 +1563,48 @@ final class Stand
             $normalized = ConfigKeySpelling::normalize($key);
         }
 
-        if (!$set->knows($normalized)) {
+        $framework = \count($segments) === 1 && $this->inProcess->nativeProfile() === 'typed'
+            ? FrameworkOptionKeys::declared()
+            : null;
+
+        foreach (array_keys($this->inProcess->nativeProfile() === 'typed' ? $set->retired() : []) as $retired) {
+            if (ConfigKeySpelling::normalize($retired) === $normalized) {
+                return [false];
+            }
+        }
+
+        if (!$set->knows($normalized) && !($framework?->knows($normalized) ?? false)) {
             throw new LedgerError(
                 'pair probe: "' . $rule . '.' . $key . '" — no declaration recognises the key normalized as "' . $normalized . '"',
             );
         }
 
-        $shape = $set->shapeOf($normalized);
+        $shape = $set->shapeOf($normalized) ?? $framework?->shapeOf($normalized);
 
         if ($shape === null) {
             return [false];
+        }
+
+        $leaf = $this->declarations->leafAlternates[self::leafOf($key)] ?? null;
+
+        if ($leaf !== null) {
+            /** @var mixed $declared */
+            $declared = self::parse($leaf);
+
+            if (!(new RuleOptionShapeMatcher())->matches($shape, $declared)) {
+                // Keep the exact authored magnitude for the frozen product:
+                // its older shape may refuse a selector that the current
+                // product accepts. An old-lawful substitute would measure a
+                // different input rather than that native refusal.
+                if ($this->inProcess->nativeProfile() === 'old') {
+                    return [$declared];
+                }
+
+                throw new LedgerError(
+                    'effect-magnitudes.tsv declares "' . $leaf . '" for the leaf "' . self::leafOf($key)
+                    . '", which the shape of "' . $rule . '.' . $key . '" refuses',
+                );
+            }
         }
 
         $writes = [];
@@ -1573,19 +1624,7 @@ final class Stand
         }
 
         $writes[] = $this->writeForShape($shape, $this->literals(null), $rule . '.' . $key, $key);
-        $leaf = $this->declarations->leafAlternates[self::leafOf($key)] ?? null;
-
         if ($leaf !== null) {
-            /** @var mixed $declared */
-            $declared = self::parse($leaf);
-
-            if (!$shape->matches($declared)) {
-                throw new LedgerError(
-                    'effect-magnitudes.tsv declares "' . $leaf . '" for the leaf "' . self::leafOf($key)
-                    . '", which the shape of "' . $rule . '.' . $key . '" refuses',
-                );
-            }
-
             $writes[] = $declared;
         }
 
@@ -1652,7 +1691,7 @@ final class Stand
             /** @var mixed $candidate */
             $candidate = self::parse($literals[$form]);
 
-            if ($shape->matches($candidate)) {
+            if ((new RuleOptionShapeMatcher())->matches($shape, $candidate)) {
                 return $candidate;
             }
         }
@@ -1665,11 +1704,11 @@ final class Stand
             /** @var mixed $scalar */
             $scalar = self::parse($literals[$form]);
 
-            if ($shape->matches([$scalar])) {
+            if ((new RuleOptionShapeMatcher())->matches($shape, [$scalar])) {
                 return [$scalar];
             }
 
-            if ($shape->matches(['a' => $scalar])) {
+            if ((new RuleOptionShapeMatcher())->matches($shape, ['a' => $scalar])) {
                 return ['a' => $scalar];
             }
         }
@@ -1688,7 +1727,7 @@ final class Stand
                 /** @var mixed $alternate */
                 $alternate = self::parse($declaredLeaf);
 
-                if ($shape->matches($alternate)) {
+                if ((new RuleOptionShapeMatcher())->matches($shape, $alternate)) {
                     return $alternate;
                 }
             }
@@ -1699,7 +1738,7 @@ final class Stand
         }
 
         throw new LedgerError(
-            'pair probe: the declared shape "' . $shape->describe() . '" of "' . $subject
+            'pair probe: the declared shape "' . (new RuleOptionShapeWording())->describe($shape) . '" of "' . $subject
             . '" accepts none of the eight forms this stand can write, and '
             . ($leafKey === null ? 'no leaf was named' : 'effect-magnitudes.tsv declares nothing for its leaf'),
         );

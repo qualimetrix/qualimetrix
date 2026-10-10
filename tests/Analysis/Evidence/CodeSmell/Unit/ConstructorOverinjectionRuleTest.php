@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit;
 
 use InvalidArgumentException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -15,6 +17,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
@@ -23,11 +26,39 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(ConstructorOverinjectionRule::class)]
 #[CoversClass(ConstructorOverinjectionOptions::class)]
 final class ConstructorOverinjectionRuleTest extends TestCase
 {
+    #[Test]
+    public function itCountsMeasuredZeroAndDistinguishesMissingPublication(): void
+    {
+        $infos = [];
+        foreach (['Healthy', 'Missing'] as $name) {
+            $file = \Qualimetrix\Core\Path\RelativePath::fromString('src/' . $name . '.php');
+            $subject = \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forMethod('Population', $name, '__construct'), $file, \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)));
+            $infos[] = new \Qualimetrix\Core\Symbol\SymbolInfo($subject, $file, 1, \Qualimetrix\Core\Symbol\CallableKind::Method, \Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forClass(($subject)->toSymbolPath()->namespace ?? '', ($subject)->toSymbolPath()->type ?? ''), $file, \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)));
+        }
+        $repository = self::createStub(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface::class);
+        $repository->method('allCallables')->willReturn($infos);
+        $repository->method('getSubject')->willReturnCallback(static fn(\Qualimetrix\Core\Symbol\MetricSubject $subject): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag => $subject->toSymbolPath()->type === 'Healthy' ? (new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag())->with(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName::CODE_SMELL_PARAMETER_COUNT, 0) : new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag());
+        $decisions = [];
+        foreach (ConstructorOverinjectionRule::channelDeclarations() as $channel => $declaration) {
+            foreach ($declaration->levels as $level) {
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(ConstructorOverinjectionRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
+            }
+        }
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+        $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions());
+        self::assertSame([], $rule->analyze((new \Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext($repository))->withPopulationTrace($session)));
+        self::assertSame(1, $session->freeze()->judgedCount());
+        self::assertSame(1, $session->freeze()->unjudgedCount());
+        self::assertSame('callable', $session->freeze()->abstentions()[0]->unit);
+        self::assertStringContainsString('Missing', $session->freeze()->abstentions()[0]->examples[0]);
+    }
+
     #[Test]
     public function itGetName(): void
     {
@@ -41,7 +72,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
     {
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions());
 
-        self::assertSame('Checks number of constructor parameters (dependencies)', $rule->getDescription());
+        self::assertSame('Checks number of constructor parameters (dependencies)', $rule::getDescription());
     }
 
     #[Test]
@@ -65,7 +96,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         self::expectException(InvalidArgumentException::class);
 
         new ConstructorOverinjectionRule(new class implements \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface {
-            public static function fromArray(array $config): static
+            public static function fromResolved(ResolvedRuleOptionValues $config): static
             {
                 return new static();
             }
@@ -315,7 +346,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
     #[Test]
     public function itOptionsFromArrayDefaults(): void
     {
-        $options = ConstructorOverinjectionOptions::fromArray(['enabled' => true]);
+        $options = ConstructorOverinjectionOptions::fromResolved(ResolvedOptionsFixture::values(ConstructorOverinjectionOptions::class, ['enabled' => true]));
 
         self::assertTrue($options->isEnabled());
         self::assertSame(8, $options->warning);
@@ -325,11 +356,11 @@ final class ConstructorOverinjectionRuleTest extends TestCase
     #[Test]
     public function itOptionsFromArrayCustomValues(): void
     {
-        $options = ConstructorOverinjectionOptions::fromArray([
+        $options = ConstructorOverinjectionOptions::fromResolved(ResolvedOptionsFixture::values(ConstructorOverinjectionOptions::class, [
             'enabled' => true,
             'warning' => 6,
             'error' => 10,
-        ]);
+        ]));
 
         self::assertTrue($options->isEnabled());
         self::assertSame(6, $options->warning);
@@ -337,11 +368,10 @@ final class ConstructorOverinjectionRuleTest extends TestCase
     }
 
     #[Test]
-    public function itOptionsFromEmptyArrayDisabled(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        $options = ConstructorOverinjectionOptions::fromArray([]);
-
-        self::assertFalse($options->isEnabled());
+        self::assertEquals(new ConstructorOverinjectionOptions(), ConstructorOverinjectionOptions::fromResolved(ResolvedOptionsFixture::values(ConstructorOverinjectionOptions::class, [])));
+        self::assertFalse(ConstructorOverinjectionOptions::fromResolved(ResolvedOptionsFixture::values(ConstructorOverinjectionOptions::class, ['enabled' => false]))->isEnabled());
     }
 
     private function exactDeclarationInfo(SymbolPath $symbolPath, string $file, int $line): SymbolInfo

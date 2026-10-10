@@ -39,6 +39,7 @@ final class FindingSummaryRendererTest extends TestCase
     public function itShowsNoFindingsFoundForEmptyReport(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 0,
             filesSkipped: 0,
@@ -60,6 +61,7 @@ final class FindingSummaryRendererTest extends TestCase
         // The presenter builds the report from the selection; the finding in
         // another namespace survives only as an out-of-scope count.
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -82,6 +84,7 @@ final class FindingSummaryRendererTest extends TestCase
     public function itShowsNoFindingsInClassScope(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -109,6 +112,7 @@ final class FindingSummaryRendererTest extends TestCase
     public function itDoesNotCallTheRunCleanWhenOnlyTheSelectionIsEmpty(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -133,6 +137,7 @@ final class FindingSummaryRendererTest extends TestCase
     public function itNamesTheFindingsOutsideANonEmptySelection(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [$this->createFinding(Severity::Warning)],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -156,6 +161,7 @@ final class FindingSummaryRendererTest extends TestCase
     public function itCallsASelectionCleanInGreenWhenNothingOutsideItWasFoundEither(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -176,6 +182,7 @@ final class FindingSummaryRendererTest extends TestCase
     public function itShowsNoFindingsFoundForNonEmptyReportWithNoScope(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -196,6 +203,7 @@ final class FindingSummaryRendererTest extends TestCase
         $finding = $this->createFinding(Severity::Error);
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [$finding],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -220,6 +228,7 @@ final class FindingSummaryRendererTest extends TestCase
         $finding = $this->createFinding(Severity::Warning);
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [$finding],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -243,6 +252,7 @@ final class FindingSummaryRendererTest extends TestCase
         $finding = $this->createFinding(Severity::Info);
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [$finding],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -272,6 +282,7 @@ final class FindingSummaryRendererTest extends TestCase
         ];
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -295,6 +306,7 @@ final class FindingSummaryRendererTest extends TestCase
         $findings = [$this->createFinding(Severity::Error)];
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -317,6 +329,7 @@ final class FindingSummaryRendererTest extends TestCase
         $findings = [$this->createFinding(Severity::Error)];
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -341,6 +354,7 @@ final class FindingSummaryRendererTest extends TestCase
         $findings = [$this->createFinding(Severity::Warning)];
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -372,6 +386,7 @@ final class FindingSummaryRendererTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [$finding],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -399,6 +414,7 @@ final class FindingSummaryRendererTest extends TestCase
         $findings = [$this->createFinding(Severity::Error)];
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -422,6 +438,7 @@ final class FindingSummaryRendererTest extends TestCase
         $findings = [$this->createFinding(Severity::Warning)];
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -445,6 +462,7 @@ final class FindingSummaryRendererTest extends TestCase
         $findings = [$this->createFinding(Severity::Info)];
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,

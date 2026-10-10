@@ -10,13 +10,14 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Core\Observation\WorseDirection;
+use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -47,7 +48,7 @@ final class PropertyCountRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks if classes have too many properties';
     }
@@ -65,17 +66,21 @@ final class PropertyCountRule extends AbstractRule
      * (`$propertyCountValue` — see the emission above) as `metricValue`,
      * judged worse the higher it goes:
      * {@see PropertyCountOptions::getSeverity()}'s `$value >= $this->error`
-     * (line 68) / `$value >= $this->warning` (line 72).
+     * / `$value >= $this->warning`.
      *
      * @return array<string, ChannelDeclaration>
      */
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Higher,
-                JudgedMetrics::of(MetricName::SIZE_PROPERTY_COUNT),
+            self::NAME => self::judgingHigher(
+                [MetricName::SIZE_PROPERTY_COUNT],
                 SymbolLevel::Class_,
+            )->withGates(
+                self::populationGate('class-coordinate', self::NAME, SymbolLevel::Class_, 'declaration', self::kindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
+                self::populationGate('class-value', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('class-value', [MetricName::SIZE_PROPERTY_COUNT]), 'The class metric was not published.'),
+                self::populationGate('exclude-readonly', self::NAME, SymbolLevel::Class_, 'declaration', self::flagExcludes('exclude-readonly', MetricName::DESIGN_IS_READONLY, 1, true), 'The configured class exclusion applies.'),
+                self::populationGate('exclude-promoted-only', self::NAME, SymbolLevel::Class_, 'declaration', self::flagExcludes('exclude-promoted-only', MetricName::DESIGN_IS_PROMOTED_PROPERTIES_ONLY, 1, true), 'The configured class exclusion applies.'),
             ),
         ];
     }
@@ -87,9 +92,10 @@ final class PropertyCountRule extends AbstractRule
         }
 
         $findings = [];
+        $declaration = self::channelDeclarations()[self::NAME];
 
-        foreach ($context->metrics->allDeclarations() as $classInfo) {
-            $finding = $this->findingForClass($classInfo, $context, $this->options);
+        foreach ($context->metrics->allClassDeclarations() as $classInfo) {
+            $finding = $this->findingForClass($classInfo, $context, $this->options, $declaration);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -102,17 +108,20 @@ final class PropertyCountRule extends AbstractRule
         SymbolInfo $classInfo,
         AnalysisContext $context,
         PropertyCountOptions $options,
+        ChannelDeclaration $declaration,
     ): ?Finding {
         $subject = $classInfo->subject ?? throw new LogicException('Property count findings require an exact class declaration subject');
-        if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+        $metrics = $this->admittedMetrics($context, $subject, $declaration, function (MetricBag $metrics) use ($context, $subject, &$options): iterable {
+            $options = $this->getEffectiveOptions($context, $options, $subject);
+            yield GateInput::metrics('class-value', $metrics);
+            yield GateInput::metrics('exclude-readonly', $metrics, option: $options->excludeReadonly);
+            yield GateInput::metrics('exclude-promoted-only', $metrics, option: $options->excludePromotedOnly);
+        }, [GateInput::kind('class-coordinate', $subject->toSymbolPath()->getType())], level: SymbolLevel::Class_);
+        if ($metrics === null) {
             return null;
         }
-
-        $metrics = $context->metrics->get($subject->toSymbolPath());
-        $propertyCountValue = $this->eligiblePropertyCount($metrics, $options);
-        if ($propertyCountValue === null) {
-            return null;
-        }
+        $propertyCount = $metrics->get(MetricName::SIZE_PROPERTY_COUNT);
+        $propertyCountValue = (int) $propertyCount;
 
         /** @var PropertyCountOptions $effectiveOptions */
         $effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
@@ -123,7 +132,7 @@ final class PropertyCountRule extends AbstractRule
 
         $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
         $message = \sprintf(
-            'Property count is %d, exceeds threshold of %d. Consider splitting the class or using composition',
+            'Property count is %d, ' . ThresholdCrossing::of($propertyCountValue, $threshold)->value . ' threshold of %d. Consider splitting the class or using composition',
             $propertyCountValue,
             $threshold,
         );
@@ -143,22 +152,6 @@ final class PropertyCountRule extends AbstractRule
             recommendation: $recommendation,
             threshold: $threshold,
         );
-    }
-
-    private function eligiblePropertyCount(MetricBag $metrics, PropertyCountOptions $options): ?int
-    {
-        $propertyCount = $metrics->get(MetricName::SIZE_PROPERTY_COUNT);
-        if ($propertyCount === null) {
-            return null;
-        }
-        if ($options->excludeReadonly && $metrics->get(MetricName::DESIGN_IS_READONLY) === 1) {
-            return null;
-        }
-        if ($options->excludePromotedOnly && $metrics->get(MetricName::DESIGN_IS_PROMOTED_PROPERTIES_ONLY) === 1) {
-            return null;
-        }
-
-        return (int) $propertyCount;
     }
 
     /**

@@ -7,10 +7,10 @@ namespace Qualimetrix\Tests\Reporting\Unit;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclusionsResolver;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 /**
  * A map here used to reach `array_push()` as named arguments and abort the run
@@ -65,7 +65,7 @@ final class FindingExclusionShapeRefusalTest extends TestCase
         string $key,
         mixed $value,
     ): \Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions {
-        $document = new ConfigurationDocument(
+        $document = LayeredDocument::of(
             [['source' => 'config', 'values' => [$key => $value]]],
             AbsolutePath::fromString('/project'),
         );

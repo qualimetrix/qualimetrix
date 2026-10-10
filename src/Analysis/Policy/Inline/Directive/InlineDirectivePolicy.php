@@ -4,9 +4,15 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
+
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
@@ -50,7 +56,10 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
      */
     private ?Severity $usageReportingSeverity = null;
 
-    public function __construct(private readonly DirectiveUsage $usage) {}
+    public function __construct(
+        private readonly DirectiveUsage $usage,
+        private readonly RefusedDirectives $refused,
+    ) {}
 
     public function prepare(array $suppressions, array $thresholdOverrides, array $thresholdDiagnostics): void
     {
@@ -61,7 +70,7 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
     }
 
     /**
-     * The directives **as authored**, one entry per line of source, keyed by
+     * The directives **as authored**, one entry per source tag, keyed by
      * file.
      *
      * This is the only view the reporting side is ever given, and the reason
@@ -97,7 +106,7 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
     {
         return self::onePerAuthoredSite(
             $this->thresholdDiagnostics,
-            static fn(ThresholdDiagnostic $d): string => $d->line . "\0" . ($d->code ?? '') . "\0" . $d->message,
+            static fn(ThresholdDiagnostic $d): string => $d->line . "\0" . $d->position . "\0" . ($d->code ?? '') . "\0" . $d->message,
         );
     }
 
@@ -106,7 +115,7 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
      *
      * Which binding survives does not matter: the reporting side never reads
      * a binding's subject, only the file and line the annotation was written
-     * at. It is the identity key — line, form, and authored text — that
+     * at. It is the identity key — position, line, form, and authored text — that
      * decides what counts as one directive.
      *
      * @template T of object
@@ -145,18 +154,39 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
         $this->usageReportingSeverity = $severity;
     }
 
-    public function directiveVerdicts(array $producedFindings, LevelActivity $levelActivity): array
+    public function directiveVerdicts(array $producedFindings, LevelActivity $levelActivity, SubjectCoverageFacts $subjectCoverage): array
     {
-        return $this->usage->verdicts($this->suppressions, $producedFindings, $levelActivity);
+        $groups = [];
+        foreach ($this->refusedDirectives() as $refusal) {
+            $site = $refusal->site;
+            $key = implode("\0", [$site->file->value(), (string) $site->line, (string) $site->position, $site->form, $site->target]);
+            $groups[$key] ??= ['site' => $site, 'refusals' => []];
+            $groups[$key]['refusals'][] = $refusal->publicRefusal();
+        }
+
+        return [
+            ...array_map(static fn(array $group): DirectiveVerdict => new DirectiveVerdict(
+                $group['site'],
+                DirectiveEffect::Refused,
+                refusals: $group['refusals'],
+            ), array_values($groups)),
+            ...$this->usage->verdicts($this->suppressions, $producedFindings, $levelActivity, $subjectCoverage),
+        ];
     }
 
-    public function auditDirectiveUsage(array $findings, LevelActivity $levelActivity): array
+    /** @return list<RefusedDirective> */
+    private function refusedDirectives(): array
+    {
+        return $this->refused->all($this->authoredSuppressions(), $this->authoredThresholdOverrides(), $this->authoredThresholdDiagnostics());
+    }
+
+    public function auditDirectiveUsage(array $findings, LevelActivity $levelActivity, SubjectCoverageFacts $subjectCoverage, ChannelPublication $publication): array
     {
         $severity = $this->usageReportingSeverity;
         if ($severity === null) {
-            return [];
+            return ['findings' => [], 'population' => JudgedPopulation::empty()];
         }
 
-        return $this->usage->stale($this->suppressions, $findings, $severity, $levelActivity);
+        return $this->usage->usageResult($this->suppressions, $findings, $severity, $levelActivity, $subjectCoverage, $publication);
     }
 }

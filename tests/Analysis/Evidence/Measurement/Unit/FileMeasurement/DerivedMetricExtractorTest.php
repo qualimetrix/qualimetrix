@@ -55,8 +55,8 @@ final class DerivedMetricExtractorTest extends TestCase
 
         $extractor->extract($repository, $fileBag, [$callable], RelativePath::fromString('tmp/test.php'));
 
-        self::assertTrue($repository->has($methodSymbol));
-        $methodBag = $repository->get($methodSymbol);
+        self::assertTrue($repository->hasSubject($this->declarationSubject($callable)));
+        $methodBag = $repository->getSubject($this->declarationSubject($callable));
         self::assertSame(85.5, $methodBag->get('maintainability.mi'));
         // Original metric should still be there
         self::assertSame(5, $methodBag->get('complexity.ccn'));
@@ -81,7 +81,7 @@ final class DerivedMetricExtractorTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            new LogicalClassPath(SymbolPath::forClass('App', 'Service')),
+            DeclarationPath::of(SymbolPath::forClass('App', 'Service'), DeclarationPath::of($symbol, $file, DeclarationOrdinal::fromRank(0))->file, DeclarationOrdinal::fromRank(0)),
             MetricBag::fromArray(['complexity.ccn' => 3]),
             23,
         );
@@ -113,7 +113,10 @@ final class DerivedMetricExtractorTest extends TestCase
         ]);
         $extractor = new DerivedMetricExtractor(new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]));
 
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            new MetricDefinition('design.type-coverage.param.total', SymbolLevel::Class_),
+            new MetricDefinition('design.type-coverage.all', SymbolLevel::Class_),
+        ]);
         $file = RelativePath::fromString('src/Service.php');
         $callable = new CallableWithMetrics(
             DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'run'), $file, DeclarationOrdinal::fromRank(0)),
@@ -121,7 +124,7 @@ final class DerivedMetricExtractorTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            new LogicalClassPath(SymbolPath::forClass('App', 'Service')),
+            DeclarationPath::of(SymbolPath::forClass('App', 'Service'), DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'run'), $file, DeclarationOrdinal::fromRank(0))->file, DeclarationOrdinal::fromRank(0)),
             MetricBag::fromArray(['complexity.ccn' => 3]),
         );
         $class = new ClassWithMetrics(
@@ -207,7 +210,7 @@ final class DerivedMetricExtractorTest extends TestCase
 
         $extractor->extract($repository, $fileBag, [$callable], RelativePath::fromString('tmp/test.php'));
 
-        $methodBag = $repository->get($methodSymbol);
+        $methodBag = $repository->getSubject($this->declarationSubject($callable));
         self::assertTrue($methodBag->has('maintainability.mi'));
         self::assertFalse($methodBag->has('complexity.ccn'));
         self::assertFalse($methodBag->has('size.loc'));
@@ -230,7 +233,7 @@ final class DerivedMetricExtractorTest extends TestCase
 
         $extractor->extract($repository, $fileBag, [$callable], RelativePath::fromString('tmp/test.php'));
 
-        $methodBag = $repository->get($methodSymbol);
+        $methodBag = $repository->getSubject($this->declarationSubject($callable));
         // Original metrics untouched, no derived metrics added
         self::assertSame(5, $methodBag->get('complexity.ccn'));
     }
@@ -250,7 +253,7 @@ final class DerivedMetricExtractorTest extends TestCase
             DeclarationPath::of(SymbolPath::forClass('App', 'Service'), $file, DeclarationOrdinal::fromRank(1)),
             4,
             1,
-            MetricBag::fromArray(['cohesion.tcc' => 0.5]),
+            new MetricBag(),
         );
         $repository->addSubject($class->subject, $class->metrics, $file, $class->line);
         $callable = $this->callable(SymbolPath::forMethod('App', 'Service', 'run'), new MetricBag());
@@ -291,8 +294,8 @@ final class DerivedMetricExtractorTest extends TestCase
 
         $extractor->extract($repository, $fileBag, [$callable], RelativePath::fromString('tmp/test.php'));
 
-        self::assertTrue($repository->has($methodSymbol));
-        self::assertSame(85.5, $repository->get($methodSymbol)->get('maintainability.mi'));
+        self::assertTrue($repository->hasSubject($this->declarationSubject($callable)));
+        self::assertSame(85.5, $repository->getSubject($this->declarationSubject($callable))->get('maintainability.mi'));
     }
 
     #[Test]
@@ -347,8 +350,8 @@ final class DerivedMetricExtractorTest extends TestCase
         $extractor->extract($repository, $fileBag, [$callable], RelativePath::fromString('tmp/test.php'));
 
         // MI should be resolved to the function, not silently discarded
-        self::assertTrue($repository->has($functionSymbol));
-        $bag = $repository->get($functionSymbol);
+        self::assertTrue($repository->hasSubject($this->declarationSubject($callable)));
+        $bag = $repository->getSubject($this->declarationSubject($callable));
         self::assertSame(72.5, $bag->get('maintainability.mi'));
         self::assertSame(5, $bag->get('complexity.ccn'));
     }
@@ -365,10 +368,11 @@ final class DerivedMetricExtractorTest extends TestCase
         $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]);
         $extractor = new DerivedMetricExtractor($compositeCollector);
 
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([new MetricDefinition('cohesion.tcc', SymbolLevel::Class_)]);
         // Both a class and a function with same short name
         $classSymbol = SymbolPath::forClass('App\\Utils', 'helper');
-        $repository->add($classSymbol, MetricBag::fromArray(['cohesion.tcc' => 0.5]), RelativePath::fromString('tmp/test.php'), 1);
+        $classSubject = MetricSubject::declaration(DeclarationPath::of($classSymbol, RelativePath::fromString('tmp/test.php'), DeclarationOrdinal::fromRank(0)));
+        $repository->addSubject($classSubject, MetricBag::fromArray(['cohesion.tcc' => 0.5]), RelativePath::fromString('tmp/test.php'), 1);
 
         $functionSymbol = SymbolPath::forGlobalFunction('App\\Utils', 'helper');
         $callable = $this->callable($functionSymbol, MetricBag::fromArray(['complexity.ccn' => 3]));
@@ -380,8 +384,8 @@ final class DerivedMetricExtractorTest extends TestCase
 
         $extractor->extract($repository, $fileBag, [$callable], RelativePath::fromString('tmp/test.php'));
 
-        self::assertNull($repository->get($classSymbol)->get('maintainability.mi'));
-        self::assertSame(80.0, $repository->get($functionSymbol)->get('maintainability.mi'));
+        self::assertNull($repository->getSubject($classSubject)->get('maintainability.mi'));
+        self::assertSame(80.0, $repository->getSubject($this->declarationSubject($callable))->get('maintainability.mi'));
     }
 
     #[Test]
@@ -394,16 +398,27 @@ final class DerivedMetricExtractorTest extends TestCase
         ]);
         $extractor = new DerivedMetricExtractor(new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]));
 
-        $repository = new InMemoryMetricRepository();
+        $definition = new MetricDefinition('maintainability.mi', SymbolLevel::Callable, [
+            SymbolLevel::Class_->value => [AggregationStrategy::Average],
+            SymbolLevel::Namespace_->value => [AggregationStrategy::Average],
+        ]);
+        $repository = new InMemoryMetricRepository([
+            $definition,
+            new MetricDefinition('size.symbol-method-count', SymbolLevel::Class_),
+        ]);
         $symbol = SymbolPath::forMethod('App', 'Service', 'run');
         $owner = new LogicalClassPath(SymbolPath::forClass('App', 'Service'));
+        $firstOwner = DeclarationPath::of($owner->symbolPath, RelativePath::fromString('src/First.php'), DeclarationOrdinal::fromRank(0));
+        $secondOwner = DeclarationPath::of($owner->symbolPath, RelativePath::fromString('src/Second.php'), DeclarationOrdinal::fromRank(0));
+        $repository->addSubject(MetricSubject::declaration($firstOwner), new MetricBag(), $firstOwner->file, 1);
+        $repository->addSubject(MetricSubject::declaration($secondOwner), new MetricBag(), $secondOwner->file, 1);
         $first = new CallableWithMetrics(
             DeclarationPath::of($symbol, RelativePath::fromString('src/First.php'), DeclarationOrdinal::fromRank(0)),
             410,
             CallableKind::Method,
             null,
             null,
-            $owner,
+            $firstOwner,
             MetricBag::fromArray(['complexity.ccn' => 3]),
             17,
         );
@@ -413,7 +428,7 @@ final class DerivedMetricExtractorTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            $owner,
+            $secondOwner,
             MetricBag::fromArray(['complexity.ccn' => 5]),
             31,
         );
@@ -441,15 +456,12 @@ final class DerivedMetricExtractorTest extends TestCase
             self::assertSame(CallableKind::Method, $callable->callableKind);
         }
 
-        $definition = new MetricDefinition('maintainability.mi', SymbolLevel::Callable, [
-            SymbolLevel::Class_->value => [AggregationStrategy::Average],
-            SymbolLevel::Namespace_->value => [AggregationStrategy::Average],
-        ]);
         $profiler = self::createStub(ProfilerInterface::class);
         (new CallableToClassAggregator($profiler))->aggregate($repository, [$definition]);
         (new ClassToNamespaceAggregator($profiler))->aggregate($repository, [$definition]);
 
-        self::assertSame(70.0, $repository->get(SymbolPath::forClass('App', 'Service'))->get('maintainability.mi.avg'));
+        self::assertSame(80.0, $repository->getSubject(MetricSubject::declaration($firstOwner))->get('maintainability.mi.avg'));
+        self::assertSame(60.0, $repository->getSubject(MetricSubject::declaration($secondOwner))->get('maintainability.mi.avg'));
         $namespace = $repository->get(SymbolPath::forNamespace('App'));
         self::assertSame(70.0, $namespace->get('maintainability.mi.avg'));
         self::assertSame(2, $namespace->get('maintainability.mi.count'));
@@ -477,7 +489,7 @@ final class DerivedMetricExtractorTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            new LogicalClassPath(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? '')),
+            DeclarationPath::of(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? ''), DeclarationPath::of($symbol, $file, DeclarationOrdinal::fromRank(1))->file, DeclarationOrdinal::fromRank(0)),
             $metrics,
         );
     }

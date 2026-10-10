@@ -8,15 +8,11 @@ use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
-use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 
-/**
- * Exact-subject storage and logical callable lookup for one metric repository.
- */
+/** Exact declaration metrics and callable metadata. */
 final class MetricSubjectIndex
 {
     /** @var array<string, MetricBag> */
@@ -24,9 +20,6 @@ final class MetricSubjectIndex
 
     /** @var array<string, SymbolInfo> */
     private array $infos = [];
-
-    /** @var array<string, list<string>> */
-    private array $declarationsByLogical = [];
 
     public function get(MetricSubject $subject): MetricBag
     {
@@ -38,24 +31,6 @@ final class MetricSubjectIndex
         return isset($this->metrics[$subject->toCanonical()]);
     }
 
-    public function logicalClassMetrics(SymbolPath $symbol): ?MetricBag
-    {
-        return $this->metrics[$this->logicalClassSubject($symbol)->toCanonical()] ?? null;
-    }
-
-    public function addLogicalClass(SymbolPath $symbol, MetricBag $metrics, ?RelativePath $file, ?int $line): SymbolInfo
-    {
-        return $this->add($this->logicalClassSubject($symbol), $metrics, $file, $line);
-    }
-
-    public function addLogicalClassScalar(SymbolPath $symbol, string $key, int|float $value): void
-    {
-        $subject = $this->logicalClassSubject($symbol);
-        if ($this->has($subject)) {
-            $this->add($subject, (new MetricBag())->with($key, $value), null, null);
-        }
-    }
-
     public function add(MetricSubject $subject, MetricBag $metrics, ?RelativePath $file, ?int $line): SymbolInfo
     {
         return $this->store(new SymbolInfo($subject, $file, $line), $metrics);
@@ -63,60 +38,32 @@ final class MetricSubjectIndex
 
     public function addCallable(CallableWithMetrics $callable): SymbolInfo
     {
-        $subject = MetricSubject::declaration($callable->declarationPath);
-
         return $this->store(new SymbolInfo(
-            $subject,
+            MetricSubject::declaration($callable->declarationPath),
             $callable->declarationPath->file,
             $callable->sourceLine,
             $callable->kind,
             $callable->classAggregationOwner,
+            $callable->anonymousClassContext,
         ), $callable->metrics);
     }
 
-    public function import(SymbolInfo $info, MetricBag $metrics): SymbolInfo
+    /** @return array{info: SymbolInfo, metrics: MetricBag} */
+    public function addScalarToExisting(MetricSubject $subject, string $key, int|float $value): array
     {
-        return $this->store($info, $metrics);
-    }
-
-    public function synchronizeAggregateInfo(SymbolInfo $info): void
-    {
-        $symbol = $info->symbolPath;
-        if (!\in_array($symbol->getType(), [SymbolType::File, SymbolType::Namespace_, SymbolType::Project], true)) {
-            return;
+        if (!$this->has($subject)) {
+            throw new LogicException('Scalar requires an existing exact declaration');
         }
 
-        $canonical = MetricSubject::aggregate($symbol)->toCanonical();
-        if (isset($this->infos[$canonical])) {
-            $this->infos[$canonical] = RepositoryMerge::subjectInfo($this->infos[$canonical], $info);
-        }
-    }
+        $metrics = (new MetricBag())->with($key, $value);
 
-    /** @param iterable<SymbolInfo> $infos */
-    public function synchronizeAggregateInfos(iterable $infos): void
-    {
-        foreach ($infos as $info) {
-            $this->synchronizeAggregateInfo($info);
-        }
+        return ['info' => $this->add($subject, $metrics, null, null), 'metrics' => $metrics];
     }
 
     /** @return array<string, SymbolInfo> */
     public function infos(): array
     {
         return $this->infos;
-    }
-
-    /** @return list<string> */
-    public function declarationsForLogical(string $canonical): array
-    {
-        return $this->declarationsByLogical[$canonical] ?? [];
-    }
-
-    public function logicalCallableMetrics(string $canonical): ?MetricBag
-    {
-        $declarations = $this->declarationsForLogical($canonical);
-
-        return \count($declarations) === 1 ? $this->metrics[$declarations[0]] : null;
     }
 
     /** @return iterable<SymbolInfo> */
@@ -130,20 +77,20 @@ final class MetricSubjectIndex
     }
 
     /** @return iterable<SymbolInfo> */
-    public function allCallables(): iterable
+    public function allClassDeclarations(): iterable
     {
-        foreach ($this->infos as $info) {
-            if ($info->callableKind !== null) {
+        foreach ($this->allDeclarations() as $info) {
+            if ($info->symbolPath->getType() === SymbolType::Class_) {
                 yield $info;
             }
         }
     }
 
     /** @return iterable<SymbolInfo> */
-    public function allLogicalClasses(): iterable
+    public function allCallables(): iterable
     {
         foreach ($this->infos as $info) {
-            if ($info->subject?->logicalClassPath() !== null) {
+            if ($info->callableKind !== null) {
                 yield $info;
             }
         }
@@ -166,37 +113,13 @@ final class MetricSubjectIndex
         }
 
         $canonical = $subject->toCanonical();
-        if (isset($this->metrics[$canonical])) {
-            $this->metrics[$canonical] = RepositoryMerge::metrics($this->metrics[$canonical], $metrics);
-            $this->infos[$canonical] = RepositoryMerge::subjectInfo($this->infos[$canonical], $info);
-        } else {
-            $this->metrics[$canonical] = $metrics;
-            $this->infos[$canonical] = $info;
-        }
-
-        $stored = $this->infos[$canonical];
-        $declaration = $stored->subject?->declarationPath();
-        if ($declaration !== null && $stored->callableKind !== null) {
-            $logicalCanonical = $declaration->logical->toCanonical();
-            $this->declarationsByLogical[$logicalCanonical] ??= [];
-            if (!\in_array($canonical, $this->declarationsByLogical[$logicalCanonical], true)) {
-                $this->declarationsByLogical[$logicalCanonical][] = $canonical;
-            }
-        }
-
-        return $stored;
+        return RepositoryMerge::store($canonical, $info, $metrics, $this->metrics, $this->infos);
     }
 
     private function copyTo(self $target): void
     {
         foreach ($this->infos as $canonical => $info) {
-            $target->import($info, $this->metrics[$canonical]);
+            $target->store($info, $this->metrics[$canonical]);
         }
     }
-
-    private function logicalClassSubject(SymbolPath $symbol): MetricSubject
-    {
-        return MetricSubject::logicalClass(new LogicalClassPath($symbol));
-    }
-
 }

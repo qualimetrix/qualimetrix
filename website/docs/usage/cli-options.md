@@ -20,11 +20,33 @@ bin/qmx check src/ lib/
 bin/qmx check src/Service/UserService.php
 ```
 
+A missing resolved path or an explicitly named existing regular file whose
+extension is not `.php` is refused with exit code 3 before discovery. This
+applies to CLI, YAML and preset paths in `check`, `directives`, `graph:export`,
+`debug:layer-assignment` and all four measuring baseline commands. Directories
+are discovered normally; an empty PHP tree remains a separate analysis refusal.
+
 A path you name that is itself a `vendor`, `node_modules` or `.git` directory (`bin/qmx check lib/vendor`) stops the run with a configuration error: Qualimetrix never walks into one, so the run would analyse nothing. Name a file or a directory inside it instead (`bin/qmx check vendor/acme/`); a `vendor` directory inside a path you name is still skipped.
 
-A directory you name — here or under `paths:` in `qmx.yaml` — that your own `exclude:` or `--exclude` removes stops the run with a configuration error (exit code 3) before analysis starts, naming the path and the selector that removes it: the run would otherwise succeed without having looked inside it. `directives`, `baseline:generate`, `baseline:update`, `baseline:cleanup` and `baseline:explain` refuse it the same way. A file you name inside an excluded directory is still analysed, and so is a directory below one that an `exact:` selector removes, because `exact:` does not reach below the directory it names. A path detected from `composer.json` that you exclude is skipped without a word: there the exclusion is doing what it was written for.
+Authored `exclude:` and `--exclude` apply to named files and directories from
+CLI, YAML and presets. `exact:` removes only the named entry; `subtree:` reaches
+its descendants. A matching written root is measured as excluded, not refused
+as input. When `analyzed=0`, `failed=0` and `excluded + generatedExcluded > 0`,
+the result is intentionally empty: `check` and `directives` return 0,
+`graph:export` writes an empty graph, and `baseline:generate` writes an empty
+baseline. Its explanation remains on stderr and in formats with a diagnostic
+place. Incompleteness takes priority with exit 4: diagnostic output is retained,
+but no baseline mutation or authoritative graph is published. Truly undiscovered
+empty input retains each command's existing outcome.
 
-If you omit paths, Qualimetrix auto-detects them from every path the `autoload` section of your `composer.json` declares — `psr-4` and `psr-0` roots, `classmap` entries (a `*` wildcard expanded to the directories it matches) and `files` entries alike. These are the same paths a run is judged against when Qualimetrix asks whether it covered the whole project, so a run with no paths always counts as covering it. An entry that is, or lies inside, a `vendor`, `node_modules` or `.git` directory — which Qualimetrix never walks into — is left out of both and named in a warning instead: third-party code is not analysed as your project's. A declared path that does not exist on disk stops the run with a configuration error. `autoload-dev` is not included: test code is analysed only when you name its path (`bin/qmx check src/ tests/`, or `paths:` in `qmx.yaml`), or when you count it as part of the project with [`--include-autoload-dev`](#--include-autoload-dev).
+`.` and canonically equivalent root spellings are valid. A directory or named
+alias must canonically target the captured root or a descendant; an external
+alias spelling targeting an internal directory is valid, the reverse refuses
+with exit 3. For files, the canonical parent is checked and the final name stays
+literal, including a named link to an outside file. `--working-dir` chooses the
+invocation root; publication has no outside-root fallback.
+
+If you omit paths, Qualimetrix auto-detects them from every path the `autoload` section of your `composer.json` declares — `psr-4` and `psr-0` roots, `classmap` entries (a `*` wildcard expanded to the directories it matches) and `files` entries alike. These are the same paths a run is judged against when Qualimetrix asks whether it covered the whole project, final scope also measures missing PHP, authored/generated removal and universe certainty. An entry that is, or lies inside, a `vendor`, `node_modules` or `.git` directory — which Qualimetrix never walks into — is left out of both and named in a warning instead: third-party code is not analysed as your project's. A declared path that does not exist on disk stops the run with a configuration error. `autoload-dev` is not included: test code is analysed only when you name its path (`bin/qmx check src/ tests/`, or `paths:` in `qmx.yaml`), or when you count it as part of the project with [`--include-autoload-dev`](#--include-autoload-dev).
 
 ---
 
@@ -44,6 +66,12 @@ the working directory. The same holds for `--baseline=`, `--output=`, `--report=
 `--preset=` (including an empty name in a list such as `--preset=strict,`): leave the option
 out to get its default.
 
+Warnings about a configuration a command accepted — `only_rules: []` lifting a
+preset's filter, for example — are written to stderr as `Warning:` lines by every
+command that reads the configuration, and `check --format=json` also carries them
+under `configurationDiagnostics`. See
+[Configuration warnings](../getting-started/configuration.md#configuration-warnings).
+
 ### `--exclude`
 
 Exclude directories from analysis with an explicit path selector. Can be repeated:
@@ -52,15 +80,14 @@ Exclude directories from analysis with an explicit path selector. Can be repeate
 bin/qmx check src/ --exclude=subtree:src/Generated --exclude=exact:src/Legacy
 ```
 
-A value that removes no directory is reported as
-[`discovery.unmatched-exclude`](../rules/discovery.md) — a `warning` at project
-level, not a refusal, and only on a run whose paths cover the project: every
-path `composer.json` declares under `autoload`, and under `autoload-dev` too
-with [`--include-autoload-dev`](#--include-autoload-dev). On a narrower run the pattern may bind nothing
-simply because the code it names lies outside the slice.
-
-A value that removes a directory you named as a path is refused instead; see
-[Paths argument](#paths-argument).
+Binding is reported through
+[`discovery.unmatched-exclude`](../rules/discovery.md). PHP-path completeness
+and universe certainty permit judging unsettled selectors; authored/generated
+removal alone does not close that question. A bound selector remains `Removed`
+on a narrow run. A possible hidden subtree from the same source gives a qualified
+warning; one from another source gives a named unjudged value and a request to
+rerun without that exclusion. A removed written root is measured, not refused.
+See [Paths argument](#paths-argument).
 
 ### `--include-generated`
 
@@ -105,9 +132,9 @@ bin/qmx check src/ --suppress-path='subtree:src/Entity' --suppress-path='regex:s
 
 Merged with `suppress_paths` from `qmx.yaml` — both sources are combined.
 
-!!! warning "Does not apply to `architecture.*` rules"
-    `architecture.layer-violation` and `architecture.circular-dependency` violations are never
-    suppressed by this option — see [Suppress Paths](../getting-started/configuration.md#suppress-paths)
+!!! warning "Declared project-scoped channels remain visible"
+    `architecture.circular-dependency` cycles and project-scoped diagnostics remain exempt.
+    The option applies to the source of `architecture.layer-violation` — see [Suppress Paths](../getting-started/configuration.md#suppress-paths)
     for why and for the alternatives.
 
 ### `--suppress-namespace`
@@ -120,9 +147,9 @@ bin/qmx check src/ --suppress-namespace='subtree:App\Entity' --suppress-namespac
 
 Merged with `suppress_namespaces` from `qmx.yaml` — both sources are combined.
 
-!!! warning "Does not apply to `architecture.*` rules"
-    `architecture.layer-violation` and `architecture.circular-dependency` violations are never
-    suppressed by this option — see [Suppress Namespaces](../getting-started/configuration.md#suppress-namespaces)
+!!! warning "Declared project-scoped channels remain visible"
+    `architecture.circular-dependency` cycles and project-scoped diagnostics remain exempt.
+    The option applies to the source of `architecture.layer-violation` — see [Suppress Namespaces](../getting-started/configuration.md#suppress-namespaces)
     for why and for the alternatives.
 
 ---
@@ -163,7 +190,7 @@ bin/qmx check src/ --format=json
 bin/qmx check src/ --format=sarif
 ```
 
-Available formats: `summary`, `text`, `text-verbose`, `json`, `metrics`, `checkstyle`, `sarif`, `gitlab`, `github`, `health`, `html`, `suppressed`.
+Available formats: `summary`, `text`, `json`, `metrics`, `checkstyle`, `sarif`, `gitlab`, `github`, `health`, `html`, `suppressed`.
 
 See [Output Formats](output-formats.md) for details on each format.
 
@@ -175,39 +202,62 @@ Write the report to a file instead of stdout:
 bin/qmx check src/ --format=html --output=report.html
 ```
 
-An existing file is written in place, as `>` in a shell does: it keeps its
-inode, owner, permissions and hard links, and a file mounted into a container
-on its own works too. A symbolic link is followed to the file it names, and
-the link stays; so do `/dev/null`, a named pipe and a process substitution such
-as `>(gzip > report.json.gz)`. A name nothing stands at yet is created, through
-a dangling symbolic link too; if the write then fails, the file it created is
-removed (one created through a link stays). A write that fails midway through
-an existing file leaves that file partly written. The kernel decides which
-links are followed: on Linux with `fs.protected_symlinks`, a link another user
-left in a shared directory such as `/tmp` is refused, as `>` refuses it. On a
-thread-safe (ZTS) PHP build, such a link to an existing file is still followed.
+A named regular destination is prepared after configuration, scope, selector and
+baseline-input refusals, before analysis. A private sibling holds the result; a
+new final name remains absent and existing bytes stay unchanged until complete
+write, flush and identity checks permit atomic publication. Replacement preserves
+permissions and changes the final inode; other hard links keep their old bytes.
+The parent must already exist and permit creation and replacement, even when
+the final file exists and is writable. Move the destination or make its parent
+writable/searchable before running qmx.
 
-`/dev/stdout`, `/dev/stderr`, `/dev/fd/N` and `/proc/self/fd/N`, spelled
-exactly so, are written through the stream itself, whether it is a terminal, a
-pipe or a file. Another spelling of the same stream, such as
-`/proc/thread-self/fd/1` or a symbolic link to `/dev/stdout`, is opened by its
-path, which on Linux fails when the stream is a pipe: use one of the four.
+SIGINT/SIGTERM before publication discard the run's own sibling and return
+128 + signal when pcntl and exclusive signal ownership are available. Otherwise
+ordinary atomic publication proceeds without replacing foreign handlers, and
+interruption may leave the private sibling. Replacing handlers during a guarded
+operation is unsupported. SIGKILL, failed cleanup and already published targets
+are also outside that cleanup guarantee. A later profile failure does not roll back a published report.
 
-qmx checks what it can before the run; the write itself is the final judge. A
-directory or a name ending in `/`, an existing file that is not writable, a new
-name in a directory that does not exist or does not allow creating a file, a
-descriptor the process does not hold, and on Linux one it holds only for
-reading, are refused with exit code 3 before analysis starts. A symbolic link
-that leads to no file qmx can create (dangling into a missing directory, a
-loop, a link the kernel refuses to follow) is refused by the write, with exit
-code 3 after the run, as is any write that still fails then.
+A symbolic link is followed only when another user cannot place that directory
+entry; accepted links remain intact and write their resolved referents. This
+also applies to a dangling link into an existing parent. A placeable link
+refuses on both ordinary and thread-safe PHP. Writable exposure elsewhere in
+the path is reported on stderr before analysis. Component swaps, ACLs,
+hard-link provenance and non-local filesystems retain their platform limits.
+
+An owned link in a 0775 directory is accepted when the directory group is
+proved to be the effective user's private primary group: no other primary or
+supplementary member. The native check supports complete per-source `files`
+and `systemd` NSS enumeration. Unknown sources, explicit `initgroups`, failed
+enumeration or unsupported platforms keep the conservative refusal.
+
+`/dev/stdout`, `/dev/stderr`, `/dev/fd/N`, `/proc/self/fd/N`,
+`/proc/thread-self/fd/N`, `php://stdout`, `php://stderr` and `php://fd/N`
+address an existing process stream; `/proc` spellings require procfs.
+`file:///absolute/path` addresses a file.
+Other URI schemes refuse. A named pipe opens only after input refusals and
+needs its reader; `/dev/null` remains supported.
+
+Descriptor existence is checked before analysis. Linux fdinfo also permits an
+early refusal of a descriptor opened only for reading. On macOS PHP does not
+expose that original access flag, so an unknown mode is left to the actual write
+and its environment refusal. Descriptor and stream writes use blocking mode.
+
+Report, profile and log targets are judged together. Two targets for one
+ordinary inode, or one absent name, refuse before analysis, including collisions
+with the explicit configuration or baseline input. A shell-inherited `2>&1` is
+not a second authored destination. Character devices such as a terminal or
+`/dev/null` may coincide. Missing parents, directories, inaccessible paths,
+closed descriptors and write failures exit 3; the reason distinguishes
+configuration input from an environment failure. A report write failure with
+unwritable stdout sends its refusal to stderr.
 
 ### `--group-by`
 
 Group violations in the output. Default depends on the formatter.
 
 ```bash
-bin/qmx check src/ --format=text-verbose --group-by=rule
+bin/qmx check src/ --format=text --detail=all --group-by=rule
 ```
 
 Available values: `none`, `file`, `rule`, `severity`, `class`, `namespace`.
@@ -231,12 +281,12 @@ that set one value are refused the same way: `violations` beside `limit`, or
 
 **JSON format options:**
 
-| Option                   | Default | Description                                                                                                 |
-| ------------------------ | ------- | ----------------------------------------------------------------------------------------------------------- |
-| `violations=N\|all`      | all     | Max violations in output (0=none)                                                                           |
-| `limit=N\|all`           | all     | The same value as `violations`, except that `0` means no limit; write one of the two                        |
-| `top=N`                  | 10      | Number of worst offenders to include                                                                        |
-| `rank-by=count\|density` | count   | Reorder worst-offender lists by violation count (default) or by [violation density](output-formats.md#json) |
+| Option                   | Default | Description                                                                                                              |
+| ------------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `violations=N\|all`      | all     | Max violations in output (0=none)                                                                                        |
+| `limit=N\|all`           | all     | The same value as `violations`, except that `0` means no limit; write one of the two                                     |
+| `top=N`                  | 10      | Number of worst offenders to include                                                                                     |
+| `rank-by=score\|density` | score   | Order worst-offender lists by ascending health score (default) or descending [violation density](output-formats.md#json) |
 
 ```bash
 bin/qmx check src/ --format=json --format-opt=limit=100
@@ -246,14 +296,17 @@ bin/qmx check src/ --format=json --format-opt=rank-by=density
 
 **Summary format options:**
 
-| Option                   | Default | Description                                                                       |
-| ------------------------ | ------- | --------------------------------------------------------------------------------- |
-| `top=N`                  | 3       | Number of worst offenders to include                                              |
-| `rank-by=count\|density` | count   | Reorder worst-offender lists by violation count (default) or by violation density |
+| Option                   | Default | Description                                                                                    |
+| ------------------------ | ------- | ---------------------------------------------------------------------------------------------- |
+| `top=N`                  | 3       | Number of worst offenders to include                                                           |
+| `rank-by=score\|density` | score   | Order worst-offender lists by ascending health score (default) or descending violation density |
 
 ```bash
 bin/qmx check src/ --format-opt=rank-by=density
 ```
+
+
+Offender selection uses the complete captured population before ranking and `top`. Namespace selectors form a union. JSON/summary `--class` requires a unique exact declaration for its separate class health heading; duplicate logical names refuse with exit 5. Use `--namespace` to retain all their exact offender records. `rank-by=count` is refused with exit 3; use `score` or `density`. Summary shows the true remaining count and advises `--format-opt=top=<total>`.
 
 !!! note "Two unrelated options named `top`"
     `--format-opt=top=N` (JSON and summary formats) caps the worst-namespace/worst-class
@@ -390,6 +443,11 @@ Filters violations and worst offenders to the selected namespaces. Shows subtree
 
 Project-wide findings (`architecture.coverage-gap` and the other diagnostics that judge the run as a whole) are never selected by a namespace selector: they belong to no namespace.
 
+Named detector findings use their declaration namespace. File-subject findings
+still follow the existing file-subject namespace selection behavior; a file in
+a namespace is not guaranteed to appear in that namespace's drill-down solely
+because of its path.
+
 The same matching rule governs the health drill-down and the worst-offender lists this option turns on, and the `include_namespaces` option of `coupling.distance`.
 
 A pattern that selects no analysed namespace is refused with exit 3, and the
@@ -440,10 +498,10 @@ Set a custom cache directory. Default: `.qmx-cache`.
 bin/qmx check src/ --cache-dir=/tmp/qmx-cache
 ```
 
-The directory is created when missing. A path that cannot be created or is not
-writable is refused with exit 3 rather than silently disabling the cache, and
-the door closes the same way on every command that resolves a cache directory,
-not only on `check`.
+The path is judged without creating directories. An explicitly configured path
+that cannot provide a writable, searchable directory is refused with exit 3.
+An unusable implicit default disables caching and produces one warning.
+An eligible directory is created only after the remaining input checks succeed.
 
 ### `--clear-cache`
 
@@ -452,6 +510,13 @@ Clear the cache before running analysis:
 ```bash
 bin/qmx check src/ --clear-cache
 ```
+
+Clearing starts after input checks and target preparation. A destination or its
+temporary sibling inside the physical cache root refuses before clearing or
+analysis, including through a symbolic link. A cache entry that
+cannot be removed produces an environment error (exit 3), naming the directory,
+the remaining entry count and the reason. An incomplete clear never prints
+"Cache cleared.".
 
 ---
 
@@ -469,13 +534,13 @@ bin/qmx check src/ --baseline=baseline.json
 
 ### `--show-resolved`
 
-Count entries whose complete identity no longer appears in the measured set:
+Count complete comparable identities that no longer appear in the measured set:
 
 ```bash
 bin/qmx check src/ --baseline=baseline.json --show-resolved
 ```
 
-Stale and inert entries are reported without failing the run or disabling other baseline entries. A group that still fires with fewer members is not resolved.
+Stale requires complete comparable absence. Stale and inert entries publish the project-level baseline.unused-entry Warning, subject to ordinary --fail-on policy. A group that still fires with fewer members is not resolved.
 
 ### Baseline lifecycle commands
 
@@ -483,22 +548,21 @@ The commands below are the complete baseline write and inspection surface:
 
 ```text
 bin/qmx baseline:generate <baseline> [<paths>...] [--mode=MODE] [--force]
-bin/qmx baseline:update   <baseline> [<paths>...] [--force]
+bin/qmx baseline:update   <baseline> [<paths>...] [--force] [--accept-new=CHANNEL]... [--record-exclusions]
 bin/qmx baseline:cleanup  <baseline> [<paths>...] [--remove=REMOVE]... [--force]
 bin/qmx baseline:explain  <symbol> [<paths>...] [--baseline=BASELINE] [--channel=CHANNEL]
 bin/qmx baseline:rename-channels <baseline> <map> [--format=FORMAT]
 ```
 
-The first four commands accept `--config=CONFIG`, `--preset=PRESET`, `--disable-rule=DISABLE-RULE`, `--only-rule=ONLY-RULE`, and `--rule-opt=RULE-OPT`. They do not accept any exclusion or suppression option. `baseline:rename-channels` accepts none of them: it runs no analysis, so there is no measured set for them to define.
+The first four commands accept `--config=CONFIG`, `--preset=PRESET`, `--disable-rule=DISABLE-RULE`, `--only-rule=ONLY-RULE`, and `--rule-opt=RULE-OPT`. All four also accept `--include-generated`, `--include-autoload-dev`, `--no-cache`, `--workers`/`-w` and `--memory-limit`. They do not accept any exclusion or suppression option. `baseline:rename-channels` accepts none of them: it runs no analysis, so there is no measured set for them to define.
 
 - `baseline:generate` captures the current measured findings. `--mode=ratchet` is the default; `--mode=suppress` records unconditional acceptance for captured identities. Its `--force` overwrites an existing file.
 - `baseline:update` tightens existing entries only. Its `--force` overrides the recorded-scope coverage guard.
 - `baseline:cleanup` lists candidates by default and removes only repeated `--remove=REMOVE` selectors. Its `--force` also overrides the scope guard.
 - `baseline:explain` shows the configured threshold, accepted baseline level, and source override for a canonical symbol; `--channel=CHANNEL` narrows the answer.
-- `baseline:rename-channels` rewrites the `channel` field of the entries a declared tab-separated map names, and nothing else, without analysing anything. Exit `1` covers a refusal on content or an unreadable baseline or map file; `2` is a malformed `--format` value. Either way the baseline is left byte-identical, and the refusal is reported in the chosen format — under `--format=json` as an object with an `error` key. See [Carry a baseline onto renamed channels](baseline.md#carry-a-baseline-onto-renamed-channels) — note that carrying an entry changes its selector.
+- `baseline:rename-channels` rewrites the `channel` field of the entries a declared tab-separated map names, and nothing else, without analysing anything. Content, grammar and environment refusals follow the command refusal policy (exit 3); no partial write is installed. See [Carry a baseline onto renamed channels](baseline.md#carry-a-baseline-onto-renamed-channels) — note that carrying an entry changes its selector.
 
-The four analysing commands refuse incomplete analysis with exit 4 before interpreting
-or writing a baseline. `--force` overrides file/scope guards only; it cannot make
+The five readers preflight present documents once before analysis/carry; closed grammar refuses early and configured semantics are loaded later. The four analysing commands refuse incomplete analysis with exit 4 before classification or writing. `--force` overrides file/scope guards only; it cannot make
 a partial measured set acceptable. Existing destinations remain byte-identical,
 and `baseline:generate` does not create a missing destination.
 
@@ -508,6 +572,18 @@ documented under [Replace an older baseline](baseline.md#replace-an-older-baseli
 The removed `--generate-baseline` and `--baseline-ignore-stale` options have no aliases. Use `baseline:generate` and explicit `baseline:cleanup --remove` instead.
 
 ---
+
+### `--accept-new=CHANNEL` and `--record-exclusions`
+
+These are mutually exclusive baseline:update modes. Repeat --accept-new with
+exact selected declared channels to add only new complete comparable measured
+identities, preserving existing caps/modes. Wildcards, levels, undeclared,
+configuration-error and audit channels refuse with exit 3 before analysis.
+--record-exclusions requires exactly recorded paths even with --force, writes the
+complete new exclusion definition and recaptures only affected full comparable
+groups with their modes. Unavailable required proof refuses the whole write.
+Ordinary update preserves scope/exclusions; equal acceptance is unchanged and
+no-op preserves bytes/generated. See [Baseline](baseline.md#tighten-after-repairs).
 
 ## Suppression options
 
@@ -527,7 +603,7 @@ is separate from `suppress_paths`; each is broken down by rule name. Unlike `@qm
 the default output indicates it happened.
 
 `--show-suppressed` renders part of this as prose on the text surface.
-`--format=suppressed` reports the full composition — all seven suppression
+`--format=suppressed` reports the full composition — all eight suppression
 mechanisms, not only these two — as machine-readable JSON; see
 [Output Formats](output-formats.md#suppressed). Either `--show-suppressed` or
 selecting `--format=suppressed` (including `format: suppressed` in
@@ -535,17 +611,11 @@ selecting `--format=suppressed` (including `format: suppressed` in
 both. The two surfaces are not otherwise equivalent — see
 [suppressed](output-formats.md#suppressed) for what each one shows.
 
-Suppression is a closed set of seven mechanisms. Several neighboring decisions
-also make a finding invisible but are not suppression, and neither surface
-covers them: a rule that never ran (`--disable-rule`, `--only-rule`,
-`enabled: false`) produced nothing to suppress; a disabled channel for a
-classless producer (visible in `qmx rules`) is removed the same way, before
-the ledger runs; a threshold that keeps a finding from being produced at all
-(`@qmx-threshold`) is audited separately rather than through this surface;
-formatter truncation (`--detail`, `violations=N`) keeps the finding in the
-payload and only flags it `truncated`; and `--namespace`/`--class` drill-down
-narrows presentation per invocation without removing anything from the
-underlying result.
+Suppression composition includes eight mechanisms, including produced-finding
+`selection` removals. A producer that never ran produced nothing to remove and
+is reported separately under `notRun`, not byMechanism. Threshold-audit effects,
+formatter truncation and namespace/class drill-down retain their separate roles;
+truncation/drill-down change presentation, not underlying finding identity.
 
 ### `--no-suppression-annotations`
 
@@ -571,11 +641,11 @@ bin/qmx check src/ --no-suppression-annotations
 
 ## Git scope options
 
-Report only violations from changed files. See [Git Integration](git-integration.md) for the full guide.
+Publish findings relative to changed files while retaining declared project-scoped diagnostics, including architecture cycle findings. Layer violations follow the source file in both modes. See [Git Integration](git-integration.md) for the full guide.
 
 ### `--report`
 
-Control which violations to report. Analyzes the full project but only shows violations from changed files:
+Limit publication by Git while preserving selected analysis paths. Non-strict mode also retains relevant namespace/project findings; declared project-scoped findings remain visible:
 
 ```bash
 bin/qmx check src/ --report=git:main..HEAD
@@ -584,7 +654,7 @@ bin/qmx check src/ --report=git:origin/develop..HEAD
 
 ### `--report-strict`
 
-In diff mode, only show violations from the changed files themselves. Without this flag, violations from parent namespaces are also shown:
+Limit file-scoped code findings to changed files without namespace/project widening. Declared project-scoped findings, including architecture cycles, remain visible even in strict mode. Layer violations follow the source file:
 
 ```bash
 bin/qmx check src/ --report=git:main..HEAD --report-strict
@@ -638,13 +708,20 @@ Write the run's log to a file, one JSON record per line:
 bin/qmx check src/ --log-file=qmx.log
 ```
 
-The file is appended to, and a missing directory is created. A path that cannot
-be written — a directory that cannot be created, a file that cannot be opened for
-appending — is refused with exit code 3 before analysis starts, and the message
-quotes the reason the system gave. An empty or blank value — `--log-file=`, as an
-unset variable in `--log-file=$LOG` writes it — is refused with exit code 3 too,
-rather than read as "no log file": leave the option out to write none. Only
-`check` takes the option.
+The file is appended to; its parent directory must already exist. Log records
+produced during input checks are buffered. The target is claimed together with
+the report and profile targets after input checks, then buffered records are
+appended. Attachment publishes the log name: a successful run leaves an empty
+file even when no record passes its minimum level. Invalid input leaves the log
+file untouched.
+
+The same link, descriptor and collision rules as `--output` apply. An unwritable
+target is refused with exit code 3. If writing fails during analysis, the logger
+remembers the first cause and counts lost records; the command reports an
+environment error before publishing the report. A partial line can remain.
+An empty or blank value, including `--log-file=$LOG` with an unset variable, is
+refused with exit code 3. Leave the option out to write no file log. Only `check`
+takes the option.
 
 ### `--log-level`
 
@@ -742,11 +819,17 @@ bin/qmx check src/ --profile=profile.json
 A target that cannot be written is refused with exit code 3 before analysis
 starts, by the same rules as [`--output`](#--output--o): a directory or a name
 ending in `/`, a file in a directory that does not exist or cannot be written,
-or a file that is not writable. An empty `--profile=` is refused the same way. A
+or a file that is not writable. Named regular profiles share the staging, atomic
+publication and signal capability boundary of `--output`. An empty `--profile=`
+is refused the same way. A
 write that still fails after the run also exits with code 3, never reported
 beside a finished run. The report is already published by then, so the reason
 goes to stderr and stdout keeps the report as its only document, even under
 `--format=json`.
+
+If cleanup also fails after that completed report, both causes are printed on
+stderr and stdout retains one report. An internal failure keeps exit 5; an
+environment cleanup failure takes exit 3 over the findings exit code.
 
 ### `--profile-format`
 
@@ -789,8 +872,14 @@ bin/qmx check src/ --disable-rule=complexity.* --disable-rule=cohesion.lcom
 bin/qmx check src/ --disable-rule=health.complexity
 ```
 
-!!! tip "Memory optimization"
-    Disabling the `duplication.clone` rule also skips the memory-intensive duplication detection phase entirely. On large codebases (500+ files), this can significantly reduce memory usage. Use `--disable-rule=duplication.clone` if you encounter out-of-memory errors. The level-narrowed spelling `--disable-rule=duplication.clone:project` skips it too: the channel reports at that one level, so silencing the level silences the rule. A producer stops as soon as the disable selectors together cover every level of every channel it emits — one level of a two-level channel leaves it running, since the other level still has findings to report.
+!!! tip "Duplication memory failure"
+    If PHP exhausts memory during `duplication.clone`, the detector emits a short
+    stderr diagnostic with the failure site and current `memory_limit`, recommends
+    `--memory-limit` or `memory_limit` in `qmx.yaml`, and exits with code 4. A
+    fatal OOM may interrupt report delivery; valid or complete JSON is not promised.
+    A late false read also makes the run incomplete with exit 4 and clears partial
+    Duplication output. An empty result from that run is not evidence of zero copies.
+    To skip detection deliberately, disable `duplication.clone` itself.
 
 ### `--only-rule`
 
@@ -827,25 +916,19 @@ Likewise, the owner before `:` in `--rule-opt=RULE:OPTION=VALUE` must be an exac
 producer rule, not a group or channel — a group or channel there is an error. The same rule
 governs the `rules:` YAML section keys.
 
-!!! note "Every channel obeys selection, including the one assembled last"
-    `annotation.unused-directive` — the "this suppression silenced nothing" verdict — can only be
-    reached once every other rule has produced its findings, so a run assembles it after rule
-    execution. It is selected like any other channel all the same:
-    `--disable-rule=annotation.unused-directive` (or `annotation.unused-directive:file`) silences
-    it, and an `--only-rule` that names other channels of `annotation.directive` without naming
-    this one does not report it.
-
-    The producer's exclusion options are a separate matter and do not reach this channel:
-    `rules.annotation.directive.suppress_paths` gates its early channels only, and
-    `suppress_namespaces` reaches none of them, since these findings are reported against the file
-    the annotation was written in.
+!!! note "Selection roles are declared per channel"
+    `annotation.unresolved-directive` and `annotation.unused-directive` are
+    directly selectable. Unsupported/invalid thresholds follow the addressed
+    producer. Explicitly disabling annotation.directive stops its
+    producer. Root path exclusions and namespace exclusions retain their own
+    subject-level applicability; they are not a second selection resolver.
 
 ### `--rule-opt`
 
 Override rule options from the command line. Format: `rule-name:option=value`, where
 `rule-name` must be an exact producer rule — never a group, never a channel, and never a
-wildcard. This is the same constraint that governs the owner before `:` in
-`--only-rule`/`--disable-rule` and the `rules:` YAML section keys. Can be repeated:
+wildcard. The same exact-producer constraint governs the `rules:` YAML section keys;
+level-qualified selection instead addresses a declared channel code. Can be repeated:
 
 ```bash
 bin/qmx check src/ --rule-opt=complexity.ccn:callable.warning=15
@@ -859,7 +942,7 @@ not accept. The refusal for the last one lists the options the rule does
 accept.
 
 `suppress_namespace_channels` is configured in YAML, not through `--rule-opt`: each selector
-requires a non-empty list of namespace patterns, while `--rule-opt` carries scalar values. Its
+requires a non-empty list of namespace patterns, while channel-keyed dictionaries are not CLI dotted addresses. Its
 keys are channel selectors and follow the same exact-or-`X.*` rule as `@qmx-ignore` — a bare
 prefix like `health` is now an error, not a shorthand for `health.*`. A key may add `:namespace`
 and no other level: the option is offered namespace aggregates only, so any other level would
@@ -928,7 +1011,7 @@ Many rules have dedicated CLI flags for quick rule-option configuration:
 | `--lcom-error=N`                     | cohesion.lcom                 | error               |
 | `--lcom-min-methods=N`               | cohesion.lcom                 | minMethods          |
 | `--lcom-exclude-readonly`            | cohesion.lcom                 | excludeReadonly     |
-| `--lcom-exclude-methods=NAME`        | cohesion.lcom                 | excludeMethods      |
+| `--lcom-exclude-methods='[NAME]'`    | cohesion.lcom                 | excludeMethods      |
 | `--noc-warning=N`                    | design.noc                    | warning             |
 | `--noc-error=N`                      | design.noc                    | error               |
 | `--param-type-coverage-warning=N`    | design.type-coverage.param    | warning             |
@@ -1002,53 +1085,32 @@ bin/qmx baseline:cleanup baseline.json src/ --remove=<selector>
 
 ### debug:layer-assignment
 
-Report which architecture layer a class is assigned to, and every other layer whose criteria would also have matched it (a potential shadow source). See [Inspecting layer assignment for a single class](../rules/architecture.md#debug-layer-assignment) for the full walkthrough.
-
 ```bash
-bin/qmx debug:layer-assignment 'App\Service\Foo'
-bin/qmx debug:layer-assignment 'App\Service\Foo' --config qmx.yaml
-
-# Machine-readable output — for agents and scripts, not for parsing the text report
 bin/qmx debug:layer-assignment 'App\Service\Foo' --format=json
+bin/qmx debug:layer-assignment 'app\service\foo' --config qmx.yaml
 ```
 
-| Option                | Description                                                       |
-| --------------------- | ----------------------------------------------------------------- |
-| `-c`, `--config=FILE` | Path to `qmx.yaml` (default: `qmx.yaml` in the current directory) |
-| `--format=FORMAT`     | `text` (default) or `json`                                        |
+| Option                | Meaning                                 |
+| --------------------- | --------------------------------------- |
+| `-c`, `--config=FILE` | Configuration file; default `qmx.yaml`. |
+| `--preset=PRESET`     | Named or file preset; repeatable.       |
+| `--format=FORMAT`     | `text` (default) or `json`.             |
 
-`--format=json` serializes the same resolution the text report renders. The command answers only for classes the run analysed: an FQN naming no analysed declaration — a typo, or a class kept out of the run by `paths`, `exclude` or the generated-file filter — exits with code 3 and the error envelope instead of being classified. Schema:
+The command runs normal Discovery/Collection and looks up observed declarations
+and graph ends; install-only classes do not enlarge that population. ASCII
+case variants resolve to observed spelling, and parser-observed high-byte names
+work. Only an empty normalized name is refused before analysis; other unknown
+input exits 3 after lookup even with disabled policy. Informational answers exit 0.
+Configure the three layer-policy producers in YAML; this command does not add
+the check command's `--disable-rule` option.
 
-```json
-{
-  "meta": {
-    "version": "0.26.0",
-    "package": "qmx",
-    "timestamp": "2026-01-15T10:30:00+00:00",
-    "docs": "https://qualimetrix.dev",
-    "llmsTxt": "https://qualimetrix.dev/llms.txt"
-  },
-  "fqn": "App\\Service\\Foo",
-  "assigned": { "layer": "any-foo", "criteria": ["pattern \"App\\**\\Foo\""] },
-  "contendingMatches": [],
-  "shadowed": [
-    { "layer": "service", "criteria": ["pattern \"App\\Service\\**\""], "reported": true }
-  ],
-  "shadowedBy": "any-foo",
-  "undecided": [],
-  "contenders": [],
-  "chainStopsAt": [],
-  "hasLayers": true
-}
-```
-
-- `meta` is the same block `check --format=json` opens with: the tool's `version`, `package`, the run's `timestamp`, and the documentation addresses `docs` and `llmsTxt` (see [Documentation addresses in JSON reports](output-formats.md#documentation-addresses)).
-- `assigned` is `null` when no layer matched; then `contendingMatches` and `shadowed` are empty too.
-- `shadowed` lists the matches after `shadowedBy`, the first match the run established, in declaration order. Each loses the class whichever way the layers the run could not answer answer, and `reported` says whether `architecture.potential-shadow` reports it. `shadowedBy` is `null` when `shadowed` is empty, and is not `assigned` when a match whose `exclude:` went unanswered stands in front of it.
-- `contendingMatches` lists, in the same form, every other match after `assigned`: the matches whose `exclude:` went unanswered and, when one stands in front of it, `shadowedBy`. Which of them owns the class depends on those clauses, so `reported` is always `false`. Together with `shadowed` it is every match the text report lists after the assignment.
-- `undecided` names the layers the run could not answer that bear on the assignment, `contenders` the layers that could own the class once they are answered, and `chainStopsAt` where the class's inheritance chain left the analysed paths; all three are empty when the run answered every layer. `assigned: null` beside a non-empty `undecided` means "could not tell", not "no layer claims this class". See [Inspecting layer assignment for a single class](../rules/architecture.md#debug-layer-assignment) for the full rules.
-- `hasLayers` distinguishes "no layers configured" (`false`) from "layers configured but none matched this class" (`true` with `assigned: null`).
-- On error, `--format=json` prints `{"error": "...", "exit_code": N, "position": ...}` to stdout instead of the human `<error>` line, and an unrecognized `--format` value exits with code 3 regardless of format.
+JSON carries `meta`, canonical `fqn`, `assigned`, `contendingMatches`, `shadowed`,
+`shadowedBy`, `undecided`, `contenders`, `chainStopsAt`, `hasLayers`,
+`policyDisabled`, and `edgeEndOnly`. Shadow verdicts expose their exact
+`exemption` when present; disabled policy omits `reported`/`exemption` and the
+diagnostic/docs hint. See [Architecture](../rules/architecture.md#debug-layer-assignment)
+for the full semantics and native example. JSON errors replace the response
+with the standard `error`/`exit_code` envelope.
 
 ### directives
 
@@ -1078,16 +1140,37 @@ The four selection options exist because a verdict is relative to the run that p
 
 A `@qmx-threshold` names exactly one rule, so under `--sweep=narrow` a counterfactual re-executes only that rule. `--sweep=full` re-executes every enabled rule for the same verdicts, at far higher cost — it is not a slower fallback but the control that measures, rather than assumes, that removing a directive of one rule cannot move another rule's findings: the two scopes are swept over the same tree and compared verdict for verdict. On this project's own `src/` the narrow sweep is several times cheaper and the two scopes agree on every verdict. Both the text report and `--format=json` state the sweep the verdicts were measured under.
 
-Exit codes: `0` nothing inert, `2` at least one inert directive whose boundary was observable, `3` bad input or configuration — including a scope that analysed no PHP files at all (a directory with no PHP in it, an `exclude` that swallowed everything, or nothing but `@generated` files), `4` the run failed to parse part of the tree, `1` the command itself failed unexpectedly.
+Exit codes: `0` no publishable refusal or observable inert directive, including
+a complete intentionally empty excluded set; `2` at least one publishable
+refusal or inert directive whose boundary is observable; `3` bad
+input/configuration, including truly undiscovered empty input; `4` incomplete
+input; `5` unexpected internal command failure. Incompleteness takes priority.
+Text and JSON retain all sites, including refusals whose channels the final
+selection does not publish. A measured scope note appears in text and JSON
+`scope.note`. JSON also publishes the measured project scope at
+`scope.project_scope`, including state, unjudged channels and source reasons.
 
-Four verdicts, of which three are answers and one is the absence of one:
+There are five verdicts:
 
-| Verdict               | What it states                                                                                                                                                                                                    |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| effective             | Removing it changes what the rules produce.                                                                                                                                                                       |
-| applied-boundary-only | It applied, and nothing moved except the boundary the finding prints.                                                                                                                                             |
-| inert                 | Removing it changes nothing. This is the only verdict that moves the exit code.                                                                                                                                   |
-| unmeasured            | No answer is available, and the report says why: the producer did not run, the directive was already refused elsewhere, it carries no rule filter, or another directive of the same rule covers the same subject. |
+| Verdict               | What it states                                                                                  |
+| --------------------- | ----------------------------------------------------------------------------------------------- |
+| effective             | It silenced a produced finding or its removal changes the threshold result.                     |
+| applied-boundary-only | It applied; only the boundary printed by the finding moved (JSON: `overrun`).                   |
+| inert                 | It silenced nothing or its removal changes nothing; exit 2 only if the boundary is observable.  |
+| unmeasured            | Its producer did not run, its subject was not covered, or another threshold directive masks it. |
+| refused               | It could not be admitted or applied, with a nonempty list of refusal details.                   |
+
+Every read tag has one site, independent of its declaration bindings.
+An otherwise inert suppression stays unmeasured when the run cannot judge its
+producer's subject. A narrowed run cannot prove a run-dependent declaration
+unused; analyzed local member evidence can still be judged.
+Suppression/diagnostic positions distinguish identical comments on one line;
+JSON still publishes `file`, `line`, `form` and `target`, not the internal
+position. For next-line controls, `line` is the tag line, not the target
+after the comment. Refused sites carry required
+`refusals: [{channel, message}]`; other effects carry an empty list.
+`reason` describes only Unmeasured, with `masked_by` when applicable.
+Neither refusal JSON nor site JSON publishes the internal addressed producer.
 
 !!! warning "A verdict is relative to the analysed scope"
 
@@ -1097,17 +1180,33 @@ Four verdicts, of which three are answers and one is the absence of one:
 
     `suppress_paths`, `suppress_namespaces` and `suppress_namespace_channels` suppress **publication**, not measurement. A directive that moved a finding inside an excluded namespace still did something, so the audit asks its question against every finding the rules produced, not against the report. The one channel outside that universe is `annotation.unused-directive`, which a run assembles after the rules have run — no directive may address it, so no verdict is judged against it.
 
-    The one thing a suppression is *not* credited with is silencing a configuration error (`annotation.unresolved-directive` and its two siblings). Those channels are exempt from annotation suppression by construction, not by configuration, so a directive aimed at one is reported inert however it is written.
+    Suppression receives no credit for silencing a configuration error
+    (`annotation.unresolved-directive` and its two siblings). Those channels
+    are exempt from annotation suppression by construction; admission and
+    reach can still refuse a directive before its effect is judged.
 
-    `annotation.unused-directive` is exempt in a louder way: a directive addressing it is **refused** rather than judged, and the audit reports it `unmeasured / already-refused` — the same answer `check` gives as an `annotation.unresolved-directive` on that line.
+    An explicit selector addressing `annotation.unused-directive` or
+    `duplication.clone` is **refused**, after reach/level admission. The audit
+    carries the same refusal details as `check`. Blanket `*` and bare file
+    directives remain effective/inert over other findings and cannot silence
+    either banned channel.
 
 The `applied-boundary-only` verdict deliberately makes no claim about direction. The rule layer has no notion of which way is stricter — `coupling.instability` is worse when higher, `cohesion.tcc` when lower — so a directive that tightens a boundary and one that raises a boundary the measured value had already passed are the same observable. In `--format=json` this verdict keeps the stable key `overrun`.
 
 Where a rule publishes no boundary alongside its finding, an `inert` verdict carries a note saying so, and **does not fail the build**: a boundary the value had already passed would have looked identical, so demanding the directive be deleted would report an unasked question as proven debt. `--format=json` reports it as `"boundary_observable": false`.
 
-On error, `--format=json` prints `{"error": "...", "exit_code": N, "position": ...}` to stdout instead of the human `<error>` line.
+On error, `--format=json` prints `{"error": "...", "exit_code": N, "position": ..., "source": ...}` to stdout instead of the human `<error>` line.
 
 ### graph:export
+
+The command reads the shared configuration document. Without path arguments,
+it uses configured or Composer defaults and applies `exclude` and the
+`@generated` filter. It accepts `--config`, `--preset`, `--exclude`,
+`--include-generated`, `--include-autoload-dev`, `--no-cache`, `--workers`/`-w`
+and `--memory-limit`. `--format`/`-f` selects only `dot` or `json`, independently
+of the document's analysis `format`. `--direction` has no short alias; global
+`-d` changes the working directory.
+
 
 Export the dependency graph for visualization:
 
@@ -1135,20 +1234,23 @@ bin/qmx graph:export src/ --no-clusters
 | ------------------------------ | ---------------------------------------------------------------------------------- |
 | `-o`, `--output=FILE`          | Output file (default: stdout)                                                      |
 | `-f`, `--format=FORMAT`        | `dot` (default) or `json`                                                          |
-| `-d`, `--direction=DIR`        | Graph direction: `LR`, `TB`, `RL`, `BT` (default: `LR`)                            |
+| `--direction=DIR`              | Graph direction: `LR`, `TB`, `RL`, `BT` (default: `LR`)                            |
 | `--no-clusters`                | Do not group nodes by namespace                                                    |
 | `--namespace=SELECTOR`         | Include only namespaces selected by `exact:`, `subtree:`, or `regex:` (repeatable) |
 | `--exclude-namespace=SELECTOR` | Exclude namespaces using the same explicit forms (repeatable)                      |
 
-A `--namespace` value matching no vertex is refused with exit 3 rather than
-exporting an empty graph. `--exclude-namespace` keeps its silence on purpose: a
-missed exclusion leaves the picture whole, so the viewer loses nothing.
+Every `--namespace` or `--exclude-namespace` selector must bind to an original
+graph vertex before filtering; an unbound value is refused with exit 3. Both
+doors use the same binding check. A case-only near match suggests the graph's
+exact spelling without accepting the wrong case.
 
 An `--output` target is judged and written the way `check` treats its own
 [`--output`](#--output--o): a directory or a name ending in `/`, an unwritable
 existing file and a new name in a directory that does not exist or does not
-allow creating a file are refused with exit 3 before any file is read; an existing target —
-a file, a symbolic link, `/dev/stdout`, a named pipe — is written in place.
+allow creating a file are refused with exit 3 before any file is read. A named
+regular target is staged and published atomically; a trusted symbolic link keeps
+its entry and publishes its referent. `/dev/stdout` and named pipes retain their
+stream delivery. The same SIGINT/SIGTERM capability boundary applies.
 
 If any discovered file fails parsing or processing, `graph:export` exits 4 and
 emits no partial graph. It does not create a missing output file and preserves
@@ -1185,6 +1287,14 @@ bin/qmx hook:uninstall --restore-backup
 ```
 
 ### rules
+
+Accepts `--config=FILE` and repeatable `--preset=PRESET`, judges the complete
+document and includes named computed metrics. It marks rules disabled by the
+current final `only_rules`/`disabled_rules` selection. It requests no analysis
+paths, so an empty PHP tree does not prevent listing rules. An invalid document
+refuses with exit 3. No separate Console parser of `rules: false` or
+`enabled: false` drives this mark; those switches belong to rule resolution.
+
 
 List all available rules with their descriptions and CLI options:
 
@@ -1224,10 +1334,80 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 Rules are grouped by category. `options:` names what the rule accepts in its
 own block, and an `options at <level>:` line names what a level slot accepts —
 these are the complete set, whether or not an option also has a CLI alias. The
-three keys in the footer are legal under every rule. `enabled` is listed per
-rule rather than in the footer because one rule, `architecture.unassigned-class`,
-does not take it — its switch is `mode`.
+three keys in the footer are legal under every rule. `enabled` is listed with
+each rule, including `architecture.unassigned-class`: false disables it even in a reportable mode;
+explicit true with `mode: ignore` refuses because the producer would remain inactive.
 
 Each CLI alias is listed with the long `--rule-opt` form it expands to. Default
 threshold values are not part of this output — see
 [Default thresholds](../reference/default-thresholds.md).
+
+## Typed rule values and final selection
+
+Both `--rule-opt` and dedicated aliases parse the same declared YAML value form.
+For example `--lcom-exclude-methods='[getName, getDescription]'` writes a sequence;
+CSV or a scalar is not that sequence. Null does not become text. Writing the same
+canonical option twice through aliases or `--rule-opt` in one invocation refuses.
+A dotted option address traverses only a declared level slot, never arbitrary
+channel-keyed dictionaries. Put `suppress_namespace_channels` maps in YAML.
+
+A bare name selects an exact producer or channel; `X.*` selects strict descendants.
+A pair `channel-name:level` requires that declared channel code to report at the
+specified level. When producer and channel have the same name, it works as a
+channel name; there is no differently named producer:level alias. The same witness
+must also belong to the supplied producer/set for namespace-channel exclusions.
+
+Higher-layer decisions win before specificity; at the same layer an exact producer
+enable beats a group disable. A later exact enable can cancel a lower disable.
+An exact enable and disable of the same producer in one layer refuses even if
+later overridden. `only_rules` selects a filter; it does not enable an inactive
+producer. Empty effective selection, a dead exact selector, an enable outside its
+own/lower effective filter and an explicit enable with muted option activity refuse.
+A higher disable may intentionally narrow an earlier filter. Empty only_rules
+removes a lower filter, while empty maps never reset options.
+
+Most channels are directly selectable. Declared diagnostic roles admit filter-exempt
+channels or diagnostics that follow a selected addressed producer. These are not
+extra producer enable statements: explicitly disabling their producer still stops
+it. `annotation.unresolved-directive` and `annotation.unused-directive` are
+directly selectable; unsupported/invalid threshold errors follow the
+addressed producer. Fix the source input rather than hiding a configuration error
+with an unrelated only filter.
+
+`bin/qmx rules` prints accepted root/level options independently of CLI aliases,
+then the effective only filter and all tied decisive disabled texts. It also prints
+`Selection source: ... (...; layer N)` from the actual origin and layer index.
+One writer repeated across cells prints once; equal text from distinct layers does
+not merge. Listing judges the document and stated selection, not effective-band
+build/conclude or runtime state. Directive text/JSON preserve all decisive disabling
+texts and omit ones canceled by later enable; JSON selection.disabled stays a string
+list. For values and layer forms see [Configuration](../getting-started/configuration.md).
+
+
+## Prose environment
+
+`QMX_ASCII` is judged before any command runs. Case-insensitive
+`1/true/yes/on` enables ASCII; `0/false/no/off`, empty and absence select
+Unicode. Other values refuse with exit 3 and name the accepted values;
+structured refusals identify `source.kind: environment` and `source.name: QMX_ASCII`.
+
+The mode affects the four prose analysis formats and every ErrorStream
+diagnostic, including progress, stdout reports and `--output` report files.
+It replaces the closed product glyph table; other Unicode such as `Café`
+remains unchanged. A table glyph inside a source name is replaced too:
+`K✓` becomes `K+` in ASCII prose. Use Unicode to preserve it. Structured
+identities are unchanged. Other commands' stdout, such as rules, directive
+text, selected debug output and DOT, is outside this mode.
+
+
+Namespace selection uses a finding's declared namespace. For a file aggregate
+(`annotation.*`, `duplication.clone`), it matches any namespace declared in
+that file; a file without declarations compares as the global namespace.
+`--class` never selects a file aggregate. `suppress_namespaces` deliberately
+does not take this file step; use `suppress_paths` for a file aggregate.
+Overlapping namespace exclusions keep credit for their first match.
+
+`suppressed --namespace/--class` refuses with exit 3 because the composition
+document describes the whole run. `--show-suppressed` remains allowed and
+labels its stderr list as whole-run with the selector unapplied. The analysis
+and exit verdict always cover the whole run.

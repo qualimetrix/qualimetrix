@@ -90,7 +90,7 @@ final class OutputFormatSchemaConsistencyTest extends TestCase
                 contentRequirements: [
                     'a project-level finding, so a SARIF result has no `locations` and a top issue has no `file`',
                     'a finding carrying a typed `edge`',
-                    'a top issue with a non-null `coupling.class-rank` and one without',
+                    'a top issue with a non-null `coupling.class-rank-share` and one without',
                     'a global function, so the `metrics` `type` enum can publish `function`',
                 ],
             ),
@@ -111,7 +111,7 @@ final class OutputFormatSchemaConsistencyTest extends TestCase
                 expectedExit: 2,
                 expectedCoverage: ['complete' => true],
                 contentRequirements: [
-                    'a namespace group key, `<global>` for the class outside every namespace, and `(project)`',
+                    'a namespace group key, `(global)` for the class outside every namespace, and `[project]`',
                 ],
             ),
             new OutputFormatScenario(
@@ -498,8 +498,8 @@ final class OutputFormatSchemaConsistencyTest extends TestCase
                 && self::anyEntry($results, static fn(array $r): bool => !isset($r['locations']))
                 && self::anyEntry($results, static fn(array $r): bool => isset($r['locations'])),
             'full: a finding carrying a typed `edge`' => self::anyEntry($violations, static fn(array $v): bool => \is_array($v['edge']) && isset($v['edge']['type'])),
-            'full: a top issue with a non-null `coupling.class-rank` and one without' => self::anyEntry($topIssues, static fn(array $t): bool => $t['coupling.class-rank'] !== null)
-                && self::anyEntry($topIssues, static fn(array $t): bool => $t['coupling.class-rank'] === null),
+            'full: a top issue with a non-null `coupling.class-rank-share` and one without' => self::anyEntry($topIssues, static fn(array $t): bool => $t['coupling.class-rank-share'] !== null)
+                && self::anyEntry($topIssues, static fn(array $t): bool => $t['coupling.class-rank-share'] === null),
             'full: a global function, so the `metrics` `type` enum can publish `function`' => self::anyEntry(
                 self::symbolsOf(OutputFormatObservation::json(self::scenario('full'), 'metrics')),
                 static fn(array $symbol): bool => $symbol['type'] === 'function',
@@ -507,13 +507,13 @@ final class OutputFormatSchemaConsistencyTest extends TestCase
             'group-by-class: a class FQCN group key, a file-path group key and the empty project key' => \array_key_exists('', self::violationGroupsOf($byClass))
                 && self::anyGroupKey(self::violationGroupsOf($byClass), static fn(string $k): bool => str_ends_with($k, '.php'))
                 && self::anyGroupKey(self::violationGroupsOf($byClass), static fn(string $k): bool => str_contains($k, '\\')),
-            'group-by-namespace: a namespace group key, `<global>` for the class outside every namespace, and `(project)`' => \array_key_exists('<global>', self::violationGroupsOf($byNamespace))
-                && \array_key_exists('(project)', self::violationGroupsOf($byNamespace))
+            'group-by-namespace: a namespace group key, `(global)` for the class outside every namespace, and `[project]`' => \array_key_exists('(global)', self::violationGroupsOf($byNamespace))
+                && \array_key_exists('[project]', self::violationGroupsOf($byNamespace))
                 && self::anyGroupKey(self::violationGroupsOf($byNamespace), static fn(string $k): bool => str_contains($k, '\\')),
             'broken: one unparsable file, so `coverage.failures[]` is not empty' => $broken['coverage']['failures'] !== [],
             'empty: a complete run that finds nothing at all' => $empty['violations'] === [],
             'suppressed: a finding an inline `@qmx-ignore` held back, and a configured suppressor that matched nothing' => self::suppressionsWereObserved(),
-            'breach: a finding whose own identity group exceeds its accepted level' => self::anyEntry($breach['violations'], static fn(array $v): bool => $v['acceptedLevel'] !== null),
+            'breach: a finding whose own identity group exceeds its accepted level' => self::anyEntry($breach['violations'], static fn(array $v): bool => $v['acceptedLevel'] !== null && $v['baselineVerdict'] === 'breached'),
         ];
 
         foreach ($reached as $branch => $wasReached) {
@@ -548,9 +548,6 @@ final class OutputFormatSchemaConsistencyTest extends TestCase
      * comparison table. Taking it from a list inside this test instead would
      * mean a new format could be added, documented, and left unguarded without
      * anything noticing.
-     *
-     * `text-verbose` is the one deliberate difference: it is deprecated and
-     * hidden from the product's listing while the page still documents it.
      */
     #[Test]
     public function itCoversEveryFormatThePageCallsMachineReadable(): void
@@ -560,7 +557,7 @@ final class OutputFormatSchemaConsistencyTest extends TestCase
 
         self::assertSame(
             $accepted,
-            array_values(array_diff($tabled, ['text-verbose'])),
+            $tabled,
             'The comparison table and the formats the product accepts have diverged.',
         );
 
@@ -879,6 +876,10 @@ final class OutputFormatSchemaConsistencyTest extends TestCase
                     [self::PAGE_EN, 'json', '/\*\*Top-level keys:\*\*(?<keys>.*?`violationGroups`)/su', true],
                     [self::PAGE_RU, 'json', '/\*\*Ключи верхнего уровня:\*\*(?<keys>.*?`violationGroups`)/su', true],
                 ],
+                'abstentions[]' => [
+                    [self::PAGE_EN, 'Selected', '/Each nonempty group has(?<keys>.*?)\.\s+The first/su'],
+                    [self::PAGE_RU, 'Популяции', '/Непустая группа несёт(?<keys>.*?)\.\s+Группа/su'],
+                ],
                 'violationGroups.{}' => [
                     [self::PAGE_EN, 'json', '/Each group is\s+(?<keys>`\{count, violations\}`)/su'],
                     [self::PAGE_RU, 'json', '/Каждая группа — это\s+(?<keys>`\{count, violations\}`)/su'],
@@ -890,6 +891,14 @@ final class OutputFormatSchemaConsistencyTest extends TestCase
                 'worstClasses[]' => [
                     [self::PAGE_EN, 'json', '/The `worstNamespaces` and `worstClasses` entries include a\s+(?<keys>`violationDensity`) field/su'],
                     [self::PAGE_RU, 'json', '/Записи `worstNamespaces` и `worstClasses` включают поле\s+(?<keys>`violationDensity`)/su'],
+                ],
+                'topIssues[].edge' => [
+                    [self::PAGE_EN, 'json', '/a typed edge is\s+`(?<keys>\{[^`]*\})`/su'],
+                    [self::PAGE_RU, 'json', '/типизированное —\s+`(?<keys>\{[^`]*\})`/su'],
+                ],
+                'topIssues[].acceptedLevel' => [
+                    [self::PAGE_EN, 'json', '/carries\s+`(?<keys>\{"shape".*?\})`/su'],
+                    [self::PAGE_RU, 'json', '/несёт `(?<keys>\{"shape".*?\})`/su'],
                 ],
                 'violations[].edge' => [
                     [self::PAGE_EN, 'json', '/a typed edge is\s+`(?<keys>\{[^`]*\})`/su'],
@@ -961,9 +970,13 @@ final class OutputFormatSchemaConsistencyTest extends TestCase
                 ...$coverageTable,
             ],
             'suppressed' => [
+                'notRun[]' => [
+                    [self::PAGE_EN, 'Selection', '/`notRun` is\s+always\s+an\s+array\.\s+Each\s+entry\s+has(?<keys>.*?)\./su', true],
+                    [self::PAGE_RU, 'Selection', '/`notRun` всегда\s+массив\.\s+У\s+записи\s+есть(?<keys>.*?)\./su', true],
+                ],
                 '(root)' => [
-                    [self::PAGE_EN, 'suppressed', '/\*\*Top-level keys:\*\*(?<keys>.*?`neverMatched`)\./su', true],
-                    [self::PAGE_RU, 'suppressed', '/\*\*Ключи верхнего уровня:\*\*(?<keys>.*?`neverMatched`)\./su', true],
+                    [self::PAGE_EN, 'suppressed', '/\*\*Top-level keys:\*\*(?<keys>.*?`notRun`\s+\(.*?\))\./su', true],
+                    [self::PAGE_RU, 'suppressed', '/\*\*Ключи верхнего уровня:\*\*(?<keys>.*?`notRun`\s+\(.*?\))\./su', true],
                 ],
             ],
         ];

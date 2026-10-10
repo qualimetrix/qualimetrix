@@ -4,20 +4,21 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
 
 /**
  * Integration test that verifies mathematical invariants hold for ALL
@@ -39,25 +40,20 @@ final class MetricInvariantTest extends TestCase
 
     public static function setUpBeforeClass(): void
     {
-        $containerFactory = new ContainerFactory();
-        $container = $containerFactory->create();
         $fixturesPath = \dirname(__DIR__, 2) . '/Fixtures/GoldenMetrics';
         $fixtureRoot = AbsolutePath::fromString($fixturesPath);
-
-        /** @var ArchitecturePolicyConfiguratorInterface $architecturePolicy */
-        $architecturePolicy = $container->get(ArchitecturePolicyConfiguratorInterface::class);
-        $document = new ConfigurationDocument([], $fixtureRoot);
-        $architecturePolicy->replace($architecturePolicy->resolve($document));
-
-        /** @var AnalysisPipelineInterface $pipeline */
-        $pipeline = $container->get(AnalysisPipelineInterface::class);
-
         $root = AbsolutePath::fromString((string) getcwd());
-        $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$fixtureRoot], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []));
-
-        self::$repository = $result->metrics;
-        self::assertNotNull($result->namespaceTree, 'NamespaceTree must be present in analysis result');
-        self::$namespaceTree = $result->namespaceTree;
+        $fixture = PreparedAnalysis::start($root, [$fixtureRoot], ['include_generated' => true]);
+        try {
+            $pipeline = $fixture->container()->get(AnalysisPipelineInterface::class);
+            \assert($pipeline instanceof AnalysisPipelineInterface);
+            $result = $pipeline->analyze($fixture->prepared()->runConfiguration);
+            self::$repository = $result->measured->repository;
+            self::assertNotNull($result->measured->namespaceTree, 'NamespaceTree must be present in analysis result');
+            self::$namespaceTree = $result->measured->namespaceTree;
+        } finally {
+            $fixture->close();
+        }
     }
 
     // ──────────────────────────────────────────────────────────────────
@@ -86,8 +82,8 @@ final class MetricInvariantTest extends TestCase
             foreach (self::$repository->forNamespace($ns) as $symbolInfo) {
                 $type = $symbolInfo->symbolPath->getType();
 
-                if ($type === SymbolType::Class_) {
-                    $classBag = self::$repository->get($symbolInfo->symbolPath);
+                if ($type === SymbolType::Class_ && $symbolInfo->subject?->declarationPath() !== null) {
+                    $classBag = self::metricsFor($symbolInfo);
                     $classCcn = $classBag->get('complexity.ccn.sum');
                     if ($classCcn !== null) {
                         $classCcnTotal += $classCcn;
@@ -102,7 +98,7 @@ final class MetricInvariantTest extends TestCase
                 $functionCcnTotal = 0;
                 foreach (self::$repository->forNamespace($ns) as $symbolInfo) {
                     if ($symbolInfo->symbolPath->getType() === SymbolType::Function_) {
-                        $fnBag = self::$repository->get($symbolInfo->symbolPath);
+                        $fnBag = self::metricsFor($symbolInfo);
                         $fnCcn = $fnBag->get('complexity.ccn');
                         if ($fnCcn !== null) {
                             $functionCcnTotal += $fnCcn;
@@ -149,14 +145,14 @@ final class MetricInvariantTest extends TestCase
                 foreach (self::$repository->forNamespace($ns) as $symbolInfo) {
                     $type = $symbolInfo->symbolPath->getType();
 
-                    if ($type === SymbolType::Class_) {
-                        $classBag = self::$repository->get($symbolInfo->symbolPath);
+                    if ($type === SymbolType::Class_ && $symbolInfo->subject?->declarationPath() !== null) {
+                        $classBag = self::metricsFor($symbolInfo);
                         $classCcn = $classBag->get('complexity.ccn.sum');
                         if ($classCcn !== null) {
                             $classCcnTotal += $classCcn;
                         }
                     } elseif ($type === SymbolType::Function_) {
-                        $fnBag = self::$repository->get($symbolInfo->symbolPath);
+                        $fnBag = self::metricsFor($symbolInfo);
                         $fnCcn = $fnBag->get('complexity.ccn');
                         if ($fnCcn !== null) {
                             $functionCcnTotal += $fnCcn;
@@ -261,14 +257,14 @@ final class MetricInvariantTest extends TestCase
 
                     // ccn.max at namespace = max of raw method/function CCN values
                     if ($type === SymbolType::Method) {
-                        $methodBag = self::$repository->get($symbolInfo->symbolPath);
+                        $methodBag = self::metricsFor($symbolInfo);
                         $methodCcn = $methodBag->get('complexity.ccn');
                         if ($methodCcn !== null) {
                             $sourceMaxCcn = max($sourceMaxCcn, $methodCcn);
                             $hasSources = true;
                         }
                     } elseif ($type === SymbolType::Function_) {
-                        $fnBag = self::$repository->get($symbolInfo->symbolPath);
+                        $fnBag = self::metricsFor($symbolInfo);
                         $fnCcn = $fnBag->get('complexity.ccn');
                         if ($fnCcn !== null) {
                             $sourceMaxCcn = max($sourceMaxCcn, $fnCcn);
@@ -374,7 +370,7 @@ final class MetricInvariantTest extends TestCase
             if (self::$namespaceTree->isLeaf($ns)) {
                 $actualCount = 0;
                 foreach (self::$repository->forNamespace($ns) as $symbolInfo) {
-                    if ($symbolInfo->symbolPath->getType() === SymbolType::Class_) {
+                    if ($symbolInfo->symbolPath->getType() === SymbolType::Class_ && $symbolInfo->subject?->declarationPath() !== null) {
                         $actualCount++;
                     }
                 }
@@ -388,13 +384,13 @@ final class MetricInvariantTest extends TestCase
             } else {
                 $subtreeCount = 0;
                 foreach (self::$repository->forNamespace($ns) as $symbolInfo) {
-                    if ($symbolInfo->symbolPath->getType() === SymbolType::Class_) {
+                    if ($symbolInfo->symbolPath->getType() === SymbolType::Class_ && $symbolInfo->subject?->declarationPath() !== null) {
                         $subtreeCount++;
                     }
                 }
                 foreach (self::$namespaceTree->getDescendants($ns) as $descNs) {
                     foreach (self::$repository->forNamespace($descNs) as $symbolInfo) {
-                        if ($symbolInfo->symbolPath->getType() === SymbolType::Class_) {
+                        if ($symbolInfo->symbolPath->getType() === SymbolType::Class_ && $symbolInfo->subject?->declarationPath() !== null) {
                             $subtreeCount++;
                         }
                     }
@@ -423,7 +419,7 @@ final class MetricInvariantTest extends TestCase
 
         // Count actual Class_ symbols in the repository
         $actualClassCount = 0;
-        foreach (self::$repository->all(SymbolLevel::Class_) as $_) {
+        foreach (self::$repository->allClassDeclarations() as $_) {
             $actualClassCount++;
         }
 
@@ -446,7 +442,7 @@ final class MetricInvariantTest extends TestCase
 
             $directClasses = 0;
             foreach (self::$repository->forNamespace($leafNs) as $symbolInfo) {
-                if ($symbolInfo->symbolPath->getType() === SymbolType::Class_) {
+                if ($symbolInfo->symbolPath->getType() === SymbolType::Class_ && $symbolInfo->subject?->declarationPath() !== null) {
                     $directClasses++;
                 }
             }
@@ -491,12 +487,12 @@ final class MetricInvariantTest extends TestCase
                 foreach (self::$repository->forNamespace($subtreeNs) as $symbolInfo) {
                     $type = $symbolInfo->symbolPath->getType();
                     if ($type === SymbolType::Method) {
-                        $methodBag = self::$repository->get($symbolInfo->symbolPath);
+                        $methodBag = self::metricsFor($symbolInfo);
                         if ($methodBag->get('complexity.ccn') !== null) {
                             $methodCount++;
                         }
                     } elseif ($type === SymbolType::Function_) {
-                        $fnBag = self::$repository->get($symbolInfo->symbolPath);
+                        $fnBag = self::metricsFor($symbolInfo);
                         if ($fnBag->get('complexity.ccn') !== null) {
                             $methodCount++;
                         }
@@ -640,4 +636,9 @@ final class MetricInvariantTest extends TestCase
     {
         return $ns === '' || str_starts_with($ns, self::FIXTURE_NS_PREFIX);
     }
+    private static function metricsFor(SymbolInfo $info): MetricBag
+    {
+        return self::$repository->getSubject($info->subject ?? throw new LogicException('Declaration invariant requires an exact subject'));
+    }
+
 }

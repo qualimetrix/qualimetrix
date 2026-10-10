@@ -22,7 +22,7 @@ use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -49,7 +49,6 @@ use Qualimetrix\Reporting\Formatter\Summary\OffenderListRenderer;
 use Qualimetrix\Reporting\Formatter\Summary\SummaryFormatter;
 use Qualimetrix\Reporting\Formatter\Summary\TopIssuesRenderer;
 use Qualimetrix\Reporting\Formatter\TextFormatter;
-use Qualimetrix\Reporting\Formatter\TextVerboseFormatter;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Health\HealthHintProjector;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
@@ -89,7 +88,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
         $formatter = $this->createTextFormatter();
         $report = $this->buildArchitectureReport();
 
-        $output = $formatter->format($report, new FormatterContext(useColor: false));
+        $output = $formatter->format($report, new FormatterContext(useColor: false))->body;
 
         self::assertNonEmptyOutput($output);
         self::assertStringContainsString(LayerViolationRule::NAME, $output);
@@ -105,20 +104,19 @@ final class ArchitectureViolationSmokeTest extends TestCase
     }
 
     #[Test]
-    public function itRendersArchitectureViolationsViaTextVerboseFormatter(): void
+    public function itRendersArchitectureViolationsViaDetailedTextFormatter(): void
     {
         $debtCalculator = new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()));
         $detailedRenderer = new DetailedFindingRenderer($debtCalculator);
-        $textFormatter = new TextFormatter($debtCalculator, $detailedRenderer);
-        $formatter = new TextVerboseFormatter($textFormatter);
+        $formatter = new TextFormatter($debtCalculator, $detailedRenderer);
 
         $report = $this->buildArchitectureReport();
-        $output = $formatter->format($report, new FormatterContext(useColor: false));
+        $output = $formatter->format($report, new FormatterContext(useColor: false, detailLimit: 0))->body;
 
         self::assertNonEmptyOutput($output);
         self::assertStringContainsString(LayerViolationRule::NAME, $output);
         self::assertStringContainsString(CircularDependencyRule::NAME, $output);
-        // text-verbose enables --detail, so recommendation text must surface.
+        // Detailed text includes the recommendation.
         // DetailedFindingRenderer inlines the recommendation without a
         // 'Recommendation:' label, so we assert on a stable substring from
         // the layer-violation recommendation copy itself.
@@ -131,21 +129,21 @@ final class ArchitectureViolationSmokeTest extends TestCase
     #[Test]
     public function itRendersArchitectureViolationsViaJsonFormatter(): void
     {
-        $hintProvider = new HealthMetricCatalog();
+        $hintProvider = new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
         $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $namespaceDrillDown = new HealthScoreDrillDown($definitionCatalog);
+        $namespaceDrillDown = new HealthScoreDrillDown($definitionCatalog, new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
         $sanitizer = new JsonSanitizer();
         $findingFilter = new FindingFilter();
         $remediationTimeRegistry = new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues());
         $formatter = new JsonFormatter(
             new DebtCalculator($remediationTimeRegistry),
             new JsonHealthSection(new HealthScoreResolver($namespaceDrillDown), $sanitizer),
-            new JsonOffenderSection(new WorstClassDrillDown($definitionCatalog), $findingFilter, $sanitizer),
+            new JsonOffenderSection(new WorstClassDrillDown(), $findingFilter, $sanitizer),
             new JsonFindingSection($remediationTimeRegistry, $sanitizer),
         );
 
         $report = $this->buildArchitectureReport();
-        $output = $formatter->format($report, new FormatterContext());
+        $output = $formatter->format($report, new FormatterContext())->body;
 
         self::assertJson($output);
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
@@ -173,7 +171,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
         $formatter = new MetricsJsonFormatter();
         $report = $this->buildArchitectureReport();
 
-        $output = $formatter->format($report, new FormatterContext());
+        $output = $formatter->format($report, new FormatterContext())->body;
 
         self::assertJson($output);
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
@@ -195,12 +193,14 @@ final class ArchitectureViolationSmokeTest extends TestCase
             new HtmlTreeBuilder(
                 new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues())),
                 self::createStub(ComputedMetricDefinitionCatalogInterface::class),
+                new \Qualimetrix\Reporting\Formatter\Html\HtmlProjectMetadata(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()),
+                new \Qualimetrix\Reporting\Formatter\FindingRecord(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()), new \Qualimetrix\Reporting\Formatter\Json\JsonSanitizer()),
             ),
-            new HealthHintProjector(new HealthMetricCatalog()),
+            new HealthHintProjector(new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()))),
         );
 
         $report = $this->buildArchitectureReport();
-        $output = $formatter->format($report, new FormatterContext());
+        $output = $formatter->format($report, new FormatterContext())->body;
 
         // The HTML formatter attaches findings to tree nodes built from
         // the metric repository (see HtmlFindingPartitioner): project-level
@@ -222,7 +222,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
         $formatter = new CheckstyleFormatter();
         $report = $this->buildArchitectureReport();
 
-        $output = $formatter->format($report, new FormatterContext());
+        $output = $formatter->format($report, new FormatterContext())->body;
 
         // Output must parse as XML
         $previousErrors = libxml_use_internal_errors(true);
@@ -236,10 +236,11 @@ final class ArchitectureViolationSmokeTest extends TestCase
         }
 
         $files = $doc->getElementsByTagName('file');
-        self::assertGreaterThan(0, $files->length, 'Expected at least one <file> element');
+        self::assertSame(1, $files->length);
+        self::assertSame(self::SOURCE_FILE, $files->item(0)?->getAttribute('name'));
 
         $errors = $doc->getElementsByTagName('error');
-        self::assertSame($this->expectedViolationCount(), $errors->length);
+        self::assertSame(1, $errors->length);
 
         $sources = [];
         foreach ($errors as $errorNode) {
@@ -249,7 +250,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
             $sources[] = $errorNode->getAttribute('source');
         }
 
-        foreach ($this->expectedRuleNames() as $rule) {
+        foreach ([LayerViolationRule::NAME] as $rule) {
             self::assertContains('qmx.' . $rule, $sources, "Checkstyle should emit source for rule {$rule}");
         }
     }
@@ -260,7 +261,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
         $formatter = new SarifFormatter(new SarifRuleCollector(new StubChannelPresentation()));
         $report = $this->buildArchitectureReport();
 
-        $output = $formatter->format($report, new FormatterContext());
+        $output = $formatter->format($report, new FormatterContext())->body;
 
         self::assertJson($output);
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
@@ -293,16 +294,16 @@ final class ArchitectureViolationSmokeTest extends TestCase
         $formatter = new GitLabCodeQualityFormatter();
         $report = $this->buildArchitectureReport();
 
-        $output = $formatter->format($report, new FormatterContext());
+        $output = $formatter->format($report, new FormatterContext())->body;
 
         self::assertJson($output);
         $issues = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertIsArray($issues);
-        self::assertSame($this->expectedViolationCount(), \count($issues));
+        self::assertCount(1, $issues);
 
         $checkNames = array_map(static fn(array $issue): string => $issue['check_name'], $issues);
-        foreach ($this->expectedRuleNames() as $rule) {
+        foreach ([LayerViolationRule::NAME] as $rule) {
             self::assertContains($rule, $checkNames, "GitLab should emit issue for {$rule}");
         }
 
@@ -313,21 +314,20 @@ final class ArchitectureViolationSmokeTest extends TestCase
             self::assertContains($severity, $validSeverities, "GitLab severity '{$severity}' is not in the spec");
         }
 
-        // Project-level diagnostics must collapse to the documented '_project' sentinel
         $paths = array_map(static fn(array $issue): string => $issue['location']['path'], $issues);
-        self::assertContains('_project', $paths, 'Project-level diagnostics should map to _project path');
+        self::assertSame([self::SOURCE_FILE], $paths);
     }
 
     #[Test]
     public function itRunsHealthFormatterOnArchitectureOnlyReport(): void
     {
-        $hintProvider = new HealthMetricCatalog();
-        $drillDown = new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class));
+        $hintProvider = new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
+        $drillDown = new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class), new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
         $resolver = new HealthScoreResolver($drillDown);
         $formatter = new HealthTextFormatter($resolver);
 
         $report = $this->buildArchitectureReport();
-        $output = $formatter->format($report, new FormatterContext(useColor: false, terminalWidth: 120));
+        $output = $formatter->format($report, new FormatterContext(useColor: false, terminalWidth: 120))->body;
 
         // The architecture rule emits no health score; the formatter must
         // still produce a non-empty rendering (header / "no data" notice) and
@@ -340,11 +340,11 @@ final class ArchitectureViolationSmokeTest extends TestCase
     {
         $registry = new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues());
         $debtCalculator = new DebtCalculator($registry);
-        $hintProvider = new HealthMetricCatalog();
+        $hintProvider = new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
         $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $namespaceDrillDown = new HealthScoreDrillDown($definitionCatalog);
+        $namespaceDrillDown = new HealthScoreDrillDown($definitionCatalog, new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
         $findingFilter = new FindingFilter();
-        $offenderListRenderer = new OffenderListRenderer($findingFilter, new WorstClassDrillDown($definitionCatalog));
+        $offenderListRenderer = new OffenderListRenderer($findingFilter, new WorstClassDrillDown());
         $formatter = new SummaryFormatter(
             new DetailedFindingRenderer($debtCalculator),
             new HealthBarRenderer(new HealthScoreResolver($namespaceDrillDown)),
@@ -355,7 +355,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
         );
 
         $report = $this->buildArchitectureReport();
-        $output = $formatter->format($report, new FormatterContext(useColor: false, terminalWidth: 120));
+        $output = $formatter->format($report, new FormatterContext(useColor: false, terminalWidth: 120))->body;
 
         self::assertNonEmptyOutput($output);
         // Summary aggregates by severity. The fixture has 1 error, 2 warnings,
@@ -372,7 +372,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
         $formatter = new GithubActionsFormatter();
         $report = $this->buildArchitectureReport();
 
-        $output = $formatter->format($report, new FormatterContext());
+        $output = $formatter->format($report, new FormatterContext())->body;
 
         self::assertNonEmptyOutput($output);
 

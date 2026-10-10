@@ -40,6 +40,55 @@ final class TextFormatterTest extends TestCase
     }
 
     #[Test]
+    public function itPublishesPopulationBeforeEmptyDataReturnsAndKeepsReasonsVerbose(): void
+    {
+        $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
+        $trace->record('fixture.rule', new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('fixture.channel'), \Qualimetrix\Core\Symbol\SymbolLevel::Project, \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::selector('project:fixture', 'project'), 'published', 'The fixture value is absent.');
+        $report = new \Qualimetrix\Reporting\Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 0, 0, 0, 0, 0, population: $trace->freeze());
+        $compact = $this->formatter->format($report, new FormatterContext(useColor: false))->body;
+        self::assertSame(1, substr_count($compact, 'Rule population incomplete'));
+        self::assertStringContainsString('project: 0 judged, 1 not judged', $compact);
+        self::assertStringNotContainsString('The fixture value is absent.', $compact);
+        $verbose = $this->formatter->format($report, (new FormatterContext(useColor: false, verbose: true))->withDetail(true))->body;
+        self::assertStringContainsString('fixture.rule / fixture.channel (project), gate published: The fixture value is absent.', $verbose);
+        self::assertStringContainsString('examples: project:fixture', $verbose);
+    }
+
+    #[Test]
+    public function itSelectsTheWorstDetailFindingBeforeGroupingByFile(): void
+    {
+        $warning = self::finding(new Location(RelativePath::fromString('src/A.php'), 1), SymbolPath::forClass('Shop', 'A'), 'complexity.ccn', 'complexity.ccn', 'Hidden warning', Severity::Warning);
+        $low = self::finding(new Location(RelativePath::fromString('src/B.php'), 1), SymbolPath::forClass('Shop', 'B'), 'complexity.ccn', 'complexity.ccn', 'Hidden low impact', Severity::Error);
+        $high = self::finding(new Location(RelativePath::fromString('src/Z.php'), 1), SymbolPath::forClass('Shop', 'Z'), 'complexity.ccn', 'complexity.ccn', 'Shown high impact', Severity::Error);
+        $ranked = [new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($high, 50, null, 5, 3), new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($low, 10, null, 5, 3)];
+        $report = new \Qualimetrix\Reporting\Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [$warning, $low, $high], 3, 0, 0, 2, 1, topIssues: $ranked);
+        $output = $this->formatter->format($report, new FormatterContext(useColor: false, detailLimit: 1, topIssuesLimit: 0))->body;
+
+        self::assertStringContainsString('Shown high impact', $output);
+        self::assertStringNotContainsString('Hidden warning', $output);
+        self::assertStringNotContainsString('Hidden low impact', $output);
+        self::assertStringContainsString('... and 2 more.', $output);
+    }
+
+    #[Test]
+    public function itNamesAnUncomparedEntryWithoutClaimingABreach(): void
+    {
+        $finding = self::finding(
+            location: new Location(RelativePath::fromString('src/A.php'), 1),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/A.php')),
+            ruleName: 'code-smell.goto',
+            code: 'code-smell.goto',
+            message: 'Original message',
+            severity: Severity::Warning,
+            metricValue: 31,
+            recommendation: 'Recommended repair',
+        )->reportedUncompared(new \Qualimetrix\Analysis\Finding\Contract\AcceptedLevel([25.0], 1), 'analysis-incomplete');
+        $output = $this->formatter->format(ReportBuilder::create()->addFinding($finding)->filesAnalyzed(1)->build(), $this->plainContext)->body;
+        self::assertStringContainsString('accepted at 25; not compared: analysis-incomplete', $output);
+        self::assertStringNotContainsString('now 31', $output);
+    }
+
+    #[Test]
     public function itReturnsTextName(): void
     {
         self::assertSame('text', $this->formatter->getName());
@@ -60,7 +109,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.15)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringContainsString('0 error(s), 0 warning(s) in 42 file(s)', $output);
         self::assertStringContainsString('Qualimetrix ', $output);
@@ -85,7 +134,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         $lines = explode("\n", rtrim($output, "\n"));
 
@@ -119,7 +168,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringContainsString(
             'Cyclomatic complexity of 31 exceeds threshold (accepted at 25, now 31) (UserService::calculateDiscount)',
@@ -147,7 +196,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
         $lines = explode("\n", rtrim($output, "\n"));
 
         self::assertSame(
@@ -184,7 +233,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.23)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         $lines = explode("\n", rtrim($output, "\n"));
 
@@ -215,7 +264,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.05)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringContainsString('warning[cohesion.lcom]: LCOM is 5 (UserService)', $output);
     }
@@ -237,7 +286,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringContainsString('src/Service/UserService.php: error[namespace-size]: Namespace contains 16 classes (namespace: App\Service)', $output);
     }
@@ -259,7 +308,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringContainsString('src/Service/UserService.php: warning[file-size]: File is too large', $output);
     }
@@ -281,7 +330,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringContainsString('src/functions.php: warning[cyclomatic-complexity]: Function has complexity of 20 (myComplexFunction)', $output);
     }
@@ -303,7 +352,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
         $lines = explode("\n", $output);
         $findingLine = $lines[0];
 
@@ -335,7 +384,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringContainsString('[complexity.callable]', $output);
         self::assertStringNotContainsString('[complexity]', $output);
@@ -360,7 +409,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report, $colorContext);
+        $output = $this->formatter->format($report, $colorContext)->body;
 
         // Should contain ANSI escape codes
         self::assertStringContainsString("\e[", $output);
@@ -385,7 +434,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringNotContainsString("\e[", $output);
     }
@@ -415,7 +464,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         // Default groupBy=None sorts by severity first: error before warning
         $posError = strpos($output, 'Error A');
@@ -445,7 +494,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report, $colorContext);
+        $output = $this->formatter->format($report, $colorContext)->body;
 
         // Summary should be bold red when errors present
         self::assertStringContainsString("\e[1;31mQualimetrix ", $output);
@@ -463,7 +512,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report, $colorContext);
+        $output = $this->formatter->format($report, $colorContext)->body;
 
         // Summary should be bold green when no findings
         self::assertStringContainsString("\e[1;32mQualimetrix ", $output);
@@ -497,7 +546,7 @@ final class TextFormatterTest extends TestCase
             ->build();
 
         $detailContext = new FormatterContext(useColor: false, detailLimit: 0);
-        $output = $this->formatter->format($report, $detailContext);
+        $output = $this->formatter->format($report, $detailContext)->body;
 
         // Groups by file
         self::assertStringContainsString('src/Foo.php (1 violation)', $output);
@@ -532,7 +581,7 @@ final class TextFormatterTest extends TestCase
             ->build();
 
         $detailContext = new FormatterContext(useColor: false, detailLimit: 0);
-        $output = $this->formatter->format($report, $detailContext);
+        $output = $this->formatter->format($report, $detailContext)->body;
 
         self::assertStringContainsString('No violations found.', $output);
         self::assertStringContainsString('0 error(s), 0 warning(s) in 5 file(s)', $output);
@@ -561,7 +610,7 @@ final class TextFormatterTest extends TestCase
             detailLimit: 0,
             isGroupByExplicit: true,
         );
-        $output = $this->formatter->format($report, $detailContext);
+        $output = $this->formatter->format($report, $detailContext)->body;
 
         // Should group by rule, not file
         self::assertStringContainsString('complexity.ccn (1)', $output);
@@ -602,7 +651,7 @@ final class TextFormatterTest extends TestCase
 
         // Limit to 1 displayed finding, but debt breakdown must still show all rules
         $context = new FormatterContext(useColor: false, detailLimit: 1);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('Technical debt by rule:', $output);
         self::assertStringContainsString('complexity.ccn', $output);
@@ -654,7 +703,7 @@ final class TextFormatterTest extends TestCase
             detailLimit: 1,
             isGroupByExplicit: $groupBy !== null,
         );
-        $output = $this->formatter->format($builder->build(), $context);
+        $output = $this->formatter->format($builder->build(), $context)->body;
         $listing = strstr($output, 'Technical debt by rule:', true);
 
         self::assertStringContainsString('... and 1 more', $output);
@@ -675,7 +724,7 @@ final class TextFormatterTest extends TestCase
         $namespace = \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Clean');
 
         foreach ([null, 0] as $detailLimit) {
-            $output = $this->formatter->format($report, new FormatterContext(useColor: true, namespace: $namespace, detailLimit: $detailLimit));
+            $output = $this->formatter->format($report, new FormatterContext(useColor: true, namespace: $namespace, detailLimit: $detailLimit))->body;
 
             self::assertStringNotContainsString('No violations found.', $output);
             self::assertStringNotContainsString("\e[1;32mQualimetrix", $output);
@@ -697,7 +746,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringContainsString(ProductIdentity::pointerText(), $output);
     }
@@ -712,7 +761,7 @@ final class TextFormatterTest extends TestCase
             ->build();
 
         $detailContext = new FormatterContext(useColor: false, detailLimit: 0);
-        $output = $this->formatter->format($report, $detailContext);
+        $output = $this->formatter->format($report, $detailContext)->body;
 
         self::assertStringContainsString(ProductIdentity::pointerText(), $output);
     }
@@ -725,6 +774,38 @@ final class TextFormatterTest extends TestCase
             default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
         };
         return new Finding(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, code: $code, message: $message, severity: $severity, metricValue: $metricValue, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
+    }
+
+    #[Test]
+    public function itShowsBothNonfailureAbsencesBeforeReturningWithoutScores(): void
+    {
+        $summary = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence(
+                'computed.custom',
+                \Qualimetrix\Core\Symbol\SymbolLevel::Project,
+                2,
+                1,
+                ['missing.input'],
+                [\Qualimetrix\Core\Symbol\MetricSubject::aggregate(\Qualimetrix\Core\Symbol\SymbolPath::forProject())],
+            ),
+        ]);
+        $report = new \Qualimetrix\Reporting\Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 1, 0, 0.0, 0, 0, computedMetricEvaluation: $summary);
+        $body = $this->formatter->format($report, new FormatterContext(useColor: false))->body;
+        self::assertStringContainsString('Computed metric computed.custom (project): not measured', $body);
+        self::assertStringContainsString('missing keys [missing.input] for 2 subject(s)', $body);
+        self::assertStringContainsString('no value for 1 subject(s)', $body);
+        $withScores = new \Qualimetrix\Reporting\Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 1, 0, 0.0, 0, 0, healthScores: [
+            'overall' => new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore('overall', 0.0, 'Critical', 50.0, 25.0, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage::notApplicable('composes dimensions')),
+        ], computedMetricEvaluation: $summary);
+        $alongside = $this->formatter->format($withScores, new FormatterContext(useColor: false))->body;
+        self::assertStringContainsString('missing keys [missing.input] for 2 subject(s)', $alongside);
+        self::assertStringContainsString('no value for 1 subject(s)', $alongside);
+        $expected = 'Computed metric computed.custom (project): not measured — missing keys [missing.input] for 2 subject(s); no value for 1 subject(s); examples: project:';
+        self::assertContains($expected, explode("\n", $body));
+        self::assertContains($expected, explode("\n", $alongside));
+        self::assertSame(1, substr_count($body, 'Computed metric computed.custom'));
+        self::assertSame(1, substr_count($alongside, 'Computed metric computed.custom'));
+
     }
 
 }

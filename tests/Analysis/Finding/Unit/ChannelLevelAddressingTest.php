@@ -24,11 +24,19 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 #[CoversClass(ChannelLevelAddressing::class)]
 final class ChannelLevelAddressingTest extends TestCase
 {
+    #[Test]
+    public function itNamesTheMisCasedLevelAndKeepsTheCallersSubject(): void
+    {
+        $addressing = $this->addressing();
+        self::assertSame('"coupling.cbo:Namespace" names level "Namespace" with the wrong case. Write "namespace".', $addressing->problemWith('coupling.cbo:Namespace'));
+        self::assertSame('Written selector names level "Namespace" with the wrong case. Write "namespace".', $addressing->problemWith('coupling.cbo:Namespace', 'Written selector'));
+    }
+
     /** @var array<string, list<SymbolLevel>> */
     private const array UNIVERSE = [
         'coupling.cbo' => [SymbolLevel::Class_, SymbolLevel::Namespace_],
         'coupling.class-rank' => [SymbolLevel::Class_],
-        'duplication.clone' => [SymbolLevel::Project],
+        'duplication.clone' => [SymbolLevel::File],
         'computed.debt' => [],
     ];
 
@@ -87,7 +95,7 @@ final class ChannelLevelAddressingTest extends TestCase
     public function itSaysAPairAddressesNothingInTheSetRatherThanNamingLevels(): void
     {
         $problem = $this->addressing()->problemWithAmong(
-            'duplication.*:project',
+            'duplication.*:file',
             [new FindingChannel('coupling.cbo')],
             'the channels rule "coupling.cbo" produces',
         );
@@ -107,6 +115,33 @@ final class ChannelLevelAddressingTest extends TestCase
         self::assertNotNull(
             $addressing->problemWithAmong('coupling.class-rank', $candidates, 'this rule\'s channels'),
         );
+    }
+
+    #[Test]
+    public function itRequiresOneProducedChannelToWitnessAnImplicitNamespaceLevel(): void
+    {
+        $addressing = $this->addressing();
+        self::assertNull($addressing->problemWithAtLevelAmong(
+            'coupling.*',
+            SymbolLevel::Namespace_,
+            [new FindingChannel('coupling.cbo')],
+            "this rule's channels",
+        ));
+        self::assertSame(
+            'Channel selector "coupling.*" addresses "coupling.class-rank", and it does not report at level "namespace" — the levels available are "class". The pair can never match anything.',
+            $addressing->problemWithAtLevelAmong(
+                'coupling.*',
+                SymbolLevel::Namespace_,
+                [new FindingChannel('coupling.class-rank')],
+                "this rule's channels",
+            ),
+        );
+        self::assertNotNull($addressing->problemWithAtLevelAmong(
+            'computed.debt',
+            SymbolLevel::Namespace_,
+            [new FindingChannel('computed.debt')],
+            "this rule's channels",
+        ));
     }
 
     /**
@@ -135,7 +170,7 @@ final class ChannelLevelAddressingTest extends TestCase
         $addressing = $this->addressing();
 
         self::assertTrue($addressing->selectorsCoverEveryDeclaredLevelOf(
-            ['duplication.clone:project'],
+            ['duplication.clone:file'],
             ['duplication.clone'],
         ));
         self::assertTrue($addressing->selectorsCoverEveryDeclaredLevelOf(

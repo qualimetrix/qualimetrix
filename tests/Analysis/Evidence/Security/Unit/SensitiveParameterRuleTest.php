@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Security\Unit;
 
 use InvalidArgumentException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -18,6 +19,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(SensitiveParameterRule::class)]
 #[CoversClass(SensitiveParameterOptions::class)]
@@ -29,7 +31,7 @@ final class SensitiveParameterRuleTest extends TestCase
         $rule = new SensitiveParameterRule(new SensitiveParameterOptions());
 
         self::assertSame('security.sensitive-parameter', $rule->getName());
-        self::assertStringContainsString('SensitiveParameter', $rule->getDescription());
+        self::assertStringContainsString('SensitiveParameter', $rule::getDescription());
     }
 
     #[Test]
@@ -73,6 +75,21 @@ final class SensitiveParameterRuleTest extends TestCase
         self::assertSame(Severity::Warning, $findings[0]->severity);
         self::assertSame('security.sensitive-parameter', $findings[0]->ruleName);
         self::assertStringContainsString('SensitiveParameter', $findings[0]->message);
+    }
+
+    #[Test]
+    public function itProjectsANamedCallableToItsLogicalSymbol(): void
+    {
+        $findings = (new SensitiveParameterRule(new SensitiveParameterOptions()))->analyze($this->createContext(
+            (new MetricBag())->withEntry('security.sensitive-parameter', [
+                'subjectKind' => 'declaration', 'logicalKind' => 'method',
+                'namespace' => 'App', 'class' => 'AuthService', 'member' => 'login',
+                'line' => 12, 'paramName' => 'password',
+            ]),
+        ));
+
+        self::assertCount(1, $findings);
+        self::assertSame($findings[0]->subject->toSymbolPath()->toString(), $findings[0]->symbolPath->toString());
     }
 
     /**
@@ -124,10 +141,10 @@ final class SensitiveParameterRuleTest extends TestCase
     #[Test]
     public function itLoadsOptionsFromArray(): void
     {
-        $options = SensitiveParameterOptions::fromArray(['enabled' => false]);
+        $options = SensitiveParameterOptions::fromResolved(ResolvedOptionsFixture::values(SensitiveParameterOptions::class, ['enabled' => false]));
         self::assertFalse($options->isEnabled());
 
-        $options = SensitiveParameterOptions::fromArray([]);
+        $options = SensitiveParameterOptions::fromResolved(ResolvedOptionsFixture::values(SensitiveParameterOptions::class, []));
         self::assertTrue($options->isEnabled());
     }
 

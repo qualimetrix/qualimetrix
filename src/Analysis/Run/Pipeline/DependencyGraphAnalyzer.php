@@ -4,28 +4,26 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\Pipeline;
 
-use PhpParser\Node;
-use PhpParser\Node\Stmt\ClassLike;
-use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\NodeTraverser;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarInterface;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
-use Qualimetrix\Analysis\Run\Contract\Discovery\SkipReportingDiscoveryInterface;
+use Qualimetrix\Analysis\Run\Collection\SourceReader;
+use Qualimetrix\Analysis\Run\Collection\UnreadableSource;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Core\Ast\FileParserInterface;
+use Qualimetrix\Core\Ast\NameResolution;
 use Qualimetrix\Core\Exception\ParseException;
-use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
-use Qualimetrix\Core\Symbol\SymbolPath;
 use Throwable;
 
 /**
@@ -36,39 +34,50 @@ use Throwable;
  */
 final readonly class DependencyGraphAnalyzer implements DependencyGraphAnalyzerInterface
 {
+    private SourceReader $sourceReader;
+
     public function __construct(
-        private FileDiscoveryInterface $fileDiscovery,
+        private ProjectFilesInterface $projectFiles,
         private FileParserInterface $fileParser,
         private DependencyTraversalParticipantInterface $dependencyVisitor,
         private DependencyGraphBuilderInterface $graphBuilder,
         private DeclarationRegistrarFactory $declarationRegistrarFactory,
-    ) {}
+    ) {
+        $this->sourceReader = new SourceReader();
+    }
 
-    public function analyze(array $paths, AbsolutePath $projectRoot): DependencyGraphAnalysisResult
+    public function analyze(RunConfiguration $configuration): DependencyGraphAnalysisResult
     {
-        $projectRoot = $projectRoot->canonicalize();
-        $files = iterator_to_array($this->fileDiscovery->discover($paths), false);
+        $projectRoot = $configuration->projectRoot->canonicalize();
+        $discovery = $this->projectFiles->discover($configuration);
+        $files = $discovery->eligibleFiles;
         $analyzedFiles = [];
         $failures = [];
         /** @var list<Dependency> $dependencies */
         $dependencies = [];
-        /** @var array<string, LogicalClassPath> $logicalClassUniverse */
-        $logicalClassUniverse = [];
+        /** @var list<ClassLikeDeclaration> $classLikeDeclarations */
+        $classLikeDeclarations = [];
 
         foreach ($files as $file) {
-            $path = PathFactory::bestEffortRelative($file->getPathname(), $projectRoot);
+            $path = PathFactory::published(PathFactory::fromCliArgument($file->getPathname(), $projectRoot), $projectRoot);
+
+            $source = $this->sourceReader->read($file);
+            if ($source instanceof UnreadableSource) {
+                $failures[] = new AnalysisFailure($path, AnalysisFailureKind::UnreadableFile, $source->reason);
+
+                continue;
+            }
 
             try {
-                $ast = $this->fileParser->parse($file);
+                $ast = $this->fileParser->parseContent($file, $source);
+                NameResolution::resolve($ast);
                 $traverser = new NodeTraverser();
                 $registrar = $this->beginNumbering($traverser);
                 $traverser->addVisitor($this->dependencyVisitor);
                 $this->dependencyVisitor->beginFile($path, $registrar->index());
                 $traverser->traverse($ast);
                 array_push($dependencies, ...$this->dependencyVisitor->dependencies());
-                foreach (self::declaredLogicalClasses($ast) as $class) {
-                    $logicalClassUniverse[$class->toCanonical()] = $class;
-                }
+                array_push($classLikeDeclarations, ...$this->dependencyVisitor->classLikeDeclarations());
                 $analyzedFiles[] = $path;
             } catch (ParseException $e) {
                 $failures[] = new AnalysisFailure($path, AnalysisFailureKind::Parse, $e->getMessage());
@@ -77,24 +86,25 @@ final readonly class DependencyGraphAnalyzer implements DependencyGraphAnalyzerI
             }
         }
 
-        $coverage = new AnalysisCoverage($analyzedFiles, [], $failures);
+        $coverage = new AnalysisCoverage($analyzedFiles, $discovery->generatedExcludedFiles, $failures, $discovery->namedExcluded);
 
         // The graph export answers the same question about its own input as a
         // check run does: an entry discovery refused is a hole in the graph,
         // and `graph:export` already refuses to publish an incomplete one.
-        if ($this->fileDiscovery instanceof SkipReportingDiscoveryInterface) {
-            foreach ($this->fileDiscovery->skippedEntries() as $skip) {
-                $coverage = $coverage->withSkipped(
-                    $skip->relativeTo($projectRoot),
-                    $skip->reason,
-                    $skip->detail,
-                );
-            }
+        foreach ($discovery->skippedEntries as $skip) {
+            $coverage = $coverage->withSkipped(
+                $skip->relativeTo($projectRoot),
+                $skip->reason,
+                $skip->detail,
+            );
         }
 
+        $build = $this->graphBuilder->build($dependencies, $classLikeDeclarations);
+
         return new DependencyGraphAnalysisResult(
-            $this->graphBuilder->build($dependencies, array_values($logicalClassUniverse)),
+            $build->graph,
             $coverage,
+            $build->mixedSpellings,
         );
     }
 
@@ -112,34 +122,4 @@ final readonly class DependencyGraphAnalyzer implements DependencyGraphAnalyzerI
         return $registrar;
     }
 
-    /**
-     * Graph-only analysis has no metric repository, so it discovers the
-     * declared logical class universe directly from the parsed AST.
-     *
-     * @param array<Node> $nodes
-     *
-     * @return list<LogicalClassPath>
-     */
-    private static function declaredLogicalClasses(array $nodes, string $namespace = ''): array
-    {
-        $classes = [];
-        foreach ($nodes as $node) {
-            if ($node instanceof Namespace_) {
-                array_push($classes, ...self::declaredLogicalClasses(
-                    $node->stmts,
-                    $node->name?->toString() ?? '',
-                ));
-
-                continue;
-            }
-
-            if (!$node instanceof ClassLike || $node->name === null) {
-                continue;
-            }
-
-            $classes[] = new LogicalClassPath(SymbolPath::forClass($namespace, $node->name->toString()));
-        }
-
-        return $classes;
-    }
 }

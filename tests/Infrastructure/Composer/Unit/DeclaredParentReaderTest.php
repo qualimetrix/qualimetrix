@@ -150,7 +150,7 @@ final class DeclaredParentReaderTest extends TestCase
                 return [];
             }
         };
-        $map = new ComposerAutoloadMap();
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $map->pointAt($this->root, [$this->root . '/src']);
         $reader = new DeclaredParentReader($map, $parser);
 
@@ -196,7 +196,7 @@ final class DeclaredParentReaderTest extends TestCase
     {
         $this->write('src/Child.php', "<?php\n\nnamespace Fixture;\n\nclass Child extends \\Fixture\\First {}\n");
 
-        $map = new ComposerAutoloadMap();
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $reader = new DeclaredParentReader($map);
         $reader->pointAt($this->root, [$this->root . '/src']);
 
@@ -219,7 +219,7 @@ final class DeclaredParentReaderTest extends TestCase
 
     private function reader(): DeclaredParentReader
     {
-        $map = new ComposerAutoloadMap();
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $map->pointAt($this->root, [$this->root . '/src']);
 
         return new DeclaredParentReader($map);

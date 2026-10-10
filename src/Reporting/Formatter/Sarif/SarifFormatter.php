@@ -5,10 +5,15 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter\Sarif;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Core\SourceText\SourceBytes;
 use Qualimetrix\Core\Version;
+use Qualimetrix\Reporting\Formatter\FormattedReport;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\Formatter\PublicationKind;
 use Qualimetrix\Reporting\Formatter\PublishedFinding;
 use Qualimetrix\Reporting\Formatter\PublishedUtf8;
 use Qualimetrix\Reporting\FormatterContext;
@@ -29,7 +34,7 @@ final class SarifFormatter implements FormatterInterface
         private readonly SarifRuleCollector $ruleCollector,
     ) {}
 
-    public function format(Report $report, FormatterContext $context): string
+    public function format(Report $report, FormatterContext $context): FormattedReport
     {
         $rules = $this->ruleCollector->collectRules($report->findings);
         $repairs = 0;
@@ -71,8 +76,12 @@ final class SarifFormatter implements FormatterInterface
             ]];
         }
 
+        foreach ($this->populationNotifications($report->population) as $notification) {
+            $run = self::withNotification($run, 'note', $notification['message']['text'], 'QMX-RULE-POPULATION-INCOMPLETE');
+        }
+
         if ($report->outOfScope !== null && $report->outOfScope->total() > 0) {
-            $run = self::withNotification($run, 'note', $report->outOfScope->describe(), 'QMX-DRILL-DOWN-OUT-OF-SCOPE');
+            $run = self::withNotification($run, 'note', $report->outOfScope->describe(), 'QMX-DRILL-DOWN-OUT-OF-SCOPE', ['identities' => $report->outOfScope->published()['identities']]);
         }
 
         $projectScope = $report->projectScope?->describe();
@@ -95,10 +104,11 @@ final class SarifFormatter implements FormatterInterface
             'runs' => [$run],
         ];
 
-        return PublishedUtf8::encodeJson(
+        $body = PublishedUtf8::encodeJson(
             $sarif,
             \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES,
-            static function (array $sarif, int $repairs): array {
+            static function (array $sarif, int $count) use (&$repairs): array {
+                $repairs = $count;
                 $sarif['runs'][0] = self::withNotification(
                     $sarif['runs'][0],
                     'warning',
@@ -110,6 +120,26 @@ final class SarifFormatter implements FormatterInterface
             },
             $repairs,
         );
+
+        return new FormattedReport($body, $repairs);
+    }
+
+    /** @return list<array{message: array{text: string}}> */
+    private function populationNotifications(JudgedPopulation $population): array
+    {
+        return array_map(static fn($absence): array => ['message' => ['text' => \sprintf(
+            'Selected judgement incomplete: %s (%s), %d unjudged %s; %s',
+            $absence->channel->code,
+            $absence->level->value,
+            $absence->count,
+            $absence->unit,
+            $absence->reason,
+        )]], $population->abstentions());
+    }
+
+    public function publicationKind(): PublicationKind
+    {
+        return PublicationKind::JsonDocument;
     }
 
     public function getName(): string
@@ -127,16 +157,18 @@ final class SarifFormatter implements FormatterInterface
      * invocation when coverage did not.
      *
      * @param array<string, mixed> $run
+     * @param array<string, mixed> $properties
      *
      * @return array<string, mixed>
      */
-    private static function withNotification(array $run, string $level, string $text, string $descriptor): array
+    private static function withNotification(array $run, string $level, string $text, string $descriptor, array $properties = []): array
     {
         $run['invocations'] ??= [['executionSuccessful' => true, 'toolExecutionNotifications' => []]];
         $run['invocations'][0]['toolExecutionNotifications'][] = [
             'level' => $level,
             'message' => ['text' => $text],
             'descriptor' => ['id' => $descriptor],
+            ...($properties === [] ? [] : ['properties' => $properties]),
         ];
 
         return $run;
@@ -164,7 +196,7 @@ final class SarifFormatter implements FormatterInterface
                     'ruleId' => $v->code,
                     'ruleIndex' => $ruleIndexMap[$v->code] ?? 0,
                     'level' => $this->ruleCollector->mapLevel($v->severity),
-                    'message' => ['text' => PublishedFinding::annotatedMessage($v)],
+                    'message' => ['text' => PublishedFinding::locatedMessage($v)],
                     'partialFingerprints' => [
                         'primaryLocationLineHash' => $v->getFingerprint(),
                     ],
@@ -259,13 +291,16 @@ final class SarifFormatter implements FormatterInterface
     }
 
     /**
-     * Percent-encodes each segment of a path. The repair comes first:
-     * `rawurlencode()` turns an invalid byte into a valid `%FF`, which the
-     * document encoder would then publish without the repair's mark.
+     * Percent-encodes raw path bytes while counting invalid input before the
+     * URI representation hides it from the document encoder.
      */
     private static function encodeSegments(string $path, int &$repairs): string
     {
-        return implode('/', array_map('rawurlencode', explode('/', PublishedUtf8::repair($path, $repairs))));
+        if (!SourceBytes::isUtf8($path)) {
+            ++$repairs;
+        }
+
+        return implode('/', array_map('rawurlencode', explode('/', $path)));
     }
 
     /**

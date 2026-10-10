@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Evidence\Measurement\Contract;
 
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\MixedSpelling;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -13,23 +14,19 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 /**
  * Mutable Measurement repository promise shared by collection, aggregation, and rules.
  *
- * @qmx-threshold coupling.cbo 48 -- Stable provider-owned repository fan-in gets one-edge headroom above raw CBO 47. `Reporting\DrillDown\DrillDownBinding` reads this repository to build the namespace universe a `--namespace` value is judged against. The threshold is inclusive, so 48 keeps today's 47 silent and reports the next dependent.
+ * @qmx-threshold coupling.cbo 55 -- Collection, aggregation and rules share the exact-subject repository promise; splitting its reads transfers their common identity dependencies.
  */
 interface MetricRepositoryInterface
 {
     /** Returns a merged repository, or null when implementations are incompatible. */
     public function mergedWith(self $other): ?self;
 
-    /**
-     * Returns metrics for any symbol.
-     *
-     * All symbol levels (Callable, Class, File, Namespace, Project) return MetricBag.
-     * Aggregated metrics use naming convention: {metric}.{strategy} (e.g., ccn.sum, loc.avg).
-     */
+    /** Returns file, namespace, or project aggregate metrics; declarations require getSubject(). */
     public function get(SymbolPath $symbol): MetricBag;
 
     /**
-     * Returns iterator over symbols measured at the given aggregation level.
+     * Returns callable declarations or file, namespace, and project aggregates.
+     * Class enumeration requires allClassDeclarations() or allLogicalClasses().
      *
      * The key is the level, not the declaration kind: a caller asking for
      * {@see SymbolLevel::Callable} gets methods and global functions in one
@@ -46,18 +43,23 @@ interface MetricRepositoryInterface
     public function has(SymbolPath $symbol): bool;
 
     /**
-     * Adds or merges metrics for a symbol.
+     * Adds or merges aggregate or logical-class metrics.
      *
      * If the symbol already has metrics, new metrics are merged (new values override).
      *
      * @param SymbolPath $symbol The symbol to add metrics for
      * @param MetricBag $metrics The metrics to add
-     * @param ?RelativePath $file The source file path; null for symbols without a single owning file (e.g., class-level coupling metrics aggregated by CouplingCollector, namespace-level graph metrics)
+     * @param ?RelativePath $file The source file path; null for symbols without one owning file
      * @param ?int $line The line number (null for aggregated/namespace metrics)
      */
     public function add(SymbolPath $symbol, MetricBag $metrics, ?RelativePath $file, ?int $line): void;
 
-    /** Returns metrics for an exact declaration, logical class, or aggregate subject. */
+    /**
+     * Returns metrics for an exact declaration, logical class, or aggregate subject.
+     * An exact class view overlays graph metrics owned by its logical name. If
+     * several declarations share that name, each view samples those same graph
+     * values once; exact declaration metrics remain separate.
+     */
     public function getSubject(MetricSubject $subject): MetricBag;
 
     /** Checks whether an exact declaration, logical class, or aggregate subject exists. */
@@ -80,6 +82,9 @@ interface MetricRepositoryInterface
 
     /** @return iterable<SymbolInfo> logical class subjects */
     public function allLogicalClasses(): iterable;
+
+    /** @return iterable<SymbolInfo> exact class declarations */
+    public function allClassDeclarations(): iterable;
 
     /**
      * Adds a single scalar metric to an existing symbol.
@@ -118,4 +123,7 @@ interface MetricRepositoryInterface
      * @return list<SymbolInfo>
      */
     public function forNamespace(string $namespace): array;
+
+    /** @return list<MixedSpelling> case-insensitive identities seen with distinct spellings */
+    public function mixedSpellings(): array;
 }

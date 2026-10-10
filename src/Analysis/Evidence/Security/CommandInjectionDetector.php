@@ -57,6 +57,7 @@ final readonly class CommandInjectionDetector
                         type: 'command_injection',
                         line: $node->getStartLine(),
                         context: "\${$varName} in {$functionName}() call",
+                        superglobal: $varName,
                     ),
                 ];
             }
@@ -83,6 +84,7 @@ final readonly class CommandInjectionDetector
                 type: 'command_injection',
                 line: $node->getStartLine(),
                 context: "\${$varName} in backtick command",
+                superglobal: $varName,
             ),
         ];
     }

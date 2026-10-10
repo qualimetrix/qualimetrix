@@ -19,8 +19,7 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
  * not a plain subtree ({@code App\**\Foo}, {@code **\*Service}, capture
  * templates) and for every non-pattern criterion kind
  * (suffix / attribute / implements / extends). `null` means "not comparable",
- * and the caller must then keep the diagnostic: a false alarm is cheap, a
- * missed shadow is not.
+ * and leaves the verdict to the firing criterion kinds and layer precedence.
  *
  * Comparison mirrors {@see CapturePattern}: a wildcard-free pattern matches
  * the prefix itself and everything under it, while a pattern ending in
@@ -95,5 +94,10 @@ final readonly class PatternScope
         }
 
         return str_starts_with($other->prefix, $this->prefix . '\\');
+    }
+
+    public function isUniversal(): bool
+    {
+        return $this->universal;
     }
 }

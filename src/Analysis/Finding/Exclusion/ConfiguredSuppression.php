@@ -44,7 +44,7 @@ final readonly class ConfiguredSuppression
                 ConfigKeySpelling::normalize($key),
                 'a_b',
             ),
-            FrameworkOptionKeys::all(),
+            FrameworkOptionKeys::suppressionKeys(),
         );
         sort($derived);
 
@@ -139,7 +139,7 @@ final readonly class ConfiguredSuppression
      */
     private static function spellingsOf(string $canonicalKey): array
     {
-        if (!\in_array($canonicalKey, FrameworkOptionKeys::all(), true)) {
+        if (!\in_array($canonicalKey, FrameworkOptionKeys::suppressionKeys(), true)) {
             throw new LogicException(\sprintf('"%s" is not a suppression option.', $canonicalKey));
         }
 

@@ -226,10 +226,8 @@ function measureSuppressionComposition(
     $stderr = $result['stderr'];
     $exitCode = $result['exitCode'];
 
-    // 0 = clean, 1 = warnings, 2 = errors — all three are a complete,
-    // successfully measured run (see CheckCommandDefinition's --fail-on
-    // doc). Anything else is a config/input failure this snapshot cannot
-    // measure through.
+    // Only 0/1/2 carry a complete measurement. Refusal (3), incomplete
+    // analysis (4), and internal error (5) cannot provide this snapshot.
     if ($exitCode > 2) {
         return sprintf(
             "`%s` exited %d, which is not a measured run (0-2). stderr:\n%s\n",

@@ -6,19 +6,19 @@ namespace Qualimetrix\Analysis\Policy\Inline\Directive\Audit;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite;
-use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
-use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveChannelBan;
-use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveLevels;
+use Qualimetrix\Analysis\Policy\Inline\Directive\RefusedDirectives;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Core\Path\RelativePath;
 
@@ -27,7 +27,7 @@ use Qualimetrix\Core\Path\RelativePath;
  * suppression did this run.
  *
  * The answer is a {@see DirectiveVerdict} per authored site, and the stale
- * findings {@see stale()} returns are one projection of it. Two computations
+ * findings {@see usageResult()} returns are one projection of it. Two computations
  * would be two chances to disagree about one directive, which is why the
  * projection reads the verdicts rather than repeating the accounting.
  *
@@ -57,21 +57,7 @@ use Qualimetrix\Core\Path\RelativePath;
  */
 final class DirectiveUsage
 {
-    /**
-     * The shared refusal for a `channel:level` pair. Built here rather than
-     * injected, mirroring {@see \Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability}: a pure function of
-     * the same universe, with no lifecycle of its own.
-     */
-    private readonly ChannelLevelAddressing $levels;
-
-    /**
-     * The refusal an author already read, asked here rather than derived
-     * again: a directive reaching the banned channel is refused where it was
-     * written, and this class has to answer "already refused" about the very
-     * same directive. Two derivations would let `check` refuse a form that
-     * `directives` still judged.
-     */
-    private readonly DirectiveChannelBan $ban;
+    private readonly DirectiveMeasurability $measurability;
 
     /**
      * Two views and not the composite that implements both: the composite
@@ -80,19 +66,18 @@ final class DirectiveUsage
      * same instance to both, which is what makes the two answers one universe.
      */
     public function __construct(
-        private readonly ChannelIdentityInterface $identity,
-        private readonly RuleSelector $ruleSelector,
-        private readonly RuleConfigurationInterface $ruleConfiguration,
+        ChannelIdentityInterface $identity,
+        RuleConfigurationInterface $ruleConfiguration,
         private readonly ChannelDeclarationRegistryInterface $declarations,
+        private readonly RefusedDirectives $refused,
     ) {
-        $this->levels = new ChannelLevelAddressing($identity);
-        $this->ban = new DirectiveChannelBan($identity);
+        $this->measurability = new DirectiveMeasurability($identity, $ruleConfiguration, $declarations);
     }
 
     /**
      * What each authored suppression did this run.
      *
-     * The single computation behind both answers this class gives: `stale()`
+     * The single computation behind both answers this class gives: `usageResult()`
      * is its projection into findings, and a report that lists directives
      * reads it directly. Two computations would be two chances to disagree
      * about the same directive.
@@ -102,12 +87,13 @@ final class DirectiveUsage
      *
      * @return list<DirectiveVerdict>
      */
-    public function verdicts(array $suppressionsByFile, array $findings, LevelActivity $activity): array
+    public function verdicts(array $suppressionsByFile, array $findings, LevelActivity $activity, SubjectCoverageFacts $subjectCoverage): array
     {
-        return array_map(
-            static fn(array $pair): DirectiveVerdict => $pair['verdict'],
-            $this->evaluate($suppressionsByFile, $findings, $activity),
-        );
+        $verdicts = [];
+        foreach ($this->evaluate($suppressionsByFile, $findings, $activity, $subjectCoverage) as $pair) {
+            $verdicts[] = $pair['verdict'];
+        }
+        return $verdicts;
     }
 
     /**
@@ -117,23 +103,31 @@ final class DirectiveUsage
      * @param array<string, list<Suppression>> $suppressionsByFile file => directives, as prepared
      * @param list<Finding> $findings everything the rules produced this run
      *
-     * @return list<Finding>
+     * @return array{findings: list<Finding>, population: JudgedPopulation}
      */
-    public function stale(
+    public function usageResult(
         array $suppressionsByFile,
         array $findings,
         Severity $severity,
         LevelActivity $activity,
+        SubjectCoverageFacts $subjectCoverage,
+        ChannelPublication $publication,
     ): array {
         $stale = [];
 
-        foreach ($this->evaluate($suppressionsByFile, $findings, $activity) as $pair) {
-            if ($pair['verdict']->effect === DirectiveEffect::Inert) {
-                $stale[] = StaleDirectiveFinding::of($pair['verdict']->site->file, $pair['directive'], $severity);
-            }
+        if (!DirectiveUsagePopulation::selected($publication)) {
+            return ['findings' => [], 'population' => JudgedPopulation::empty()];
         }
-
-        return $stale;
+        $verdicts = (function () use ($suppressionsByFile, $findings, $activity, $subjectCoverage, $severity, &$stale): iterable {
+            foreach ($this->evaluate($suppressionsByFile, $findings, $activity, $subjectCoverage) as $pair) {
+                yield $pair['verdict'];
+                if ($pair['verdict']->effect === DirectiveEffect::Inert) {
+                    $stale[] = StaleDirectiveFinding::of($pair['verdict']->site->file, $pair['directive'], $severity);
+                }
+            }
+        })();
+        $population = DirectiveUsagePopulation::measure($publication, $verdicts);
+        return ['findings' => $stale, 'population' => $population];
     }
 
     /**
@@ -144,8 +138,7 @@ final class DirectiveUsage
      * a misconfigured directive is not silenced by another directive, and the
      * projection enforces that for every report. Counting such a finding as
      * something a suppression matched would call a directive live that can
-     * never do anything — measured on a fixture, `@qmx-ignore-file
-     * annotation.unresolved-directive` reported "effective" while `check`
+     * never do anything — measured on a fixture, `@qmx-ignore-file annotation.unresolved-directive` reported "effective" while `check`
      * printed the error it claimed to silence.
      *
      * This is not the publication ledger of D4 creeping back in. That ledger
@@ -185,32 +178,35 @@ final class DirectiveUsage
      * @param array<string, list<Suppression>> $suppressionsByFile
      * @param list<Finding> $findings
      *
-     * @return list<array{verdict: DirectiveVerdict, directive: Suppression}>
+     * @return iterable<array{verdict: DirectiveVerdict, directive: Suppression}>
      */
-    private function evaluate(array $suppressionsByFile, array $findings, LevelActivity $activity): array
+    private function evaluate(array $suppressionsByFile, array $findings, LevelActivity $activity, SubjectCoverageFacts $subjectCoverage): iterable
     {
-        $selection = $this->ruleConfiguration->selection();
         $findings = $this->suppressible($findings);
-        $evaluated = [];
 
         foreach ($suppressionsByFile as $file => $fileSuppressions) {
             foreach (self::groupByAuthoredSite($fileSuppressions) as $group) {
                 $directive = $group[0];
-                $reason = $this->unmeasurableReason($group, $activity, $selection->only, $selection->disabled);
+                if ($this->refused->suppression(RelativePath::fromString($file), $directive) !== null) {
+                    continue;
+                }
+                $fired = self::anyOfTheGroupFired($file, $group, $findings);
+                $reason = $fired ? null : $this->measurability->unmeasurableReason($file, $group, $activity, $subjectCoverage);
 
                 $effect = match (true) {
                     $reason !== null => DirectiveEffect::Unmeasured,
-                    self::anyOfTheGroupFired($file, $group, $findings) => DirectiveEffect::Effective,
+                    $fired => DirectiveEffect::Effective,
                     default => DirectiveEffect::Inert,
                 };
 
-                $evaluated[] = [
+                yield [
                     'verdict' => new DirectiveVerdict(
                         site: new DirectiveSite(
                             file: RelativePath::fromString($file),
                             line: $directive->line,
                             form: $directive->form(),
                             target: (string) $directive->target(),
+                            position: $directive->position,
                         ),
                         effect: $effect,
                         reason: $reason,
@@ -220,7 +216,6 @@ final class DirectiveUsage
             }
         }
 
-        return $evaluated;
     }
 
     /**
@@ -264,154 +259,5 @@ final class DirectiveUsage
         }
 
         return false;
-    }
-
-    /**
-     * Why this directive cannot be judged, or null when it can.
-     *
-     * The accounting is deliberately narrow, and every limit here is one that
-     * would otherwise turn ordinary configuration into noise. It answers with
-     * a named reason rather than a boolean because the caller reports the
-     * difference: a directive nobody could ask about is not a directive that
-     * did nothing.
-     *
-     * A directive is judged only when the rule producing the channel it
-     * addresses actually reported: without that, disabling a family of rules
-     * — as the shipped `legacy` preset does — would report every annotation
-     * belonging to it as stale. **Both** ways of switching a rule off count,
-     * because the user made the same decision either way: `disabled_rules`
-     * and `--disable-rule` stop the rule from running, and `rules: { X:
-     * false }` / `rules: { X: { enabled: false } }` let it run and return
-     * nothing. Reading only the first is what made the second report every
-     * annotation of the switched-off rule as a leftover. The other limit
-     * needs no code: the directive maps are keyed by the files collection
-     * actually analysed, so a run scoped to part of the tree never sees an
-     * annotation outside it.
-     *
-     * A directive that carries no rule filter at all is never judged. It says
-     * "whatever is here", so there is no channel whose producer could be
-     * consulted, and reporting it stale would mean reporting the file's
-     * cleanliness as a defect.
-     *
-     * Nor is one judged whose pair {@see ChannelLevelAddressing} already
-     * refused, whose selector expands to no channel at all, whose channels no
-     * producer owns, or which reaches the channel
-     * {@see \Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveChannelBan} refuses: `coupling.cbo:project`, naming a
-     * level `coupling.cbo` never reports at, can never be silenced by any
-     * finding, so calling it stale on top of the
-     * `annotation.unresolved-directive`
-     * {@see \Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability} already raised would answer one mistake
-     * twice. All four arrive here as the same answer for the same reason, and
-     * the ban is asked in the order the refusal decides it — after the pair,
-     * so that a wrong level is still reported as a wrong level.
-     *
-     * The levels come from the whole authored group rather than from its first
-     * binding: one authored site expands to a binding per applicable
-     * declaration, and those need not share a level — a class docblock covers
-     * the class and every callable in it. Judging by the first alone reports a
-     * directive that is alive at one of its levels as unmeasured, which is the
-     * mirror image of the defect this reading exists to remove.
-     *
-     * @param non-empty-list<Suppression> $group
-     * @param list<string> $only
-     * @param list<string> $disabled
-     */
-    private function unmeasurableReason(
-        array $group,
-        LevelActivity $activity,
-        array $only,
-        array $disabled,
-    ): ?DirectiveUnmeasurableReason {
-        $suppression = $group[0];
-        if ($suppression->refusal !== null) {
-            // Asked before the target, because a refused directive has no
-            // usable one: the tag was unreadable or incomplete, or it was
-            // written where nothing reads it. `check` has already said so on this line, and the
-            // audit repeating it as `inert` would tell the author to delete an
-            // annotation on the strength of a question nobody could ask.
-            return DirectiveUnmeasurableReason::AlreadyRefused;
-        }
-
-        $target = $suppression->target();
-        if ($target->appliesToEveryChannel()) {
-            return DirectiveUnmeasurableReason::AddressesEveryChannel;
-        }
-
-        if ($this->alreadyRefused($suppression)) {
-            return DirectiveUnmeasurableReason::AlreadyRefused;
-        }
-
-        $sawDisabledProducer = false;
-
-        foreach ($this->addressedCodes($suppression) as $code) {
-            $producer = $this->identity->producerOf($code);
-            if ($producer === null) {
-                // Unreachable through a directive: `addressedCodes()` expands
-                // the selector over the same catalogue `producerOf()` reads, so
-                // a code that came out of the expansion has a producer. Kept as
-                // a type guard, not as a reason path — the answer below is the
-                // same either way, so nothing hangs on which way this exits.
-                continue;
-            }
-
-            if (
-                $this->ruleSelector->isProducerEnabled($producer, $only, $disabled)
-                && $activity->ranAtAnyOf($producer, DirectiveLevels::ofGroup($group))
-            ) {
-                return null;
-            }
-
-            $sawDisabledProducer = true;
-        }
-
-        // Either every addressable producer was switched off, or nothing
-        // addressable was found at all. Those are different answers, and this
-        // is where the loop parts them: the second is a directive that was
-        // already refused elsewhere.
-        return $sawDisabledProducer
-            ? DirectiveUnmeasurableReason::ProducerDisabled
-            : DirectiveUnmeasurableReason::AlreadyRefused;
-    }
-
-    /**
-     * Whether the author has already been told about this directive.
-     *
-     * Two refusals, one answer, and both are asked in the order
-     * {@see \Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability} decides them in: the pair first, so
-     * that a level a channel never reports at is reported as a wrong level,
-     * and the ban second. Asking either differently here is how `check` and
-     * `directives` would come to disagree about one authored line.
-     */
-    private function alreadyRefused(Suppression $suppression): bool
-    {
-        $target = $suppression->target();
-
-        if ($this->levels->problemWith((string) $target) !== null) {
-            return true;
-        }
-
-        $selector = $target->selector();
-
-        return $selector !== null && $this->ban->problemWith((string) $target, $selector->channel()) !== null;
-    }
-
-    /**
-     * The finding codes a target addresses.
-     *
-     * @return list<string>
-     */
-    private function addressedCodes(Suppression $suppression): array
-    {
-        $selector = $suppression->target()->selector();
-        if ($selector === null) {
-            return [];
-        }
-
-        $codes = [];
-        foreach ($this->identity->expand($selector->channel()) as $channel) {
-            $codes[] = $channel->code;
-        }
-
-        return $codes;
     }
 }

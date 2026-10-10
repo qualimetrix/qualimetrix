@@ -23,19 +23,39 @@ use Symfony\Component\Console\Tester\CommandTester;
  * sentence. The cases remain explicit so a refusal cannot disappear together
  * with its expected result.
  */
-/**
- * The refusal check folds quoted spans and requires the case's rule, level,
- * and offending key to appear among them. It also requires distinct subjects
- * to receive distinct sentences while allowing equivalent subjects to share
- * wording. This checks useful specificity without pinning every sentence's
- * exact prose.
- */
 #[CoversNothing]
 final class TranslatedRefusalVocabularyTest extends TestCase
 {
     private const string ANALYSED_PATH = 'tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php';
 
     private const string CCN = 'complexity.ccn';
+
+    /** @var array<string, string> Full authored subjects and their source; %s is the fixture file locator. */
+    private const array REFUSALS = [
+        'unrecognised-depth-1-key' => 'Configuration error: Unknown key "rules.complexity.ccn.callabel" in configuration file "%s" (did you mean "callable"?). Accepted keys: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.',
+        'unsupported-method-level' => 'Configuration error: Unknown key "rules.complexity.ccn.method" in configuration file "%s". Accepted keys: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.',
+        'unsupported-namespace-level' => 'Configuration error: Unknown key "rules.complexity.ccn.namespace" in configuration file "%s". Accepted keys: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.',
+        'uppercase-level-name' => 'Configuration error: Key "rules.complexity.ccn.CALLABLE" in configuration file "%s" is not written in an accepted spelling; write "callable" (its snake_case, camelCase and kebab-case spellings are accepted).',
+        'typo-on-rule-without-levels' => 'Configuration error: Unknown key "rules.coupling.class-rank.warnign" in configuration file "%s" (did you mean "warning"?). Accepted keys: error, warning, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.',
+        'option-owned-by-another-rule' => 'Configuration error: Unknown key "rules.complexity.ccn.max_distance_warning" in configuration file "%s". Accepted keys: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.',
+        'unsupported-threshold-option' => 'Configuration error: Unknown key "rules.code-smell.eval.threshold" in configuration file "%s". Accepted keys: enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths.',
+        'pluralised-option-name' => 'Configuration error: Unknown key "rules.complexity.ccn.thresholds" in configuration file "%s" (did you mean "threshold"?). Accepted keys: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.',
+        'misspelled-enabled-option' => 'Configuration error: Unknown key "rules.complexity.ccn.enable" in configuration file "%s" (did you mean "enabled"?). Accepted keys: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.',
+        'unsupported-severity-key' => 'Configuration error: Unknown key "rules.complexity.ccn.severity" in configuration file "%s". Accepted keys: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.',
+        'misspelled-suppression-key' => 'Configuration error: Unknown key "rules.complexity.ccn.suppress_namespace_chanels" in configuration file "%s" (did you mean "suppress-namespace-channels"?). Accepted keys: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.',
+        'retired-level-option' => 'Configuration error: Key "rules.complexity.ccn.callable.exclude_paths" in configuration file "%s" is retired. The "exclude-paths" option was retired. To suppress findings the analysis already produces, use "suppress-paths". To exclude files from analysis entirely (the finding is never produced), use the "exclude" option instead — it is a different mechanism, not a renamed one.',
+        'json-unrecognised-depth-1-key' => 'Configuration error: Unknown key "rules.complexity.ccn.callabel" in configuration file "%s" (did you mean "callable"?). Accepted keys: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.',
+        'typo-inside-level' => 'Configuration error: Unknown key "rules.complexity.ccn.callable.warnign" in configuration file "%s" (did you mean "warning"?). Accepted keys: enabled, error, warning, threshold.',
+        'two-typos-inside-level' => 'Configuration error: Unknown key "rules.complexity.ccn.callable.warnign" in configuration file "%s" (did you mean "warning"?). Accepted keys: enabled, error, warning, threshold.',
+        'abbreviated-level-options' => 'Configuration error: Unknown key "rules.complexity.ccn.callable.warn" in configuration file "%s" (did you mean "warning"?). Accepted keys: enabled, error, warning, threshold.',
+        'uppercase-level-options' => 'Configuration error: Key "rules.complexity.ccn.callable.WARNING" in configuration file "%s" is not written in an accepted spelling; write "warning" (its snake_case, camelCase and kebab-case spellings are accepted).',
+        'options-for-another-level' => 'Configuration error: Unknown key "rules.complexity.ccn.callable.max_warning" in configuration file "%s". Accepted keys: enabled, error, warning, threshold.',
+        'cross-level-options' => 'Configuration error: Unknown key "rules.complexity.ccn.class.warning" in configuration file "%s". Accepted keys: enabled, max-error, max-warning, threshold.',
+        'scalar-for-level-options-map' => 'Configuration error: "rules.complexity.ccn.callable" in configuration file "%s" must be a map, got int.',
+        'flag-unsupported-level' => 'Configuration error: Option "method.warning" is not an option of rule "complexity.ccn". Options here: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold. Written: --rule-opt=complexity.ccn:method.warning=1. Source: option --rule-opt.',
+        'flag-typo-inside-level' => 'Configuration error: Option "warnign" is not an option of rule "complexity.ccn" at level "callable". Options at that level: enabled, error, threshold, warning. Other levels of this rule take different options. Written: --rule-opt=complexity.ccn:callable.warnign=1. Source: option --rule-opt.',
+        'flag-level-option-at-rule-depth' => 'Configuration error: Option "warning" is not an option of rule "complexity.ccn". Options here: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold. Written: --rule-opt=complexity.ccn:warning=1. Source: option --rule-opt.',
+    ];
 
     /**
      * Each case's `rules` value is the body of a `rules:` block,
@@ -148,7 +168,7 @@ final class TranslatedRefusalVocabularyTest extends TestCase
      * scratch, so a second run of the same row would cost a fresh container to
      * learn nothing.
      *
-     * @var array<string, array{exit: int, refusal: string}>
+     * @var array<string, array{exit: int, refusal: string, locator: ?string}>
      */
     private static array $runs = [];
 
@@ -181,55 +201,25 @@ final class TranslatedRefusalVocabularyTest extends TestCase
         ));
     }
 
-    /**
-     * Half two, first part: the answer names the subject the author got wrong,
-     * inside quotes, where the options list cannot leak into the comparison.
-     */
     #[Test]
     #[DataProvider('provideRefusalCases')]
     public function itNamesEachCasesSubjectInItsOwnAnswer(string $case): void
     {
-        $row = self::POSITIONS[$case];
-        $refusal = $this->positionRun($case)['refusal'];
-        $spans = self::foldedQuotedSpans($refusal);
-
-        self::assertNotSame([], $spans, \sprintf(
-            'Case "%s" answered without naming anything: %s',
-            $case,
-            $refusal === '' ? '(nothing)' : $refusal,
-        ));
-
-        foreach (array_filter([$row['rule'], $row['level'], $row['key']]) as $subject) {
-            self::assertContains(self::fold($subject), $spans, \sprintf(
-                'Case "%s" must answer in words of its own subject: "%s" is named nowhere in %s',
-                $case,
-                $subject,
-                $refusal,
-            ));
-        }
+        $run = $this->positionRun($case);
+        self::assertSame(self::expectedRefusal($case, $run['locator']), $run['refusal']);
     }
 
-    /**
-     * Half two, second part — the one that a shared phrase cannot survive.
-     * Two cases read alike exactly when they name the same subject: a
-     * collapse into one sentence about refusal makes distinct subjects read
-     * alike, and an answer handed to the wrong case makes equal subjects
-     * read differently.
-     */
     #[Test]
     public function itLetsTwoTranslatedPositionsReadAlikeOnlyWhenTheyNameTheSameSubject(): void
     {
         $sentences = [];
         $subjects = [];
-
         foreach (array_keys(self::POSITIONS) as $case) {
-            $row = self::POSITIONS[$case];
-            $sentences[$case] = $this->positionRun($case)['refusal'];
-            $subjects[$case] = implode('|', [
-                $row['rule'],
-                $row['level'] ?? '',
-                $row['key'] === null ? '' : self::fold($row['key']),
-            ]);
+            $run = $this->positionRun($case);
+            $sentences[$case] = $run['locator'] === null
+                ? $run['refusal']
+                : str_replace('"' . $run['locator'] . '"', '"<configuration-file>"', $run['refusal']);
+            $subjects[$case] = self::expectedRefusal($case, '<configuration-file>');
         }
 
         foreach ($sentences as $left => $leftSentence) {
@@ -237,22 +227,18 @@ final class TranslatedRefusalVocabularyTest extends TestCase
                 if ($left >= $right) {
                     continue;
                 }
-
                 self::assertSame(
                     $subjects[$left] === $subjects[$right],
                     $leftSentence === $rightSentence,
-                    \sprintf(
-                        "Cases \"%s\" and \"%s\" name %s subjects but read %s.\n  %s\n  %s",
-                        $left,
-                        $right,
-                        $subjects[$left] === $subjects[$right] ? 'the same' : 'different',
-                        $leftSentence === $rightSentence ? 'alike' : 'differently',
-                        $leftSentence,
-                        $rightSentence,
-                    ),
+                    \sprintf('Cases "%s" and "%s" must distinguish their full authored subjects and doors.', $left, $right),
                 );
             }
         }
+    }
+
+    private static function expectedRefusal(string $case, ?string $locator): string
+    {
+        return $locator === null ? self::REFUSALS[$case] : \sprintf(self::REFUSALS[$case], $locator);
     }
 
     /**
@@ -273,7 +259,7 @@ final class TranslatedRefusalVocabularyTest extends TestCase
         self::assertSame('', $run['refusal']);
     }
 
-    /** @return array{exit: int, refusal: string} */
+    /** @return array{exit: int, refusal: string, locator: ?string} */
     private function positionRun(string $id): array
     {
         if (isset(self::$runs[$id])) {
@@ -292,7 +278,7 @@ final class TranslatedRefusalVocabularyTest extends TestCase
     /**
      * @param list<string> $flags
      *
-     * @return array{exit: int, refusal: string}
+     * @return array{exit: int, refusal: string, locator: ?string}
      */
     private function execute(?string $configPath, array $flags, bool $json): array
     {
@@ -313,8 +299,12 @@ final class TranslatedRefusalVocabularyTest extends TestCase
         $tester = $this->tester();
         $tester->execute($arguments, ['capture_stderr_separately' => true]);
 
+        $locator = $configPath === null ? null : realpath($configPath);
+        self::assertNotFalse($locator);
+
         return [
             'exit' => $tester->getStatusCode(),
+            'locator' => $locator,
             'refusal' => $json
                 ? self::envelopeError($tester->getDisplay())
                 : self::refusalLine($tester->getErrorOutput()),
@@ -355,32 +345,6 @@ final class TranslatedRefusalVocabularyTest extends TestCase
         return implode(' ', $lines);
     }
 
-    /**
-     * Every double-quoted span of a refusal, folded. Quoting is where the
-     * product puts the things it is talking about; the options it goes on to
-     * offer are listed bare, and counting those would let a sentence that
-     * names no subject pass.
-     *
-     * @return list<string>
-     */
-    private static function foldedQuotedSpans(string $refusal): array
-    {
-        preg_match_all('/"([^"]*)"/', $refusal, $matches);
-
-        return array_map(self::fold(...), $matches[1]);
-    }
-
-    /**
-     * Separators and case are folded away before either side is compared: the
-     * normaliser answers `CALLABLE` as `cALLABLE` and `max_warning` as
-     * `maxWarning`, and this file must not restate what the author typed —
-     * only that the letters of the subject came back.
-     */
-    private static function fold(string $token): string
-    {
-        return str_replace(['_', '-'], '', strtolower($token));
-    }
-
     private function tester(): CommandTester
     {
         $container = (new ContainerFactory())->create();
@@ -388,7 +352,7 @@ final class TranslatedRefusalVocabularyTest extends TestCase
         self::assertInstanceOf(CheckCommand::class, $command);
         $refusalPresenter = $container->get(RefusalPresenter::class);
         self::assertInstanceOf(RefusalPresenter::class, $refusalPresenter);
-        (new Application(new ErrorStream(), $refusalPresenter))->addCommand($command);
+        (new Application(new ErrorStream(), $refusalPresenter, new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()))->addCommand($command);
 
         return new CommandTester($command);
     }

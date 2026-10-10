@@ -4,40 +4,40 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Duplication;
 
-use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use LogicException;
+
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
 /**
  * Options for the code duplication rule.
  */
-final readonly class CodeDuplicationOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
+final readonly class CodeDuplicationOptions implements RuleOptionsInterface
 {
-    use StandardOverrideValidatorTrait;
-
     public function __construct(
         public bool $enabled = true,
         public int $min_lines = 5,
         public int $min_tokens = 70,
-        public int $warning = 5,
         public int $error = 50,
     ) {}
 
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
-        $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 5, 50);
+        $error = $config->integer('error', 50);
+        $minLines = $config->integer('min-lines', 5);
+        $minTokens = $config->integer('min-tokens', 70);
+        if ($error < 1 || $minLines < 1 || $minTokens < 1) {
+            throw new LogicException('Duplication thresholds and minimum sizes must be positive integers.');
+        }
 
         return new self(
-            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
-            min_lines: (int) ($config['min_lines'] ?? $config['minLines'] ?? 5),
-            min_tokens: (int) ($config['min_tokens'] ?? $config['minTokens'] ?? 70),
-            warning: (int) $thresholds['warning'],
-            error: (int) $thresholds['error'],
+            enabled: $config->boolean('enabled', true),
+            min_lines: $minLines,
+            min_tokens: $minTokens,
+            error: $error,
         );
     }
 
@@ -46,44 +46,17 @@ final readonly class CodeDuplicationOptions implements RuleOptionsInterface, Thr
         return $this->enabled;
     }
 
-    public function getSeverity(int|float $value): ?Severity
+    public function getSeverity(int|float $value): Severity
     {
-        if ($value >= $this->error) {
-            return Severity::Error;
-        }
-
-        if ($value >= $this->warning) {
-            return Severity::Warning;
-        }
-
-        return null;
-    }
-
-    public function withOverride(int|float|null $warning, int|float|null $error): static
-    {
-        return new static(
-            enabled: $this->enabled,
-            min_lines: $this->min_lines,
-            min_tokens: $this->min_tokens,
-            warning: $warning !== null ? (int) $warning : $this->warning,
-            error: $error !== null ? (int) $error : $this->error,
-        );
-    }
-
-    public function warningBoundary(): int
-    {
-        return $this->warning;
+        return $value >= $this->error ? Severity::Error : Severity::Warning;
     }
 
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
         return RuleOptionKeySet::of([
-            'enabled' => RuleOptionShape::boolean()->orNull(),
-            'error' => RuleOptionShape::integer()->orNull(),
-            'min-lines' => RuleOptionShape::integer()->orNull(),
-            'min-tokens' => RuleOptionShape::integer()->orNull(),
-            'threshold' => RuleOptionShape::integer()->orNull(),
-            'warning' => RuleOptionShape::integer()->orNull(),
+            'error' => RuleOptionShape::integer()->atLeast(1)->orNull(),
+            'min-lines' => RuleOptionShape::integer()->atLeast(1)->orNull(),
+            'min-tokens' => RuleOptionShape::integer()->atLeast(1)->orNull(),
         ]);
     }
 }

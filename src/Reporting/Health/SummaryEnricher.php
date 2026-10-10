@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Health;
 
 use LogicException;
+
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummary;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummaryBuilder;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
@@ -12,6 +13,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Evidence\Prioritization\Impact\ImpactCalculator;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Report;
 
@@ -50,6 +52,7 @@ final readonly class SummaryEnricher
         $topIssues = $this->impactCalculator->computeTopIssues($report->findings, $metrics, $tree);
 
         return new Report(
+            fileNamespaces: $report->fileNamespaces,
             findings: $report->findings,
             filesAnalyzed: $report->filesAnalyzed,
             filesSkipped: $report->filesSkipped,
@@ -69,6 +72,13 @@ final readonly class SummaryEnricher
             suppressionComposition: $report->suppressionComposition,
             outOfScope: $report->outOfScope,
             projectScope: $report->projectScope,
+            configurationDiagnostics: $report->configurationDiagnostics,
+            computedMetricEvaluation: $report->computedMetricEvaluation,
+            population: $this->copiedPopulation($report),
         );
+    }
+    private function copiedPopulation(Report $report): JudgedPopulation
+    {
+        return $report->population;
     }
 }

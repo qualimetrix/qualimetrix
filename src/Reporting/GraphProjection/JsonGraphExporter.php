@@ -7,6 +7,7 @@ namespace Qualimetrix\Reporting\GraphProjection;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Formatter\PublishedUtf8;
 
 /**
@@ -32,67 +33,8 @@ final class JsonGraphExporter
     public function export(DependencyGraphInterface $graph): string
     {
         $classes = (new NamespaceFilter($this->includeNamespaces, $this->excludeNamespaces))->apply($graph->getAllClasses());
-
-        $classSet = [];
-        foreach ($classes as $classPath) {
-            $classSet[$classPath->toCanonical()] = true;
-        }
-
-        // Build nodes
-        $nodes = [];
-        foreach ($classes as $classPath) {
-            $nodes[] = [
-                'fqn' => $classPath->toString(),
-                'namespace' => $classPath->namespace ?? '',
-            ];
-        }
-
-        usort($nodes, static fn(array $a, array $b): int => $a['fqn'] <=> $b['fqn']);
-
-        // Build aggregated edges
-        /** @var array<string, array{from: string, to: string, types: array<string, true>, count: int}> $edgeMap */
-        $edgeMap = [];
-
-        foreach ($graph->getAllDependencies() as $dependency) {
-            $sourceKey = $dependency->sourceLogical()->toCanonical();
-            $targetKey = $dependency->targetLogical()->toCanonical();
-
-            // Only include edges where both nodes are in filtered set
-            if (!isset($classSet[$sourceKey]) || !isset($classSet[$targetKey])) {
-                continue;
-            }
-
-            $edgeKey = $sourceKey . '|' . $targetKey;
-
-            if (!isset($edgeMap[$edgeKey])) {
-                $edgeMap[$edgeKey] = [
-                    'from' => $dependency->sourceLogical()->toString(),
-                    'to' => $dependency->targetLogical()->toString(),
-                    'types' => [],
-                    'count' => 0,
-                ];
-            }
-
-            $edgeMap[$edgeKey]['types'][$dependency->type->value] = true;
-            $edgeMap[$edgeKey]['count']++;
-        }
-
-        // Convert edge map to sorted list
-        $edges = [];
-        foreach ($edgeMap as $edge) {
-            $types = array_keys($edge['types']);
-            sort($types);
-
-            $edges[] = [
-                'from' => $edge['from'],
-                'to' => $edge['to'],
-                'types' => $types,
-                'count' => $edge['count'],
-            ];
-        }
-
-        usort($edges, static fn(array $a, array $b): int => ($a['from'] <=> $b['from']) !== 0 ? ($a['from'] <=> $b['from']) : ($a['to'] <=> $b['to']));
-
+        $nodes = self::nodes($classes);
+        $edges = self::edges(self::edgeMap($graph, self::classSet($classes)));
         $identity = ProductIdentity::identity();
 
         $result = [
@@ -122,5 +64,106 @@ final class JsonGraphExporter
         // `JSON_THROW_ON_ERROR` would throw here and the whole export would
         // fail on an otherwise complete analysis.
         return PublishedUtf8::encodeJsonObject($result, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES) . "\n";
+    }
+
+    /**
+     * @param list<SymbolPath> $classes
+     *
+     * @return list<array{fqn: string, namespace: string}>
+     */
+    private static function nodes(array $classes): array
+    {
+        $nodes = array_map(
+            static fn(SymbolPath $class): array => [
+                'fqn' => $class->toString(),
+                'namespace' => $class->namespace ?? '',
+            ],
+            $classes,
+        );
+        usort($nodes, static fn(array $a, array $b): int => $a['fqn'] <=> $b['fqn']);
+
+        return $nodes;
+    }
+
+    /**
+     * @param list<SymbolPath> $classes
+     *
+     * @return array<string, true>
+     */
+    private static function classSet(array $classes): array
+    {
+        $set = [];
+        foreach ($classes as $class) {
+            $set[$class->toCanonical()] = true;
+        }
+
+        return $set;
+    }
+
+    /**
+     * @param array<string, true> $classSet
+     *
+     * @return array<string, array{from: string, to: string, types: array<string, true>, shape: array<string, array<string, true>>, count: int}>
+     */
+    private static function edgeMap(DependencyGraphInterface $graph, array $classSet): array
+    {
+        $edges = [];
+        foreach ($graph->getAllDependencies() as $dependency) {
+            $source = $dependency->sourceLogical()->toCanonical();
+            $target = $dependency->targetLogical()->toCanonical();
+            if (!isset($classSet[$source], $classSet[$target])) {
+                continue;
+            }
+            $key = $source . '|' . $target;
+            $edges[$key] ??= [
+                'from' => $dependency->sourceLogical()->toString(),
+                'to' => $dependency->targetLogical()->toString(),
+                'types' => [],
+                'shape' => [],
+                'count' => 0,
+            ];
+            $edges[$key]['types'][$dependency->type->value] = true;
+            if ($dependency->shape !== null) {
+                $edges[$key]['shape'][$dependency->type->value][$dependency->shape->value] = true;
+            }
+            $edges[$key]['count']++;
+        }
+
+        return $edges;
+    }
+
+    /**
+     * @param array<string, array{from: string, to: string, types: array<string, true>, shape: array<string, array<string, true>>, count: int}> $edgeMap
+     *
+     * @return list<array{from: string, to: string, types: list<string>, shape: object, count: int}>
+     */
+    private static function edges(array $edgeMap): array
+    {
+        $edges = [];
+        foreach ($edgeMap as $edge) {
+            $types = array_keys($edge['types']);
+            sort($types);
+            ksort($edge['shape']);
+            $shape = [];
+            foreach ($edge['shape'] as $type => $shapes) {
+                $values = array_keys($shapes);
+                sort($values);
+                $shape[$type] = $values;
+            }
+            $edges[] = [
+                'from' => $edge['from'],
+                'to' => $edge['to'],
+                'types' => $types,
+                'shape' => (object) $shape,
+                'count' => $edge['count'],
+            ];
+        }
+        usort($edges, static function (array $a, array $b): int {
+            $from = $a['from'] <=> $b['from'];
+
+            return $from !== 0 ? $from : $a['to'] <=> $b['to'];
+        });
+
+        return $edges;
     }
 }

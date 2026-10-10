@@ -11,7 +11,9 @@ use PhpParser\Comment\Doc;
 use PhpParser\Node;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusal;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusalReason;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionTarget;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
@@ -42,40 +44,14 @@ use Qualimetrix\Core\Symbol\MetricSubject;
  * where the channel is optional, that is the only way to write a reason
  * without the first word of it being read as the channel.
  *
- * Note: inline same-line comments (e.g., `$x = foo(); // @qmx-ignore rule`) are not supported.
- * Only separate-line comments are recognized.
+ * A trailing comment such as `// @qmx-ignore-next-line rule` is read from
+ * the start of the comment. Next-line still addresses the line after its end.
  */
 final readonly class SuppressionExtractor
 {
     /**
-     * The three grammars admit `:` and `#` so that both spellings a channel
-     * can be *mis*addressed by are **captured** and then refused by name —
-     * `#` for the retired pair, `:` for a level that the channel does not
-     * report at. Without them the pattern stops at the separator and silences
-     * the whole channel instead of one level of it, which is a suppression
-     * quietly wider than the one that was written.
-     *
-     * The argument stands on the tag's own line — horizontal space
-     * separates them, never a newline — and it may not *begin* with the
-     * comment's closing delimiter. Both guards exist because `*` is a
-     * legitimate argument, the one spelling of "no rule filter", and a
-     * comment writes `*` in two places its author did not: the closing
-     * delimiter, and the leading asterisk of every docblock line. Reading
-     * either as the argument turns a directive that named no channel into the
-     * widest suppression there is, and nothing downstream can tell: the tag
-     * parsed, so nothing refuses it, and it silenced something, so it is not
-     * unused either. An argument that merely *ends* against the closing
-     * delimiter is still an argument — a block comment holding
-     * `@qmx-ignore complexity.*` with no space before the delimiter means the
-     * selector it looks like.
-     */
-    private const PATTERN_SYMBOL = '/@qmx-ignore(?!-next-line|-file)(?![\w-])[^\S\n\r]+(?!\*+\/)([\w.*#:-]+)(?:[^\S\n\r]+([^\n\r]+))?/';
-    private const PATTERN_NEXT_LINE = '/@qmx-ignore-next-line(?![\w-])[^\S\n\r]+(?!\*+\/)([\w.*#:-]+)(?:[^\S\n\r]+([^\n\r]+))?/';
-    private const PATTERN_FILE = '/@qmx-ignore-file(?![\w-])(?:[^\S\n\r]+(?!\*+\/)([\w.*#:-]+)(?:[^\S\n\r]+([^\n\r]+))?)?/';
-
-    /**
      * Every `@qmx-` tag an author can write, whether or not this class reads
-     * it. What the three grammars above did not consume is a form nobody
+     * it. What the suppression grammars did not consume is a form nobody
      * reads, and it is refused by name instead of being left where it fell:
      * the tags below extraction judge the directives they are handed, so a
      * misspelling that never becomes one is invisible to all of them.
@@ -96,7 +72,12 @@ final readonly class SuppressionExtractor
      * Public so that the one place deciding which nodes to read can ask for
      * the family by name instead of spelling the prefix a second time.
      */
-    public const string TAG_PREFIX = '@qmx-';
+    public const string TAG_PREFIX = SuppressionSyntax::TAG_PREFIX;
+
+    public static function mayCarryDirective(string $text): bool
+    {
+        return SuppressionSyntax::mayCarryDirective($text);
+    }
 
     private const MODE_FULL = 'full';
     private const MODE_PHYSICAL = 'physical';
@@ -116,9 +97,14 @@ final readonly class SuppressionExtractor
      *
      * @return list<Suppression>
      */
-    public function extract(Node $node, MetricSubject $subject, ControlScope $controlScope, Closure $thresholdRead): array
-    {
-        return $this->extractNode($node, $subject, $controlScope, self::MODE_FULL, $thresholdRead);
+    public function extract(
+        Node $node,
+        MetricSubject $subject,
+        ControlScope $controlScope,
+        DeclarationReach $reach,
+        Closure $thresholdRead,
+    ): array {
+        return $this->extractNode($node, new DeclarationBinding($subject, $controlScope, $reach), self::MODE_FULL, $thresholdRead);
     }
 
     /**
@@ -136,9 +122,12 @@ final readonly class SuppressionExtractor
      *
      * @return list<Suppression>
      */
-    public function extractPhysical(Node $node, Closure $thresholdRead): array
-    {
-        return $this->extractNode($node, null, null, self::MODE_PHYSICAL, $thresholdRead);
+    public function extractPhysical(
+        Node $node,
+        Closure $thresholdRead,
+        DirectiveRefusalReason $unboundReason = DirectiveRefusalReason::NoDeclarationToBind,
+    ): array {
+        return $this->extractNode($node, null, self::MODE_PHYSICAL, $thresholdRead, $unboundReason);
     }
 
     /**
@@ -148,7 +137,7 @@ final readonly class SuppressionExtractor
      */
     public function extractFileLevelSuppressions(Node $node): array
     {
-        return $this->extractNode($node, null, null, self::MODE_FILE_ONLY, static fn(): bool => true);
+        return $this->extractNode($node, null, self::MODE_FILE_ONLY, static fn(): bool => true);
     }
 
     /**
@@ -161,28 +150,34 @@ final readonly class SuppressionExtractor
      */
     private function extractNode(
         Node $node,
-        ?MetricSubject $subject,
-        ?ControlScope $controlScope,
+        ?DeclarationBinding $binding,
         string $mode,
         Closure $thresholdRead,
+        DirectiveRefusalReason $unboundReason = DirectiveRefusalReason::NoDeclarationToBind,
     ): array {
         $suppressions = [];
-        $nodeEndLine = $node->getEndLine() > 0 ? $node->getEndLine() : null;
 
-        foreach (self::commentsOf($node) as $comment) {
+        foreach (SuppressionSyntax::commentsOf($node) as $comment) {
             $text = DocumentationRegions::mask($comment->getText());
+            $typos = SuppressionSyntax::misspelledForms($comment, $text);
+            foreach ($typos as $typo) {
+                $offset = $typo->position - $comment->getStartFilePos();
+                $refusal = $typo->refusal ?? throw new LogicException('A misspelled directive must carry its refusal');
+                $length = \strlen($refusal->tag);
+                $text = substr_replace($text, str_repeat(' ', $length), $offset, $length);
+            }
             $read = [];
 
-            foreach ($this->matchText($text) as $match) {
+            foreach (SuppressionSyntax::matchText($text, $comment->getText()) as $match) {
                 $read[] = $match['offset'];
                 $suppression = $this->projectMatch(
                     $match,
-                    $comment->getStartLine(),
+                    SuppressionSyntax::lineAtOffset($comment->getText(), $comment->getStartLine(), $match['offset']),
                     $comment->getEndLine(),
-                    $nodeEndLine,
-                    $subject,
-                    $controlScope,
+                    SuppressionSyntax::positionAtOffset($comment, $match['offset']),
+                    $binding,
                     $mode,
+                    $unboundReason,
                 );
 
                 if ($suppression !== null) {
@@ -191,68 +186,34 @@ final readonly class SuppressionExtractor
             }
 
             if ($mode !== self::MODE_FILE_ONLY) {
-                array_push($suppressions, ...self::unreadableForms($comment, $text, $read, $thresholdRead));
+                array_push($suppressions, ...$typos, ...self::unreadableForms($comment, $text, $read, $thresholdRead, $unboundReason));
+                array_push($suppressions, ...self::mentionRefusals($comment));
             }
         }
 
         return $suppressions;
     }
 
-    /**
-     * Every comment attached to the node, docblocks first.
-     *
-     * `Node::getDocComment()` returns the **last** docblock attached, so
-     * reading it and then the non-`Doc` comments loses the first of two
-     * adjacent docblocks entirely — it is neither the one returned nor one of
-     * the others. The set an author sees above a declaration is the set that
-     * is read. Docblocks keep their former position in the order so that a
-     * declaration carrying one docblock and one line comment still reports its
-     * controls in the order it always did.
-     *
-     * @return list<Comment>
-     */
-    private static function commentsOf(Node $node): array
+    /** @return list<Suppression> */
+    private static function mentionRefusals(Comment $comment): array
     {
-        $docs = [];
-        $others = [];
-
-        foreach ($node->getComments() as $comment) {
-            if ($comment instanceof Doc) {
-                $docs[] = $comment;
-            } else {
-                $others[] = $comment;
-            }
+        $refused = [];
+        foreach (DocumentationRegions::mentions($comment->getText()) as $mention) {
+            $refusal = $mention['fenceLine'] === null
+                ? DirectiveRefusal::notAtLineStart($mention['tag'])
+                : DirectiveRefusal::insideUnclosedFence($mention['tag'], $comment->getStartLine() + $mention['fenceLine'] - 1);
+            preg_match('/^[^\S\n\r]+(?!\*+\/)([\w.*#:-]+)/', substr($comment->getText(), $mention['offset'] + \strlen($mention['tag'])), $argument);
+            $refused[] = new Suppression(
+                rule: $argument[1] ?? '',
+                reason: null,
+                line: SuppressionSyntax::lineAtOffset($comment->getText(), $comment->getStartLine(), $mention['offset']),
+                type: SuppressionType::Symbol,
+                position: SuppressionSyntax::positionAtOffset($comment, $mention['offset']),
+                refusal: $refusal,
+            );
         }
 
-        return [...$docs, ...$others];
-    }
-
-    /**
-     * @return list<array{type: SuppressionType, rule: non-empty-string, reason: ?string, offset: int}>
-     */
-    private function matchText(string $text): array
-    {
-        $matches = [];
-
-        foreach ([
-            [SuppressionType::File, self::PATTERN_FILE],
-            [SuppressionType::NextLine, self::PATTERN_NEXT_LINE],
-            [SuppressionType::Symbol, self::PATTERN_SYMBOL],
-        ] as [$type, $pattern]) {
-            if (preg_match_all($pattern, $text, $patternMatches, \PREG_SET_ORDER | \PREG_OFFSET_CAPTURE) <= 0) {
-                continue;
-            }
-
-            foreach ($patternMatches as $match) {
-                $authored = self::authoredArgument($type, $match[1][0] ?? '', $match[2][0] ?? null);
-
-                if ($authored !== null) {
-                    $matches[] = [...$authored, 'offset' => $match[0][1]];
-                }
-            }
-        }
-
-        return $matches;
+        return $refused;
     }
 
     /**
@@ -270,15 +231,26 @@ final readonly class SuppressionExtractor
      *
      * @return list<Suppression>
      */
-    private static function unreadableForms(Comment $comment, string $text, array $read, Closure $thresholdRead): array
-    {
+    private static function unreadableForms(
+        Comment $comment,
+        string $text,
+        array $read,
+        Closure $thresholdRead,
+        DirectiveRefusalReason $unboundReason,
+    ): array {
         if (preg_match_all(self::PATTERN_ANY_TAG, $text, $matches, \PREG_SET_ORDER | \PREG_OFFSET_CAPTURE) <= 0) {
             return [];
         }
 
         $refused = [];
 
-        foreach ($matches as $match) {
+        foreach ($matches as $candidate) {
+            if (preg_match(self::PATTERN_ANY_TAG, $comment->getText(), $match, \PREG_OFFSET_CAPTURE, $candidate[0][1]) !== 1) {
+                continue;
+            }
+            if ($match[0][1] !== $candidate[0][1]) {
+                continue;
+            }
             $offset = $match[0][1];
             $tag = $match[1][0];
             $argument = $match[2][0] ?? '';
@@ -287,66 +259,47 @@ final readonly class SuppressionExtractor
                 continue;
             }
 
-            $isThreshold = $tag === self::THRESHOLD_TAG_NAME;
-            if ($isThreshold && $thresholdRead($comment, $offset)) {
+            $refusal = self::unreadTagRefusal($comment, $tag, $argument, $offset, $thresholdRead, $unboundReason);
+            if ($refusal === null) {
                 continue;
             }
 
             $refused[] = new Suppression(
                 rule: $argument,
                 reason: null,
-                line: self::lineAtOffset($text, $comment->getStartLine(), $offset),
+                line: SuppressionSyntax::lineAtOffset($text, $comment->getStartLine(), $offset),
                 type: SuppressionType::Symbol,
-                refusal: $isThreshold && !$comment instanceof Doc
-                    ? DirectiveRefusal::thresholdOutsideDocblock()
-                    : DirectiveRefusal::ofUnreadTag($tag, $argument),
+                position: SuppressionSyntax::positionAtOffset($comment, $offset),
+                refusal: $refusal,
             );
         }
 
         return $refused;
     }
 
-    private static function lineAtOffset(string $text, int $startLine, int $offset): int
-    {
-        return $startLine + substr_count(substr($text, 0, $offset), "\n");
-    }
-
-    /**
-     * One directive's two authored halves, normalised.
-     *
-     * The file form is the only one whose channel is optional, and both ways
-     * of leaving it out — no argument at all, and the separator standing in
-     * the channel position — desugar to the same "no rule filter" spelling
-     * the symbol and next-line forms use. All three then converge on one
-     * {@see SuppressionTarget} case rather than on a wildcard selector; see
-     * that type for why the distinction matters.
-     *
-     * The other two forms keep whatever was written, the separator included,
-     * so a directive that named no channel is reported for what it is rather
-     * than silently widened.
-     *
-     * @return ?array{type: SuppressionType, rule: non-empty-string, reason: ?string} `null` when
-     *                                                                                nothing was authored
-     */
-    private static function authoredArgument(SuppressionType $type, string $rule, ?string $reason): ?array
-    {
-        $channelIsOptional = $type === SuppressionType::File;
-
-        if ($channelIsOptional && ($rule === '' || $rule === Suppression::REASON_SEPARATOR)) {
-            $rule = SuppressionTarget::NO_RULE_FILTER;
-        } elseif ($reason !== null) {
-            $reason = self::stripReasonSeparator($reason);
-        }
-
-        if ($rule === '') {
+    /** @param non-empty-string $tag */
+    private static function unreadTagRefusal(
+        Comment $comment,
+        string $tag,
+        string $argument,
+        int $offset,
+        Closure $thresholdRead,
+        DirectiveRefusalReason $unboundReason,
+    ): ?DirectiveRefusal {
+        $isThreshold = $tag === self::THRESHOLD_TAG_NAME;
+        if ($isThreshold && $thresholdRead($comment, $offset)) {
             return null;
         }
 
-        return [
-            'type' => $type,
-            'rule' => $rule,
-            'reason' => self::extractReason($reason),
-        ];
+        $refusal = $isThreshold && !$comment instanceof Doc
+            ? DirectiveRefusal::thresholdOutsideDocblock()
+            : DirectiveRefusal::ofUnreadTag($tag, $argument);
+        if ($unboundReason === DirectiveRefusalReason::ClosureNotDirectValue
+            && $refusal->reason === DirectiveRefusalReason::NoDeclarationToBind) {
+            $refusal = DirectiveRefusal::closureNotDirectValue($refusal->form);
+        }
+
+        return $refusal;
     }
 
     /**
@@ -355,12 +308,12 @@ final readonly class SuppressionExtractor
      */
     private function projectMatch(
         array $match,
-        int $startLine,
+        int $tagLine,
         int $endLine,
-        ?int $nodeEndLine,
-        ?MetricSubject $subject,
-        ?ControlScope $controlScope,
+        int $position,
+        ?DeclarationBinding $binding,
         string $mode,
+        DirectiveRefusalReason $unboundReason,
     ): ?Suppression {
         if ($mode === self::MODE_FILE_ONLY && $match['type'] !== SuppressionType::File) {
             return null;
@@ -370,56 +323,38 @@ final readonly class SuppressionExtractor
             return new Suppression(
                 rule: $match['rule'],
                 reason: $match['reason'],
-                line: $startLine,
+                line: $tagLine,
                 type: SuppressionType::Symbol,
-                refusal: DirectiveRefusal::noDeclarationToBind(),
+                position: $position,
+                refusal: $unboundReason === DirectiveRefusalReason::ClosureNotDirectValue
+                    ? DirectiveRefusal::closureNotDirectValue(SuppressionType::Symbol->value)
+                    : DirectiveRefusal::noDeclarationToBind(),
             );
         }
 
         if ($match['type'] === SuppressionType::Symbol) {
-            if ($subject === null || $controlScope === null) {
+            if ($binding === null) {
                 throw new LogicException('Symbol suppression requires an explicit declaration binding');
             }
 
             return new Suppression(
                 rule: $match['rule'],
                 reason: $match['reason'],
-                line: $startLine,
+                line: $tagLine,
                 type: SuppressionType::Symbol,
-                binding: new DeclarationBinding($subject, $controlScope, $nodeEndLine),
+                position: $position,
+                binding: $binding,
             );
         }
 
         return new Suppression(
             rule: $match['rule'],
             reason: $match['reason'],
-            line: $match['type'] === SuppressionType::File ? $startLine : $endLine,
+            line: $tagLine,
             type: $match['type'],
+            position: $position,
+            silencedLine: $match['type'] === SuppressionType::NextLine ? $endLine + 1 : null,
         );
     }
 
-    /**
-     * Drops a leading {@see Suppression::REASON_SEPARATOR} so the separator does not end up
-     * inside the prose it introduces.
-     */
-    private static function stripReasonSeparator(string $reason): string
-    {
-        if (!str_starts_with($reason, Suppression::REASON_SEPARATOR)) {
-            return $reason;
-        }
-
-        return ltrim(substr($reason, \strlen(Suppression::REASON_SEPARATOR)));
-    }
-
-    private static function extractReason(?string $raw): ?string
-    {
-        if ($raw === null) {
-            return null;
-        }
-
-        // Strip trailing docblock closing characters (e.g., "*/") and whitespace
-        $trimmed = rtrim($raw, " \t*/");
-
-        return $trimmed !== '' ? $trimmed : null;
-    }
 }

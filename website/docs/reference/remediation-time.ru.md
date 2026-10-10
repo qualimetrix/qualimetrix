@@ -92,11 +92,12 @@
 
 ## Архитектурные правила
 
-| Правило               | ID                                 | Минуты |
-| --------------------- | ---------------------------------- | ------ |
-| Circular Dependencies | `architecture.circular-dependency` | 120    |
-| Layer Violations      | `architecture.layer-violation`     | 15     |
-| Unassigned Classes    | `architecture.unassigned-class`    | 15     |
+| Правило                      | ID                                 | Минуты |
+| ---------------------------- | ---------------------------------- | ------ |
+| Circular Dependencies        | `architecture.circular-dependency` | 120    |
+| Layer Violations             | `architecture.layer-violation`     | 15     |
+| Диагностики объявления слоёв | `architecture.layer-declaration`   | 15     |
+| Unassigned Classes           | `architecture.unassigned-class`    | 15     |
 
 ## Правила обнаружения файлов (Discovery)
 
@@ -136,3 +137,9 @@
 ## Почему эти значения отличаются от пороговых значений по умолчанию
 
 Эта страница -- про калибровку, а не про обнаружение. [Пороговые значения по умолчанию](default-thresholds.ru.md) говорят, *когда* правило срабатывает; эта страница говорит, *сколько времени* ожидаемо занимает исправление одного случая. `coupling.class-rank` масштабирует свои собственные пороги по размеру проекта и исключён из масштабирования по превышению, которое модель этой страницы применяет ко всем остальным magnitude-каналам -- см. [ClassRank](../rules/coupling.ru.md#classrank), почему.
+
+## Правила baseline
+
+| Rule         | ID                      | Minutes |
+| ------------ | ----------------------- | ------- |
+| Unused entry | `baseline.unused-entry` | 5       |

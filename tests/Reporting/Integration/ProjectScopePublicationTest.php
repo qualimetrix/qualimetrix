@@ -13,6 +13,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepositor
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
+use Qualimetrix\Reporting\Formatter\Prose\GlyphMode;
+use Qualimetrix\Reporting\Formatter\Prose\ProseText;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\ReportBuilder;
 use Qualimetrix\Reporting\ReportCoverage;
@@ -32,9 +34,9 @@ final class ProjectScopePublicationTest extends TestCase
 
     private const array UNKNOWN_CHANNELS = ['suppression.unmatched-namespace'];
 
-    private const array UNKNOWN_VALUES = [['option' => 'suppress_namespaces', 'pattern' => 'subtree:Tests']];
+    private const array UNKNOWN_VALUES = [['channel' => 'suppression.unmatched-namespace', 'option' => 'suppress_namespaces', 'pattern' => 'subtree:Tests']];
 
-    private const array SKIPPED_VALUES = [['option' => 'suppress_paths', 'pattern' => 'subtree:tests/Legacy']];
+    private const array SKIPPED_VALUES = [['channel' => 'suppression.unmatched-path', 'option' => 'suppress_paths', 'pattern' => 'subtree:tests/Legacy']];
 
     /** @return iterable<string, array{string}> */
     public static function documentFormats(): iterable
@@ -47,7 +49,7 @@ final class ProjectScopePublicationTest extends TestCase
     /** @return iterable<string, array{string}> */
     public static function noticeFormats(): iterable
     {
-        foreach (['sarif', 'github', 'html', 'text', 'text-verbose', 'summary', 'health'] as $format) {
+        foreach (['sarif', 'github', 'html', 'text', 'summary', 'health'] as $format) {
             yield $format => [$format];
         }
     }
@@ -63,16 +65,29 @@ final class ProjectScopePublicationTest extends TestCase
     /** The key is there in every state, with the same keys inside it. */
     #[Test]
     #[DataProvider('documentFormats')]
+    public function itPreservesSourceReasonsWhenPublishingSkippedValues(string $format): void
+    {
+        $reason = new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason(\Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReasonKind::NoDeclaredCode, ['source' => '/fixture/composer.json']);
+        $scope = ReportProjectScope::unknown()->withReasons([$reason])->withUnjudgedValues([
+            ['channel' => 'suppression.unmatched-path', 'option' => 'suppress_paths', 'pattern' => 'subtree:tests/Legacy'],
+        ]);
+        $published = self::decode($this->format($format, $scope))['projectScope'];
+        self::assertSame([$reason->toArray()], $published['reasons']);
+        self::assertSame(self::SKIPPED_VALUES, $published['unjudgedValues']);
+    }
+
+    #[Test]
+    #[DataProvider('documentFormats')]
     public function itPublishesTheStateUnderOneKeyOfOneShape(string $format): void
     {
         $narrowed = self::decode($this->format($format, self::narrowed()))['projectScope'];
 
         self::assertSame(
-            ['state' => 'narrowed', 'uncoveredAutoloadTargets' => ['lib/'], 'unjudgedChannels' => self::CHANNELS, 'unjudgedValues' => []],
+            ['state' => 'narrowed', 'uncoveredAutoloadTargets' => ['lib/'], 'unjudgedChannels' => self::CHANNELS, 'unjudgedValues' => [], 'reasons' => []],
             $narrowed,
         );
         self::assertSame(
-            ['state' => 'covered', 'uncoveredAutoloadTargets' => [], 'unjudgedChannels' => [], 'unjudgedValues' => []],
+            ['state' => 'covered', 'uncoveredAutoloadTargets' => [], 'unjudgedChannels' => [], 'unjudgedValues' => [], 'reasons' => []],
             self::decode($this->format($format, ReportProjectScope::covered()))['projectScope'],
         );
         self::assertSame(
@@ -81,6 +96,7 @@ final class ProjectScopePublicationTest extends TestCase
                 'uncoveredAutoloadTargets' => [],
                 'unjudgedChannels' => ['suppression.unmatched-path'],
                 'unjudgedValues' => self::SKIPPED_VALUES,
+                'reasons' => [],
             ],
             self::decode($this->format($format, self::coveredWithSkippedValues()))['projectScope'],
         );
@@ -90,6 +106,7 @@ final class ProjectScopePublicationTest extends TestCase
                 'uncoveredAutoloadTargets' => [],
                 'unjudgedChannels' => self::UNKNOWN_CHANNELS,
                 'unjudgedValues' => self::UNKNOWN_VALUES,
+                'reasons' => [],
             ],
             self::decode($this->format($format, self::unknown()))['projectScope'],
         );
@@ -104,6 +121,80 @@ final class ProjectScopePublicationTest extends TestCase
         self::assertStringContainsString('Project scope narrowed', $output);
         self::assertStringContainsString('lib/', $output);
         self::assertStringContainsString('architecture.unreachable-layer, discovery.unmatched-exclude', $output);
+    }
+
+    #[Test]
+    public function itKeepsMalformedSourceReasonDataInThePublishedDescription(): void
+    {
+        $reason = new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason(
+            \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReasonKind::OmittedComposerRoot,
+            ['candidate' => "src/K\xFF/composer.json", 'cause' => 'unreadable manifest'],
+        );
+        $description = ReportProjectScope::covered()->withReasons([$reason])->describe();
+
+        self::assertNotNull($description);
+        self::assertStringContainsString('omitted-composer-root', $description);
+        self::assertStringContainsString("K\xFF/composer.json", $description);
+        $published = ProseText::publish($description, GlyphMode::Unicode);
+        self::assertStringContainsString('K%FF/composer.json', $published->body);
+        self::assertSame(1, $published->escapedStrings);
+        self::assertStringContainsString('unreadable manifest', $description);
+
+        $notifications = self::decode($this->format('sarif', ReportProjectScope::covered()->withReasons([$reason])))['runs'][0]['invocations'][0]['toolExecutionNotifications'];
+        self::assertStringContainsString('K%FF/composer.json', $notifications[0]['message']['text']);
+        self::assertSame('QMX-PUBLICATION-INVALID-UTF8', $notifications[1]['descriptor']['id']);
+    }
+
+    #[Test]
+    public function itKeepsValidSourceReasonJsonUnchanged(): void
+    {
+        $reason = new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason(
+            \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReasonKind::OmittedComposerRoot,
+            ['candidate' => 'src/K%FF/composer.json', 'cause' => 'unreadable manifest'],
+        );
+
+        self::assertSame(
+            'Project scope covered. Source reasons: ' . json_encode($reason->toArray(), \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . '.',
+            ReportProjectScope::covered()->withReasons([$reason])->describe(),
+        );
+    }
+
+    #[Test]
+    public function itKeepsMalformedSourceReasonInTheHtmlBannerAndCountsItsRepair(): void
+    {
+        $reason = new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason(
+            \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReasonKind::OmittedComposerRoot,
+            ['candidate' => "src/K\xFF/composer.json", 'cause' => 'unreadable manifest'],
+        );
+        $symbol = \Qualimetrix\Core\Symbol\SymbolPath::forProject();
+        $finding = new \Qualimetrix\Analysis\Finding\Contract\Finding(
+            \Qualimetrix\Analysis\Finding\Contract\Location::none(),
+            \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbol),
+            $symbol,
+            'duplication.clone',
+            'duplication.clone',
+            "Source K\xFF",
+            \Qualimetrix\Analysis\Finding\Contract\Severity::Warning,
+        );
+        $report = ReportBuilder::create()
+            ->addFinding($finding)
+            ->metrics(new InMemoryMetricRepository())
+            ->filesAnalyzed(2)
+            ->projectScope(ReportProjectScope::covered()->withReasons([$reason]))
+            ->build();
+        $registry = (new ContainerFactory())->create()->get(FormatterRegistryInterface::class);
+        self::assertInstanceOf(FormatterRegistryInterface::class, $registry);
+        $formatted = $registry->get('html')->format($report, new FormatterContext(useColor: false));
+        $document = \Dom\HTMLDocument::createFromString($formatted->body, \LIBXML_NOERROR);
+        $banner = (new \Dom\XPath($document))->evaluate('string(//*[@data-qmx-project-scope])');
+
+        self::assertIsString($banner);
+        self::assertStringContainsString('K%FF/composer.json', $banner);
+        self::assertGreaterThan(0, $formatted->escapedStrings);
+        $payloadText = (new \Dom\XPath($document))->evaluate('string(//*[@id="report-data"])');
+        self::assertIsString($payloadText);
+        $payload = self::decode($payloadText);
+        self::assertSame($formatted->escapedStrings, $payload['invalidUtf8Replaced']);
     }
 
     /** The list formats publish under a name of their own, not under a coverage failure's. */
@@ -149,6 +240,35 @@ final class ProjectScopePublicationTest extends TestCase
         self::assertStringContainsString('subtree:tests/Legacy', $output);
     }
 
+    #[Test]
+    public function itNamesUnjudgedChannelsOfACoveredRun(): void
+    {
+        $scope = ReportProjectScope::measured(
+            new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(
+                new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(
+                    \Qualimetrix\Core\Path\AbsolutePath::fromString('/fixture'),
+                    true,
+                    [],
+                    [],
+                    [],
+                    true,
+                    [],
+                ),
+                [],
+                \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered,
+                [],
+                new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement([
+                    \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor::Generated,
+                ]),
+            ),
+            [],
+            [],
+        );
+
+        self::assertContains('architecture.unreachable-layer', $scope->unjudgedChannels);
+        self::assertStringContainsString('architecture.unreachable-layer', (string) $scope->describe());
+    }
+
     /** A narrowed run judges no value, so it has none to skip, and a list beside its channels could only contradict them. */
     #[Test]
     public function itRefusesSkippedValuesOnANarrowedRun(): void
@@ -184,14 +304,14 @@ final class ProjectScopePublicationTest extends TestCase
     private static function unknown(): ReportProjectScope
     {
         return ReportProjectScope::unknown()->withUnjudgedValues([
-            ['channel' => 'suppression.unmatched-namespace', ...self::UNKNOWN_VALUES[0]],
+            self::UNKNOWN_VALUES[0],
         ]);
     }
 
     private static function coveredWithSkippedValues(): ReportProjectScope
     {
         return ReportProjectScope::covered()->withUnjudgedValues([
-            ['channel' => 'suppression.unmatched-path', ...self::SKIPPED_VALUES[0]],
+            self::SKIPPED_VALUES[0],
         ]);
     }
 
@@ -216,7 +336,7 @@ final class ProjectScopePublicationTest extends TestCase
         /** @var FormatterRegistryInterface $registry */
         $registry = (new ContainerFactory())->create()->get(FormatterRegistryInterface::class);
 
-        return $registry->get($format)->format($report, new FormatterContext(useColor: false, basePath: '/project'));
+        return $registry->get($format)->format($report, new FormatterContext(useColor: false, basePath: '/project'))->body;
     }
 
     /** @return array<mixed> */

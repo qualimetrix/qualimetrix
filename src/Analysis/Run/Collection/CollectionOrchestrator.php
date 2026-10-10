@@ -9,6 +9,7 @@ use Psr\Log\LoggerInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedMetricExtractorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
@@ -47,7 +48,7 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
         AbsolutePath $projectRoot,
     ): CollectionPhaseOutput {
         if ($files === []) {
-            return new CollectionPhaseOutput([], []);
+            return new CollectionPhaseOutput([], [], classLikeDeclarations: []);
         }
 
         // Lifts projectRoot into the sequential FileProcessor instance. The
@@ -115,7 +116,7 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
             return $this->fileProcessor->process($file);
         } catch (Throwable $exception) {
             return FileProcessingResult::failure(
-                PathFactory::bestEffortRelative($file->getPathname(), $projectRoot),
+                PathFactory::published(PathFactory::fromCliArgument($file->getPathname(), $projectRoot), $projectRoot),
                 $exception->getMessage(),
                 FileProcessingFailureKind::Processing,
             );
@@ -154,7 +155,7 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
 
     /**
      * Source-owned namespace contributions are registered before aggregation
-     * as running sums, each metric paired with a `.count` of contributing files.
+     * as running sums with private structured file-contribution metadata.
      */
     private static function registerNamespaceContributions(
         FileProcessingResult $result,
@@ -167,10 +168,10 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
             foreach ($namespaceData['metrics']->all() as $name => $value) {
                 $contribution = $contribution
                     ->with($name, ($existing->get($name) ?? 0) + $value)
-                    ->with($name . '.count', ($existing->get($name . '.count') ?? 0) + 1);
+                    ->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => $name]);
             }
 
-            $repository->add($namespaceData['symbolPath'], $contribution, $result->filePath, $namespaceData['line']);
+            $repository->add($namespaceData['symbolPath'], $contribution, null, null);
         }
     }
 

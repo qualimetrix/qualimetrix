@@ -5,15 +5,20 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter\Json;
 
 use LogicException;
+
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Core\SourceText\SourceBytes;
 use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
 use Qualimetrix\Reporting\Formatter\FormatOptionValue;
+use Qualimetrix\Reporting\Formatter\FormattedReport;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\Ordering\FindingSorter;
+use Qualimetrix\Reporting\Formatter\PublicationKind;
 use Qualimetrix\Reporting\Formatter\PublishedUtf8;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
@@ -24,6 +29,8 @@ use Qualimetrix\Reporting\Report;
  *
  * Outputs health scores, worst offenders, and findings in a machine-readable
  * format suitable for AI agents, CI pipelines, and programmatic consumption.
+ *
+ * @qmx-threshold coupling.cbo warning=21 -- This publication adapter composes health, ranking, finding and invocation projections; separating the format composition transfers the same outward vocabulary dependencies.
  */
 final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterface
 {
@@ -37,14 +44,14 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
         private readonly JsonFindingSection $findingSection,
     ) {}
 
-    public function format(Report $report, FormatterContext $context): string
+    public function format(Report $report, FormatterContext $context): FormattedReport
     {
         $filteredFindings = $this->findingSection->sort($report->findings);
 
         $limit = $this->getViolationLimit($context);
         $outputFindings = $limit === null
             ? $filteredFindings
-            : \array_slice($filteredFindings, 0, $limit);
+            : $this->findingSection->sort(\Qualimetrix\Reporting\Formatter\Ordering\FindingSorter::worstFirst($report->findings, $report->topIssues, $limit));
 
         $topN = $this->getTopN($context);
 
@@ -54,6 +61,16 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
             'outOfScope' => $this->buildOutOfScope($report->outOfScope),
             'coverage' => $report->coverage?->toArray(),
             'projectScope' => $report->projectScope?->toArray(),
+            'configurationDiagnostics' => $report->configurationDiagnostics,
+            'abstentions' => $this->populationDocument($report),
+            'computedMetricOutcomes' => array_map(static fn(ComputedMetricValueAbsence $absence): array => [
+                'metric' => $absence->metricName,
+                'level' => $absence->level->value,
+                'missingKeysCount' => $absence->missingKeysCount,
+                'noValueCount' => $absence->noValueCount,
+                'missingKeys' => $absence->missingKeys,
+                'subjects' => array_map(static fn($subject): string => $subject->toCanonical(), $absence->subjects),
+            ], $report->computedMetricEvaluation->absences),
             'health' => $this->healthSection->format($report, $context),
             'worstNamespaces' => $this->offenderSection->formatNamespaces(
                 $report->worstNamespaces,
@@ -66,7 +83,7 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
                 $topN,
             ),
             'topIssues' => $this->formatTopIssues($report, $context),
-            'violations' => $this->findingSection->format($outputFindings, $context),
+            'violations' => $this->findingSection->format($outputFindings, $context, $report->fileNamespaces),
             'violationsMeta' => [
                 'total' => \count($filteredFindings),
                 'shown' => \count($outputFindings),
@@ -80,10 +97,29 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
             $data['violationGroups'] = $this->buildFindingGroups(
                 $outputFindings,
                 $context,
+                $report->fileNamespaces,
             );
         }
 
-        return PublishedUtf8::encodeJsonObject($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES);
+        $repairs = 0;
+        $body = PublishedUtf8::encodeJsonObject($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES, $repairs);
+
+        return new FormattedReport($body, $repairs);
+    }
+
+    /** @return list<array{producer: string, channel: string, level: string, gate: string, reason: string, unit: string, count: int, examples: list<string>}> */
+    private function populationDocument(Report $report): array
+    {
+        return array_map(static fn($absence): array => [
+            'producer' => $absence->producer, 'channel' => $absence->channel->code,
+            'level' => $absence->level->value, 'gate' => $absence->gate, 'reason' => $absence->reason,
+            'unit' => $absence->unit, 'count' => $absence->count, 'examples' => $absence->examples,
+        ], $report->population->abstentions());
+    }
+
+    public function publicationKind(): PublicationKind
+    {
+        return PublicationKind::JsonDocument;
     }
 
     public function getName(): string
@@ -124,20 +160,32 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
 
         foreach ($issues as $rank => $issue) {
             $finding = $issue->finding;
+            $record = $this->findingSection->formatFinding($finding, $context, $report->fileNamespaces);
             $result[] = [
                 'rank' => $rank + 1,
-                'file' => $finding->location->file === null
-                    ? null
-                    : $context->relativizePath($finding->location->file),
-                'line' => $finding->location->line,
-                'symbol' => $finding->symbolPath->toString(),
-                'rule' => $finding->ruleName,
-                'severity' => $finding->severity->value,
-                'message' => $finding->message,
-                'recommendation' => $finding->recommendation,
                 'impactScore' => round($issue->impactScore, 2),
-                'coupling.class-rank' => $issue->classRank !== null ? round($issue->classRank, 4) : null,
+                'coupling.class-rank-share' => $issue->classRankShare !== null ? round($issue->classRankShare, 4) : null,
                 'debtMinutes' => $issue->debtMinutes,
+                'file' => $record['file'],
+                'line' => $record['line'],
+                'subject' => $record['subject'],
+                'symbol' => $record['symbol'],
+                'channel' => $record['channel'],
+                'occurrence' => $record['occurrence'],
+                'edge' => $record['edge'],
+                'namespace' => $record['namespace'],
+                'namespaces' => $record['namespaces'],
+                'rule' => $record['rule'],
+                'code' => $record['code'],
+                'severity' => $record['severity'],
+                'message' => $record['message'],
+                'recommendation' => $record['recommendation'],
+                'metricValue' => $record['metricValue'],
+                'threshold' => $record['threshold'],
+                'techDebtMinutes' => $record['techDebtMinutes'],
+                'acceptedLevel' => $record['acceptedLevel'],
+                'baselineVerdict' => $record['baselineVerdict'],
+                'baselineReason' => $record['baselineReason'],
             ];
         }
 
@@ -206,16 +254,11 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
      * the selection left nothing out — present either way, so the document's
      * shape does not move with the command line.
      *
-     * @return array{violationCount: int, errorCount: int, warningCount: int, infoCount: int}|null
+     * @return array<string, mixed>|null
      */
     private function buildOutOfScope(?OutOfScopeFindings $outOfScope): ?array
     {
-        return $outOfScope === null ? null : [
-            'violationCount' => $outOfScope->total(),
-            'errorCount' => $outOfScope->errorCount,
-            'warningCount' => $outOfScope->warningCount,
-            'infoCount' => $outOfScope->infoCount,
-        ];
+        return $outOfScope?->published();
     }
 
     /**
@@ -225,16 +268,16 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
      *
      * @return array<string, array{count: int, violations: list<array<string, mixed>>}>
      */
-    private function buildFindingGroups(array $findings, FormatterContext $context): array
+    private function buildFindingGroups(array $findings, FormatterContext $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces): array
     {
-        $groups = FindingSorter::group($findings, $context->groupBy);
+        $groups = FindingSorter::group($findings, $context->groupBy, $fileNamespaces);
 
         $result = [];
 
         foreach ($groups as $key => $groupFindings) {
-            $result[$key] = [
+            $result[SourceBytes::escape($key)] = [
                 'count' => \count($groupFindings),
-                'violations' => $this->findingSection->format($groupFindings, $context),
+                'violations' => $this->findingSection->format($groupFindings, $context, $fileNamespaces),
             ];
         }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Parallel\Strategy;
 
+use Amp\CancelledException;
 use Closure;
 use LogicException;
 use Psr\Log\LoggerInterface;
@@ -34,6 +35,8 @@ use Throwable;
  * - Collector classes synchronized with DI container
  *
  * @see https://github.com/amphp/parallel
+ *
+ * @qmx-threshold coupling.instability warning=0.857143 -- This execution adapter binds worker, cancellation and collection contracts with few strategy consumers; splitting it transfers the same transport dependencies.
  */
 final class AmphpParallelStrategy implements ExecutionStrategyInterface, ParallelCapableInterface
 {
@@ -213,6 +216,7 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
 
         $pool = WorkerPool::open($this->workerCount, $this->logger);
 
+        $cancelled = false;
         try {
             $results = [];
             $errorCount = 0;
@@ -235,6 +239,9 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
             }
 
             return $results;
+        } catch (CancelledException $e) {
+            $cancelled = true;
+            throw $e;
         } catch (Throwable $e) {
             // This catches errors in task submission, not execution
             $this->logger->error(
@@ -244,7 +251,11 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
 
             throw $e;
         } finally {
-            $pool->close();
+            if ($cancelled) {
+                $pool->abort();
+            } else {
+                $pool->close();
+            }
         }
     }
 
@@ -291,6 +302,8 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
             $file = $item['file'];
             try {
                 $results[] = $item['await']();
+            } catch (CancelledException $e) {
+                throw $e;
             } catch (Throwable $e) {
                 // Record failure for this specific file, continue processing others
                 $errorCount++;
@@ -313,54 +326,27 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
         return $results;
     }
 
-    /**
-     * Resolves the file's absolute path. SplFileInfo from Finder is typically
-     * absolute, but qmx can be invoked with relative arguments (e.g.,
-     * `bin/qmx check src/`) in which case getPathname() is relative.
-     *
-     * Canonicalizes via realpath() in both branches so symlinked source trees
-     * relativize correctly against the canonicalized {@see $projectRoot}
-     * (StrategySelector calls `canonicalize()` on the root for cache-key
-     * stability). Canonicalizing only the root breaks relativization for a
-     * pathname reached through a symlink.
-     */
+    /** Resolves the containing directory while retaining the file's written name. */
     private function absolutePath(SplFileInfo $file): AbsolutePath
     {
-        $pathname = $file->getPathname();
-
-        if (str_starts_with($pathname, '/')) {
-            $real = @realpath($pathname);
-
-            return AbsolutePath::fromString($real !== false ? $real : $pathname);
+        $root = $this->projectRoot ?? throw new LogicException('projectRoot must be set before absolutePath');
+        $named = PathFactory::fromCliArgument($file->getPathname(), $root);
+        $parent = realpath(\dirname($named->value()));
+        if ($parent === false) {
+            throw new LogicException(\sprintf('Cannot resolve parent of "%s"', $named->value()));
         }
 
-        $resolved = $file->getRealPath();
-
-        if ($resolved !== false) {
-            return AbsolutePath::fromString($resolved);
-        }
-
-        return AbsolutePath::fromString((string) getcwd() . '/' . $pathname);
+        return AbsolutePath::fromString($parent . '/' . basename($named->value()));
     }
 
-    /**
-     * Project-relative path for the failure-path result. Routes through the
-     * same {@see absolutePath()} helper as the success path so SplFileInfo
-     * input is canonicalized consistently before relativizing against the
-     * `$projectRoot`. For the rare file outside the project root,
-     * {@see PathFactory::bestEffortRelative()} preserves directory structure
-     * to avoid the basename collision that an earlier draft introduced.
-     */
+    /** Uses the same written file name for failed and successful tasks. */
     private function relativePathFor(SplFileInfo $file): RelativePath
     {
         if ($this->projectRoot === null) {
             throw new LogicException('projectRoot must be set before relativePathFor');
         }
 
-        return PathFactory::bestEffortRelative(
-            $this->absolutePath($file)->value(),
-            $this->projectRoot,
-        );
+        return PathFactory::published($this->absolutePath($file), $this->projectRoot);
     }
 
     /**

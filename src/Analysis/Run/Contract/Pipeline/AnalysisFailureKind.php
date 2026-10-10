@@ -26,4 +26,7 @@ enum AnalysisFailureKind: string
 
     /** A directory the run could not look inside. */
     case UnreadableDirectory = 'unreadable-directory';
+    case FileSymlink = 'file-symlink';
+    case UnreadableFile = 'unreadable-file';
+    case UnreadableEntry = 'unreadable-entry';
 }

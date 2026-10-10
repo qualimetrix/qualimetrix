@@ -21,6 +21,7 @@ final class ReportTest extends TestCase
     public function itIsEmptyWhenNoFindings(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -39,6 +40,7 @@ final class ReportTest extends TestCase
         $finding = $this->createFinding(Severity::Error);
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [$finding],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -61,6 +63,7 @@ final class ReportTest extends TestCase
         ];
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: $findings,
             filesAnalyzed: 5,
             filesSkipped: 1,
@@ -78,6 +81,7 @@ final class ReportTest extends TestCase
         $findings = [$this->createFinding(Severity::Error)];
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: $findings,
             filesAnalyzed: 42,
             filesSkipped: 3,
