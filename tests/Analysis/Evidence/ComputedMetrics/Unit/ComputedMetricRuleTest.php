@@ -86,7 +86,7 @@ final class ComputedMetricRuleTest extends TestCase
         });
         $decisions = [];
         foreach ($definitions as $definition) {
-            $declaration = ComputedMetricChannelFamily::declarationForDefinition($definition) ?? throw new LogicException('Fixture requires a reporting coordinate.');
+            $declaration = ComputedMetricChannelFamily::declarationFor($definition->name, $definition->reportingLevels(), $definition->inverted) ?? throw new LogicException('Fixture requires a reporting coordinate.');
             foreach ($declaration->levels as $level) {
                 $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress($definition->producerRuleName(), new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($definition->name), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
             }

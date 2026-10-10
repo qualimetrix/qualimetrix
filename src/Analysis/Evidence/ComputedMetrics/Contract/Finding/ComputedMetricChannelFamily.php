@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding;
 
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
@@ -56,13 +55,13 @@ use Qualimetrix\Core\Symbol\SymbolType;
  */
 final class ComputedMetricChannelFamily
 {
-    public static function declarationForDefinition(ComputedMetricDefinition $definition): ?ChannelDeclaration
+    /** @param list<SymbolLevel> $levels */
+    public static function declarationFor(string $name, array $levels, bool $inverted): ?ChannelDeclaration
     {
-        $levels = $definition->reportingLevels();
         if ($levels === []) {
             return null;
         }
-        $channel = new FindingChannel($definition->name);
+        $channel = new FindingChannel($name);
         $gates = [];
         foreach ($levels as $level) {
             $unit = match ($level) {
@@ -72,9 +71,9 @@ final class ComputedMetricChannelFamily
             if ($level === SymbolLevel::Class_) {
                 $gates[] = new PopulationGate('class-coordinate', $channel, $level, $unit, new KindIn('class-coordinate', [SymbolType::Class_]), 'Computed class judgement requires a class declaration.');
             }
-            $gates[] = new PopulationGate('published-value', $channel, $level, $unit, new KeyPresent('published-value', [$definition->name]), 'Applicable computed metric requires its published value.');
+            $gates[] = new PopulationGate('published-value', $channel, $level, $unit, new KeyPresent('published-value', [$name]), 'Applicable computed metric requires its published value.');
         }
-        return ChannelDeclaration::magnitude($definition->inverted ? WorseDirection::Lower : WorseDirection::Higher, ...$levels)->withGates(...$gates);
+        return ChannelDeclaration::magnitude($inverted ? WorseDirection::Lower : WorseDirection::Higher, ...$levels)->withGates(...$gates);
     }
 
     /**

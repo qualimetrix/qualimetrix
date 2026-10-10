@@ -147,3 +147,8 @@ inside a level slot alike.
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
 
 Code-smell occurrence rules decode native entry subjects and account occurrences before finding construction. Allowed-name filtering and promoted-property filtering use the same ordered declaration as direct eligibility; malformed extras bypass only the native name predicate, while an empty string reaches it. Metric-backed rules account published zero before severity selection and retain their configured kind, constructor, class-context and value-object exclusions.
+
+Gate construction and lazy declaration-metric admission use Finding-owned
+`AbstractRule` operations. Each rule retains its raw metric keys, coordinate,
+ordered predicates and failure reasons; a refused coordinate never reads its
+metric bag.

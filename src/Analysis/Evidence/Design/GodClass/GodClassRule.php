@@ -10,13 +10,8 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Finding\Contract\Population\FlagExcludes;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
-use Qualimetrix\Analysis\Finding\Contract\Population\KeyThreshold;
-use Qualimetrix\Analysis\Finding\Contract\Population\KindIn;
-use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
-use Qualimetrix\Analysis\Finding\Contract\Population\RuleValueThreshold;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
@@ -181,10 +176,10 @@ final class GodClassRule extends AbstractRule
     {
         return [
             self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_)->withGates(
-                new PopulationGate('logical-class-kind', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KindIn('logicalKind', [SymbolType::Class_]), 'Only class declarations are judged.'),
-                new PopulationGate('readonly-class', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new FlagExcludes('excludeReadonly', MetricName::DESIGN_IS_READONLY, activeWhen: true), 'Readonly classes are excluded by configuration.'),
-                new PopulationGate('method-floor', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KeyThreshold('minMethods', [MetricName::SIZE_METHOD_COUNT], '>=', 'minMethods', missing: 'zero'), 'The class has too few methods for god-class judgement.'),
-                new PopulationGate('evaluable-criteria', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new RuleValueThreshold('minCriteria', '>=', 'minCriteria'), 'Too few god-class criteria can be evaluated.'),
+                self::populationGate('logical-class-kind', self::NAME, SymbolLevel::Class_, 'declaration', self::kindIn('logicalKind', [SymbolType::Class_]), 'Only class declarations are judged.'),
+                self::populationGate('readonly-class', self::NAME, SymbolLevel::Class_, 'declaration', self::flagExcludes('excludeReadonly', MetricName::DESIGN_IS_READONLY, activeWhen: true), 'Readonly classes are excluded by configuration.'),
+                self::populationGate('method-floor', self::NAME, SymbolLevel::Class_, 'declaration', self::keyThreshold('minMethods', [MetricName::SIZE_METHOD_COUNT], '>=', 'minMethods', missing: 'zero'), 'The class has too few methods for god-class judgement.'),
+                self::populationGate('evaluable-criteria', self::NAME, SymbolLevel::Class_, 'declaration', self::ruleValueThreshold('minCriteria', '>=', 'minCriteria'), 'Too few god-class criteria can be evaluated.'),
             ),
         ];
     }

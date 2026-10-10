@@ -18,9 +18,9 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final class DataClassExclusionCheck
 {
     /** @return list<PopulationGate> */
-    public static function populationGates(): array
+    public static function populationGates(string $channelName): array
     {
-        $channel = new FindingChannel(DataClassRule::NAME);
+        $channel = new FindingChannel($channelName);
         $level = SymbolLevel::Class_;
 
         return [

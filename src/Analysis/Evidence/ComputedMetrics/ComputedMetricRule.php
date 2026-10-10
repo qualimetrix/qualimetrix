@@ -87,7 +87,7 @@ final class ComputedMetricRule extends AbstractRule
             $spanName = 'rule.' . $producer . '.' . $definition->name;
             $profiler->start($spanName, 'rule.' . $producer);
 
-            $declaration = ComputedMetricChannelFamily::declarationForDefinition($definition);
+            $declaration = ComputedMetricChannelFamily::declarationFor($definition->name, $definition->reportingLevels(), $definition->inverted);
             if ($declaration === null) {
                 $profiler->stop($spanName);
                 continue;

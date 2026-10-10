@@ -12,9 +12,7 @@ use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
-use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
-use Qualimetrix\Analysis\Finding\Contract\Population\RuleValueThreshold;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
@@ -198,7 +196,7 @@ final class CircularDependencyRule extends AbstractRule
     {
         return [
             self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project)->readingRunEvidence()->withGates(
-                new PopulationGate('max-cycle-size', new FindingChannel(self::NAME), SymbolLevel::Project, 'cycle', new RuleValueThreshold('max-cycle-size', '<=', 'max-cycle-size', true), 'The cycle exceeds the configured population ceiling.'),
+                self::populationGate('max-cycle-size', self::NAME, SymbolLevel::Project, 'cycle', self::ruleValueThreshold('max-cycle-size', '<=', 'max-cycle-size', true), 'The cycle exceeds the configured population ceiling.'),
             ),
         ];
     }

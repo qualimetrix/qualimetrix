@@ -10,20 +10,14 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Finding\Contract\Population\ContextGuard;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
-use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
-use Qualimetrix\Analysis\Finding\Contract\Population\NameMatches;
 
-use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
@@ -73,14 +67,13 @@ final class ConstructorOverinjectionRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Higher,
-                JudgedMetrics::of(MetricName::CODE_SMELL_PARAMETER_COUNT),
+            self::NAME => self::judgingHigher(
+                [MetricName::CODE_SMELL_PARAMETER_COUNT],
                 SymbolLevel::Callable,
             )->withGates(
-                new PopulationGate('constructor-name', new FindingChannel(self::NAME), SymbolLevel::Callable, 'callable', new NameMatches('constructor-name'), 'Only constructors are judged.'),
-                new PopulationGate('class-context', new FindingChannel(self::NAME), SymbolLevel::Callable, 'callable', new ContextGuard('callableHasClassContext'), 'The callable has no class context.'),
-                new PopulationGate('parameter-count', new FindingChannel(self::NAME), SymbolLevel::Callable, 'callable', new KeyPresent('parameter-count', [MetricName::CODE_SMELL_PARAMETER_COUNT]), 'Parameter count was not published.'),
+                self::populationGate('constructor-name', self::NAME, SymbolLevel::Callable, 'callable', self::nameMatches('constructor-name'), 'Only constructors are judged.'),
+                self::populationGate('class-context', self::NAME, SymbolLevel::Callable, 'callable', self::contextGuard('callableHasClassContext'), 'The callable has no class context.'),
+                self::populationGate('parameter-count', self::NAME, SymbolLevel::Callable, 'callable', self::keyPresent('parameter-count', [MetricName::CODE_SMELL_PARAMETER_COUNT]), 'Parameter count was not published.'),
             ),
         ];
     }

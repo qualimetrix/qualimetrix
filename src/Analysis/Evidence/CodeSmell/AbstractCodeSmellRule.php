@@ -10,8 +10,6 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
-use Qualimetrix\Analysis\Finding\Contract\Population\NameMatches;
-use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
@@ -118,7 +116,7 @@ abstract class AbstractCodeSmellRule extends AbstractRule
         if (is_a(static::getOptionsClass(), EntryFilteringOptionsInterface::class, true)) {
             $gates = [];
             foreach ($declaration->levels as $level) {
-                $gates[] = new PopulationGate('allowed-extra', new FindingChannel(static::NAME), $level, 'occurrence', new NameMatches('allowed-extra'), 'The configured entry matcher allows this occurrence.');
+                $gates[] = self::populationGate('allowed-extra', static::NAME, $level, 'occurrence', self::nameMatches('allowed-extra'), 'The configured entry matcher allows this occurrence.');
             }
             $declaration = $declaration->withGates(...$gates);
         }

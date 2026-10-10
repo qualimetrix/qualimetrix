@@ -92,7 +92,7 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
             return null;
         }
 
-        return ComputedMetricChannelFamily::declarationForDefinition($definition);
+        return ComputedMetricChannelFamily::declarationFor($definition->name, $definition->reportingLevels(), $definition->inverted);
     }
 
     public function reachAt(FindingChannel $channel, SymbolLevel $level): ValueReach

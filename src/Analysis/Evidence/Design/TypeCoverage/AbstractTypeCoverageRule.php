@@ -10,17 +10,12 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
-use Qualimetrix\Analysis\Finding\Contract\Population\KeyThreshold;
-use Qualimetrix\Analysis\Finding\Contract\Population\KindIn;
-use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -69,13 +64,12 @@ abstract class AbstractTypeCoverageRule extends AbstractRule
         $name = static::channelName();
 
         return [
-            $name => ChannelDeclaration::judging(
-                WorseDirection::Lower,
-                JudgedMetrics::of(static::coverageMetric()),
+            $name => self::judgingLower(
+                [static::coverageMetric()],
                 SymbolLevel::Class_,
             )->withGates(
-                new PopulationGate('logical-class-kind', new FindingChannel($name), SymbolLevel::Class_, 'declaration', new KindIn('logicalKind', [SymbolType::Class_]), 'Only class declarations are judged.'),
-                new PopulationGate('typeable-total', new FindingChannel($name), SymbolLevel::Class_, 'declaration', new KeyThreshold(static::coverageMetric() . '.total', [static::coverageMetric() . '.total'], '>', 0), 'This type-coverage dimension requires a positive declaration total.'),
+                self::populationGate('logical-class-kind', $name, SymbolLevel::Class_, 'declaration', self::kindIn('logicalKind', [SymbolType::Class_]), 'Only class declarations are judged.'),
+                self::populationGate('typeable-total', $name, SymbolLevel::Class_, 'declaration', self::keyThreshold(static::coverageMetric() . '.total', [static::coverageMetric() . '.total'], '>', 0), 'This type-coverage dimension requires a positive declaration total.'),
             ),
         ];
     }

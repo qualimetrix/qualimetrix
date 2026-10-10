@@ -5,26 +5,19 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Size;
 
 use LogicException;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Finding\Contract\Population\FlagExcludes;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
-use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
-use Qualimetrix\Analysis\Finding\Contract\Population\KindIn;
 
-use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
-use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
-use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -80,15 +73,14 @@ final class PropertyCountRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Higher,
-                JudgedMetrics::of(MetricName::SIZE_PROPERTY_COUNT),
+            self::NAME => self::judgingHigher(
+                [MetricName::SIZE_PROPERTY_COUNT],
                 SymbolLevel::Class_,
             )->withGates(
-                new PopulationGate('class-coordinate', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
-                new PopulationGate('class-value', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KeyPresent('class-value', [MetricName::SIZE_PROPERTY_COUNT]), 'The class metric was not published.'),
-                new PopulationGate('exclude-readonly', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new FlagExcludes('exclude-readonly', MetricName::DESIGN_IS_READONLY, 1, true), 'The configured class exclusion applies.'),
-                new PopulationGate('exclude-promoted-only', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new FlagExcludes('exclude-promoted-only', MetricName::DESIGN_IS_PROMOTED_PROPERTIES_ONLY, 1, true), 'The configured class exclusion applies.'),
+                self::populationGate('class-coordinate', self::NAME, SymbolLevel::Class_, 'declaration', self::kindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
+                self::populationGate('class-value', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('class-value', [MetricName::SIZE_PROPERTY_COUNT]), 'The class metric was not published.'),
+                self::populationGate('exclude-readonly', self::NAME, SymbolLevel::Class_, 'declaration', self::flagExcludes('exclude-readonly', MetricName::DESIGN_IS_READONLY, 1, true), 'The configured class exclusion applies.'),
+                self::populationGate('exclude-promoted-only', self::NAME, SymbolLevel::Class_, 'declaration', self::flagExcludes('exclude-promoted-only', MetricName::DESIGN_IS_PROMOTED_PROPERTIES_ONLY, 1, true), 'The configured class exclusion applies.'),
             ),
         ];
     }
@@ -119,15 +111,13 @@ final class PropertyCountRule extends AbstractRule
         ChannelDeclaration $declaration,
     ): ?Finding {
         $subject = $classInfo->subject ?? throw new LogicException('Property count findings require an exact class declaration subject');
-        $metrics = null;
-        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), $declaration, (function () use ($context, $subject, &$metrics, &$options): iterable {
-            yield GateInput::kind('class-coordinate', $subject->toSymbolPath()->getType());
-            $metrics = $context->metrics->getSubject($subject);
+        $metrics = $this->admittedMetrics($context, $subject, $declaration, function (MetricBag $metrics) use ($context, $subject, &$options): iterable {
             $options = $this->getEffectiveOptions($context, $options, $subject);
             yield GateInput::metrics('class-value', $metrics);
             yield GateInput::metrics('exclude-readonly', $metrics, option: $options->excludeReadonly);
             yield GateInput::metrics('exclude-promoted-only', $metrics, option: $options->excludePromotedOnly);
-        })())) {
+        }, [GateInput::kind('class-coordinate', $subject->toSymbolPath()->getType())], level: SymbolLevel::Class_);
+        if ($metrics === null) {
             return null;
         }
         $propertyCount = $metrics->get(MetricName::SIZE_PROPERTY_COUNT);

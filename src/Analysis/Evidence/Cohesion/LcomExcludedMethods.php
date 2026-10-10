@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Cohesion;
 
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -26,7 +27,7 @@ final class LcomExcludedMethods
     /**
      * @return list<Finding>
      */
-    public static function findings(AnalysisContext $context, LcomOptions $options): array
+    public static function findings(AnalysisContext $context, LcomOptions $options, string $producer, ChannelDeclaration $declaration): array
     {
         if ($options->excludeMethods === null || $options->excludeMethods === []) {
             return [];
@@ -34,7 +35,6 @@ final class LcomExcludedMethods
 
         $scopeJudged = $context->projectScope->judgesNamespaceClaims();
         $methods = $scopeJudged ? self::declaredMethods($context) : [];
-        $declaration = LcomRule::channelDeclarations()['cohesion.unmatched-exclude-method'];
         $findings = [];
         $seen = [];
         foreach ($options->excludeMethods as $authored) {
@@ -44,7 +44,7 @@ final class LcomExcludedMethods
             }
             $seen[$normalized] = true;
             if (!$context->admit(
-                LcomRule::NAME,
+                $producer,
                 new FindingChannel('cohesion.unmatched-exclude-method'),
                 SymbolLevel::Project,
                 PopulationIdentity::selector($normalized, 'configured-method-selector'),

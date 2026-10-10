@@ -10,20 +10,14 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
-use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
-use Qualimetrix\Analysis\Finding\Contract\Population\KeyThreshold;
-use Qualimetrix\Analysis\Finding\Contract\Population\NameMatches;
 
-use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -155,14 +149,13 @@ final class MaintainabilityRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Lower,
-                JudgedMetrics::of(MetricName::MAINTAINABILITY_MI),
+            self::NAME => self::judgingLower(
+                [MetricName::MAINTAINABILITY_MI],
                 SymbolLevel::Callable,
             )->withGates(
-                new PopulationGate('exclude-tests', new FindingChannel(self::NAME), SymbolLevel::Callable, 'callable', new NameMatches('exclude-tests', true), 'The configured test-file exclusion applies.'),
-                new PopulationGate('minimum-statements', new FindingChannel(self::NAME), SymbolLevel::Callable, 'callable', new KeyThreshold('minimum-statements', [MetricName::SIZE_METHOD_STATEMENT_COUNT], '>=', 'minimum-statements', 'zero', true), 'Statement count is below the configured minimum.'),
-                new PopulationGate('maintainability', new FindingChannel(self::NAME), SymbolLevel::Callable, 'callable', new KeyPresent('maintainability', [MetricName::MAINTAINABILITY_MI]), 'Maintainability was not published.'),
+                self::populationGate('exclude-tests', self::NAME, SymbolLevel::Callable, 'callable', self::nameMatches('exclude-tests', true), 'The configured test-file exclusion applies.'),
+                self::populationGate('minimum-statements', self::NAME, SymbolLevel::Callable, 'callable', self::keyThreshold('minimum-statements', [MetricName::SIZE_METHOD_STATEMENT_COUNT], '>=', 'minimum-statements', 'zero', true), 'Statement count is below the configured minimum.'),
+                self::populationGate('maintainability', self::NAME, SymbolLevel::Callable, 'callable', self::keyPresent('maintainability', [MetricName::MAINTAINABILITY_MI]), 'Maintainability was not published.'),
             ),
         ];
     }

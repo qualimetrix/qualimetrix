@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\CodeSmell;
 
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\Population\FlagExcludes;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
-use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
@@ -50,7 +47,7 @@ final class BooleanArgumentRule extends AbstractCodeSmellRule
         $declaration = parent::channelDeclarations()[self::NAME];
         $gates = $declaration->populationGates;
         foreach ([SymbolLevel::Callable, SymbolLevel::File] as $level) {
-            $gates[] = new PopulationGate('flag-promoted-properties', new FindingChannel(self::NAME), $level, 'occurrence', new FlagExcludes('flag-promoted-properties', null, true, false), 'Promoted constructor properties are excluded by configuration.');
+            $gates[] = self::populationGate('flag-promoted-properties', self::NAME, $level, 'occurrence', self::flagExcludes('flag-promoted-properties', null, true, false), 'Promoted constructor properties are excluded by configuration.');
         }
         return [self::NAME => $declaration->withGates(...$gates)];
     }

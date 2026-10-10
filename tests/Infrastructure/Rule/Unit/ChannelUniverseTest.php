@@ -60,7 +60,7 @@ final class ChannelUniverseTest extends TestCase
         self::assertSame(['published-value'], array_column($runtime->gatesFor($channel, SymbolLevel::Namespace_), 'id'));
         self::assertSame(['published-value'], array_column($runtime->gatesFor($channel, SymbolLevel::Project), 'id'));
         self::assertSame(['declaration', 'declaration', 'namespace', 'project'], array_column($runtime->populationGates, 'unit'));
-        $definitionOwned = ComputedMetricChannelFamily::declarationForDefinition($this->definitions[0]);
+        $definitionOwned = ComputedMetricChannelFamily::declarationFor($this->definitions[0]->name, $this->definitions[0]->reportingLevels(), $this->definitions[0]->inverted);
         self::assertEquals($definitionOwned, $runtime);
     }
 

@@ -178,7 +178,7 @@ unknown exception status when duplicate parent declarations disagree.
   Inputs are yielded in source order and stop at the first failed gate.
 - Data-class population gates retain interface, abstract, property, exception,
   readonly, promoted-only and member-floor order before WOC presence.
-  `DataClassExclusionCheck::populationGates()` declares the class-shape portion;
+  `DataClassExclusionCheck::populationGates()` receives the channel name and declares the class-shape portion;
   `populationInputs()` supplies its current metric bag and effective options.
   Disabled exception exclusion bypasses both presence and nonzero checks;
   unconditional interface and abstract flags exclude only the integer value 1.

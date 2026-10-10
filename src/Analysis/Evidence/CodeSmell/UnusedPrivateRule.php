@@ -5,23 +5,17 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\CodeSmell;
 
 use LogicException;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
-use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
-use Qualimetrix\Analysis\Finding\Contract\Population\KindIn;
 
-use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
-use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -86,12 +80,8 @@ final class UnusedPrivateRule extends AbstractRule
     {
         $subject = $classInfo->subject ?? throw new LogicException('Unused private findings require an exact class subject');
         $declaration = $subject->declarationPath() ?? throw new LogicException('Unused private findings require a declaration subject');
-        $metrics = null;
-        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), $populationDeclaration, (static function () use ($context, $subject, $declaration, &$metrics): iterable {
-            yield GateInput::kind('class-coordinate', $declaration->logical->getType());
-            $metrics = $context->metrics->getSubject($subject);
-            yield GateInput::metrics('published-value', $metrics);
-        })())) {
+        $metrics = $this->admittedMetrics($context, $subject, $populationDeclaration, static fn(MetricBag $metrics): array => [GateInput::metrics('published-value', $metrics)], [GateInput::kind('class-coordinate', $declaration->logical->getType())], level: SymbolLevel::Class_);
+        if ($metrics === null) {
             return [];
         }
         $total = (int) $metrics->get(MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL);
@@ -159,13 +149,12 @@ final class UnusedPrivateRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Higher,
-                JudgedMetrics::of(MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL),
+            self::NAME => self::judgingHigher(
+                [MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL],
                 SymbolLevel::Class_,
             )->withGates(
-                new PopulationGate('class-coordinate', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the declared symbol coordinate.'),
-                new PopulationGate('published-value', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KeyPresent('published-value', [MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL]), 'The rule metric was not published.'),
+                self::populationGate('class-coordinate', self::NAME, SymbolLevel::Class_, 'declaration', self::kindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the declared symbol coordinate.'),
+                self::populationGate('published-value', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('published-value', [MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL]), 'The rule metric was not published.'),
             ),
         ];
     }

@@ -520,7 +520,7 @@ final class LcomRuleTest extends TestCase
             $scope = new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement($whole ? [] : [\Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor::Paths]);
             $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession($publication);
             $context = (new AnalysisContext($repository, projectScope: $scope))->withPopulationTrace($session);
-            $findings = \Qualimetrix\Analysis\Evidence\Cohesion\LcomExcludedMethods::findings($context, new LcomOptions(excludeMethods: ['KNOWN', 'known', 'Missing', 'MISSING']));
+            $findings = \Qualimetrix\Analysis\Evidence\Cohesion\LcomExcludedMethods::findings($context, new LcomOptions(excludeMethods: ['KNOWN', 'known', 'Missing', 'MISSING']), LcomRule::NAME, LcomRule::channelDeclarations()['cohesion.unmatched-exclude-method']);
             self::assertCount($whole ? 1 : 0, $findings);
             self::assertSame($whole ? 2 : 0, $session->freeze()->judgedCount());
             self::assertSame($whole ? 0 : 2, $session->freeze()->unjudgedCount());

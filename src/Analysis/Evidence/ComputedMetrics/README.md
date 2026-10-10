@@ -354,7 +354,8 @@ always require the whole region. Baseline owns comparability; this capability
 provides formula evidence rather than another run lifecycle port.
 
 The rule obtains one full `ComputedMetricChannelFamily` declaration per
-definition and uses it for pure eligibility and optional selected accounting.
+definition name, reporting levels and inversion flag, without a reverse
+dependency on the definition type, and uses it for pure eligibility and optional selected accounting.
 The runtime roster is the actual class, namespace or project roster. Applicable
 subjects are judged on the published definition value; non-applicable subjects
 remain outside that population. An empty project is still the native project

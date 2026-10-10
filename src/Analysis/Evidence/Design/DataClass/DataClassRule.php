@@ -10,18 +10,13 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
-use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
-use Qualimetrix\Analysis\Finding\Contract\Population\KindIn;
-use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -169,13 +164,12 @@ final class DataClassRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Lower,
-                JudgedMetrics::of(MetricName::DESIGN_WOC),
+            self::NAME => self::judgingLower(
+                [MetricName::DESIGN_WOC],
                 SymbolLevel::Class_,
             )->withGates(
-                new PopulationGate('logical-class-kind', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KindIn('logicalKind', [SymbolType::Class_]), 'Only class declarations are judged.'),
-                ...[...DataClassExclusionCheck::populationGates(), new PopulationGate('woc-present', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KeyPresent('woc-present', [MetricName::DESIGN_WOC]), 'WOC was not published.')],
+                self::populationGate('logical-class-kind', self::NAME, SymbolLevel::Class_, 'declaration', self::kindIn('logicalKind', [SymbolType::Class_]), 'Only class declarations are judged.'),
+                ...[...DataClassExclusionCheck::populationGates(self::NAME), self::populationGate('woc-present', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('woc-present', [MetricName::DESIGN_WOC]), 'WOC was not published.')],
             ),
         ];
     }

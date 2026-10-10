@@ -6,26 +6,20 @@ namespace Qualimetrix\Analysis\Evidence\Complexity;
 
 use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
-use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
-use Qualimetrix\Analysis\Finding\Contract\Population\KindIn;
-use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
-use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
-use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -142,18 +136,17 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Higher,
-                JudgedMetrics::of(
+            self::NAME => self::judgingHigher(
+                [
                     MetricName::COMPLEXITY_CCN,
                     MetricName::agg(MetricName::COMPLEXITY_CCN, AggregationStrategy::Max),
-                ),
+                ],
                 SymbolLevel::Callable,
                 SymbolLevel::Class_,
             )->withGates(
-                new PopulationGate('callable-value', new FindingChannel(self::NAME), SymbolLevel::Callable, 'callable', new KeyPresent('callable-value', [MetricName::COMPLEXITY_CCN]), 'Callable complexity was not published.'),
-                new PopulationGate('class-coordinate', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
-                new PopulationGate('class-maximum', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KeyPresent('class-maximum', [MetricName::agg(MetricName::COMPLEXITY_CCN, AggregationStrategy::Max)]), 'Maximum method complexity was not published.'),
+                self::populationGate('callable-value', self::NAME, SymbolLevel::Callable, 'callable', self::keyPresent('callable-value', [MetricName::COMPLEXITY_CCN]), 'Callable complexity was not published.'),
+                self::populationGate('class-coordinate', self::NAME, SymbolLevel::Class_, 'declaration', self::kindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
+                self::populationGate('class-maximum', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('class-maximum', [MetricName::agg(MetricName::COMPLEXITY_CCN, AggregationStrategy::Max)]), 'Maximum method complexity was not published.'),
             ),
         ];
     }
@@ -171,20 +164,12 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
 
         foreach ($context->metrics->allCallables() as $methodInfo) {
             $subject = $methodInfo->subject ?? throw new LogicException('Cyclomatic complexity findings require an exact callable subject');
-            $metrics = $context->metrics->getSubject($subject);
-            $ccn = $metrics->get(MetricName::COMPLEXITY_CCN);
-            $cognitive = $metrics->get(MetricName::COMPLEXITY_COGNITIVE);
-
-            if (!$context->admit(
-                self::NAME,
-                new FindingChannel(self::NAME),
-                SymbolLevel::Callable,
-                PopulationIdentity::subject($subject, 'callable'),
-                $declaration,
-                [GateInput::metrics('callable-value', $metrics)],
-            )) {
+            $metrics = $this->admittedMetrics($context, $subject, $declaration, static fn(MetricBag $metrics): array => [GateInput::metrics('callable-value', $metrics)], unit: 'callable', level: SymbolLevel::Callable);
+            if ($metrics === null) {
                 continue;
             }
+            $ccn = $metrics->get(MetricName::COMPLEXITY_CCN);
+            $cognitive = $metrics->get(MetricName::COMPLEXITY_COGNITIVE);
 
             $ccnValue = (int) $ccn;
 
@@ -252,12 +237,8 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
 
         foreach ($context->metrics->allClassDeclarations() as $classInfo) {
             $subject = $classInfo->subject ?? throw new LogicException('Cyclomatic complexity class findings require an exact declaration subject');
-            $metrics = null;
-            if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), $declaration, (static function () use ($context, $subject, &$metrics): iterable {
-                yield GateInput::kind('class-coordinate', $subject->toSymbolPath()->getType());
-                $metrics = $context->metrics->getSubject($subject);
-                yield GateInput::metrics('class-maximum', $metrics);
-            })())) {
+            $metrics = $this->admittedMetrics($context, $subject, $declaration, static fn(MetricBag $metrics): array => [GateInput::metrics('class-maximum', $metrics)], [GateInput::kind('class-coordinate', $subject->toSymbolPath()->getType())], level: SymbolLevel::Class_);
+            if ($metrics === null) {
                 continue;
             }
             $maxCcn = $metrics->get(MetricName::agg(MetricName::COMPLEXITY_CCN, AggregationStrategy::Max));

@@ -43,7 +43,8 @@ Cohesion/
 `LcomExcludedMethods` reports unmatched authored method names only for a
 whole-project method universe, matching and deduplicating case-insensitively
 while retaining the first authored spelling. It does not change the LCOM
-graph or its academic calculation.
+graph or its academic calculation. The rule supplies its producer and full
+secondary declaration; the diagnostic helper does not depend back on the rule.
 
 `LcomCollector` provides `cohesion.lcom`; `TccLccCollector` provides `cohesion.tcc` and `cohesion.lcc`.
 They retain their collector names, metric keys, class-level aggregation
