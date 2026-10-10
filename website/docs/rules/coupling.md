@@ -345,19 +345,19 @@ cannot identify its declaring body and uses the method-name fallback.
 
 ### Which calls contribute
 
-| Form                                                                                    | Response identity                                                      |
-| --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Own method via `$this`, `self` or `static`                                              | Already in `M`                                                         |
-| Inherited or `parent` method                                                            | Resolved declaring class and method, where readable                    |
-| Imported trait method or alias                                                          | Effective exposed method in `M`; invoked body resolved to its source   |
-| Typed parameter, property or promoted-property receiver                                 | Resolved class and method, when the declared type identifies one class |
-| Assignment of a known receiver to a local variable; direct positive `instanceof` branch | The retained class and method, within that supported local scope       |
-| Named static call; `new ClassName()`                                                    | Resolved class and method; construction uses `__construct`             |
-| Nullsafe call                                                                           | The same target as the ordinary method call                            |
-| Chained return, array element or untyped receiver                                       | Method-name fallback, shared by repeated calls to that name            |
-| Variable-class static call (`$class::method()`)                                         | Method-name fallback                                                   |
-| Global function                                                                         | A separate function response, independent of method responses          |
-| First-class callable or dynamic method name                                             | Excluded                                                               |
+| Form                                                                                    | Response identity                                                                     |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Own method via `$this`, `self` or `static`                                              | Already in `M`                                                                        |
+| Inherited or `parent` method                                                            | Resolved declaring class and method, where readable                                   |
+| Imported trait method or alias                                                          | Effective exposed method in `M`; invoked body resolved to its source                  |
+| Typed non-variadic parameter, property or promoted-property receiver                    | Resolved class and method, when the declared type identifies one class                |
+| Assignment of a known receiver to a local variable; direct positive `instanceof` branch | The retained class and method, within that supported local scope                      |
+| Named static call; `new ClassName()`                                                    | Resolved class and method; construction uses `__construct`                            |
+| Nullsafe call                                                                           | The same target as the ordinary method call                                           |
+| Chained return, array element, variadic parameter or untyped receiver                   | Method-name fallback, shared by repeated calls to that name                           |
+| Variable-class static call (`$class::method()`)                                         | Resolved class and method for a known object receiver; otherwise method-name fallback |
+| Global function                                                                         | A separate function response, independent of method responses                         |
+| First-class callable or dynamic method name                                             | Excluded                                                                              |
 
 The fallback also applies when ancestry or a trait is unreadable, or method
 lookup is ambiguous. Declared types provide static evidence; RFC does not
