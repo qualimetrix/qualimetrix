@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Integration;
 
 use DateTimeImmutable;
+use LogicException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
@@ -20,6 +24,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
+use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
@@ -37,6 +42,7 @@ use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
@@ -53,6 +59,8 @@ use Symfony\Component\Console\Tester\CommandTester;
  */
 final class CaptureFromMeasuredSetTest extends TestCase
 {
+    private ChannelPublication $publication;
+
     /** @var list<string> */
     private array $tempFiles = [];
 
@@ -63,6 +71,10 @@ final class CaptureFromMeasuredSetTest extends TestCase
 
     protected function setUp(): void
     {
+        $configuration = ResolvedOptionsFixture::ready(FindingConfiguration::none(), [
+            new RuleMetadata(UnusedEntryRule::NAME, UnusedEntryRule::getOptionsClass(), UnusedEntryRule::getDescription(), [], false),
+        ]);
+        $this->publication = new ChannelPublication($configuration->enablement ?? throw new LogicException('Fixture requires resolved publication.'));
         $this->suppressions = [];
         $this->configuredOptions = new FindingProjectionOptions();
     }
@@ -345,7 +357,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
             );
         }
 
-        return $projector->project($findings, $this->suppressions, $projectionOptions);
+        return $projector->project($findings, $this->suppressions, $projectionOptions, $this->publication);
     }
 
     private static function path(string $value): PathPattern
