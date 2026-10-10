@@ -267,6 +267,9 @@
     "ns:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator": [
       {"channel":"size.class-count","magnitudes":[24]}
     ],
+    "ns:Qualimetrix\\Reporting": [
+      {"channel":"coupling.distance","magnitudes":[0.7547169811320755]}
+    ],
     "ns:Qualimetrix\\Reporting\\Formatter\\Html": [
       {"channel":"health.cohesion","magnitudes":[41.7]}
     ],

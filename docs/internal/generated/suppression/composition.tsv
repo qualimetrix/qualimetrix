@@ -106,7 +106,6 @@ rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualime
 rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualimetrix\Core\Symbol	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualimetrix\Infrastructure\Console\Refusal	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualimetrix\Infrastructure\Serializer	error	1
-rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualimetrix\Reporting	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualimetrix\Reporting\Formatter\Prose	warning	1
 rule-namespace-suppression	coupling.instability	coupling.instability	(no file)	Qualimetrix\Analysis\Evidence\Coupling	warning	1
 rule-namespace-suppression	coupling.instability	coupling.instability	(no file)	Qualimetrix\Analysis\Finding\SuppressionBinding	warning	1

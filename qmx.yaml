@@ -2170,8 +2170,6 @@ rules:
     suppress_namespaces:
       # The concrete population language is a shared contract hub for judging rules and publication consumers.
       - exact: 'Qualimetrix\Analysis\Finding\Contract\Population'
-      # Immutable publication records share one transport purpose across formatters.
-      - exact: 'Qualimetrix\Reporting'
       # Concrete prose operations and glyph values need no abstract provider; A=0, I=1/3 gives D=2/3.
       - exact: 'Qualimetrix\Reporting\Formatter\Prose'
       # Baseline's concrete public facts form a contract hub (raw distance 0.659091).
