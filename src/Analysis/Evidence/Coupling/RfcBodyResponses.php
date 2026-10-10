@@ -97,6 +97,7 @@ final class RfcBodyResponses
     /** @param array<string, string> $variables */
     private function assignment(Node\Expr\Assign $node, array &$variables): void
     {
+        $this->visit($node->var, $variables);
         $this->visit($node->expr, $variables);
         RfcReceiverTypes::bind($node, $variables);
     }

@@ -26,6 +26,7 @@ final class RfcGlobalCollectorTest extends TestCase
     {
         yield 'case and imported class aliases' => ['<?php namespace Lib { class Svc { static function run() {} } } namespace App { use Lib\\Svc as Alias; class C { function m() { Alias::RUN(); \\lib\\svc::run(); } } }', 'App\\C', 1, 1];
         yield 'namespace relative class' => ['<?php namespace App; class Svc { static function run() {} } class C { function m() { namespace\\Svc::run(); Svc::RUN(); \\App\\Svc::run(); } }', 'App\\C', 1, 1];
+        yield 'assignment targets retain their direct invocations' => ['<?php class C { function m($a) { $a->make()->p = value(); } }', 'C', 1, 2];
         yield 'functions and methods are separate kinds' => ['<?php class C { function m($a, $b) { run(); RUN(); $a->run(); $b->RUN(); } }', 'C', 1, 2];
         yield 'function aliases resolve without class resolver' => ['<?php namespace App; use function Lib\\run as go; class C { function m() { go(); \\Lib\\run(); } }', 'App\\C', 1, 1];
         yield 'owned aliases count exposed methods but share body membership' => ['<?php trait T { function run() { $this->one(); $this->two(); $this->run(); } } class C { use T { run as one; run as two; } }', 'C', 3, 0];
