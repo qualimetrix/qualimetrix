@@ -272,13 +272,27 @@ final class HarnessSelfTest
                                 $check($name === 'paired' ? 3 : 0, count($beforeIntents), $name . ': the field intention pre-count is concrete');
                                 $check($name === 'paired' ? 3 : 0, count($beforeDerived), $name . ': the field measurement pre-count is concrete');
                             }
-                            $check($name === 'paired' ? [$index, $derived] : [], array_values(array_intersect($mutation->relativePaths(), [$index, $derived])), $name . ': field cleanup is composed only for the nonempty pair');
+                            $expectedRows = [];
+                            $expectedTables = $tables;
+                            $expectedPaths = [];
+                            foreach ([$index => $beforeIntents, $derived => $beforeDerived] as $path => $rows) {
+                                $expectedRows[$path] = array_values(array_filter($rows, static fn(array $row): bool =>
+                                    $row['report'] !== 'json' || $row['view'] !== 'ranking'));
+                                if ($expectedRows[$path] !== $rows) {
+                                    $expectedPaths[] = $path;
+                                    $columns = $path === $index ? DeclaredFields::COLUMNS : DeclaredFields::DERIVED_COLUMNS;
+                                    $expectedTables[$path] = Tsv::render($columns, array_map(static fn(array $row): array => array_values($row), $expectedRows[$path]));
+                                }
+                            }
+                            if ($name === 'paired') {
+                                $check($retained, $expectedTables, 'paired: the expected cleanup retains both exact non-ranking rows');
+                            }
+                            $check($expectedPaths, array_values(array_intersect($mutation->relativePaths(), [$index, $derived])), $name . ': field cleanup is composed exactly for tables carrying unavailable ranking rows');
                             $mutation->apply($target, $root);
                             $mutatedTuple = EquivalenceTuple::derive($tree);
                             $check([...$originalTuple->fields, 'probe'], $mutatedTuple->fields, $name . ': the shared added-member mutation reaches the actual finding record');
                             $check([...$originalTuple->sources, EquivalenceTuple::source()], $mutatedTuple->sources, $name . ': the added member retains the finding record producer');
                             $check($originalSource, Shell::read($root . '/' . $producer), $name . ': the shared mutation leaves the original publisher intact');
-                            $expectedTables = $name === 'paired' ? $retained : $tables;
                             foreach ($expectedTables as $path => $contents) {
                                 $check([$contents !== null, $contents], $snapshot($target->path($path)), $name . ': the private tuple plant removes only unavailable ranking rows: ' . $path);
                                 $check([$tables[$path] !== null, $tables[$path]], $snapshot($root . '/' . $path), $name . ': the original field table retains its presence and bytes: ' . $path);
@@ -286,8 +300,8 @@ final class HarnessSelfTest
                             $afterIntents = DeclarationTable::rows($target->path('finding-gate'), DeclaredFields::INDEX, DeclaredFields::COLUMNS);
                             $afterDerived = DeclarationTable::rows($target->path('finding-gate'), DeclaredFields::DERIVED, DeclaredFields::DERIVED_COLUMNS);
                             if ($name === 'current') {
-                                $check($originalRows[$index], $afterIntents, 'current: every field intention survives the private tuple plant');
-                                $check($originalRows[$derived], $afterDerived, 'current: every field measurement survives the private tuple plant');
+                                $check($expectedRows[$index], $afterIntents, 'current: every available field intention survives the private tuple plant');
+                                $check($expectedRows[$derived], $afterDerived, 'current: every available field measurement survives the private tuple plant');
                             } else {
                                 $check($name === 'paired' ? 2 : 0, count($afterIntents), $name . ': exactly the retained field intentions remain');
                                 $check($name === 'paired' ? 2 : 0, count($afterDerived), $name . ': exactly the retained field measurements remain');
