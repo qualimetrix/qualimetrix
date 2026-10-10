@@ -1,0 +1,22 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 3835
++visible 3643
+@@ -64,3 +64,0 @@
+-            "namespaces": [
+-                "Corpus\\IncompleteDirectorySymlink"
+-            ],
+@@ -90,3 +87,0 @@
+-            "namespaces": [
+-                "Corpus\\IncompleteDirectorySymlink"
+-            ],
+@@ -116,4 +110,4 @@
+-physical-records 851
+-["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.boolean-argument\",\"code\":\"code-smell.boolean-argument\",\"edge\":null,\"file\":\"src/Actual.php\",\"line\":7,\"message\":\"Boolean argument $enabled detected - consider splitting methods or using enums\",\"metricValue\":1,\"namespace\":\"Corpus\\\\IncompleteDirectorySymlink\",\"namespaces\":[\"Corpus\\\\IncompleteDirectorySymlink\"],\"occurrence\":\"15feada3baadd4c4\",\"recommendation\":\"Replace boolean parameter with two explicit methods or use an enum.\",\"rule\":\"code-smell.boolean-argument\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\IncompleteDirectorySymlink\\\\Actual::label@src/Actual.php\",\"symbol\":\"Corpus\\\\IncompleteDirectorySymlink\\\\Actual::label\",\"techDebtMinutes\":10,\"threshold\":null}"]
+-ranking-records 921
+-["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.boolean-argument\",\"code\":\"code-smell.boolean-argument\",\"coupling.class-rank-share\":1,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Actual.php\",\"impactScore\":10,\"line\":7,\"message\":\"Boolean argument $enabled detected - consider splitting methods or using enums\",\"metricValue\":1,\"namespace\":\"Corpus\\\\IncompleteDirectorySymlink\",\"namespaces\":[\"Corpus\\\\IncompleteDirectorySymlink\"],\"occurrence\":\"15feada3baadd4c4\",\"recommendation\":\"Replace boolean parameter with two explicit methods or use an enum.\",\"rule\":\"code-smell.boolean-argument\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\IncompleteDirectorySymlink\\\\Actual::label@src/Actual.php\",\"symbol\":\"Corpus\\\\IncompleteDirectorySymlink\\\\Actual::label\",\"techDebtMinutes\":10,\"threshold\":null}"]
++physical-records 793
++["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.boolean-argument\",\"code\":\"code-smell.boolean-argument\",\"edge\":null,\"file\":\"src/Actual.php\",\"line\":7,\"message\":\"Boolean argument $enabled detected - consider splitting methods or using enums\",\"metricValue\":1,\"namespace\":\"Corpus\\\\IncompleteDirectorySymlink\",\"occurrence\":\"15feada3baadd4c4\",\"recommendation\":\"Replace boolean parameter with two explicit methods or use an enum.\",\"rule\":\"code-smell.boolean-argument\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\IncompleteDirectorySymlink\\\\Actual::label@src/Actual.php\",\"symbol\":\"Corpus\\\\IncompleteDirectorySymlink\\\\Actual::label\",\"techDebtMinutes\":10,\"threshold\":null}"]
++ranking-records 863
++["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.boolean-argument\",\"code\":\"code-smell.boolean-argument\",\"coupling.class-rank-share\":1,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Actual.php\",\"impactScore\":10,\"line\":7,\"message\":\"Boolean argument $enabled detected - consider splitting methods or using enums\",\"metricValue\":1,\"namespace\":\"Corpus\\\\IncompleteDirectorySymlink\",\"occurrence\":\"15feada3baadd4c4\",\"recommendation\":\"Replace boolean parameter with two explicit methods or use an enum.\",\"rule\":\"code-smell.boolean-argument\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\IncompleteDirectorySymlink\\\\Actual::label@src/Actual.php\",\"symbol\":\"Corpus\\\\IncompleteDirectorySymlink\\\\Actual::label\",\"techDebtMinutes\":10,\"threshold\":null}"]

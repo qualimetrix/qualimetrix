@@ -1,0 +1,29 @@
+--- candidate
++++ reference (mapped)
+@@ -1,7 +1,19 @@
+-visible 67
+-<?xml version="1.0" encoding="UTF-8"?>
+-<checkstyle version="3.0"/>
+-
+-invocation-format:checkstyle 67
+-<?xml version="1.0" encoding="UTF-8"?>
+-<checkstyle version="3.0"/>
++visible 1100
++<?xml version="1.0" encoding="UTF-8"?>
++<checkstyle version="3.0">
++  <file name="[project]">
++    <error line="1" severity="warning" message="The suppress_paths pattern &quot;subtree:src/NoSuchDir&quot; matched no file analysed by this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported." source="qmx.suppression.unmatched-path"/>
++    <error line="1" severity="warning" message="The suppress_namespaces pattern &quot;subtree:Corpus\Suppression\Gone&quot; matched no namespace declared in this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported." source="qmx.suppression.unmatched-namespace"/>
++    <error line="1" severity="warning" message="The suppress_paths pattern &quot;subtree:src/AlsoGone&quot; configured under rule &quot;complexity.ccn&quot; matched nothing this run analysed, so it suppressed nothing and could not have." source="qmx.suppression.unmatched-rule-ledger"/>
++  </file>
++</checkstyle>
++
++invocation-format:checkstyle 1100
++<?xml version="1.0" encoding="UTF-8"?>
++<checkstyle version="3.0">
++  <file name="[project]">
++    <error line="1" severity="warning" message="The suppress_paths pattern &quot;subtree:src/NoSuchDir&quot; matched no file analysed by this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported." source="qmx.suppression.unmatched-path"/>
++    <error line="1" severity="warning" message="The suppress_namespaces pattern &quot;subtree:Corpus\Suppression\Gone&quot; matched no namespace declared in this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported." source="qmx.suppression.unmatched-namespace"/>
++    <error line="1" severity="warning" message="The suppress_paths pattern &quot;subtree:src/AlsoGone&quot; configured under rule &quot;complexity.ccn&quot; matched nothing this run analysed, so it suppressed nothing and could not have." source="qmx.suppression.unmatched-rule-ledger"/>
++  </file>
++</checkstyle>

@@ -1,0 +1,22 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 13264
++visible 13218
+@@ -306,2 +306,1 @@
+-            "namespace": null,
+-            "namespaces": [],
++            "namespace": "(project)",
+@@ -330,2 +329,1 @@
+-            "namespace": null,
+-            "namespaces": [],
++            "namespace": "(project)",
+@@ -355,4 +353,4 @@
+-physical-records 690
+-["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"architecture.circular-dependency\",\"code\":\"architecture.circular-dependency\",\"edge\":null,\"file\":null,\"line\":null,\"message\":\"Circular dependency (3 classes): A \\u2192 B \\u2192 C \\u2192 A\",\"metricValue\":3,\"namespace\":null,\"namespaces\":[],\"occurrence\":\"da1273e2c84b95e4\",\"recommendation\":\"Cycle path: A \\u2192 B \\u2192 C \\u2192 A (3 classes). Break by introducing an interface to invert one dependency.\",\"rule\":\"architecture.circular-dependency\",\"severity\":\"warning\",\"subject\":\"project:\",\"symbol\":\"(project)\",\"techDebtMinutes\":120,\"threshold\":null}"]
+-ranking-records 767
+-["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"architecture.circular-dependency\",\"code\":\"architecture.circular-dependency\",\"coupling.class-rank-share\":null,\"debtMinutes\":120,\"edge\":null,\"file\":null,\"impactScore\":139.6,\"line\":null,\"message\":\"Circular dependency (3 classes): A \\u2192 B \\u2192 C \\u2192 A\",\"metricValue\":3,\"namespace\":null,\"namespaces\":[],\"occurrence\":\"da1273e2c84b95e4\",\"recommendation\":\"Cycle path: A \\u2192 B \\u2192 C \\u2192 A (3 classes). Break by introducing an interface to invert one dependency.\",\"rule\":\"architecture.circular-dependency\",\"severity\":\"warning\",\"subject\":\"project:\",\"symbol\":\"(project)\",\"techDebtMinutes\":120,\"threshold\":null}"]
++physical-records 681
++["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"architecture.circular-dependency\",\"code\":\"architecture.circular-dependency\",\"edge\":null,\"file\":null,\"line\":null,\"message\":\"Circular dependency (3 classes): A \\u2192 B \\u2192 C \\u2192 A\",\"metricValue\":3,\"namespace\":\"(project)\",\"occurrence\":\"da1273e2c84b95e4\",\"recommendation\":\"Cycle path: A \\u2192 B \\u2192 C \\u2192 A (3 classes). Break by introducing an interface to invert one dependency.\",\"rule\":\"architecture.circular-dependency\",\"severity\":\"warning\",\"subject\":\"project:\",\"symbol\":\"(project)\",\"techDebtMinutes\":120,\"threshold\":null}"]
++ranking-records 758
++["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"architecture.circular-dependency\",\"code\":\"architecture.circular-dependency\",\"coupling.class-rank-share\":null,\"debtMinutes\":120,\"edge\":null,\"file\":null,\"impactScore\":139.6,\"line\":null,\"message\":\"Circular dependency (3 classes): A \\u2192 B \\u2192 C \\u2192 A\",\"metricValue\":3,\"namespace\":\"(project)\",\"occurrence\":\"da1273e2c84b95e4\",\"recommendation\":\"Cycle path: A \\u2192 B \\u2192 C \\u2192 A (3 classes). Break by introducing an interface to invert one dependency.\",\"rule\":\"architecture.circular-dependency\",\"severity\":\"warning\",\"subject\":\"project:\",\"symbol\":\"(project)\",\"techDebtMinutes\":120,\"threshold\":null}"]

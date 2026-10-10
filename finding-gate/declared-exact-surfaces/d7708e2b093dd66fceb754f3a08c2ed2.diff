@@ -1,0 +1,26 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 3374
++visible 3238
+@@ -63,4 +63,1 @@
+-            "namespace": "Shop",
+-            "namespaces": [
+-                "Shop"
+-            ],
++            "namespace": null,
+@@ -89,4 +86,1 @@
+-            "namespace": "Shop",
+-            "namespaces": [
+-                "Shop"
+-            ],
++            "namespace": null,
+@@ -116,4 +110,4 @@
+-physical-records 643
+-["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"annotation.unresolved-directive\",\"code\":\"annotation.unresolved-directive\",\"edge\":null,\"file\":\"src/Cart.php\",\"line\":8,\"message\":\"Suppression \\\"no.such.rule\\\" addresses no channel. No declared name is close to it. Prose belongs after \\\"--\\\".\",\"metricValue\":null,\"namespace\":\"Shop\",\"namespaces\":[\"Shop\"],\"occurrence\":null,\"recommendation\":null,\"rule\":\"annotation.unresolved-directive\",\"severity\":\"error\",\"subject\":\"file:src/Cart.php\",\"symbol\":\"src/Cart.php\",\"techDebtMinutes\":15,\"threshold\":null}"]
+-ranking-records 713
+-["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"annotation.unresolved-directive\",\"code\":\"annotation.unresolved-directive\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Cart.php\",\"impactScore\":45,\"line\":8,\"message\":\"Suppression \\\"no.such.rule\\\" addresses no channel. No declared name is close to it. Prose belongs after \\\"--\\\".\",\"metricValue\":null,\"namespace\":\"Shop\",\"namespaces\":[\"Shop\"],\"occurrence\":null,\"recommendation\":null,\"rule\":\"annotation.unresolved-directive\",\"severity\":\"error\",\"subject\":\"file:src/Cart.php\",\"symbol\":\"src/Cart.php\",\"techDebtMinutes\":15,\"threshold\":null}"]
++physical-records 613
++["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"annotation.unresolved-directive\",\"code\":\"annotation.unresolved-directive\",\"edge\":null,\"file\":\"src/Cart.php\",\"line\":8,\"message\":\"Suppression \\\"no.such.rule\\\" addresses no channel. No declared name is close to it. Prose belongs after \\\"--\\\".\",\"metricValue\":null,\"namespace\":null,\"occurrence\":null,\"recommendation\":null,\"rule\":\"annotation.unresolved-directive\",\"severity\":\"error\",\"subject\":\"file:src/Cart.php\",\"symbol\":\"src/Cart.php\",\"techDebtMinutes\":15,\"threshold\":null}"]
++ranking-records 683
++["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"annotation.unresolved-directive\",\"code\":\"annotation.unresolved-directive\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Cart.php\",\"impactScore\":45,\"line\":8,\"message\":\"Suppression \\\"no.such.rule\\\" addresses no channel. No declared name is close to it. Prose belongs after \\\"--\\\".\",\"metricValue\":null,\"namespace\":null,\"occurrence\":null,\"recommendation\":null,\"rule\":\"annotation.unresolved-directive\",\"severity\":\"error\",\"subject\":\"file:src/Cart.php\",\"symbol\":\"src/Cart.php\",\"techDebtMinutes\":15,\"threshold\":null}"]

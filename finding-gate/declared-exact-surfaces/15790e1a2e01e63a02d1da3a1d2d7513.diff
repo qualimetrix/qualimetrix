@@ -1,0 +1,24 @@
+--- candidate
++++ reference (mapped)
+@@ -1,4 +1,4 @@
+-visible 196
+-[<normalized>] [WARNING] DIT: 1 incomplete inheritance chain(s) publish DIT lower bounds; design.dit-unresolved: Corpus\StderrWarning\External\ExternalParent (source could not be placed or read).
+-
+-invocation-format:json 17361
++visible 90
++[<normalized>] [WARNING] DIT: 1 incomplete inheritance chain(s) publish DIT lower bounds.
++
++invocation-format:json 17195
+@@ -457,3 +457,0 @@
+-            "namespaces": [
+-                "Corpus\\StderrWarning"
+-            ],
+@@ -483,3 +480,0 @@
+-            "namespaces": [
+-                "Corpus\\StderrWarning"
+-            ],
+@@ -509,2 +503,2 @@
+-invocation-stderr 196
+-[<normalized>] [WARNING] DIT: 1 incomplete inheritance chain(s) publish DIT lower bounds; design.dit-unresolved: Corpus\StderrWarning\External\ExternalParent (source could not be placed or read).
++invocation-stderr 90
++[<normalized>] [WARNING] DIT: 1 incomplete inheritance chain(s) publish DIT lower bounds.

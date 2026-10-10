@@ -1,0 +1,85 @@
+--- candidate
++++ reference (mapped)
+@@ -1,4 +1,78 @@
+-visible 2
+-[]
+-invocation-format:gitlab 2
+-[]
++visible 1604
++[
++    {
++        "description": "The suppress_paths pattern \"subtree:src/NoSuchDir\" matched no file analysed by this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported.",
++        "check_name": "suppression.unmatched-path",
++        "fingerprint": "6761069c98e97dd0a8661219b0fcfae4",
++        "severity": "major",
++        "location": {
++            "path": "_project",
++            "lines": {
++                "begin": 1
++            }
++        }
++    },
++    {
++        "description": "The suppress_namespaces pattern \"subtree:Corpus\\Suppression\\Gone\" matched no namespace declared in this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported.",
++        "check_name": "suppression.unmatched-namespace",
++        "fingerprint": "5d7b2ead3d4b65921a52fb4128fefa4a",
++        "severity": "major",
++        "location": {
++            "path": "_project",
++            "lines": {
++                "begin": 1
++            }
++        }
++    },
++    {
++        "description": "The suppress_paths pattern \"subtree:src/AlsoGone\" configured under rule \"complexity.ccn\" matched nothing this run analysed, so it suppressed nothing and could not have.",
++        "check_name": "suppression.unmatched-rule-ledger",
++        "fingerprint": "c42caafbf10655e6dc4b9433d9bcda53",
++        "severity": "major",
++        "location": {
++            "path": "_project",
++            "lines": {
++                "begin": 1
++            }
++        }
++    }
++]
++invocation-format:gitlab 1604
++[
++    {
++        "description": "The suppress_paths pattern \"subtree:src/NoSuchDir\" matched no file analysed by this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported.",
++        "check_name": "suppression.unmatched-path",
++        "fingerprint": "6761069c98e97dd0a8661219b0fcfae4",
++        "severity": "major",
++        "location": {
++            "path": "_project",
++            "lines": {
++                "begin": 1
++            }
++        }
++    },
++    {
++        "description": "The suppress_namespaces pattern \"subtree:Corpus\\Suppression\\Gone\" matched no namespace declared in this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported.",
++        "check_name": "suppression.unmatched-namespace",
++        "fingerprint": "5d7b2ead3d4b65921a52fb4128fefa4a",
++        "severity": "major",
++        "location": {
++            "path": "_project",
++            "lines": {
++                "begin": 1
++            }
++        }
++    },
++    {
++        "description": "The suppress_paths pattern \"subtree:src/AlsoGone\" configured under rule \"complexity.ccn\" matched nothing this run analysed, so it suppressed nothing and could not have.",
++        "check_name": "suppression.unmatched-rule-ledger",
++        "fingerprint": "c42caafbf10655e6dc4b9433d9bcda53",
++        "severity": "major",
++        "location": {
++            "path": "_project",
++            "lines": {
++                "begin": 1
++            }
++        }
++    }
++]

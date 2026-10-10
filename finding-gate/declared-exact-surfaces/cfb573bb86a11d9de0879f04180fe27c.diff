@@ -1,0 +1,22 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 3540
++visible 3494
+@@ -57,2 +57,1 @@
+-            "namespace": null,
+-            "namespaces": [],
++            "namespace": "(project)",
+@@ -81,2 +80,1 @@
+-            "namespace": null,
+-            "namespaces": [],
++            "namespace": "(project)",
+@@ -106,4 +104,4 @@
+-physical-records 820
+-["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"discovery.unmatched-exclude\",\"code\":\"discovery.unmatched-exclude\",\"edge\":null,\"file\":null,\"line\":null,\"message\":\"The exclude pattern \\\"subtree:NoSuchDir\\\" matched no entry in the project, so it leaves nothing out.\",\"metricValue\":null,\"namespace\":null,\"namespaces\":[],\"occurrence\":\"30500196e002c8a7\",\"recommendation\":\"Check \\\"subtree:NoSuchDir\\\" against project-relative entry paths. Exact selectors name one entry, subtree selectors include descendants, and regex selectors match the full path. Drop the entry if its target is gone.\",\"rule\":\"discovery.unmatched-exclude\",\"severity\":\"warning\",\"subject\":\"project:\",\"symbol\":\"(project)\",\"techDebtMinutes\":10,\"threshold\":null}"]
+-ranking-records 893
+-["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"discovery.unmatched-exclude\",\"code\":\"discovery.unmatched-exclude\",\"coupling.class-rank-share\":null,\"debtMinutes\":10,\"edge\":null,\"file\":null,\"impactScore\":10,\"line\":null,\"message\":\"The exclude pattern \\\"subtree:NoSuchDir\\\" matched no entry in the project, so it leaves nothing out.\",\"metricValue\":null,\"namespace\":null,\"namespaces\":[],\"occurrence\":\"30500196e002c8a7\",\"recommendation\":\"Check \\\"subtree:NoSuchDir\\\" against project-relative entry paths. Exact selectors name one entry, subtree selectors include descendants, and regex selectors match the full path. Drop the entry if its target is gone.\",\"rule\":\"discovery.unmatched-exclude\",\"severity\":\"warning\",\"subject\":\"project:\",\"symbol\":\"(project)\",\"techDebtMinutes\":10,\"threshold\":null}"]
++physical-records 811
++["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"discovery.unmatched-exclude\",\"code\":\"discovery.unmatched-exclude\",\"edge\":null,\"file\":null,\"line\":null,\"message\":\"The exclude pattern \\\"subtree:NoSuchDir\\\" matched no entry in the project, so it leaves nothing out.\",\"metricValue\":null,\"namespace\":\"(project)\",\"occurrence\":\"30500196e002c8a7\",\"recommendation\":\"Check \\\"subtree:NoSuchDir\\\" against project-relative entry paths. Exact selectors name one entry, subtree selectors include descendants, and regex selectors match the full path. Drop the entry if its target is gone.\",\"rule\":\"discovery.unmatched-exclude\",\"severity\":\"warning\",\"subject\":\"project:\",\"symbol\":\"(project)\",\"techDebtMinutes\":10,\"threshold\":null}"]
++ranking-records 884
++["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"discovery.unmatched-exclude\",\"code\":\"discovery.unmatched-exclude\",\"coupling.class-rank-share\":null,\"debtMinutes\":10,\"edge\":null,\"file\":null,\"impactScore\":10,\"line\":null,\"message\":\"The exclude pattern \\\"subtree:NoSuchDir\\\" matched no entry in the project, so it leaves nothing out.\",\"metricValue\":null,\"namespace\":\"(project)\",\"occurrence\":\"30500196e002c8a7\",\"recommendation\":\"Check \\\"subtree:NoSuchDir\\\" against project-relative entry paths. Exact selectors name one entry, subtree selectors include descendants, and regex selectors match the full path. Drop the entry if its target is gone.\",\"rule\":\"discovery.unmatched-exclude\",\"severity\":\"warning\",\"subject\":\"project:\",\"symbol\":\"(project)\",\"techDebtMinutes\":10,\"threshold\":null}"]

@@ -1,0 +1,85 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 2627
++visible 3775
+@@ -86,3 +86,39 @@
+-    }
+-]
+-invocation-format:gitlab 2627
++    },
++    {
++        "description": "Class count is 6, exceeds threshold of 1. Consider splitting into sub-namespaces",
++        "check_name": "size.class-count",
++        "fingerprint": "0182aaef52c3f0ac0df4fb68bbbc9f5c",
++        "severity": "major",
++        "location": {
++            "path": "Corpus\\NameCase",
++            "lines": {
++                "begin": 1
++            }
++        }
++    },
++    {
++        "description": "Class count is 2, exceeds threshold of 1. Consider splitting into sub-namespaces",
++        "check_name": "size.class-count",
++        "fingerprint": "3d43dca39e92782616770d7d164a4e7c",
++        "severity": "major",
++        "location": {
++            "path": "Corpus\\NameCase\\Web",
++            "lines": {
++                "begin": 1
++            }
++        }
++    },
++    {
++        "description": "Circular dependency (2 classes): B \u2192 FOO \u2192 B",
++        "check_name": "architecture.circular-dependency",
++        "fingerprint": "2650577ced3c11db7d965705aa6e88ed",
++        "severity": "critical",
++        "location": {
++            "path": "_project",
++            "lines": {
++                "begin": 1
++            }
++        }
++    }
++]
++invocation-format:gitlab 3775
+@@ -171,0 +207,36 @@
++            }
++        }
++    },
++    {
++        "description": "Class count is 6, exceeds threshold of 1. Consider splitting into sub-namespaces",
++        "check_name": "size.class-count",
++        "fingerprint": "0182aaef52c3f0ac0df4fb68bbbc9f5c",
++        "severity": "major",
++        "location": {
++            "path": "Corpus\\NameCase",
++            "lines": {
++                "begin": 1
++            }
++        }
++    },
++    {
++        "description": "Class count is 2, exceeds threshold of 1. Consider splitting into sub-namespaces",
++        "check_name": "size.class-count",
++        "fingerprint": "3d43dca39e92782616770d7d164a4e7c",
++        "severity": "major",
++        "location": {
++            "path": "Corpus\\NameCase\\Web",
++            "lines": {
++                "begin": 1
++            }
++        }
++    },
++    {
++        "description": "Circular dependency (2 classes): B \u2192 FOO \u2192 B",
++        "check_name": "architecture.circular-dependency",
++        "fingerprint": "2650577ced3c11db7d965705aa6e88ed",
++        "severity": "critical",
++        "location": {
++            "path": "_project",
++            "lines": {
++                "begin": 1

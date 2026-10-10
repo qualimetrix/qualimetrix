@@ -1,0 +1,31 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 3153
++visible 3781
+@@ -32,3 +32,12 @@
+-</checkstyle>
+-
+-invocation-format:checkstyle 3153
++  <file name="Corpus\Design\Anonymous">
++    <error line="1" severity="error" message="Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
++  </file>
++  <file name="Corpus\Design\Hierarchy">
++    <error line="1" severity="error" message="Class count is 9, exceeds threshold of 6. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
++  </file>
++  <file name="Corpus\Design\Model">
++    <error line="1" severity="warning" message="Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
++  </file>
++</checkstyle>
++
++invocation-format:checkstyle 3781
+@@ -64,0 +73,9 @@
++  </file>
++  <file name="Corpus\Design\Anonymous">
++    <error line="1" severity="error" message="Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
++  </file>
++  <file name="Corpus\Design\Hierarchy">
++    <error line="1" severity="error" message="Class count is 9, exceeds threshold of 6. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
++  </file>
++  <file name="Corpus\Design\Model">
++    <error line="1" severity="warning" message="Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>

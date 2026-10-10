@@ -1,5 +1,1 @@
 old	new	reason
-# A root key ends in a colon; a nested leaf uses canonical JSON path arrays on both sides.
-# Example path: ["rules","complexity.ccn","warning"]. Only plain block key positions are editable.
-# Rule:option rows also name CLI tokens. Selector reach and metric formula rewrites are unsupported.
-["rules","coupling.distance","min-class-count"]	["rules","coupling.distance","min-type-count"]	Distance gates the own class-like type population instead of only classes

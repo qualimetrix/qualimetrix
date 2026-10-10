@@ -1,2 +1,1 @@
 surface	file	reason
-tree|rules	declared-delta/tree-rules.diff	The global rules listing declares Distance own-scope measurement and its renamed type-count option

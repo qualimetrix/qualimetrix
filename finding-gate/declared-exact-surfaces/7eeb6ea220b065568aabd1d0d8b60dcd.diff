@@ -1,0 +1,137 @@
+--- candidate
++++ reference (mapped)
+@@ -1,5 +1,5 @@
+-visible 231
+-
+-1 violation(s) suppressed by @qmx-ignore tags across the whole run (reporting selectors are not applied):
+-  src/Suppressed.php
+-    line 14 — eval() usage detected - security risk [code-smell.eval]
++visible 277
++
++1 violation(s) suppressed by @qmx-ignore tags across the whole run (reporting selectors are not applied):
++  src/Suppressed.php
++    line 14 — Replace eval() with a safer alternative (closures, reflection, or template engine). [code-smell.eval]
+@@ -10,5 +10,5 @@
+-invocation-stderr 231
+-
+-1 violation(s) suppressed by @qmx-ignore tags across the whole run (reporting selectors are not applied):
+-  src/Suppressed.php
+-    line 14 — eval() usage detected - security risk [code-smell.eval]
++invocation-stderr 277
++
++1 violation(s) suppressed by @qmx-ignore tags across the whole run (reporting selectors are not applied):
++  src/Suppressed.php
++    line 14 — Replace eval() with a safer alternative (closures, reflection, or template engine). [code-smell.eval]
+@@ -19,1 +19,1 @@
+-invocation-check:output:file 23153
++invocation-check:output:file 21617
+@@ -96,4 +96,1 @@
+-            "namespace": "Shop",
+-            "namespaces": [
+-                "Shop"
+-            ],
++            "namespace": null,
+@@ -125,3 +122,0 @@
+-            "namespaces": [
+-                "Shop"
+-            ],
+@@ -152,4 +146,1 @@
+-            "namespace": "Shop",
+-            "namespaces": [
+-                "Shop"
+-            ],
++            "namespace": null,
+@@ -180,4 +171,1 @@
+-            "namespace": "Shop",
+-            "namespaces": [
+-                "Shop"
+-            ],
++            "namespace": null,
+@@ -208,4 +196,1 @@
+-            "namespace": "Shop",
+-            "namespaces": [
+-                "Shop"
+-            ],
++            "namespace": null,
+@@ -236,4 +221,1 @@
+-            "namespace": "Shop",
+-            "namespaces": [
+-                "Shop"
+-            ],
++            "namespace": null,
+@@ -264,4 +246,1 @@
+-            "namespace": "Shop",
+-            "namespaces": [
+-                "Shop"
+-            ],
++            "namespace": null,
+@@ -293,4 +272,0 @@
+-            "namespaces": [
+-                "Other",
+-                "Shop\\Inner"
+-            ],
+@@ -322,4 +297,0 @@
+-            "namespaces": [
+-                "Other",
+-                "Shop\\Inner"
+-            ],
+@@ -351,4 +322,0 @@
+-            "namespaces": [
+-                "Other",
+-                "Shop\\Inner"
+-            ],
+@@ -377,4 +344,1 @@
+-            "namespace": "Shop",
+-            "namespaces": [
+-                "Shop"
+-            ],
++            "namespace": null,
+@@ -402,3 +366,0 @@
+-            "namespaces": [
+-                "Shop"
+-            ],
+@@ -425,4 +386,1 @@
+-            "namespace": "Shop",
+-            "namespaces": [
+-                "Shop"
+-            ],
++            "namespace": null,
+@@ -449,4 +407,1 @@
+-            "namespace": "Shop",
+-            "namespaces": [
+-                "Shop"
+-            ],
++            "namespace": null,
+@@ -473,4 +428,1 @@
+-            "namespace": "Shop",
+-            "namespaces": [
+-                "Shop"
+-            ],
++            "namespace": null,
+@@ -497,4 +449,1 @@
+-            "namespace": "Shop",
+-            "namespaces": [
+-                "Shop"
+-            ],
++            "namespace": null,
+@@ -521,4 +470,1 @@
+-            "namespace": "Shop",
+-            "namespaces": [
+-                "Shop"
+-            ],
++            "namespace": null,
+@@ -546,4 +492,0 @@
+-            "namespaces": [
+-                "Other",
+-                "Shop\\Inner"
+-            ],
+@@ -571,4 +513,0 @@
+-            "namespaces": [
+-                "Other",
+-                "Shop\\Inner"
+-            ],
+@@ -596,4 +534,0 @@
+-            "namespaces": [
+-                "Other",
+-                "Shop\\Inner"
+-            ],
