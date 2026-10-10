@@ -54,16 +54,10 @@ final class ComputedMetricDefaults
                     // Pure methods (no property access, e.g. interface contract getters) inflate
                     // TCC denominator and LCOM. Adjust both: boost TCC proportionally, reduce LCOM.
                     // D_tcc=0.4, D_lcom=0.7. Classes with no pure methods: formula unchanged.
-                    // The LCOM span stays 5 where the namespace formula moved to 2: this input is
-                    // one class's integer LCOM4 floored at 1 after the pure-method adjustment, and
-                    // its median is 1 across the benchmark corpus (2026-09-14), so saturating at 3
-                    // moves only the lower quartile while pushing classes below a namespace parent
-                    // that is already penalised on the same evidence.
                     SymbolLevel::Class_->value => 'clamp(weighted_mean((m["cohesion.tcc"] ?? null) === null ? null : (m["cohesion.tcc"] + (1 - m["cohesion.tcc"]) * ((m["cohesion.pure-method-count"] ?? 0) / max(m["size.method-count"] ?? 1, 1)) * 0.4) ** 0.5 * 100, 0.5, (m["cohesion.lcom"] ?? null) === null ? null : (1 - clamp((max(m["cohesion.lcom"] - (m["cohesion.pure-method-count"] ?? 0) * 0.7, 1) - 1) / 5, 0, 1)) * 100, 0.5), 0, 100)',
-                    // LCOM4 half: no penalty at 1.0 (the average class is one connected
-                    // component) and saturated at 3.0 (it decomposes into three). The span was 5,
-                    // which put saturation at LCOM4 6.0 — beyond anything measured.
-                    SymbolLevel::Namespace_->value => 'clamp(weighted_mean((m["cohesion.tcc.avg"] ?? null) === null ? null : m["cohesion.tcc.avg"] ** 0.5 * 100, 0.5, (m["cohesion.lcom.avg"] ?? null) === null ? null : (1 - clamp((m["cohesion.lcom.avg"] - 1) / 2, 0, 1)) * 100, 0.5), 0, 100)',
+                    // The unadjusted LCOM contribution uses the class scale: identical
+                    // evidence must not be penalized more merely because it is aggregated.
+                    SymbolLevel::Namespace_->value => 'clamp(weighted_mean((m["cohesion.tcc.avg"] ?? null) === null ? null : m["cohesion.tcc.avg"] ** 0.5 * 100, 0.5, (m["cohesion.lcom.avg"] ?? null) === null ? null : (1 - clamp((m["cohesion.lcom.avg"] - 1) / 5, 0, 1)) * 100, 0.5), 0, 100)',
                 ],
                 applicability: [
                     'class' => ComputedMetricApplicability::anyPresent(['cohesion.tcc', MetricName::COHESION_LCOM]),

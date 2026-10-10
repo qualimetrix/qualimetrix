@@ -253,7 +253,7 @@ final class ComputedMetricDefaultsTest extends TestCase
             self::assertSame(ComputedMetricOutcome::NOT_APPLICABLE, $evaluation->evaluate($typing, $level, ['design.type-coverage.param.total.sum' => 0])->kind);
             self::assertSame(0.0, $evaluation->evaluate($typing, $level, ['design.type-coverage.param.total.sum' => 1, 'design.type-coverage.param.typed.sum' => 0])->value);
             self::assertSame(ComputedMetricOutcome::NOT_APPLICABLE, $evaluation->evaluate($typing, $level, ['design.type-coverage.param.typed.sum' => 5])->kind);
-            self::assertSame(50.0, $evaluation->evaluate($defaults['health.cohesion'], $level, ['cohesion.tcc.count' => 0, 'cohesion.lcom.avg' => 2])->value);
+            self::assertSame(80.0, $evaluation->evaluate($defaults['health.cohesion'], $level, ['cohesion.tcc.count' => 0, 'cohesion.lcom.avg' => 2])->value);
             self::assertSame(0.0, $evaluation->evaluate($defaults['health.cohesion'], $level, ['cohesion.tcc.avg' => 0])->value);
         }
     }

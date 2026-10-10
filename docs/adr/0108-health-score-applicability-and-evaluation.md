@@ -75,6 +75,15 @@ percentage metrics and typing health. A positive total with no typed declaration
 remains a measured zero. These changes do not revise the underlying academic
 cohesion metrics or the existing purity adjustment.
 
+The unadjusted LCOM contribution uses the same span at class and namespace
+levels: one connected component has no penalty, and six exhaust that
+contribution. A namespace formerly exhausted it at three, so identical
+unadjusted evidence scored lower merely by aggregation. Restoring the class
+scale removes that discrepancy without changing academic LCOM, applicability
+or the existing class purity adjustment. This is a correction of that scale,
+not evidence that all namespace scores are monotone relative to their member
+classes; the separate purity adjustment and benchmark calibration remain.
+
 **Publication follows the effective formula and exact subject.** Coverage and
 decomposition describe inputs used by the selected formula, not a builtin with
 the same name. An authored constant 80 cannot borrow builtin input evidence.

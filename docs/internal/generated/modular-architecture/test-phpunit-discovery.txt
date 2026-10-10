@@ -3721,6 +3721,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itSummarizesAbsencesWithBoundedExactSamplesForTheMetricAndLevel
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itTreatsAParenthesisedFallbackChainAsGuardedToItsLastLink
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itUsesTheNullCoalescingFallbackForAMissingMetric
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itUsesTheSameUnadjustedLcomScaleForClassAndNamespace
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itAcceptsALiteralIndexHoweverItIsSpaced
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itEvaluatesNullableMeanClampArgumentsOnceInNativeOrder
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itEvaluatesOrderedNullableMeansWithoutDroppingZero

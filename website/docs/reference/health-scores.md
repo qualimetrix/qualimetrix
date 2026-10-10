@@ -76,6 +76,8 @@ Penalizes high average CCN and cognitive complexity, plus square-root-scaled pen
 
 Combines available TCC (Tight Class Cohesion) and LCOM4 contributions and divides by their participating weight sum. An absent half contributes no default, including for classes with fewer than six methods. TCC retains its square-root scaling and the existing purity adjustment remains unchanged; measured LCOM can still contribute for stateless classes.
 
+The unadjusted LCOM contribution uses the same span of five at class and namespace levels: one component receives no penalty, and six exhaust the contribution. The class purity adjustment remains separate; matching this scale does not guarantee monotonicity between every namespace and its member classes.
+
 ### Coupling
 
 Uses hyperbolic decay (`K / (K + penalty)`) for smooth scoring.

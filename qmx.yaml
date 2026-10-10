@@ -2452,12 +2452,6 @@ rules:
       - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php
     suppress_namespace_channels:
       health.cohesion:
-        # Metadata catalog lookups expose independent health dimensions; aggregate
-        # field cohesion mixes stateless catalog operations with held formula bindings.
-        - exact: 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata'
-        # Alternative serializers implement codec identity, availability and native
-        # encode/decode without a shared instance-field lifecycle.
-        - exact: 'Qualimetrix\Infrastructure\Serializer'
         # Stateless expansion algorithms and their immutable result do not share
         # fields; cohesion is structurally inapplicable only to this exact root.
         - exact: 'Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion'

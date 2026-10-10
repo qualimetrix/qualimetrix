@@ -37,6 +37,27 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class ComputedMetricEvaluatorTest extends TestCase
 {
     #[Test]
+    public function itUsesTheSameUnadjustedLcomScaleForClassAndNamespace(): void
+    {
+        foreach ([1, 2, 3, 6, 7] as $lcom) {
+            $repo = $this->repository();
+            $class = SymbolPath::forClass('App', 'Example');
+            $namespace = SymbolPath::forNamespace('App');
+            $this->addFixture($repo, $class, MetricBag::fromArray([
+                'cohesion.lcom' => $lcom,
+                'cohesion.pure-method-count' => 0,
+            ]), RelativePath::fromString('Example.php'), 1);
+            $this->addFixture($repo, $namespace, MetricBag::fromArray([
+                'cohesion.lcom.avg' => $lcom,
+            ]), null, null);
+            $this->evaluate($repo, [ComputedMetricDefaults::getDefaults()['health.cohesion']]);
+            $classScore = $this->readFixture($repo, $class)->get('health.cohesion');
+            self::assertNotNull($classScore);
+            self::assertEqualsWithDelta($classScore, $this->readFixture($repo, $namespace)->get('health.cohesion'), 0.000001);
+        }
+    }
+
+    #[Test]
     public function itKeepsCustomMissingAndNullAbsenceSeparateFromAuthoredHealthConstant(): void
     {
         $repo = $this->repository();
@@ -910,9 +931,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
         //                   = 100 - 5.0 - 12.0 = 83.0 (no p95/max metrics present → ?? 0)
         self::assertEqualsWithDelta(83.0, $bag->get('health.complexity'), 0.01);
 
-        // health.cohesion = clamp(sqrt(0.5)*50 + (1 - clamp((3-1)/2, 0, 1))*50, 0, 100)
-        //                 = 0.7071*50 + 0*50 = 35.36 (LCOM4 3.0 saturates the structural half)
-        self::assertEqualsWithDelta(35.36, $bag->get('health.cohesion'), 0.01);
+        // health.cohesion = clamp(sqrt(0.5)*50 + (1 - clamp((3-1)/5, 0, 1))*50, 0, 100)
+        //                 = 0.7071*50 + 0.6*50 = 65.36
+        self::assertEqualsWithDelta(65.36, $bag->get('health.cohesion'), 0.01);
 
         // health.coupling = 100 * 18 / (18 + dist*6
         //                              + max(ce_packages_avg*3 + sqrt(ce_avg)*0.5 - 4, 0)*4
@@ -929,9 +950,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
         //                       = 100 - 37.5 - sqrt(15)*4.5 - 0 = 100 - 37.5 - 17.43 = 45.07
         self::assertEqualsWithDelta(45.07, $bag->get('health.maintainability'), 0.5);
 
-        // health.overall = clamp(83*0.30 + 35.36*0.20 + 90.91*0.20 + 76*0.10 + 45.07*0.20, 0, 100)
-        //                = 24.9 + 7.071 + 18.182 + 7.6 + 9.014 = 66.77
-        self::assertEqualsWithDelta(66.77, $bag->get('health.overall'), 0.5);
+        // health.overall = clamp(83*0.30 + 65.36*0.20 + 90.91*0.20 + 76*0.10 + 45.07*0.20, 0, 100)
+        //                = 24.9 + 13.071 + 18.182 + 7.6 + 9.014 = 72.77
+        self::assertEqualsWithDelta(72.77, $bag->get('health.overall'), 0.5);
     }
 
     #[Test]

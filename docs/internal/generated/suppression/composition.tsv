@@ -111,10 +111,8 @@ rule-namespace-suppression	coupling.instability	coupling.instability	(no file)	Q
 rule-namespace-suppression	coupling.instability	coupling.instability	(no file)	Qualimetrix\Infrastructure\Console	warning	1
 rule-namespace-suppression	coupling.instability	coupling.instability	(no file)	Qualimetrix\Infrastructure\DependencyInjection\CompilerPass	warning	1
 rule-namespace-suppression	coupling.instability	coupling.instability	(no file)	Qualimetrix\Infrastructure\DependencyInjection\Configurator	warning	1
-rule-namespace-suppression	health.cohesion	health.cohesion	(no file)	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata	warning	1
 rule-namespace-suppression	health.cohesion	health.cohesion	(no file)	Qualimetrix\Analysis\Evidence\Prioritization	warning	1
 rule-namespace-suppression	health.cohesion	health.cohesion	(no file)	Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion	warning	1
-rule-namespace-suppression	health.cohesion	health.cohesion	(no file)	Qualimetrix\Infrastructure\Serializer	error	1
 rule-namespace-suppression	size.class-count	size.class-count	(no file)	Qualimetrix\Analysis\Evidence\CodeSmell	error	1
 rule-namespace-suppression	size.class-count	size.class-count	(no file)	Qualimetrix\Analysis\Evidence\Coupling	error	1
 rule-namespace-suppression	size.class-count	size.class-count	(no file)	Qualimetrix\Analysis\Finding\Contract\Rule	error	1
