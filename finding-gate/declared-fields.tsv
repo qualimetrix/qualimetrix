@@ -1,5 +1,1 @@
 change	report	view	field	reason
-added	json	format:json	namespaces	publishes the complete namespace membership of every finding; file findings use the captured file namespace index and ranked copies retain the same record.
-added	json	check:baseline-source	namespaces	publishes the complete namespace membership of every finding; file findings use the captured file namespace index and ranked copies retain the same record.
-added	json	check:baseline	namespaces	publishes the complete namespace membership of every finding; file findings use the captured file namespace index and ranked copies retain the same record.
-added	json	ranking	namespaces	publishes the complete namespace membership of every finding; file findings use the captured file namespace index and ranked copies retain the same record.

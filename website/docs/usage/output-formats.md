@@ -400,7 +400,9 @@ targets and other formats retain their existing output behavior.
 ```
 <!-- llms:skip-end -->
 
-`worstNamespaces` includes namespaces declaring at least one own class, interface, trait or enum; containers with only child declarations are excluded. Every numeric field in a namespace record describes its subtree, including `healthOverall`, `healthScores`, `violationCount`, `violationDensity` and `size.class-count.sum`. A class record describes its own exact declaration. `violationDensity` is findings per 100 LOC; it is null when findings exist but LOC is absent or zero.
+The `worstNamespaces` and `worstClasses` entries include a `violationDensity` field: findings per 100 LOC. It is null when findings exist but LOC is absent or zero.
+
+`worstNamespaces` includes namespaces declaring at least one own class, interface, trait or enum; containers with only child declarations are excluded. Every numeric field in a namespace record describes its subtree, including `healthOverall`, `healthScores`, `violationCount`, `violationDensity` and `size.class-count.sum`. A class record describes its own exact declaration.
 
 `healthScores` contains available complexity, cohesion, coupling, typing and maintainability dimensions; it never contains `overall`. The composite is `healthOverall`. Reasons, labels and summary colors follow the effective computed-metric thresholds.
 

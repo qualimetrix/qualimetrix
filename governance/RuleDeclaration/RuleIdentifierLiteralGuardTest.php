@@ -85,17 +85,6 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
         . ' Finding owns the question contract, not their executable producers.'
         . ' ProjectScopeReadersTest compares its exact set with the registered readers;'
         . ' the allowed pair does not exempt any other literal or file.';
-    /**
-     * Why `JsonOffenderSection`'s `size.class-count` output key is exempt: it
-     * is the published JSON key carrying $offender->classCount, sibling to
-     * authored output vocabulary in the same array literal.
-     */
-    private const string JSON_OFFENDER_CLASS_COUNT_REASON =
-        'Key of the published JSON object carrying $offender->classCount, whose'
-        . ' sibling keys in the same array literal (symbolPath, healthOverall,'
-        . ' label, reason, violationCount, violationDensity, healthScores) are'
-        . ' authored output vocabulary. Same argument as JsonFormatter.php: the'
-        . ' wire contract must not move when a metric key is renamed.';
 
     /**
      * Literals legitimately allowed to sit outside the capability that owns
@@ -170,9 +159,6 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
             'cohesion.unmatched-exclude-method' => self::PROJECT_SCOPE_CHANNELS_REASON,
             'coupling.unmatched-framework-namespace' => self::PROJECT_SCOPE_CHANNELS_REASON,
             'discovery.unmatched-exclude' => self::PROJECT_SCOPE_CHANNELS_REASON,
-        ],
-        'src/Reporting/Formatter/Json/JsonOffenderSection.php' => [
-            'size.class-count' => self::JSON_OFFENDER_CLASS_COUNT_REASON,
         ],
     ];
 

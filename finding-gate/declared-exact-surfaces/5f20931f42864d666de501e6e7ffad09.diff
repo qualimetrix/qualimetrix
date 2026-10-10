@@ -1,0 +1,20 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 7409
++visible 7413
+@@ -38,1 +38,1 @@
+-  85.3 Corpus\ParallelFiles (101 classes in subtree, 101 violations, 5.9/100 LOC)
++  85.3 Corpus\ParallelFiles (101 classes, 101 violations, 5.9/100 LOC)
+@@ -44,1 +44,1 @@
+-  +98 more (use --format-opt=top=101)
++  +7 more (use --format=html or --format-opt=top=10)
+@@ -83,1 +83,1 @@
+-invocation-format:summary 7409
++invocation-format:summary 7413
+@@ -120,1 +120,1 @@
+-  85.3 Corpus\ParallelFiles (101 classes in subtree, 101 violations, 5.9/100 LOC)
++  85.3 Corpus\ParallelFiles (101 classes, 101 violations, 5.9/100 LOC)
+@@ -126,1 +126,1 @@
+-  +98 more (use --format-opt=top=101)
++  +7 more (use --format=html or --format-opt=top=10)
