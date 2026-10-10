@@ -9,7 +9,9 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
 use Qualimetrix\Reporting\FormatterContext;
 
-/** Composes detailed finding output and its technical-debt breakdown. */
+/** Composes detailed finding output and its technical-debt breakdown. *
+ * @qmx-threshold coupling.instability warning=0.800001 -- Detail publication composes ordering, namespace attribution, finding and debt rendering through few consumers; extracting the composition transfers its outward dependencies.
+ */
 final class DetailedFindingRenderer
 {
     private readonly FindingDetailRenderer $findingDetailRenderer;

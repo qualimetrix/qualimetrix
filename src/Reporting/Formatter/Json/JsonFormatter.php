@@ -9,7 +9,6 @@ use LogicException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\SourceText\SourceBytes;
 use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
@@ -204,16 +203,7 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
     private function buildSummary(Report $report, array $filteredFindings): array
     {
         if ($report->outOfScope !== null) {
-            $errorCount = 0;
-            $warningCount = 0;
-            $infoCount = 0;
-            foreach ($filteredFindings as $v) {
-                match ($v->severity) {
-                    Severity::Error => $errorCount++,
-                    Severity::Warning => $warningCount++,
-                    Severity::Info => $infoCount++,
-                };
-            }
+            $counts = $this->findingSection->countBySeverity($filteredFindings);
 
             $debtSummary = $this->debtCalculator->calculate($filteredFindings);
 
@@ -222,9 +212,9 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
                 'filesSkipped' => $report->filesSkipped,
                 'duration' => round($report->duration, 3),
                 'violationCount' => \count($filteredFindings),
-                'errorCount' => $errorCount,
-                'warningCount' => $warningCount,
-                'infoCount' => $infoCount,
+                'errorCount' => $counts['error'],
+                'warningCount' => $counts['warning'],
+                'infoCount' => $counts['info'],
                 'techDebtMinutes' => $debtSummary->totalMinutes,
                 // Kept, as null: the selection's debt over the whole project's
                 // LOC would mix two scopes, and a key that vanishes changes the

@@ -72,6 +72,21 @@ final class JsonFindingSection
     }
 
     /**
+     * @param list<Finding> $findings
+     *
+     * @return array{error: int, warning: int, info: int}
+     */
+    public function countBySeverity(array $findings): array
+    {
+        $counts = ['error' => 0, 'warning' => 0, 'info' => 0];
+        foreach ($findings as $finding) {
+            $counts[$finding->severity->value]++;
+        }
+
+        return $counts;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function formatFinding(Finding $finding, FormatterContext $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces): array

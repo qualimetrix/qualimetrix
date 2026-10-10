@@ -18,6 +18,9 @@ use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
+/**
+ * @qmx-threshold health.cohesion warning=30 -- The immutable execution snapshot holds independent metric, graph, scope and population facts; splitting their lookups only moves the same field-cohesion signal to additional carriers.
+ */
 final readonly class AnalysisContext
 {
     /** @var array<string, array<string, ThresholdOverride>> */
@@ -43,12 +46,7 @@ final readonly class AnalysisContext
             foreach ($overrides as $override) {
                 $key = $override->subject->toCanonical();
                 $winner = $winners[$key][$override->rulePattern] ?? null;
-                $specificity = $override->controlScope->specificity();
-                $winnerSpecificity = $winner?->controlScope->specificity() ?? 0;
-                if ($winner === null
-                    || $specificity > $winnerSpecificity
-                    || ($specificity === $winnerSpecificity && self::span($override) < self::span($winner))
-                ) {
+                if (self::wins($override, $winner)) {
                     $winners[$key][$override->rulePattern] = $override;
                 }
             }
@@ -86,5 +84,17 @@ final readonly class AnalysisContext
     private static function span(ThresholdOverride $override): int
     {
         return $override->endLine !== null ? $override->endLine - $override->line : \PHP_INT_MAX;
+    }
+
+    private static function wins(ThresholdOverride $override, ?ThresholdOverride $winner): bool
+    {
+        if ($winner === null) {
+            return true;
+        }
+        $specificity = $override->controlScope->specificity();
+        $winnerSpecificity = $winner->controlScope->specificity();
+
+        return $specificity > $winnerSpecificity
+            || ($specificity === $winnerSpecificity && self::span($override) < self::span($winner));
     }
 }

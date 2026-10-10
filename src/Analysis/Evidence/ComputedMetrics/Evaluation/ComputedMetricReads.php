@@ -27,6 +27,8 @@ use Symfony\Component\ExpressionLanguage\Node\NullCoalesceNode;
  * - A ternary branch, and the right side of `and`/`or`, run only on a value
  *   the symbol carries. Before a run only a key every path reads counts;
  *   after one, {@see ComputedMetricBranchTrace} says which operands ran.
+ *
+ * @qmx-threshold coupling.instability warning=0.800001 -- Formula traversal depends on expression node kinds and has a small incoming population; splitting that traversal transfers its node dependencies.
  */
 final class ComputedMetricReads
 {
