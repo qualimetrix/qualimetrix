@@ -109,7 +109,14 @@ Core/
 │   ├── SymbolLevel.php                    # The project's one level vocabulary
 │   ├── SymbolLevelProjection.php          # The one projection of declaration kind onto level
 │   ├── SymbolPath.php                     # Stable symbol identifier
-│   └── SymbolType.php
+│   ├── SymbolType.php
+│   ├── TraitComposition.php               # Neutral effective imported PHP method composition
+│   ├── TraitCompositionResult.php         # Imported method sources and unread trait names
+│   ├── TraitCompositionScope.php          # Internal recursive raw-fact reads and cycles
+│   ├── TraitDefinitionFacts.php           # Raw own trait methods and nested use facts
+│   ├── TraitMethodPool.php                # Internal direct candidates and adaptations
+│   ├── TraitMethodSource.php              # Original method identity and effective modifiers
+│   └── TraitUseFacts.php                  # Resolved direct traits, aliases and precedences
 ├── Time/
 │   ├── ClockInterface.php                 # "What time is it?" contract
 │   └── SystemClock.php                    # Wall-clock reading of ClockInterface
