@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import importlib.util
 import os
+import signal
 import subprocess
 import sys
 import tempfile
@@ -244,6 +245,102 @@ class PhpunitAggregateTest(unittest.TestCase):
         while process_exists(child_pid) and time.monotonic() < deadline:
             time.sleep(0.02)
         self.assertFalse(process_exists(child_pid), f"timeout left child process {child_pid} alive")
+
+    def test_sigint_during_listing_reaps_its_group_and_term_ignoring_child(self):
+        self.assert_cancellation_during_listing(signal.SIGINT)
+
+    def test_sigterm_during_listing_reaps_its_group_and_term_ignoring_child(self):
+        self.assert_cancellation_during_listing(signal.SIGTERM)
+
+    def test_sigint_during_shards_reaps_every_group_and_term_ignoring_child(self):
+        self.assert_cancellation_during_shards(signal.SIGINT)
+
+    def test_sigterm_during_shards_reaps_every_group_and_term_ignoring_child(self):
+        self.assert_cancellation_during_shards(signal.SIGTERM)
+
+    def assert_cancellation_during_listing(self, signum: int) -> None:
+        configuration = complete_configuration()
+        configuration["list_sleep"] = 30
+        configuration["list_spawn_term_ignoring_child"] = True
+        with tempfile.TemporaryDirectory(prefix="qmx-list-cancel-") as directory:
+            record_directory = Path(directory)
+            environment = os.environ.copy()
+            environment["FAKE_PHPUNIT_CONFIGURATION"] = json.dumps(configuration)
+            environment["FAKE_PHPUNIT_RECORD_DIRECTORY"] = str(record_directory)
+            process = subprocess.Popen(
+                [sys.executable, str(RUNNER), f"--phpunit={FAKE_PHPUNIT}"],
+                cwd=PROJECT_ROOT, env=environment, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                text=True, start_new_session=True,
+            )
+            pids: list[int] = []
+            try:
+                self.wait_for_records(record_directory / "list.pid", record_directory / "list.child-pid")
+                pids = [int((record_directory / name).read_text(encoding="utf-8")) for name in ("list.pid", "list.child-pid")]
+                process.send_signal(signum)
+                stdout, stderr = process.communicate(timeout=8)
+                self.assertEqual(128 + signum, process.returncode, (stdout, stderr))
+                self.assertIn(f"cancelled: received {signal.Signals(signum).name}", stderr)
+                self.assert_processes_gone(pids)
+            finally:
+                self.kill_leftovers(process, pids)
+
+    def assert_cancellation_during_shards(self, signum: int) -> None:
+        configuration = complete_configuration()
+        configuration["run"] = {
+            suite: {"sleep": 30, "spawn_term_ignoring_child": suite == "Unit"}
+            for suite in SUITES
+        }
+        with tempfile.TemporaryDirectory(prefix="qmx-shard-cancel-") as directory:
+            record_directory = Path(directory)
+            environment = os.environ.copy()
+            environment["FAKE_PHPUNIT_CONFIGURATION"] = json.dumps(configuration)
+            environment["FAKE_PHPUNIT_RECORD_DIRECTORY"] = str(record_directory)
+            process = subprocess.Popen(
+                [sys.executable, str(RUNNER), f"--phpunit={FAKE_PHPUNIT}"],
+                cwd=PROJECT_ROOT, env=environment, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                text=True, start_new_session=True,
+            )
+            pids: list[int] = []
+            try:
+                self.wait_for_records(
+                    *(record_directory / f"{suite}.json" for suite in SUITES),
+                    record_directory / "Unit.child-pid",
+                )
+                pids = [
+                    json.loads((record_directory / f"{suite}.json").read_text(encoding="utf-8"))["pid"]
+                    for suite in SUITES
+                ]
+                pids.append(int((record_directory / "Unit.child-pid").read_text(encoding="utf-8")))
+                process.send_signal(signum)
+                stdout, stderr = process.communicate(timeout=8)
+                self.assertEqual(128 + signum, process.returncode, (stdout, stderr))
+                self.assertIn(f"cancelled: received {signal.Signals(signum).name}", stderr)
+                self.assert_processes_gone(pids)
+            finally:
+                self.kill_leftovers(process, pids)
+
+    def wait_for_records(self, *paths: Path) -> None:
+        deadline = time.monotonic() + 4
+        while not all(path.exists() for path in paths) and time.monotonic() < deadline:
+            time.sleep(0.02)
+        self.assertTrue(all(path.exists() for path in paths), [str(path) for path in paths if not path.exists()])
+
+    def assert_processes_gone(self, pids: list[int]) -> None:
+        deadline = time.monotonic() + 2
+        while any(process_exists(pid) for pid in pids) and time.monotonic() < deadline:
+            time.sleep(0.02)
+        self.assertEqual([], [pid for pid in pids if process_exists(pid)])
+
+    def kill_leftovers(self, process: subprocess.Popen[str], pids: list[int]) -> None:
+        if process.poll() is None:
+            os.killpg(process.pid, signal.SIGKILL)
+            process.wait(timeout=2)
+        for pid in pids:
+            if process_exists(pid):
+                try:
+                    os.killpg(pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
 
     def test_printed_commands_are_built_by_the_function_that_starts_a_shard(self):
         """A printed command a reader trusts has to be the command that runs.

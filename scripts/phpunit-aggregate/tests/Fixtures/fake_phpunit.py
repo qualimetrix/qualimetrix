@@ -16,8 +16,16 @@ from pathlib import Path
 configuration = json.loads(os.environ["FAKE_PHPUNIT_CONFIGURATION"])
 arguments = sys.argv[1:]
 suite = next((argument.split("=", 1)[1] for argument in arguments if argument.startswith("--testsuite=")), None)
+record_directory = os.environ.get("FAKE_PHPUNIT_RECORD_DIRECTORY")
 
 if "--list-tests" in arguments:
+    if record_directory is not None:
+        Path(record_directory, "list.pid").write_text(str(os.getpid()), encoding="utf-8")
+    if configuration.get("list_spawn_term_ignoring_child"):
+        child = subprocess.Popen([sys.executable, "-c", "import signal, time; signal.signal(signal.SIGTERM, signal.SIG_IGN); time.sleep(30)"])
+        if record_directory is not None:
+            Path(record_directory, "list.child-pid").write_text(str(child.pid), encoding="utf-8")
+    time.sleep(configuration.get("list_sleep", 0))
     if configuration.get("malformed_listing"):
         print("PHPUnit 12.0.0")
         print("Available tests:")
@@ -51,7 +59,6 @@ if junit_path is not None and behavior.get("junit") != "missing":
                 "time": str(behavior.get("case_time", 0.01)),
             })
         ET.ElementTree(root).write(path, encoding="unicode")
-record_directory = os.environ.get("FAKE_PHPUNIT_RECORD_DIRECTORY")
 if record_directory is not None:
     cache_directory = next(
         argument.split("=", 1)[1]
@@ -59,7 +66,7 @@ if record_directory is not None:
         if argument.startswith("--cache-directory=")
     )
     Path(record_directory, f"{suite}.json").write_text(
-        json.dumps({"suite": suite, "cache_directory": cache_directory, "arguments": arguments}),
+        json.dumps({"suite": suite, "cache_directory": cache_directory, "arguments": arguments, "pid": os.getpid()}),
         encoding="utf-8",
     )
 if behavior.get("spawn_term_ignoring_child"):
