@@ -145,6 +145,8 @@ What follows from the decision: trade-offs, constraints, and implications.
 
 - [0107 — Inheritance Chain Outcomes](0107-inheritance-chain-outcomes.md) — exact depths, numeric floors, non-numeric loops and independent Throwable knowledge share one Design-owned ancestry result.
 
+- [0111 — Resolved RFC Targets and Trait Composition](0111-resolved-rfc-targets-and-trait-composition.md) — exact response membership and neutral PHP trait method composition.
+
 ## Superseded history
 
 - [0008 — ArchitectureProcessor Service](0008-architecture-processor-service.md) — replaced by the capability-oriented topology in ADR 0022.

@@ -3157,9 +3157,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"a sequence in a call argument is a sequence of its own"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"an if alone in a braced else is nested in it"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"an if alone in an alternative-syntax else is nested in it"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"an imported alias of a foreign class is not a self-call"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"an operator change in the middle of a chain"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"arrow function body is nested one level"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"arrow function without control flow adds nothing"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"best-effort AST: a PHP-invalid own-name import collision is not a self-call"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"closure at file level starts at nesting zero"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"closure in a method is a separate unit of the method"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"closure in a ternary branch is nested twice"
@@ -3184,6 +3186,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"recursion counts once per method"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"short ternary inside if gets the nesting increment"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"short ternary next to null coalescing still counts"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"static self-call through a fully qualified name in another letter case"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"static self-call through a namespace-relative class name"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"static self-call through an alias in another letter case"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"static self-call through an imported class alias"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"static self-call through an imported namespace prefix"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"static self-call through the own class name"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"ternary in a catch body is nested"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\CognitiveComplexityVisitorTest::itFollowsTheWhitepaperSpecification"ternary in a do-while condition is not nested"
@@ -3590,6 +3597,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthSummaryBuilderTest::itRanksANamespaceOnlyWhenItDeclaresClassesOfItsOwn
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthSummaryBuilderTest::itRefusesAnIncompleteHealthDefinitionInsteadOfInventingThresholds
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthSummaryBuilderTest::itUsesOwnTypeEligibilityAndSubtreeCountsForAParent
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\MetricHintCatalogTest::itDescribesRfcAsAResponseSetRatherThanAnInterface
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\MetricHintCatalogTest::itDescribesTheInclusiveClassRankHotspotHintBoundaryTruthfully
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\MetricHintCatalogTest::itDescribesTheOwnScopeCboLikeItsSiblings
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\MetricHintCatalogTest::itGetDirectionKnown
@@ -3984,6 +3992,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceCboScopeIntegrationTest::itJudgesANamespaceWithASubNamespaceOnItsOwnClasses
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceCboScopeIntegrationTest::itJudgesTheSameNamespaceOnFewerCouplingsWhenADependentIsLeftOutOfTheRun
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceCboScopeIntegrationTest::itReachesTheSameVerdictWhenTheSubNamespaceIsLeftOutOfTheRun
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\RfcResolvedRunTest::itPreservesExactResolvedMetricsAcrossWorkersAndWarmAstCache
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\UnmatchedFrameworkNamespaceIntegrationTest::itFailsTheRunUnderFailOnWarning
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\UnmatchedFrameworkNamespaceIntegrationTest::itIsSilencedByDisablingTheProducingRule
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\UnmatchedFrameworkNamespaceIntegrationTest::itLeavesTheRunGreenUnderFailOnNone
@@ -4321,14 +4330,76 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\NamespaceCboOptionsTest::itDefaultsToEnabledWhenConstructedFromAnEmptyArray
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\NamespaceInstabilityOptionsTest::itDefaultsToEnabledWhenTheOptionsArrayIsEmpty
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\NamespaceInstabilityOptionsTest::itIsDisabledWhenTheEnabledFlagIsFalse
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcCollectorTest::itClearsStateOnReset
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcCollectorTest::itCountsExternalCallsSeparately
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcCollectorTest::itDeliberatelyDoesNotProvideCallableMetrics
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcCollectorTest::itKeepsDistinctResponsesForSameFileDeclarations
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcCollectorTest::itProvidesExpectedMetricNames
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcCollectorTest::itReturnsClassesWithComputedMetrics
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcCollectorTest::itReturnsCollectorName
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcCollectorTest::itReturnsCorrectMetricDefinitions
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcCollectorTest::itKeepsExactSameNameBodiesAndRowsThroughSerialization
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcCollectorTest::itProvidesOnlyRawRowsBeforeTheSoleGlobalPublisher
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcCollectorTest::itResetsItsRawDeclarationStateBetweenFiles
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itAggregatesTheFinalDeclarationValuesExactlyOnce
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"ambiguous named receiver has no selected declaration"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"ambiguous parent cannot absorb responses"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"ambiguous trait has no chosen source"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"case and imported class aliases"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"class override excludes trait body"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"closures keep captured receivers and their own parameter scope"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"conditional assignment cannot narrow the following statement"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"conflicting trait hooks have no arbitrary source"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"empty declaration gets explicit zero"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"excluded trait body is not scanned"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"function aliases resolve without class resolver"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"functions and methods are separate kinds"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"hook bodies keep distinct caller identities"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"hook property spelling is case sensitive"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"hooked and plain trait property conflict has no chosen body"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"imported hooks keep property spelling and bodies"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"inheritance cycle falls back by method name"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"inherited property supplies one exact receiver type"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"inherited self and parent property types retain declaring context"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"known missing methods retain receiver identity"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"loop assignments cannot leak across iterations"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"namespace relative class"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"nested alias retains leaf body source"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"nullable single class and local reassignment"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"one chosen property cannot import a conflicted sibling hook"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"own untyped property does not borrow a trait type"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"owned aliases count exposed methods but share body membership"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"positive instanceof does not leak outside branch"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"qualified alias restores excluded body"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"trait context belongs to consumer"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"trait property and promoted consumer type"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"typed assignment invalidates after a branch"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"unions and intersections have no unique receiver"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"unread ancestry retains the method name fallback"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"unread direct named class retains class identity"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"unread trait adds no invented member"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"visibility changes do not add methods"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itUsesEachExactCrossFileDeclarationParent
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F01"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F02"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F03"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F04"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F05"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F06"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F07"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F08"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F09"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F10"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F11"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F12"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F13"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F14"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F15"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F16"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F17"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F18"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F19"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F20"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F21"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F22"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F23"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F24"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F25"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F26"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F27"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcResponseFormsTest::itResolvesEveryResponseForm"F28"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcVisitorTest::itCalculatesRfcCorrectly"abstract methods"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcVisitorTest::itCalculatesRfcCorrectly"anonymous classes ignored"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcVisitorTest::itCalculatesRfcCorrectly"complex order processor"
@@ -4351,14 +4422,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcVisitorTest::itCalculatesRfcCorrectly"static calls"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcVisitorTest::itCalculatesRfcCorrectly"trait with concrete methods"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcVisitorTest::itClearsStateOnReset
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcVisitorTest::itCountsMethodChainsOnDifferentReceiversSeparately
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcVisitorTest::itCountsMultipleNullsafeCallsSeparately
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcVisitorTest::itCountsNullsafeMethodCallInRfc
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcVisitorTest::itCountsPromotedPropertyHooks
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcVisitorTest::itCountsPropertyHooksAndTheirLexicallyNestedCallableCalls
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcVisitorTest::itDeduplicatesNullsafeAndRegularCalls
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcVisitorTest::itDoesNotTreatCapturesOrCloneWithAsRfcExecution
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcVisitorTest::itTreatsNewSelfStaticParentAsInternal
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcVisitorTest::itKeepsUnreadConstructorsDistinctFromKnownExternalConstructors
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcVisitorTest::itSharesUnknownMethodChainResponseNames
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itCountsASourceOnceTheTargetIsMeasuredToo
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itDistinguishesScopeSelectorsUnknownGraphAndKnownEmptyClassification
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFrameworkNamespaceRuleTest::itDoesNotCountASourceTheCollectorNeverClassifies
@@ -4561,6 +4632,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DitAggregateRunTest::itAggregatesTheDepthItPublishesPerClass
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DitAggregateRunTest::itCountsClassesRatherThanEveryClassLevelSymbol
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DitAggregateRunTest::itPublishesDegreeZeroAbstractClassesAndOnlyClassDepthsFromSource
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DitAggregateRunTest::itUsesResolvedParentNamesForTheExactDeclarationDepth
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DuplicateDeclarationDepthRunTest::itDoesNotMoveWhenTheTwoDeclarationsSwapFileNames
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DuplicateDeclarationDepthRunTest::itGivesEachDeclarationOfOneNameItsOwnDepth
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\Inheritance\DuplicateDeclarationDepthRunTest::itKeepsParsedMixedCyclesIndependentOfComposerSelectedRoot
@@ -10184,6 +10256,33 @@ Available tests:
  - Qualimetrix\Tests\Core\Symbol\Unit\SymbolLevelProjectionTest::itProjectsEveryDeclarationKindOntoItsAggregationLevel"a method is a callable"
  - Qualimetrix\Tests\Core\Symbol\Unit\SymbolLevelProjectionTest::itProjectsEveryDeclarationKindOntoItsAggregationLevel"a namespace"
  - Qualimetrix\Tests\Core\Symbol\Unit\SymbolLevelProjectionTest::itProjectsEveryDeclarationKindOntoItsAggregationLevel"the project"
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itComposesImportedMethods"abstract source and alias remain abstract"
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itComposesImportedMethods"adaptations span separate use statements"
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itComposesImportedMethods"ascii identity and high bytes remain distinct"
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itComposesImportedMethods"concrete method satisfies abstract peer"
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itComposesImportedMethods"diamond reuses one source"
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itComposesImportedMethods"excluded source remains aliasable"
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itComposesImportedMethods"explicit alias visibility leaves original"
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itComposesImportedMethods"imported only and private source"
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itComposesImportedMethods"nested alias uses direct qualifier and leaf source"
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itComposesImportedMethods"nested own abstract method overrides imported concrete"
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itComposesImportedMethods"own method resolves conflict and alias collision"
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itComposesImportedMethods"unqualified alias preserves original"
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itComposesImportedMethods"unqualified alias spans separate use statements"
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itComposesImportedMethods"visibility only leaves alias original visibility"
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itDoesNotGuessAnUnqualifiedAliasWithUnreadCandidates
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itMarksOnlyActiveCycleMembersUnreadAndKeepsOuterOwnMethods
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itPreservesKnownMethodsAcrossUnreadNestedUses
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itReadsEachFoldedTraitOncePerCompositionWithoutSharingRuns
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itRefusesKnownConflicts"alias same name collides"
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itRefusesKnownConflicts"aliases collide even with same source"
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itRefusesKnownConflicts"concrete sources collide"
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itRefusesKnownConflicts"diamond visibility mismatch collides"
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itRefusesKnownConflicts"known empty differs from unread"
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itRefusesKnownConflicts"precedence names direct excluded trait"
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itRefusesKnownConflicts"qualifier must be direct trait"
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itRefusesKnownConflicts"unqualified alias searches original pool after precedence"
+ - Qualimetrix\Tests\Core\Symbol\Unit\TraitCompositionTest::itRefusesKnownConflicts"unqualified missing method is invalid when complete"
  - Qualimetrix\Tests\Core\Unit\Ast\NameResolutionTest::itAnnotatesTheOriginalNameNodesBeforeConsumersVisitTheirParents
  - Qualimetrix\Tests\Core\Unit\Ast\NameResolutionTest::itCollectsAliasErrorsWithoutFailingTheFile
  - Qualimetrix\Tests\Core\Unit\Ast\NameResolutionTest::itLetsAConsumerRefuseNameResolutionErrors

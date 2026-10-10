@@ -3289,13 +3289,6 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRfcData": {
-      "path": "src/Analysis/Evidence/Coupling/RfcVisitor.php",
-      "kind": "class",
-      "owner": "Analysis.Evidence.Coupling",
-      "visibility": "internal",
-      "consumers": []
-    },
     "Qualimetrix\\Analysis\\Evidence\\Coupling\\Configuration\\CouplingSection": {
       "path": "src/Analysis/Evidence/Coupling/Configuration/CouplingSection.php",
       "kind": "class",
@@ -3613,6 +3606,14 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\DeclarationRelationIndex"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationIndex"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
         }
       ]
     },
@@ -3697,6 +3698,10 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\DeclarationRelationIndex"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationIndex"
         }
       ]
     },
@@ -4342,10 +4347,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathComplexityCollector"
         },
         {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
-        },
-        {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageCollector"
         },
@@ -4380,6 +4381,10 @@
         {
           "owner": "Analysis.Evidence.Size",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodStatementCountCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
         }
       ]
     },
@@ -4450,10 +4455,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityRule"
         },
         {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
-        },
-        {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector"
         },
@@ -4500,6 +4501,10 @@
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\OffenderRanking"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
         }
       ]
     },
@@ -4578,10 +4583,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\TccLccCollector"
         },
         {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
-        },
-        {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageCollector"
         },
@@ -4600,6 +4601,10 @@
         {
           "owner": "Analysis.Evidence.Complexity",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CyclomaticComplexityCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
         }
       ]
     },
@@ -4663,19 +4668,11 @@
         },
         {
           "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityVisitor"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CyclomaticComplexityVisitor"
         },
         {
           "owner": "Analysis.Evidence.Complexity",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathComplexityVisitor"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
         },
         {
           "owner": "Analysis.Evidence.Design",
@@ -4712,6 +4709,14 @@
         {
           "owner": "Analysis.Evidence.Complexity",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CyclomaticComplexityCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityVisitor"
         }
       ]
     },
@@ -4734,10 +4739,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\TccLccCollector"
         },
         {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
-        },
-        {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageVisitor"
         },
@@ -4752,6 +4753,10 @@
         {
           "owner": "Analysis.Evidence.Complexity",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CyclomaticComplexityCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
         }
       ]
     },
@@ -4888,6 +4893,10 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\ContainerFactory"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
         }
       ]
     },
@@ -4959,10 +4968,6 @@
         },
         {
           "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityVisitor"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CyclomaticComplexityCollector"
         },
         {
@@ -4988,10 +4993,6 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CouplingCollector"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
         },
         {
           "owner": "Analysis.Evidence.Design",
@@ -5132,6 +5133,14 @@
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\OffenderRanking"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityVisitor"
         }
       ]
     },
@@ -5198,10 +5207,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceCollector"
         },
         {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
-        },
-        {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector"
         },
@@ -5248,6 +5253,10 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\MeasurementRepositoryFactory"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
         }
       ]
     },
@@ -5380,10 +5389,6 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
         },
         {
           "owner": "Analysis.Evidence.Design",
@@ -5528,6 +5533,10 @@
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\OffenderRanking"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
         }
       ]
     },
@@ -5696,6 +5705,14 @@
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\OffenderRanking"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationIndex"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
         }
       ]
     },
@@ -5879,19 +5896,11 @@
         },
         {
           "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityVisitor"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CyclomaticComplexityVisitor"
         },
         {
           "owner": "Analysis.Evidence.Complexity",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathComplexityVisitor"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcVisitor"
         },
         {
           "owner": "Analysis.Evidence.Design",
@@ -5928,6 +5937,14 @@
         {
           "owner": "Analysis.Evidence.Size",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodStatementCountVisitor"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcVisitor"
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityVisitor"
         }
       ]
     },
@@ -5951,10 +5968,6 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityVisitor"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CyclomaticComplexityVisitor"
         },
         {
@@ -5968,6 +5981,10 @@
         {
           "owner": "Analysis.Evidence.Size",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodStatementCountVisitor"
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityVisitor"
         }
       ]
     },
@@ -5992,10 +6009,6 @@
         {
           "owner": "Analysis.Evidence.CodeSmell",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeVisitor"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityVisitor"
         },
         {
           "owner": "Analysis.Evidence.Complexity",
@@ -6024,6 +6037,10 @@
         {
           "owner": "Analysis.Evidence.Size",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodStatementCountVisitor"
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityVisitor"
         }
       ]
     },
@@ -16159,6 +16176,18 @@
         {
           "owner": "Infrastructure.Composer",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Composer\\DeclaredClassLikeFactExtractor"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcClassFacts"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcReceiverTypes"
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityVisitor"
         }
       ]
     },
@@ -16718,10 +16747,6 @@
         },
         {
           "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityVisitor"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CyclomaticComplexityCollector"
         },
         {
@@ -16739,10 +16764,6 @@
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Offender\\WorstOffender"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
         },
         {
           "owner": "Analysis.Evidence.DependencyModel",
@@ -17091,6 +17112,14 @@
         {
           "owner": "Analysis.Evidence.Measurement",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\FileNamespaceIndex"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityVisitor"
         }
       ]
     },
@@ -17737,6 +17766,10 @@
         {
           "owner": "Analysis.Evidence.Complexity",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CyclomaticComplexityCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationIndex"
         }
       ]
     },
@@ -17901,6 +17934,10 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationIdentity"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationFacts"
         }
       ]
     },
@@ -18321,6 +18358,14 @@
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Offender\\WorstOffender"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationIndex"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
         }
       ]
     },
@@ -18549,6 +18594,10 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\AbstractRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationIndex"
         }
       ]
     },
@@ -18741,10 +18790,6 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
         },
         {
           "owner": "Analysis.Evidence.Coupling",
@@ -19217,6 +19262,10 @@
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\OffenderRanking"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
         }
       ]
     },
@@ -19321,10 +19370,6 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\FrameworkClassificationSites"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
         },
         {
           "owner": "Analysis.Evidence.Coupling",
@@ -19621,6 +19666,10 @@
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\OffenderRanking"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
         }
       ]
     },
@@ -25485,6 +25534,14 @@
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\OffenderRanking"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationIndex"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcResponseResolver"
         }
       ]
     },
@@ -26739,6 +26796,154 @@
       "path": "src/Analysis/Evidence/ComputedMetrics/Health/Offender/RankedOffenders.php",
       "kind": "class",
       "owner": "Analysis.Evidence.ComputedMetrics.Health",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\Symbol\\TraitComposition": {
+      "path": "src/Core/Symbol/TraitComposition.php",
+      "kind": "class",
+      "owner": "Core.Symbol",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcEffectiveMembers"
+        }
+      ]
+    },
+    "Qualimetrix\\Core\\Symbol\\TraitDefinitionFacts": {
+      "path": "src/Core/Symbol/TraitDefinitionFacts.php",
+      "kind": "class",
+      "owner": "Core.Symbol",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcEffectiveMembers"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationFacts"
+        }
+      ]
+    },
+    "Qualimetrix\\Core\\Symbol\\TraitMethodSource": {
+      "path": "src/Core/Symbol/TraitMethodSource.php",
+      "kind": "class",
+      "owner": "Core.Symbol",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationFacts"
+        }
+      ]
+    },
+    "Qualimetrix\\Core\\Symbol\\TraitUseFacts": {
+      "path": "src/Core/Symbol/TraitUseFacts.php",
+      "kind": "class",
+      "owner": "Core.Symbol",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationFacts"
+        }
+      ]
+    },
+    "Qualimetrix\\Core\\Symbol\\TraitCompositionScope": {
+      "path": "src/Core/Symbol/TraitCompositionScope.php",
+      "kind": "class",
+      "owner": "Core.Symbol",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\Symbol\\TraitCompositionResult": {
+      "path": "src/Core/Symbol/TraitCompositionResult.php",
+      "kind": "class",
+      "owner": "Core.Symbol",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcEffectiveMembers"
+        }
+      ]
+    },
+    "Qualimetrix\\Core\\Symbol\\TraitMethodPool": {
+      "path": "src/Core/Symbol/TraitMethodPool.php",
+      "kind": "class",
+      "owner": "Core.Symbol",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcBodyResponses": {
+      "path": "src/Analysis/Evidence/Coupling/RfcBodyResponses.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Coupling",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcClassFacts": {
+      "path": "src/Analysis/Evidence/Coupling/RfcClassFacts.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Coupling",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector": {
+      "path": "src/Analysis/Evidence/Coupling/RfcGlobalCollector.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Coupling",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationFacts": {
+      "path": "src/Analysis/Evidence/Coupling/RfcDeclarationFacts.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Coupling",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcResponseResolver": {
+      "path": "src/Analysis/Evidence/Coupling/RfcResponseResolver.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Coupling",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcEffectiveMembers": {
+      "path": "src/Analysis/Evidence/Coupling/RfcEffectiveMembers.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Coupling",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationIndex": {
+      "path": "src/Analysis/Evidence/Coupling/RfcDeclarationIndex.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Coupling",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcLocalFlow": {
+      "path": "src/Analysis/Evidence/Coupling/RfcLocalFlow.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Coupling",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcReceiverTypes": {
+      "path": "src/Analysis/Evidence/Coupling/RfcReceiverTypes.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Coupling",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcPropertyTypes": {
+      "path": "src/Analysis/Evidence/Coupling/RfcPropertyTypes.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Coupling",
       "visibility": "internal",
       "consumers": []
     }

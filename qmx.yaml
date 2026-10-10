@@ -319,7 +319,6 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Coupling\ClassRankCollector'
         - 'Qualimetrix\Analysis\Evidence\Coupling\ClassRankOptions'
         - 'Qualimetrix\Analysis\Evidence\Coupling\ClassRankRule'
-        - 'Qualimetrix\Analysis\Evidence\Coupling\ClassRfcData'
         - 'Qualimetrix\Analysis\Evidence\Coupling\Configuration\CouplingSection'
         - 'Qualimetrix\Analysis\Evidence\Coupling\Configuration\FrameworkNamespaceSelectorParser'
         - 'Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface'
@@ -334,7 +333,17 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule'
         - 'Qualimetrix\Analysis\Evidence\Coupling\NamespaceCboOptions'
         - 'Qualimetrix\Analysis\Evidence\Coupling\NamespaceInstabilityOptions'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\RfcBodyResponses'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\RfcClassFacts'
         - 'Qualimetrix\Analysis\Evidence\Coupling\RfcCollector'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\RfcDeclarationFacts'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\RfcDeclarationIndex'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\RfcEffectiveMembers'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\RfcGlobalCollector'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\RfcLocalFlow'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\RfcPropertyTypes'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\RfcReceiverTypes'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\RfcResponseResolver'
         - 'Qualimetrix\Analysis\Evidence\Coupling\RfcVisitor'
         - 'Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkFinding'
         - 'Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceOptions'
@@ -1167,6 +1176,13 @@ architecture:
         - 'Qualimetrix\Core\Symbol\SymbolLevelProjection'
         - 'Qualimetrix\Core\Symbol\SymbolPath'
         - 'Qualimetrix\Core\Symbol\SymbolType'
+        - 'Qualimetrix\Core\Symbol\TraitComposition'
+        - 'Qualimetrix\Core\Symbol\TraitCompositionResult'
+        - 'Qualimetrix\Core\Symbol\TraitCompositionScope'
+        - 'Qualimetrix\Core\Symbol\TraitDefinitionFacts'
+        - 'Qualimetrix\Core\Symbol\TraitMethodPool'
+        - 'Qualimetrix\Core\Symbol\TraitMethodSource'
+        - 'Qualimetrix\Core\Symbol\TraitUseFacts'
     - name: infrastructure-ast
       patterns:
         - 'Qualimetrix\Infrastructure\Ast\CachedFileParser'
@@ -1564,6 +1580,7 @@ architecture:
     analysis-evidence-complexity:
       - analysis-evidence-measurement
       - analysis-finding
+      - core-neutral
       - core-path
       - core-symbol
       - external
@@ -1996,7 +2013,6 @@ rules:
       - regex: 'src/Analysis/Evidence/CodeSmell/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Cohesion/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Complexity/.*Visitor\.php'
-      - regex: 'src/Analysis/Evidence/Coupling/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Maintainability/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Size/.*Visitor\.php'
       # DI configurators wire all services (coupling is their job)
@@ -2125,8 +2141,6 @@ rules:
     suppress_namespaces:
       # Temporary until this exact subject is split.
       - exact: 'Qualimetrix\Analysis\Evidence\CodeSmell'
-      # Temporary until this exact subject is split.
-      - exact: 'Qualimetrix\Analysis\Evidence\Coupling'
       # Temporary until this exact subject is split.
       - exact: 'Qualimetrix\Analysis\Finding\Contract\Rule'
       # Temporary until this exact subject is split.
@@ -2278,7 +2292,6 @@ rules:
       - regex: 'src/Analysis/Evidence/CodeSmell/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Cohesion/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Complexity/.*Visitor\.php'
-      - regex: 'src/Analysis/Evidence/Coupling/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Maintainability/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Size/.*Visitor\.php'
 

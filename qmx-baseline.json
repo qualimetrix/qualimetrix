@@ -127,9 +127,6 @@
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyOptions@src/Analysis/Evidence/CircularDependency/CircularDependencyOptions.php": [
       {"channel":"health.cohesion","magnitudes":[40]}
     ],
-    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRfcData@src/Analysis/Evidence/Coupling/RfcVisitor.php": [
-      {"channel":"design.data-class","magnitudes":[22]}
-    ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Coupling\\CouplingCollector@src/Analysis/Evidence/Coupling/CouplingCollector.php": [
       {"channel":"design.god-class","magnitudes":[3]}
     ],
@@ -220,7 +217,8 @@
       {"channel":"health.maintainability","magnitudes":[43.7]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Coupling": [
-      {"channel":"coupling.cbo","magnitudes":[20]}
+      {"channel":"coupling.cbo","magnitudes":[22]},
+      {"channel":"size.class-count","magnitudes":[35]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Design": [
       {"channel":"coupling.instability","magnitudes":[0.972603]}
@@ -256,10 +254,13 @@
       {"channel":"coupling.instability","magnitudes":[0.95122]}
     ],
     "ns:Qualimetrix\\Core\\Ast": [
-      {"channel":"coupling.cbo","magnitudes":[17]}
+      {"channel":"coupling.cbo","magnitudes":[18]}
     ],
     "ns:Qualimetrix\\Core\\FileTarget": [
       {"channel":"size.class-count","magnitudes":[24]}
+    ],
+    "ns:Qualimetrix\\Core\\Symbol": [
+      {"channel":"size.class-count","magnitudes":[21]}
     ],
     "ns:Qualimetrix\\Infrastructure\\Composer": [
       {"channel":"coupling.cbo","magnitudes":[18]}

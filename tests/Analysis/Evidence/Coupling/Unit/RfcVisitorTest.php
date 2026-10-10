@@ -10,8 +10,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\Coupling\ClassRfcData;
+use Qualimetrix\Analysis\Evidence\Coupling\RfcClassFacts;
 use Qualimetrix\Analysis\Evidence\Coupling\RfcVisitor;
+use Qualimetrix\Tests\Analysis\Evidence\Coupling\Support\RfcMeasurement;
 
 #[CoversClass(RfcVisitor::class)]
 final class RfcVisitorTest extends TestCase
@@ -23,15 +24,7 @@ final class RfcVisitorTest extends TestCase
     #[DataProvider('provideRfcCases')]
     public function itCalculatesRfcCorrectly(string $code, array $expected): void
     {
-        $visitor = new RfcVisitor();
-        $parser = (new ParserFactory())->createForHostVersion();
-        $ast = $parser->parse($code) ?? [];
-
-        $traverser = new NodeTraverser();
-        $traverser->addVisitor($visitor);
-        $traverser->traverse($ast);
-
-        $classesData = self::byName($visitor->getClassesData());
+        $classesData = RfcMeasurement::byName(RfcMeasurement::measure(['Case.php' => $code]));
 
         foreach ($expected as $classFqn => $expectedData) {
             self::assertArrayHasKey($classFqn, $classesData, "Missing data for class $classFqn");
@@ -39,17 +32,17 @@ final class RfcVisitorTest extends TestCase
             $data = $classesData[$classFqn];
             self::assertSame(
                 $expectedData['coupling.rfc'],
-                $data->getRfc(),
+                $data->get('coupling.rfc'),
                 "RFC mismatch for $classFqn",
             );
             self::assertSame(
                 $expectedData['own'],
-                $data->getOwnMethodsCount(),
+                $data->get('coupling.rfc-own'),
                 "Own methods count mismatch for $classFqn",
             );
             self::assertSame(
                 $expectedData['external'],
-                $data->getExternalMethodsCount(),
+                $data->get('coupling.rfc-external'),
                 "External methods count mismatch for $classFqn",
             );
         }
@@ -243,7 +236,7 @@ PHP,
             ],
         ];
 
-        // Abstract methods should not be counted
+        // Abstract declarations are members of M.
         yield 'abstract methods' => [
             'code' => <<<'PHP'
 <?php
@@ -256,10 +249,10 @@ abstract class AbstractClass
 
     abstract public function abstractMethod(): void;
 }
-// M = 1 (only concrete), R = 1, RFC = 2
+// M = 2 (abstract and concrete), R = 1, RFC = 3
 PHP,
             'expected' => [
-                'AbstractClass' => ['coupling.rfc' => 2, 'own' => 1, 'external' => 1],
+                'AbstractClass' => ['coupling.rfc' => 3, 'own' => 2, 'external' => 1],
             ],
         ];
 
@@ -429,10 +422,10 @@ trait LoggerTrait
 
     abstract public function getWriter(): object;
 }
-// M = 2 (only concrete), R = 1, RFC = 3
+// M = 3 (abstract and concrete), R = 1, RFC = 4
 PHP,
             'expected' => [
-                'App\LoggerTrait' => ['coupling.rfc' => 3, 'own' => 2, 'external' => 1],
+                'App\LoggerTrait' => ['coupling.rfc' => 4, 'own' => 3, 'external' => 1],
             ],
         ];
 
@@ -464,7 +457,7 @@ PHP,
             ],
         ];
 
-        // Different receivers with same method name should count as separate
+        // Unknown receivers share the method-name fallback.
         yield 'different receivers same method name' => [
             'code' => <<<'PHP'
 <?php
@@ -472,15 +465,15 @@ class MultiRepo
 {
     public function saveAll(): void
     {
-        $this->userRepo->save();   // +1 external (userRepo->save)
-        $this->orderRepo->save();  // +1 external (orderRepo->save)
-        $this->cacheRepo->save();  // +1 external (cacheRepo->save)
+        $this->userRepo->save();
+        $this->orderRepo->save();
+        $this->cacheRepo->save();
     }
 }
-// M = 1, R = 3, RFC = 4
+// M = 1, R = 1, RFC = 2
 PHP,
             'expected' => [
-                'MultiRepo' => ['coupling.rfc' => 4, 'own' => 1, 'external' => 3],
+                'MultiRepo' => ['coupling.rfc' => 2, 'own' => 1, 'external' => 1],
             ],
         ];
 
@@ -553,22 +546,14 @@ class NullsafeService
 }
 PHP;
 
-        $visitor = new RfcVisitor();
-        $parser = (new ParserFactory())->createForHostVersion();
-        $ast = $parser->parse($code) ?? [];
-
-        $traverser = new NodeTraverser();
-        $traverser->addVisitor($visitor);
-        $traverser->traverse($ast);
-
-        $classesData = self::byName($visitor->getClassesData());
+        $classesData = RfcMeasurement::byName(RfcMeasurement::measure(['Case.php' => $code]));
 
         self::assertArrayHasKey('NullsafeService', $classesData);
         $data = $classesData['NullsafeService'];
         // M = 1, R = 1 (nullsafe method call), RFC = 2
-        self::assertSame(2, $data->getRfc());
-        self::assertSame(1, $data->getOwnMethodsCount());
-        self::assertSame(1, $data->getExternalMethodsCount());
+        self::assertSame(2, $data->get('coupling.rfc'));
+        self::assertSame(1, $data->get('coupling.rfc-own'));
+        self::assertSame(1, $data->get('coupling.rfc-external'));
     }
 
     /**
@@ -589,29 +574,21 @@ class NullsafeMulti
 }
 PHP;
 
-        $visitor = new RfcVisitor();
-        $parser = (new ParserFactory())->createForHostVersion();
-        $ast = $parser->parse($code) ?? [];
-
-        $traverser = new NodeTraverser();
-        $traverser->addVisitor($visitor);
-        $traverser->traverse($ast);
-
-        $classesData = self::byName($visitor->getClassesData());
+        $classesData = RfcMeasurement::byName(RfcMeasurement::measure(['Case.php' => $code]));
 
         self::assertArrayHasKey('NullsafeMulti', $classesData);
         $data = $classesData['NullsafeMulti'];
         // M = 1, R = 2 (two different nullsafe calls), RFC = 3
-        self::assertSame(3, $data->getRfc());
-        self::assertSame(1, $data->getOwnMethodsCount());
-        self::assertSame(2, $data->getExternalMethodsCount());
+        self::assertSame(3, $data->get('coupling.rfc'));
+        self::assertSame(1, $data->get('coupling.rfc-own'));
+        self::assertSame(2, $data->get('coupling.rfc-external'));
     }
 
     /**
-     * new self()/new static()/new parent() should NOT count as external constructor calls.
+     * Missing constructor targets retain the method-name fallback.
      */
     #[Test]
-    public function itTreatsNewSelfStaticParentAsInternal(): void
+    public function itKeepsUnreadConstructorsDistinctFromKnownExternalConstructors(): void
     {
         $code = <<<'PHP'
 <?php
@@ -639,29 +616,21 @@ class SelfFactory
 }
 PHP;
 
-        $visitor = new RfcVisitor();
-        $parser = (new ParserFactory())->createForHostVersion();
-        $ast = $parser->parse($code) ?? [];
-
-        $traverser = new NodeTraverser();
-        $traverser->addVisitor($visitor);
-        $traverser->traverse($ast);
-
-        $classesData = self::byName($visitor->getClassesData());
+        $classesData = RfcMeasurement::byName(RfcMeasurement::measure(['Case.php' => $code]));
 
         self::assertArrayHasKey('SelfFactory', $classesData);
         $data = $classesData['SelfFactory'];
-        // M = 4, R = 1 (only new SomeOther()), RFC = 5
-        self::assertSame(5, $data->getRfc());
-        self::assertSame(4, $data->getOwnMethodsCount());
-        self::assertSame(1, $data->getExternalMethodsCount());
+        // self/static retain SelfFactory; unread parent and SomeOther are distinct targets.
+        self::assertSame(7, $data->get('coupling.rfc'));
+        self::assertSame(4, $data->get('coupling.rfc-own'));
+        self::assertSame(3, $data->get('coupling.rfc-external'));
     }
 
     /**
-     * Method chains on different receivers should each count as unique external calls.
+     * Unknown receivers in method chains share each method-name response.
      */
     #[Test]
-    public function itCountsMethodChainsOnDifferentReceiversSeparately(): void
+    public function itSharesUnknownMethodChainResponseNames(): void
     {
         $code = <<<'PHP'
 <?php
@@ -675,21 +644,12 @@ class ChainService
 }
 PHP;
 
-        $visitor = new RfcVisitor();
-        $parser = (new ParserFactory())->createForHostVersion();
-        $ast = $parser->parse($code) ?? [];
-
-        $traverser = new NodeTraverser();
-        $traverser->addVisitor($visitor);
-        $traverser->traverse($ast);
-
-        $classesData = self::byName($visitor->getClassesData());
+        $classesData = RfcMeasurement::byName(RfcMeasurement::measure(['Case.php' => $code]));
 
         self::assertArrayHasKey('ChainService', $classesData);
         $data = $classesData['ChainService'];
-        // M = 1, R should be >= 4 (getB, save, getD, save — the two save() calls
-        // should NOT dedup because they have different complex receivers)
-        self::assertGreaterThanOrEqual(4, $data->getExternalMethodsCount());
+        // M = 1; getB, getD and the shared unknown save response contribute R = 3.
+        self::assertSame(3, $data->get('coupling.rfc-external'));
     }
 
     /**
@@ -710,22 +670,14 @@ class NullsafeDedup
 }
 PHP;
 
-        $visitor = new RfcVisitor();
-        $parser = (new ParserFactory())->createForHostVersion();
-        $ast = $parser->parse($code) ?? [];
-
-        $traverser = new NodeTraverser();
-        $traverser->addVisitor($visitor);
-        $traverser->traverse($ast);
-
-        $classesData = self::byName($visitor->getClassesData());
+        $classesData = RfcMeasurement::byName(RfcMeasurement::measure(['Case.php' => $code]));
 
         self::assertArrayHasKey('NullsafeDedup', $classesData);
         $data = $classesData['NullsafeDedup'];
         // M = 1, R = 1 (repo->save deduplicates), RFC = 2
-        self::assertSame(2, $data->getRfc());
-        self::assertSame(1, $data->getOwnMethodsCount());
-        self::assertSame(1, $data->getExternalMethodsCount());
+        self::assertSame(2, $data->get('coupling.rfc'));
+        self::assertSame(1, $data->get('coupling.rfc-own'));
+        self::assertSame(1, $data->get('coupling.rfc-external'));
     }
 
     #[Test]
@@ -748,17 +700,18 @@ PHP;
         $visitor = new RfcVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        \Qualimetrix\Core\Ast\NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
-        $data = self::byName($visitor->getClassesData())['Profile'];
+        $data = RfcMeasurement::byName(RfcMeasurement::measure(['Case.php' => $code]))['Profile'];
 
         // Two hooks are own callables; load() and normalize() are external calls.
-        self::assertSame(4, $data->getRfc());
-        self::assertSame(2, $data->getOwnMethodsCount());
-        self::assertSame(2, $data->getExternalMethodsCount());
+        self::assertSame(4, $data->get('coupling.rfc'));
+        self::assertSame(2, $data->get('coupling.rfc-own'));
+        self::assertSame(2, $data->get('coupling.rfc-external'));
     }
 
     #[Test]
@@ -779,16 +732,17 @@ PHP;
         $visitor = new RfcVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        \Qualimetrix\Core\Ast\NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
-        $data = self::byName($visitor->getClassesData())['Profile'];
+        $data = RfcMeasurement::byName(RfcMeasurement::measure(['Case.php' => $code]))['Profile'];
 
-        self::assertSame(3, $data->getRfc());
-        self::assertSame(2, $data->getOwnMethodsCount());
-        self::assertSame(1, $data->getExternalMethodsCount());
+        self::assertSame(3, $data->get('coupling.rfc'));
+        self::assertSame(2, $data->get('coupling.rfc-own'));
+        self::assertSame(1, $data->get('coupling.rfc-external'));
     }
 
     #[Test]
@@ -815,18 +769,19 @@ PHP;
         $visitor = new RfcVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        \Qualimetrix\Core\Ast\NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
-        $data = self::byName($visitor->getClassesData())['Captures'];
+        $data = RfcMeasurement::byName(RfcMeasurement::measure(['Case.php' => $code]))['Captures'];
 
         // M = 2; first-class callable captures and clone-with create values but
         // do not invoke external RFC response targets.
-        self::assertSame(2, $data->getRfc());
-        self::assertSame(2, $data->getOwnMethodsCount());
-        self::assertSame(0, $data->getExternalMethodsCount());
+        self::assertSame(2, $data->get('coupling.rfc'));
+        self::assertSame(2, $data->get('coupling.rfc-own'));
+        self::assertSame(0, $data->get('coupling.rfc-external'));
     }
 
     #[Test]
@@ -847,6 +802,7 @@ class First
 PHP;
 
         $ast1 = $parser->parse($code1) ?? [];
+        \Qualimetrix\Core\Ast\NameResolution::resolve($ast1);
         $traverser = new NodeTraverser();
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast1);
@@ -865,6 +821,7 @@ class Second
 PHP;
 
         $ast2 = $parser->parse($code2) ?? [];
+        \Qualimetrix\Core\Ast\NameResolution::resolve($ast2);
         $traverser2 = new NodeTraverser();
         $traverser2->addVisitor($visitor);
         $traverser2->traverse($ast2);
@@ -877,9 +834,9 @@ PHP;
     }
 
     /**
-     * @param array<int, ClassRfcData> $classes
+     * @param array<int, RfcClassFacts> $classes
      *
-     * @return array<string, ClassRfcData>
+     * @return array<string, RfcClassFacts>
      */
     private static function byName(array $classes): array
     {
