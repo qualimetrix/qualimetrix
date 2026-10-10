@@ -1663,6 +1663,7 @@ Qualimetrix\Analysis\Finding\Selection\SelectionRefusals	Analysis.Finding	Qualim
 Qualimetrix\Analysis\Finding\Selection\SelectionSpecificity	Analysis.Finding	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
 Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit	Analysis.Finding	Qualimetrix\Core\Pattern\NamespacePattern	Core.Neutral	contract
 Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit	Analysis.Finding	Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	contract
+Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit	Analysis.Finding	Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	contract
 Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit	Analysis.Finding	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
 Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionFinding	Analysis.Finding	Qualimetrix\Core\Pattern\NamespacePattern	Core.Neutral	contract
 Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionFinding	Analysis.Finding	Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	contract

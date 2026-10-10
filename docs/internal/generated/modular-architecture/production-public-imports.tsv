@@ -2798,6 +2798,7 @@ Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	Qualimetrix\I
 Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateContentMerger	Analysis.Evidence.Duplication	src/Analysis/Evidence/Duplication/Matching/DuplicateContentMerger.php	ast-name
 Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	Qualimetrix\Analysis\Finding\Contract\OccurrenceKey	Analysis.Finding	src/Analysis/Finding/Contract/OccurrenceKey.php	ast-name
 Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity	Analysis.Finding	src/Analysis/Finding/Contract/Population/PopulationIdentity.php	ast-name
+Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit	Analysis.Finding	src/Analysis/Finding/SuppressionBinding/UnboundSuppressionAudit.php	ast-name
 Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService	Analysis.Policy.Baseline	src/Analysis/Policy/Baseline/BoundaryExplanationService.php	ast-name
 Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsagePopulation	Analysis.Policy.Inline	src/Analysis/Policy/Inline/Directive/Audit/DirectiveUsagePopulation.php	ast-name
 Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	Qualimetrix\Core\Symbol\DeclarationPath	Core.Symbol	src/Core/Symbol/DeclarationPath.php	ast-name
