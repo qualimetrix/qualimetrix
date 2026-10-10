@@ -483,7 +483,6 @@ final class LayerViolationRuleTest extends TestCase
             'source' => $dependency->source->toCanonical(),
             'target' => $dependency->targetLogical()->toCanonical(),
             'type' => $dependency->type->value,
-            'projectedTarget' => $targetSubject->toCanonical(),
         ])->value, $findings[0]->occurrenceKey?->value);
         self::assertSame($dependency->sourceLogical(), $findings[0]->symbolPath);
     }
@@ -532,7 +531,7 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function itKeepsOwnedTargetOccurrencesWhenThePublishedSubjectIsSource(): void
+    public function itCountsOwnedTargetsWithinTheSameSourceLogicalTargetOccurrence(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
         $architecture = $this->buildArchitecture([
@@ -556,10 +555,10 @@ final class LayerViolationRuleTest extends TestCase
             array_map(static fn(\Qualimetrix\Analysis\Finding\Contract\Finding $finding): string => $finding->subject->toCanonical(), $findings),
         );
         self::assertSame([
-            $this->targetOccurrence($dependency, $first),
-            $this->targetOccurrence($dependency, $second),
+            $this->targetOccurrence($dependency),
+            $this->targetOccurrence($dependency),
         ], array_map(static fn(\Qualimetrix\Analysis\Finding\Contract\Finding $finding): ?string => $finding->occurrenceKey?->value, $findings));
-        self::assertNotSame($findings[0]->occurrenceKey?->value, $findings[1]->occurrenceKey?->value);
+        self::assertSame($findings[0]->occurrenceKey?->value, $findings[1]->occurrenceKey?->value);
     }
 
     #[Test]
@@ -591,10 +590,10 @@ final class LayerViolationRuleTest extends TestCase
 
         self::assertCount(4, $findings);
         self::assertSame([
-            $this->targetOccurrence($dependencies[0], $firstTarget),
-            $this->targetOccurrence($dependencies[0], $secondTarget),
-            $this->targetOccurrence($dependencies[2], $firstTarget),
-            $this->targetOccurrence($dependencies[2], $secondTarget),
+            $this->targetOccurrence($dependencies[0]),
+            $this->targetOccurrence($dependencies[0]),
+            $this->targetOccurrence($dependencies[2]),
+            $this->targetOccurrence($dependencies[2]),
         ], array_map(
             static fn(\Qualimetrix\Analysis\Finding\Contract\Finding $finding): ?string => $finding->occurrenceKey?->value,
             $findings,
@@ -643,13 +642,12 @@ final class LayerViolationRuleTest extends TestCase
         self::assertNotSame($findings[0]->occurrenceKey?->value, $findings[1]->occurrenceKey?->value);
     }
 
-    private function targetOccurrence(Dependency $dependency, MetricSubject $target): string
+    private function targetOccurrence(Dependency $dependency): string
     {
         return OccurrenceKey::semantic('architecture.layer-violation', [
             'source' => $dependency->source->toCanonical(),
             'target' => $dependency->targetLogical()->toCanonical(),
             'type' => $dependency->type->value,
-            'projectedTarget' => $target->toCanonical(),
         ])->value;
     }
 
@@ -734,11 +732,11 @@ final class LayerViolationRuleTest extends TestCase
         self::assertCount(1, $fallbackFindings);
         self::assertCount(1, $oneFindings);
         self::assertCount(2, $manyFindings);
-        self::assertSame([$this->targetOccurrence($dependency, $first), $this->targetOccurrence($dependency, $second)], array_map(
+        self::assertSame([$this->targetOccurrence($dependency), $this->targetOccurrence($dependency)], array_map(
             static fn(\Qualimetrix\Analysis\Finding\Contract\Finding $finding): ?string => $finding->occurrenceKey?->value,
             $manyFindings,
         ));
-        self::assertNotSame($manyFindings[0]->occurrenceKey?->value, $manyFindings[1]->occurrenceKey?->value);
+        self::assertSame($manyFindings[0]->occurrenceKey?->value, $manyFindings[1]->occurrenceKey?->value);
         self::assertSame($dependency->location, $manyFindings[0]->location);
         self::assertSame($target, $manyFindings[0]->dependencyTarget);
         self::assertSame(DependencyType::New_, $manyFindings[0]->dependencyType);

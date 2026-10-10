@@ -110,11 +110,12 @@ Generate, update and writing cleanup prepare a private sibling before analysis.
 The parent must permit creation and replacement even when the final file exists.
 They publish complete bytes atomically after identity and content-hash checks;
 no-op update/cleanup preserve the final bytes and inode. SIGINT/SIGTERM before
-publication discard the own sibling and return 128 + signal. These staged
-commands require pcntl, default SIGINT/SIGTERM handlers and no registered
-event-loop signal callbacks. Unavailable capability refuses with exit 3 before
-preparation or analysis. Replacing handlers during the operation is unsupported.
-SIGKILL, cleanup failure and already published targets are outside that guarantee.
+publication discard the own sibling and return 128 + signal when pcntl and
+exclusive signal ownership are available. Otherwise ordinary atomic publication
+proceeds without replacing foreign handlers, and interruption may leave the
+private sibling. Replacing handlers during a guarded operation is unsupported.
+SIGKILL, cleanup failure and already published targets are also outside that
+guarantee.
 
 ### Generate
 
@@ -176,7 +177,8 @@ Other entries follow ordinary tightening. Unknown delta, changed generated
 policy without sufficient proof, incomplete analysis or unavailable required
 groups refuses the whole write. The options cannot combine.
 
-An absent `file:` entry is removable as `exclusions-removed-population` only
+An absent `file:` or exact `declaration:` entry is removable as
+`exclusions-removed-population` only
 when a complete inventory and the exact recorded-scope run prove its own
 present PHP file newly excluded, with unchanged generated policy. Cleanup
 offers the same selector. Relation entries without source provenance still

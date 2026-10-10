@@ -55,6 +55,36 @@ final class LayerViolationBaselineMigrationTest extends TestCase
     }
 
     #[Test]
+    public function itKeepsAcceptedLayerOccurrencesWhenOnlyTheSourceIsSelected(): void
+    {
+        $generated = $this->command(
+            \Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand::class,
+            ['baseline' => 'fresh.json', '--only-rule' => [self::CHANNEL]],
+        );
+        self::assertSame(0, $generated->getStatusCode(), $generated->getDisplay());
+        $full = $this->command(CheckCommand::class, ['--format' => 'json', '--only-rule' => [self::CHANNEL]]);
+        $narrow = $this->command(CheckCommand::class, ['paths' => ['src/Application/Consumer.php'], '--baseline' => 'fresh.json', '--format' => 'json', '--only-rule' => [self::CHANNEL], '--fail-on' => 'warning']);
+        self::assertSame(1, $narrow->getStatusCode(), $narrow->getDisplay());
+        $original = json_decode($full->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        $selected = json_decode($narrow->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        $occurrences = static fn(array $report): array => array_column(array_values(array_filter($report['violations'], static fn(array $finding): bool => $finding['channel'] === self::CHANNEL)), 'occurrence');
+        self::assertSame($occurrences($original), $occurrences($selected));
+        foreach ($selected['violations'] as $finding) {
+            self::assertSame(1, $finding['acceptedLevel']['count']);
+            self::assertSame('not-compared', $finding['baselineVerdict']);
+            self::assertSame('outside-coverage', $finding['baselineReason']);
+        }
+        rename('src/Domain/UnionTarget.php', 'src/Domain/RenamedUnionTarget.php');
+        $renamed = $this->command(CheckCommand::class, ['--baseline' => 'fresh.json', '--format' => 'json', '--only-rule' => [self::CHANNEL], '--fail-on' => 'warning', '--show-suppressed' => true]);
+        self::assertSame(0, $renamed->getStatusCode(), $renamed->getDisplay());
+        $renamedReport = json_decode($renamed->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame([], $renamedReport['violations']);
+        $renamedRaw = $this->command(CheckCommand::class, ['--format' => 'json', '--only-rule' => [self::CHANNEL]]);
+        $renamedRawReport = json_decode($renamedRaw->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame($occurrences($original), $occurrences($renamedRawReport));
+    }
+
+    #[Test]
     public function itReportsSourceViolationsAndRetiredEntriesFromALegacyBaseline(): void
     {
         $check = $this->command(CheckCommand::class, ['--baseline' => 'baseline.json', '--format' => 'json']);
@@ -98,7 +128,7 @@ final class LayerViolationBaselineMigrationTest extends TestCase
         self::assertCount(4, $selectors);
         $cleanup = $this->command(BaselineCleanupCommand::class, ['baseline' => 'baseline.json']);
         self::assertSame(Command::SUCCESS, $cleanup->getStatusCode(), $cleanup->getDisplay());
-        self::assertStringContainsString('2 entries could be removed', $cleanup->getDisplay());
+        self::assertStringContainsString('4 entries could be removed', $cleanup->getDisplay());
         self::assertSame($before, $this->bytes());
         foreach ($old->inertEntries as $entry) {
             self::assertStringContainsString($entry->selector->value, $cleanup->getDisplay());

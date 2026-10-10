@@ -80,6 +80,31 @@ final class DirectivesCommandTest extends TestCase
     }
 
     #[Test]
+    #[DataProvider('unrelatedRemovedFiles')]
+    public function itJudgesADeadNocDirectiveInsideTheSelectedUniverse(string $removal): void
+    {
+        $this->writeSource('Kept.php', "<?php\n// @qmx-ignore-file design.noc -- no child exists in this universe\nnamespace Fixture;\nclass Kept {}\n");
+        $this->writeSource('Removed.php', "<?php\n" . ($removal === 'generated' ? '/** @generated */' : '') . "\nnamespace Other;\nclass Removed {}\n");
+        file_put_contents($this->tempDir . '/composer.json', '{"autoload":{"psr-4":{"Fixture\\\\":"src/"}}}');
+        $config = $this->writeConfig(($removal === 'excluded' ? "exclude: [{exact: src/Removed.php}]\n" : '')
+            . "fail_on: warning\nrules:\n  annotation.directive:\n    unused-directive-severity: warning\n");
+        $options = ['paths' => [$this->tempDir . '/src'], '--config' => $config, '--only-rule' => ['design.noc', 'annotation.unused-directive']];
+        $check = $this->runCheck($options);
+        self::assertSame(1, $check->getStatusCode(), $check->getDisplay());
+        self::assertStringContainsString('annotation.unused-directive', $check->getDisplay());
+        $audit = $this->audit($options);
+        self::assertSame(2, $audit->getStatusCode(), $audit->getDisplay());
+        self::assertStringContainsString('inert', $audit->getDisplay());
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function unrelatedRemovedFiles(): iterable
+    {
+        yield 'generated' => ['generated'];
+        yield 'excluded' => ['excluded'];
+    }
+
+    #[Test]
     public function itDoesNotFailAWarningGateForANocDirectiveOnASelectedParent(): void
     {
         $this->writeSource('Parent.php', <<<'SOURCE'

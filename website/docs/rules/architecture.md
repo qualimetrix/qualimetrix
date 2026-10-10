@@ -1188,8 +1188,12 @@ To suppress a layer violation, address the exact channel: `@qmx-ignore architect
 !!! info "Deviation from original spec"
     Layer matching is logical; the finding subject is the exact source declaration.
     An unowned target produces one finding; an owned target produces one projection
-    per exact target declaration. Targets remain in occurrence identity and
-    cardinality, while symbol/namespace controls judge the source of each projection.
+    per exact target declaration. These count units share occurrence identity
+    from exact source, logical target and dependency kind; selecting or renaming
+    target files cannot change it. An unknown target's physical file and
+    declaration cardinality cannot be inferred. A narrowed Run-reach population
+    retains its matched accepted level as `not-compared`, with ordinary severity.
+    Symbol/namespace controls judge the source of each projection.
     Next-line/file controls use the physical dependency site. Repeated identical
     edges retain one count-bounded baseline identity without using its presentation line.
 
@@ -1217,7 +1221,7 @@ The framework (`RuleOptionsBuild`) extracts `suppress_namespaces` / `suppress_pa
 - **`relations:` is a whitelist; aliases expand reflectively.** Long-form allow targets accept a `relations:` list that constrains which `DependencyType` kinds are permitted. Direct values are validated against `DependencyType::cases()` reflectively, so adding a new dependency kind to the collector automatically becomes accepted in YAML. There is no `forbid_relations:` — whitelist-only avoids resolution ambiguity and the maintenance cost of a parallel enum.
 - **Vendor namespaces are first-class layers.** Name patterns work on external edge ends. `extends` and `implements` follow exactly placed installed declarations as data; missing, conflicting or cut branches remain undecidable. Own attributes of an unanalysed external declaration are not inferred from its ancestry. Place a namespace-pattern fallback before an unresolved criterion when that is the intended policy.
 - **Same-layer dependencies are always allowed** in the MVP. Sub-module isolation within a single layer is deferred to Phase 2.
-- **Exact source and target occurrences.** A forbidden dependency is attributed to its exact source declaration. Zero owned targets gives one logical-target occurrence; owned targets give one occurrence per exact target declaration. Baseline groups keep this occurrence identity and count.
+- **Exact source and logical target occurrences.** A forbidden dependency is attributed to its exact source declaration. Zero owned targets gives one count unit; owned targets give one unit per exact target declaration, all sharing the source/logical-target/dependency-kind occurrence. A narrowed population does not tighten the accepted count.
 - **Out-of-layer ends are silently ignored** for layer-violation purposes. Their count is reported separately via the `coverage-gap` mode, which splits it: classes every declared criterion answered "no" about, and classes some criterion could not be answered for at all. Assignments that stand on a layer the run could not fully answer are not part of the gap; [`architecture.doubted-assignment`](#doubted-assignment) counts them.
 - **Default-enabled, but inert without layers.** The rule reports `enabled: true` by default and short-circuits when `architecture.layers` is empty, so projects without architecture configuration see zero overhead.
 - **Safety nets, not ambiguity errors.** The previous specificity-based algorithm rejected ambiguous configurations at load time. Under declaration-order matching, ambiguity does not exist — the order disambiguates — but the user can still **misorder** layers. Two diagnostics catch this: `architecture.unreachable-layer` (a layer that captured nothing) and `architecture.potential-shadow` (an earlier layer that silently stole classes from a later one). Both are configuration diagnostics — they fail the run unconditionally and have no severity option (see the note under [Coverage modes](#coverage-modes)). See the dedicated sections above.

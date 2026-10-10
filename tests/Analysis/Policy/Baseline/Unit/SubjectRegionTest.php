@@ -23,6 +23,18 @@ use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FindingFactory;
 final class SubjectRegionTest extends TestCase
 {
     #[Test]
+    public function itResolvesDeclarationFileBytesBeforeDiscardingTheOccurrenceOrdinal(): void
+    {
+        $identity = new BaselineIdentity(
+            'declaration:callable:App\\Service::run@src/Service%23%40.php#2',
+            new FindingChannel('complexity.ccn'),
+        );
+        self::assertSame('src/Service#@.php', SubjectRegion::subjectFile($identity)?->value());
+        $relation = new BaselineIdentity('class:App\\Service', new FindingChannel('architecture.layer-violation'));
+        self::assertNull(SubjectRegion::subjectFile($relation));
+    }
+
+    #[Test]
     public function itDoesNotTreatAnEmptyCurrentGroupAsProofOfPsr4Containment(): void
     {
         $identity = new BaselineIdentity(SymbolPath::forNamespace('App\\Domain')->toCanonical(), new FindingChannel('size.namespace-size'));

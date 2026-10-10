@@ -47,7 +47,9 @@ final readonly class SubjectCoverageFacts
             return $observation->file !== null && isset($this->analyzed[$observation->file->value()]);
         }
 
-        return $this->scope->judgesNamespaceClaims() && $this->failed === [];
+        $judged = $localLevel ? $this->scope->judgesSelectedUniverse() : $this->scope->judgesNamespaceClaims();
+
+        return $judged && $this->failed === [];
     }
 
     public function analyzed(RelativePath $file): bool

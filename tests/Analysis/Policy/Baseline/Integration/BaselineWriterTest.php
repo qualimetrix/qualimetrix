@@ -455,6 +455,8 @@ final class BaselineWriterTest extends TestCase
                 self::fail('The write must not proceed while another holder has the lock.');
             } catch (RuntimeException $e) {
                 self::assertStringContainsString($path . '.lock', $e->getMessage());
+                self::assertStringContainsString('0.2 seconds', $e->getMessage());
+                self::assertStringContainsString('another process', $e->getMessage());
             }
 
             self::assertFileDoesNotExist($path, 'A refused write must not have touched the target.');

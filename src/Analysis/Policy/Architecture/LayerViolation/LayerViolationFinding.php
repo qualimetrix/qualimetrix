@@ -20,9 +20,9 @@ use Qualimetrix\Core\Symbol\MetricSubject;
  *
  * Policy evaluation remains in {@see LayerViolationRule}. Once the rule has
  * established that an edge is forbidden, this value materializes one finding
- * for each ready owned target declaration, preserving its occurrence identity.
- * Every finding belongs to the exact source declaration. With no owned targets,
- * it emits one source finding without target projection evidence.
+ * for each ready owned target declaration. Those count units share a stable
+ * occurrence identified by exact source, logical target and dependency kind.
+ * With no owned targets, it emits one source finding.
  */
 final readonly class LayerViolationFinding
 {
@@ -51,14 +51,12 @@ final readonly class LayerViolationFinding
      */
     public function toFindings(): array
     {
-        $occurrenceTargets = $this->ownedTargets === []
-            ? [MetricSubject::declaration($this->dependency->source)]
-            : $this->ownedTargets;
+        $finding = $this->toFinding();
 
-        return array_map($this->toFinding(...), $occurrenceTargets);
+        return array_fill(0, max(1, \count($this->ownedTargets)), $finding);
     }
 
-    private function toFinding(MetricSubject $occurrenceTarget): Finding
+    private function toFinding(): Finding
     {
         $location = $this->dependency->location;
         if (!$location instanceof Location) {
@@ -76,9 +74,6 @@ final readonly class LayerViolationFinding
             'target' => $this->dependency->targetLogical()->toCanonical(),
             'type' => $this->dependency->type->value,
         ];
-        if ($occurrenceTarget->declarationPath()?->toCanonical() !== $this->dependency->source->toCanonical()) {
-            $evidence['projectedTarget'] = $occurrenceTarget->toCanonical();
-        }
 
         return new Finding(
             location: $location,
