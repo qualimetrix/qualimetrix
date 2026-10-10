@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Coupling\RfcResponseResolver;
 use Qualimetrix\Tests\Analysis\Evidence\Coupling\Support\RfcMeasurement;
 
+#[CoversClass(RfcResponseResolver::class)]
 final class RfcResponseFormsTest extends TestCase
 {
     private const string LIBRARY = <<<'PHP'

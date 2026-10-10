@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Coupling\RfcGlobalCollector;
 use Symfony\Component\Process\Process;
 
+#[CoversClass(RfcGlobalCollector::class)]
 final class RfcResolvedRunTest extends TestCase
 {
     private string $root = '';

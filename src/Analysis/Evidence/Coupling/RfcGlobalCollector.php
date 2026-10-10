@@ -41,7 +41,7 @@ final class RfcGlobalCollector implements GlobalContextCollectorInterface
     {
         $definitions = [];
         foreach ($this->provides() as $name) {
-            $definitions[] = new MetricDefinition($name, SymbolLevel::Class_, aggregations: [
+            $definitions[] = new MetricDefinition(name: $name, collectedAt: SymbolLevel::Class_, aggregations: [
                 SymbolLevel::Namespace_->value => [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max, AggregationStrategy::Percentile95],
                 SymbolLevel::Project->value => [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max, AggregationStrategy::Percentile95],
             ]);
