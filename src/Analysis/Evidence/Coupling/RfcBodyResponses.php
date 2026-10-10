@@ -48,8 +48,12 @@ final class RfcBodyResponses
         }
         $this->response($node, $variables);
         $before = $variables;
-        foreach (RfcLocalFlow::children($node) as $child) {
-            $this->visit($child, $variables);
+        foreach (RfcLocalFlow::paths($node) as $path) {
+            $branch = $variables;
+            $this->walk($path, $variables);
+            if (RfcLocalFlow::alternatives($node)) {
+                $variables = $branch;
+            }
         }
         if ($uncertain) {
             $variables = array_intersect_assoc($before, $variables);
@@ -107,12 +111,7 @@ final class RfcBodyResponses
     {
         $this->visit($node->cond, $variables);
         $then = $variables;
-        if ($node->cond instanceof Node\Expr\Instanceof_ && $node->cond->expr instanceof Node\Expr\Variable && \is_string($node->cond->expr->name)) {
-            $type = RfcReceiverTypes::typeName($node->cond->class);
-            if ($type !== null) {
-                $then[$node->cond->expr->name] = $type;
-            }
-        }
+        RfcReceiverTypes::positiveInstanceof($node->cond, $then);
         $this->walk($node->stmts, $then);
         $other = $variables;
         foreach ($node->elseifs as $elseif) {
@@ -138,7 +137,7 @@ final class RfcBodyResponses
             }
         } elseif ($node instanceof Node\Expr\StaticCall) {
             if ($node->name instanceof Node\Identifier && !$node->isFirstClassCallable()) {
-                $this->add('method', $node->name->toString(), RfcReceiverTypes::typeName($node->class));
+                $this->add('method', $node->name->toString(), RfcReceiverTypes::receiver($node->class, $variables));
             }
         } else {
             $this->otherResponse($node);

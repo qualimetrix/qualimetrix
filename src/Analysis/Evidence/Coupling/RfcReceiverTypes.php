@@ -10,6 +10,7 @@ use Qualimetrix\Core\Ast\ResolvedName;
 /**
  * Recognizes the declared and local receiver evidence supported by RFC.
  *
+ * @qmx-threshold coupling.cbo warning=21 -- Receiver evidence recognizes the supported PHP type and write-target grammar; splitting its node vocabulary transfers the same dependencies.
  * @qmx-threshold coupling.instability warning=0.875001 -- Receiver evidence reads the supported PHP type and expression grammar; its small incoming population does not model that required outward composition.
  */
 final class RfcReceiverTypes
@@ -42,7 +43,7 @@ final class RfcReceiverTypes
                 continue;
             }
             unset($variables[$parameter->var->name]);
-            $type = self::typeName($parameter->type);
+            $type = $parameter->variadic ? null : self::typeName($parameter->type);
             if ($type !== null) {
                 $variables[$parameter->var->name] = $type;
             }
@@ -50,8 +51,11 @@ final class RfcReceiverTypes
     }
 
     /** @param array<string, string> $variables */
-    public static function receiver(Node\Expr $expression, array $variables): ?string
+    public static function receiver(Node\Name|Node\Expr $expression, array $variables): ?string
     {
+        if ($expression instanceof Node\Name) {
+            return self::typeName($expression);
+        }
         if ($expression instanceof Node\Expr\Variable && \is_string($expression->name)) {
             return $expression->name === 'this' ? 'self' : ($variables[$expression->name] ?? null);
         }
@@ -75,11 +79,23 @@ final class RfcReceiverTypes
     }
 
     /** @param array<string, string> $variables */
+    public static function positiveInstanceof(Node\Expr $condition, array &$variables): void
+    {
+        if (!$condition instanceof Node\Expr\Instanceof_ || !$condition->expr instanceof Node\Expr\Variable || !\is_string($condition->expr->name)) {
+            return;
+        }
+        $type = self::typeName($condition->class);
+        if ($type !== null) {
+            $variables[$condition->expr->name] = $type;
+        }
+    }
+
+    /** @param array<string, string> $variables */
     public static function bind(Node\Expr\Assign $node, array &$variables): void
     {
+        $type = self::receiver($node->expr, $variables);
+        self::forgetTarget($node->var, $variables);
         if ($node->var instanceof Node\Expr\Variable && \is_string($node->var->name)) {
-            $type = self::receiver($node->expr, $variables);
-            unset($variables[$node->var->name]);
             if ($type !== null) {
                 $variables[$node->var->name] = $type;
             }
@@ -92,8 +108,24 @@ final class RfcReceiverTypes
         if (!$node instanceof Node\Expr\AssignOp && !$node instanceof Node\Expr\AssignRef) {
             return;
         }
-        if ($node->var instanceof Node\Expr\Variable && \is_string($node->var->name)) {
-            unset($variables[$node->var->name]);
+        self::forgetTarget($node->var, $variables);
+    }
+
+    /** @param array<string, string> $variables */
+    public static function forgetTarget(?Node $target, array &$variables): void
+    {
+        if ($target instanceof Node\Expr\Variable) {
+            if (\is_string($target->name)) {
+                unset($variables[$target->name]);
+            } else {
+                $variables = [];
+            }
+        } elseif ($target instanceof Node\Expr\List_ || $target instanceof Node\Expr\Array_) {
+            foreach ($target->items as $item) {
+                if ($item !== null) {
+                    self::forgetTarget($item->value, $variables);
+                }
+            }
         }
     }
 }

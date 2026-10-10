@@ -22,7 +22,7 @@ final class RfcPropertyTypes
         }
         $sources = $this->members->propertySources($facts, $active)[$property] ?? [];
         if ($sources !== []) {
-            return $this->propertySourceType($sources, $property);
+            return $this->propertySourceType($sources, $property, $facts);
         }
         $parents = $this->index->parents($facts);
         if (\count($parents) !== 1) {
@@ -34,14 +34,14 @@ final class RfcPropertyTypes
     }
 
     /** @param array<string, RfcDeclarationFacts> $sources */
-    private function propertySourceType(array $sources, string $property): ?string
+    private function propertySourceType(array $sources, string $property, RfcDeclarationFacts $consumer): ?string
     {
         if (\count($sources) !== 1) {
             return null;
         }
         $source = reset($sources);
 
-        return $this->propertyContext($source->properties[$property] ?? null, $source);
+        return $this->propertyContext($source->properties[$property] ?? null, $consumer);
     }
 
     private function propertyContext(?string $type, RfcDeclarationFacts $owner): ?string

@@ -271,10 +271,12 @@ without a declared method retains its class and method identity when ancestry
 and trait composition are readable. Missing, ambiguous or cyclic ancestry
 or unread trait composition uses the method-name
 fallback; a directly named external class retains its resolved class name.
-Unknown receivers share a lowercased method response. Typed parameters,
+Unknown receivers share a lowercased method response. Typed non-variadic parameters,
 properties, promoted properties, explicit construction, local assignment and
 a direct positive `instanceof` branch supply narrow evidence. Reassignment
-and uncertain control-flow regions invalidate it. Return chains, array
+and compound write targets invalidate it. Alternative control-flow paths keep
+independent local evidence; uncertain regions invalidate their written variables.
+Return chains, array
 contents and PHPDoc do not supply receiver types.
 
 > **Note:** Global functions contribute separate response identities; property
