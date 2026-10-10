@@ -243,7 +243,6 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         $subject = $info->subject ?? MetricSubject::aggregate($info->symbolPath);
         $metrics = $context->metrics->get($info->symbolPath);
         $options = $this->getEffectiveOptions($context, $options, $subject);
-        $metrics->get(MetricName::SIZE_CLASS_COUNT);
         $cbo = $metrics->get(MetricName::COUPLING_CBO_OWN);
         if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Namespace_, PopulationIdentity::aggregate($info->symbolPath), $declaration, (static function () use ($metrics, $options): iterable {
             yield GateInput::metrics('own-classes', $metrics, $options->minClassCount);
