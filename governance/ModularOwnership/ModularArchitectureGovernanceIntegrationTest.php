@@ -58,11 +58,28 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
         );
         self::assertSame(
             ['Composer\\Config::disableProcessTimeout', 'python3 scripts/check-code-parallel/check-code-parallel.py'],
-            $scripts['check:code:parallel'],
+            $scripts['check:parallel'],
         );
         self::assertSame(
-            ['@cs-check', '@check:code:parallel', '@dangling-names', '@test:js', '@test:cross-tool'],
+            ['@check:code:tests', '@phpstan'],
             $this->scriptSteps($scripts, 'check:code'),
+        );
+        self::assertSame(
+            ['@cs-check', '@test:aggregate', '@dangling-names', '@test:js', '@test:cross-tool'],
+            $this->scriptSteps($scripts, 'check:code:tests'),
+        );
+        self::assertSame(
+            ['@check-leaks', '@check:code:tests', '@check:parallel'],
+            $this->scriptSteps($scripts, 'check'),
+        );
+        self::assertSame(
+            [
+                'Composer\\Config::disableProcessTimeout',
+                '@check:docs',
+                '@check:artifacts',
+                '@check:self',
+            ],
+            $this->scriptSteps($scripts, 'check:remaining'),
         );
         self::assertContains('@architecture:check', $this->scriptSteps($scripts, 'check:artifacts'));
         self::assertContains('@suppression-snapshot:check', $this->scriptSteps($scripts, 'check:artifacts'));

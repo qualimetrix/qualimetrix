@@ -2460,6 +2460,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0109-rule-populations-and-coupling-units.md' => 'Analysis.Finding',
         'docs/adr/0110-complete-offender-ranking-and-catalog-thresholds.md' => 'Analysis.Evidence.ComputedMetrics.Health',
         'docs/adr/0111-resolved-rfc-targets-and-trait-composition.md' => 'Analysis.Evidence.Coupling',
+        'docs/adr/0112-validation-check-scheduling.md' => 'Architecture.Governance',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/ProjectManifest/README.md' => 'Analysis.ProjectManifest',
