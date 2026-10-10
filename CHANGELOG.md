@@ -1667,6 +1667,7 @@ What changes for a configuration you already have:
 
 ### Fixed
 
+- Global namespace offender counts and density include its own findings, without treating named namespaces as descendants.
 - Formula evaluation no longer lets an independent missing key hide a reached
   invalid non-null metric input. Unselected branches and later chained-access
   stages remain unjudged. Selection uses one native evaluation without an

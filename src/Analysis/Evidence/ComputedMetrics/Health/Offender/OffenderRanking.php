@@ -159,7 +159,7 @@ final readonly class OffenderRanking
 
         foreach ($findings as $finding) {
             $ns = $finding->subject->declarationPath()?->logical->namespace ?? $finding->symbolPath->namespace;
-            if ($ns === null || $ns === '') {
+            if ($ns === null) {
                 continue;
             }
             $ns = ClassNameSpelling::fold($ns);

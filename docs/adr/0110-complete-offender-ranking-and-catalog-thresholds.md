@@ -22,7 +22,8 @@ ComputedMetrics builds one complete offender snapshot for each report. One
 ranking service owns namespace and exact class records. Namespace eligibility
 requires at least one own class, interface, trait or enum; a container with only
 child declarations is excluded. Namespace record values describe its subtree,
-while class record values describe that exact declaration.
+while class record values describe that exact declaration. The global namespace
+is an isolated leaf: its finding count includes only its own population.
 
 Reporting retains both complete lists. Class drill-down selects those captured
 records without measuring or ranking again. Namespace selectors form a union
