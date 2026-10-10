@@ -504,6 +504,7 @@ final class HealthBarRendererTest extends TestCase
             });
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -570,6 +571,7 @@ final class HealthBarRendererTest extends TestCase
     private function createReport(array $healthScores = []): Report
     {
         return new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,

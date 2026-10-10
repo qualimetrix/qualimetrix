@@ -79,6 +79,7 @@ final class JsonOffenderSectionDensityTest extends TestCase
         // Instead, test with the raw formatWorstOffenders via formatNamespaces (since it delegates)
         // For classes, we need to use formatClasses via Report
         $report = new \Qualimetrix\Reporting\Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,

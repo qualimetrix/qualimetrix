@@ -372,7 +372,7 @@ final readonly class FindingFilterOrchestrator
                 $output->writeln(\sprintf(
                     '    line %s — %s [%s]',
                     $finding->location->line ?? '?',
-                    $finding->getDisplayMessage(),
+                    $finding->message,
                     $finding->ruleName,
                 ));
             }

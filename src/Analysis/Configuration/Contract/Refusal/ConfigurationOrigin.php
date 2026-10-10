@@ -86,6 +86,7 @@ final readonly class ConfigurationOrigin
             ConfigurationSource::Preset => 'preset "?"',
             ConfigurationSource::ConfigFile => 'configuration file "?"',
             ConfigurationSource::CommandLine => 'the command line',
+            ConfigurationSource::Environment => 'the environment',
             ConfigurationSource::BaselineFile => 'baseline file "?"',
             ConfigurationSource::Resolved => 'the merged configuration',
         };
@@ -99,6 +100,7 @@ final readonly class ConfigurationOrigin
             ConfigurationSource::Preset => \sprintf('preset "%s"', $locator),
             ConfigurationSource::ConfigFile => \sprintf('configuration file "%s"', $locator),
             ConfigurationSource::CommandLine => \sprintf('option %s', $locator),
+            ConfigurationSource::Environment => \sprintf('environment variable %s', $locator),
             ConfigurationSource::BaselineFile => \sprintf('baseline file "%s"', $locator),
             ConfigurationSource::Resolved => 'the merged configuration',
         };

@@ -29,6 +29,7 @@ final class ReportBuilder
     private int $filesSkipped = 0;
     private float $duration = 0.0;
     private ?MetricRepositoryInterface $metrics = null;
+    private \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces;
     private ?NamespaceTree $namespaceTree = null;
     private ?ReportCoverage $coverage = null;
     private ?SuppressionComposition $suppressionComposition = null;
@@ -50,6 +51,13 @@ final class ReportBuilder
     public function computedMetricEvaluation(ComputedMetricEvaluationSummary $summary): self
     {
         $this->computedMetricEvaluation = $summary;
+
+        return $this;
+    }
+
+    public function fileNamespaces(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces): self
+    {
+        $this->fileNamespaces = $fileNamespaces;
 
         return $this;
     }
@@ -222,6 +230,7 @@ final class ReportBuilder
         }
 
         return new Report(
+            fileNamespaces: $this->fileNamespaces ?? \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($this->metrics),
             findings: $this->findings,
             filesAnalyzed: $this->filesAnalyzed,
             filesSkipped: $this->filesSkipped,

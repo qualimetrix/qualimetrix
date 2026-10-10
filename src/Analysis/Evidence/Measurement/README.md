@@ -30,7 +30,7 @@ Measurement/
 │   ├── ClassMetricScopeRegistry.php  # finite class-key scopes and independent merge
 │   ├── AggregateMetricIndex.php     # project/file/namespace metrics and source info
 │   ├── LogicalClassMetricIndex.php  # folded class metrics and spelling evidence
-│   ├── MetricSubjectIndex.php       # exact declarations and callable lookup
+│   ├── MetricSubjectIndex.php       # exact declarations and callable metadata
 │   └── NamespaceMetricIndex.php     # namespace attribution and spelling evidence
 └── Visitor/             # AST visitor state and metadata
 ```
@@ -143,11 +143,17 @@ choose the combined spelling before merging bags and preserve scalar precedence,
 structured entries and source metadata.
 
 The repository delegates each identity domain to one internal index. Exact
-declarations and callable ambiguity stay in `MetricSubjectIndex`; folded class
+declarations and callable metadata stay in `MetricSubjectIndex`; folded class
 identity and its spelling observations stay in `LogicalClassMetricIndex`;
 project, file, and namespace aggregate bags stay in `AggregateMetricIndex`.
 `NamespaceMetricIndex` remains the attribution view over those stored facts.
 Logical class identity and graph-only metrics remain in the logical index.
+Logical callable fallback lookup is absent: declaration reads and scalar writes
+require exact subjects. `addScalar(SymbolPath)` accepts aggregate paths only;
+class, method and function paths refuse. `addSubjectScalar()` refuses a missing
+exact declaration of every kind, and preserves an existing bag's other metrics,
+structured entries and source identity.
+
 Declaration values stay in the exact subject index. `allClassDeclarations()`
 enumerates the value population; `allLogicalClasses()` enumerates graph names.
 Logical `get()`/`has()` for classes or callables and `all(Class_)` refuse even
@@ -228,7 +234,8 @@ children's classes.
 Namespace file contributions declare their population and use unpublished
 `MetricName::NAMESPACE_FILE_CONTRIBUTION` metadata. Totals and file counts fold
 once per own contribution; sums preserve integers and averages divide total by
-files. Sum-only structural definitions do not publish a file-count `.count`
+files. A nonzero total with zero contributing files refuses before Sum, Count
+or Average; a genuinely empty population still averages to zero. Sum-only structural definitions do not publish a file-count `.count`
 suffix. `MetricDefinition::publishedSuffixes()` is the sole suffix authority,
 including the count accompanying an average. Marked namespace contributions
 refuse Max, Min and percentile strategies because totals/files cannot recover

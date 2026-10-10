@@ -81,7 +81,7 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
                 $topN,
             ),
             'topIssues' => $this->formatTopIssues($report, $context),
-            'violations' => $this->findingSection->format($outputFindings, $context),
+            'violations' => $this->findingSection->format($outputFindings, $context, $report->fileNamespaces),
             'violationsMeta' => [
                 'total' => \count($filteredFindings),
                 'shown' => \count($outputFindings),
@@ -95,6 +95,7 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
             $data['violationGroups'] = $this->buildFindingGroups(
                 $outputFindings,
                 $context,
+                $report->fileNamespaces,
             );
         }
 
@@ -157,7 +158,7 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
 
         foreach ($issues as $rank => $issue) {
             $finding = $issue->finding;
-            $record = $this->findingSection->formatFinding($finding, $context);
+            $record = $this->findingSection->formatFinding($finding, $context, $report->fileNamespaces);
             $result[] = [
                 'rank' => $rank + 1,
                 'impactScore' => round($issue->impactScore, 2),
@@ -171,6 +172,7 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
                 'occurrence' => $record['occurrence'],
                 'edge' => $record['edge'],
                 'namespace' => $record['namespace'],
+                'namespaces' => $record['namespaces'],
                 'rule' => $record['rule'],
                 'code' => $record['code'],
                 'severity' => $record['severity'],
@@ -264,16 +266,16 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
      *
      * @return array<string, array{count: int, violations: list<array<string, mixed>>}>
      */
-    private function buildFindingGroups(array $findings, FormatterContext $context): array
+    private function buildFindingGroups(array $findings, FormatterContext $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces): array
     {
-        $groups = FindingSorter::group($findings, $context->groupBy);
+        $groups = FindingSorter::group($findings, $context->groupBy, $fileNamespaces);
 
         $result = [];
 
         foreach ($groups as $key => $groupFindings) {
             $result[SourceBytes::escape($key)] = [
                 'count' => \count($groupFindings),
-                'violations' => $this->findingSection->format($groupFindings, $context),
+                'violations' => $this->findingSection->format($groupFindings, $context, $fileNamespaces),
             ];
         }
 

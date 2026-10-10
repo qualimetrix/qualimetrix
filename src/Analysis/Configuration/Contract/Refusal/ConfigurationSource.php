@@ -20,6 +20,7 @@ enum ConfigurationSource: string
     case Preset = 'preset';
     case ConfigFile = 'file';
     case CommandLine = 'cli';
+    case Environment = 'environment';
     case BaselineFile = 'baseline';
 
     /**

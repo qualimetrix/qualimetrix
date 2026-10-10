@@ -28,10 +28,10 @@ final class JsonFindingSection
      *
      * @return list<array<string, mixed>>
      */
-    public function format(array $findings, FormatterContext $context): array
+    public function format(array $findings, FormatterContext $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces): array
     {
         return array_map(
-            fn(Finding $v): array => $this->formatFinding($v, $context),
+            fn(Finding $v): array => $this->formatFinding($v, $context, $fileNamespaces),
             $findings,
         );
     }
@@ -74,9 +74,9 @@ final class JsonFindingSection
     /**
      * @return array<string, mixed>
      */
-    public function formatFinding(Finding $finding, FormatterContext $context): array
+    public function formatFinding(Finding $finding, FormatterContext $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces): array
     {
-        return $this->record->of($finding, $context);
+        return $this->record->of($finding, $context, $fileNamespaces);
     }
 
     /**

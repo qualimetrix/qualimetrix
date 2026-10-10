@@ -124,45 +124,6 @@ final class FindingTest extends TestCase
     }
 
     #[Test]
-    public function itGetDisplayMessageReturnsHumanMessageWhenAvailable(): void
-    {
-        $finding = new Finding(
-            location: new Location(RelativePath::fromString('src/test.php'), 10),
-            subject: self::subject(),
-            symbolPath: SymbolPath::forClass('App', 'Foo'),
-            ruleName: 'complexity',
-            code: 'complexity.callable',
-            message: 'Cyclomatic complexity is 15, exceeds threshold of 10',
-            severity: Severity::Error,
-            recommendation: 'Cyclomatic complexity: 15 (threshold: 10) — too many code paths',
-        );
-
-        self::assertSame(
-            'Cyclomatic complexity: 15 (threshold: 10) — too many code paths',
-            $finding->getDisplayMessage(),
-        );
-    }
-
-    #[Test]
-    public function itGetDisplayMessageFallsBackToMessageWhenHumanMessageNull(): void
-    {
-        $finding = new Finding(
-            location: new Location(RelativePath::fromString('src/test.php'), 10),
-            subject: self::subject(),
-            symbolPath: SymbolPath::forClass('App', 'Foo'),
-            ruleName: 'complexity',
-            code: 'complexity.callable',
-            message: 'Cyclomatic complexity is 15, exceeds threshold of 10',
-            severity: Severity::Error,
-        );
-
-        self::assertSame(
-            'Cyclomatic complexity is 15, exceeds threshold of 10',
-            $finding->getDisplayMessage(),
-        );
-    }
-
-    #[Test]
     public function itExposesItsChannel(): void
     {
         $finding = new Finding(

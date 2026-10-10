@@ -355,6 +355,8 @@ final class ApplicationRefusalTest extends TestCase
             if (\in_array('--format=json', $arguments, true)) {
                 $envelope = json_decode($run['stdout'], true, flags: \JSON_THROW_ON_ERROR);
                 self::assertSame(3, $envelope['exit_code']);
+                self::assertSame('environment', $envelope['source'][0]['kind']);
+                self::assertSame('QMX_ASCII', $envelope['source'][0]['name']);
             } else {
                 self::assertSame('', $run['stdout']);
             }
@@ -366,6 +368,23 @@ final class ApplicationRefusalTest extends TestCase
     private static function binPath(): string
     {
         return \dirname(__DIR__, 4) . '/bin/qmx';
+    }
+
+    #[Test]
+    public function itRefusesTheGlobalDisplayLabelButSelectsTheEmptyNamespace(): void
+    {
+        file_put_contents($this->fixture . '/src/Global.php', '<?php class First {} class Second {}');
+        file_put_contents($this->fixture . '/qmx.yaml', "rules:\n  size.class-count:\n    warning: 1\n");
+        $refused = $this->runBin(['check', 'src', '--only-rule=size.class-count', '--format=json', '--namespace=subtree:(global)', '--workers=0', '--no-cache']);
+        self::assertSame(3, $refused['exitCode']);
+        self::assertSame(3, json_decode($refused['stdout'], true, flags: \JSON_THROW_ON_ERROR)['exit_code']);
+        $selected = $this->runBin(['check', 'src', '--only-rule=size.class-count', '--format=json', '--namespace=regex:^$', '--fail-on=warning', '--workers=0', '--no-cache']);
+        self::assertSame(1, $selected['exitCode']);
+        $report = json_decode($selected['stdout'], true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(1, $report['summary']['violationCount']);
+        self::assertSame('', $report['violations'][0]['namespace']);
+        self::assertSame([''], $report['violations'][0]['namespaces']);
+        self::assertSame(0, $report['outOfScope']['violationCount']);
     }
 
     private static function removeDirectory(string $directory): void

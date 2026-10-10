@@ -26,6 +26,10 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * - Damping factor: 0.85
  * - Convergence epsilon: 1e-6
  * - Maximum iterations: 100
+ *
+ * Namespace aggregates sample each physical class declaration: the logical-name
+ * ClassRank value repeats in every declaration's view. Their sum/count/average
+ * are declaration-weighted; the underlying graph algorithm still uses logical names.
  */
 final class ClassRankCollector implements GlobalContextCollectorInterface
 {

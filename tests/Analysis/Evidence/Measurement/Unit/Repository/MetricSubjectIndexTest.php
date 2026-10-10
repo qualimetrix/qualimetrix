@@ -53,7 +53,6 @@ final class MetricSubjectIndexTest extends TestCase
             20,
         ));
 
-        self::assertSame(2, \count($index->declarationsForLogical($logical->toCanonical())));
         self::assertSame(3, $index->get(MetricSubject::declaration($first))->get('complexity.ccn'));
         self::assertSame(5, $index->get(MetricSubject::declaration($second))->get('complexity.ccn'));
         self::assertCount(2, iterator_to_array($index->allCallables(), false));
@@ -66,7 +65,6 @@ final class MetricSubjectIndexTest extends TestCase
         $logical = new LogicalClassMetricIndex();
 
         self::assertSame([], $index->infos());
-        self::assertSame([], $index->declarationsForLogical('callable:App\\Service::run'));
         self::assertSame([], iterator_to_array($index->allDeclarations(), false));
         self::assertSame([], iterator_to_array($logical->allLogicalClasses(), false));
     }

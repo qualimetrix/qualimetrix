@@ -12,7 +12,7 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
 
-/** Exact declaration metrics and logical callable lookup. */
+/** Exact declaration metrics and callable metadata. */
 final class MetricSubjectIndex
 {
     /** @var array<string, MetricBag> */
@@ -20,9 +20,6 @@ final class MetricSubjectIndex
 
     /** @var array<string, SymbolInfo> */
     private array $infos = [];
-
-    /** @var array<string, list<string>> */
-    private array $declarationsByLogical = [];
 
     public function get(MetricSubject $subject): MetricBag
     {
@@ -52,15 +49,11 @@ final class MetricSubjectIndex
         ), $callable->metrics);
     }
 
-    /** @return ?array{info: SymbolInfo, metrics: MetricBag} */
-    public function addScalarToExisting(MetricSubject $subject, string $key, int|float $value): ?array
+    /** @return array{info: SymbolInfo, metrics: MetricBag} */
+    public function addScalarToExisting(MetricSubject $subject, string $key, int|float $value): array
     {
         if (!$this->has($subject)) {
-            if ($subject->declarationPath()?->logical->getType() === SymbolType::Class_) {
-                throw new LogicException('Class scalar requires an existing exact declaration');
-            }
-
-            return null;
+            throw new LogicException('Scalar requires an existing exact declaration');
         }
 
         $metrics = (new MetricBag())->with($key, $value);
@@ -72,19 +65,6 @@ final class MetricSubjectIndex
     public function infos(): array
     {
         return $this->infos;
-    }
-
-    /** @return list<string> */
-    public function declarationsForLogical(string $canonical): array
-    {
-        return $this->declarationsByLogical[$canonical] ?? [];
-    }
-
-    public function logicalCallableMetrics(string $canonical): ?MetricBag
-    {
-        $declarations = $this->declarationsForLogical($canonical);
-
-        return \count($declarations) === 1 ? $this->metrics[$declarations[0]] : null;
     }
 
     /** @return iterable<SymbolInfo> */
@@ -142,17 +122,7 @@ final class MetricSubjectIndex
             $this->infos[$canonical] = $info;
         }
 
-        $stored = $this->infos[$canonical];
-        $declaration = $stored->subject?->declarationPath();
-        if ($declaration !== null && $stored->callableKind !== null) {
-            $logical = $declaration->logical->toCanonical();
-            $this->declarationsByLogical[$logical] ??= [];
-            if (!\in_array($canonical, $this->declarationsByLogical[$logical], true)) {
-                $this->declarationsByLogical[$logical][] = $canonical;
-            }
-        }
-
-        return $stored;
+        return $this->infos[$canonical];
     }
 
     private function copyTo(self $target): void

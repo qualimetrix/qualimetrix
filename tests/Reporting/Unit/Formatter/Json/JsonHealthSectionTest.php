@@ -37,6 +37,7 @@ final class JsonHealthSectionTest extends TestCase
     private function buildReport(array $healthScores = []): Report
     {
         return new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,

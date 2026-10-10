@@ -44,7 +44,7 @@ final class DetailedFindingRendererTest extends TestCase
     public function itKeepsTheNamespaceMessageAndRecommendationAsSeparateLines(): void
     {
         $finding = self::finding(Location::none(), SymbolPath::forNamespace('Shop'), 'computed', 'health.cohesion', 'Measured cohesion is low.', Severity::Warning, recommendation: 'Split the namespace.');
-        $output = $this->renderer->render([$finding], new FormatterContext(useColor: false));
+        $output = $this->renderer->render([$finding], new FormatterContext(useColor: false), \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertStringContainsString('Shop (1 violation)', $output);
         self::assertStringContainsString('Measured cohesion is low.', $output);
@@ -56,7 +56,7 @@ final class DetailedFindingRendererTest extends TestCase
     public function itShowsNoFindingsFoundForEmptyFindings(): void
     {
         $context = new FormatterContext(useColor: false);
-        $output = $this->renderer->render([], $context);
+        $output = $this->renderer->render([], $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertStringContainsString('No violations found.', $output);
     }
@@ -65,7 +65,7 @@ final class DetailedFindingRendererTest extends TestCase
     public function itShowsScopedMessageForEmptyFindingsWithNamespaceFilter(): void
     {
         $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'));
-        $output = $this->renderer->render([], $context);
+        $output = $this->renderer->render([], $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertStringContainsString('No violations in this scope.', $output);
     }
@@ -74,7 +74,7 @@ final class DetailedFindingRendererTest extends TestCase
     public function itShowsScopedMessageForEmptyFindingsWithClassFilter(): void
     {
         $context = new FormatterContext(useColor: false, class: 'App\\Service\\UserService');
-        $output = $this->renderer->render([], $context);
+        $output = $this->renderer->render([], $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertStringContainsString('No violations in this scope.', $output);
     }
@@ -102,7 +102,7 @@ final class DetailedFindingRendererTest extends TestCase
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->renderer->render($findings, $context);
+        $output = $this->renderer->render($findings, $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         // Should group by file (default in detail mode)
         self::assertStringContainsString('src/Foo.php (1 violation)', $output);
@@ -125,7 +125,7 @@ final class DetailedFindingRendererTest extends TestCase
         ];
 
         $context = new FormatterContext(useColor: false, groupBy: GroupBy::None, isGroupByExplicit: true);
-        $output = $this->detailRenderer->render($findings, $context);
+        $output = $this->detailRenderer->render($findings, $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         // Should NOT have file group headers (but debt breakdown may mention "violation")
         self::assertStringNotContainsString('src/Foo.php (1 violation)', $output);
@@ -156,7 +156,7 @@ final class DetailedFindingRendererTest extends TestCase
         ];
 
         $context = new FormatterContext(useColor: false, groupBy: GroupBy::Rule, isGroupByExplicit: true);
-        $output = $this->detailRenderer->render($findings, $context);
+        $output = $this->detailRenderer->render($findings, $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertStringContainsString('complexity.ccn (1)', $output);
         self::assertStringContainsString('size.method-count (1)', $output);
@@ -179,7 +179,7 @@ final class DetailedFindingRendererTest extends TestCase
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->detailRenderer->render($findings, $context);
+        $output = $this->detailRenderer->render($findings, $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertStringContainsString('too many code paths', $output);
         self::assertStringContainsString('exceeds threshold', $output);
@@ -201,7 +201,7 @@ final class DetailedFindingRendererTest extends TestCase
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->detailRenderer->render($findings, $context);
+        $output = $this->detailRenderer->render($findings, $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertStringContainsString('exceeds threshold', $output);
     }
@@ -229,7 +229,7 @@ final class DetailedFindingRendererTest extends TestCase
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->detailRenderer->render($findings, $context);
+        $output = $this->detailRenderer->render($findings, $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertStringContainsString('ERROR', $output);
         self::assertStringContainsString('WARN', $output);
@@ -250,7 +250,7 @@ final class DetailedFindingRendererTest extends TestCase
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->detailRenderer->render($findings, $context);
+        $output = $this->detailRenderer->render($findings, $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertStringContainsString('[complexity.ccn]', $output);
     }
@@ -270,7 +270,7 @@ final class DetailedFindingRendererTest extends TestCase
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->detailRenderer->render($findings, $context);
+        $output = $this->detailRenderer->render($findings, $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertStringContainsString('bar', $output);
     }
@@ -362,7 +362,7 @@ final class DetailedFindingRendererTest extends TestCase
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->detailRenderer->render($findings, $context);
+        $output = $this->detailRenderer->render($findings, $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertStringContainsString('Complexity is 31  [complexity.ccn]', $output);
         self::assertStringContainsString('    accepted at 25, now 31', $output);
@@ -384,7 +384,7 @@ final class DetailedFindingRendererTest extends TestCase
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->detailRenderer->render($findings, $context);
+        $output = $this->detailRenderer->render($findings, $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertStringNotContainsString('accepted at', $output);
     }
@@ -404,7 +404,7 @@ final class DetailedFindingRendererTest extends TestCase
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->detailRenderer->render($findings, $context);
+        $output = $this->detailRenderer->render($findings, $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertStringContainsString('App\\Service', $output);
     }

@@ -269,3 +269,8 @@ than exposing a concrete collector or rule.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+> **Note:** `design.noc` is computed on logical class names. Namespace
+> aggregates sample physical declarations, so a logical name's graph value
+> contributes once per declaration. Namespace sums/counts/averages are
+> declaration-weighted, rather than graph-node or inheritance-edge counts.

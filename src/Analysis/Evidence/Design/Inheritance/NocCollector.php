@@ -41,6 +41,10 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * class (see {@see DependencyType::Extends} and
  * {@see \Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency::$describesNestedAnonymousClass}),
  * so it is excluded below rather than counted against the enclosing class.
+ *
+ * Namespace aggregates sample each physical class declaration: the logical-name
+ * NOC value repeats in every declaration's view. Their sum/count/average
+ * are declaration-weighted; the underlying graph algorithm still uses logical names.
  */
 final class NocCollector implements GlobalContextCollectorInterface
 {

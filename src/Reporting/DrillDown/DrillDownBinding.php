@@ -133,7 +133,7 @@ final readonly class DrillDownBinding
         $compared = [];
         $namespace = $symbolPath->namespace;
 
-        if ($namespace !== null && $namespace !== '') {
+        if ($namespace !== null) {
             $compared[] = $namespace;
         }
 
@@ -141,7 +141,7 @@ final readonly class DrillDownBinding
             return $compared;
         }
 
-        $canonical = $symbolPath->toString();
+        $canonical = $level === SymbolLevel::Namespace_ ? ($symbolPath->namespace ?? '') : $symbolPath->toString();
 
         if ($canonical !== '') {
             $compared[] = $canonical;

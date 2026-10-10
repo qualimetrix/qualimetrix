@@ -171,13 +171,4 @@ final readonly class Finding
         return implode(':', $parts);
     }
 
-    /**
-     * Returns the best available human-readable message.
-     *
-     * Prefers recommendation when available, falls back to technical message.
-     */
-    public function getDisplayMessage(): string
-    {
-        return $this->recommendation ?? $this->message;
-    }
 }

@@ -44,7 +44,7 @@ final class HealthTextFormatterTest extends TestCase
     {
         $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
         $trace->record('fixture.rule', new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('fixture.channel'), \Qualimetrix\Core\Symbol\SymbolLevel::Project, \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::selector('project:fixture', 'project'), 'published', 'The fixture value is absent.');
-        $report = new \Qualimetrix\Reporting\Report([], 0, 0, 0, 0, 0, population: $trace->freeze());
+        $report = new \Qualimetrix\Reporting\Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 0, 0, 0, 0, 0, population: $trace->freeze());
         $compact = $this->formatter->format($report, new FormatterContext(useColor: false))->body;
         self::assertSame(1, substr_count($compact, 'Rule population incomplete'));
         self::assertStringContainsString('project: 0 judged, 1 not judged', $compact);
@@ -486,6 +486,7 @@ final class HealthTextFormatterTest extends TestCase
         int $filesAnalyzed = 10,
     ): Report {
         return new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: $filesAnalyzed,
             filesSkipped: 0,
@@ -509,12 +510,12 @@ final class HealthTextFormatterTest extends TestCase
                 [\Qualimetrix\Core\Symbol\MetricSubject::aggregate(\Qualimetrix\Core\Symbol\SymbolPath::forProject())],
             ),
         ]);
-        $report = new Report([], 1, 0, 0.0, 0, 0, computedMetricEvaluation: $summary);
+        $report = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 1, 0, 0.0, 0, 0, computedMetricEvaluation: $summary);
         $body = $this->formatter->format($report, new FormatterContext(useColor: false))->body;
         self::assertStringContainsString('Computed metric computed.custom (project): not measured', $body);
         self::assertStringContainsString('missing keys [missing.input] for 2 subject(s)', $body);
         self::assertStringContainsString('no value for 1 subject(s)', $body);
-        $withScores = new \Qualimetrix\Reporting\Report([], 1, 0, 0.0, 0, 0, healthScores: [
+        $withScores = new \Qualimetrix\Reporting\Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 1, 0, 0.0, 0, 0, healthScores: [
             'overall' => new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore('overall', 0.0, 'Critical', 50.0, 25.0, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage::notApplicable('composes dimensions')),
         ], computedMetricEvaluation: $summary);
         $alongside = $this->formatter->format($withScores, new FormatterContext(useColor: false))->body;
@@ -566,7 +567,7 @@ final class HealthTextFormatterTest extends TestCase
         self::assertSame(2, $summary->absences[0]->missingKeysCount);
         self::assertSame(1, $summary->absences[0]->noValueCount);
         foreach ([[], ['overall' => new HealthScore('overall', 80.0, 'Good', 50.0, 25.0, HealthCoverage::notApplicable('composes dimensions'))]] as $scores) {
-            $body = $this->formatter->format(new Report([], 1, 0, 0.0, 0, 0, healthScores: $scores, computedMetricEvaluation: $summary), new FormatterContext(useColor: false))->body;
+            $body = $this->formatter->format(new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 1, 0, 0.0, 0, 0, healthScores: $scores, computedMetricEvaluation: $summary), new FormatterContext(useColor: false))->body;
             self::assertSame(1, substr_count($body, 'Computed metric computed.custom (class):'));
             self::assertStringContainsString('missing keys [cohesion.tcc] for 2 subject(s)', $body);
             self::assertStringContainsString('no value for 1 subject(s)', $body);

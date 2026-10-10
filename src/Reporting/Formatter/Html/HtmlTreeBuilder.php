@@ -62,7 +62,7 @@ final class HtmlTreeBuilder
             $nodesByPath,
             $report->metrics,
         );
-        $this->findingPartitioner->attach($nodesByPath, $findingsByNode, $context);
+        $this->findingPartitioner->attach($nodesByPath, $findingsByNode, $context, $report->fileNamespaces);
 
         // 3. Complete debt and finding totals; every finding is attached,
         // so the root's totals are the report's.

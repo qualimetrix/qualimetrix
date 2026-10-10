@@ -61,6 +61,10 @@ end the search on success after work: it holds a `return` or `break`, or a
 `continue` that skips statements after the try, at its top level or inside its `if` branches
 (`ControlFlow/ChainOfAttempts.php`). A try nested deeper, one inside a closure, and one whose
 `continue` skips nothing are reported.
+`ControlFlow/AttemptWork` recognizes eager function, method, nullsafe method and
+static calls, object construction, include, throw, shell execution and eval.
+Deferred function-like bodies and first-class callable creation do not count as
+executed work; eager receiver or argument evaluation still does.
 An early guard inside the `try`, after a preparatory call but before useful
 work, can still make the empty `catch` look like a valid chain of attempts:
 `$y = prepare($x); if ($y === null) continue; work($y);`.

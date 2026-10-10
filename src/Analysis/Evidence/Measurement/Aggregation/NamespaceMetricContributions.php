@@ -39,6 +39,10 @@ final class NamespaceMetricContributions
             }
         }
 
+        if ($total !== 0 && $total !== 0.0 && $files === 0) {
+            throw new LogicException('Namespace contribution total requires contributing files');
+        }
+
         return match ($strategy) {
             AggregationStrategy::Sum => $total,
             AggregationStrategy::Count => $files,

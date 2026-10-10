@@ -621,6 +621,7 @@ final class HtmlTreeBuilderTest extends TestCase
         $metrics->add(SymbolPath::forProject(), MetricBag::fromArray(['health.cohesion' => 82.9]), null, null);
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -1165,7 +1166,7 @@ final class HtmlTreeBuilderTest extends TestCase
                 new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem('cohesion.tcc.avg', 'TCC', null, '> 0.5', 'higher', '', coverage: $coverage),
             ],
         );
-        $payload = $this->builder->build(new \Qualimetrix\Reporting\Report([], 1, 0, 0.0, 0, 0, healthScores: ['cohesion' => $score]), new FormatterContext());
+        $payload = $this->builder->build(new \Qualimetrix\Reporting\Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 1, 0, 0.0, 0, 0, healthScores: ['cohesion' => $score]), new FormatterContext());
         $data = json_decode(json_encode($payload, \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR);
         self::assertArrayHasKey('health.cohesion', $data['summary']['healthScores']);
         self::assertNull($data['summary']['healthScores']['health.cohesion']);

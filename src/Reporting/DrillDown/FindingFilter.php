@@ -38,7 +38,7 @@ final class FindingFilter
      *
      * @return list<Finding>
      */
-    public function filterFindings(array $findings, FormatterContext $context, ?FileNamespaceIndex $fileNamespaces = null): array
+    public function filterFindings(array $findings, FormatterContext $context, FileNamespaceIndex $fileNamespaces): array
     {
         if ($context->namespace === null && $context->class === null) {
             return $findings;
@@ -58,23 +58,15 @@ final class FindingFilter
         }));
     }
 
-    private function matchesNamespace(Finding $finding, FormatterContext $context, ?FileNamespaceIndex $fileNamespaces): bool
+    private function matchesNamespace(Finding $finding, FormatterContext $context, FileNamespaceIndex $fileNamespaces): bool
     {
         $selector = $context->namespace;
         if ($selector === null || $finding->symbolPath->getType() === SymbolType::Project) {
             return false;
         }
 
-        $namespace = FindingNamespace::declared($finding);
-        if ($namespace !== null) {
-            return $selector->matches($namespace);
-        }
-        if ($finding->subject->toSymbolPath()->getType() !== SymbolType::File) {
-            return false;
-        }
-
-        foreach ($this->fileNamespaces($finding, $fileNamespaces) as $fileNamespace) {
-            if ($selector->matches($fileNamespace)) {
+        foreach (\Qualimetrix\Reporting\FindingProjection\FindingNamespaces::of($finding, $fileNamespaces) as $namespace) {
+            if ($selector->matches($namespace)) {
                 return true;
             }
         }
@@ -85,16 +77,6 @@ final class FindingFilter
     private function qualifiedClassName(?string $namespace, string $class): string
     {
         return $namespace !== null && $namespace !== '' ? $namespace . '\\' . $class : $class;
-    }
-
-    /** @return non-empty-list<string> */
-    private function fileNamespaces(Finding $finding, ?FileNamespaceIndex $fileNamespaces): array
-    {
-        $namespaces = $finding->location->file !== null
-            ? ($fileNamespaces?->namespacesOf($finding->location->file) ?? [])
-            : [];
-
-        return $namespaces !== [] ? $namespaces : [''];
     }
 
     /**
@@ -118,7 +100,8 @@ final class FindingFilter
                     return false;
                 }
 
-                return $context->namespace->matches($canonical);
+                return $context->namespace->matches($offender->symbolPath->getType() === SymbolType::Namespace_
+                    ? ($offender->symbolPath->namespace ?? '') : $canonical);
             }
 
             if ($context->class !== null) {

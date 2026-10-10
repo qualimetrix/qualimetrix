@@ -70,7 +70,7 @@ final class TextFormatter implements FormatterInterface
     private function formatFlat(Report $report, FormatterContext $context): string
     {
         $color = new AnsiColor($context->useColor);
-        $sorted = FindingSorter::sort($report->findings, $context->groupBy);
+        $sorted = FindingSorter::sort($report->findings, $context->groupBy, $report->fileNamespaces);
 
         $lines = [];
 

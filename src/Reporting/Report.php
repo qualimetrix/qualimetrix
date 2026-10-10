@@ -55,6 +55,7 @@ final readonly class Report
      *                                                                                                   refusal envelope's
      */
     public function __construct(
+        public \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces,
         public array $findings,
         public int $filesAnalyzed,
         public int $filesSkipped,

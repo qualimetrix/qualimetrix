@@ -65,6 +65,34 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
+    public function itCarriesFileNamespacesIntoViolationsGroupsAndRankedRecords(): void
+    {
+        $repository = new \Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository();
+        $file = RelativePath::fromString('src/Multi.php');
+        foreach (['Shop', 'Other'] as $namespace) {
+            $repository->addSubject(\Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(
+                SymbolPath::forClass($namespace, 'Marker'),
+                $file,
+                \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0),
+            )), new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag(), $file, 1);
+        }
+        $finding = self::finding(new Location($file, 7), SymbolPath::forFile($file), 'duplication.clone', 'duplication.clone', 'Physical copy', Severity::Warning);
+        $index = \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($repository);
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact('Shop'), groupBy: GroupBy::NamespaceName);
+        $selected = (new \Qualimetrix\Reporting\DrillDown\FindingFilter())->filterFindings([$finding], $context, $index);
+        $ranked = new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($finding, 10, null, 5, 3);
+        $report = new Report($index, $selected, 1, 0, 0, 0, 1, metrics: $repository, topIssues: [$ranked]);
+        $data = json_decode($this->formatter->format($report, $context)->body, true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(1, $data['summary']['violationCount']);
+        self::assertSame(['Other, Shop'], array_keys($data['violationGroups']));
+        foreach ([$data['violations'][0], $data['topIssues'][0], $data['violationGroups']['Other, Shop']['violations'][0]] as $record) {
+            self::assertNull($record['namespace']);
+            self::assertSame(['Other', 'Shop'], $record['namespaces']);
+            self::assertSame($finding->subject->toCanonical(), $record['subject']);
+        }
+    }
+
+    #[Test]
     public function itRepairsBinaryPopulationExamplesOnlyAtPublication(): void
     {
         $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
@@ -119,7 +147,7 @@ final class JsonFormatterTest extends TestCase
         $low = self::finding(new Location(RelativePath::fromString('src/A.php'), 1), SymbolPath::forClass('Shop', 'A'), 'complexity.ccn', 'complexity.ccn', 'Low error', Severity::Error);
         $high = self::finding(new Location(RelativePath::fromString('src/Z.php'), 1), SymbolPath::forClass('Shop', 'Z'), 'complexity.ccn', 'complexity.ccn', 'High error', Severity::Error);
         $ranked = [new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($high, 50, null, 5, 3), new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($low, 10, null, 5, 3)];
-        $report = new Report([$info, $low, $high], 2, 0, 0, 2, 0, topIssues: $ranked);
+        $report = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [$info, $low, $high], 2, 0, 0, 2, 0, topIssues: $ranked);
         $data = json_decode($this->formatter->format($report, new FormatterContext(options: ['violations' => '1']))->body, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame(['High error'], array_column($data['violations'], 'message'));
@@ -131,7 +159,7 @@ final class JsonFormatterTest extends TestCase
     {
         $info = self::finding(Location::none(), SymbolPath::forNamespace('A'), 'code-smell.goto', 'code-smell.goto', 'Info', Severity::Info);
         $error = self::finding(new Location(RelativePath::fromString('src/Z.php'), 1), SymbolPath::forClass('Shop', 'Z'), 'complexity.ccn', 'complexity.ccn', 'Error', Severity::Error);
-        $data = json_decode($this->formatter->format(new Report([$info, $error], 1, 0, 0, 1, 0), new FormatterContext(options: ['violations' => '1']))->body, true, 512, \JSON_THROW_ON_ERROR);
+        $data = json_decode($this->formatter->format(new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [$info, $error], 1, 0, 0, 1, 0), new FormatterContext(options: ['violations' => '1']))->body, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame(['Error'], array_column($data['violations'], 'message'));
     }
@@ -141,7 +169,7 @@ final class JsonFormatterTest extends TestCase
     {
         $finding = self::finding(Location::none(), SymbolPath::forNamespace('Shop'), 'computed', 'health.cohesion', 'Low cohesion', Severity::Warning, 20, recommendation: 'Split the namespace.', threshold: 30)->reportedAsBreach(new \Qualimetrix\Analysis\Finding\Contract\AcceptedLevel([25], 1));
         $issue = new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($finding, 10, null, 5, 3);
-        $data = json_decode($this->formatter->format(new Report([$finding], 1, 0, 0, 1, 0, topIssues: [$issue]), new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
+        $data = json_decode($this->formatter->format(new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [$finding], 1, 0, 0, 1, 0, topIssues: [$issue]), new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertArrayHasKey('acceptedLevel', $data['topIssues'][0]);
         foreach ($data['violations'][0] as $key => $value) {
@@ -274,7 +302,7 @@ final class JsonFormatterTest extends TestCase
     #[Test]
     public function itProducesIso8601Timestamp(): void
     {
-        $report = new Report([], 0, 0, 0.0, 0, 0);
+        $report = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 0, 0, 0.0, 0, 0);
         $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
@@ -385,6 +413,7 @@ final class JsonFormatterTest extends TestCase
             recommendation: 'Cyclomatic complexity: 79 (threshold: 20) - too many code paths',
         );
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [$finding],
             filesAnalyzed: 1,
             filesSkipped: 0,
@@ -405,6 +434,7 @@ final class JsonFormatterTest extends TestCase
     public function itIncludesHealthScores(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 100,
             filesSkipped: 0,
@@ -471,6 +501,7 @@ final class JsonFormatterTest extends TestCase
     public function itShowsHealthInScopedReporting(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 8,
             filesSkipped: 0,
@@ -495,6 +526,7 @@ final class JsonFormatterTest extends TestCase
     public function itIncludesWorstNamespaces(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 100,
             filesSkipped: 0,
@@ -538,6 +570,7 @@ final class JsonFormatterTest extends TestCase
     public function itIncludesWorstClasses(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 100,
             filesSkipped: 0,
@@ -773,6 +806,7 @@ final class JsonFormatterTest extends TestCase
     public function itKeepsTheSummaryShapeUnderADrillDown(): void
     {
         $plain = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 3,
             filesSkipped: 0,
@@ -782,6 +816,7 @@ final class JsonFormatterTest extends TestCase
             debtPer1kLoc: 5.4,
         );
         $selected = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 3,
             filesSkipped: 0,
@@ -1126,6 +1161,7 @@ final class JsonFormatterTest extends TestCase
     public function itLimitsWorstNamespacesWithTopNOption(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 100,
             filesSkipped: 0,
@@ -1150,6 +1186,7 @@ final class JsonFormatterTest extends TestCase
     public function itSanitizesNanInHealthScores(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
@@ -1182,7 +1219,7 @@ final class JsonFormatterTest extends TestCase
     #[Test]
     public function itProducesNullForEmptyHealthScores(): void
     {
-        $report = new Report([], 10, 0, 0.5, 0, 0);
+        $report = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 10, 0, 0.5, 0, 0);
 
         $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
@@ -1194,6 +1231,7 @@ final class JsonFormatterTest extends TestCase
     public function itFiltersWorstOffendersByNamespace(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 100,
             filesSkipped: 0,
@@ -1250,6 +1288,7 @@ final class JsonFormatterTest extends TestCase
     public function itShowsOffendersInScopedReporting(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 8,
             filesSkipped: 0,
@@ -1337,6 +1376,7 @@ final class JsonFormatterTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 50,
             filesSkipped: 0,
@@ -1396,6 +1436,7 @@ final class JsonFormatterTest extends TestCase
         $metrics->method('getSubject')->willReturn($classMetrics);
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 50,
             filesSkipped: 0,
@@ -1430,6 +1471,7 @@ final class JsonFormatterTest extends TestCase
         $metrics->method('all')->willReturn([]);
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 50,
             filesSkipped: 0,
