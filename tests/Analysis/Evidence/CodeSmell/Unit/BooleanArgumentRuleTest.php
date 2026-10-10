@@ -52,6 +52,24 @@ final class BooleanArgumentRuleTest extends TestCase
     }
 
     #[Test]
+    public function itRejectsExcludedEntriesBeforeProjectingTheirLocations(): void
+    {
+        $file = RelativePath::fromString('src/LazyLocations.php');
+        $bag = (new MetricBag())
+            ->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => 0, 'extra' => 'isActive'])
+            ->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => 0, 'extra' => 'overwrite', 'promoted' => true])
+            ->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => 10, 'extra' => 'overwrite']);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')->willReturn([new SymbolInfo(SymbolPath::forFile($file), $file, 1)]);
+        $repository->method('get')->willReturn($bag);
+
+        $findings = (new BooleanArgumentRule(new BooleanArgumentOptions()))->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $findings);
+        self::assertSame(10, $findings[0]->location->line);
+    }
+
+    #[Test]
     public function itReportsItsNameAndDescription(): void
     {
         $rule = new BooleanArgumentRule(new BooleanArgumentOptions());

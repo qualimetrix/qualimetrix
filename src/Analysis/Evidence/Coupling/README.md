@@ -158,6 +158,9 @@ it, and before the channel existed the miss and a run with no prefix at all
 produced byte-identical reports — the classification is only observable through
 `coupling.cbo-app` / `coupling.ce-framework`, never through the finding set.
 
+`UnmatchedFrameworkFinding` owns the message and stable occurrence projection;
+the rule retains selector enumeration and eligibility.
+
 Two facts about the shape, both measured rather than chosen:
 
 - **It is its own rule, not a second channel on `CboRule`.** A magnitude

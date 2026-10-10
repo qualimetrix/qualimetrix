@@ -6,14 +6,13 @@ namespace Qualimetrix\Analysis\Evidence\Design\Inheritance;
 
 use LogicException;
 use Psr\Log\LoggerInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
-use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
@@ -86,14 +85,19 @@ final class InheritanceRule extends AbstractRule
     {
         $dit = null;
         $outcome = InheritanceOutcome::Exact;
-        $inputs = (function () use ($subject, $context, &$dit, &$outcome): iterable {
-            yield GateInput::kind('logicalKind', $subject->toSymbolPath()->getType());
-            $metrics = $context->metrics->getSubject($subject);
-            $dit = $metrics->get(MetricName::DESIGN_DIT);
-            $outcome = $this->publishedOutcome($dit, $metrics->get(MetricName::DESIGN_DIT_UNRESOLVED));
-            yield GateInput::metrics('dit-present', $metrics);
-        })();
-        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), $declaration, $inputs)) {
+        $metrics = $this->admittedMetrics(
+            $context,
+            $subject,
+            $declaration,
+            function (MetricBag $metrics) use (&$dit, &$outcome): iterable {
+                $dit = $metrics->get(MetricName::DESIGN_DIT);
+                $outcome = $this->publishedOutcome($dit, $metrics->get(MetricName::DESIGN_DIT_UNRESOLVED));
+                yield GateInput::metrics('dit-present', $metrics);
+            },
+            [GateInput::kind('logicalKind', $subject->toSymbolPath()->getType())],
+            level: SymbolLevel::Class_,
+        );
+        if ($metrics === null) {
             return [null, $outcome];
         }
         /** @var InheritanceOptions $effectiveOptions */

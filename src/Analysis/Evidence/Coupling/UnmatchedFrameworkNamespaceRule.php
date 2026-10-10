@@ -8,15 +8,12 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
 
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -184,7 +181,7 @@ final class UnmatchedFrameworkNamespaceRule extends AbstractRule
         }
         $findings = [];
         foreach ($this->coupling->unboundSelectors($classified) as $selector) {
-            $findings[] = $this->finding($selector);
+            $findings[] = UnmatchedFrameworkFinding::of($selector, self::NAME, self::OCCURRENCE_KIND);
         }
 
         return $findings;
@@ -226,33 +223,6 @@ final class UnmatchedFrameworkNamespaceRule extends AbstractRule
             })());
         }
         return $classified;
-    }
-
-    private function finding(NamespacePattern $selector): Finding
-    {
-        $display = $selector->definition->display();
-
-        return new Finding(
-            location: Location::none(),
-            subject: MetricSubject::aggregate(SymbolPath::forProject()),
-            symbolPath: SymbolPath::forProject(),
-            ruleName: self::NAME,
-            code: self::NAME,
-            message: \sprintf(
-                'The framework namespace selector "%s" matched no class the run analysed or depends on. Nothing was moved'
-                . ' out of the application scope for it, so "coupling.cbo-app" still counts every class it was'
-                . ' written to exclude and "coupling.ce-framework" counts none of them.',
-                $display,
-            ),
-            severity: Severity::Warning,
-            recommendation: \sprintf(
-                'Check "%s" against the names the code really imports. Use exact for one name, subtree for a namespace'
-                . ' and all descendants, or regex for an explicit delimiterless PCRE fragment. Drop the entry if the'
-                . ' dependency is gone.',
-                $display,
-            ),
-            occurrenceKey: OccurrenceKey::semantic(self::OCCURRENCE_KIND, ['selector' => $display]),
-        );
     }
 
 }

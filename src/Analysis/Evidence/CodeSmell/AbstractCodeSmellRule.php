@@ -8,14 +8,11 @@ use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
-use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Core\Symbol\MetricSubjectCodec;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
@@ -142,8 +139,8 @@ abstract class AbstractCodeSmellRule extends AbstractRule
 
             foreach ($entries as $entryOrdinal => $entry) {
                 $file = $fileInfo->file ?? throw new LogicException('File symbol must carry a relative path');
-                $subject = MetricSubjectCodec::decodeEntry($entry, $file);
-                if (!$context->admit(static::NAME, new FindingChannel(static::NAME), $subject::levelOfCanonical($subject->toCanonical()), PopulationIdentity::occurrence($subject->toCanonical(), $entryOrdinal), $declaration, $this->populationInputs($entry))) {
+                $subject = CodeSmellFinding::subjectFromEntry($entry, $file);
+                if (!$this->admitOccurrence($context, $subject, $entryOrdinal, $declaration, $this->populationInputs($entry))) {
                     continue;
                 }
                 $findings[] = CodeSmellFinding::fromEntry($entry, $file)->toFinding(

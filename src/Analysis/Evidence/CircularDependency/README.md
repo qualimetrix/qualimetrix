@@ -40,6 +40,7 @@ CircularDependency/
 ├── CircularDependencyAnalysis.php
 ├── CircularDependencyDetector.php
 ├── Cycle.php
+├── CycleFinding.php             # Cycle message, recommendation and occurrence projection
 ├── CycleMemberLabels.php
 ├── CircularDependencyOptions.php
 └── CircularDependencyRule.php

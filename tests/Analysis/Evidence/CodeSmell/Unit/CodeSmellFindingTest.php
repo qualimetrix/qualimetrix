@@ -45,7 +45,7 @@ final class CodeSmellFindingTest extends TestCase
             $class->getMethods(ReflectionMethod::IS_PUBLIC),
         );
         sort($publicMethods);
-        self::assertSame(['fromEntry', 'toFinding'], $publicMethods);
+        self::assertSame(['fromEntry', 'subjectFromEntry', 'toFinding'], $publicMethods);
         self::assertSame([], $class->getProperties(ReflectionProperty::IS_PUBLIC));
     }
 

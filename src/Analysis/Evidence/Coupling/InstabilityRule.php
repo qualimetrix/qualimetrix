@@ -10,11 +10,9 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
 
-use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
@@ -137,12 +135,12 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
                 SymbolLevel::Class_,
                 SymbolLevel::Namespace_,
             )->withGates(
-                self::populationGate('class-coordinate', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', self::kindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
-                self::populationGate('class-instability', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', self::keyPresent('class-instability', [MetricName::COUPLING_INSTABILITY]), 'Class instability was not published.'),
-                self::populationGate('class-afferent', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', self::keyThreshold('class-afferent', [MetricName::COUPLING_CA], '>=', 'class-afferent', 'zero', true), 'Class afferent coupling is below its minimum.'),
-                self::populationGate('namespace-classes', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', self::keyThreshold('namespace-classes', [MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)], '>=', 'namespace-classes', 'zero', true), 'Subtree classes are below the configured minimum.'),
-                self::populationGate('namespace-instability', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', self::keyPresent('namespace-instability', [MetricName::COUPLING_INSTABILITY]), 'Namespace instability was not published.'),
-                self::populationGate('namespace-afferent', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', self::keyThreshold('namespace-afferent', [MetricName::COUPLING_CA], '>=', 'namespace-afferent', 'zero', true), 'Namespace afferent coupling is below its minimum.'),
+                self::populationGate('class-coordinate', self::NAME, SymbolLevel::Class_, 'declaration', self::kindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
+                self::populationGate('class-instability', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('class-instability', [MetricName::COUPLING_INSTABILITY]), 'Class instability was not published.'),
+                self::populationGate('class-afferent', self::NAME, SymbolLevel::Class_, 'declaration', self::keyThreshold('class-afferent', [MetricName::COUPLING_CA], '>=', 'class-afferent', 'zero', true), 'Class afferent coupling is below its minimum.'),
+                self::populationGate('namespace-classes', self::NAME, SymbolLevel::Namespace_, 'namespace', self::keyThreshold('namespace-classes', [MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)], '>=', 'namespace-classes', 'zero', true), 'Subtree classes are below the configured minimum.'),
+                self::populationGate('namespace-instability', self::NAME, SymbolLevel::Namespace_, 'namespace', self::keyPresent('namespace-instability', [MetricName::COUPLING_INSTABILITY]), 'Namespace instability was not published.'),
+                self::populationGate('namespace-afferent', self::NAME, SymbolLevel::Namespace_, 'namespace', self::keyThreshold('namespace-afferent', [MetricName::COUPLING_CA], '>=', 'namespace-afferent', 'zero', true), 'Namespace afferent coupling is below its minimum.'),
             ),
         ];
     }
@@ -179,13 +177,13 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
         ChannelDeclaration $declaration,
     ): ?Finding {
         $metrics = null;
-        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), $declaration, (function () use ($context, $subject, &$metrics, &$options): iterable {
+        if (!$this->admitSubject($context, $subject, $declaration, (function () use ($context, $subject, &$metrics, &$options): iterable {
             yield GateInput::kind('class-coordinate', $subject->toSymbolPath()->getType());
             $options = $this->getEffectiveOptions($context, $options, $subject);
             $metrics = $context->metrics->getSubject($subject);
             yield GateInput::metrics('class-instability', $metrics);
             yield GateInput::metrics('class-afferent', $metrics, $options->minAfferent);
-        })())) {
+        })(), SymbolLevel::Class_)) {
             return null;
         }
         $instability = $metrics->get(MetricName::COUPLING_INSTABILITY);
@@ -240,11 +238,11 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
             $metrics = $context->metrics->get($nsInfo->symbolPath);
 
             $populationOptions = $this->getEffectiveOptions($context, $namespaceOptions, $subject);
-            if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Namespace_, PopulationIdentity::aggregate($nsInfo->symbolPath), $declaration, (static function () use ($metrics, $populationOptions): iterable {
+            if (!$this->admitSubject($context, MetricSubject::aggregate($nsInfo->symbolPath), $declaration, (static function () use ($metrics, $populationOptions): iterable {
                 yield GateInput::metrics('namespace-classes', $metrics, $populationOptions->minClassCount);
                 yield GateInput::metrics('namespace-instability', $metrics);
                 yield GateInput::metrics('namespace-afferent', $metrics, $populationOptions->minAfferent);
-            })())) {
+            })(), SymbolLevel::Namespace_, 'namespace')) {
                 continue;
             }
             $instability = $metrics->get(MetricName::COUPLING_INSTABILITY);

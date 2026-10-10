@@ -33,6 +33,12 @@ final readonly class CodeSmellFinding
     /**
      * @param CodeSmellEntry $entry
      */
+    public static function subjectFromEntry(array $entry, RelativePath $file): MetricSubject
+    {
+        return MetricSubjectCodec::decodeEntry($entry, $file);
+    }
+
+    /** @param CodeSmellEntry $entry */
     public static function fromEntry(array $entry, RelativePath $file): self
     {
         return new self(
