@@ -457,6 +457,8 @@ final class CheckWitnesses
                 },
                 [
                     [FailureClass::TUPLE_FIELD_DRIFT, EquivalenceTuple::TRACKED_PATH],
+                    [FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json'],
+                    [FailureClass::RUN_FAILED, 'candidate-2 / alpha'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|baseline-file'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|format:json'],
@@ -722,6 +724,9 @@ final class CheckWitnesses
                 self::DECLARATIONS,
                 static function (array $tree): array {
                     $tree['cases']['alpha'][] = SubjectLevel::claim('replay.alpha', 'class');
+                    $definition = json_decode($tree['declarations']['cases/alpha/case.json'], true, 512, \JSON_THROW_ON_ERROR);
+                    $definition['channels'] = $tree['cases']['alpha'];
+                    $tree['declarations']['cases/alpha/case.json'] = self::json($definition);
 
                     return $tree;
                 },
@@ -744,6 +749,9 @@ final class CheckWitnesses
                 static function (array $tree): array {
                     $subject = $tree['findings']['alpha'][0]['subject'];
                     $tree['cases']['alpha'][] = SubjectLevel::claim('replay.zulu', 'callable');
+                    $definition = json_decode($tree['declarations']['cases/alpha/case.json'], true, 512, \JSON_THROW_ON_ERROR);
+                    $definition['channels'] = $tree['cases']['alpha'];
+                    $tree['declarations']['cases/alpha/case.json'] = self::json($definition);
                     $tree['findings']['alpha'][] = SyntheticTree::finding($tree['tuple'], 'replay.zulu', $subject);
                     $tree['static']['replay.zulu'] = ['callable'];
                     $tree['fixture']['replay.zulu'] = ['callable'];

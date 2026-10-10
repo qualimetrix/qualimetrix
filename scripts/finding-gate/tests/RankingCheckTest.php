@@ -1665,8 +1665,11 @@ final class RankingCheckTest extends TestCase
                             $records = $document['violations'];
                             $document['violations'] = [$records[0], $records[2], $records[2], $records[2]];
                         }
-                    } elseif ($change === 'threshold' && $capture === 'physical') {
-                        $document['violations'][1]['threshold'] += 1;
+                    } elseif ($change === 'threshold') {
+                        $document['topIssues'][1]['threshold'] += 1;
+                        if (isset($document['violations'][1])) {
+                            $document['violations'][1]['threshold'] += 1;
+                        }
                     } elseif ($change === 'order' && $capture === 'ranked') {
                         $document['topIssues'] = array_reverse($document['topIssues']);
                         foreach ($document['topIssues'] as $position => &$issue) {

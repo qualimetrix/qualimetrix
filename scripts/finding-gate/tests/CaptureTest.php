@@ -156,7 +156,10 @@ final class CaptureTest extends TestCase
         foreach (['healthy', 'physical-count', 'whole-private-slot'] as $fault) {
             if ($fault === 'whole-private-slot') {
                 $tree = SelfTestOutcomes::fixture();
-                $tree['candidateAnswers']['case:alpha|format:json']['ranked'] = ['exit' => 2];
+                $tree['candidateAnswers']['case:alpha|format:json'] = [
+                    ...$tree['answers']['case:alpha|format:json'],
+                    'ranked' => ['exit' => 2],
+                ];
             } else {
                 $tree = SyntheticTree::clean();
                 $tree['findings']['alpha'][] = SyntheticTree::finding($tree['tuple'], 'replay.alpha', 'declaration:callable:Replay\\Beta::run@src/Beta.php');

@@ -640,6 +640,9 @@ PHP;
         }
         sort($channels);
         $specification['cases']['alpha'] = array_map(static fn(string $channel): string => $channel . '@callable', $channels);
+        $definition = json_decode($specification['declarations']['cases/alpha/case.json'], true, 512, \JSON_THROW_ON_ERROR);
+        $definition['channels'] = $specification['cases']['alpha'];
+        $specification['declarations']['cases/alpha/case.json'] = json_encode($definition, \JSON_THROW_ON_ERROR);
         $specification['static'] = $specification['fixture'] = array_fill_keys($channels, ['callable']);
         $specification['findings']['alpha'] = [];
         $specification['candidateFindings']['alpha'] = [];
