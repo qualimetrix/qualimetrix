@@ -34,13 +34,7 @@ final class ExternalAncestry
             }
             $seen[$identity] = true;
 
-            $builtin = PhpBuiltinClassRegistry::canonicalName($current);
-            if ($builtin !== null) {
-                $throwable = ($throwable === ThrowableReach::Yes || $this->builtinReachesThrowable($builtin)) ? ThrowableReach::Yes : ThrowableReach::No;
-                $next = $this->builtinStep($builtin, $depth);
-            } else {
-                $next = $this->sourceStep($current, $depth);
-            }
+            [$next, $throwable] = $this->ancestryStep($current, $depth, $throwable);
             if ($next instanceof ExternalDepth) {
                 return $next;
             }
@@ -52,6 +46,20 @@ final class ExternalAncestry
         return isset($analysedNames[ClassNameSpelling::fold($current)])
             ? ExternalDepth::reachedAnalysedName($depth, $current, $throwable)
             : ExternalDepth::brokeAt($depth, $current, $throwable);
+    }
+
+    /** @return array{ExternalDepth|string, ThrowableReach} */
+    private function ancestryStep(string $current, int $depth, ThrowableReach $throwable): array
+    {
+        $builtin = PhpBuiltinClassRegistry::canonicalName($current);
+        if ($builtin === null) {
+            return [$this->sourceStep($current, $depth), $throwable];
+        }
+
+        return [
+            $this->builtinStep($builtin, $depth),
+            ($throwable === ThrowableReach::Yes || $this->builtinReachesThrowable($builtin)) ? ThrowableReach::Yes : ThrowableReach::No,
+        ];
     }
 
     private function builtinStep(string $builtin, int $depth): ExternalDepth|string

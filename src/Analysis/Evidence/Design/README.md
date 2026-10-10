@@ -81,6 +81,8 @@ this capability imports neither a composer type nor a parser (ADR 0074).
 `InheritanceResolution` represents a private complete answer with
 `InheritanceOutcome`: nullable depth, `Exact`/`Floor`/`Loop`, and explicit
 `ThrowableReach::Yes`/`No`/`Unknown` evidence about PHP's `Throwable`.
+`withPrefix()` extends either a declaration or external rejoin answer with the
+same nullable-depth and positive-Throwable evidence policy.
 Obstruction causes and names travel alongside those independent facts, through
 structured entries on `design.dit-unresolved`. `ExternalDepth` and `ExternalChainOutcome`
 carry external-tail evidence, including an explicit continuation to an already

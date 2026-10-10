@@ -131,12 +131,7 @@ final class InheritanceDepthResolver
         }
         $answer = $this->parentResolution($parent);
 
-        return new InheritanceResolution(
-            $answer->depth === null ? null : 1 + $answer->depth,
-            $answer->outcome,
-            isset($this->throwableDeclarations[$exact]) ? ThrowableReach::Yes : $answer->reachesThrowable,
-            $answer->obstructions,
-        );
+        return $answer->withPrefix(1, isset($this->throwableDeclarations[$exact]) ? ThrowableReach::Yes : ThrowableReach::Unknown);
     }
 
     private function parentResolution(string $parent): InheritanceResolution
@@ -169,12 +164,7 @@ final class InheritanceDepthResolver
         $prefix = $tail->depth ?? throw new LogicException('An analysed ancestry boundary requires a finite prefix depth');
         $answer = $this->parentResolution($name);
 
-        return new InheritanceResolution(
-            $answer->depth === null ? null : $prefix + $answer->depth,
-            $answer->outcome,
-            $tail->reachesThrowable === ThrowableReach::Yes ? ThrowableReach::Yes : $answer->reachesThrowable,
-            $answer->obstructions,
-        );
+        return $answer->withPrefix($prefix, $tail->reachesThrowable);
     }
 
     /** @param non-empty-list<InheritanceResolution> $answers */

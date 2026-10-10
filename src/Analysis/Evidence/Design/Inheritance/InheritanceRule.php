@@ -131,21 +131,30 @@ final class InheritanceRule extends AbstractRule
             $parts[] = \sprintf('%d cyclic inheritance chain(s) have no numeric DIT', $loops);
         }
         if ($parts !== []) {
-            ksort($obstructions, \SORT_STRING);
-            $samples = [];
-            foreach (\array_slice($obstructions, 0, 5) as $obstruction) {
-                $name = (string) $obstruction['name'];
-                $samples[] = match ($obstruction['cause']) {
-                    ExternalChainOutcome::NoMapForIt->name => $name . ' (no composer install; run composer install)',
-                    ExternalChainOutcome::Loop->name => $name . ' (cycle)',
-                    default => $name . ' (source could not be placed or read)',
-                };
-            }
-            if ($samples !== []) {
-                $parts[] = 'design.dit-unresolved: ' . implode(', ', $samples) . (\count($obstructions) > 5 ? \sprintf(', and %d more', \count($obstructions) - 5) : '');
+            $samples = $this->obstructionSummary($obstructions);
+            if ($samples !== null) {
+                $parts[] = $samples;
             }
             $this->logger?->warning('DIT: ' . implode('; ', $parts) . '.');
         }
+    }
+
+    /** @param array<string, array<string, scalar>> $obstructions */
+    private function obstructionSummary(array $obstructions): ?string
+    {
+        ksort($obstructions, \SORT_STRING);
+        $samples = [];
+        foreach (\array_slice($obstructions, 0, 5) as $obstruction) {
+            $name = (string) $obstruction['name'];
+            $samples[] = match ($obstruction['cause']) {
+                ExternalChainOutcome::NoMapForIt->name => $name . ' (no composer install; run composer install)',
+                ExternalChainOutcome::Loop->name => $name . ' (cycle)',
+                default => $name . ' (source could not be placed or read)',
+            };
+        }
+
+        return $samples === [] ? null : 'design.dit-unresolved: ' . implode(', ', $samples)
+            . (\count($obstructions) > 5 ? \sprintf(', and %d more', \count($obstructions) - 5) : '');
     }
 
     private function findingForClass(

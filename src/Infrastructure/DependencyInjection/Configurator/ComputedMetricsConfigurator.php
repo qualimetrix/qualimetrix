@@ -22,55 +22,53 @@ final class ComputedMetricsConfigurator implements ContainerConfiguratorInterfac
 
     public function configure(ContainerBuilder $container): void
     {
-        $this->registerRoot($container);
+        $this->registerConfiguration($container);
+        $this->registerEvaluation($container);
         $this->registerHealth($container);
         $this->registerRule($container);
     }
 
-    private function registerRoot(ContainerBuilder $container): void
+    private function registerConfiguration(ContainerBuilder $container): void
     {
-        $reach = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricReach';
         $expression = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Evaluation\\ComputedMetricExpression';
-        $metricReachCatalog = 'Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\MetricReachCatalogInterface';
+        $healthFormulaExcluder = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\HealthFormulaExcluder';
         $formulaValidator = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricFormulaValidator';
         $configResolver = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricsConfigResolver';
-        $findingBuilder = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Finding\\ComputedMetricFindingBuilder';
-        $evaluator = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Evaluation\\ComputedMetricEvaluator';
         $analysis = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricAnalysis';
-        $healthFormulaExcluder = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\HealthFormulaExcluder';
-        $delegatingLogger = 'Qualimetrix\\Infrastructure\\Logging\\DelegatingLogger';
-        $computedMetricsSection = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricsSection';
-        $excludeHealthSection = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ExcludeHealthSection';
 
-        $container->register($computedMetricsSection)->setAutoconfigured(true);
-        $container->register($excludeHealthSection)->setAutoconfigured(true);
-
-        $container->register($healthFormulaExcluder)->setArguments([new Reference('Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricExpressionInterface')]);
-        $container->setAlias(self::HEALTH_EXCLUSION, $healthFormulaExcluder)->setPublic(true);
+        $container->register('Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricsSection')->setAutoconfigured(true);
+        $container->register('Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ExcludeHealthSection')->setAutoconfigured(true);
         $container->register($expression);
         $container->setAlias('Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricExpressionInterface', $expression);
-        $container->register($reach)->setArguments([
-            new Reference($metricReachCatalog),
-            new Reference($expression),
-        ]);
-        $container->setAlias(self::REACH, $reach);
+        $container->register($healthFormulaExcluder)->setArguments([new Reference('Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricExpressionInterface')]);
+        $container->setAlias(self::HEALTH_EXCLUSION, $healthFormulaExcluder)->setPublic(true);
         $container->register($formulaValidator);
         $container->register($configResolver)->setArguments([
             new Reference($formulaValidator),
             new Reference(self::HEALTH_EXCLUSION),
         ]);
-        $container->register($findingBuilder);
-        $container->register($analysis)->setArguments([
-            new Reference($configResolver),
-        ]);
-        $container->register($evaluator)->setArguments([
-            new Reference($analysis),
-            new Reference(ProfilerInterface::class),
-            new Reference($delegatingLogger),
-        ]);
-        $container->setAlias('Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluatorInterface', $evaluator);
+        $container->register($analysis)->setArguments([new Reference($configResolver)]);
         $container->setAlias(self::CONFIGURATOR, $analysis)->setPublic(true);
         $container->setAlias(self::CATALOG, $analysis)->setPublic(true);
+    }
+
+    private function registerEvaluation(ContainerBuilder $container): void
+    {
+        $reach = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricReach';
+        $evaluator = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Evaluation\\ComputedMetricEvaluator';
+
+        $container->register($reach)->setArguments([
+            new Reference('Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\MetricReachCatalogInterface'),
+            new Reference('Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Evaluation\\ComputedMetricExpression'),
+        ]);
+        $container->setAlias(self::REACH, $reach);
+        $container->register('Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Finding\\ComputedMetricFindingBuilder');
+        $container->register($evaluator)->setArguments([
+            new Reference('Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricAnalysis'),
+            new Reference(ProfilerInterface::class),
+            new Reference('Qualimetrix\\Infrastructure\\Logging\\DelegatingLogger'),
+        ]);
+        $container->setAlias('Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluatorInterface', $evaluator);
     }
 
     private function registerHealth(ContainerBuilder $container): void

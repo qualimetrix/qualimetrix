@@ -14,4 +14,14 @@ final readonly class InheritanceResolution
         public ThrowableReach $reachesThrowable,
         public array $obstructions = [],
     ) {}
+
+    public function withPrefix(int $links, ThrowableReach $prefixThrowable): self
+    {
+        return new self(
+            $this->depth === null ? null : $links + $this->depth,
+            $this->outcome,
+            $prefixThrowable === ThrowableReach::Yes ? ThrowableReach::Yes : $this->reachesThrowable,
+            $this->obstructions,
+        );
+    }
 }
