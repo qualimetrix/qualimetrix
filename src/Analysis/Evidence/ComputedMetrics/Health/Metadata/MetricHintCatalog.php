@@ -261,8 +261,8 @@ final class MetricHintCatalog
             'label' => 'RFC',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 50',
-            'badExplanation' => 'too many callable methods',
-            'goodExplanation' => 'reasonable method reach',
+            'badExplanation' => 'large response set',
+            'goodExplanation' => 'limited response set',
         ],
         MetricName::SIZE_METHOD_COUNT => [
             'label' => 'Methods',
@@ -556,10 +556,10 @@ final class MetricHintCatalog
             ['above' => true, 'text' => 'Heavy base class'],
         ],
         'coupling.rfc' => [
-            ['max' => 20, 'text' => 'Simple interface'],
-            ['max' => 50, 'text' => 'Moderate interface'],
-            ['max' => 100, 'text' => 'Complex interface'],
-            ['above' => true, 'text' => 'Very complex interface'],
+            ['max' => 20, 'text' => 'Small response set'],
+            ['max' => 50, 'text' => 'Moderate response set'],
+            ['max' => 100, 'text' => 'Large response set'],
+            ['above' => true, 'text' => 'Very large response set'],
         ],
         // Size
         MetricName::SIZE_METHOD_COUNT => [

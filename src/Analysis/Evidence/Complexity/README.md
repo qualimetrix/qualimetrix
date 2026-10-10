@@ -130,6 +130,11 @@ deviations listed in the visitor docblock and on the website rule page.
 - Each sequence of like logical operators (`&&`/`and`, `\|\|`/`or`), read
   in source order: `$a && ($b || $c) && $d` is three sequences
 
+> **Note:** Direct static self-calls use the shared class-name resolver: imported
+> aliases, namespace-relative names and fully qualified names are compared
+> case-insensitively to the owning class. `self::` and `static::` retain their
+> direct self-call treatment; `parent::` is not a self-call.
+
 **No increment:** `??`, `??=` and `?->` — the whitepaper ignores
 null-coalescing operators as shorthand ("Ignore shorthand", p. 6).
 

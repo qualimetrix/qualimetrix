@@ -265,12 +265,22 @@ public function activeNames(array $users): array  // cognitive complexity: 0
       nests them one level inside the enclosing structure and adds their body to the
       method. Qualimetrix measures each as its own unit starting at nesting level 0.
     - **Recursion:** only a direct self-call is detected: `$this->method()` or
-      `$this?->method()`, `self::`, `static::` or the own class name, or a function calling
-      itself by its short, fully qualified or `namespace\`-relative name, in any letter case.
+      `$this?->method()`, `self::`, `static::` or a class name resolved to the owning class,
+      including imported aliases, imported namespace prefixes, fully qualified and
+      `namespace\`-relative names, in any letter case. `parent::` is not a self-call.
+      A function can call itself by its short, fully qualified or `namespace\`-relative name.
       The whitepaper also counts every method in an indirect cycle (A calls B, B calls A);
       Qualimetrix does not, and it does not follow a call through a variable or a callable.
 
 <!-- llms:skip-end -->
+
+<!-- llms-only
+Cognitive recursion is a direct self-call, counted once per callable. Static
+class names use shared class-name resolution (imports, namespace prefixes,
+fully qualified and namespace-relative names), compared case-insensitively to
+the owning class. self/static retain their self-call treatment; parent does
+not. Indirect cycles and calls through variables or callables are not followed.
+-->
 
 ### Configuration
 

@@ -15,6 +15,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
+use Qualimetrix\Core\Ast\NameResolution;
 use Qualimetrix\Core\Path\RelativePath;
 
 #[CoversClass(CognitiveComplexityVisitor::class)]
@@ -30,6 +31,7 @@ final class CognitiveComplexityVisitorTest extends TestCase
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -679,6 +681,7 @@ PHP;
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -716,6 +719,7 @@ PHP;
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -753,6 +757,7 @@ PHP;
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -790,6 +795,7 @@ PHP;
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -828,6 +834,7 @@ PHP;
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -881,6 +888,7 @@ PHP;
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -921,6 +929,7 @@ PHP;
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -954,6 +963,7 @@ PHP;
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -979,6 +989,7 @@ PHP;
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -1026,6 +1037,7 @@ PHP;
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -1067,6 +1079,7 @@ PHP;
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -1103,6 +1116,7 @@ PHP;
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -1140,6 +1154,7 @@ PHP;
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -1180,6 +1195,7 @@ PHP;
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -1217,6 +1233,7 @@ PHP;
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -1250,6 +1267,7 @@ PHP;
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -1283,6 +1301,7 @@ PHP;
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -1320,6 +1339,7 @@ PHP;
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -1357,6 +1377,7 @@ PHP;
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -1388,6 +1409,7 @@ function first($a) {
 PHP;
 
         $ast1 = $parser->parse($code1) ?? [];
+        NameResolution::resolve($ast1);
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
         $traverser->addVisitor($registrar);
@@ -1408,6 +1430,7 @@ function second() {
 PHP;
 
         $ast2 = $parser->parse($code2) ?? [];
+        NameResolution::resolve($ast2);
         $traverser2 = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
         $traverser2->addVisitor($registrar);
@@ -1449,6 +1472,7 @@ PHP;
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -1502,6 +1526,7 @@ PHP;
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -1521,6 +1546,7 @@ PHP;
     {
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse('<?php function f($a, $b) { if ($a) {} else if ($b) {} }') ?? [];
+        NameResolution::resolve($ast);
         $outerIf = (new NodeFinder())->findFirstInstanceOf($ast, If_::class);
         self::assertNotNull($outerIf);
         $outerIf->setAttributes(array_diff_key($outerIf->getAttributes(), ['endFilePos' => true]));
@@ -1545,6 +1571,7 @@ PHP;
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -1581,6 +1608,7 @@ PHP;
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -1612,6 +1640,7 @@ PHP;
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
@@ -1798,6 +1827,41 @@ PHP;
         yield 'static self-call through the own class name' => [
             'code' => '<?php namespace App; class R { public static function st($a) { return R::st($a) + \App\R::sT($a); } }',
             'expected' => ['App\R::st' => 1],
+        ];
+
+        yield 'static self-call through an imported class alias' => [
+            'code' => '<?php namespace App; use App\Own as O; class Own { public static function m() { O::m(); } }',
+            'expected' => ['App\Own::m' => 1],
+        ];
+
+        yield 'static self-call through an alias in another letter case' => [
+            'code' => '<?php namespace App; use App\Own as O; class Own { public static function m() { o::M(); } }',
+            'expected' => ['App\Own::m' => 1],
+        ];
+
+        yield 'static self-call through a namespace-relative class name' => [
+            'code' => '<?php namespace App; class Own { public static function m() { namespace\Own::m(); } }',
+            'expected' => ['App\Own::m' => 1],
+        ];
+
+        yield 'static self-call through an imported namespace prefix' => [
+            'code' => '<?php namespace App; use App as Prefix; class Own { public static function m() { Prefix\Own::m(); } }',
+            'expected' => ['App\Own::m' => 1],
+        ];
+
+        yield 'static self-call through a fully qualified name in another letter case' => [
+            'code' => '<?php namespace App; class Own { public static function m() { \aPp\oWn::M(); } }',
+            'expected' => ['App\Own::m' => 1],
+        ];
+
+        yield 'an imported alias of a foreign class is not a self-call' => [
+            'code' => '<?php namespace App; use Other\Own as O; class Own { public static function m() { O::m(); } }',
+            'expected' => ['App\Own::m' => 0],
+        ];
+
+        yield 'best-effort AST: a PHP-invalid own-name import collision is not a self-call' => [
+            'code' => '<?php namespace App; use Other\Own; class Own { public static function m() { Own::m(); } }',
+            'expected' => ['App\Own::m' => 0],
         ];
 
         yield 'function self-call spelled in another letter case' => [

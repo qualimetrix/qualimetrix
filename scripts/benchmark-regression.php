@@ -408,6 +408,12 @@ foreach ($projects as $id => $config) {
     };
     $unmeasuredAcrossRun = [...$unmeasuredAcrossRun, ...$unmeasuredMetrics];
     fprintf(STDERR, "%-15s (%.1fs)\n", $verdict, $elapsed);
+    $cognitive = [];
+    foreach (['avg', 'count', 'max', 'p95', 'sum'] as $suffix) {
+        $key = 'complexity.cognitive.' . $suffix;
+        $cognitive[$key] = $projectMetrics[$key] ?? null;
+    }
+    fprintf(STDOUT, "COGNITIVE %s %s\n", $id, json_encode($cognitive, JSON_THROW_ON_ERROR));
 }
 
 // Print summary
