@@ -263,11 +263,15 @@ final class ExactSurfaceAuthority
                     $rows[$side][] = ['raw' => $canonical, 'decoded' => ReportRecords::object($canonical)];
                 }
             }
+            $projections = [];
+            foreach (['candidate', 'reference'] as $side) {
+                $projections[$side] = $kind === 'ranking' && ($rows[$side] ?? []) !== [] ? RankingSchema::derive($run->publicationTree($side))->fields : [];
+            }
             $operations = $records->exactOperations($case, $view);
             $schema = self::schemaUnits($rows, $kind, $report, $view, $case, $run, $records);
-            $allowed = self::admissible($rows, $operations, $kind, $report, $schema);
+            $allowed = self::admissible($rows, $operations, $kind, $report, $schema, $projections);
             foreach (['candidate', 'reference'] as $side) {
-                $rows[$side] = self::erase($rows[$side] ?? [], $operations, $side, $kind, $report, $schema, $allowed);
+                $rows[$side] = self::erase($rows[$side] ?? [], $operations, $side, $kind, $report, $schema, $allowed, $projections);
                 $bags[$kind][$side] = array_column($rows[$side], 'raw');
                 sort($bags[$kind][$side], \SORT_STRING);
             }
@@ -290,9 +294,11 @@ final class ExactSurfaceAuthority
     }
 
     /** @param array<string,mixed> $endpoint
+     * @param list<string> $fields
+     *
      * @return array<string,mixed>
      */
-    private static function endpoint(array $endpoint, string $kind): array
+    private static function endpoint(array $endpoint, string $kind, array $fields): array
     {
         if ($kind !== 'ranking') {
             return RankingSchema::physical($endpoint);
@@ -306,7 +312,7 @@ final class ExactSurfaceAuthority
                 $ranked[$field] = $endpoint['ranking.' . $field];
             }
         }
-        return $ranked;
+        return array_intersect_key($ranked, array_flip($fields));
     }
 
     /** @param list<string> $path
@@ -408,10 +414,11 @@ final class ExactSurfaceAuthority
     /** @param array<string,list<array{raw:string,decoded:array<string,mixed>}>> $rows
      * @param list<array{candidate:?array<string,mixed>,reference:?array<string,mixed>,paths:list<list<string>>,whole:bool}> $operations
      * @param array<string,list<string>> $schema
+     * @param array<string,list<string>> $projections
      *
      * @return array<string,true>
      */
-    private static function admissible(array $rows, array $operations, string $kind, string $report, array $schema): array
+    private static function admissible(array $rows, array $operations, string $kind, string $report, array $schema, array $projections): array
     {
         $allowed = [];
         foreach (['candidate', 'reference'] as $side) {
@@ -429,9 +436,9 @@ final class ExactSurfaceAuthority
                 if ($paths === [] && !$operation['whole']) {
                     continue;
                 }
-                $expected = $report === 'json' ? self::endpoint($endpoint, $kind) : $endpoint;
+                $expected = $report === 'json' ? self::endpoint($endpoint, $kind, $projections[$side]) : $endpoint;
                 $cohort = self::compatibleKey($expected, $schema[$side]);
-                $signature = self::operationKey($operation, $kind, $report);
+                $signature = self::operationKey($operation, $kind, $report, $projections);
                 $cohorts[$cohort]['signatures'][$signature] = ($cohorts[$cohort]['signatures'][$signature] ?? 0) + 1;
             }
             foreach ($cohorts as $cohort => $group) {
@@ -450,7 +457,7 @@ final class ExactSurfaceAuthority
         }
         $shared = [];
         foreach ($operations as $operation) {
-            $signature = self::operationKey($operation, $kind, $report);
+            $signature = self::operationKey($operation, $kind, $report, $projections);
             $candidateNeeded = $operation['candidate'] !== null && ($operation['whole'] || self::operationPaths($operation, $kind) !== []);
             $referenceNeeded = $operation['reference'] !== null && ($operation['whole'] || self::operationPaths($operation, $kind) !== []);
             if ((!$candidateNeeded || isset($allowed['candidate'][$signature]))
@@ -483,8 +490,10 @@ final class ExactSurfaceAuthority
         return $paths;
     }
 
-    /** @param array{candidate:?array<string,mixed>,reference:?array<string,mixed>,paths:list<list<string>>,whole:bool} $operation */
-    private static function operationKey(array $operation, string $kind, string $report): string
+    /** @param array{candidate:?array<string,mixed>,reference:?array<string,mixed>,paths:list<list<string>>,whole:bool} $operation
+     * @param array<string,list<string>> $projections
+     */
+    private static function operationKey(array $operation, string $kind, string $report, array $projections): string
     {
         if ($kind !== 'ranking' || $report !== 'json') {
             return DeclaredRecords::canonical($operation);
@@ -500,8 +509,8 @@ final class ExactSurfaceAuthority
             $transitions[] = $transition;
         }
         return self::decodedKey([
-            'candidate' => $operation['candidate'] === null ? null : self::endpoint($operation['candidate'], $kind),
-            'reference' => $operation['reference'] === null ? null : self::endpoint($operation['reference'], $kind),
+            'candidate' => $operation['candidate'] === null ? null : self::endpoint($operation['candidate'], $kind, $projections['candidate']),
+            'reference' => $operation['reference'] === null ? null : self::endpoint($operation['reference'], $kind, $projections['reference']),
             'transitions' => $transitions,
             'whole' => $operation['whole'],
         ]);
@@ -510,11 +519,12 @@ final class ExactSurfaceAuthority
     /** @param list<array{raw:string,decoded:array<string,mixed>}> $rows
      * @param list<array{candidate:?array<string,mixed>,reference:?array<string,mixed>,paths:list<list<string>>,whole:bool}> $operations
      * @param array<string,list<string>> $schema
+     * @param array<string,list<string>> $projections
      * @param array<string,true> $allowed
      *
      * @return list<array{raw:string,decoded:array<string,mixed>}>
      */
-    private static function erase(array $rows, array $operations, string $side, string $kind, string $report, array $schema, array $allowed): array
+    private static function erase(array $rows, array $operations, string $side, string $kind, string $report, array $schema, array $allowed, array $projections): array
     {
         $indicesByDecoded = [];
         foreach ($rows as $index => $row) {
@@ -526,13 +536,13 @@ final class ExactSurfaceAuthority
             if ($endpoint === null) {
                 continue;
             }
-            $expected = $report === 'json' ? self::endpoint($endpoint, $kind) : $endpoint;
+            $expected = $report === 'json' ? self::endpoint($endpoint, $kind, $projections[$side]) : $endpoint;
             $paths = self::operationPaths($operation, $kind);
             if ($paths === [] && !$operation['whole']) {
                 continue;
             }
             $cohort = self::compatibleKey($expected, $schema[$side]);
-            $signature = self::operationKey($operation, $kind, $report);
+            $signature = self::operationKey($operation, $kind, $report, $projections);
             if (!isset($allowed[$signature])) {
                 continue;
             }

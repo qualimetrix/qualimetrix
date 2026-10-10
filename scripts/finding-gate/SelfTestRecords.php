@@ -142,7 +142,7 @@ final class SelfTestRecords extends SelfTestGroup
     {
         $issues = [];
         foreach ($records as $index => $record) {
-            $issues[] = ['rank' => $index + 1, ...array_intersect_key($record, array_flip(RankingSchema::PROJECTION)), 'impactScore' => $scores[$index], 'coupling.class-rank' => null, 'debtMinutes' => $record['techDebtMinutes']];
+            $issues[] = ['rank' => $index + 1, ...array_intersect_key($record, array_flip(RankingSchema::PROJECTION)), 'impactScore' => $scores[$index], 'coupling.class-rank-share' => null, 'debtMinutes' => $record['techDebtMinutes']];
         }
         return $issues;
     }

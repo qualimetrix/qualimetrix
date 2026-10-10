@@ -15,7 +15,7 @@ final class ReportRecords
     public const array ANALYSIS_DIAGNOSTICS = ['analysis.parse', 'analysis.processing', 'analysis.directory-symlink', 'analysis.not-regular-file', 'analysis.unreadable-directory'];
 
     public const array SCHEMAS = [
-        'json' => ['file', 'line', 'subject', 'symbol', 'channel', 'occurrence', 'edge', 'namespace', 'rule', 'code', 'severity', 'message', 'recommendation', 'metricValue', 'threshold', 'techDebtMinutes', 'acceptedLevel'],
+        'json' => ['file', 'line', 'subject', 'symbol', 'channel', 'occurrence', 'edge', 'namespace', 'namespaces', 'rule', 'code', 'severity', 'message', 'recommendation', 'metricValue', 'threshold', 'techDebtMinutes', 'acceptedLevel', 'baselineVerdict', 'baselineReason'],
         'suppressed' => ['mechanism', 'suppressor', 'rule', 'channel', 'subject', 'occurrence', 'edge', 'file', 'line', 'symbol', 'severity', 'message', 'recommendation'],
         'metrics' => ['type', 'name', 'file', 'line', 'metrics'],
         'directives' => ['file', 'line', 'form', 'target', 'effect', 'reason', 'masked_by', 'boundary_observable', 'refusals'],

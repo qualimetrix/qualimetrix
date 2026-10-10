@@ -452,8 +452,8 @@ final class RankingCheck implements CaseCheck
         $eligible = [];
         foreach ($pairs as $index => $pair) {
             $labels[$index] = DeclaredRecords::canonical($pair['reference']);
-            $eligible[$index] = array_intersect_key($pair['candidate'], array_flip(['ranking.impactScore', 'ranking.coupling.class-rank']))
-                === array_intersect_key($pair['reference'], array_flip(['ranking.impactScore', 'ranking.coupling.class-rank']));
+            $eligible[$index] = array_intersect_key($pair['candidate'], array_flip(array_map(static fn(string $field): string => 'ranking.' . $field, RankingSchema::VALUES)))
+                === array_intersect_key($pair['reference'], array_flip(array_map(static fn(string $field): string => 'ranking.' . $field, RankingSchema::VALUES)));
         }
         $sequences = [];
         $visible = [];

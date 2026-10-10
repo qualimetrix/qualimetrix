@@ -71,7 +71,7 @@ final class SyntheticTree
      */
     public static function clean(): array
     {
-        $fields = ['file', 'line', 'subject', 'symbol', 'channel', 'occurrence', 'edge', 'namespace', 'rule', 'code', 'severity', 'message', 'recommendation', 'metricValue', 'threshold', 'techDebtMinutes', 'acceptedLevel'];
+        $fields = ReportRecords::SCHEMAS['json'];
 
         return [
             'cases' => ['alpha' => ['replay.alpha@callable']],
@@ -123,7 +123,7 @@ final class SyntheticTree
     {
         $file = str_contains($subject, '@') ? substr($subject, (int) strrpos($subject, '@') + 1) : 'src/Alpha.php';
         $symbol = preg_replace('/^declaration:(?:callable|class):/', '', explode('@', $subject)[0]);
-        $values = ['file' => $file, 'line' => 1, 'subject' => $subject, 'symbol' => $symbol, 'channel' => $channel, 'occurrence' => null, 'edge' => null, 'namespace' => 'Replay', 'rule' => $channel, 'code' => $channel, 'severity' => 'error', 'message' => 'replayed', 'recommendation' => null, 'metricValue' => 1, 'threshold' => 0, 'techDebtMinutes' => 15, 'acceptedLevel' => null];
+        $values = ['file' => $file, 'line' => 1, 'subject' => $subject, 'symbol' => $symbol, 'channel' => $channel, 'occurrence' => null, 'edge' => null, 'namespace' => 'Replay', 'namespaces' => ['Replay'], 'rule' => $channel, 'code' => $channel, 'severity' => 'error', 'message' => 'replayed', 'recommendation' => null, 'metricValue' => 1, 'threshold' => 0, 'techDebtMinutes' => 15, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null];
         $finding = [];
 
         foreach ($fields as $field) {
@@ -390,7 +390,7 @@ final class SyntheticTree
                 $checkstyle .= '<file name="' . htmlspecialchars($file, \ENT_XML1) . '"><error line="' . ($line ?? 1) . '" severity="' . $finding['severity'] . '" source="qmx.' . $code . '" message="' . htmlspecialchars($annotatedMessage, \ENT_XML1) . '"/></file>';
             }
             $sarif[] = $result;
-            $html[] = array_intersect_key($finding, array_flip([...ReportRecords::SCHEMAS['json'], 'baselineVerdict', 'baselineReason']));
+            $html[] = array_intersect_key($finding, array_flip(ReportRecords::SCHEMAS['json']));
             $brief = (string) $finding['symbol'];
             $separator = strrpos($brief, '\\');
             if ($separator !== false) {
@@ -476,15 +476,9 @@ final class SyntheticTree
             };
             $issues[] = [
                 'rank' => 0,
-                'file' => $finding['file'],
-                'line' => $finding['line'],
-                'symbol' => $finding['symbol'],
-                'rule' => $finding['rule'],
-                'severity' => $finding['severity'],
-                'message' => $finding['message'],
-                'recommendation' => $finding['recommendation'],
+                ...array_intersect_key($finding, array_flip(RankingSchema::PROJECTION)),
                 'impactScore' => (float) ($weight * (int) $finding['techDebtMinutes']),
-                'coupling.class-rank' => 1.0,
+                'coupling.class-rank-share' => 1.0,
                 'debtMinutes' => $finding['techDebtMinutes'],
             ];
         }
@@ -565,7 +559,7 @@ final class SyntheticTree
 
     private static function rankingSource(): string
     {
-        $fields = ['rank', 'file', 'line', 'symbol', 'rule', 'severity', 'message', 'recommendation', 'impactScore', 'coupling.class-rank', 'debtMinutes'];
+        $fields = RankingSchema::FIELDS;
         $members = implode('', array_map(static fn(string $field): string => "                '" . $field . "' => null,\n", $fields));
         return "<?php\nfinal class JsonFormatter\n{\n    private function formatTopIssues(): array\n    {\n        \$result = [];\n        foreach ([] as \$issue) {\n            \$result[] = [\n" . $members . "            ];\n        }\n        return \$result;\n    }\n}\n";
     }

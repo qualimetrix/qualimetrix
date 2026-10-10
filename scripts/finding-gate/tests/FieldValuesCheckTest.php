@@ -532,7 +532,7 @@ final class FieldValuesCheckTest extends TestCase
         foreach ($records as $index => $record) {
             $rule = (string) $record['rule'];
             $counts[$rule] = ($counts[$rule] ?? 0) + 1;
-            $issues[] = ['rank' => $index + 1, ...array_intersect_key($record, array_flip(\QmxFindingGate\RankingSchema::PROJECTION)), 'impactScore' => 0, 'coupling.class-rank' => null, 'debtMinutes' => $record['techDebtMinutes']];
+            $issues[] = ['rank' => $index + 1, ...array_intersect_key($record, array_flip(\QmxFindingGate\RankingSchema::PROJECTION)), 'impactScore' => 0, 'coupling.class-rank-share' => null, 'debtMinutes' => $record['techDebtMinutes']];
         }
         $document = ['violations' => $records, 'topIssues' => [], 'violationsMeta' => ['total' => \count($records), 'shown' => \count($records), 'truncated' => false, 'byRule' => $counts]];
         $original = \QmxFindingGate\ValueCheck::value($document);

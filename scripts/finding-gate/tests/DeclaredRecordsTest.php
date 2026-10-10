@@ -187,8 +187,8 @@ final class DeclaredRecordsTest extends TestCase
             ['withdrawn', 'alpha', 'json', 'check:baseline-source', '{"channel":"architecture.unreachable-layer"}', 'The configuration diagnostic is removed.'],
         ]);
         $tree['candidateDeclarations'][DeclaredRecords::DERIVED] = Tsv::render(DeclaredRecords::DERIVED_COLUMNS, [
-            ['withdrawn', 'alpha', 'json', 'format:json', DeclaredRecords::canonical($record + ['ranking.impactScore' => 45, 'ranking.coupling.class-rank' => 1])],
-            ['withdrawn', 'alpha', 'json', 'check:baseline-source', DeclaredRecords::canonical($record + ['ranking.impactScore' => 45, 'ranking.coupling.class-rank' => 1])],
+            ['withdrawn', 'alpha', 'json', 'format:json', DeclaredRecords::canonical($record + ['ranking.impactScore' => 45, 'ranking.coupling.class-rank-share' => 1])],
+            ['withdrawn', 'alpha', 'json', 'check:baseline-source', DeclaredRecords::canonical($record + ['ranking.impactScore' => 45, 'ranking.coupling.class-rank-share' => 1])],
         ]);
         $report = RecordedComparison::stageReport($tree, 'case:alpha|baseline-file');
         self::assertSame([], $report->failureClasses(), $report->render());

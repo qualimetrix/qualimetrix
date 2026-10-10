@@ -562,6 +562,11 @@ final class ReportRecordsTest extends TestCase
     #[Test]
     public function itRewritesOnlyLicensedFindingValuesOnEveryReadableProjection(): void
     {
+        $formatter = $this->root . '/src/Reporting/Formatter/Json/JsonFormatter.php';
+        $legacyFields = ['rank', 'file', 'line', 'symbol', 'rule', 'severity', 'message', 'recommendation', 'impactScore', 'coupling.class-rank-share', 'debtMinutes'];
+        $source = preg_replace_callback("~^ {16}'([^']+)' => null,\n~m", static fn(array $match): string => \in_array($match[1], $legacyFields, true) ? $match[0] : '', Fs::read($formatter));
+        self::assertIsString($source);
+        Fs::write($formatter, $source);
         Fs::write($this->root . '/finding-gate/' . \QmxFindingGate\DeclaredValues::INDEX, Tsv::render(\QmxFindingGate\DeclaredValues::COLUMNS, [
             ['field', 'message', '*', 'Change this finding message.'],
             ['field', 'metricValue', '*', 'Change this finding magnitude.'],
@@ -727,6 +732,7 @@ final class ReportRecordsTest extends TestCase
         self::assertFalse(\QmxFindingGate\ExactSurfaceAuthority::rawResidual($source, $uniformCaptures, $uniformRun, $uniformRecords));
 
         $referenceRoot = SyntheticTree::fixture(SyntheticTree::clean(), candidate: false);
+        Fs::write($referenceRoot . '/src/Reporting/Formatter/Json/JsonFormatter.php', Fs::read($formatter));
         try {
             Fs::write($this->root . '/finding-gate/' . DeclaredFields::INDEX, Tsv::render(DeclaredFields::COLUMNS, [
                 ['added', 'json', 'ranking', 'probe', 'Publish the measured ranked member.'],
@@ -1071,7 +1077,7 @@ final class ReportRecordsTest extends TestCase
      */
     private static function comparativeFinding(array $record): array
     {
-        return $record + ['ranking.impactScore' => 0, 'ranking.coupling.class-rank' => null];
+        return $record + ['ranking.impactScore' => 0, 'ranking.coupling.class-rank-share' => null];
     }
 
     /** @param array<string,string> $artifacts */
@@ -1110,7 +1116,7 @@ final class ReportRecordsTest extends TestCase
                 }
                 $rule = (string) ($record['rule'] ?? 'unavailable');
                 $counts[$rule] = ($counts[$rule] ?? 0) + 1;
-                $issues[] = ['rank' => $index + 1, ...array_intersect_key($record, array_flip(\QmxFindingGate\RankingSchema::PROJECTION)), 'impactScore' => 0, 'coupling.class-rank' => null, 'debtMinutes' => $record['techDebtMinutes'] ?? null];
+                $issues[] = ['rank' => $index + 1, ...array_intersect_key($record, array_flip(\QmxFindingGate\RankingSchema::derive($run->publicationTree($side))->fields)), 'impactScore' => 0, 'coupling.class-rank-share' => null, 'debtMinutes' => $record['techDebtMinutes'] ?? null];
             }
             $document['topIssues'] = [];
             $document['violationsMeta'] = ['total' => \count($document['violations']), 'shown' => \count($document['violations']), 'truncated' => false, 'byRule' => $counts];
@@ -1286,7 +1292,7 @@ final class ReportRecordsTest extends TestCase
     /** @return array<string,mixed> */
     private static function finding(): array
     {
-        return array_replace(array_fill_keys(ReportRecords::SCHEMAS['json'], null), ['file' => 'src/A.php', 'line' => 1, 'subject' => 'class:App\\A', 'symbol' => 'App\\A', 'channel' => 'a.b', 'rule' => 'a.b', 'code' => 'a.b', 'severity' => 'error', 'message' => 'M', 'metricValue' => 3, 'threshold' => 1, 'techDebtMinutes' => 15]);
+        return array_replace(array_fill_keys(ReportRecords::SCHEMAS['json'], null), ['file' => 'src/A.php', 'line' => 1, 'subject' => 'class:App\\A', 'symbol' => 'App\\A', 'namespace' => 'App', 'namespaces' => ['App'], 'channel' => 'a.b', 'rule' => 'a.b', 'code' => 'a.b', 'severity' => 'error', 'message' => 'M', 'metricValue' => 3, 'threshold' => 1, 'techDebtMinutes' => 15]);
     }
 
     /** @param list<array<string,mixed>> $findings
