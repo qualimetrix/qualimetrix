@@ -16,77 +16,25 @@ use QmxFindingGate\FailureClass;
  */
 final class RenameControls
 {
-    /**
-     * The channel key moves and no map declares it. Both halves of the key's
-     * construction are mutated together, so this is a rename of the channel
-     * rather than a rule that emits something it does not declare.
-     *
-     * The rule name is deliberately left alone: the `complexity` case addresses
-     * `cohesion.lcom` through `--rule-opt`, and renaming the rule would make
-     * the run fail on an unknown rule instead of comparing two vocabularies.
-     * That failure is a mechanism of its own, and the `reference-input` control
-     * is where it is proved.
-     *
-     * The blast radius, enumerated rather than gestured at — and trimmed to what
-     * a run actually produces, because a toleration nothing matches is now a
-     * failed control (see Outcome::idleTolerations()).
-     * `cohesion.lcom` is claimed by the `complexity` and `detectors` cases.
-     * The former publishes a finding; both claims become stale under the rename.
-     * Value declarations for old record identities cannot apply to this
-     * rename and are removed only from the scratch control input.
-     * The container also stops agreeing with its tracked declaration fixture.
-     *
-     * Two tolerations were declared here and never fired, measured over a full
-     * PASS run on 2026-08-24: `coverage-shortfall` and `coverage-surplus`. Both
-     * were an argument about a different mutation: this one renames the channel
-     * at its *declaration*, so the declared set moves with the observed one and
-     * the corpus stays balanced in both directions.
-     *
-     * A third was declared and DID fire, on the opposite reading from the one
-     * that named it. `RulesCommand` now also prints each producer's own channels —
-     * `cohesion.lcom4 judges cohesion.lcom` — so the renamed half of that line
-     * moves `tree|rules` too where it did not before; and the tree that
-     * measurement ran against had a declared delta for `tree|rules`
-     * (`finding-gate/declared-delta.tsv`, withdrawn on this branch at
-     * `e7d8c9ae`), which {@see ChannelRenamePlants::producerListingToleration()} reads to decide
-     * whether the reach is tolerated at all. The 2026-08-24 omission was
-     * correct for ITS tree, where the declaration covered the reach; it is not
-     * a false premise being corrected, but a fact whose value changed on both
-     * axes. With the delta absent, {@see ChannelRenamePlants::producerListingToleration()} is reused
-     * rather than a plain `Expectation`
-     * hardcoded here — its docblock's premise ("only a control renaming a
-     * producer needs this") was true of the two controls it was written for
-     * and false of this one, but its actual *logic* — the reach is
-     * `surface-mismatch` only where the step under test declares nothing for
-     * `tree|rules` — does not depend on which half of a printed line moved, and
-     * is exactly what this control needs too.
-     */
+    /** A published JSON finding channel moves; producer declarations and Population stay unchanged. */
     public static function renameWithoutMap(): Control
     {
         return Control::red(
             'rename-no-map',
-            'a channel renamed in product code with no finding-gate/maps/channels.tsv row naming it',
-            ChannelRenamePlants::lcomChannelMutation()->and(self::oldLcomValueDeclarations()),
-            [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity'),
-                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:complexity|format:json', exactScope: true),
-                ...ChannelRenamePlants::caseListingFailures('complexity')],
+            'a JSON finding channel is renamed with no channels.tsv row naming it',
+            ChannelRenamePlants::publishedLcomChannelMutation()->and(self::oldLcomValueDeclarations()),
             [
-                new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:complexity'),
-                new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:detectors'),
-                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:detectors|format:json', exactScope: true),
-                ...Controls::fieldValueToleration(),
-                ...array_map(static fn(string $scope): Expectation => new Expectation(FailureClass::SURFACE_MISMATCH, $scope, exactScope: true), [
-                    'case:detectors|baseline-file', 'case:detectors|check:output:file',
-                    'case:detectors|format:checkstyle', 'case:detectors|format:github',
-                    'case:detectors|format:gitlab', 'case:detectors|format:json',
-                    'case:detectors|format:sarif', 'case:detectors|format:text',
-                    'case:detectors|show-suppressed',
+                ...array_map(static fn(string $scope): Expectation => new Expectation(FailureClass::RECORD_UNDECLARED, $scope, exactScope: true), [
+                    'case:complexity|format:json', 'case:detectors|format:json',
                 ]),
-                new Expectation(
-                    FailureClass::WITNESS_DISAGREEMENT,
-                    'governance/Channel/Fixtures/declared.txt',
-                ),
-                ...ChannelRenamePlants::producerListingToleration(),
+                ...array_map(static fn(string $scope): Expectation => new Expectation(FailureClass::SURFACE_MISMATCH, $scope, exactScope: true), [
+                    'case:complexity|format:json', 'case:complexity|check:output:file',
+                    'case:detectors|format:json', 'case:detectors|check:output:file',
+                ]),
+                new Expectation(FailureClass::COVERAGE_SHORTFALL, 'corpus', exactScope: true),
+                new Expectation(FailureClass::COVERAGE_SURPLUS, 'corpus', exactScope: true),
+                new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:complexity', exactScope: true),
+                new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:detectors', exactScope: true),
             ],
         );
     }
@@ -99,6 +47,11 @@ final class RenameControls
 
         foreach ($values->derived() as $row) {
             if ($row['kind'] !== DeclaredValues::FIELD || !str_contains($row['subject'], '|record:')) {
+                continue;
+            }
+
+            if (!str_starts_with($row['subject'], 'case:complexity|format:json|record:')
+                && !str_starts_with($row['subject'], 'case:detectors|format:json|record:')) {
                 continue;
             }
 
@@ -157,90 +110,38 @@ final class RenameControls
         );
     }
 
-    /**
-     * A row of a declared split that explains nothing, beside one that does.
-     *
-     * The relaxation this watches: a channel row is credited by the records it
-     * explained as well as by the text it substituted, because a row that moves
-     * a producer and leaves the code alone has nothing to substitute anywhere —
-     * its rule half is one side of the split and is deliberately left
-     * untranslated, its code half is the same string on both sides, and no
-     * surface prints the whole `rule#code` key. Without the credit `map-stale`
-     * would refuse the only shape such a declaration has.
-     *
-     * The boundary is the point. Credit travels per row and per matched record,
-     * so a second row of the same split — declared over a code the product never
-     * emits — is idle and must fail, even though the split it belongs to is
-     * live. A relaxation granted per split rather than per row would make this
-     * control green, which is why it is required rather than derived from the
-     * self-test: {@see \QmxFindingGate\SelfTest} proves the accounting on
-     * synthetic pairs, and this proves the gate carries it through a real run.
-     *
-     * The product change is {@see ChannelRenamePlants::unusedPrivateChannelMutation()}, the one the
-     * fingerprint pair already measured, so the only thing this control varies
-     * is the declaration. The map declares the rename as a **split**, which is
-     * what makes the rule half untranslatable: with no substitution left, the
-     * `smells` case's surfaces and the `qmx rules` listing differ, and those two
-     * are the mutation's whole measured radius here — the claim and the tracked
-     * declaration fixture move with the rename, exactly as the green twin moves
-     * them, so neither the claim check nor the witness has anything to say.
-     */
+    /** A JSON producer move credits its live split row; a second unobserved row stays stale. */
     public static function splitRowIdle(): Control
     {
         return Control::red(
             'split-row-idle',
-            'a row of a declared split that explained nothing, beside one that explained every record',
-            ChannelRenamePlants::unusedPrivateChannelMutation()
-                ->and(ChannelRenamePlants::unusedPrivateRenameDeclarations())
+            'a declared JSON producer move explains records while another row of its split explains none',
+            ChannelRenamePlants::publishedUnusedPrivateProducerMutation()
                 ->and(ChannelRenamePlants::trackedChannelMapPlus(
                     [
                         "code-smell.unused-private#code-smell.unused-private\t"
-                            . "code-smell.unused-privat2#code-smell.unused-privat2\t"
-                            . 'the producer and its code move together, and this row explains every record of them',
+                            . "code-smell.unused-privat2#code-smell.unused-private\t"
+                            . 'the JSON producer moves while its finding channel and code stay unchanged',
                         "code-smell.unused-private#code-smell.never-emitted\t"
-                            . "code-smell.unused-privat3#code-smell.unused-privat3\t"
-                            . 'a second half of the same split, over a code the product never emits',
+                            . "code-smell.unused-privat3#code-smell.never-emitted\t"
+                            . 'this split row names no published finding',
                     ],
-                    'the rename is declared as a split, one of whose two rows can explain nothing',
+                    'one producer split row explains records and the other is idle',
                 )),
-            [new Expectation(FailureClass::MAP_STALE, 'code-smell.never-emitted'),
-                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:smells|format:json', exactScope: true),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:baseline-cycle|format:suppressed', exactScope: true),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:config-precedence|format:suppressed', exactScope: true),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:directive-placement|format:suppressed', exactScope: true),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:discovery|format:suppressed', exactScope: true),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:duplication-size|format:suppressed', exactScope: true),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:incomplete-directory-symlink|format:suppressed', exactScope: true),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:only-rules|format:suppressed', exactScope: true),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:parallel-files|format:suppressed', exactScope: true),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:scoped-layers|format:suppressed', exactScope: true),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:stderr-warning|format:suppressed', exactScope: true),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:suppression|format:suppressed', exactScope: true),
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:threshold-raising|format:suppressed', exactScope: true),
-                ...ChannelRenamePlants::caseListingFailures('smells')],
-            // `tree|rules` moves here too — the mutation renames a producer and
-            // the listing prints producer names — and whether that shows up as
-            // a `surface-mismatch` depends on the step under test rather than on
-            // this control. {@see ChannelRenamePlants::producerListingToleration()}.
             [
-                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells'),
-                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:detectors|format:json', exactScope: true),
-                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:detectors-smells|format:json', exactScope: true),
-                ...Controls::fieldValueToleration(),
-                ...array_map(static fn(string $scope): Expectation => new Expectation(FailureClass::SURFACE_MISMATCH, $scope, exactScope: true), [
-                    'case:detectors-smells|baseline-file', 'case:detectors-smells|check:output:file',
-                    'case:detectors-smells|explain:declaration:class:Corpus\\Smells\\Injection@src/Injection.php',
-                    'case:detectors-smells|format:checkstyle', 'case:detectors-smells|format:github',
-                    'case:detectors-smells|format:gitlab', 'case:detectors-smells|format:json',
-                    'case:detectors-smells|format:sarif', 'case:detectors-smells|format:text',
-                    'case:detectors-smells|show-suppressed',
-                    'case:detectors|baseline-file', 'case:detectors|check:output:file',
-                    'case:detectors|format:checkstyle', 'case:detectors|format:github',
-                    'case:detectors|format:gitlab', 'case:detectors|format:json',
-                    'case:detectors|format:sarif', 'case:detectors|format:text',
-                    'case:detectors|show-suppressed',
+                new Expectation(
+                    FailureClass::MAP_STALE,
+                    'channels.tsv: "code-smell.unused-private#code-smell.never-emitted" -> "code-smell.unused-privat3#code-smell.never-emitted"',
+                    exactScope: true,
+                ),
+                ...array_map(static fn(string $scope): Expectation => new Expectation(FailureClass::RECORD_UNDECLARED, $scope, exactScope: true), [
+                    'case:smells|format:json', 'case:detectors-smells|format:json', 'case:detectors|format:json',
                 ]),
-                ...ChannelRenamePlants::producerListingToleration(),
+                ...array_map(static fn(string $scope): Expectation => new Expectation(FailureClass::SURFACE_MISMATCH, $scope, exactScope: true), [
+                    'case:smells|format:json', 'case:smells|check:output:file',
+                    'case:detectors-smells|format:json', 'case:detectors-smells|check:output:file',
+                    'case:detectors|format:json', 'case:detectors|check:output:file',
+                ]),
             ],
         );
     }
