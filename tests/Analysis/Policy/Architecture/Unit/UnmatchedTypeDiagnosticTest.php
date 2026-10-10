@@ -29,6 +29,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy;
@@ -62,7 +63,7 @@ final class UnmatchedTypeDiagnosticTest extends TestCase
         );
         $evidence = $this->evidence([new LayerDefinition('typed', $membership)], [SymbolPath::forClass('App', 'Known')]);
 
-        $findings = UnmatchedTypeDiagnostic::forEvidence($evidence, new ProjectScopeJudgement(), new AnalysisContext(new InMemoryMetricRepository()));
+        $findings = UnmatchedTypeDiagnostic::forEvidence($evidence, new ProjectScopeJudgement(), new AnalysisContext(new InMemoryMetricRepository()), LayerDeclarationRule::channelDeclarations()[ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME]);
 
         self::assertCount(2, $findings);
         self::assertStringContainsString('architecture.layers[0].implements[1]:17', $findings[0]->message);
@@ -88,7 +89,7 @@ final class UnmatchedTypeDiagnosticTest extends TestCase
             new LayerDefinition('other', new MembershipSpec(extends: [$second->fqn], namedTypes: [$second])),
         ]);
 
-        $findings = UnmatchedTypeDiagnostic::forEvidence($evidence, new ProjectScopeJudgement(), new AnalysisContext(new InMemoryMetricRepository()));
+        $findings = UnmatchedTypeDiagnostic::forEvidence($evidence, new ProjectScopeJudgement(), new AnalysisContext(new InMemoryMetricRepository()), LayerDeclarationRule::channelDeclarations()[ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME]);
 
         self::assertCount(2, $findings);
         self::assertNotEquals($findings[0]->occurrenceKey, $findings[1]->occurrenceKey);
@@ -116,7 +117,7 @@ final class UnmatchedTypeDiagnosticTest extends TestCase
         ));
         $evidence = $this->evidence([], entries: [$entry]);
 
-        $findings = UnmatchedTypeDiagnostic::forEvidence($evidence, new ProjectScopeJudgement(), new AnalysisContext(new InMemoryMetricRepository()));
+        $findings = UnmatchedTypeDiagnostic::forEvidence($evidence, new ProjectScopeJudgement(), new AnalysisContext(new InMemoryMetricRepository()), LayerDeclarationRule::channelDeclarations()[ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME]);
 
         self::assertCount(1, $findings);
         self::assertStringContainsString('Vendor\Missing', $findings[0]->message);
@@ -132,7 +133,7 @@ final class UnmatchedTypeDiagnosticTest extends TestCase
             new LayerDefinition('typed', new MembershipSpec(extends: [$type->fqn], namedTypes: [$type])),
         ], install: $install);
 
-        self::assertSame([], UnmatchedTypeDiagnostic::forEvidence($evidence, new ProjectScopeJudgement($doors), new AnalysisContext(new InMemoryMetricRepository())));
+        self::assertSame([], UnmatchedTypeDiagnostic::forEvidence($evidence, new ProjectScopeJudgement($doors), new AnalysisContext(new InMemoryMetricRepository()), LayerDeclarationRule::channelDeclarations()[ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME]));
     }
 
     /** @return iterable<string, array{list<ProjectScopeDoor>, bool}> */
@@ -154,7 +155,7 @@ final class UnmatchedTypeDiagnosticTest extends TestCase
             new LayerDefinition('two', new MembershipSpec(extends: [$two->fqn], namedTypes: [$two])),
         ]);
 
-        $findings = UnmatchedTypeDiagnostic::forEvidence($evidence, new ProjectScopeJudgement(), new AnalysisContext(new InMemoryMetricRepository()));
+        $findings = UnmatchedTypeDiagnostic::forEvidence($evidence, new ProjectScopeJudgement(), new AnalysisContext(new InMemoryMetricRepository()), LayerDeclarationRule::channelDeclarations()[ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME]);
 
         self::assertCount(2, $findings);
         self::assertNotEquals($findings[0]->occurrenceKey, $findings[1]->occurrenceKey);
@@ -177,7 +178,7 @@ final class UnmatchedTypeDiagnosticTest extends TestCase
             ], null)))->publishes(...));
             $scope = new ProjectScopeJudgement($doors);
             $context = (new AnalysisContext(new InMemoryMetricRepository(), projectScope: $scope))->withPopulationTrace($session);
-            $findings = UnmatchedTypeDiagnostic::forEvidence($evidence, $scope, $context);
+            $findings = UnmatchedTypeDiagnostic::forEvidence($evidence, $scope, $context, LayerDeclarationRule::channelDeclarations()[ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME]);
             self::assertCount($doors === [] ? 1 : 0, $findings);
             self::assertSame($doors === [] ? 2 : 0, $session->freeze()->judgedCount());
             self::assertSame($doors === [] ? 0 : 2, $session->freeze()->unjudgedCount());

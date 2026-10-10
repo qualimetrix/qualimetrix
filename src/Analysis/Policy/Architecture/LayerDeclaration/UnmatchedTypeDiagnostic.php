@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration;
 
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -28,14 +29,13 @@ final class UnmatchedTypeDiagnostic
     private const string OCCURRENCE_KIND = 'unmatched-layer-type';
 
     /** @return list<Finding> */
-    public static function forEvidence(LayerEvidence $evidence, ProjectScopeJudgement $scope, AnalysisContext $context): array
+    public static function forEvidence(LayerEvidence $evidence, ProjectScopeJudgement $scope, AnalysisContext $context, ChannelDeclaration $declaration): array
     {
         $configuration = $evidence->architecture;
         $types = $configuration->namedTypes();
         $judgement = $configuration->registry()->contextFactory()->knownTypes()->unmatched($types, $scope);
-        $declaration = LayerDeclarationRule::channelDeclarations()[ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME];
         foreach ($types as $type) {
-            $context->admit(LayerDeclarationRule::NAME, new FindingChannel(ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME), SymbolLevel::Project, PopulationIdentity::selector(UnmatchedTypeOccurrence::identityOf($type), 'authored-type-occurrence'), $declaration, [GateInput::context('namedTypesJudged', $judgement->isJudged())]);
+            $context->admit(ArchitectureChannels::LAYER_DECLARATION_PRODUCER_NAME, new FindingChannel(ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME), SymbolLevel::Project, PopulationIdentity::selector(UnmatchedTypeOccurrence::identityOf($type), 'authored-type-occurrence'), $declaration, [GateInput::context('namedTypesJudged', $judgement->isJudged())]);
         }
         if (!$judgement->isJudged()) {
             return [];

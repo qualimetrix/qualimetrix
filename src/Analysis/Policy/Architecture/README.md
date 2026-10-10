@@ -555,7 +555,7 @@ roster. Its `populationGates()` contributes the lifecycle predicate to the
 producer's complete declaration. The matched/excluded/unanswered comparison
 remains the finding decision after admission.
 
-`UnmatchedTypeDiagnostic::forEvidence(evidence, scope, context)` judges the full
+`UnmatchedTypeDiagnostic::forEvidence(evidence, scope, context, declaration)` judges the full
 native authored-type roster once, including met types that emit no finding.
 `populationGates()` contributes the complete-scope-and-consulted-install
 predicate. Authored provenance distinguishes equal FQNs at separate positions;
