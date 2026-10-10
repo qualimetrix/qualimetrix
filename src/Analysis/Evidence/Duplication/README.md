@@ -159,6 +159,8 @@ re-key baseline and GitLab/SARIF identities; this is an identity migration, not
 a baseline schema change. `@qmx-ignore` channel directives remain refused.
 A file subject has no namespace, so `suppress_namespaces` does not suppress a
 Duplication finding; path selectors can suppress copies in their files.
+Population copy identities frame raw file bytes before JSON encoding, preserving
+valid UTF-8 identities and distinguishing invalid bytes from literal escapes.
 
 The detector counts token rows over CR, LF and CRLF correctly; CRLF is one line
 break. A trailing line break in an inline-HTML token does not cover an empty

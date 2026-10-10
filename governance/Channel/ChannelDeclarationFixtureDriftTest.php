@@ -68,8 +68,8 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
                     : $expected[$key]->describedAs($declaration->description),
             );
             $actualFields = get_object_vars($declaration);
-            // The fixture has no representation for run-evidence reach.
-            unset($expectedFields['readsRunEvidence'], $actualFields['readsRunEvidence']);
+            // The six structural columns do not encode run-evidence reach or predicates.
+            unset($expectedFields['readsRunEvidence'], $actualFields['readsRunEvidence'], $expectedFields['populationGates'], $actualFields['populationGates']);
             self::assertEquals(
                 $expectedFields,
                 $actualFields,

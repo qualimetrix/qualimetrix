@@ -44,7 +44,7 @@ final class ConfiguredWarningBoundaryMapTest extends TestCase
         'complexity.npath' => ['callable' => 200, 'class' => 500],
         'complexity.wmc' => ['class' => 50],
         'coupling.cbo' => ['class' => 14, 'namespace' => 14],
-        'coupling.class-rank' => ['class' => 0.02],
+        'coupling.class-rank' => ['class' => 5.0],
         'coupling.distance' => ['namespace' => 0.3],
         'coupling.instability' => ['class' => 0.8, 'namespace' => 0.8],
         'design.data-class' => ['class' => 33],

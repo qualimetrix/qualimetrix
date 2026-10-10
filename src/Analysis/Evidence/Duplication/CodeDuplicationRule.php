@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Duplication;
 
 use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlock;
+
 use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateLocation;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
@@ -18,6 +19,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Observation\WorseDirection;
+use Qualimetrix\Core\SourceText\SourceBytes;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -144,7 +146,7 @@ final class CodeDuplicationRule extends AbstractRule
             $lines = $copy->codeLines;
             $hintPart = $copy->hint !== null ? \sprintf(': "%s"', $copy->hint) : '';
             $copyInFile = $copiesInFile[$file] = ($copiesInFile[$file] ?? -1) + 1;
-            $context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::File, PopulationIdentity::occurrence(json_encode([$blockOrdinal, $block->contentHash, $file, $copyInFile], \JSON_THROW_ON_ERROR), $index, 'copy-occurrence'), $declaration, []);
+            $context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::File, PopulationIdentity::occurrence(json_encode([$blockOrdinal, $block->contentHash, SourceBytes::framed($file), $copyInFile], \JSON_THROW_ON_ERROR), $index, 'copy-occurrence'), $declaration, []);
             $named = self::namedOthers($block->occurrences(), $index);
             $unnamed = $block->occurrences() - 1 - \count($named);
 

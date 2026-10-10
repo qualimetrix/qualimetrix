@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract\Population;
 
 use LogicException;
+use Qualimetrix\Core\SourceText\SourceBytes;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -54,7 +55,7 @@ final readonly class PopulationIdentity
         if ($authority === '' || $ordinal < 0) {
             throw new LogicException('Native population occurrence requires authority and ordinal.');
         }
-        return new self(json_encode([$authority, $ordinal], \JSON_THROW_ON_ERROR), $unit);
+        return new self(json_encode([SourceBytes::framed($authority), $ordinal], \JSON_THROW_ON_ERROR), $unit);
     }
 
     /** @param non-empty-list<string> $members */
@@ -64,7 +65,7 @@ final readonly class PopulationIdentity
             throw new LogicException('Cycle population requires named members.');
         }
         sort($members, \SORT_STRING);
-        return new self(json_encode(array_values(array_unique($members)), \JSON_THROW_ON_ERROR), 'cycle');
+        return new self(json_encode(array_map(SourceBytes::framed(...), array_values(array_unique($members))), \JSON_THROW_ON_ERROR), 'cycle');
     }
 
     public static function edge(string $source, string $target): self
@@ -72,7 +73,7 @@ final readonly class PopulationIdentity
         if ($source === '' || $target === '') {
             throw new LogicException('Edge population requires both logical endpoints.');
         }
-        return new self(json_encode([$source, $target], \JSON_THROW_ON_ERROR), 'dependency-edge');
+        return new self(json_encode([SourceBytes::framed($source), SourceBytes::framed($target)], \JSON_THROW_ON_ERROR), 'dependency-edge');
     }
 
     public static function selector(string $canonical, string $unit): self

@@ -117,7 +117,7 @@ complexity.npath higher callable,class judges:complexity.npath,complexity.npath.
 complexity.wmc higher class judges:complexity.wmc
 coupling.cbo higher class,namespace judges:coupling.cbo,coupling.cbo-app,coupling.cbo-own
 coupling.class-rank - class
-coupling.distance higher namespace judges:coupling.distance
+coupling.distance higher namespace judges:coupling.distance-own
 coupling.instability higher class,namespace judges:coupling.instability
 coupling.unmatched-framework-namespace - project
 design.data-class lower class judges:design.woc

@@ -57,12 +57,6 @@ final class UnmatchedFrameworkNamespaceRule extends AbstractRule
 {
     public const string NAME = 'coupling.unmatched-framework-namespace';
 
-    /**
-     * What one finding here is about: the selector. Without it every finding on
-     * this channel shared one baseline identity, so an accepted entry bounded
-     * their number and a replaced selector passed under it unnoticed.
-     */
-    private const string OCCURRENCE_KIND = 'unmatched-framework-prefix';
     public const string DOCS_PAGE = 'rules/coupling.md';
 
     /** Editing one line of `qmx.yaml`, plus reading what the code really imports. */
@@ -181,7 +175,7 @@ final class UnmatchedFrameworkNamespaceRule extends AbstractRule
         }
         $findings = [];
         foreach ($this->coupling->unboundSelectors($classified) as $selector) {
-            $findings[] = UnmatchedFrameworkFinding::of($selector, self::NAME, self::OCCURRENCE_KIND);
+            $findings[] = UnmatchedFrameworkFinding::of($selector, self::NAME);
         }
 
         return $findings;

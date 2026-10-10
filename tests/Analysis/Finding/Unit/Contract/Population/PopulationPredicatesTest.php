@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Finding\Unit\Population;
+namespace Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population;
 
 use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;

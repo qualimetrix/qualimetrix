@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Finding\Unit\Population;
+namespace Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population;
 
 use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -203,6 +203,33 @@ final class PopulationSelectionTest extends TestCase
                 self::assertStringContainsString('Only graph or prepared-evidence absence', $failure->getMessage());
             }
         }
+    }
+
+    #[Test]
+    public function itPreservesBinaryIdentitiesWithoutCollidingWithPercentLiterals(): void
+    {
+        foreach ([
+            static fn(string $value): PopulationIdentity => PopulationIdentity::occurrence($value, 0),
+            static fn(string $value): PopulationIdentity => PopulationIdentity::edge($value, 'target'),
+            static fn(string $value): PopulationIdentity => PopulationIdentity::cycle([$value, 'target']),
+        ] as $factory) {
+            $binary = $factory("member:\xFF")->canonical;
+            self::assertNotSame($factory('member:%FF')->canonical, $binary);
+            self::assertSame($binary, $factory("member:\xFF")->canonical);
+            self::assertTrue(mb_check_encoding($binary, 'UTF-8'));
+        }
+        self::assertSame('["member",0]', PopulationIdentity::occurrence('member', 0)->canonical);
+        self::assertSame('["member","target"]', PopulationIdentity::edge('member', 'target')->canonical);
+        self::assertSame('["member","target"]', PopulationIdentity::cycle(['target', 'member', 'member'])->canonical);
+        self::assertSame("clause:\xFF", PopulationIdentity::clause("clause:\xFF")->canonical);
+        $members = [];
+        for ($ordinal = 0; $ordinal < 6; ++$ordinal) {
+            $members[] = ['identity' => PopulationIdentity::selector("member:$ordinal:\xFF", 'occurrence'), 'inputs' => [GateInput::metrics('value', new MetricBag())]];
+        }
+        $population = $this->publication()->measure('fixture.population', new FindingChannel('fixture.population'), SymbolLevel::Project, $this->declaration(), $members);
+        $absence = $population->abstentions()[0];
+        self::assertSame(6, $absence->count);
+        self::assertSame(["member:0:\xFF", "member:1:\xFF", "member:2:\xFF", "member:3:\xFF", "member:4:\xFF"], $absence->examples);
     }
 
     private function publication(bool $selected = true): ChannelPublication

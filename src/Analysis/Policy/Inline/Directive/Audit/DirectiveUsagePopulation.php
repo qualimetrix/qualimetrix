@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
+use Qualimetrix\Core\SourceText\SourceBytes;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
@@ -43,7 +44,7 @@ final class DirectiveUsagePopulation
             foreach ($verdicts as $verdict) {
                 $site = $verdict->site;
                 yield [
-                    'identity' => PopulationIdentity::selector(json_encode([$site->file->value(), $site->line, $site->position, $site->form, $site->target], \JSON_THROW_ON_ERROR), 'directive-site'),
+                    'identity' => PopulationIdentity::selector(json_encode([SourceBytes::framed($site->file->value()), $site->line, $site->position, SourceBytes::framed($site->form), SourceBytes::framed($site->target)], \JSON_THROW_ON_ERROR), 'directive-site'),
                     'inputs' => [GateInput::context('directiveScopeMeasured', $verdict->reason === null)],
                 ];
                 unset($site, $verdict);

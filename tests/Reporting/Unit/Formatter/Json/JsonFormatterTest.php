@@ -65,6 +65,31 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
+    public function itRepairsBinaryPopulationExamplesOnlyAtPublication(): void
+    {
+        $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
+        $channel = new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.ccn');
+        for ($ordinal = 0; $ordinal < 6; ++$ordinal) {
+            $trace->record(
+                'complexity.ccn',
+                $channel,
+                \Qualimetrix\Core\Symbol\SymbolLevel::Callable,
+                \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::selector("member:$ordinal:\xFF", 'callable'),
+                'callable-value',
+                'Missing publication.',
+            );
+        }
+        $population = $trace->freeze();
+        self::assertSame("member:0:\xFF", $population->abstentions()[0]->examples[0]);
+        $report = ReportBuilder::create()->population($population)->build();
+        $data = json_decode($this->formatter->format($report, new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
+        self::assertSame(6, $data['abstentions'][0]['count']);
+        self::assertSame(['member:0:%FF', 'member:1:%FF', 'member:2:%FF', 'member:3:%FF', 'member:4:%FF'], $data['abstentions'][0]['examples']);
+        self::assertSame(5, $data['invalidUtf8Replaced']);
+        self::assertSame("member:0:\xFF", $population->abstentions()[0]->examples[0]);
+    }
+
+    #[Test]
     public function itPublishesUnjudgedPopulationOnAnEmptyFindingReportWithoutAFailure(): void
     {
         $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();

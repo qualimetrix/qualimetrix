@@ -15,7 +15,14 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 /** Finding for one authored framework selector that classified nothing. */
 final readonly class UnmatchedFrameworkFinding
 {
-    public static function of(NamespacePattern $selector, string $channel, string $occurrenceKind): Finding
+    /**
+     * What one finding here is about: the selector. Without it every finding on
+     * this channel shared one baseline identity, so an accepted entry bounded
+     * their number and a replaced selector passed under it unnoticed.
+     */
+    private const string OCCURRENCE_KIND = 'unmatched-framework-prefix';
+
+    public static function of(NamespacePattern $selector, string $channel): Finding
     {
         $display = $selector->definition->display();
 
@@ -38,7 +45,7 @@ final readonly class UnmatchedFrameworkFinding
                 . ' dependency is gone.',
                 $display,
             ),
-            occurrenceKey: OccurrenceKey::semantic($occurrenceKind, ['selector' => $display]),
+            occurrenceKey: OccurrenceKey::semantic(self::OCCURRENCE_KIND, ['selector' => $display]),
         );
     }
 

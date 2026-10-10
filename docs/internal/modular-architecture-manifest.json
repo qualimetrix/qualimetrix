@@ -17699,6 +17699,18 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Json\\JsonFormatter"
+        },
+        {
+          "owner": "Analysis.Evidence.Duplication",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\CodeDuplicationRule"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationIdentity"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\DirectiveUsagePopulation"
         }
       ]
     },

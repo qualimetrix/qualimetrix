@@ -471,6 +471,11 @@ source, coordinate or identity is refused. Missing publication and measured zero
 are separate observations; the declared predicate chooses whether missing zero
 can pass a native threshold.
 
+`PopulationIdentity` frames binary occurrence, edge and cycle components without
+changing valid UTF-8 hash inputs. Selector and clause factories retain the owning
+canonical identity; bounded abstention examples retain those bytes until report
+publication applies the existing UTF-8 repair.
+
 `RuleExecution` derives one context carrying a fresh `PopulationSession` per
 execution and shares it across every producer. Architecture evidence therefore
 keeps its existing shared-context memoization. Successful eligible native members

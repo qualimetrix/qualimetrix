@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Finding\Unit\Population;
+namespace Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population;
 
 use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -182,6 +182,30 @@ final class HostedPopulationTest extends TestCase
                 self::assertSame('invocation', $absence->unit);
                 self::assertSame(1, $absence->count);
             }
+        }
+    }
+
+    #[Test]
+    public function itAccountsForDirectiveSitesContainingBinarySourceBytes(): void
+    {
+        $producer = \Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface::PRODUCER_RULE_NAME;
+        $channel = \Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME;
+        $declaration = \Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsagePopulation::declaration();
+        $verdicts = [];
+        foreach (["src/\xFF.php", 'src/%FF.php'] as $file) {
+            $verdicts[] = new \Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict(
+                new \Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite(\Qualimetrix\Core\Path\RelativePath::fromString($file), 1, 'file', "channel.\xFF", 0),
+                \Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect::Unmeasured,
+                \Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason::ScopeUnmeasured,
+            );
+        }
+        $population = \Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsagePopulation::measure(self::publication($producer, [$channel => $declaration]), $verdicts);
+        self::assertSame(2, $population->unjudgedCount());
+        $examples = $population->abstentions()[0]->examples;
+        self::assertCount(2, $examples);
+        self::assertNotSame($examples[0], $examples[1]);
+        foreach ($examples as $example) {
+            self::assertTrue(mb_check_encoding($example, 'UTF-8'));
         }
     }
 

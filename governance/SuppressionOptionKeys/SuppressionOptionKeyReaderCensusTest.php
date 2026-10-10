@@ -36,7 +36,7 @@ final class SuppressionOptionKeyReaderCensusTest extends TestCase
     private const string RAW_READ = '/\\$[A-Za-z_][A-Za-z0-9_]*(?:->[A-Za-z0-9_]+)*\\[\\s*(?:[\'"]suppress(?:[_-][A-Za-z_-]+|[A-Z][A-Za-z]*)?(?=[\'"])|ConfigSchema::SUPPRESS_)/';
 
     /**
-     * A file holding two or more suppression spellings side by side in a list.
+     * A file holding two or more suppress_* or suppressCamelCase option spellings in a list.
      *
      * The shape above only sees a key written *at* the subscript, and a reader
      * that puts its spellings in a constant and subscripts with the loop
@@ -50,7 +50,7 @@ final class SuppressionOptionKeyReaderCensusTest extends TestCase
      * leaves alone.
      */
     private const string HELD_ENUMERATION =
-        '/[\'"]suppress[A-Za-z_]*[\'"]\\s*,\\s*[\'"]suppress[A-Za-z_]*[\'"]/';
+        '/[\'"]suppress(?:_[A-Za-z_]+|[A-Z][A-Za-z]*)?[\'"]\\s*,\\s*[\'"]suppress(?:_[A-Za-z_]+|[A-Z][A-Za-z]*)?[\'"]/';
 
     #[Test]
     public function itIsTheOnlyPlaceInSourceThatReadsASuppressionOptionKey(): void
