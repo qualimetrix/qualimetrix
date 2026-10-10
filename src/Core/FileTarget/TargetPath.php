@@ -29,7 +29,7 @@ final class TargetPath
     /** Retain a newly created private directory's ownership while its facts remain unchanged. */
     public static function rememberCreatedDirectory(string $directory): void
     {
-        PathWalk::rememberCreatedDirectory($directory);
+        CreatedDirectoryOwnership::remember($directory);
     }
 
     private static function descriptorPrefix(string $path): ?int

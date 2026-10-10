@@ -365,6 +365,8 @@ reconstruct.
 ### BaselineCleanupCommand
 
 Inspect stale candidates; comparable absence does not itself prove that code was fixed.
+The command reports removal counts only after the guarded atomic baseline write
+has completed; count pluralization is separate from selection and publication.
 
 **Name:** `baseline:cleanup`
 
@@ -489,8 +491,9 @@ projection. The rule's remediation estimate is 5 minutes. Audit findings never
 enter the measured set, capture or accept-new; authored path/namespace
 suppression and Git projection cannot hide them. When unselected, stderr reports
 counts only. Uncompared entries likewise produce count diagnostics, not path dumps.
-Nine finding formats publish the audit; Metrics, Health and Suppressed retain
-their own subjects. All twelve preserve the ordinary failure policy: an isolated
+Six finding formats publish the audit; Checkstyle and GitLab Code Quality omit
+its fileless project subject, while Metrics, Health and Suppressed retain their
+own subjects. All eleven preserve the ordinary failure policy: an isolated
 audit warning exits 0 by default, with `--fail-on=error` or `none`, and 1 with
 `--fail-on=warning`. Incomplete analysis has priority and exits 4.
 

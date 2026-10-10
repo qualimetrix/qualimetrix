@@ -39,6 +39,7 @@ Core/
 ├── Environment/
 │   └── EnvironmentFailureInterface.php    # Neutral delivery/storage failure marker
 ├── FileTarget/
+│   ├── CreatedDirectoryOwnership.php
 │   ├── DirectoryFacts.php
 │   ├── EntryControl.php
 │   ├── EntryFacts.php
@@ -998,8 +999,10 @@ classifies failed path inspection only after checking the parent evidence.
 `TargetPath::resolve()` accepts an optional membership port, and `ResolvedTarget`
 retains it through claim, replacement and lock rechecks.
 `TargetPath::rememberCreatedDirectory()` lets Cache retain ownership of a private
-directory it just created. `PathWalk` reuses that judgement only while the
-physical directory's inode, mode, UID, GID and effective process owner agree.
+directory it just created. Internal `CreatedDirectoryOwnership` retains these
+process-owned facts separately from the component walk. `PathWalk` reuses its
+judgement only while the physical directory's inode, mode, UID, GID and effective
+process owner agree.
 A changed directory returns to ordinary judgement; a fork drops these facts.
 The directory walk and publication identity checks still run on every write.
 
