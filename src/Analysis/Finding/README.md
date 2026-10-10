@@ -87,6 +87,15 @@ uses the same channel selection without mutating the completed ledger.
 effective threshold: equality reaches it and a strictly greater value exceeds
 it, regardless of display rounding. A value below that boundary is not a
 crossing. Rule-specific lower-is-worse messages keep their own wording.
+`AbstractRule::thresholdFinding()` assembles the selected severity, band,
+threshold wording, and exact declaration finding once. Rules retain their
+population admission, effective override selection, and subject-specific text;
+regular and value-object constructor bands remain separate.
+`AnalysisContext` indexes complete threshold-override winners by exact subject
+and literal rule name. Selection keeps scope specificity, then the shorter
+span, then the first insertion; it never merges partial winning overrides.
+Every new context rebuilds its private index from its own raw bindings,
+including directive counterfactuals.
 
 `RuleExecutionInterface::execute()` returns `RuleExecutionResult` (in `Contract/`)
 rather than a bare finding list: `$produced` (everything rules and their
@@ -155,8 +164,12 @@ an analyzed local file, a positively verified absent file and a nonlocal region.
 Local member evidence can survive an unrelated failed file; a nonlocal absence
 needs a known complete declaration population. A verified absent exact file can
 prove absence even for a run-wide producer. A present run-wide subject still
-requires its wider population. Baseline and Inline use this same Finding-owned
-answer instead of deriving separate scope heuristics.
+requires its wider population. For local subjects, a complete selected universe
+is not withheld by unrelated generated or configured-excluded files. Explicit
+path narrowing, unknown discovery and failed files still withhold Run-wide
+claims; namespace/project absence retains its stricter declaration question.
+Baseline and Inline use this same Finding-owned answer instead of deriving
+separate scope heuristics.
 
 `LevelActivity` records the producer/level cells admitted by the committed
 `RuleEnablement`. `RuleExecutionInterface::levelActivity()` reads that immutable
