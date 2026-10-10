@@ -4337,6 +4337,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"ambiguous named receiver has no selected declaration"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"ambiguous parent cannot absorb responses"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"ambiguous trait has no chosen source"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"assignment targets retain their direct invocations"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"case and imported class aliases"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"class override excludes trait body"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\RfcGlobalCollectorTest::itResolvesOnlyEffectiveOwnedBodies"closures keep captured receivers and their own parameter scope"

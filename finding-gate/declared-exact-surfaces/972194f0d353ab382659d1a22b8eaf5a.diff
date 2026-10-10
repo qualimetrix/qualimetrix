@@ -1,0 +1,906 @@
+--- candidate
++++ reference (mapped)
+@@ -1963,0 +1963,15 @@
++                "coupling.rfc.sum": 101,
++                "coupling.rfc.avg": 1,
++                "coupling.rfc.max": 1,
++                "coupling.rfc.p95": 1,
++                "coupling.rfc.count": 101,
++                "coupling.rfc-own.sum": 101,
++                "coupling.rfc-own.avg": 1,
++                "coupling.rfc-own.max": 1,
++                "coupling.rfc-own.p95": 1,
++                "coupling.rfc-own.count": 101,
++                "coupling.rfc-external.sum": 0,
++                "coupling.rfc-external.avg": 0,
++                "coupling.rfc-external.max": 0,
++                "coupling.rfc-external.p95": 0,
++                "coupling.rfc-external.count": 101,
+@@ -2107,15 +2122,0 @@
+-                "coupling.rfc.sum": 101,
+-                "coupling.rfc.avg": 1,
+-                "coupling.rfc.max": 1,
+-                "coupling.rfc.p95": 1,
+-                "coupling.rfc.count": 101,
+-                "coupling.rfc-own.sum": 101,
+-                "coupling.rfc-own.avg": 1,
+-                "coupling.rfc-own.max": 1,
+-                "coupling.rfc-own.p95": 1,
+-                "coupling.rfc-own.count": 101,
+-                "coupling.rfc-external.sum": 0,
+-                "coupling.rfc-external.avg": 0,
+-                "coupling.rfc-external.max": 0,
+-                "coupling.rfc-external.p95": 0,
+-                "coupling.rfc-external.count": 101,
+@@ -2194,0 +2194,15 @@
++                "coupling.rfc.sum": 101,
++                "coupling.rfc.avg": 1,
++                "coupling.rfc.max": 1,
++                "coupling.rfc.p95": 1,
++                "coupling.rfc.count": 101,
++                "coupling.rfc-own.sum": 101,
++                "coupling.rfc-own.avg": 1,
++                "coupling.rfc-own.max": 1,
++                "coupling.rfc-own.p95": 1,
++                "coupling.rfc-own.count": 101,
++                "coupling.rfc-external.sum": 0,
++                "coupling.rfc-external.avg": 0,
++                "coupling.rfc-external.max": 0,
++                "coupling.rfc-external.p95": 0,
++                "coupling.rfc-external.count": 101,
+@@ -2354,15 +2369,0 @@
+-                "coupling.rfc.sum": 101,
+-                "coupling.rfc.avg": 1,
+-                "coupling.rfc.max": 1,
+-                "coupling.rfc.p95": 1,
+-                "coupling.rfc.count": 101,
+-                "coupling.rfc-own.sum": 101,
+-                "coupling.rfc-own.avg": 1,
+-                "coupling.rfc-own.max": 1,
+-                "coupling.rfc-own.p95": 1,
+-                "coupling.rfc-own.count": 101,
+-                "coupling.rfc-external.sum": 0,
+-                "coupling.rfc-external.avg": 0,
+-                "coupling.rfc-external.max": 0,
+-                "coupling.rfc-external.p95": 0,
+-                "coupling.rfc-external.count": 101,
+@@ -2429,0 +2429,15 @@
++                "coupling.rfc.sum": 101,
++                "coupling.rfc.avg": 1,
++                "coupling.rfc.max": 1,
++                "coupling.rfc.p95": 1,
++                "coupling.rfc.count": 101,
++                "coupling.rfc-own.sum": 101,
++                "coupling.rfc-own.avg": 1,
++                "coupling.rfc-own.max": 1,
++                "coupling.rfc-own.p95": 1,
++                "coupling.rfc-own.count": 101,
++                "coupling.rfc-external.sum": 0,
++                "coupling.rfc-external.avg": 0,
++                "coupling.rfc-external.max": 0,
++                "coupling.rfc-external.p95": 0,
++                "coupling.rfc-external.count": 101,
+@@ -2586,15 +2601,0 @@
+-                "coupling.rfc.sum": 101,
+-                "coupling.rfc.avg": 1,
+-                "coupling.rfc.max": 1,
+-                "coupling.rfc.p95": 1,
+-                "coupling.rfc.count": 101,
+-                "coupling.rfc-own.sum": 101,
+-                "coupling.rfc-own.avg": 1,
+-                "coupling.rfc-own.max": 1,
+-                "coupling.rfc-own.p95": 1,
+-                "coupling.rfc-own.count": 101,
+-                "coupling.rfc-external.sum": 0,
+-                "coupling.rfc-external.avg": 0,
+-                "coupling.rfc-external.max": 0,
+-                "coupling.rfc-external.p95": 0,
+-                "coupling.rfc-external.count": 101,
+@@ -2647,0 +2647,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -2711,3 +2714,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -2745,0 +2745,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -2809,3 +2812,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -2843,0 +2843,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -2907,3 +2910,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -2941,0 +2941,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -3005,3 +3008,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -3039,0 +3039,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -3103,3 +3106,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -3137,0 +3137,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -3201,3 +3204,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -3235,0 +3235,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -3299,3 +3302,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -3333,0 +3333,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -3397,3 +3400,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -3431,0 +3431,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -3495,3 +3498,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -3529,0 +3529,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -3593,3 +3596,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -3627,0 +3627,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -3691,3 +3694,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -3725,0 +3725,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -3789,3 +3792,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -3823,0 +3823,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -3887,3 +3890,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -3921,0 +3921,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -3985,3 +3988,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -4019,0 +4019,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -4083,3 +4086,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -4117,0 +4117,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -4181,3 +4184,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -4215,0 +4215,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -4279,3 +4282,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -4313,0 +4313,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -4377,3 +4380,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -4411,0 +4411,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -4475,3 +4478,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -4509,0 +4509,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -4573,3 +4576,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -4607,0 +4607,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -4671,3 +4674,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -4705,0 +4705,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -4769,3 +4772,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -4803,0 +4803,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -4867,3 +4870,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -4901,0 +4901,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -4965,3 +4968,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -4999,0 +4999,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -5063,3 +5066,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -5097,0 +5097,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -5161,3 +5164,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -5195,0 +5195,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -5259,3 +5262,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -5293,0 +5293,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -5357,3 +5360,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -5391,0 +5391,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -5455,3 +5458,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -5489,0 +5489,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -5553,3 +5556,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -5587,0 +5587,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -5651,3 +5654,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -5685,0 +5685,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -5749,3 +5752,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -5783,0 +5783,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -5847,3 +5850,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -5881,0 +5881,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -5945,3 +5948,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -5979,0 +5979,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -6043,3 +6046,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -6077,0 +6077,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -6141,3 +6144,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -6175,0 +6175,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -6239,3 +6242,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -6273,0 +6273,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -6337,3 +6340,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -6371,0 +6371,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -6435,3 +6438,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -6469,0 +6469,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -6533,3 +6536,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -6567,0 +6567,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -6631,3 +6634,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -6665,0 +6665,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -6729,3 +6732,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -6763,0 +6763,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -6827,3 +6830,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -6861,0 +6861,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -6925,3 +6928,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -6959,0 +6959,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -7023,3 +7026,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -7057,0 +7057,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -7121,3 +7124,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -7155,0 +7155,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -7219,3 +7222,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -7253,0 +7253,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -7317,3 +7320,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -7351,0 +7351,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -7415,3 +7418,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -7449,0 +7449,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -7513,3 +7516,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -7547,0 +7547,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -7611,3 +7614,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -7645,0 +7645,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -7709,3 +7712,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -7743,0 +7743,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -7807,3 +7810,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -7841,0 +7841,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -7905,3 +7908,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -7939,0 +7939,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -8003,3 +8006,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -8037,0 +8037,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -8101,3 +8104,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -8135,0 +8135,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -8199,3 +8202,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -8233,0 +8233,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -8297,3 +8300,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -8331,0 +8331,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -8395,3 +8398,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -8429,0 +8429,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -8493,3 +8496,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -8527,0 +8527,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -8591,3 +8594,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -8625,0 +8625,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -8689,3 +8692,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -8723,0 +8723,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -8787,3 +8790,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -8821,0 +8821,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -8885,3 +8888,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -8919,0 +8919,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -8983,3 +8986,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -9017,0 +9017,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -9081,3 +9084,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -9115,0 +9115,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -9179,3 +9182,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -9213,0 +9213,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -9277,3 +9280,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -9311,0 +9311,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -9375,3 +9378,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -9409,0 +9409,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -9473,3 +9476,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -9507,0 +9507,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -9571,3 +9574,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -9605,0 +9605,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -9669,3 +9672,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -9703,0 +9703,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -9767,3 +9770,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -9801,0 +9801,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -9865,3 +9868,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -9899,0 +9899,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -9963,3 +9966,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -9997,0 +9997,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -10061,3 +10064,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -10095,0 +10095,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -10159,3 +10162,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -10193,0 +10193,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -10257,3 +10260,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -10291,0 +10291,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -10355,3 +10358,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -10389,0 +10389,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -10453,3 +10456,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -10487,0 +10487,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -10551,3 +10554,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -10585,0 +10585,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -10649,3 +10652,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -10683,0 +10683,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -10747,3 +10750,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -10781,0 +10781,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -10845,3 +10848,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -10879,0 +10879,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -10943,3 +10946,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -10977,0 +10977,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -11041,3 +11044,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -11075,0 +11075,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -11139,3 +11142,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -11173,0 +11173,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -11237,3 +11240,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -11271,0 +11271,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -11335,3 +11338,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -11369,0 +11369,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -11433,3 +11436,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -11467,0 +11467,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -11531,3 +11534,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -11565,0 +11565,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -11629,3 +11632,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -11663,0 +11663,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -11727,3 +11730,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -11761,0 +11761,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -11825,3 +11828,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -11859,0 +11859,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -11923,3 +11926,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -11957,0 +11957,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -12021,3 +12024,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -12055,0 +12055,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -12119,3 +12122,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -12153,0 +12153,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -12217,3 +12220,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -12251,0 +12251,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -12315,3 +12318,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -12349,0 +12349,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -12413,3 +12416,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
+@@ -12447,0 +12447,3 @@
++                "coupling.rfc": 1,
++                "coupling.rfc-own": 1,
++                "coupling.rfc-external": 0,
+@@ -12511,3 +12514,0 @@
+-                "coupling.rfc": 1,
+-                "coupling.rfc-own": 1,
+-                "coupling.rfc-external": 0,
