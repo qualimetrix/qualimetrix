@@ -74,7 +74,7 @@ final class RenameControls
                 new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:complexity'),
                 new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:detectors'),
                 new Expectation(FailureClass::RECORD_UNDECLARED, 'case:detectors|format:json', exactScope: true),
-                new Expectation(FailureClass::FIELD_VALUES_MISMATCH, 'declared-fields.derived.tsv', exactScope: true),
+                ...Controls::fieldValueToleration(),
                 ...array_map(static fn(string $scope): Expectation => new Expectation(FailureClass::SURFACE_MISMATCH, $scope, exactScope: true), [
                     'case:detectors|baseline-file', 'case:detectors|check:output:file',
                     'case:detectors|format:checkstyle', 'case:detectors|format:github',
@@ -226,7 +226,7 @@ final class RenameControls
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells'),
                 new Expectation(FailureClass::RECORD_UNDECLARED, 'case:detectors|format:json', exactScope: true),
                 new Expectation(FailureClass::RECORD_UNDECLARED, 'case:detectors-smells|format:json', exactScope: true),
-                new Expectation(FailureClass::FIELD_VALUES_MISMATCH, 'declared-fields.derived.tsv', exactScope: true),
+                ...Controls::fieldValueToleration(),
                 ...array_map(static fn(string $scope): Expectation => new Expectation(FailureClass::SURFACE_MISMATCH, $scope, exactScope: true), [
                     'case:detectors-smells|baseline-file', 'case:detectors-smells|check:output:file',
                     'case:detectors-smells|explain:declaration:class:Corpus\\Smells\\Injection@src/Injection.php',
@@ -299,18 +299,18 @@ final class RenameControls
             [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity|format:metrics'),
                 ...self::aggregateValueFailures()],
             [new Expectation(FailureClass::SURFACE_MISMATCH, 'format:metrics'),
-                new Expectation(FailureClass::DELTA_TOO_LARGE, 'case:coupling|format:metrics', exactScope: true),
-                new Expectation(FailureClass::DELTA_TOO_LARGE, 'case:design|format:metrics', exactScope: true),
-                new Expectation(FailureClass::DELTA_TOO_LARGE, 'case:drill-down|format:metrics', exactScope: true),
-                new Expectation(FailureClass::DELTA_TOO_LARGE, 'case:layers|format:metrics', exactScope: true),
-                new Expectation(FailureClass::VALUE_MISMATCH, 'declared-values.derived.tsv', exactScope: true)],
+                ...Controls::oversizedDeclaredSurfaces([
+                    'case:coupling|format:metrics', 'case:design|format:metrics',
+                    'case:drill-down|format:metrics', 'case:layers|format:metrics',
+                ]),
+                ...Controls::valueToleration()],
         );
     }
 
     /**
-     * A value comparison requires records on both sides. The UTF-8 reference
-     * publishes a whole invocation, so its metrics surface is compared against
-     * the exact declared delta instead.
+     * A value comparison requires records on both sides. The UTF-8 transition's
+     * declared whole metrics publication is held to its exact delta; an identity
+     * comparison retains the native record-value obligations.
      *
      * @return list<Expectation>
      */
@@ -318,8 +318,9 @@ final class RenameControls
     {
         $required = [];
         foreach (\QmxFindingGate\Corpus::load(\dirname(__DIR__, 2))->cases as $case) {
-            if ($case->id === 'utf8-identifier') {
-                $required[] = new Expectation(FailureClass::DELTA_MISMATCH, 'case:utf8-identifier|format:metrics', exactScope: true);
+            if ($case->id === 'utf8-identifier'
+                && Controls::hasSurfaceDeclaration('case:utf8-identifier|format:metrics')) {
+                $required[] = Controls::changedSurface('case:' . $case->id . '|format:metrics');
                 continue;
             }
             if (CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($case, 'reference'))
@@ -377,7 +378,7 @@ final class RenameControls
     /**
      * A suppressed report value renamed in product code, translated by
      * `report-values.tsv`'s quoted-only substitution for JSON record pairs.
-     * The UTF-8 reference is a whole invocation and its exact surface changes.
+     * A declared whole UTF-8 publication retains its exact surface comparison.
      *
      * `SuppressionMechanism::NamespaceSuppression` is renamed rather than a
      * mechanism the corpus actually fires, because the declaration does not need
@@ -389,15 +390,24 @@ final class RenameControls
      */
     public static function reportValueRenamed(): Control
     {
+        $mutation = self::reportValueMutation()->and(ChannelRenamePlants::trackedMapPlus(
+            'report-values.tsv',
+            ["namespace-suppression\tnamespace-block\tthe control renames the mechanism value"],
+            'a report-values row declaring the control\'s renamed value',
+        ));
+        $scope = 'case:utf8-identifier|format:suppressed';
+        if (!Controls::hasSurfaceDeclaration($scope)) {
+            return Control::greenWith(
+                'report-value-renamed',
+                'a suppressed report value is translated by its declared report-values row',
+                $mutation,
+            );
+        }
         return Control::red(
             'report-value-renamed',
-            'a suppressed report value is translated in JSON record pairs but changes a whole UTF-8 publication',
-            self::reportValueMutation()->and(ChannelRenamePlants::trackedMapPlus(
-                'report-values.tsv',
-                ["namespace-suppression\tnamespace-block\tthe control renames the mechanism value"],
-                'a report-values row declaring the control\'s renamed value',
-            )),
-            [new Expectation(FailureClass::DELTA_MISMATCH, 'case:utf8-identifier|format:suppressed', exactScope: true)],
+            'a suppressed report value is translated in JSON record pairs but changes a declared whole UTF-8 publication',
+            $mutation,
+            [Controls::changedSurface($scope)],
         );
     }
 
@@ -434,9 +444,9 @@ final class RenameControls
     }
 
     /**
-     * Record-paired suppressed publications come from the corpus. The UTF-8
-     * reference is whole and uses its exact delta; the drill-down early selector
-     * refusal publishes no mechanism vocabulary.
+     * Record-paired suppressed publications come from the corpus. A declared
+     * whole UTF-8 publication uses its exact delta; the drill-down early
+     * selector refusal publishes no mechanism vocabulary.
      *
      * @return list<Expectation>
      */
@@ -449,7 +459,7 @@ final class RenameControls
                 continue;
             }
             if ($case->id === 'utf8-identifier') {
-                $required[] = new Expectation(FailureClass::DELTA_MISMATCH, 'case:utf8-identifier|format:suppressed', exactScope: true);
+                $required[] = Controls::changedSurface('case:utf8-identifier|format:suppressed');
                 continue;
             }
             if (!CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($case, 'reference'))

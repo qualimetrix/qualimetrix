@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace QmxFindingGateControls;
 
 use LogicException;
+use QmxFindingGate\Declarations;
+use QmxFindingGate\DeclaredFields;
+use QmxFindingGate\DeclaredValues;
+use QmxFindingGate\FailureClass;
 use QmxFindingGate\Wiring;
 
 /**
@@ -17,7 +21,7 @@ use QmxFindingGate\Wiring;
  * and that declared renames are absorbed only by their declarations. They also
  * cover root configuration keys and published-order permutations
  * ({@see FindingControls::publishedOrderPermuted()}). The declared report-value translation remains effective
- * for JSON record pairs; its whole UTF-8 suppressed publication is a typed RED, not a global GREEN.
+ * for JSON record pairs; a declared whole publication keeps its own exact comparison.
  * Each subject's controls live in its own class; this one fixes their order,
  * which is the order of the harness's table.
  *
@@ -90,6 +94,55 @@ final class Controls
         return array_map(
             static fn(Control $control): Control => self::force($control, $forcedExpectations),
             $controls,
+        );
+    }
+
+    /** @return list<Expectation> */
+    public static function fieldValueToleration(?string $root = null): array
+    {
+        $fields = DeclaredFields::load(($root ?? \dirname(__DIR__, 2)) . '/finding-gate');
+        foreach (DeclaredFields::REPORTS as $report) {
+            foreach ($fields->views($report) as $view) {
+                if ($fields->derived($report, $view) !== []) {
+                    return [new Expectation(FailureClass::FIELD_VALUES_MISMATCH, DeclaredFields::DERIVED, exactScope: true)];
+                }
+            }
+        }
+        return [];
+    }
+
+    /** @return list<Expectation> */
+    public static function valueToleration(?string $root = null): array
+    {
+        return DeclaredValues::load(($root ?? \dirname(__DIR__, 2)) . '/finding-gate')->derived() === []
+            ? []
+            : [new Expectation(FailureClass::VALUE_MISMATCH, DeclaredValues::DERIVED, exactScope: true)];
+    }
+
+    public static function hasSurfaceDeclaration(string $scope, ?string $root = null): bool
+    {
+        $declarations = Declarations::load($root ?? \dirname(__DIR__, 2));
+        return $declarations->delta->hasSurfaceIntention($scope) || $declarations->exactSurfaces->has($scope);
+    }
+
+    public static function changedSurface(string $scope, ?string $root = null): Expectation
+    {
+        return new Expectation(
+            self::hasSurfaceDeclaration($scope, $root) ? FailureClass::DELTA_MISMATCH : FailureClass::SURFACE_MISMATCH,
+            $scope,
+            exactScope: true,
+        );
+    }
+
+    /** @param list<string> $scopes
+     * @return list<Expectation>
+     */
+    public static function oversizedDeclaredSurfaces(array $scopes, ?string $root = null): array
+    {
+        $delta = Declarations::load($root ?? \dirname(__DIR__, 2))->delta;
+        return array_map(
+            static fn(string $scope): Expectation => new Expectation(FailureClass::DELTA_TOO_LARGE, $scope, exactScope: true),
+            array_values(array_filter($scopes, static fn(string $scope): bool => $delta->hasSurfaceIntention($scope))),
         );
     }
 

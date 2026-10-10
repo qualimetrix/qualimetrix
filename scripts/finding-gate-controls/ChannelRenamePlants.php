@@ -305,36 +305,35 @@ final class ChannelRenamePlants
     }
 
     /**
-     * The channel rename, shared by the map control and the overreach control.
+     * Renames only the channel; its producer and every decision predicate stay unchanged.
      *
-     * The declaration-side fragment was `ChannelDeclaration::magnitude(` when
-     * this control was written; `LcomRule` later moved onto
-     * `ChannelDeclaration::judging(` without changing the shape this control
-     * relies on — the key is still `self::NAME` on its own line, immediately
-     * before the factory call. `LcomRule.php` is the only file this mutation
-     * touches; `LcomVisitor.php` declares
-     * neither `self::NAME` nor `ChannelDeclaration`, so a future rename there
-     * cannot collide with this fragment.
-     *
-     * The renamed channel also gets `describedAs()`, because the product refuses
-     * the rename without it: a channel not named after its producer must carry
-     * its own description (ADR 0081), and a container that does not compile
-     * stops the gate at its channel probe, before any comparison. The text is
-     * the producer's own `getDescription()`, so every published description
-     * stays byte-identical and the channel name remains the only thing moved.
+     * Population gate identities and the analysis lookup must follow the new channel key.
+     * A channel not named after its producer requires its own description.
      */
     public static function lcomChannelMutation(): Mutation
     {
         return Mutation::edit(
             'src/Analysis/Evidence/Cohesion/LcomRule.php',
             [
-                'self::NAME => ChannelDeclaration::judging(' => "'cohesion.lcom4' => ChannelDeclaration::judging(",
-                "                SymbolLevel::Class_,\n            ),"
-                    => "                SymbolLevel::Class_,\n            )->describedAs("
-                    . "'Checks Lack of Cohesion of Methods (high values indicate class should be split)'),",
+                'self::NAME => self::judgingHigher(' => "'cohesion.lcom4' => self::judgingHigher(",
+                "                SymbolLevel::Class_,\n            )->withGates("
+                    => "                SymbolLevel::Class_,\n            )->describedAs(self::getDescription())->withGates(",
+                'self::channelDeclarations()[self::NAME]' => "self::channelDeclarations()['cohesion.lcom4']",
+                "self::populationGate('class-coordinate', self::NAME," => "self::populationGate('class-coordinate', 'cohesion.lcom4',",
+                "self::populationGate('exclude-readonly', self::NAME," => "self::populationGate('exclude-readonly', 'cohesion.lcom4',",
+                "self::populationGate('minimum-methods', self::NAME," => "self::populationGate('minimum-methods', 'cohesion.lcom4',",
+                "self::populationGate('class-value', self::NAME," => "self::populationGate('class-value', 'cohesion.lcom4',",
                 'code: self::NAME,' => "code: 'cohesion.lcom4',",
             ],
             'channel cohesion.lcom -> cohesion.lcom4, described in its producer\'s own words, the producing rule name left alone',
-        );
+        )->and(Mutation::edit(
+            'src/Analysis/Finding/Contract/Rule/AbstractRule.php',
+            [
+                "new FindingChannel(\$this->getName()),\n            \$level,\n            PopulationIdentity::subject(\$subject, \$unit),"
+                    => "new FindingChannel(\$this->getName() === 'cohesion.lcom' ? 'cohesion.lcom4' : \$this->getName()),\n"
+                    . "            \$level,\n            PopulationIdentity::subject(\$subject, \$unit),",
+            ],
+            'the renamed channel keeps its subject admission while every producer name and other channel stay unchanged',
+        ));
     }
 }

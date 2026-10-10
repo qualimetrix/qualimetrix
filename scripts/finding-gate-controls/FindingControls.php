@@ -129,7 +129,7 @@ final class FindingControls
                 new Expectation(FailureClass::VALUE_MISMATCH, 'case:detectors|format:json|record:'),
                 new Expectation(FailureClass::RECORD_UNDECLARED, 'case:detectors|format:json', exactScope: true),
                 new Expectation(FailureClass::RECORD_UNDECLARED, 'case:detectors-smells|format:json', exactScope: true),
-                new Expectation(FailureClass::FIELD_VALUES_MISMATCH, 'declared-fields.derived.tsv', exactScope: true),
+                ...Controls::fieldValueToleration(),
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:detectors-smells|baseline-file', exactScope: true),
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:detectors-smells|check:output:file', exactScope: true),
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:detectors-smells|explain:declaration:class:Corpus\\Smells\\Injection@src/Injection.php', exactScope: true),
@@ -156,7 +156,7 @@ final class FindingControls
             [new Expectation(FailureClass::FINDING_COUNT_MISMATCH, 'case:design'),
                 new Expectation(FailureClass::RECORD_UNDECLARED, 'case:design|format:json', exactScope: true)],
             [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:design'),
-                new Expectation(FailureClass::FIELD_VALUES_MISMATCH, 'declared-fields.derived.tsv', exactScope: true)],
+                ...Controls::fieldValueToleration()],
         );
     }
 

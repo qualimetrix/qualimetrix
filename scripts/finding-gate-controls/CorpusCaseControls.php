@@ -43,7 +43,7 @@ final class CorpusCaseControls
                     'case:config-precedence|show-suppressed',
                 ],
             ],
-            tolerated: [new Expectation(FailureClass::FIELD_VALUES_MISMATCH, 'declared-fields.derived.tsv', exactScope: true)],
+            tolerated: [...Controls::fieldValueToleration()],
         );
     }
 
@@ -82,7 +82,7 @@ final class CorpusCaseControls
                     'case:threshold-raising|directives|record:{"file":"src/Design.php","line":5,"form":"threshold","target":"design.god-class"}',
                 ],
             ],
-            tolerated: [new Expectation(FailureClass::FIELD_VALUES_MISMATCH, 'declared-fields.derived.tsv', exactScope: true)],
+            tolerated: [...Controls::fieldValueToleration()],
         );
     }
 
@@ -125,7 +125,7 @@ final class CorpusCaseControls
                 ],
             ],
             scratchDeclarations: self::withdrawnDirectiveMessageDeclaration(),
-            tolerated: [new Expectation(FailureClass::FIELD_VALUES_MISMATCH, 'declared-fields.derived.tsv', exactScope: true)],
+            tolerated: [...Controls::fieldValueToleration()],
         );
     }
 
@@ -154,9 +154,9 @@ final class CorpusCaseControls
                     'case:stderr-warning|stderr:show-suppressed',
                 ],
                 FailureClass::DELTA_MISMATCH => [
-                    'case:stderr-warning|format:health',
-                    'case:stderr-warning|format:summary',
-                    'case:stderr-warning|format:text-detail',
+                    'case:stderr-warning|stderr:format:health',
+                    'case:stderr-warning|stderr:format:summary',
+                    'case:stderr-warning|stderr:format:text-detail',
                 ],
                 FailureClass::SURFACE_MISMATCH => [
                     'case:stderr-warning|stderr:baseline-file',
@@ -305,7 +305,9 @@ final class CorpusCaseControls
         $expectations = [];
         foreach ($failures as $failure => $scopes) {
             foreach ($scopes as $scope) {
-                $expectations[] = new Expectation($failure, $scope, exactScope: true);
+                $expectations[] = $failure === FailureClass::DELTA_MISMATCH
+                    ? Controls::changedSurface($scope)
+                    : new Expectation($failure, $scope, exactScope: true);
             }
         }
         return $expectations;

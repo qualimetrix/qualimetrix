@@ -45,7 +45,7 @@ final class FingerprintControls
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells'),
                 new Expectation(FailureClass::RECORD_UNDECLARED, 'case:detectors|format:json', exactScope: true),
                 new Expectation(FailureClass::RECORD_UNDECLARED, 'case:detectors-smells|format:json', exactScope: true),
-                new Expectation(FailureClass::FIELD_VALUES_MISMATCH, 'declared-fields.derived.tsv', exactScope: true),
+                ...Controls::fieldValueToleration(),
                 ...array_map(static fn(string $scope): Expectation => new Expectation(FailureClass::SURFACE_MISMATCH, $scope, exactScope: true), [
                     'case:detectors-smells|baseline-file', 'case:detectors-smells|check:output:file',
                     'case:detectors-smells|explain:declaration:class:Corpus\\Smells\\Injection@src/Injection.php',
