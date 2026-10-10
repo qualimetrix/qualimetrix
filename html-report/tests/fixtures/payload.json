@@ -996,6 +996,9 @@
                                 "occurrence": null,
                                 "edge": null,
                                 "namespace": "App\\Cx",
+                                "namespaces": [
+                                    "App\\Cx"
+                                ],
                                 "rule": "size.class-count",
                                 "code": "size.class-count",
                                 "severity": "error",
@@ -1126,6 +1129,9 @@
                                         "occurrence": null,
                                         "edge": null,
                                         "namespace": "App\\Cx",
+                                        "namespaces": [
+                                            "App\\Cx"
+                                        ],
                                         "rule": "complexity.ccn",
                                         "code": "complexity.ccn",
                                         "severity": "error",
@@ -1147,6 +1153,9 @@
                                         "occurrence": null,
                                         "edge": null,
                                         "namespace": "App\\Cx",
+                                        "namespaces": [
+                                            "App\\Cx"
+                                        ],
                                         "rule": "complexity.ccn",
                                         "code": "complexity.ccn",
                                         "severity": "error",
@@ -1165,12 +1174,15 @@
                                         "subject": "declaration:class:App\\Cx\\Bytes%FF@src/Growth.php",
                                         "symbol": "App\\Cx\\Bytes%FF",
                                         "channel": "architecture.layer-violation",
-                                        "occurrence": "97473545ad2ecaa7",
+                                        "occurrence": "23689553381cd4b5",
                                         "edge": {
                                             "type": "property_type",
                                             "target": "class:App\\Domain\\Port"
                                         },
                                         "namespace": "App\\Cx",
+                                        "namespaces": [
+                                            "App\\Cx"
+                                        ],
                                         "rule": "architecture.layer-violation",
                                         "code": "architecture.layer-violation",
                                         "severity": "warning",

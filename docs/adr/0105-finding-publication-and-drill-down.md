@@ -17,8 +17,10 @@ as measured issues and recommended a baseline after an internal failure.
 ### One record and truthful placement
 
 FindingRecord supplies JSON violations, JSON topIssues and HTML records with
-the same nineteen fields, including rule, code, symbol, channel, exact subject,
-occurrence, edge, namespace, diagnostic, advice and baseline judgement.
+the same twenty fields, including rule, code, symbol, channel, exact subject,
+occurrence, edge, namespace, complete namespaces, diagnostic, advice and baseline
+judgement. Every Report supplies its captured FileNamespaceIndex; file membership
+uses that same index for selection, grouping and record projection.
 Message, recommendation and acceptedLevel status occupy separate presentation
 slots. A baseline cap alone is not a measured breach: breached and not-compared
 remain distinct. Formats with one slot append the truthful accepted-level text.
@@ -76,7 +78,12 @@ first-match credit. Binding counts keep the same compared universe.
 
 Out-of-scope identity is the occurrence-preserving multiset of channel, subject,
 occurrence, optional edge and severity. JSON and metrics share the same count
-and identity spelling; SARIF publishes them in a notification. GitHub retains
+and identity spelling. Metrics retains its own summary vocabulary
+(violations, errors, warnings, info), while its outOfScope uses the shared
+publication vocabulary (violationCount, errorCount, warningCount, infoCount).
+This is an accepted cost: consumers combining selected and outside counts
+read the two explicitly documented schemas; no second representation is
+added to either object. SARIF publishes outside identities in a notification. GitHub retains
 its ::notice. GitLab and Checkstyle refuse selectors because their consumer
 would read a partial list as the whole result. suppressed is a whole-run
 composition document and also refuses --namespace/--class. --show-suppressed

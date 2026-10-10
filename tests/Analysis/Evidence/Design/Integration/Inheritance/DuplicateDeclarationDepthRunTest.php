@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Evidence\Design\Inheritance\ExternalAncestry;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthResolver;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceOutcome;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceRule;
+use Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Core\Ast\NameResolution;
 use Qualimetrix\Core\Path\RelativePath;
@@ -157,7 +158,7 @@ final class DuplicateDeclarationDepthRunTest extends TestCase
                 $answer = $resolver->depthOf($child);
                 self::assertSame(4, $answer->depth);
                 self::assertSame(InheritanceOutcome::Exact, $answer->outcome);
-                self::assertNull($answer->reachesThrowable);
+                self::assertSame(ThrowableReach::Unknown, $answer->reachesThrowable);
                 self::assertSame('src/C.php', $child->file->value());
                 self::assertSame(0, $child->ordinal->value);
             }
@@ -177,7 +178,7 @@ final class DuplicateDeclarationDepthRunTest extends TestCase
                 $answer = $resolver->depthOf($child);
                 self::assertSame(InheritanceOutcome::Loop, $answer->outcome);
                 self::assertNull($answer->depth);
-                self::assertNull($answer->reachesThrowable);
+                self::assertSame(ThrowableReach::Unknown, $answer->reachesThrowable);
             }
         }
         self::assertFalse(class_exists('App\A', false));

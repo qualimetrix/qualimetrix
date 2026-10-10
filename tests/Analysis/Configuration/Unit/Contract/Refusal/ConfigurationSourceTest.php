@@ -23,6 +23,7 @@ final class ConfigurationSourceTest extends TestCase
                 'Preset' => 'preset',
                 'ConfigFile' => 'file',
                 'CommandLine' => 'cli',
+                'Environment' => 'environment',
                 'BaselineFile' => 'baseline',
                 'Resolved' => 'resolved',
             ],
