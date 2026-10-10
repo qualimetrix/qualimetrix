@@ -283,13 +283,19 @@ final readonly class ChannelDeclaration
             }
             ++$index;
         }
+        $this->assertCompletedPopulation($index, $gates, $identity);
+        return null;
+    }
+
+    /** @param list<PopulationGate> $gates */
+    private function assertCompletedPopulation(int $index, array $gates, PopulationIdentity $identity): void
+    {
         if ($index !== \count($gates)) {
             throw new LogicException('Population inputs ended before the declared ordered gates.');
         }
         if ($gates !== [] && $identity->unit !== $gates[0]->unit) {
             throw new LogicException('Healthy population identity has the wrong declared member unit.');
         }
-        return null;
     }
 
     /**

@@ -32,6 +32,7 @@ final readonly class FlagExcludes implements GatePredicate
         }
         return $this->excludes($value) ? 'Excluded by the declared population flag.' : null;
     }
+    /** @qmx-ignore code-smell.boolean-argument -- The boolean is a measured flag operand compared to the declared value, not an execution mode. */
     private function excludes(int|float|bool|null $value): bool
     {
         return $this->nonzero ? $value !== null && $value !== 0 : $value === $this->forbidden;

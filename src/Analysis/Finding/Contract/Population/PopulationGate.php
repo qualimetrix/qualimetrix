@@ -23,9 +23,14 @@ final readonly class PopulationGate
             || !\in_array($predicate::class, [KeyPresent::class, KeyThreshold::class, FlagExcludes::class, KindIn::class, NameMatches::class, RuleValueThreshold::class, ContextGuard::class], true)) {
             throw new LogicException('Invalid closed population declaration.');
         }
-        if ($failureUnit !== null && ($failureUnit !== 'invocation' || $unit === 'invocation'
-            || !$predicate instanceof ContextGuard
-            || !\in_array($predicate->source, ['graphAvailable', 'preparedEvidenceAvailable'], true))) {
+        $this->assertFailureUnit();
+    }
+
+    private function assertFailureUnit(): void
+    {
+        if ($this->failureUnit !== null && ($this->failureUnit !== 'invocation' || $this->unit === 'invocation'
+            || !$this->predicate instanceof ContextGuard
+            || !\in_array($this->predicate->source, ['graphAvailable', 'preparedEvidenceAvailable'], true))) {
             throw new LogicException('Only graph or prepared-evidence absence can override a member failure to invocation.');
         }
     }

@@ -138,6 +138,21 @@ final class ClassRankRule extends AbstractRule
             }
             $facts[$key] = $fact;
         }
+        $measured = $this->measuredDeclarations($classes, $facts);
+        if (array_diff_key($facts, $measured) !== []) {
+            throw new LogicException('ClassRank graph and measured declaration rosters disagree.');
+        }
+        return $facts;
+    }
+
+    /**
+     * @param list<SymbolInfo> $classes
+     * @param array<string, ClassLikeDeclaration> $facts
+     *
+     * @return array<string, true>
+     */
+    private function measuredDeclarations(array $classes, array $facts): array
+    {
         $measured = [];
         foreach ($classes as $info) {
             $subject = $info->subject ?? throw new LogicException('ClassRank requires an exact declaration subject.');
@@ -148,10 +163,7 @@ final class ClassRankRule extends AbstractRule
             }
             $measured[$key] = true;
         }
-        if (array_diff_key($facts, $measured) !== []) {
-            throw new LogicException('ClassRank graph and measured declaration rosters disagree.');
-        }
-        return $facts;
+        return $measured;
     }
 
     /** @return array{string, string, bool} */

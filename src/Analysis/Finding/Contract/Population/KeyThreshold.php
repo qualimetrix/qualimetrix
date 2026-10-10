@@ -41,9 +41,7 @@ final readonly class KeyThreshold implements GatePredicate
             if ($value === null) {
                 return 'Missing metric "' . $key . '".';
             }
-            if (!is_finite((float) $value) || ($this->nonnegative && $value < 0)) {
-                throw new LogicException('Invalid measured population count.');
-            }
+            $this->assertMeasuredCount($value);
             $sum += $value;
         }
         if (!is_finite((float) $sum)) {
@@ -53,6 +51,13 @@ final readonly class KeyThreshold implements GatePredicate
             return null;
         }
         return $firstMissing === null ? 'Metric population boundary was not met.' : 'Missing metric "' . $firstMissing . '".';
+    }
+
+    private function assertMeasuredCount(int|float $value): void
+    {
+        if (!is_finite((float) $value) || ($this->nonnegative && $value < 0)) {
+            throw new LogicException('Invalid measured population count.');
+        }
     }
 
     private function readValue(MetricBag $bag, string $key, int|float|null $value): int|float|null

@@ -81,6 +81,7 @@ final readonly class GateInput
         }
     }
 
+    /** @qmx-ignore code-smell.boolean-argument -- The boolean is the declared option value required for this input to apply, not an execution mode. */
     public function active(?bool $when): bool
     {
         if ($when === null) {
