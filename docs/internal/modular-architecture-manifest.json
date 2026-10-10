@@ -5090,6 +5090,54 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\GateInput"
+        },
+        {
+          "owner": "Analysis.Evidence.CodeSmell",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule"
+        },
+        {
+          "owner": "Analysis.Evidence.CodeSmell",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule"
+        },
+        {
+          "owner": "Analysis.Evidence.CodeSmell",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\ComplexityRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\WmcRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Size",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Size",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\PropertyCountRule"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\KeyThreshold"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\AbstractRule"
         }
       ]
     },
@@ -6582,31 +6630,11 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\ComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathComplexityRule"
         },
         {
           "owner": "Analysis.Evidence.Complexity",
@@ -6649,16 +6677,8 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule"
         },
         {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\AbstractTypeCoverageRule"
-        },
-        {
           "owner": "Analysis.Evidence.Duplication",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\CodeDuplicationRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Maintainability",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\MaintainabilityRule"
         },
         {
           "owner": "Analysis.Evidence.Security",
@@ -6674,14 +6694,6 @@
         },
         {
           "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\ClassCountRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\PropertyCountRule"
         },
         {
@@ -6690,19 +6702,11 @@
         },
         {
           "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule"
-        },
-        {
-          "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\UnassignedClass\\UnassignedClassSummary"
         },
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveValidator"
-        },
-        {
-          "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\UnusedDirectiveRule"
         },
         {
           "owner": "Analysis.Run",
@@ -6755,6 +6759,18 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerDeclaration\\UnmatchedExcludeDiagnostic"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\DirectiveUsagePopulation"
         }
       ]
     },
@@ -7011,6 +7027,10 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\DirectiveUsagePopulation"
         }
       ]
     },
@@ -7988,47 +8008,11 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\BooleanArgumentRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods"
-        },
-        {
-          "owner": "Analysis.Evidence.Cohesion",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\ComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\WmcRule"
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
@@ -8107,14 +8091,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\ClassCountRule"
         },
         {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\PropertyCountRule"
-        },
-        {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerDeclaration\\LayerDeclarationRule"
         },
@@ -8143,14 +8119,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryAudit"
         },
         {
-          "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\DirectiveUsage"
-        },
-        {
-          "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\UnusedDirectiveRule"
-        },
-        {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit"
         },
@@ -8161,6 +8129,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\DirectiveUsagePopulation"
         }
       ]
     },
@@ -8169,88 +8141,7 @@
       "kind": "class",
       "owner": "Analysis.Finding",
       "visibility": "contract",
-      "consumers": [
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Cohesion",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\ComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\WmcRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CboRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\AbstractTypeCoverageRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Maintainability",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\MaintainabilityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\ClassCountRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\PropertyCountRule"
-        }
-      ]
+      "consumers": []
     },
     "Qualimetrix\\Analysis\\Finding\\Contract\\LevelActivity": {
       "path": "src/Analysis/Finding/Contract/LevelActivity.php",
@@ -16327,92 +16218,16 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyRule"
         },
         {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule"
-        },
-        {
           "owner": "Analysis.Evidence.Cohesion",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\ComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\WmcRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CboRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassRule"
         },
         {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule"
         },
         {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\AbstractTypeCoverageRule"
-        },
-        {
           "owner": "Analysis.Evidence.Duplication",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\CodeDuplicationRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Maintainability",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\MaintainabilityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\ClassCountRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\PropertyCountRule"
         },
         {
           "owner": "Analysis.Finding",
@@ -16433,6 +16248,10 @@
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Finding\\ComputedMetricChannelFamily"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\AbstractRule"
         }
       ]
     },
@@ -17416,6 +17235,10 @@
         {
           "owner": "Reporting.GraphProjection",
           "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\NamespaceSelection"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionFinding"
         }
       ]
     },
@@ -17496,6 +17319,10 @@
         {
           "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineExclusionShape"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionFinding"
         }
       ]
     },
@@ -17550,10 +17377,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleSuppressionSelectorDecoder"
         },
         {
-          "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionAudit"
-        },
-        {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\RunConfigurationResolver"
         },
@@ -17580,6 +17403,10 @@
         {
           "owner": "Reporting.GraphProjection",
           "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\NamespaceSelection"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionFinding"
         }
       ]
     },
@@ -18341,10 +18168,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Threshold\\ThresholdOverride"
         },
         {
-          "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionAudit"
-        },
-        {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerDeclaration\\DeclaredLayerReachability"
         },
@@ -18519,6 +18342,10 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationIdentity"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionFinding"
         }
       ]
     },
@@ -18743,6 +18570,10 @@
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\HealthScoreDrillDown"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankRule"
         }
       ]
     },
@@ -19193,10 +19024,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveValidator"
         },
         {
-          "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\UnusedDirectiveRule"
-        },
-        {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeRule"
         },
@@ -19362,10 +19189,6 @@
         },
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\JudgedPopulation"
-        },
-        {
-          "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
         },
         {
@@ -19405,16 +19228,20 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryAudit"
         },
         {
-          "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\DirectiveUsage"
-        },
-        {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit"
         },
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Population\\PopulationTrace"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\AbstractRule"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\DirectiveUsagePopulation"
         }
       ]
     },
@@ -19617,10 +19444,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Finding"
         },
         {
-          "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionAudit"
-        },
-        {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\ArchitecturePolicy"
         },
@@ -19811,6 +19634,10 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationIdentity"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionFinding"
         }
       ]
     },
@@ -26142,24 +25969,8 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule"
-        },
-        {
           "owner": "Analysis.Evidence.Cohesion",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\UnmatchedFrameworkNamespaceRule"
         },
         {
           "owner": "Analysis.Policy.Architecture",
@@ -26175,10 +25986,6 @@
         },
         {
           "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule"
-        },
-        {
-          "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Observation\\EdgeEvidenceWalk"
         },
         {
@@ -26186,12 +25993,12 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\UnassignedClass\\UnassignedClassRule"
         },
         {
-          "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\UnusedDirectiveRule"
-        },
-        {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeRule"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\DirectiveUsagePopulation"
         }
       ]
     },
@@ -26202,28 +26009,8 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\BooleanArgumentRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Cohesion",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\WmcRule"
-        },
-        {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassExclusionCheck"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\PropertyCountRule"
         }
       ]
     },
@@ -26374,12 +26161,12 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\UnassignedClass\\UnassignedClassRule"
         },
         {
-          "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\DirectiveUsage"
-        },
-        {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\DirectiveUsagePopulation"
         }
       ]
     },
@@ -26390,81 +26177,9 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Analysis.Evidence.CircularDependency",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\AbstractCodeSmellRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\BooleanArgumentRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
           "owner": "Analysis.Evidence.Cohesion",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
-          "owner": "Analysis.Evidence.Cohesion",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\ComplexityRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathComplexityRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\WmcRule",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
         },
         {
@@ -26474,93 +26189,9 @@
           "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
         },
         {
-          "owner": "Analysis.Evidence.Coupling",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CboRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\UnmatchedFrameworkNamespaceRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
           "owner": "Analysis.Evidence.Design",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassExclusionCheck",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\AbstractTypeCoverageRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
-          "owner": "Analysis.Evidence.Maintainability",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\MaintainabilityRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\ClassCountRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\PropertyCountRule",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
         },
         {
@@ -26584,12 +26215,6 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
-          "owner": "Analysis.Policy.Architecture",
-          "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Observation\\EdgeEvidenceWalk",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
         },
@@ -26600,15 +26225,15 @@
           "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
         },
         {
-          "owner": "Analysis.Policy.Inline",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\UnusedDirectiveRule",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
-        },
-        {
           "owner": "Analysis.Run",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeRule",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\DirectiveUsagePopulation",
+          "relation": "contract_surface",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationGate"
         }
       ]
@@ -26661,10 +26286,6 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Json\\JsonFormatter"
-        },
-        {
-          "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Sarif\\SarifFormatter"
         },
         {
@@ -26682,6 +26303,10 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\DirectiveUsagePopulation"
         }
       ]
     },
@@ -26692,92 +26317,12 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Cohesion",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\ComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\WmcRule"
-        },
-        {
           "owner": "Analysis.Evidence.ComputedMetrics",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Finding\\ComputedMetricChannelFamily"
         },
         {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CboRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityRule"
-        },
-        {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassExclusionCheck"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Maintainability",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\MaintainabilityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\ClassCountRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\PropertyCountRule"
         }
       ]
     },
@@ -26788,48 +26333,8 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Analysis.Evidence.Cohesion",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CboRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityRule"
-        },
-        {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassExclusionCheck"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\AbstractTypeCoverageRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Maintainability",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\MaintainabilityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\ClassCountRule"
         }
       ]
     },
@@ -26840,80 +26345,8 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Cohesion",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\ComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\WmcRule"
-        },
-        {
           "owner": "Analysis.Evidence.ComputedMetrics",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Finding\\ComputedMetricChannelFamily"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CboRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\AbstractTypeCoverageRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\PropertyCountRule"
         }
       ]
     },
@@ -26924,20 +26357,10 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\AbstractCodeSmellRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule"
-        },
-        {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Maintainability",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\MaintainabilityRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceRule",
+          "relation": "contract_surface",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\AbstractRule"
         }
       ]
     },
@@ -26948,120 +26371,16 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Analysis.Evidence.CircularDependency",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\AbstractCodeSmellRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\BooleanArgumentRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule"
-        },
-        {
           "owner": "Analysis.Evidence.Cohesion",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods"
-        },
-        {
-          "owner": "Analysis.Evidence.Cohesion",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\ComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\WmcRule"
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Finding\\ComputedMetricChannelFamily"
         },
         {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CboRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\UnmatchedFrameworkNamespaceRule"
-        },
-        {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassExclusionCheck"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\AbstractTypeCoverageRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Maintainability",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\MaintainabilityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\ClassCountRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\PropertyCountRule"
         },
         {
           "owner": "Analysis.Policy.Architecture",
@@ -27077,10 +26396,6 @@
         },
         {
           "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule"
-        },
-        {
-          "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Observation\\EdgeEvidenceWalk"
         },
         {
@@ -27088,12 +26403,12 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\UnassignedClass\\UnassignedClassRule"
         },
         {
-          "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\UnusedDirectiveRule"
-        },
-        {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeRule"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\DirectiveUsagePopulation"
         }
       ]
     },
@@ -27116,40 +26431,8 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule"
         },
         {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule"
-        },
-        {
           "owner": "Analysis.Evidence.Cohesion",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods"
-        },
-        {
-          "owner": "Analysis.Evidence.Cohesion",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\ComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\WmcRule"
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
@@ -27220,14 +26503,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\ClassCountRule"
         },
         {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\PropertyCountRule"
-        },
-        {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerDeclaration\\LayerDeclarationRule"
         },
@@ -27256,12 +26531,12 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryAudit"
         },
         {
-          "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\DirectiveUsage"
-        },
-        {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\DirectiveUsagePopulation"
         }
       ]
     },
@@ -27285,11 +26560,9 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.CircularDependency",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyRule",
+          "relation": "contract_surface",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\AbstractRule"
         }
       ]
     },
@@ -27311,6 +26584,20 @@
       "path": "src/Reporting/Formatter/Prose/RuleAbstentionNarrator.php",
       "kind": "class",
       "owner": "Reporting",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionFinding": {
+      "path": "src/Analysis/Finding/SuppressionBinding/UnboundSuppressionFinding.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\DirectiveUsagePopulation": {
+      "path": "src/Analysis/Policy/Inline/Directive/Audit/DirectiveUsagePopulation.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Inline",
       "visibility": "internal",
       "consumers": []
     }
