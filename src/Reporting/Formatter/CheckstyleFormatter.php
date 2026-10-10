@@ -81,9 +81,11 @@ final class CheckstyleFormatter implements FormatterInterface
         $grouped = [];
 
         foreach ($findings as $finding) {
-            $file = $finding->location->file === null
-                ? PublishedFinding::place($finding)->name
-                : $context->relativizePath($finding->location->file);
+            if ($finding->location->file === null) {
+                continue;
+            }
+
+            $file = $context->relativizePath($finding->location->file);
             $grouped[$file] ??= [];
             $grouped[$file][] = $finding;
         }

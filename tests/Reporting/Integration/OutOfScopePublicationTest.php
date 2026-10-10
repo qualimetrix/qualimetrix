@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Reporting\Integration;
 
+use DOMDocument;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -63,7 +64,7 @@ final class OutOfScopePublicationTest extends TestCase
 
     #[Test]
     #[DataProvider('filelessFormats')]
-    public function itPublishesTheNamespacePlaceForFilelessFindings(string $format, string $namespace, string $label): void
+    public function itPublishesTheNamespacePlaceOnlyInFormatsWithAFilelessLocation(string $format, string $namespace, string $label): void
     {
         $symbol = SymbolPath::forNamespace($namespace);
         $finding = new Finding(Location::none(), MetricSubject::aggregate($symbol), $symbol, 'health.cohesion', 'health.cohesion', 'Low cohesion.', Severity::Warning);
@@ -71,8 +72,8 @@ final class OutOfScopePublicationTest extends TestCase
 
         match ($format) {
             'text' => self::assertStringStartsWith($label . ':', $output),
-            'checkstyle' => self::assertStringContainsString('name="' . $label . '"', $output),
-            'gitlab' => self::assertSame($label, self::decode($output)[0]['location']['path']),
+            'checkstyle' => self::assertEmptyCheckstyle($output),
+            'gitlab' => self::assertSame([], self::decode($output)),
             'github' => self::assertStringContainsString('::' . $label . ': Low cohesion.', $output),
             'sarif' => self::assertSame($label . ': Low cohesion.', self::decode($output)['runs'][0]['results'][0]['message']['text']),
             default => self::fail('Unknown format'),
@@ -293,6 +294,14 @@ final class OutOfScopePublicationTest extends TestCase
             message: 'Class Kept is too complex',
             severity: Severity::Error,
         );
+    }
+
+    private static function assertEmptyCheckstyle(string $output): void
+    {
+        $xml = new DOMDocument();
+        self::assertTrue($xml->loadXML($output));
+        self::assertSame(0, $xml->getElementsByTagName('file')->length);
+        self::assertSame(0, $xml->getElementsByTagName('error')->length);
     }
 
     /** @return array<mixed> */

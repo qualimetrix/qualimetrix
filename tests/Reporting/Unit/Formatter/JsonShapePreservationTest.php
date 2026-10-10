@@ -41,7 +41,7 @@ use Qualimetrix\Tests\Reporting\Support\StubChannelPresentation;
  * value types as before the migration. The test does not commit a literal
  * golden file (the rest of the report contains volatile fields like
  * timestamps and versions); instead it pins the shape — keys, types, and
- * the sentinel values for "no file" findings.
+ * the omission of fileless findings on path-required surfaces.
  */
 #[CoversNothing]
 final class JsonShapePreservationTest extends TestCase
@@ -59,7 +59,7 @@ final class JsonShapePreservationTest extends TestCase
         $data = json_decode($formatter->format($report, new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertIsList($data);
-        self::assertCount(2, $data);
+        self::assertCount(1, $data);
 
         foreach ($data as $entry) {
             self::assertArrayHasKey('location', $entry);
@@ -69,7 +69,7 @@ final class JsonShapePreservationTest extends TestCase
 
         $paths = array_column(array_column($data, 'location'), 'path');
         self::assertContains('src/Service/UserService.php', $paths);
-        self::assertContains('_project', $paths, 'project-level violation must carry the _project sentinel');
+        self::assertSame(['src/Service/UserService.php'], $paths);
     }
 
     #[Test]

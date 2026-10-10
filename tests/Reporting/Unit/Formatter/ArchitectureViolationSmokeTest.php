@@ -236,10 +236,11 @@ final class ArchitectureViolationSmokeTest extends TestCase
         }
 
         $files = $doc->getElementsByTagName('file');
-        self::assertGreaterThan(0, $files->length, 'Expected at least one <file> element');
+        self::assertSame(1, $files->length);
+        self::assertSame(self::SOURCE_FILE, $files->item(0)?->getAttribute('name'));
 
         $errors = $doc->getElementsByTagName('error');
-        self::assertSame($this->expectedViolationCount(), $errors->length);
+        self::assertSame(1, $errors->length);
 
         $sources = [];
         foreach ($errors as $errorNode) {
@@ -249,7 +250,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
             $sources[] = $errorNode->getAttribute('source');
         }
 
-        foreach ($this->expectedRuleNames() as $rule) {
+        foreach ([LayerViolationRule::NAME] as $rule) {
             self::assertContains('qmx.' . $rule, $sources, "Checkstyle should emit source for rule {$rule}");
         }
     }
@@ -299,10 +300,10 @@ final class ArchitectureViolationSmokeTest extends TestCase
         $issues = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertIsArray($issues);
-        self::assertSame($this->expectedViolationCount(), \count($issues));
+        self::assertCount(1, $issues);
 
         $checkNames = array_map(static fn(array $issue): string => $issue['check_name'], $issues);
-        foreach ($this->expectedRuleNames() as $rule) {
+        foreach ([LayerViolationRule::NAME] as $rule) {
             self::assertContains($rule, $checkNames, "GitLab should emit issue for {$rule}");
         }
 
@@ -313,9 +314,8 @@ final class ArchitectureViolationSmokeTest extends TestCase
             self::assertContains($severity, $validSeverities, "GitLab severity '{$severity}' is not in the spec");
         }
 
-        // Project-level diagnostics must collapse to the documented '_project' sentinel
         $paths = array_map(static fn(array $issue): string => $issue['location']['path'], $issues);
-        self::assertContains('_project', $paths, 'Project-level diagnostics should map to _project path');
+        self::assertSame([self::SOURCE_FILE], $paths);
     }
 
     #[Test]

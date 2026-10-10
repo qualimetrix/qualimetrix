@@ -276,7 +276,9 @@ refusals retain their path and parsed value; CLI refusals also retain the author
 expression. No source rewriting or float-to-integer conversion occurs.
 
 `SelectorYamlDecoder` is the configuration ingress for the shared selector
-language. A selector list entry is exactly one mapping — `{exact: value}`,
+language. The authored schema refuses a bare string before decoder translation;
+its diagnostic describes the selector mapping grammar. A selector list entry is
+exactly one mapping — `{exact: value}`,
 `{subtree: value}`, or `{regex: value}` — never a bare string. It retains the
 document origin and list position when translating mapping or PCRE validation
 failures to `ConfigurationRefusal`, then builds the separator-bound Core value.

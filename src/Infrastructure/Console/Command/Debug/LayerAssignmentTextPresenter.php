@@ -187,7 +187,7 @@ final readonly class LayerAssignmentTextPresenter
         $this->output->writeln(\sprintf('    Could not be decided: <comment>%s</comment>', implode(', ', $undecided)));
         $this->output->writeln(\sprintf('    The chain stops at: <comment>%s</comment>', implode(', ', $chainStopsAt)));
         $this->output->writeln('');
-        $this->output->writeln('  A declared <comment>extends</comment>/<comment>implements</comment>/<comment>attributes</comment> criterion reads facts this');
+        $this->output->writeln('  A declared <comment>extends</comment>/<comment>implements</comment>/<comment>attributes</comment>/<comment>member_attributes</comment> criterion reads facts this');
         $this->output->writeln('  run did not collect: where the chain stops is outside the analysed paths.');
         $this->output->writeln('  No layer matched, and a layer could not answer.');
         $this->output->writeln('');
