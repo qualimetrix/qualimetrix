@@ -232,21 +232,12 @@
         "docs:check": "bash scripts/check-docs.sh",
         "check": [
             "@check-leaks",
-            "@check:code",
-            "@check:docs",
-            "@check:artifacts",
-            "@check:self"
+            "@check:code:tests",
+            "@check:parallel"
         ],
         "check:code": [
-            "@cs-check",
-            "@check:code:parallel",
-            "@dangling-names",
-            "@test:js",
-            "@test:cross-tool"
-        ],
-        "check:code:parallel": [
-            "Composer\\Config::disableProcessTimeout",
-            "python3 scripts/check-code-parallel/check-code-parallel.py"
+            "@check:code:tests",
+            "@phpstan"
         ],
         "check:docs": [
             "@docs:check"
@@ -271,6 +262,22 @@
             "Composer\\Config::disableProcessTimeout",
             "phpunit --configuration=phpunit.xml.dist --no-coverage --group=finding-gate-e2e",
             "@gate:self-test"
+        ],
+        "check:code:tests": [
+            "@cs-check",
+            "@test:aggregate",
+            "@dangling-names",
+            "@test:js",
+            "@test:cross-tool"
+        ],
+        "check:parallel": [
+            "Composer\\Config::disableProcessTimeout",
+            "python3 scripts/check-code-parallel/check-code-parallel.py"
+        ],
+        "check:remaining": [
+            "@check:docs",
+            "@check:artifacts",
+            "@check:self"
         ]
     },
     "scripts-descriptions": {
@@ -303,9 +310,8 @@
         "html-bundle:check": "Fail if html-report/dist/report.min.js was not built from the current html-report/src/, without writing",
         "selfcheck": "Validate modular-architecture governance, then run Qualimetrix on its own source code",
         "selfcheck:analysis": "Run Qualimetrix on its own source code after governance freshness has already been checked",
-        "check": "Everything below, in the order a failure is cheapest to read",
+        "check": "Run code tests, then PHPStan beside documentation, artifact and self-analysis checks",
         "check:code": "What a code change invalidates: style, the dangling-name census, static analysis, tests",
-        "check:code:parallel": "Run the existing PHPStan and verified PHPUnit aggregate checks concurrently, collecting both results",
         "check:docs": "What a website change invalidates: a strict mkdocs build",
         "configuration:merge-table": "Regenerate the table of how each configuration key combines across layers in website/docs/getting-started/configuration.md (EN and RU) from the section declarations",
         "configuration:merge-table:check": "Fail if that table differs from what the section declarations generate",
@@ -317,7 +323,10 @@
         "tautology:controls:coverage": "Prove the tautology stand's own arithmetic: removing a repaired case's declaration leaves exactly that case guarded by nothing, and a declaration naming a case the run never carried is a distinct stale-declaration refusal",
         "directives:narrow-control": "Prove --sweep=narrow and --sweep=full agree verdict for verdict: the seeded fixture whole (every verdict and every refusal), its Silenced/ half (where a wrong-producer defect reaches the comparison), then src/. Cheapest signal first, because composer stops at the first run that fails",
         "directives:audit": "Fail if any inline @qmx directive over src/ does nothing",
-        "check:gate": "Gate end-to-end tests and observed witnesses; required for finding-gate changes"
+        "check:gate": "Gate end-to-end tests and observed witnesses; required for finding-gate changes",
+        "check:code:tests": "Run style, verified PHPUnit shards, the name census, JavaScript and cross-tool tests",
+        "check:parallel": "Run PHPStan and the remaining validation groups concurrently, collecting both results",
+        "check:remaining": "Run documentation, generated-artifact and self-analysis checks in order"
     },
     "config": {
         "sort-packages": true,

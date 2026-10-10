@@ -36,8 +36,8 @@ class CheckCodeParallelTest(unittest.TestCase):
                 "from pathlib import Path",
                 "root = Path(os.environ['QMX_FAKE_DIR'])",
                 "name = sys.argv[1]",
-                "if name not in ('phpstan', 'test:aggregate'): sys.exit(17)",
-                "other = 'test:aggregate' if name == 'phpstan' else 'phpstan'",
+                "if name not in ('phpstan', 'check:remaining'): sys.exit(17)",
+                "other = 'check:remaining' if name == 'phpstan' else 'phpstan'",
                 "(root / (name + '.started')).write_text('ready')",
                 "deadline = time.monotonic() + 2",
                 "while not (root / (other + '.started')).exists():",
@@ -67,24 +67,24 @@ class CheckCodeParallelTest(unittest.TestCase):
             self.assertEqual(4, completed.returncode, completed.stderr.decode(errors='replace'))
             self.assertEqual(
                 b'===== phpstan stdout =====\nphpstan stdout\n'
-                b'===== test:aggregate stdout =====\ntest:aggregate stdout\n',
+                b'===== check:remaining stdout =====\ncheck:remaining stdout\n',
                 completed.stdout,
             )
             self.assertEqual(
                 b'===== phpstan stderr =====\nphpstan stderr\n[phpstan] exit 4\n'
-                b'===== test:aggregate stderr =====\ntest:aggregate stderr\n[test:aggregate] exit 0\n',
+                b'===== check:remaining stderr =====\ncheck:remaining stderr\n[check:remaining] exit 0\n',
                 completed.stderr,
             )
             expected_context = str(SCRIPT.parents[2]) + '\n' + 'inherited'
             self.assertEqual(expected_context, (root / 'phpstan.context').read_text())
-            self.assertEqual(expected_context, (root / 'test:aggregate.context').read_text())
+            self.assertEqual(expected_context, (root / 'check:remaining.context').read_text())
 
     def test_group_refusal_still_attempts_cleanup_of_the_peer(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             children = [
                 MODULE.Child(name, [sys.executable], root / f"{name}.out", root / f"{name}.err")
-                for name in ("phpstan", "test:aggregate")
+                for name in ("phpstan", "check:remaining")
             ]
             marker = root / "peer-cleanup-complete"
             ready = root / "peer-ready"
@@ -139,7 +139,7 @@ class CheckCodeParallelTest(unittest.TestCase):
             )
             paths = [root / "first.mask", root / "second.mask"]
             result = MODULE.run_checks(
-                [(name, [sys.executable, "-c", program, str(path)]) for name, path in zip(("phpstan", "test:aggregate"), paths)],
+                [(name, [sys.executable, "-c", program, str(path)]) for name, path in zip(("phpstan", "check:remaining"), paths)],
                 cwd=root,
                 stdout=io.BytesIO(),
                 stderr=io.BytesIO(),
@@ -166,7 +166,7 @@ class CheckCodeParallelTest(unittest.TestCase):
             ))
             commands = [
                 ("phpstan", [sys.executable, "-c", program, str(first), str(second), "A", "a", "4"]),
-                ("test:aggregate", [sys.executable, "-c", program, str(second), str(first), "B", "b", "7"]),
+                ("check:remaining", [sys.executable, "-c", program, str(second), str(first), "B", "b", "7"]),
             ]
             for first_exit, second_exit, expected in ((4, 0, 4), (0, 7, 7), (4, 7, 4)):
                 commands[0][1][-1] = str(first_exit)
@@ -179,13 +179,13 @@ class CheckCodeParallelTest(unittest.TestCase):
                 self.assertEqual(expected, result)
                 self.assertEqual(
                     b"===== phpstan stdout =====\n" + b"A" * 200000
-                    + b"===== test:aggregate stdout =====\n" + b"B" * 200000,
+                    + b"===== check:remaining stdout =====\n" + b"B" * 200000,
                     stdout.getvalue(),
                 )
                 self.assertEqual(
                     b"===== phpstan stderr =====\n" + b"a" * 200000 + f"[phpstan] exit {first_exit}\n".encode()
-                    + b"===== test:aggregate stderr =====\n" + b"b" * 200000
-                    + f"[test:aggregate] exit {second_exit}\n".encode(),
+                    + b"===== check:remaining stderr =====\n" + b"b" * 200000
+                    + f"[check:remaining] exit {second_exit}\n".encode(),
                     stderr.getvalue(),
                 )
 
@@ -212,7 +212,7 @@ class CheckCodeParallelTest(unittest.TestCase):
                     result = MODULE.run_checks(
                         [
                             ("phpstan", [sys.executable, "-c", program, str(pid_file)]),
-                            ("test:aggregate", [str(root / "missing-executable")]),
+                            ("check:remaining", [str(root / "missing-executable")]),
                         ],
                         cwd=root,
                         stdout=stdout,
@@ -237,7 +237,7 @@ class CheckCodeParallelTest(unittest.TestCase):
                 root = Path(temporary)
                 pid_files = [root / "first.pid", root / "second.pid"]
                 program = "import os,sys,time; open(sys.argv[1],'w').write(str(os.getpid())); time.sleep(30)"
-                commands = [(name, [sys.executable, "-c", program, str(pid)]) for name, pid in zip(("phpstan", "test:aggregate"), pid_files)]
+                commands = [(name, [sys.executable, "-c", program, str(pid)]) for name, pid in zip(("phpstan", "check:remaining"), pid_files)]
                 child = start_harness(root, commands)
                 try:
                     wait_for_files(pid_files)
@@ -250,7 +250,7 @@ class CheckCodeParallelTest(unittest.TestCase):
                         self.assertEqual(128 + signum, child.returncode, stderr.decode(errors="replace"))
                         self.assertIn(f"interrupted by {signal.Signals(signum).name}".encode(), stderr)
                     self.assertIn(b"===== phpstan stdout =====", stdout)
-                    self.assertIn(b"===== test:aggregate stdout =====", stdout)
+                    self.assertIn(b"===== check:remaining stdout =====", stdout)
                     for pid_file in pid_files:
                         self.assertFalse(process_is_running(int(pid_file.read_text())))
                 finally:
@@ -280,7 +280,7 @@ class CheckCodeParallelTest(unittest.TestCase):
             )
             commands = [
                 ("phpstan", [sys.executable, "-c", program, str(pid_file), str(ready_file)]),
-                ("test:aggregate", [sys.executable, "-c", "import time; time.sleep(30)"]),
+                ("check:remaining", [sys.executable, "-c", "import time; time.sleep(30)"]),
             ]
             child = start_harness(root, commands)
             try:

@@ -147,6 +147,8 @@ What follows from the decision: trade-offs, constraints, and implications.
 
 - [0111 — Resolved RFC Targets and Trait Composition](0111-resolved-rfc-targets-and-trait-composition.md) — exact response membership and neutral PHP trait method composition.
 
+- [0112 — Validation Check Scheduling](0112-validation-check-scheduling.md) — verified code tests finish before PHPStan overlaps the remaining validation groups.
+
 ## Superseded history
 
 - [0008 — ArchitectureProcessor Service](0008-architecture-processor-service.md) — replaced by the capability-oriented topology in ADR 0022.

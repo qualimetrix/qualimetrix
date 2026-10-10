@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the existing PHPStan and PHPUnit aggregate commands concurrently.
+"""Run PHPStan beside documentation, artifact and self-analysis checks.
 
 Each child writes to regular files, so verbose output cannot block either
 process. Output is published in command order after both have completed.
@@ -21,7 +21,7 @@ from typing import BinaryIO, Sequence
 ROOT = Path(__file__).resolve().parents[2]
 COMMANDS = (
     ("phpstan", ("composer", "phpstan")),
-    ("test:aggregate", ("composer", "test:aggregate")),
+    ("check:remaining", ("composer", "check:remaining")),
 )
 SHUTDOWN_GRACE_SECONDS = 30.0
 POLL_SECONDS = 0.05

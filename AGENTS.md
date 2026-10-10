@@ -597,7 +597,7 @@ itself contain the private name, so echoing it would leak it into the build log.
 
 ```bash
 # Project validation
-composer check          # everything below, in the order a failure is cheapest to read
+composer check          # all groups: code tests first, then PHPStan beside docs/artifacts/self
 composer check:code     # what a code change invalidates: cs-check, phpstan, PHPUnit, JS tests, cross-tool
 composer check:docs     # what a website change invalidates: a strict mkdocs build
 composer check:artifacts # what a manifest, config or corpus change invalidates: every generated artifact
