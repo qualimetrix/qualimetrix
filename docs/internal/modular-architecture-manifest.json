@@ -5109,23 +5109,11 @@
         },
         {
           "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\ComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\WmcRule"
         },
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountRule"
         },
         {
           "owner": "Analysis.Evidence.Size",
@@ -5138,6 +5126,10 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\AbstractRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule"
         }
       ]
     },
@@ -6771,6 +6763,10 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\DirectiveUsagePopulation"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerDeclaration\\UnmatchedTypeDiagnostic"
         }
       ]
     },
@@ -7587,10 +7583,6 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Analysis.Evidence.CircularDependency",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyRule"
-        },
-        {
           "owner": "Analysis.Evidence.CodeSmell",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\CodeSmellFinding"
         },
@@ -7653,10 +7645,6 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\UnmatchedFrameworkNamespaceRule"
         },
         {
           "owner": "Analysis.Evidence.Design",
@@ -7880,10 +7868,6 @@
         },
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryAudit"
-        },
-        {
-          "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\IdentityBoundaryExplanation"
         },
         {
@@ -7905,6 +7889,18 @@
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\WorstOffenderBuilder"
+        },
+        {
+          "owner": "Analysis.Evidence.CircularDependency",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CycleFinding"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\UnmatchedFrameworkFinding"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryFinding"
         }
       ]
     },
@@ -8004,10 +8000,6 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\AbstractCodeSmellRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule"
         },
         {
@@ -8036,10 +8028,6 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\UnmatchedFrameworkNamespaceRule"
         },
         {
@@ -8053,10 +8041,6 @@
         {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule"
         },
         {
           "owner": "Analysis.Evidence.Design",
@@ -8195,10 +8179,6 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Analysis.Evidence.CircularDependency",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyRule"
-        },
-        {
           "owner": "Analysis.Evidence.CodeSmell",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\CodeSmellFinding"
         },
@@ -8265,10 +8245,6 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\UnmatchedFrameworkNamespaceRule"
         },
         {
           "owner": "Analysis.Evidence.Design",
@@ -8375,16 +8351,24 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods"
         },
         {
-          "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryAudit"
-        },
-        {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerDeclaration\\LayerOverlapDiagnostic"
         },
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerDeclaration\\UnmatchedTypeDiagnostic"
+        },
+        {
+          "owner": "Analysis.Evidence.CircularDependency",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CycleFinding"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\UnmatchedFrameworkFinding"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryFinding"
         }
       ]
     },
@@ -8395,20 +8379,12 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Analysis.Evidence.CircularDependency",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyRule"
-        },
-        {
           "owner": "Analysis.Evidence.CodeSmell",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\CodeSmellFinding"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\IdenticalSubExpressionRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\UnmatchedFrameworkNamespaceRule"
         },
         {
           "owner": "Analysis.Evidence.Duplication",
@@ -8447,16 +8423,24 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods"
         },
         {
-          "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryAudit"
-        },
-        {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerDeclaration\\LayerOverlapDiagnostic"
         },
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerDeclaration\\UnmatchedTypeDiagnostic"
+        },
+        {
+          "owner": "Analysis.Evidence.CircularDependency",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CycleFinding"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\UnmatchedFrameworkFinding"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryFinding"
         }
       ]
     },
@@ -11902,10 +11886,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\UnmatchedFrameworkNamespaceOptions"
         },
         {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\UnmatchedFrameworkNamespaceRule"
-        },
-        {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\DataClass\\DataClassOptions"
         },
@@ -12139,10 +12119,6 @@
         },
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryAudit"
-        },
-        {
-          "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryOptions"
         },
         {
@@ -12156,6 +12132,18 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerDeclaration\\UnmatchedTypeDiagnostic"
+        },
+        {
+          "owner": "Analysis.Evidence.CircularDependency",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CycleFinding"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\UnmatchedFrameworkFinding"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryFinding"
         }
       ]
     },
@@ -17198,10 +17186,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceOptions"
         },
         {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\UnmatchedFrameworkNamespaceRule"
-        },
-        {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleSuppressionSelectorDecoder"
         },
@@ -17252,6 +17236,10 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionFinding"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\UnmatchedFrameworkFinding"
         }
       ]
     },
@@ -18274,10 +18262,6 @@
         },
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryAudit"
-        },
-        {
-          "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\EntryJudgement"
         },
         {
@@ -18359,6 +18343,18 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionFinding"
+        },
+        {
+          "owner": "Analysis.Evidence.CircularDependency",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CycleFinding"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\UnmatchedFrameworkFinding"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryFinding"
         }
       ]
     },
@@ -18395,10 +18391,6 @@
         {
           "owner": "Analysis.Evidence.Security",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Security\\SensitiveParameterRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\AbstractCodeSmellRule"
         },
         {
           "owner": "Analysis.Evidence.Security",
@@ -19573,10 +19565,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods"
         },
         {
-          "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryAudit"
-        },
-        {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerDeclaration\\LayerOverlapDiagnostic"
         },
@@ -19651,6 +19639,18 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionFinding"
+        },
+        {
+          "owner": "Analysis.Evidence.CircularDependency",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CycleFinding"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\UnmatchedFrameworkFinding"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryFinding"
         }
       ]
     },
@@ -26071,18 +26071,6 @@
         },
         {
           "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\ComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\WmcRule"
         },
         {
@@ -26140,10 +26128,6 @@
         {
           "owner": "Analysis.Evidence.Size",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\ClassCountRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountRule"
         },
         {
           "owner": "Analysis.Evidence.Size",
@@ -26437,10 +26421,6 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\AbstractCodeSmellRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule"
         },
         {
@@ -26465,10 +26445,6 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\UnmatchedFrameworkNamespaceRule"
         },
         {
@@ -26478,10 +26454,6 @@
         {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule"
         },
         {
           "owner": "Analysis.Evidence.Design",
@@ -26611,6 +26583,27 @@
       "path": "src/Analysis/Policy/Inline/Directive/Audit/DirectiveUsagePopulation.php",
       "kind": "class",
       "owner": "Analysis.Policy.Inline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CycleFinding": {
+      "path": "src/Analysis/Evidence/CircularDependency/CycleFinding.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.CircularDependency",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Coupling\\UnmatchedFrameworkFinding": {
+      "path": "src/Analysis/Evidence/Coupling/UnmatchedFrameworkFinding.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Coupling",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryFinding": {
+      "path": "src/Analysis/Policy/Baseline/EntryBinding/UnusedEntryFinding.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
       "visibility": "internal",
       "consumers": []
     }
