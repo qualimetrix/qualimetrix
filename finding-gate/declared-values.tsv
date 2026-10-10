@@ -1,1 +1,8 @@
 kind	key	level	reason
+field	message	*	Coupling diagnostics explain the declared own scope and uniform-share units
+field	metricValue	*	ClassRank findings use rank times logical population and Distance uses its own namespace scope
+field	threshold	*	ClassRank boundaries are expressed in uniform-share units
+field	severity	*	The new declared coupling coordinates determine finding severity
+field	ranking.impactScore	*	Impact uses ClassRank uniform share instead of raw probability
+metric	coupling.class-rank-share	*	Collection publishes rank times the measured logical population with its own aggregated spellings
+order	ranking	*	Impact scores use uniform-share centrality and determine the published issue order

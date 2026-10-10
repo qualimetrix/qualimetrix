@@ -12,3 +12,7 @@ computed_metrics:
   health.typing: { enabled: false }
   health.maintainability: { enabled: false }
   health.overall: { enabled: false }
+
+rules:
+  coupling.distance:
+    min-type-count: 3

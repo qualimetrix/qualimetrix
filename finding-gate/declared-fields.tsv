@@ -1,6 +1,8 @@
 change	report	view	field	reason
-added	json-document	format:json	computedMetricOutcomes	Successful check reports publish the run-owned authored computed-value absence summary
-added	json-document	check:output:file	computedMetricOutcomes	Successful check reports publish the run-owned authored computed-value absence summary
-added	json-document	check:parallel	computedMetricOutcomes	Successful check reports publish the run-owned authored computed-value absence summary
-added	json-document	check:baseline	computedMetricOutcomes	Successful check reports publish the run-owned authored computed-value absence summary
-added	json-document	check:baseline-source	computedMetricOutcomes	Successful check reports publish the run-owned authored computed-value absence summary
+added	json-document	format:json	abstentions	Reports expose the invocation-owned population abstentions separately from findings
+added	json-document	check:output:file	abstentions	Reports expose the invocation-owned population abstentions separately from findings
+added	json-document	check:parallel	abstentions	Reports expose the invocation-owned population abstentions separately from findings
+added	json-document	check:baseline	abstentions	Reports expose the invocation-owned population abstentions separately from findings
+added	json-document	check:baseline-source	abstentions	Reports expose the invocation-owned population abstentions separately from findings
+removed	json	ranking	coupling.class-rank	Top issues replace raw rank with the same uniform-share units used for impact
+added	json	ranking	coupling.class-rank-share	Top issues publish the finite uniform-share value used for impact
