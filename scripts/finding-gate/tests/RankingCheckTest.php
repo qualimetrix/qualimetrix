@@ -440,7 +440,10 @@ final class RankingCheckTest extends TestCase
         $tree = self::rankedTree($records, $issues, 1);
         $this->green($tree);
         $issues[0]['namespaces'] = ['Replay\\A'];
-        $tree['candidateAnswers']['case:alpha|format:json'] = ['stdout' => self::document($records, $issues), 'ranked' => ['stdout' => self::document($records, $issues)]];
+        $document = self::document($records, $issues);
+        $tree['candidateAnswers']['case:alpha|format:json'] = ['stdout' => $document, 'ranked' => ['stdout' => $document]];
+        $tree['candidateAnswers']['case:alpha|check:output'] = ['file' => $document];
+        $tree['candidateAnswers']['case:alpha|check:parallel'] = ['stdout' => $document];
         $this->red($tree, FailureClass::RANKING_PROJECTION_MISMATCH);
     }
 
