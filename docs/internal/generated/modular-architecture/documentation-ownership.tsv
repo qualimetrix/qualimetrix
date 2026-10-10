@@ -101,6 +101,7 @@ docs/adr/0105-finding-publication-and-drill-down.md	Reporting	"Move or update at
 docs/adr/0106-declaration-metric-records-and-declared-publication.md	Analysis.Evidence.Measurement	"Move or update atomically with the named subject owner."
 docs/adr/0107-inheritance-chain-outcomes.md	Analysis.Evidence.Design	"Move or update atomically with the named subject owner."
 docs/adr/0108-health-score-applicability-and-evaluation.md	Analysis.Evidence.ComputedMetrics	"Move or update atomically with the named subject owner."
+docs/adr/0109-rule-populations-and-coupling-units.md	Analysis.Finding	"Move or update atomically with the named subject owner."
 docs/adr/README.md	Architecture.Governance	"Repository-wide governance documentation; review with the manifest and generated topology."
 docs/internal/CLI_CONVENTIONS.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/COMPETITOR_COMPARISON.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."

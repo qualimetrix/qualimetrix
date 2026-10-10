@@ -219,6 +219,10 @@
             "coupling.class-rank.avg": 0.14285714285714288,
             "coupling.class-rank.p95": 0.19798846640049636,
             "coupling.class-rank.count": 7,
+            "coupling.class-rank-share.max": 1.488505398485411,
+            "coupling.class-rank-share.avg": 1.0000000000000002,
+            "coupling.class-rank-share.p95": 1.3859192648034746,
+            "coupling.class-rank-share.count": 7,
             "coupling.distance-own.avg": 0.4166666666666667,
             "coupling.distance-own.count": 3,
             "health.complexity": 98,
@@ -421,6 +425,10 @@
                     "coupling.class-rank.avg": 0.11494254865797657,
                     "coupling.class-rank.p95": 0.11494254865797657,
                     "coupling.class-rank.count": 1,
+                    "coupling.class-rank-share.max": 0.804597840605836,
+                    "coupling.class-rank-share.avg": 0.804597840605836,
+                    "coupling.class-rank-share.p95": 0.804597840605836,
+                    "coupling.class-rank-share.count": 1,
                     "health.cohesion": 100,
                     "health.coupling": 75,
                     "health.overall": 87.5
@@ -444,6 +452,7 @@
                             "coupling.ce-framework": 0,
                             "design.noc": 0,
                             "coupling.class-rank": 0.11494254865797657,
+                            "coupling.class-rank-share": 0.804597840605836,
                             "code-smell.unused-private.total": 0,
                             "cohesion.lcom": 0,
                             "complexity.wmc": 0,
@@ -713,6 +722,10 @@
                     "coupling.class-rank.avg": 0.1475095752236706,
                     "coupling.class-rank.p95": 0.20043099339292347,
                     "coupling.class-rank.count": 6,
+                    "coupling.class-rank-share.max": 1.488505398485411,
+                    "coupling.class-rank-share.avg": 1.0325670265656943,
+                    "coupling.class-rank-share.p95": 1.4030169537504642,
+                    "coupling.class-rank-share.count": 6,
                     "health.complexity": 98,
                     "health.cohesion": 50,
                     "health.coupling": 83.33333333333333,
@@ -962,6 +975,10 @@
                             "coupling.class-rank.avg": 0.134482764597393,
                             "coupling.class-rank.p95": 0.16379308850651764,
                             "coupling.class-rank.count": 5,
+                            "coupling.class-rank-share.max": 1.1465516195456233,
+                            "coupling.class-rank-share.avg": 0.9413793521817511,
+                            "coupling.class-rank-share.p95": 1.1465516195456233,
+                            "coupling.class-rank-share.count": 5,
                             "health.complexity": 95.8,
                             "health.cohesion": 50,
                             "health.coupling": 92.3076923076923,
@@ -1014,6 +1031,7 @@
                                     "coupling.ce-framework": 0,
                                     "design.noc": 0,
                                     "coupling.class-rank": 0.11494254865797657,
+                                    "coupling.class-rank-share": 0.804597840605836,
                                     "code-smell.unused-private.total": 0,
                                     "cohesion.lcom": 2,
                                     "cohesion.tcc": 0,
@@ -1183,6 +1201,7 @@
                                     "coupling.cbo-app": 0,
                                     "coupling.ce-framework": 0,
                                     "coupling.class-rank": 0.11494254865797657,
+                                    "coupling.class-rank-share": 0.804597840605836,
                                     "code-smell.unused-private.total": 0,
                                     "complexity.wmc": 0,
                                     "coupling.rfc": 0,
@@ -1236,6 +1255,7 @@
                                     "coupling.ce-framework": 0,
                                     "design.noc": 0,
                                     "coupling.class-rank": 0.11494254865797657,
+                                    "coupling.class-rank-share": 0.804597840605836,
                                     "code-smell.unused-private.total": 0,
                                     "cohesion.lcom": 0,
                                     "complexity.wmc": 0,
@@ -1292,6 +1312,7 @@
                                     "coupling.cbo-app": 1,
                                     "coupling.ce-framework": 0,
                                     "coupling.class-rank": 0.16379308850651764,
+                                    "coupling.class-rank-share": 1.1465516195456233,
                                     "complexity.wmc": 1,
                                     "coupling.rfc": 1,
                                     "coupling.rfc-own": 1,
@@ -1384,6 +1405,7 @@
                                     "coupling.cbo-app": 1,
                                     "coupling.ce-framework": 0,
                                     "coupling.class-rank": 0.16379308850651764,
+                                    "coupling.class-rank-share": 1.1465516195456233,
                                     "complexity.wmc": 1,
                                     "coupling.rfc": 1,
                                     "coupling.rfc-own": 1,
@@ -1683,6 +1705,10 @@
                             "coupling.class-rank.avg": 0.21264362835505873,
                             "coupling.class-rank.p95": 0.21264362835505873,
                             "coupling.class-rank.count": 1,
+                            "coupling.class-rank-share.max": 1.488505398485411,
+                            "coupling.class-rank-share.avg": 1.488505398485411,
+                            "coupling.class-rank-share.p95": 1.488505398485411,
+                            "coupling.class-rank-share.count": 1,
                             "health.complexity": 100,
                             "health.coupling": 100,
                             "health.typing": 100,
@@ -1707,6 +1733,7 @@
                                     "coupling.cbo-app": 1,
                                     "coupling.ce-framework": 0,
                                     "coupling.class-rank": 0.21264362835505873,
+                                    "coupling.class-rank-share": 1.488505398485411,
                                     "complexity.wmc": 1,
                                     "coupling.rfc": 1,
                                     "coupling.rfc-own": 1,
@@ -2717,18 +2744,28 @@
                 "formatTemplate": null
             },
             "coupling.class-rank": {
-                "label": "ClassRank",
+                "label": "ClassRank probability",
                 "ranges": [
                     {
-                        "max": 0.009,
-                        "text": "Peripheral class"
+                        "above": true,
+                        "text": "PageRank probability"
+                    }
+                ],
+                "formatTemplate": null
+            },
+            "coupling.class-rank-share": {
+                "label": "ClassRank share",
+                "ranges": [
+                    {
+                        "max": 1,
+                        "text": "At most uniform share"
                     },
                     {
-                        "max": 0.02,
-                        "text": "Moderate importance"
+                        "max": 5,
+                        "text": "Below hotspot share"
                     },
                     {
-                        "max": 0.05,
+                        "max": 10,
                         "text": "Important hub"
                     },
                     {
@@ -3236,5 +3273,31 @@
         "excluded": 0,
         "failures": []
     },
+    "abstentions": [
+        {
+            "producer": "size.class-count",
+            "channel": "size.class-count",
+            "level": "namespace",
+            "gate": "nonempty-count",
+            "reason": "The namespace has no own classes. Metric population boundary was not met.",
+            "unit": "namespace",
+            "count": 1,
+            "examples": [
+                "ns:App\\Domain"
+            ]
+        },
+        {
+            "producer": "size.class-count",
+            "channel": "size.class-count",
+            "level": "namespace",
+            "gate": "own-count",
+            "reason": "The own class count was not published. Missing metric \"size.class-count\".",
+            "unit": "namespace",
+            "count": 1,
+            "examples": [
+                "ns:App"
+            ]
+        }
+    ],
     "invalidUtf8Replaced": 6
 }
