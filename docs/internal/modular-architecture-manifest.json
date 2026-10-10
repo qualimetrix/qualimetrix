@@ -18559,6 +18559,10 @@
         {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\PopulationIdentity"
         }
       ]
     },
@@ -19455,6 +19459,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Population\\PopulationTrace"
         }
       ]
     },
@@ -26746,6 +26754,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\ReportBuilder"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy"
         }
       ]
     },
