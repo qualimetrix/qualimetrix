@@ -181,7 +181,7 @@ final class TopIssuesRendererTest extends TestCase
                 new RankedIssue(
                     finding: $finding,
                     impactScore: 10.0,
-                    classRank: 0.05,
+                    classRankShare: 0.05,
                     debtMinutes: 30,
                     severityWeight: 3,
                 ),
@@ -249,7 +249,7 @@ final class TopIssuesRendererTest extends TestCase
                 new RankedIssue(
                     finding: $finding,
                     impactScore: 3.14,
-                    classRank: null,
+                    classRankShare: null,
                     debtMinutes: 45,
                     severityWeight: 3,
                 ),
@@ -296,7 +296,7 @@ final class TopIssuesRendererTest extends TestCase
                 new RankedIssue(
                     finding: $finding,
                     impactScore: 2.5,
-                    classRank: 0.03,
+                    classRankShare: 0.03,
                     debtMinutes: 30,
                     severityWeight: 1,
                 ),
@@ -337,7 +337,7 @@ final class TopIssuesRendererTest extends TestCase
             errorCount: 1,
             warningCount: 0,
             topIssues: [
-                new RankedIssue(finding: $finding, impactScore: 5.0, classRank: null, debtMinutes: 20, severityWeight: 3),
+                new RankedIssue(finding: $finding, impactScore: 5.0, classRankShare: null, debtMinutes: 20, severityWeight: 3),
             ],
         );
 
@@ -371,7 +371,7 @@ final class TopIssuesRendererTest extends TestCase
             errorCount: 1,
             warningCount: 0,
             topIssues: [
-                new RankedIssue(finding: $finding, impactScore: 8.0, classRank: null, debtMinutes: 15, severityWeight: 3),
+                new RankedIssue(finding: $finding, impactScore: 8.0, classRankShare: null, debtMinutes: 15, severityWeight: 3),
             ],
         );
 
@@ -407,7 +407,7 @@ final class TopIssuesRendererTest extends TestCase
             errorCount: 1,
             warningCount: 0,
             topIssues: [
-                new RankedIssue(finding: $finding, impactScore: 1.0, classRank: null, debtMinutes: 60, severityWeight: 3),
+                new RankedIssue(finding: $finding, impactScore: 1.0, classRankShare: null, debtMinutes: 60, severityWeight: 3),
             ],
         );
 
@@ -443,7 +443,7 @@ final class TopIssuesRendererTest extends TestCase
             errorCount: 0,
             warningCount: 1,
             topIssues: [
-                new RankedIssue(finding: $finding, impactScore: 2.0, classRank: 0.01, debtMinutes: 45, severityWeight: 1),
+                new RankedIssue(finding: $finding, impactScore: 2.0, classRankShare: 0.01, debtMinutes: 45, severityWeight: 1),
             ],
         );
 
@@ -504,7 +504,7 @@ final class TopIssuesRendererTest extends TestCase
         return new RankedIssue(
             finding: $finding,
             impactScore: $score,
-            classRank: 0.05,
+            classRankShare: 0.05,
             debtMinutes: $debt,
             severityWeight: $severity === Severity::Error ? 3 : 1,
         );

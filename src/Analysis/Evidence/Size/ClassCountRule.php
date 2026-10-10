@@ -8,14 +8,16 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
-use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
@@ -64,10 +66,12 @@ final class ClassCountRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Higher,
-                JudgedMetrics::of(MetricName::SIZE_CLASS_COUNT),
+            self::NAME => self::judgingHigher(
+                [MetricName::SIZE_CLASS_COUNT],
                 SymbolLevel::Namespace_,
+            )->withGates(
+                self::populationGate('own-count', self::NAME, SymbolLevel::Namespace_, 'namespace', self::keyPresent('own-count', [MetricName::SIZE_CLASS_COUNT]), 'The own class count was not published.'),
+                self::populationGate('nonempty-count', self::NAME, SymbolLevel::Namespace_, 'namespace', self::keyThreshold('nonempty-count', [MetricName::SIZE_CLASS_COUNT], '>', 0, 'zero', true), 'The namespace has no own classes.'),
             ),
         ];
     }
@@ -81,18 +85,27 @@ final class ClassCountRule extends AbstractRule
             return [];
         }
 
+        $declaration = self::channelDeclarations()[self::NAME];
         $findings = [];
 
         foreach ($context->metrics->all(SymbolLevel::Namespace_) as $namespaceInfo) {
             $subject = $namespaceInfo->subject
                 ?? MetricSubject::aggregate($namespaceInfo->symbolPath);
             $metrics = $context->metrics->get($namespaceInfo->symbolPath);
-            $classCount = (int) ($metrics->get(MetricName::SIZE_CLASS_COUNT) ?? 0);
-
-            if ($classCount === 0) {
+            if (!$context->admit(
+                self::NAME,
+                new FindingChannel(self::NAME),
+                SymbolLevel::Namespace_,
+                PopulationIdentity::aggregate($namespaceInfo->symbolPath),
+                $declaration,
+                [
+                    GateInput::metrics('own-count', $metrics), GateInput::metrics('nonempty-count', $metrics),
+                ],
+            )) {
                 continue;
             }
 
+            $classCount = (int) $metrics->get(MetricName::SIZE_CLASS_COUNT);
             /** @var ClassCountOptions $effectiveOptions */
             $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $subject);
             $severity = $effectiveOptions->getSeverity($classCount);

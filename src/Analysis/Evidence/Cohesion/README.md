@@ -43,7 +43,8 @@ Cohesion/
 `LcomExcludedMethods` reports unmatched authored method names only for a
 whole-project method universe, matching and deduplicating case-insensitively
 while retaining the first authored spelling. It does not change the LCOM
-graph or its academic calculation.
+graph or its academic calculation. The rule supplies its producer and full
+secondary declaration; the diagnostic helper does not depend back on the rule.
 
 `LcomCollector` provides `cohesion.lcom`; `TccLccCollector` provides `cohesion.tcc` and `cohesion.lcc`.
 They retain their collector names, metric keys, class-level aggregation
@@ -130,7 +131,12 @@ normalized name that
 matches no precomputed Method-kind declaration. Functions and property hooks do
 not witness a method; partial runs make no project-wide absence claim. Its project
 magnitude is 1, its occurrence identifies the normalized name, and it explicitly
-declines the producer's configured warning boundary. The primary 3/5 LCOM band,
+declines the producer's configured warning boundary. Selected accounting judges
+every normalized configured name, including a healthy match. When the method
+universe is not judged, each configured selector belongs to the declared
+`method-universe` absence group without enumerating callables or inventing
+unmatched findings. The full secondary declaration owns the same scope gate
+for direct, unselected and selected execution. The primary 3/5 LCOM band,
 LCOM4 graph algorithm and lifecycle are unchanged.
 
 DoD includes typed snapshot handoff, case-insensitive matching with original
@@ -141,3 +147,5 @@ denominator withhold declaration absence.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+The primary LCOM population checks the class coordinate, configured readonly exclusion, minimum method count and published LCOM value in that order. Missing method counts retain the native zero fallback; missing LCOM values remain unjudged. Secondary configured-method-selector accounting is independent.

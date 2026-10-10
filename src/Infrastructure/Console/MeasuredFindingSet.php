@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
+use LogicException;
+
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
@@ -31,6 +33,7 @@ final readonly class MeasuredFindingSet
             $result->findings(),
             $result->directives->suppressions,
             $options,
+            $result->populationPublication ?? throw new LogicException('Measured finding projection requires captured channel publication'),
         );
         return new MeasuredAnalysisRun($result, $projection->measuredFindings);
     }

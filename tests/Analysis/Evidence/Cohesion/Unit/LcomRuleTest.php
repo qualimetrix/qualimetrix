@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit;
 
 use InvalidArgumentException;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -30,6 +31,33 @@ use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 #[CoversClass(LcomOptions::class)]
 final class LcomRuleTest extends TestCase
 {
+    #[Test]
+    public function itCountsMeasuredZeroBeforeSeverityAndDistinguishesMissingPublication(): void
+    {
+        $rule = new LcomRule(new LcomOptions(minMethods: 0, excludeReadonly: false));
+        $repository = new \Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository([new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName::COHESION_LCOM, \Qualimetrix\Core\Symbol\SymbolLevel::Class_)]);
+        foreach (['Healthy' => (new MetricBag())->with(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName::COHESION_LCOM, 0), 'Missing' => new MetricBag()] as $name => $bag) {
+            $info = self::subjectInfo(SymbolPath::forClass('Population', $name), RelativePath::fromString('src/' . $name . '.php'), 1);
+            $repository->addSubject($info->subject ?? throw new LogicException('Exact fixture subject is required.'), $bag, $info->file, 1);
+        }
+        $decisions = [];
+        foreach (LcomRule::channelDeclarations() as $channel => $declaration) {
+            foreach ($declaration->levels as $level) {
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
+                    new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(LcomRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable),
+                    new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
+                );
+            }
+        }
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+        $context = (new AnalysisContext($repository))->withPopulationTrace($session);
+        self::assertSame([], $rule->analyze($context));
+        self::assertSame(1, $session->freeze()->judgedCount());
+        self::assertSame(1, $session->freeze()->unjudgedCount());
+        self::assertSame('declaration', $session->freeze()->abstentions()[0]->unit);
+        self::assertStringContainsString('Missing', $session->freeze()->abstentions()[0]->examples[0]);
+    }
+
     #[Test]
     public function itGetsName(): void
     {
@@ -472,6 +500,35 @@ final class LcomRuleTest extends TestCase
         self::assertNull($declaration->judges);
         self::assertFalse($declaration->usesProducerWarningBoundary);
         self::assertTrue(LcomRule::channelDeclarations()[LcomRule::NAME]->usesProducerWarningBoundary);
+    }
+
+    #[Test]
+    public function itAccountsEachNormalizedMethodSelectorIncludingHealthyMatchesAndUnknownScope(): void
+    {
+        $channel = new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('cohesion.unmatched-exclude-method');
+        $publication = new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement([
+            new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
+                new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(LcomRule::NAME, $channel, \Qualimetrix\Core\Symbol\SymbolLevel::Project, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable),
+                new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
+            ),
+        ], null));
+        foreach ([true, false] as $whole) {
+            $repository = self::createMock(MetricRepositoryInterface::class);
+            $repository->expects($whole ? self::once() : self::never())->method('allCallables')->willReturn([
+                self::subjectInfo(SymbolPath::forMethod('App', 'Service', 'known'), RelativePath::fromString('src/Service.php'), 1),
+            ]);
+            $scope = new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement($whole ? [] : [\Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor::Paths]);
+            $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(($publication)->publishes(...));
+            $context = (new AnalysisContext($repository, projectScope: $scope))->withPopulationTrace($session);
+            $findings = \Qualimetrix\Analysis\Evidence\Cohesion\LcomExcludedMethods::findings($context, new LcomOptions(excludeMethods: ['KNOWN', 'known', 'Missing', 'MISSING']), LcomRule::NAME, LcomRule::channelDeclarations()['cohesion.unmatched-exclude-method']);
+            self::assertCount($whole ? 1 : 0, $findings);
+            self::assertSame($whole ? 2 : 0, $session->freeze()->judgedCount());
+            self::assertSame($whole ? 0 : 2, $session->freeze()->unjudgedCount());
+            if (!$whole) {
+                self::assertSame('configured-method-selector', $session->freeze()->abstentions()[0]->unit);
+                self::assertSame(['known', 'missing'], $session->freeze()->abstentions()[0]->examples);
+            }
+        }
     }
 
     private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo

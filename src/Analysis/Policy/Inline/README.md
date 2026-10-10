@@ -43,6 +43,7 @@ Inline/
 │   │   ├── AuthoredDirectiveGroup.php # one authored @qmx-threshold, its bindings, site and subjects
 │   │   ├── DirectiveMaskingCoalition.php # which threshold directives of one rule hide one another
 │   │   ├── DirectiveUsage.php      # what each authored suppression did
+│   │   ├── DirectiveUsagePopulation.php # selected judgement of authored suppression sites
 │   │   ├── DirectiveMeasurability.php # addressed producer and subject-coverage evidence
 │   │   ├── ExecutionFingerprint.php # what one rule execution produced, compared as a whole
 │   │   ├── MaskingOutcome.php      # what the sweep decided about one group, before it is reported
@@ -407,3 +408,7 @@ the parsing of itself. `InlineDirectiveValidator` reads the policy's own copy of
 map, which no counterfactual touches, so its diagnostics are identical on every
 pass — and the `annotation.*` channels have already answered for malformed,
 unresolvable and unsupported annotations.
+
+Directive-site population identities frame authored file, form and target bytes
+before JSON tuple encoding. Invalid source bytes remain distinct from literal
+percent escapes; valid UTF-8 identities keep their existing representation.

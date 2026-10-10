@@ -32,6 +32,33 @@ use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 final class UnreachableCodeRuleTest extends TestCase
 {
     #[Test]
+    public function itCountsMeasuredZeroAndDistinguishesMissingPublication(): void
+    {
+        $infos = [];
+        foreach (['Healthy', 'Missing'] as $name) {
+            $file = \Qualimetrix\Core\Path\RelativePath::fromString('src/' . $name . '.php');
+            $subject = \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forMethod('Population', $name, 'run'), $file, \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)));
+            $infos[] = new \Qualimetrix\Core\Symbol\SymbolInfo($subject, $file, 1, \Qualimetrix\Core\Symbol\CallableKind::Method);
+        }
+        $repository = self::createStub(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface::class);
+        $repository->method('allCallables')->willReturn($infos);
+        $repository->method('getSubject')->willReturnCallback(static fn(\Qualimetrix\Core\Symbol\MetricSubject $subject): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag => $subject->toSymbolPath()->type === 'Healthy' ? (new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag())->with(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName::CODE_SMELL_UNREACHABLE_CODE, 0) : new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag());
+        $decisions = [];
+        foreach (UnreachableCodeRule::channelDeclarations() as $channel => $declaration) {
+            foreach ($declaration->levels as $level) {
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(UnreachableCodeRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
+            }
+        }
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+        $rule = new UnreachableCodeRule(new UnreachableCodeOptions());
+        self::assertSame([], $rule->analyze((new \Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext($repository))->withPopulationTrace($session)));
+        self::assertSame(1, $session->freeze()->judgedCount());
+        self::assertSame(1, $session->freeze()->unjudgedCount());
+        self::assertSame('callable', $session->freeze()->abstentions()[0]->unit);
+        self::assertStringContainsString('Missing', $session->freeze()->abstentions()[0]->examples[0]);
+    }
+
+    #[Test]
     public function itGetName(): void
     {
         $rule = new UnreachableCodeRule(new UnreachableCodeOptions());

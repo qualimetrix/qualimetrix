@@ -29,6 +29,27 @@ final class GithubActionsFormatterTest extends TestCase
     }
 
     #[Test]
+    public function itPublishesUnjudgedPopulationOnAnEmptyFindingReportWithoutAFailure(): void
+    {
+        $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
+        $channel = new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.ccn');
+        $trace->record(
+            'complexity.ccn',
+            $channel,
+            \Qualimetrix\Core\Symbol\SymbolLevel::Callable,
+            \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::occurrence('missing<&>', 0, 'callable'),
+            'callable-value',
+            'Missing <value> & publication.',
+        );
+        $report = ReportBuilder::create()->population($trace->freeze())->build();
+        $output = $this->formatter->format($report, new FormatterContext())->body;
+        self::assertStringContainsString('::notice title=rule-population.incomplete::', $output);
+        self::assertStringContainsString('1 unjudged callable', $output);
+        self::assertStringNotContainsString('::error', $output);
+        self::assertStringNotContainsString('::warning', $output);
+    }
+
+    #[Test]
     public function itNamesAnUncomparedEntryWithoutClaimingABreach(): void
     {
         $finding = self::finding(

@@ -26,6 +26,14 @@ final class JsonEncodingPopulationTest extends TestCase
     /** @var array<class-string, string> */
     private const array OWNERS = [
         \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder::class => 'Only finite positive float weights from native ConstantNode values checked by WeightedHealthFormula::weightOf are encoded, preserving the JSON fraction.',
+        \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule::class => 'Native copy ordinals and content hashes identify the copy; its existing canonical file subject escapes invalid source bytes.',
+        \Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation::class => 'Group keys contain validated producer/channel metadata, declared gate reasons and closed units; source examples remain outside the encoded key.',
+        \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::class => 'Source authority, cycle member and edge endpoint strings are framed; symbol canonicals already escape invalid source bytes.',
+        \Qualimetrix\Analysis\Finding\Population\PopulationTrace::class => 'Group keys contain validated producer/channel metadata, declared gate reasons and closed units; native source identity examples are stored separately.',
+        \Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit::class => 'Source selector displays are byte-framed before the inner JSON tuple; rule, option and channel names are validated vocabulary, and native ordinals preserve duplicate positions.',
+        \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationRule::class => 'Layer names originate in parsed UTF-8 architecture configuration; the pair records native precedence.',
+        \Qualimetrix\Analysis\Policy\Architecture\Observation\EdgeEvidenceWalk::class => 'Dependency endpoints are byte-safe canonical SymbolPath identities; the dependency type is closed vocabulary.',
+        \Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsagePopulation::class => 'Authored file, form and target strings are byte-framed; native line and position are numeric.',
         \Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateContentMerger::class => 'Source strings are framed before hashing.',
         \Qualimetrix\Analysis\Finding\Contract\OccurrenceKey::class => 'Source kind, evidence names and values are framed before hashing.',
         \Qualimetrix\Analysis\Policy\Architecture\Layer\UnmatchedTypeOccurrence::class => 'Named types and provenance come from parsed UTF-8 configuration.',

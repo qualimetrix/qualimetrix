@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
+use LogicException;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -28,6 +29,33 @@ use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 #[CoversClass(ClassCognitiveComplexityOptions::class)]
 final class CognitiveComplexityRuleTest extends TestCase
 {
+    #[Test]
+    public function itCountsMeasuredZeroBeforeSeverityAndDistinguishesMissingPublication(): void
+    {
+        $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
+        $repository = new \Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository([new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName::COMPLEXITY_COGNITIVE . '.max', \Qualimetrix\Core\Symbol\SymbolLevel::Class_)]);
+        foreach (['Healthy' => (new MetricBag())->with(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName::COMPLEXITY_COGNITIVE . '.max', 0), 'Missing' => new MetricBag()] as $name => $bag) {
+            $info = self::subjectInfo(SymbolPath::forClass('Population', $name), RelativePath::fromString('src/' . $name . '.php'), 1);
+            $repository->addSubject($info->subject ?? throw new LogicException('Exact fixture subject is required.'), $bag, $info->file, 1);
+        }
+        $decisions = [];
+        foreach (CognitiveComplexityRule::channelDeclarations() as $channel => $declaration) {
+            foreach ($declaration->levels as $level) {
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
+                    new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(CognitiveComplexityRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable),
+                    new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
+                );
+            }
+        }
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+        $context = (new AnalysisContext($repository))->withPopulationTrace($session);
+        self::assertSame([], $rule->analyzeLevel(\Qualimetrix\Core\Symbol\SymbolLevel::Class_, $context));
+        self::assertSame(1, $session->freeze()->judgedCount());
+        self::assertSame(1, $session->freeze()->unjudgedCount());
+        self::assertSame('declaration', $session->freeze()->abstentions()[0]->unit);
+        self::assertStringContainsString('Missing', $session->freeze()->abstentions()[0]->examples[0]);
+    }
+
     #[Test]
     public function itGetName(): void
     {
@@ -559,6 +587,34 @@ final class CognitiveComplexityRuleTest extends TestCase
             'declaration:callable:App\\Service\\Twin::run@src/A.php',
             'declaration:callable:App\\Service\\Twin::run@src/B.php',
         ], $subjects);
+    }
+
+    #[Test]
+    public function itAccountsHealthyZeroAndMissingCallablePublicationsSeparately(): void
+    {
+        $file = RelativePath::fromString('src/Service.php');
+        $zero = self::subjectInfo(SymbolPath::forMethod('App', 'Service', 'zero'), $file, 1);
+        $missing = self::subjectInfo(SymbolPath::forMethod('App', 'Service', 'missing'), $file, 2);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allCallables')->willReturn([$zero, $missing]);
+        $zeroSubject = $zero->subject ?? throw new LogicException('Fixture requires an exact callable.');
+        $repository->method('getSubject')->willReturnCallback(static fn($subject): MetricBag =>
+            $subject->toCanonical() === $zeroSubject->toCanonical() ? MetricBag::fromArray(['complexity.cognitive' => 0]) : new MetricBag());
+        $channel = new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.cognitive');
+        $publication = new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement([
+            new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
+                new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress('complexity.cognitive', $channel, SymbolLevel::Callable, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable),
+                new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
+            ),
+        ], null));
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(($publication)->publishes(...));
+        $context = (new AnalysisContext($repository))->withPopulationTrace($session);
+        self::assertSame([], (new CognitiveComplexityRule(new CognitiveComplexityOptions()))->analyzeLevel(SymbolLevel::Callable, $context));
+        $population = $session->freeze();
+        self::assertSame(1, $population->judgedCount());
+        self::assertSame(1, $population->unjudgedCount());
+        self::assertSame('callable', $population->abstentions()[0]->unit);
+        self::assertStringContainsString('missing', $population->abstentions()[0]->examples[0]);
     }
 
     private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo

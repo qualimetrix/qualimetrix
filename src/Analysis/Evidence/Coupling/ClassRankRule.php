@@ -5,30 +5,30 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Coupling;
 
 use LogicException;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
+use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
- * Rule that checks ClassRank (PageRank on dependency graph) at class level.
- *
- * ClassRank identifies the most "important" classes in the codebase by analyzing
- * the dependency graph using the PageRank algorithm. Classes with high ClassRank
- * are critical hubs where changes have wide-reaching impact.
- *
- * A class nothing depends on (`coupling.ca` = 0) is never reported: PageRank
- * gives every class a floor share of the rank, and on a small or loosely
- * coupled project that floor alone can clear the scaled threshold.
+ * Judges exact class declarations using multiples of uniform graph probability.
+ * All named PHP kinds participate in PageRank, while only classes are judged.
  */
 #[CliAlias('class-rank-warning', 'warning')]
 #[CliAlias('class-rank-error', 'error')]
@@ -59,121 +59,128 @@ final class ClassRankRule extends AbstractRule
             return [];
         }
 
-        // Collect all classes first — we need the count for threshold scaling
-        $classes = iterator_to_array($context->metrics->allLogicalClasses(), false);
-        $classCount = \count($classes);
-
-        if ($classCount === 0) {
+        $declaration = self::channelDeclarations()[self::NAME];
+        if ($context->dependencyGraph === null) {
+            $context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::invocation(self::NAME), $declaration, (static function (): iterable {
+                yield GateInput::context('graphAvailable', false);
+            })());
             return [];
         }
-
-        // Scale thresholds by project size. PageRank sums to 1.0, so individual
-        // ranks dilute as class count grows. sqrt(classCount/100) normalizes:
-        // - 100 classes: thresholds unchanged (scale factor = 1.0)
-        // - 1600 classes: thresholds / 4 (catches more hubs)
-        // - 25 classes: thresholds * 2 (avoids false positives)
-        $scaleFactor = self::computeScaleFactor($classCount);
-
+        $classes = iterator_to_array($context->metrics->allClassDeclarations(), false);
+        $facts = $this->classFacts($context, $classes);
         $findings = [];
-
-        foreach ($context->metrics->allClassDeclarations() as $classInfo) {
-            $finding = $this->findingForClass($classInfo, $context, $scaleFactor, $classCount);
+        foreach ($classes as $info) {
+            $subject = $info->subject ?? throw new LogicException('ClassRank requires an exact declaration subject.');
+            $finding = $this->findingForClass($info, $facts[$subject->toCanonical()]->type, $context, $declaration);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
         }
-
         return $findings;
     }
 
-    private function findingForClass(
-        SymbolInfo $classInfo,
-        AnalysisContext $context,
-        float $scaleFactor,
-        int $classCount,
-    ): ?Finding {
-        $subject = $classInfo->subject ?? throw new LogicException('ClassRank findings require an exact class declaration subject');
-        if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+    private function findingForClass(SymbolInfo $info, ClassType $type, AnalysisContext $context, ChannelDeclaration $declaration): ?Finding
+    {
+        $subject = $info->subject ?? throw new LogicException('ClassRank requires an exact declaration subject.');
+        $metrics = $this->admittedMetrics(
+            $context,
+            $subject,
+            $declaration,
+            static function (MetricBag $metrics): iterable {
+                yield GateInput::metrics('class-rank-share', $metrics);
+                yield GateInput::metrics('dependents', $metrics);
+            },
+            (static function () use ($subject, $type): iterable {
+                yield GateInput::context('graphAvailable', true);
+                yield GateInput::kind('class-coordinate', $subject->toSymbolPath()->getType());
+                yield GateInput::kind('php-class', $type);
+            })(),
+            level: SymbolLevel::Class_,
+        );
+        if ($metrics === null) {
             return null;
         }
-
-        $classRank = $context->metrics->getSubject($subject)->get(MetricName::COUPLING_CLASS_RANK);
-        if ($classRank === null) {
-            return null;
-        }
-
-        $dependents = (int) $context->metrics->getSubject($subject)->require(MetricName::COUPLING_CA);
-        if ($dependents === 0) {
-            return null;
-        }
-
-        $rankValue = (float) $classRank;
-
-        /** @var ClassRankOptions $effectiveOptions */
-        $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $subject);
-        $effectiveScaledWarning = $effectiveOptions->warning / $scaleFactor;
-        $effectiveScaledError = $effectiveOptions->error / $scaleFactor;
-        $severity = self::getSeverityForScaledThresholds($rankValue, $effectiveScaledWarning, $effectiveScaledError);
+        $rank = (float) $metrics->require(MetricName::COUPLING_CLASS_RANK_SHARE);
+        /** @var ClassRankOptions $options */
+        $options = $this->getEffectiveOptions($context, $this->options, $subject);
+        $severity = $options->getSeverity($rank);
         if ($severity === null) {
             return null;
         }
-
-        $threshold = $severity === Severity::Error ? $effectiveScaledError : $effectiveScaledWarning;
-
+        $threshold = $severity === Severity::Error ? $options->error : $options->warning;
+        [$valueText, $thresholdText, $rounded] = self::display($rank, $threshold);
+        $dependents = (int) $metrics->require(MetricName::COUPLING_CA);
         return new Finding(
-            location: new Location($classInfo->file, $classInfo->line),
+            location: new Location($info->file, $info->line),
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
-            ruleName: $this->getName(),
+            ruleName: self::NAME,
             code: self::NAME,
-            message: \sprintf(
-                'ClassRank is %.4f, ' . ThresholdCrossing::of($rankValue, $threshold)->value . ' threshold of %.4f (scaled for %d classes). This class is a critical hub — changes have wide impact',
-                $rankValue,
-                $threshold,
-                $classCount,
-            ),
+            message: \sprintf('ClassRank share is %s× uniform, %s threshold of %s×%s. This class is a critical hub — changes have wide impact', $valueText, ThresholdCrossing::of($rank, $threshold)->value, $thresholdText, $rounded ? ' (display rounded)' : ''),
             severity: $severity,
-            metricValue: $rankValue,
-            recommendation: \sprintf(
-                'ClassRank: %.4f (threshold: %.4f) — coupling hotspot, %d %s on this',
-                $rankValue,
-                $threshold,
-                $dependents,
-                $dependents === 1 ? 'class depends' : 'classes depend',
-            ),
+            metricValue: $rank,
             threshold: $threshold,
+            recommendation: \sprintf('ClassRank share: %s× uniform (threshold: %s×%s) — coupling hotspot, %d %s on this', $valueText, $thresholdText, $rounded ? ', display rounded' : '', $dependents, $dependents === 1 ? 'class depends' : 'classes depend'),
         );
     }
 
-    /**
-     * Compute the scale factor for threshold adjustment based on class count.
-     *
-     * Uses sqrt(classCount / 100) so that thresholds are unchanged at 100 classes,
-     * decrease for larger projects, and increase for smaller ones.
+    /** @param list<SymbolInfo> $classes
+     * @return array<string, ClassLikeDeclaration>
      */
-    public static function computeScaleFactor(int $classCount): float
+    private function classFacts(AnalysisContext $context, array $classes): array
     {
-        if ($classCount <= 0) {
-            return 1.0;
+        $graph = $context->dependencyGraph ?? throw new LogicException('ClassRank declaration join requires a graph.');
+        $facts = [];
+        foreach ($graph->getClassLikeDeclarations() as $fact) {
+            $key = $fact->declaration->toCanonical();
+            if (isset($facts[$key]) && $facts[$key]->type !== $fact->type) {
+                throw new LogicException('Conflicting exact ClassRank PHP-kind facts.');
+            }
+            $facts[$key] = $fact;
         }
-
-        return sqrt($classCount / 100);
+        $measured = $this->measuredDeclarations($classes, $facts);
+        if (array_diff_key($facts, $measured) !== []) {
+            throw new LogicException('ClassRank graph and measured declaration rosters disagree.');
+        }
+        return $facts;
     }
 
-    private static function getSeverityForScaledThresholds(
-        float $value,
-        float $scaledWarning,
-        float $scaledError,
-    ): ?Severity {
-        if ($value >= $scaledError) {
-            return Severity::Error;
+    /**
+     * @param list<SymbolInfo> $classes
+     * @param array<string, ClassLikeDeclaration> $facts
+     *
+     * @return array<string, true>
+     */
+    private function measuredDeclarations(array $classes, array $facts): array
+    {
+        $measured = [];
+        foreach ($classes as $info) {
+            $subject = $info->subject ?? throw new LogicException('ClassRank requires an exact declaration subject.');
+            $path = $subject->declarationPath() ?? throw new LogicException('ClassRank requires declaration identity.');
+            $key = $path->toCanonical();
+            if (!isset($facts[$key])) {
+                throw new LogicException('Measured ClassRank declaration has no exact PHP-kind fact.');
+            }
+            $measured[$key] = true;
         }
+        return $measured;
+    }
 
-        if ($value >= $scaledWarning) {
-            return Severity::Warning;
+    /** @return array{string, string, bool} */
+    private static function display(float $value, float $threshold): array
+    {
+        $precision = 2;
+        while (true) {
+            $valueText = \sprintf('%.*f', $precision, $value);
+            $thresholdText = \sprintf('%.*f', $precision, $threshold);
+            if ($value === $threshold || $valueText !== $thresholdText) {
+                return [$valueText, $thresholdText, false];
+            }
+            if ($precision === 6) {
+                return [$valueText, $thresholdText, true];
+            }
+            $precision++;
         }
-
-        return null;
     }
 
     /**
@@ -185,40 +192,22 @@ final class ClassRankRule extends AbstractRule
     }
 
     /**
-     * `coupling.class-rank` is declared `occurrence` — a **decision, not a
-     * derivation** (ADR 0017) — even though it reports a
-     * real number (`$rankValue`, see the emission above). ClassRank is an
-     * iterative PageRank normalised over the *whole project*: it moves
-     * whenever anything anywhere is added or removed, and this rule's own
-     * threshold is rescaled for the current class count to compensate
-     * (`$scaleFactor = self::computeScaleFactor($classCount)`, applied to
-     * `$effectiveOptions->warning`/`->error` before comparison — see
-     * {@see analyze()}). A stored raw rank from an earlier run is therefore
-     * not a boundary in a later run's units; no rounding or tolerance fixes
-     * a units mismatch. Bounded by `count` instead, the entry says "this
-     * class is an accepted coupling hotspot" — the only claim the number
-     * actually supports. Ratcheting the coupling ClassRank stands for is
-     * `coupling.cbo`'s job; that channel stays `magnitude`.
-     *
-     * **This is also why the channel declares no judged metric**, although its
-     * `metricValue` is read straight out of the catalog
-     * ({@see MetricName::COUPLING_CLASS_RANK}, in {@see classFinding()}).
-     * {@see \Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration::judging()}
-     * exists for a `magnitude` channel, and the decision that this one is not
-     * `magnitude` is [ADR 0017](../../../../docs/adr/0017-baseline-ceiling.md),
-     * point 5: a project-normalised rank can change meaning while the channel
-     * does not, and a baseline entry bound to it would over-accept. The
-     * question is settled — do not reopen it by "fixing" the declaration to
-     * match the reading. The cost is named in ADR 0046: this channel is one of
-     * the six the declared-metric check does not cover, and it is the only one
-     * where the check stays silent over a live catalog value.
+     * Graph-relative share remains occurrence debt: a later graph changes the
+     * population behind the same exact declaration, so an accepted hotspot is
+     * bounded by count rather than an earlier graph's numeric share.
      *
      * @return array<string, ChannelDeclaration>
      */
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Class_)->readingRunEvidence(),
+            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Class_)->readingRunEvidence()->withGates(
+                self::populationGate('graph-available', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', self::contextGuard('graphAvailable'), 'The dependency graph is unavailable.', 'invocation'),
+                self::populationGate('class-coordinate', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', self::kindIn('class-coordinate', [SymbolType::Class_]), 'ClassRank requires a class coordinate.'),
+                self::populationGate('php-class', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', self::kindIn('php-class', [ClassType::Class_]), 'Only exact PHP classes are judged.'),
+                self::populationGate('class-rank-share', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', self::keyPresent('class-rank-share', [MetricName::COUPLING_CLASS_RANK_SHARE]), 'ClassRank share was not published.'),
+                self::populationGate('dependents', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', self::keyThreshold('dependents', [MetricName::COUPLING_CA], '>', 0, 'refuse', true), 'A class with no dependents is outside hotspot judgement.'),
+            ),
         ];
     }
 

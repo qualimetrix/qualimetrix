@@ -14,7 +14,7 @@ use WeakMap;
 /** Collects and memoizes one run's class-side and edge-side layer evidence. */
 final class LayerEvidenceCollector
 {
-    /** @var WeakMap<AnalysisContext, list<LayerEvidence|null>> */
+    /** @var WeakMap<AnalysisContext, array{LayerEvidence|null}> */
     private WeakMap $memo;
 
     public function __construct(

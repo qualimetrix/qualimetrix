@@ -93,7 +93,8 @@ Baseline/
 │   ├── SubjectRegion.php        # Exact subject placement
 │   └── GroupCeilingVerdict.php  # VO: accepted / measured breach / reported, for one group
 ├── EntryBinding/
-│   ├── UnusedEntryAudit.php     # Post-ceiling project audit
+│   ├── UnusedEntryAudit.php     # Streams post-ceiling diagnostic records into the captured publication
+│   ├── UnusedEntryFinding.php   # Stale/inert diagnostic messages and stable occurrence identity
 │   ├── UnusedEntryOptions.php   # Audit enablement
 │   └── UnusedEntryRule.php      # Declared warning channel metadata
 └── Contract/

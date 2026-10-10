@@ -654,6 +654,20 @@ final class CodeDuplicationRuleTest extends TestCase
         self::assertSame(array_map(static fn($finding): string => $finding->getFingerprint(), $findings), array_map(static fn($finding): string => $finding->getFingerprint(), $again));
     }
 
+    #[Test]
+    public function itAccountsForCopiesWhoseFileNamesContainBinaryBytes(): void
+    {
+        $block = new DuplicateBlock([
+            new DuplicateLocation(RelativePath::fromString("src/\xFF.php"), 1, 10, 10, null),
+            new DuplicateLocation(RelativePath::fromString('src/%FF.php'), 1, 10, 10, null),
+        ], 80, self::CONTENT_HASH);
+        $context = $this->contextWithBlocks(self::createStub(MetricRepositoryInterface::class), [$block]);
+        $findings = $this->createRule()->analyze($context);
+        self::assertCount(2, $findings);
+        self::assertSame(['src/%FF.php', "src/\xFF.php"], array_map(static fn($finding): string => $finding->location->pathString(), $findings));
+        self::assertNotSame($findings[0]->getFingerprint(), $findings[1]->getFingerprint());
+    }
+
     private function createRule(?CodeDuplicationOptions $options = null): CodeDuplicationRule
     {
         return new CodeDuplicationRule($options ?? new CodeDuplicationOptions(), $this->resultProvider);

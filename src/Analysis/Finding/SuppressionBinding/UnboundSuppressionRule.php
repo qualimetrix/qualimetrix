@@ -7,6 +7,10 @@ namespace Qualimetrix\Analysis\Finding\SuppressionBinding;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Population\ContextGuard;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -71,6 +75,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * channel, measured, while the other two keep speaking.
  *
  * **Statelessness:** trivially — `analyze()` does nothing at all.
+ *
+ * @qmx-threshold coupling.instability warning=0.82 -- Hosted suppression metadata consumes its channel and option vocabulary through a narrow composition boundary.
  */
 final class UnboundSuppressionRule extends AbstractRule
 {
@@ -127,10 +133,16 @@ final class UnboundSuppressionRule extends AbstractRule
     {
         return [
             UnboundSuppressionOptions::UNMATCHED_PATH => ChannelDeclaration::occurrence(SymbolLevel::Project)
+                ->withGates(new PopulationGate('suppressionPathJudged', new FindingChannel(UnboundSuppressionOptions::UNMATCHED_PATH), SymbolLevel::Project, 'configured-suppression-value-occurrence', new ContextGuard('suppressionPathJudged'), 'Suppression value scope was not judged.'))
                 ->describedAs('Reports a global suppress_paths value that matches no analysed file.'),
             UnboundSuppressionOptions::UNMATCHED_NAMESPACE => ChannelDeclaration::occurrence(SymbolLevel::Project)
+                ->withGates(new PopulationGate('suppressionNamespaceJudged', new FindingChannel(UnboundSuppressionOptions::UNMATCHED_NAMESPACE), SymbolLevel::Project, 'configured-suppression-value-occurrence', new ContextGuard('suppressionNamespaceJudged'), 'Suppression value scope was not judged.'))
                 ->describedAs('Reports a global suppress_namespaces value that matches no declared namespace.'),
             UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER => ChannelDeclaration::occurrence(SymbolLevel::Project)
+                ->withGates(
+                    new PopulationGate('suppressionPathJudged', new FindingChannel(UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER), SymbolLevel::Project, 'configured-suppression-value-occurrence', new ContextGuard('suppressionPathJudged', true), 'Suppression value scope was not judged.'),
+                    new PopulationGate('suppressionNamespaceJudged', new FindingChannel(UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER), SymbolLevel::Project, 'configured-suppression-value-occurrence', new ContextGuard('suppressionNamespaceJudged', true), 'Suppression value scope was not judged.'),
+                )
                 ->describedAs('Reports a suppression value configured under a rule that names nothing the run contains.'),
         ];
     }

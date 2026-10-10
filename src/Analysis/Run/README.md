@@ -54,7 +54,8 @@ reconstructed from the selected file spelling.
 
 `AnalysisResult::fromRun()` composes Run's `MeasuredRunResult`, Inline's
 `DirectiveObservations`, nullable rule execution, a separate late-published
-list and ComputedMetrics' immutable absence summary. Summary merge combines
+list, ComputedMetrics' immutable absence summary and the hosted
+`JudgedPopulation`. Summary merge combines
 reason counts, exact missing keys and deterministic exact samples capped at three,
 without adding another repository or coverage carrier. Measurements contain
 repository, coverage, namespace tree, final project scope and duration. `findings()` reads canonical execution publication and late
@@ -348,6 +349,25 @@ DoD preserves reset/prepare ordering, independent either-producer participants
 and zero inspection for an inactive producer. Architecture preparation consults
 all three `ArchitectureChannels::PRODUCERS`: forbidden edges, declaration
 diagnostics and unassigned classes; each producer retains its own gate.
+
+## Population transport
+
+`PreparedRun` captures the invocation's `ChannelPublication` beside its shared
+context and carries Discovery findings beside their population. Inline usage
+audits return findings and population as one result; selection is checked before
+enumerating the native accounting rosters.
+`AnalysisResult` combines execution and late hosted populations while keeping
+produced findings available to directive audits independently of publication.
+Its merge preserves population partition identity as well as the independent
+`ComputedMetricEvaluationSummary`.
+
+Discovery counts effective configured selectors after native spelling/origin
+coalescing. Removed, unmatched and same-source-covered selectors are judged;
+other-source coverage, inaccessible evidence and an unknown universe remain
+unjudged. A selected unknown graph is one invocation failure rather than a
+fabricated set of declaration failures. Known empty native rosters stay empty.
+Population values describe selected rule judgements and do not substitute for
+input-file, declaration or score coverage.
 
 ## Locality
 

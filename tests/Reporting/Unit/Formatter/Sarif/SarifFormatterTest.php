@@ -49,6 +49,29 @@ final class SarifFormatterTest extends TestCase
     }
 
     #[Test]
+    public function itPublishesUnjudgedPopulationOnAnEmptyFindingReportWithoutAFailure(): void
+    {
+        $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
+        $channel = new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.ccn');
+        $trace->record(
+            'complexity.ccn',
+            $channel,
+            \Qualimetrix\Core\Symbol\SymbolLevel::Callable,
+            \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::occurrence('missing<&>', 0, 'callable'),
+            'callable-value',
+            'Missing <value> & publication.',
+        );
+        $report = ReportBuilder::create()->population($trace->freeze())->build();
+        $data = json_decode($this->formatter->format($report, new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
+        self::assertSame([], $data['runs'][0]['results']);
+        $invocation = $data['runs'][0]['invocations'][0];
+        self::assertTrue($invocation['executionSuccessful']);
+        self::assertSame('QMX-RULE-POPULATION-INCOMPLETE', $invocation['toolExecutionNotifications'][0]['descriptor']['id']);
+        self::assertSame('note', $invocation['toolExecutionNotifications'][0]['level']);
+        self::assertStringContainsString('1 unjudged callable', $invocation['toolExecutionNotifications'][0]['message']['text']);
+    }
+
+    #[Test]
     public function itNamesAnUncomparedEntryWithoutClaimingABreach(): void
     {
         $finding = self::finding(

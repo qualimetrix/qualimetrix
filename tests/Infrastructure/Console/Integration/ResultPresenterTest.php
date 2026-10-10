@@ -67,6 +67,77 @@ require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
 final class ResultPresenterTest extends TestCase
 {
     #[Test]
+    public function itMergesIndependentRunAndFilterPopulationsWithoutDoubleAdoption(): void
+    {
+        $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
+        $trace->record(
+            'complexity.ccn',
+            new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.ccn'),
+            \Qualimetrix\Core\Symbol\SymbolLevel::Callable,
+            \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::occurrence('missing', 0, 'callable'),
+            'callable-value',
+            'Callable complexity was not published.',
+        );
+        $population = $trace->freeze();
+        $summary = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence(
+                'computed.custom',
+                \Qualimetrix\Core\Symbol\SymbolLevel::Project,
+                noValueCount: 1,
+            ),
+        ]);
+        $otherTrace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
+        $otherTrace->record(
+            'complexity.ccn',
+            new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.ccn'),
+            \Qualimetrix\Core\Symbol\SymbolLevel::Callable,
+            \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::occurrence('missing', 0, 'callable'),
+            'callable-value',
+            'Callable complexity was not published.',
+        );
+        $filtered = new \Qualimetrix\Reporting\FindingProjection\FindingProjectionResult(
+            [],
+            new \Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionResult([], [], []),
+            population: $population->merge($otherTrace->freeze()),
+        );
+        $result = AnalysisResult::fromRun(
+            $this->analysisResult()->measured,
+            new DirectiveObservations([], []),
+            null,
+            [],
+            computedMetricEvaluation: $summary,
+            population: $population,
+        );
+        $formatter = $this->createMock(FormatterInterface::class);
+        $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
+        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Formatter\PublicationKind::JsonDocument);
+        $formatter->expects(self::once())->method('format')->with(
+            self::callback(static function (Report $report) use ($summary): bool {
+                self::assertSame($summary, $report->computedMetricEvaluation);
+                self::assertSame(2, $report->population->abstentions()[0]->count);
+                self::assertSame(['["missing",0]'], $report->population->abstentions()[0]->examples);
+                self::assertSame([], $report->findings);
+                return true;
+            }),
+            self::callback(static fn(\Qualimetrix\Reporting\FormatterContext $context): bool => $context->verbose),
+        )->willReturn(new FormattedReport('{}'));
+        $registry = self::createStub(FormatterRegistryInterface::class);
+        $registry->method('get')->willReturn($formatter);
+        $exit = $this->presenter($registry)->presentResults(
+            [],
+            $result,
+            $this->input(),
+            new BufferedOutput(\Symfony\Component\Console\Output\OutputInterface::VERBOSITY_VERBOSE),
+            AbsolutePath::fromString('/project'),
+            $this->targets(),
+            new OutputFormat('json'),
+            new ExitPolicy(),
+            filterResult: $filtered,
+        );
+        self::assertSame(0, $exit);
+    }
+
+    #[Test]
     #[DataProvider('provideSerializedPayloads')]
     public function itWritesSerializedPayloadsByteForByte(string $payload): void
     {
@@ -722,6 +793,45 @@ final class ResultPresenterTest extends TestCase
             foreach (['Fixture.php', 'qmx.yaml'] as $file) {
                 if (is_file($directory . '/' . $file)) {
                     unlink($directory . '/' . $file);
+                }
+            }
+            rmdir($directory);
+        }
+    }
+
+    #[Test]
+    public function itPublishesRulePopulationThroughRealVerboseQuietSilentAndFileRoutes(): void
+    {
+        $directory = sys_get_temp_dir() . '/qmx_prose_population_' . bin2hex(random_bytes(6));
+        self::assertTrue(mkdir($directory));
+        try {
+            self::assertNotFalse(file_put_contents($directory . '/Fixture.php', '<?php function fixture(bool $isActive): void {}'));
+            self::assertNotFalse(file_put_contents($directory . '/qmx.yaml', "rules: {}\n"));
+            $base = [\PHP_BINARY, 'bin/qmx', '--working-dir=' . $directory, 'check', '.', '--config=qmx.yaml', '--workers=0', '--no-cache', '--no-progress', '--only-rule=code-smell.boolean-argument', '--format=text'];
+            $normal = new \Symfony\Component\Process\Process($base, \dirname(__DIR__, 4));
+            self::assertSame(0, $normal->run(), $normal->getErrorOutput());
+            self::assertSame(1, substr_count($normal->getOutput(), 'Rule population incomplete'));
+            self::assertStringContainsString('occurrence: 0 judged, 1 not judged', $normal->getOutput());
+            self::assertStringNotContainsString('gate allowed-extra', $normal->getOutput());
+            $verbose = new \Symfony\Component\Process\Process([...$base, '-v'], \dirname(__DIR__, 4));
+            self::assertSame(0, $verbose->run(), $verbose->getErrorOutput());
+            self::assertStringContainsString('code-smell.boolean-argument / code-smell.boolean-argument (callable), gate allowed-extra', $verbose->getOutput());
+            foreach (['--quiet', '--silent'] as $flag) {
+                $muted = new \Symfony\Component\Process\Process([...$base, $flag], \dirname(__DIR__, 4));
+                self::assertSame(0, $muted->run(), $muted->getErrorOutput());
+                self::assertSame('', $muted->getOutput());
+                self::assertSame('', $muted->getErrorOutput());
+            }
+            $file = new \Symfony\Component\Process\Process([...$base, '-v', '--output=report.txt'], \dirname(__DIR__, 4));
+            self::assertSame(0, $file->run(), $file->getErrorOutput());
+            $body = file_get_contents($directory . '/report.txt');
+            self::assertNotFalse($body);
+            self::assertStringContainsString('gate allowed-extra', $body);
+            self::assertStringNotContainsString('Rule population incomplete', $file->getOutput());
+        } finally {
+            foreach (['Fixture.php', 'qmx.yaml', 'report.txt'] as $name) {
+                if (is_file($directory . '/' . $name)) {
+                    unlink($directory . '/' . $name);
                 }
             }
             rmdir($directory);

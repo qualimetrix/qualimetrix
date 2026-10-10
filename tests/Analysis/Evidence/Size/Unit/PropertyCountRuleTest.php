@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Size\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
+use LogicException;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
@@ -24,6 +25,46 @@ use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 #[CoversClass(PropertyCountOptions::class)]
 final class PropertyCountRuleTest extends TestCase
 {
+    #[Test]
+    public function itUsesReadonlyAndPromotedPublicationInsteadOfAStaleInterfaceFlag(): void
+    {
+        foreach (['design.is-readonly', 'design.is-promoted-properties-only'] as $flag) {
+            $repository = self::createStub(MetricRepositoryInterface::class);
+            $info = self::subjectInfo(SymbolPath::forClass('Population', 'Readonly'), RelativePath::fromString('src/Readonly.php'), 1);
+            $repository->method('allClassDeclarations')->willReturn([$info]);
+            $repository->method('getSubject')->willReturn((new MetricBag())->with('size.property-count', 20)->with($flag, 1)->with('design.is-interface', 0));
+            self::assertSame([], (new PropertyCountRule(new PropertyCountOptions()))->analyze(new AnalysisContext($repository)));
+            self::assertCount(1, (new PropertyCountRule(new PropertyCountOptions(excludeReadonly: false, excludePromotedOnly: false)))->analyze(new AnalysisContext($repository)));
+        }
+    }
+
+    #[Test]
+    public function itCountsMeasuredZeroBeforeSeverityAndDistinguishesMissingPublication(): void
+    {
+        $rule = new PropertyCountRule(new PropertyCountOptions(excludeReadonly: false, excludePromotedOnly: false));
+        $repository = new \Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository([new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName::SIZE_PROPERTY_COUNT, \Qualimetrix\Core\Symbol\SymbolLevel::Class_)]);
+        foreach (['Healthy' => (new MetricBag())->with(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName::SIZE_PROPERTY_COUNT, 0), 'Missing' => new MetricBag()] as $name => $bag) {
+            $info = self::subjectInfo(SymbolPath::forClass('Population', $name), RelativePath::fromString('src/' . $name . '.php'), 1);
+            $repository->addSubject($info->subject ?? throw new LogicException('Exact fixture subject is required.'), $bag, $info->file, 1);
+        }
+        $decisions = [];
+        foreach (PropertyCountRule::channelDeclarations() as $channel => $declaration) {
+            foreach ($declaration->levels as $level) {
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
+                    new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(PropertyCountRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable),
+                    new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
+                );
+            }
+        }
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+        $context = (new AnalysisContext($repository))->withPopulationTrace($session);
+        self::assertSame([], $rule->analyze($context));
+        self::assertSame(1, $session->freeze()->judgedCount());
+        self::assertSame(1, $session->freeze()->unjudgedCount());
+        self::assertSame('declaration', $session->freeze()->abstentions()[0]->unit);
+        self::assertStringContainsString('Missing', $session->freeze()->abstentions()[0]->examples[0]);
+    }
+
     #[Test]
     public function itGetsName(): void
     {

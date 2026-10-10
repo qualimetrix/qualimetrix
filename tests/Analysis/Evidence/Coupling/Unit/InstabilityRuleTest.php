@@ -31,6 +31,30 @@ use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 final class InstabilityRuleTest extends TestCase
 {
     #[Test]
+    public function itAccountsMeasuredZeroAndMissingSelectedPublicationBeforeSeverity(): void
+    {
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allClassDeclarations')->willReturn([
+            self::subjectInfo(SymbolPath::forClass('Population', 'Healthy'), RelativePath::fromString('src/Healthy.php'), 1),
+            self::subjectInfo(SymbolPath::forClass('Population', 'Missing'), RelativePath::fromString('src/Missing.php'), 1),
+        ]);
+        $repository->method('getSubject')->willReturnCallback(static fn(\Qualimetrix\Core\Symbol\MetricSubject $subject): MetricBag => $subject->toSymbolPath()->type === 'Healthy' ? (new MetricBag())->with('coupling.instability', 0)->with('coupling.ca', 0)->with('coupling.ce', 0) : (new MetricBag())->with('coupling.ca', 0)->with('coupling.ce', 0));
+        $decisions = [];
+        foreach (InstabilityRule::channelDeclarations() as $channel => $declaration) {
+            foreach ($declaration->levels as $level) {
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(InstabilityRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
+            }
+        }
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+        $rule = new InstabilityRule(new InstabilityOptions(class: new ClassInstabilityOptions(minAfferent: 0)));
+        self::assertSame([], $rule->analyzeLevel(\Qualimetrix\Core\Symbol\SymbolLevel::Class_, (new AnalysisContext($repository))->withPopulationTrace($session)));
+        self::assertSame(1, $session->freeze()->judgedCount());
+        self::assertSame(1, $session->freeze()->unjudgedCount());
+        self::assertStringContainsString('Missing', $session->freeze()->abstentions()[0]->examples[0]);
+        self::assertSame('declaration', $session->freeze()->abstentions()[0]->unit);
+    }
+
+    #[Test]
     public function itReturnsCorrectName(): void
     {
         $rule = new InstabilityRule(new InstabilityOptions());

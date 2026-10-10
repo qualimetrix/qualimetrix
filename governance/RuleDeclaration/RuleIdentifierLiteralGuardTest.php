@@ -86,21 +86,6 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
         . ' ProjectScopeReadersTest compares its exact set with the registered readers;'
         . ' the allowed pair does not exempt any other literal or file.';
     /**
-     * Why `JsonFormatter`'s `coupling.class-rank` output key is exempt: it is
-     * the published JSON key carrying $issue->classRank, sibling to authored
-     * output vocabulary (rank, file, line, symbol, rule, severity, message,
-     * impactScore, debtMinutes) in the same array literal.
-     */
-    private const string JSON_FORMATTER_CLASS_RANK_REASON =
-        'Key of the published JSON object carrying $issue->classRank, whose sibling'
-        . ' keys in the same array literal (rank, file, line, symbol, rule,'
-        . ' severity, message, impactScore, debtMinutes) are authored output'
-        . ' vocabulary. The name belongs to the wire contract the finding gate'
-        . ' compares, not to the metric or the channel universe, so spelling it'
-        . ' through MetricName would let an internal metric rename silently'
-        . ' rewrite published output.';
-
-    /**
      * Why `JsonOffenderSection`'s `size.class-count` output key is exempt: it
      * is the published JSON key carrying $offender->classCount, sibling to
      * authored output vocabulary in the same array literal.
@@ -185,9 +170,6 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
             'cohesion.unmatched-exclude-method' => self::PROJECT_SCOPE_CHANNELS_REASON,
             'coupling.unmatched-framework-namespace' => self::PROJECT_SCOPE_CHANNELS_REASON,
             'discovery.unmatched-exclude' => self::PROJECT_SCOPE_CHANNELS_REASON,
-        ],
-        'src/Reporting/Formatter/Json/JsonFormatter.php' => [
-            'coupling.class-rank' => self::JSON_FORMATTER_CLASS_RANK_REASON,
         ],
         'src/Reporting/Formatter/Json/JsonOffenderSection.php' => [
             'size.class-count' => self::JSON_OFFENDER_CLASS_COUNT_REASON,

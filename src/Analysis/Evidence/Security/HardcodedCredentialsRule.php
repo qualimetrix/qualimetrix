@@ -9,8 +9,10 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Core\Symbol\MetricSubjectCodec;
@@ -78,6 +80,7 @@ final class HardcodedCredentialsRule extends AbstractRule
         }
 
         $findings = [];
+        $declaration = self::channelDeclarations()[self::NAME];
 
         foreach ($context->metrics->all(SymbolLevel::File) as $fileInfo) {
             $metrics = $context->metrics->get($fileInfo->symbolPath);
@@ -87,7 +90,7 @@ final class HardcodedCredentialsRule extends AbstractRule
                 continue;
             }
 
-            array_push($findings, ...$this->findingsForEntries($fileInfo, $entries, $context));
+            array_push($findings, ...$this->findingsForEntries($fileInfo, $entries, $context, $declaration));
         }
 
         return $findings;
@@ -98,16 +101,17 @@ final class HardcodedCredentialsRule extends AbstractRule
      *
      * @return list<Finding>
      */
-    private function findingsForEntries(SymbolInfo $fileInfo, array $entries, AnalysisContext $context): array
+    private function findingsForEntries(SymbolInfo $fileInfo, array $entries, AnalysisContext $context, ChannelDeclaration $declaration): array
     {
         \assert($this->options instanceof HardcodedCredentialsOptions);
         $file = $fileInfo->file ?? throw new LogicException('File symbol must carry a relative path');
         $findings = [];
 
-        foreach ($entries as $entry) {
+        foreach ($entries as $entryOrdinal => $entry) {
             $line = (int) $entry['line'];
             $pattern = (string) $entry['pattern'];
             $subject = MetricSubjectCodec::decodeEntry($entry, $file);
+            $context->admit(self::NAME, new FindingChannel(self::NAME), $subject::levelOfCanonical($subject->toCanonical()), PopulationIdentity::occurrence($subject->toCanonical(), $entryOrdinal), $declaration, []);
             $severity = $this->getEffectiveSeverity($context, $this->options, $subject, 1);
             if ($severity === null) {
                 continue;

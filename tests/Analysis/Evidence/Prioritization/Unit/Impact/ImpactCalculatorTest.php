@@ -65,8 +65,8 @@ final class ImpactCalculatorTest extends TestCase
         $metrics->method('getSubject')->willReturnCallback(
             static function ($subject): MetricBag {
                 return match ($subject->toSymbolPath()->toCanonical()) {
-                    'class:App\Service\ErrorClass' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.05),
-                    'class:App\Service\WarningClass' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.02),
+                    'class:App\Service\ErrorClass' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK_SHARE, 0.05),
+                    'class:App\Service\WarningClass' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK_SHARE, 0.02),
                     default => new MetricBag(),
                 };
             },
@@ -98,9 +98,9 @@ final class ImpactCalculatorTest extends TestCase
         $metrics->method('getSubject')->willReturnCallback(
             static function ($subject): MetricBag {
                 return match ($subject->toSymbolPath()->toCanonical()) {
-                    'class:App\Low' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.01),
-                    'class:App\High' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.10),
-                    'class:App\Mid' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.05),
+                    'class:App\Low' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK_SHARE, 0.01),
+                    'class:App\High' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK_SHARE, 0.10),
+                    'class:App\Mid' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK_SHARE, 0.05),
                     default => new MetricBag(),
                 };
             },
@@ -123,7 +123,7 @@ final class ImpactCalculatorTest extends TestCase
 
         $metrics = self::createStub(MetricRepositoryInterface::class);
         $metrics->method('getSubject')->willReturn(
-            (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.05),
+            (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK_SHARE, 0.05),
         );
 
         $calculator = new ImpactCalculator($this->resolver, $this->registry);
@@ -167,7 +167,7 @@ final class ImpactCalculatorTest extends TestCase
 
         // null classRank, no median → 0.0 * 1 * 5 = 0.0
         self::assertSame(0.0, $issues[0]->impactScore);
-        self::assertNull($issues[0]->classRank);
+        self::assertNull($issues[0]->classRankShare);
     }
 
     #[Test]
@@ -205,8 +205,8 @@ final class ImpactCalculatorTest extends TestCase
         $metrics->method('getSubject')->willReturnCallback(
             static function ($subject): MetricBag {
                 return match ($subject->toSymbolPath()->toCanonical()) {
-                    'class:App\ClassA' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.01),
-                    'class:App\ClassB' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.03),
+                    'class:App\ClassA' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK_SHARE, 0.01),
+                    'class:App\ClassB' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK_SHARE, 0.03),
                     default => new MetricBag(),
                 };
             },
@@ -228,7 +228,7 @@ final class ImpactCalculatorTest extends TestCase
         }
 
         self::assertNotNull($funcIssue);
-        self::assertNull($funcIssue->classRank);
+        self::assertNull($funcIssue->classRankShare);
         // median of [0.01, 0.03] = 0.02, Warning=1, debug-code=5 → 0.02 * 1 * 5 = 0.1
         self::assertEqualsWithDelta(0.1, $funcIssue->impactScore, 0.0001);
     }
@@ -253,7 +253,7 @@ final class ImpactCalculatorTest extends TestCase
 
         $metrics = self::createStub(MetricRepositoryInterface::class);
         $metrics->method('getSubject')->willReturn(
-            (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.1),
+            (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK_SHARE, 0.1),
         );
 
         $calculator = new ImpactCalculator($this->resolver, $this->registry);
@@ -284,7 +284,7 @@ final class ImpactCalculatorTest extends TestCase
 
         $metrics = self::createStub(MetricRepositoryInterface::class);
         $metrics->method('getSubject')->willReturn(
-            (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.0),
+            (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK_SHARE, 0.0),
         );
 
         $calculator = new ImpactCalculator($this->resolver, $this->registry);
@@ -292,7 +292,7 @@ final class ImpactCalculatorTest extends TestCase
 
         // classRank=0.0, Error(3), debug-code(5) → 0.0 * 3 * 5 = 0.0
         self::assertSame(0.0, $issues[0]->impactScore);
-        self::assertSame(0.0, $issues[0]->classRank);
+        self::assertSame(0.0, $issues[0]->classRankShare);
     }
 
     private function createFinding(

@@ -5,16 +5,17 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\CodeSmell;
 
 use LogicException;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -63,9 +64,10 @@ final class UnusedPrivateRule extends AbstractRule
         }
 
         $findings = [];
+        $populationDeclaration = self::channelDeclarations()[self::NAME];
 
         foreach ($context->metrics->allClassDeclarations() as $classInfo) {
-            $findings = [...$findings, ...$this->findingsForDeclaration($classInfo, $context)];
+            $findings = [...$findings, ...$this->findingsForDeclaration($classInfo, $context, $populationDeclaration)];
         }
 
         return $findings;
@@ -74,16 +76,15 @@ final class UnusedPrivateRule extends AbstractRule
     /**
      * @return list<Finding>
      */
-    private function findingsForDeclaration(SymbolInfo $classInfo, AnalysisContext $context): array
+    private function findingsForDeclaration(SymbolInfo $classInfo, AnalysisContext $context, ChannelDeclaration $populationDeclaration): array
     {
         $subject = $classInfo->subject ?? throw new LogicException('Unused private findings require an exact class subject');
         $declaration = $subject->declarationPath() ?? throw new LogicException('Unused private findings require a declaration subject');
-        if ($declaration->logical->getType() !== SymbolType::Class_) {
+        $metrics = $this->admittedMetrics($context, $subject, $populationDeclaration, static fn(MetricBag $metrics): array => [GateInput::metrics('published-value', $metrics)], [GateInput::kind('class-coordinate', $declaration->logical->getType())], level: SymbolLevel::Class_);
+        if ($metrics === null) {
             return [];
         }
-
-        $metrics = $context->metrics->getSubject($subject);
-        $total = (int) ($metrics->get(MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL) ?? 0);
+        $total = (int) $metrics->get(MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL);
         if ($total === 0) {
             return [];
         }
@@ -148,10 +149,12 @@ final class UnusedPrivateRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Higher,
-                JudgedMetrics::of(MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL),
+            self::NAME => self::judgingHigher(
+                [MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL],
                 SymbolLevel::Class_,
+            )->withGates(
+                self::populationGate('class-coordinate', self::NAME, SymbolLevel::Class_, 'declaration', self::kindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the declared symbol coordinate.'),
+                self::populationGate('published-value', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('published-value', [MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL]), 'The rule metric was not published.'),
             ),
         ];
     }

@@ -500,6 +500,7 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
             ),
             ruleExecution: new RuleExecutionResult($findings, $findings, new RuleExclusionStats(), LevelActivity::empty()),
             latePublished: [],
+            populationPublication: self::populationPublication(),
         );
     }
 
@@ -519,5 +520,21 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
             reportScope: null,
             projectRoot: $projectRoot,
         );
+    }
+
+    private static function populationPublication(): \Qualimetrix\Analysis\Finding\Contract\ChannelPublication
+    {
+        $decisions = [];
+        foreach ([\Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule::class, \Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::class] as $rule) {
+            foreach ($rule::channelDeclarations() as $name => $declaration) {
+                foreach ($declaration->levels as $level) {
+                    $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
+                        new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress($rule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($name), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable),
+                        new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
+                    );
+                }
+            }
+        }
+        return new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null));
     }
 }

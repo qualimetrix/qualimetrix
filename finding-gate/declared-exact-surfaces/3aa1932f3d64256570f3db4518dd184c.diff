@@ -1,0 +1,15 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 4859
++visible 4457
+@@ -18,4 +18,3 @@
+-Rule population incomplete — authored-type-occurrence: 4 judged, 0 not judged; callable: 63 judged, 21 not judged; declaration: 117 judged, 116 not judged; declared-exclude-clause: 3 judged, 0 not judged; dependency-edge: 4 judged, 5 not judged; invocation: 1 judged, 0 not judged; logical-class: 13 judged, 0 not judged; namespace: 11 judged, 29 not judged; precedence-pair: 1 judged, 0 not judged.
+-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
+-
+-invocation-show-suppressed 4859
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-show-suppressed 4457
+@@ -38,1 +37,0 @@
+-Rule population incomplete — authored-type-occurrence: 4 judged, 0 not judged; callable: 63 judged, 21 not judged; declaration: 117 judged, 116 not judged; declared-exclude-clause: 3 judged, 0 not judged; dependency-edge: 4 judged, 5 not judged; invocation: 1 judged, 0 not judged; logical-class: 13 judged, 0 not judged; namespace: 11 judged, 29 not judged; precedence-pair: 1 judged, 0 not judged.

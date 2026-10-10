@@ -808,8 +808,8 @@ Run `bin/qmx check src/` after modifying metric collection or aggregation logic 
 
 We analyze ourselves with `bin/qmx check src/` using `qmx.yaml` and the
 versioned root `qmx-baseline.json`. That file is a v14 ratchet snapshot for
-residual, currently accepted warnings only; it is not a suppress-mode or legacy
-baseline. The generated qmx projection enforces coarse owner/seam topology.
+residual, currently accepted magnitudes and occurrences; it is not a
+suppress-mode or legacy baseline. The generated qmx projection enforces coarse owner/seam topology.
 `composer selfcheck` first runs `composer architecture:check`, which validates
 the exact manifest policy and generated freshness, and then applies the qmx
 ratchet with `--fail-on=warning`. A direct `bin/qmx check` omits that first

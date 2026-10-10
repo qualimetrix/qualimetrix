@@ -14,11 +14,22 @@ use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceOptions;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
+use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
+use Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch;
+use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
@@ -26,6 +37,40 @@ use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 #[CoversClass(InheritanceOptions::class)]
 final class InheritanceRuleTest extends TestCase
 {
+    #[Test]
+    public function itAccountsForWrongLogicalKindsBeforeReadingClassMetrics(): void
+    {
+        $info = self::subjectInfo(SymbolPath::forMethod('App', 'Service', 'run'), RelativePath::fromString('service.php'), 1);
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->expects(self::once())->method('allDeclarations')->willReturn([$info]);
+        $repository->expects(self::never())->method('getSubject');
+        $session = self::populationSession(InheritanceRule::NAME);
+        self::assertSame([], (new InheritanceRule(new InheritanceOptions()))->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
+        self::assertSame(0, $session->freeze()->judgedCount());
+        self::assertSame(1, $session->freeze()->unjudgedCount());
+        self::assertSame('logical-class-kind', $session->freeze()->abstentions()[0]->gate);
+    }
+
+    #[Test]
+    public function itCountsZeroDepthAsJudgedAndKeepsMissingDepthSeparateFromLoopEvidence(): void
+    {
+        $info = self::subjectInfo(SymbolPath::fromClassFqn('App\\RootClass'), RelativePath::fromString('root.php'), 1);
+        foreach ([0, null] as $depth) {
+            $repository = self::createStub(MetricRepositoryInterface::class);
+            $repository->method('allDeclarations')->willReturn([$info]);
+            $repository->method('getSubject')->willReturn($depth === null ? new MetricBag() : MetricBag::fromArray(['design.dit' => $depth]));
+            $logger = new \Qualimetrix\Tests\TestSupport\Logging\Support\RecordingLogger();
+            $session = self::populationSession(InheritanceRule::NAME);
+            self::assertSame([], (new InheritanceRule(new InheritanceOptions(), $logger))->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
+            self::assertSame($depth === null ? 0 : 1, $session->freeze()->judgedCount());
+            self::assertSame($depth === null ? 1 : 0, $session->freeze()->unjudgedCount());
+            if ($depth === null) {
+                self::assertSame('dit-present', $session->freeze()->abstentions()[0]->gate);
+            }
+            self::assertSame([], $logger->records);
+        }
+    }
+
     /** @return iterable<string, array{list<?int>, bool}> */
     public static function incompleteCases(): iterable
     {
@@ -370,6 +415,14 @@ final class InheritanceRuleTest extends TestCase
             'declaration:class:App\\Service\\Twin@src/A.php' => 5,
             'declaration:class:App\\Service\\Twin@src/B.php' => 9,
         ], $reported);
+    }
+
+    private static function populationSession(string $producer, bool $selected = true): PopulationSession
+    {
+        return new PopulationSession((new ChannelPublication(new RuleEnablement([new EnablementDecision(
+            new SelectionCellAddress($producer, new FindingChannel($producer), SymbolLevel::Class_, ChannelSelectionRole::Selectable),
+            new AuthoredCellDecision($selected ? CellSwitch::On : CellSwitch::Off, CellAdmission::Direct),
+        )], null)))->publishes(...));
     }
 
     private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo

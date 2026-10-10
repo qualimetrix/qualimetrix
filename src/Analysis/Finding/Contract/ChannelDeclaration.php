@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract;
 
 use InvalidArgumentException;
+use LogicException;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
@@ -94,6 +98,8 @@ final readonly class ChannelDeclaration
         public bool $usesProducerWarningBoundary = true,
         public ChannelSelectionRole $selectionRole = ChannelSelectionRole::Selectable,
         public bool $readsRunEvidence = false,
+        /** @var list<PopulationGate> */
+        public array $populationGates = [],
     ) {
         $this->levels = self::canonicalLevels($levels);
     }
@@ -182,7 +188,7 @@ final readonly class ChannelDeclaration
      */
     public function asConfigurationError(): self
     {
-        return new self($this->direction, true, $this->judges, $this->levels, $this->description, $this->usesProducerWarningBoundary, $this->selectionRole, $this->readsRunEvidence);
+        return new self($this->direction, true, $this->judges, $this->levels, $this->description, $this->usesProducerWarningBoundary, $this->selectionRole, $this->readsRunEvidence, $this->populationGates);
     }
 
     /**
@@ -202,23 +208,94 @@ final readonly class ChannelDeclaration
             throw new InvalidArgumentException('A channel description must not be blank.');
         }
 
-        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $description, $this->usesProducerWarningBoundary, $this->selectionRole, $this->readsRunEvidence);
+        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $description, $this->usesProducerWarningBoundary, $this->selectionRole, $this->readsRunEvidence, $this->populationGates);
     }
 
     public function withoutConfiguredWarningBoundary(): self
     {
-        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $this->description, false, $this->selectionRole, $this->readsRunEvidence);
+        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $this->description, false, $this->selectionRole, $this->readsRunEvidence, $this->populationGates);
     }
 
     public function selectedAs(ChannelSelectionRole $role): self
     {
-        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $this->description, $this->usesProducerWarningBoundary, $role, $this->readsRunEvidence);
+        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $this->description, $this->usesProducerWarningBoundary, $role, $this->readsRunEvidence, $this->populationGates);
     }
 
     /** A channel without catalog judges may state that its evidence depends on the run. */
     public function readingRunEvidence(): self
     {
-        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $this->description, $this->usesProducerWarningBoundary, $this->selectionRole, true);
+        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $this->description, $this->usesProducerWarningBoundary, $this->selectionRole, true, $this->populationGates);
+    }
+
+    public function withGates(PopulationGate ...$gates): self
+    {
+        $seen = [];
+        $units = [];
+        foreach ($gates as $gate) {
+            $key = $gate->channel->code . ':' . $gate->level->value . ':' . $gate->id;
+            if (!\in_array($gate->level, $this->levels, true) || isset($seen[$key])) {
+                throw new LogicException('A population gate repeats or addresses an undeclared level.');
+            }
+            $coordinate = $gate->channel->code . ':' . $gate->level->value;
+            if (isset($units[$coordinate]) && $units[$coordinate] !== $gate->unit) {
+                throw new LogicException('Population gates in one coordinate require one ordinary member unit.');
+            }
+            $units[$coordinate] = $gate->unit;
+            $seen[$key] = true;
+        }
+        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $this->description, $this->usesProducerWarningBoundary, $this->selectionRole, $this->readsRunEvidence, array_values($gates));
+    }
+
+    /** @return list<PopulationGate> */
+    public function gatesFor(FindingChannel $channel, SymbolLevel $level): array
+    {
+        if (!\in_array($level, $this->levels, true)) {
+            throw new LogicException('Population coordinate has an undeclared level.');
+        }
+        foreach ($this->populationGates as $gate) {
+            if (!$gate->channel->equals($channel)) {
+                throw new LogicException('Population declaration belongs to a different channel.');
+            }
+        }
+        return array_values(array_filter($this->populationGates, static fn(PopulationGate $gate): bool => $gate->level === $level));
+    }
+
+    /**
+     * @param iterable<GateInput> $inputs
+     *
+     * @return array{gate: string, reason: string}|null
+     */
+    public function populationFailure(FindingChannel $channel, SymbolLevel $level, PopulationIdentity $identity, iterable $inputs): ?array
+    {
+        $gates = $this->gatesFor($channel, $level);
+        $index = 0;
+        foreach ($inputs as $input) {
+            $gate = $gates[$index] ?? throw new LogicException('Population inputs exceed the declared ordered gates.');
+            if (!$input instanceof GateInput) {
+                throw new LogicException('A reached population input must be a GateInput.');
+            }
+            $reason = $gate->evaluate($input);
+            if ($reason !== null) {
+                if ($identity->unit !== ($gate->failureUnit ?? $gate->unit)) {
+                    throw new LogicException('Population failure identity has the wrong declared unit.');
+                }
+                return ['gate' => $gate->id, 'reason' => $reason];
+            }
+            ++$index;
+        }
+        $this->assertCompletedPopulation($index, $gates, $identity);
+        return null;
+    }
+
+    /** @param list<PopulationGate> $gates */
+    private function assertCompletedPopulation(int $index, array $gates, PopulationIdentity $identity): void
+    {
+        if ($index !== \count($gates)) {
+            throw new LogicException('Population inputs ended before the declared ordered gates.');
+        }
+        if ($gates !== [] && $identity->unit !== $gates[0]->unit) {
+            throw new LogicException('Healthy population identity has the wrong declared member unit.');
+        }
     }
 
     /**

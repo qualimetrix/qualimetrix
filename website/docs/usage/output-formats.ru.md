@@ -165,7 +165,7 @@ bin/qmx check src/ --detail=50
 **Пример вывода:**
 
 ```
-src/Repository/OrderRepository.php: error[coupling.class-rank]: ClassRank is 0.6491, exceeds threshold of 0.3536 (scaled for 2 classes). This class is a critical hub — changes have wide impact (OrderRepository)
+src/Repository/OrderRepository.php: error[coupling.class-rank]: ClassRank share is 12.98× uniform, exceeds threshold of 10.00×. This class is a critical hub — changes have wide impact (OrderRepository)
 src/Repository/OrderRepository.php: warning[complexity.ccn]: Cyclomatic complexity is 10, reaches threshold of 10. Consider extracting methods or simplifying conditions (OrderRepository::findByCriteria)
 src/Service/UserService.php:9: warning[code-smell.error-suppression]: Error suppression (@) on file_get_contents() - handle errors explicitly
 src/Service/UserService.php: warning[complexity.ccn]: Cyclomatic complexity is 14, exceeds threshold of 10. Consider extracting methods or simplifying conditions (UserService::calculate)
@@ -190,7 +190,7 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 
 **Когда использовать:** Пользовательские скрипты, дашборды, программная обработка.
 
-**Ключи верхнего уровня:** `meta`, `summary`, `outOfScope`, `coverage`, `projectScope` (см. [Охват проекта во всех форматах](#project-scope-in-every-format)), `configurationDiagnostics`, `computedMetricOutcomes`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, плюс `violationGroups`, когда передан `--group-by` — без него ключа нет вовсе, это не пустой объект.
+**Ключи верхнего уровня:** `meta`, `summary`, `outOfScope`, `coverage`, `projectScope` (см. [Охват проекта во всех форматах](#project-scope-in-every-format)), `configurationDiagnostics`, `computedMetricOutcomes`, `abstentions`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, плюс `violationGroups`, когда передан `--group-by` — без него ключа нет вовсе, это не пустой объект.
 
 `configurationDiagnostics` перечисляет предупреждения о конфигурации, которую прогон принял, — те же, что `check` печатает в stderr, — и равен `[]`, когда их нет. Каждая запись — `{"message": "…", "source": [{"kind": "preset", "name": "…", "imported_by": null}, …]}`: `source` называет каждый слой, о котором предупреждение, от младшего к старшему, в той же форме, что `source` ошибки конфигурации. Например, `only_rules: []` в `qmx.yaml` поверх пресета, фильтрующего правила, законно и даёт одну запись, называющую оба слоя.
 
@@ -241,6 +241,7 @@ JSON из конфигурации следует тому же пути; фай
     },
     "configurationDiagnostics": [],
     "computedMetricOutcomes": [],
+    "abstentions": [],
     "health": {
         "complexity": {
             "score": 78.0,
@@ -352,7 +353,7 @@ JSON из конфигурации следует тому же пути; фай
             "baselineVerdict": null,
             "baselineReason": null,
             "impactScore": 3.71,
-            "coupling.class-rank": 0.1237,
+            "coupling.class-rank-share": 3.711,
             "debtMinutes": 30
         }
     ],
@@ -399,10 +400,16 @@ JSON из конфигурации следует тому же пути; фай
 `topIssues` — тот же ранжированный список, что формат `summary` печатает как
 «Top issues by impact»; другие форматы его не выводят. Каждая запись называет
 `impactScore`, специфичный для правила и используемый для ранжирования, и
-оценку `debtMinutes`. Ключ `coupling.class-rank` присутствует всегда, но его
-значение равно `null`, если правило-производитель не читает сигнал коупл-хаба;
-`file` и `line` тоже могут быть `null` — у находки уровня проекта нет позиции
-в исходнике.
+оценку `debtMinutes`. Ключ `coupling.class-rank-share` присутствует всегда.
+Находки классов и методов используют измеренную долю своего класса; находки
+файлов и неймспейсов — максимальную долю среди их классов. Значение равно `null`,
+если конечная доля недоступна, а также для находок функций и проекта.
+Ранжирование может использовать медиану измеренных долей для `impactScore`,
+не заменяя этот `null`. `file` и `line` тоже могут быть `null` — у находки уровня
+проекта нет позиции в исходнике. Доля равна сырому PageRank, умноженному на число
+логических вершин графа, и выражена в кратных равномерной вероятности. Выгрузка метрик
+сохраняет `coupling.class-rank` и добавляет `coupling.class-rank-share`;
+ранжирование не подменяет отсутствующую долю сырой вероятностью.
 
 Каждая находка содержит nullable `acceptedLevel`, `baselineVerdict` и
 `baselineReason`. Verdict `breached` означает сравнимое превышение и Error;
@@ -819,12 +826,18 @@ code_quality:
 
 **Когда использовать:** GitHub Actions CI. Проще в настройке, чем SARIF — не нужен шаг загрузки.
 
-Формат workflow-команд: `::<level> file=<path>,line=<n>,title=<rule>::<message>` (по строке на нарушение). Маппинг: warning → `::warning`, error → `::error`.
+Формат workflow-команд: `::<level> file=<path>,line=<n>,title=<rule>::<message>` (по строке на нарушение). Маппинг: info → `::notice`, warning → `::warning`, error → `::error`.
 
 На каждой строке присутствует только `title=`. У находки уровня проекта нет
 позиции в исходнике, поэтому она печатается как
 `::<level> title=<rule>::<message>` — без `file=` и `line=`; GitHub тогда
 показывает её у прогона workflow, а не у строки в диффе.
+
+Диагностика отчёта тоже использует `::notice` только с `title=`: выбранные
+популяции без оценки (`rule-population.incomplete`), охват проекта
+(`run.project-scope`) и находки вне выборки (`drill-down.out-of-scope`). Эти
+уведомления описывают отчёт, не добавляя нарушений и не меняя код завершения
+проверки правил.
 
 <!-- llms:skip-begin -->
 **Пример вывода:**
@@ -1165,6 +1178,38 @@ Threshold overrides одного правила на одной строке п�
 `baseline:generate`, `update`, `cleanup` и переписывает на месте
 `baseline:rename-channels` — это версионированный входной артефакт, который
 инструмент читает обратно, со своей схемой, а не отчёт.
+
+## Популяции выбранных правил
+
+Правило может не судить выбранный предмет: нужная метрика не опубликована,
+действует его штатное исключение или необходимые данные неизвестны. Это
+отличается от здорового предмета, который был оценён без находки. Отключённые
+и невыбранные каналы не добавляют записи о популяции.
+
+Каждый успешный JSON-документ check содержит `abstentions`, включая `[]`.
+Непустая группа несёт `producer`, `channel`, `level`, `gate`, `reason`,
+`unit`, `count` и `examples`. Группа принадлежит первому не пройденному
+объявленному условию; примеры — не более пяти отсортированных уникальных
+канонических идентичностей. Счётчик использует штатную единицу условия:
+декларацию, неймспейс, цикл или настроенный селектор. Разные единицы нельзя
+складывать в общее число предметов. Независимые вызовы анализа сохраняют
+свои популяции при объединении; повторное принятие одной замороженной
+популяции не удваивает счётчики.
+
+| Формат                      | Выбранные предметы, оставшиеся без оценки                                                           |
+| --------------------------- | --------------------------------------------------------------------------------------------------- |
+| `text`, `summary`, `health` | Краткое уведомление при обычной подробности и ограниченные детали при `-v`, в том числе без находок |
+| `json`                      | Полные группы `abstentions` при обычной и тихой подробности, а также в файлах                       |
+| `sarif`                     | Уведомление `note` с дескриптором `QMX-RULE-POPULATION-INCOMPLETE`                                  |
+| `github`                    | Строка `::notice title=rule-population.incomplete::`                                                |
+| `html`                      | Видимый баннер и полная нагрузка `abstentions`                                                      |
+
+Эти записи не создают нарушения, не меняют серьёзность или код выхода по
+правилам, не расходуют границы baseline и не увеличивают число подавлений.
+Они отделены от `computedMetricOutcomes`, покрытия файлов анализа и покрытия
+оценок здоровья. Metrics, Checkstyle, GitLab, suppressed и baseline не получают
+искусственных находок об отсутствии оценки. Успешный stdout в silent остаётся
+пустым; файл отчёта сохраняет сведения о популяции своего формата.
 
 ## Покрытие анализа во всех форматах
 

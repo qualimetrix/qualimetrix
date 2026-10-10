@@ -88,6 +88,7 @@ Reporting/
     ├── CoverageNarrator.php                 # Complete/empty/incomplete human coverage summary
     ├── Prose/                              # Prose narration and publication
     │   ├── ComputedMetricAbsenceNarrator.php # Bounded computed-value absence groups
+    │   ├── RuleAbstentionNarrator.php        # Compact or verbose unjudged rule populations
     │   ├── ProseText.php                   # Publishes one prose body and its repaired-string count
     │   ├── GlyphMode.php                   # Unicode or closed-table ASCII publication
     │   └── AsciiGlyphs.php                 # Product glyph replacements; other Unicode stays intact
@@ -237,6 +238,7 @@ final readonly class FormatterContext
         public ?int $detailLimit = null,   // --detail mode: null=off, 0=all, N=limit
         public bool $isGroupByExplicit = false, // whether --group-by was set explicitly
         public int $topIssuesLimit = self::DEFAULT_TOP_ISSUES_LIMIT,
+        public bool $verbose = false,     // from OutputInterface::isVerbose()
     ) {}
 
     public function getOption(string $key, string $default = ''): string;
@@ -342,6 +344,7 @@ final readonly class Report
         public ?ReportProjectScope $projectScope = null, // how the run's paths stood against composer.json autoload; set on every check run
         public array $configurationDiagnostics = [], // list<{message, source}> — warnings about the accepted configuration, already published
         public ComputedMetricEvaluationSummary $computedMetricEvaluation = new ComputedMetricEvaluationSummary(),
+        ?JudgedPopulation $population = null, // defaults to an empty immutable population
     ) {}
 
     public function isEmpty(): bool;
@@ -361,6 +364,26 @@ from findings and configuration diagnostics. `SummaryEnricher` preserves it in
 both its unchanged-report and reconstructed-report paths; direct synthetic
 constructors default to an empty immutable summary. Directive audit retains its
 separate verdict document.
+
+`ReportBuilder::population()` retains the selected rule population independently
+of computed outcomes and findings. `ResultPresenter` combines run and late-filter
+partitions once; `SummaryEnricher` preserves that value in both branches. A
+repeated adoption of the same frozen partition is idempotent, while independent
+calls sum their native counts. Synthetic reports default to an empty population.
+
+JSON always publishes `abstentions`, including `[]`. Each group contains
+`producer`, `channel`, `level`, `gate`, `reason`, `unit`, `count` and at most five
+sorted distinct canonical `examples`. SARIF communicates nonempty groups through
+an invocation `note` (`QMX-RULE-POPULATION-INCOMPLETE`), GitHub through a
+`rule-population.incomplete` notice, and HTML through a banner plus the full
+payload. These records remain separate from findings, baseline ceilings,
+suppression totals, computed outcomes and file/score coverage; empty findings
+still carry the population explanation. Native UTF-8 repair and escaping apply
+to its reasons and examples.
+
+`FormatterContext.verbose` comes from actual output verbosity and survives
+`withDetailLimit()` and `withDetail()` copies. It defaults to false for synthetic
+contexts; destination handling continues to own quiet and silent output.
 
 ```php
 final readonly class SummaryEnricher
@@ -487,7 +510,7 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 
 **Name:** `json`
 
-Summary-oriented JSON for AI agents, CI/CD, and programmatic consumption. Includes health scores, worst offenders, and every finding unless `violations=N` caps the list. Every successful report also includes `computedMetricOutcomes`, empty when no authored value is absent. Example:
+Summary-oriented JSON for AI agents, CI/CD, and programmatic consumption. Includes health scores, worst offenders, and every finding unless `violations=N` caps the list. Every successful report also includes `computedMetricOutcomes`, empty when no authored value is absent, and `abstentions`, empty when no selected population member was left unjudged. Example:
 
 ```json
 {
@@ -495,6 +518,7 @@ Summary-oriented JSON for AI agents, CI/CD, and programmatic consumption. Includ
   "summary": { "filesAnalyzed": 342, "violationCount": 47, "errorCount": 12, "warningCount": 35, "techDebtMinutes": 270, "debtPer1kLoc": 5.4 },
   "outOfScope": null,
   "computedMetricOutcomes": [],
+  "abstentions": [],
   "health": { "complexity": { "score": 65, "label": "Fair", "threshold": { "warning": 50, "error": 25 }, "coverage": { "state": "measured", "measured": 2263, "eligible": 2263, "ratio": 1.0, "unit": "callables", "basis": "complexity.ccn.count", "reason": null }, "decomposition": [...] } },
   "worstNamespaces": [{ "symbolPath": "App\\Payment", "healthOverall": 31, "reason": "low cohesion, high complexity" }],
   "worstClasses": [{ "symbolPath": "App\\Payment\\PaymentService", "file": "src/...", "healthOverall": 28, "metrics": {...} }],
@@ -1061,3 +1085,13 @@ same glyph sequence inside a source identifier or path: the completed body no
 longer retains that provenance. Unicode mode preserves such valid characters.
 Other Unicode letters, such as Café, remain intact in either mode. Structured
 formatters keep their own encoders and canonical identities.
+
+`RuleAbstentionNarrator::lines(Report)` and `verboseLines(Report)` are the shared
+Text, Summary and Health routes for incomplete rule populations, including an
+empty findings or health-data report. Normal prose publishes one indication
+with judged and unjudged counts separated by unit. Verbose prose adds the
+producer, channel, level, first failed gate, reason and bounded examples of
+each group. These are judgement counts, not globally unique symbol counts.
+The formatter context carries console verbosity through copied contexts;
+quiet, silent and file publication retain the normal output policy. Native
+prose publication repairs invalid source bytes after narration.

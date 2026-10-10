@@ -40,7 +40,14 @@ Complexity/
 ```
 
 The three callable collectors retain their names, requirements and metric
-definitions. Rule metadata retains the exact option-class mappings:
+definitions. Callable CCN, cognitive and NPath rule coordinates declare
+required metric publication through their full channel declarations. Exact
+callable subjects with measured zero complete healthy judgement; absent values
+belong to the `callable-value` absence group. Selected accounting includes both
+healthy and finding sides without changing threshold comparisons or collector
+algorithms. Direct and unselected calls use the same pure eligibility gate.
+
+Rule metadata retains the exact option-class mappings:
 `ComplexityRule` -> `ComplexityOptions`, `CognitiveComplexityRule` ->
 `CognitiveComplexityOptions`, `NpathComplexityRule` ->
 `NpathComplexityOptions`, and `WmcRule` -> `WmcOptions`.
@@ -309,3 +316,10 @@ all default band numbers are unchanged.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+Callable and class-maximum populations are recorded before severity selection. Class coordinates are checked before reading their metric bags; a measured zero contributes one healthy judgement while an absent publication contributes one unjudged declaration. WMC retains its configured data-class exclusion.
+
+Gate construction and lazy declaration-metric admission use Finding-owned
+`AbstractRule` operations. Each rule retains its raw metric keys, coordinate,
+ordered predicates and failure reasons; a refused coordinate never reads its
+metric bag.

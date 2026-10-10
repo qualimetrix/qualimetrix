@@ -1,1 +1,2 @@
 kind	key	level	reason
+field	ranking.impactScore	*	Impact uses ClassRank uniform share instead of raw probability

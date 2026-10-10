@@ -85,6 +85,8 @@ final class ChannelLevelRefusalTopologyTest extends TestCase
      * @var array<string, string>
      */
     private const array LEVEL_READERS = [
+        'src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php' =>
+            'enumerates configured definition measurement levels after deriving the reporting declaration; it does not judge authored channel:level grammar',
         'src/Analysis/Policy/Baseline/BaselineCleaner.php' =>
             'classifies stored identities for cleanup and does not judge authored channel:level pairs',
         'src/Analysis/Policy/Baseline/BaselineEntryParser.php' =>

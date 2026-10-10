@@ -1,52 +1,116 @@
 --- candidate
 +++ reference (mapped)
-@@ -1,1 +1,1 @@
--visible 7413
-+visible 7367
-@@ -6,1 +6,1 @@
--Health ██████████████████████████░░░░ 85.3% Excellent
-+Health █████████████████████████░░░░░ 82.3% Excellent
-@@ -16,3 +16,2 @@
--  Cohesion        ██████████████████████████████ 100% Excellent
--                   computed over 101 of 101 classes (100%)
--                   TCC: not measured 0/101
-+  Cohesion        ██████████████████████████░░░░ 85.4% Excellent
-+                   computed over 0 of 101 classes (0%)
-@@ -38,6 +37,6 @@
--  85.3 Corpus\ParallelFiles (101 classes, 101 violations, 5.9/100 LOC)
--
--Worst classes
--  97.2 Corpus\ParallelFiles\Shard002 (1 violations, 5.6/100 LOC)
--  97.2 Corpus\ParallelFiles\Shard005 (1 violations, 5.6/100 LOC)
--  97.2 Corpus\ParallelFiles\Shard008 (1 violations, 5.6/100 LOC)
-+  82.3 Corpus\ParallelFiles (101 classes, 101 violations, 5.9/100 LOC)
-+
-+Worst classes
-+  93.5 Corpus\ParallelFiles\Shard002 (1 violations, 5.6/100 LOC)
-+  93.5 Corpus\ParallelFiles\Shard005 (1 violations, 5.6/100 LOC)
-+  93.5 Corpus\ParallelFiles\Shard008 (1 violations, 5.6/100 LOC)
-@@ -83,1 +82,1 @@
--invocation-format:summary 7413
-+invocation-format:summary 7367
-@@ -88,1 +87,1 @@
--Health ██████████████████████████░░░░ 85.3% Excellent
-+Health █████████████████████████░░░░░ 82.3% Excellent
-@@ -98,3 +97,2 @@
--  Cohesion        ██████████████████████████████ 100% Excellent
--                   computed over 101 of 101 classes (100%)
--                   TCC: not measured 0/101
-+  Cohesion        ██████████████████████████░░░░ 85.4% Excellent
-+                   computed over 0 of 101 classes (0%)
-@@ -120,6 +118,6 @@
--  85.3 Corpus\ParallelFiles (101 classes, 101 violations, 5.9/100 LOC)
--
--Worst classes
--  97.2 Corpus\ParallelFiles\Shard002 (1 violations, 5.6/100 LOC)
--  97.2 Corpus\ParallelFiles\Shard005 (1 violations, 5.6/100 LOC)
--  97.2 Corpus\ParallelFiles\Shard008 (1 violations, 5.6/100 LOC)
-+  82.3 Corpus\ParallelFiles (101 classes, 101 violations, 5.9/100 LOC)
-+
-+Worst classes
-+  93.5 Corpus\ParallelFiles\Shard002 (1 violations, 5.6/100 LOC)
-+  93.5 Corpus\ParallelFiles\Shard005 (1 violations, 5.6/100 LOC)
-+  93.5 Corpus\ParallelFiles\Shard008 (1 violations, 5.6/100 LOC)
+@@ -48,28 +48,28 @@
+-  1. [WRN] 30.0  src/Shard000.php  [30min]
+-         complexity.ccn: Cyclomatic complexity is 2, reaches threshold of 2. Consider extracting methods or simplifying conditions (Shard000::run)
+-         Recommendation: Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.
+-  2. [WRN] 30.0  src/Shard001.php  [30min]
+-         complexity.ccn: Cyclomatic complexity is 3, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Shard001::run)
+-         Recommendation: Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.
+-  3. [WRN] 30.0  src/Shard002.php  [30min]
+-         complexity.ccn: Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Shard002::run)
+-         Recommendation: Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.
+-  4. [WRN] 30.0  src/Shard003.php  [30min]
+-         complexity.ccn: Cyclomatic complexity is 2, reaches threshold of 2. Consider extracting methods or simplifying conditions (Shard003::run)
+-         Recommendation: Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.
+-  5. [WRN] 30.0  src/Shard004.php  [30min]
+-         complexity.ccn: Cyclomatic complexity is 3, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Shard004::run)
+-         Recommendation: Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.
+-  6. [WRN] 30.0  src/Shard005.php  [30min]
+-         complexity.ccn: Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Shard005::run)
+-         Recommendation: Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.
+-  7. [WRN] 30.0  src/Shard006.php  [30min]
+-         complexity.ccn: Cyclomatic complexity is 2, reaches threshold of 2. Consider extracting methods or simplifying conditions (Shard006::run)
+-         Recommendation: Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.
+-  8. [WRN] 30.0  src/Shard007.php  [30min]
+-         complexity.ccn: Cyclomatic complexity is 3, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Shard007::run)
+-         Recommendation: Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.
+-  9. [WRN] 30.0  src/Shard008.php  [30min]
+-         complexity.ccn: Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Shard008::run)
+-         Recommendation: Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.
+-  10. [WRN] 30.0  src/Shard009.php  [30min]
++  1. [WRN] 0.30  src/Shard000.php  [30min]
++         complexity.ccn: Cyclomatic complexity is 2, reaches threshold of 2. Consider extracting methods or simplifying conditions (Shard000::run)
++         Recommendation: Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.
++  2. [WRN] 0.30  src/Shard001.php  [30min]
++         complexity.ccn: Cyclomatic complexity is 3, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Shard001::run)
++         Recommendation: Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.
++  3. [WRN] 0.30  src/Shard002.php  [30min]
++         complexity.ccn: Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Shard002::run)
++         Recommendation: Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.
++  4. [WRN] 0.30  src/Shard003.php  [30min]
++         complexity.ccn: Cyclomatic complexity is 2, reaches threshold of 2. Consider extracting methods or simplifying conditions (Shard003::run)
++         Recommendation: Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.
++  5. [WRN] 0.30  src/Shard004.php  [30min]
++         complexity.ccn: Cyclomatic complexity is 3, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Shard004::run)
++         Recommendation: Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.
++  6. [WRN] 0.30  src/Shard005.php  [30min]
++         complexity.ccn: Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Shard005::run)
++         Recommendation: Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.
++  7. [WRN] 0.30  src/Shard006.php  [30min]
++         complexity.ccn: Cyclomatic complexity is 2, reaches threshold of 2. Consider extracting methods or simplifying conditions (Shard006::run)
++         Recommendation: Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.
++  8. [WRN] 0.30  src/Shard007.php  [30min]
++         complexity.ccn: Cyclomatic complexity is 3, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Shard007::run)
++         Recommendation: Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.
++  9. [WRN] 0.30  src/Shard008.php  [30min]
++         complexity.ccn: Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Shard008::run)
++         Recommendation: Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.
++  10. [WRN] 0.30  src/Shard009.php  [30min]
+@@ -130,28 +130,28 @@
+-  1. [WRN] 30.0  src/Shard000.php  [30min]
+-         complexity.ccn: Cyclomatic complexity is 2, reaches threshold of 2. Consider extracting methods or simplifying conditions (Shard000::run)
+-         Recommendation: Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.
+-  2. [WRN] 30.0  src/Shard001.php  [30min]
+-         complexity.ccn: Cyclomatic complexity is 3, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Shard001::run)
+-         Recommendation: Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.
+-  3. [WRN] 30.0  src/Shard002.php  [30min]
+-         complexity.ccn: Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Shard002::run)
+-         Recommendation: Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.
+-  4. [WRN] 30.0  src/Shard003.php  [30min]
+-         complexity.ccn: Cyclomatic complexity is 2, reaches threshold of 2. Consider extracting methods or simplifying conditions (Shard003::run)
+-         Recommendation: Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.
+-  5. [WRN] 30.0  src/Shard004.php  [30min]
+-         complexity.ccn: Cyclomatic complexity is 3, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Shard004::run)
+-         Recommendation: Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.
+-  6. [WRN] 30.0  src/Shard005.php  [30min]
+-         complexity.ccn: Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Shard005::run)
+-         Recommendation: Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.
+-  7. [WRN] 30.0  src/Shard006.php  [30min]
+-         complexity.ccn: Cyclomatic complexity is 2, reaches threshold of 2. Consider extracting methods or simplifying conditions (Shard006::run)
+-         Recommendation: Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.
+-  8. [WRN] 30.0  src/Shard007.php  [30min]
+-         complexity.ccn: Cyclomatic complexity is 3, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Shard007::run)
+-         Recommendation: Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.
+-  9. [WRN] 30.0  src/Shard008.php  [30min]
+-         complexity.ccn: Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Shard008::run)
+-         Recommendation: Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.
+-  10. [WRN] 30.0  src/Shard009.php  [30min]
++  1. [WRN] 0.30  src/Shard000.php  [30min]
++         complexity.ccn: Cyclomatic complexity is 2, reaches threshold of 2. Consider extracting methods or simplifying conditions (Shard000::run)
++         Recommendation: Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.
++  2. [WRN] 0.30  src/Shard001.php  [30min]
++         complexity.ccn: Cyclomatic complexity is 3, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Shard001::run)
++         Recommendation: Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.
++  3. [WRN] 0.30  src/Shard002.php  [30min]
++         complexity.ccn: Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Shard002::run)
++         Recommendation: Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.
++  4. [WRN] 0.30  src/Shard003.php  [30min]
++         complexity.ccn: Cyclomatic complexity is 2, reaches threshold of 2. Consider extracting methods or simplifying conditions (Shard003::run)
++         Recommendation: Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.
++  5. [WRN] 0.30  src/Shard004.php  [30min]
++         complexity.ccn: Cyclomatic complexity is 3, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Shard004::run)
++         Recommendation: Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.
++  6. [WRN] 0.30  src/Shard005.php  [30min]
++         complexity.ccn: Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Shard005::run)
++         Recommendation: Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.
++  7. [WRN] 0.30  src/Shard006.php  [30min]
++         complexity.ccn: Cyclomatic complexity is 2, reaches threshold of 2. Consider extracting methods or simplifying conditions (Shard006::run)
++         Recommendation: Cyclomatic complexity: 2 (threshold: 2) — high CCN with low cognitive complexity (1) suggests mechanical branching (switch/match). Lower refactoring priority.
++  8. [WRN] 0.30  src/Shard007.php  [30min]
++         complexity.ccn: Cyclomatic complexity is 3, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Shard007::run)
++         Recommendation: Cyclomatic complexity: 3 (threshold: 2) — high CCN with low cognitive complexity (2) suggests mechanical branching (switch/match). Lower refactoring priority.
++  9. [WRN] 0.30  src/Shard008.php  [30min]
++         complexity.ccn: Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions (Shard008::run)
++         Recommendation: Cyclomatic complexity: 4 (threshold: 2) — high CCN with low cognitive complexity (3) suggests mechanical branching (switch/match). Lower refactoring priority.
++  10. [WRN] 0.30  src/Shard009.php  [30min]

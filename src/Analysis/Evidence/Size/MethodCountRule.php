@@ -4,19 +4,17 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Size;
 
-use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
-use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -68,10 +66,12 @@ final class MethodCountRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Higher,
-                JudgedMetrics::of(MetricName::SIZE_METHOD_COUNT),
+            self::NAME => self::judgingHigher(
+                [MetricName::SIZE_METHOD_COUNT],
                 SymbolLevel::Class_,
+            )->withGates(
+                self::populationGate('class-coordinate', self::NAME, SymbolLevel::Class_, 'declaration', self::kindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
+                self::populationGate('method-count', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('method-count', [MetricName::SIZE_METHOD_COUNT]), 'Method count was not published.'),
             ),
         ];
     }
@@ -87,17 +87,8 @@ final class MethodCountRule extends AbstractRule
 
         $findings = [];
 
-        foreach ($context->metrics->allClassDeclarations() as $classInfo) {
-            $subject = $classInfo->subject ?? throw new LogicException('Method count findings require an exact class declaration subject');
-            if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
-                continue;
-            }
-            $metrics = $context->metrics->getSubject($subject);
+        foreach ($this->admittedDeclarations($context, self::channelDeclarations()[self::NAME], $context->metrics->allClassDeclarations(), SymbolLevel::Class_, 'method-count', 'class-coordinate') as [$classInfo, $subject, $metrics]) {
             $methodCount = $metrics->get(MetricName::SIZE_METHOD_COUNT);
-
-            if ($methodCount === null) {
-                continue;
-            }
 
             $methodCountValue = (int) $methodCount;
             /** @var MethodCountOptions $effectiveOptions */

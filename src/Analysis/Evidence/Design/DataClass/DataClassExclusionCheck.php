@@ -6,58 +6,45 @@ namespace Qualimetrix\Analysis\Evidence\Design\DataClass;
 
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Population\FlagExcludes;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyThreshold;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
-/**
- * Evaluates the independent exclusion predicates for {@see DataClassRule}:
- * interfaces, abstract classes, zero-property classes, exceptions,
- * readonly classes, promoted-properties-only classes, and classes under
- * minMembers.
- *
- * Extracted out of {@see DataClassRule::analyze()} so the guard-clause chain
- * is a single loop over independent predicates rather than a sequence of
- * inline branches, which is what multiplied that method's NPath complexity.
- * Reads only pre-computed metrics — no AST traversal (CLAUDE.md §2, §3).
- */
+/** The ordered class-shape exclusions used by DataClassRule. */
 final class DataClassExclusionCheck
 {
-    public static function isExcluded(MetricBag $metrics, DataClassOptions $options): bool
+    /** @return list<PopulationGate> */
+    public static function populationGates(string $channelName): array
     {
-        foreach (self::predicates($options) as $predicate) {
-            if ($predicate($metrics)) {
-                return true;
-            }
-        }
+        $channel = new FindingChannel($channelName);
+        $level = SymbolLevel::Class_;
 
-        return false;
+        return [
+            new PopulationGate('interface-class', $channel, $level, 'declaration', new FlagExcludes('interface-class', MetricName::DESIGN_IS_INTERFACE), 'Interfaces are outside the data-class population.'),
+            new PopulationGate('abstract-class', $channel, $level, 'declaration', new FlagExcludes('abstract-class', MetricName::DESIGN_IS_ABSTRACT), 'Abstract classes are outside the data-class population.'),
+            new PopulationGate('class-properties', $channel, $level, 'declaration', new KeyThreshold('class-properties', [MetricName::SIZE_PROPERTY_COUNT], '>', 0, missing: 'zero'), 'Data classes require properties.'),
+            new PopulationGate('exception-classification', $channel, $level, 'declaration', new KeyPresent('excludeExceptions', [MetricName::DESIGN_IS_EXCEPTION], activeWhen: true), 'Exception classification is required when exceptions are excluded.'),
+            new PopulationGate('exception-class', $channel, $level, 'declaration', new FlagExcludes('excludeExceptions', MetricName::DESIGN_IS_EXCEPTION, activeWhen: true, nonzero: true), 'Exception classes are excluded by configuration.'),
+            new PopulationGate('readonly-class', $channel, $level, 'declaration', new FlagExcludes('excludeReadonly', MetricName::DESIGN_IS_READONLY, activeWhen: true), 'Readonly classes are excluded by configuration.'),
+            new PopulationGate('promoted-only-class', $channel, $level, 'declaration', new FlagExcludes('excludePromotedOnly', MetricName::DESIGN_IS_PROMOTED_PROPERTIES_ONLY, activeWhen: true), 'Promoted-properties-only classes are excluded by configuration.'),
+            new PopulationGate('member-floor', $channel, $level, 'declaration', new KeyThreshold('minMembers', [MetricName::SIZE_METHOD_COUNT_TOTAL, MetricName::SIZE_PROPERTY_COUNT], '>=', 'minMembers', missing: 'zero'), 'The class has too few members for data-class judgement.'),
+        ];
     }
 
-    /**
-     * @return list<callable(MetricBag): bool>
-     */
-    private static function predicates(DataClassOptions $options): array
+    /** @return iterable<GateInput> */
+    public static function populationInputs(MetricBag $metrics, DataClassOptions $options): iterable
     {
-        return [
-            // Interfaces are contracts, not data classes
-            static fn(MetricBag $metrics): bool => $metrics->get(MetricName::DESIGN_IS_INTERFACE) === 1,
-            // Abstract classes are contracts, not data classes
-            static fn(MetricBag $metrics): bool => $metrics->get(MetricName::DESIGN_IS_ABSTRACT) === 1,
-            // Classes with zero properties cannot be data classes by definition
-            static fn(MetricBag $metrics): bool => (int) ($metrics->get(MetricName::SIZE_PROPERTY_COUNT) ?? 0) === 0,
-            // Exception classes are DTOs by design — they hold error context, not behavior
-            static fn(MetricBag $metrics): bool => $options->excludeExceptions
-                && $metrics->get(MetricName::DESIGN_IS_EXCEPTION) !== 0,
-            // Skip readonly classes if configured
-            static fn(MetricBag $metrics): bool => $options->excludeReadonly
-                && $metrics->get(MetricName::DESIGN_IS_READONLY) === 1,
-            // Skip promoted-properties-only classes if configured
-            static fn(MetricBag $metrics): bool => $options->excludePromotedOnly
-                && $metrics->get(MetricName::DESIGN_IS_PROMOTED_PROPERTIES_ONLY) === 1,
-            // Size is counted in members, not methods: a struct of public
-            // fields declares no methods at all and is the purest Data Class
-            // there is. Accessors count too — they are what such a class is
-            // made of.
-            static fn(MetricBag $metrics): bool => (int) ($metrics->get(MetricName::SIZE_METHOD_COUNT_TOTAL) ?? 0)
-                + (int) ($metrics->get(MetricName::SIZE_PROPERTY_COUNT) ?? 0) < $options->minMembers,
-        ];
+        yield GateInput::metrics('interface-class', $metrics);
+        yield GateInput::metrics('abstract-class', $metrics);
+        yield GateInput::metrics('class-properties', $metrics);
+        yield GateInput::metrics('excludeExceptions', $metrics, option: $options->excludeExceptions);
+        yield GateInput::metrics('excludeExceptions', $metrics, option: $options->excludeExceptions);
+        yield GateInput::metrics('excludeReadonly', $metrics, option: $options->excludeReadonly);
+        yield GateInput::metrics('excludePromotedOnly', $metrics, option: $options->excludePromotedOnly);
+        yield GateInput::metrics('minMembers', $metrics, $options->minMembers);
     }
 }

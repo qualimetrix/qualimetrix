@@ -1,0 +1,44 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 5504
++visible 4679
+@@ -12,9 +12,6 @@
+-    <error line="5" severity="warning" message="ClassRank share is 1.58× uniform, exceeds threshold of 1.00×. This class is a critical hub — changes have wide impact" source="qmx.coupling.class-rank"/>
+-  </file>
+-  <file name="src/Kernel/Logger.php">
+-    <error line="5" severity="warning" message="Afferent coupling too high: 3 classes depend on this (CBO: 3, threshold: 2)" source="qmx.coupling.cbo"/>
+-    <error line="5" severity="warning" message="ClassRank share is 1.31× uniform, exceeds threshold of 1.00×. This class is a critical hub — changes have wide impact" source="qmx.coupling.class-rank"/>
+-  </file>
+-  <file name="src/Kernel/Uuid.php">
+-    <error line="5" severity="warning" message="Afferent coupling too high: 2 classes depend on this (CBO: 2, threshold: 2)" source="qmx.coupling.cbo"/>
+-    <error line="5" severity="warning" message="ClassRank share is 1.07× uniform, exceeds threshold of 1.00×. This class is a critical hub — changes have wide impact" source="qmx.coupling.class-rank"/>
++  </file>
++  <file name="src/Kernel/Logger.php">
++    <error line="5" severity="warning" message="Afferent coupling too high: 3 classes depend on this (CBO: 3, threshold: 2)" source="qmx.coupling.cbo"/>
++  </file>
++  <file name="src/Kernel/Uuid.php">
++    <error line="5" severity="warning" message="Afferent coupling too high: 2 classes depend on this (CBO: 2, threshold: 2)" source="qmx.coupling.cbo"/>
+@@ -32,1 +29,0 @@
+-    <error line="12" severity="warning" message="ClassRank share is 1.16× uniform, exceeds threshold of 1.00×. This class is a critical hub — changes have wide impact" source="qmx.coupling.class-rank"/>
+@@ -62,1 +58,1 @@
+-invocation-format:checkstyle 5504
++invocation-format:checkstyle 4679
+@@ -73,9 +69,6 @@
+-    <error line="5" severity="warning" message="ClassRank share is 1.58× uniform, exceeds threshold of 1.00×. This class is a critical hub — changes have wide impact" source="qmx.coupling.class-rank"/>
+-  </file>
+-  <file name="src/Kernel/Logger.php">
+-    <error line="5" severity="warning" message="Afferent coupling too high: 3 classes depend on this (CBO: 3, threshold: 2)" source="qmx.coupling.cbo"/>
+-    <error line="5" severity="warning" message="ClassRank share is 1.31× uniform, exceeds threshold of 1.00×. This class is a critical hub — changes have wide impact" source="qmx.coupling.class-rank"/>
+-  </file>
+-  <file name="src/Kernel/Uuid.php">
+-    <error line="5" severity="warning" message="Afferent coupling too high: 2 classes depend on this (CBO: 2, threshold: 2)" source="qmx.coupling.cbo"/>
+-    <error line="5" severity="warning" message="ClassRank share is 1.07× uniform, exceeds threshold of 1.00×. This class is a critical hub — changes have wide impact" source="qmx.coupling.class-rank"/>
++  </file>
++  <file name="src/Kernel/Logger.php">
++    <error line="5" severity="warning" message="Afferent coupling too high: 3 classes depend on this (CBO: 3, threshold: 2)" source="qmx.coupling.cbo"/>
++  </file>
++  <file name="src/Kernel/Uuid.php">
++    <error line="5" severity="warning" message="Afferent coupling too high: 2 classes depend on this (CBO: 2, threshold: 2)" source="qmx.coupling.cbo"/>
+@@ -93,1 +86,0 @@
+-    <error line="12" severity="warning" message="ClassRank share is 1.16× uniform, exceeds threshold of 1.00×. This class is a critical hub — changes have wide impact" source="qmx.coupling.class-rank"/>

@@ -6,19 +6,19 @@ namespace Qualimetrix\Analysis\Evidence\Design\Inheritance;
 
 use LogicException;
 use Psr\Log\LoggerInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
-use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -64,11 +64,12 @@ final class InheritanceRule extends AbstractRule
             return [];
         }
 
+        $declaration = self::channelDeclarations()[self::NAME];
         $findings = [];
         $outcomes = [InheritanceOutcome::Exact->name => 0, InheritanceOutcome::Floor->name => 0, InheritanceOutcome::Loop->name => 0];
         foreach ($context->metrics->allDeclarations() as $classInfo) {
             $subject = $classInfo->subject ?? throw new LogicException('Inheritance findings require an exact class declaration subject');
-            [$finding, $outcome] = $this->analyzeDeclaration($subject, new Location($classInfo->file, $classInfo->line), $context, $this->options);
+            [$finding, $outcome] = $this->analyzeDeclaration($subject, new Location($classInfo->file, $classInfo->line), $context, $this->options, $declaration);
             ++$outcomes[$outcome->name];
             if ($finding !== null) {
                 $findings[] = $finding;
@@ -80,16 +81,23 @@ final class InheritanceRule extends AbstractRule
     }
 
     /** @return array{?Finding, InheritanceOutcome} */
-    private function analyzeDeclaration(MetricSubject $subject, Location $location, AnalysisContext $context, InheritanceOptions $options): array
+    private function analyzeDeclaration(MetricSubject $subject, Location $location, AnalysisContext $context, InheritanceOptions $options, ChannelDeclaration $declaration): array
     {
-        if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
-            return [null, InheritanceOutcome::Exact];
-        }
-        // One logical name can have different parents in different bodies.
-        $metrics = $context->metrics->getSubject($subject);
-        $dit = $metrics->get(MetricName::DESIGN_DIT);
-        $outcome = $this->publishedOutcome($dit, $metrics->get(MetricName::DESIGN_DIT_UNRESOLVED));
-        if ($dit === null) {
+        $dit = null;
+        $outcome = InheritanceOutcome::Exact;
+        $metrics = $this->admittedMetrics(
+            $context,
+            $subject,
+            $declaration,
+            function (MetricBag $metrics) use (&$dit, &$outcome): iterable {
+                $dit = $metrics->get(MetricName::DESIGN_DIT);
+                $outcome = $this->publishedOutcome($dit, $metrics->get(MetricName::DESIGN_DIT_UNRESOLVED));
+                yield GateInput::metrics('dit-present', $metrics);
+            },
+            [GateInput::kind('logicalKind', $subject->toSymbolPath()->getType())],
+            level: SymbolLevel::Class_,
+        );
+        if ($metrics === null) {
             return [null, $outcome];
         }
         /** @var InheritanceOptions $effectiveOptions */
@@ -175,10 +183,12 @@ final class InheritanceRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Higher,
-                JudgedMetrics::of(MetricName::DESIGN_DIT),
+            self::NAME => self::judgingHigher(
+                [MetricName::DESIGN_DIT],
                 SymbolLevel::Class_,
+            )->withGates(
+                self::populationGate('logical-class-kind', self::NAME, SymbolLevel::Class_, 'declaration', self::kindIn('logicalKind', [SymbolType::Class_]), 'Only class declarations are judged.'),
+                self::populationGate('dit-present', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('dit-present', [MetricName::DESIGN_DIT]), 'Numeric inheritance depth was not published.'),
             ),
         ];
     }

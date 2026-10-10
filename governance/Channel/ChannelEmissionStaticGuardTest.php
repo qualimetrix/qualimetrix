@@ -405,6 +405,10 @@ final class ChannelEmissionStaticGuardTest extends TestCase
     private static function delegatedEmitters(): array
     {
         return [
+            'src/Analysis/Evidence/CircularDependency/CycleFinding.php' =>
+                'CircularDependencyRule delegates its prepared cycle message and occurrence projection here; CircularDependencyRuleTest pins the emitted channel and identity.',
+            'src/Analysis/Evidence/Coupling/UnmatchedFrameworkFinding.php' =>
+                'UnmatchedFrameworkNamespaceRule delegates its unbound selector finding here; its owning test pins the channel and selector occurrence.',
             'src/Analysis/Evidence/Cohesion/LcomExcludedMethods.php' =>
                 'LcomRule delegates its unmatched-exclusion channel here; the scanner follows rule inheritance'
                 . ' rather than helper calls. LcomRuleTest checks the emitted channel, declaration and scope.',
@@ -445,11 +449,11 @@ final class ChannelEmissionStaticGuardTest extends TestCase
             'src/Analysis/Run/ExcludeBinding/UnjudgedExcludeFinding.php' =>
                 'The second shape of the same channel, for the pattern the walk could not judge; the audit'
                 . ' delegates to it, and it is off the rule chain for the same reason the audit is.',
-            'src/Analysis/Finding/SuppressionBinding/UnboundSuppressionAudit.php' =>
+            'src/Analysis/Finding/SuppressionBinding/UnboundSuppressionFinding.php' =>
                 'UnboundSuppressionRule names the three channels but cannot emit them: whether a suppression'
                 . ' value bound to anything is known only after the run, at the reporting seam, so the findings'
                 . ' are assembled here and no rule class chain leads to this construction.',
-            'src/Analysis/Policy/Baseline/EntryBinding/UnusedEntryAudit.php' =>
+            'src/Analysis/Policy/Baseline/EntryBinding/UnusedEntryFinding.php' =>
                 'Baseline usage is audited after measurement at the reporting seam, outside the rule chain;'
                 . ' UnusedEntryAuditTest checks its emitted channel and project scope.',
             'src/Analysis/Policy/Inline/Directive/Audit/StaleDirectiveFinding.php' =>

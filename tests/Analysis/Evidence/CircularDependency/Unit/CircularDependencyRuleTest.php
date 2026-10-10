@@ -36,6 +36,36 @@ final class CircularDependencyRuleTest extends TestCase
     }
 
     #[Test]
+    public function itCountsCeilingExclusionsBeforeSeverityAndBypassesNonpositiveCeilings(): void
+    {
+        $this->prepare([
+            new Cycle($this->paths(['A', 'B']), $this->paths(['A', 'B', 'A'])),
+            new Cycle($this->paths(['A', 'B', 'C']), $this->paths(['A', 'B', 'C', 'A'])),
+        ]);
+        $channel = new \Qualimetrix\Analysis\Finding\Contract\FindingChannel(CircularDependencyRule::NAME);
+        $publication = new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement([
+            new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
+                new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(CircularDependencyRule::NAME, $channel, \Qualimetrix\Core\Symbol\SymbolLevel::Project, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable),
+                new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
+            ),
+        ], null));
+        foreach ([2, 0, -1] as $ceiling) {
+            $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(($publication)->publishes(...));
+            $findings = $this->rule(new CircularDependencyOptions(maxCycleSize: $ceiling))->analyze(
+                (new AnalysisContext(new InMemoryMetricRepository()))->withPopulationTrace($session),
+            );
+            $population = $session->freeze();
+            self::assertCount($ceiling > 0 ? 1 : 2, $findings);
+            self::assertSame($ceiling > 0 ? 1 : 2, $population->judgedCount());
+            self::assertSame($ceiling > 0 ? 1 : 0, $population->unjudgedCount());
+            if ($ceiling > 0) {
+                self::assertSame('cycle', $population->abstentions()[0]->unit);
+                self::assertSame('max-cycle-size', $population->abstentions()[0]->gate);
+            }
+        }
+    }
+
+    #[Test]
     public function itReturnsCorrectName(): void
     {
         $rule = $this->rule(new CircularDependencyOptions());

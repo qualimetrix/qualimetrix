@@ -7,12 +7,13 @@ namespace Qualimetrix\Analysis\Evidence\Coupling;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -56,12 +57,6 @@ final class UnmatchedFrameworkNamespaceRule extends AbstractRule
 {
     public const string NAME = 'coupling.unmatched-framework-namespace';
 
-    /**
-     * What one finding here is about: the selector. Without it every finding on
-     * this channel shared one baseline identity, so an accepted entry bounded
-     * their number and a replaced selector passed under it unnoticed.
-     */
-    private const string OCCURRENCE_KIND = 'unmatched-framework-prefix';
     public const string DOCS_PAGE = 'rules/coupling.md';
 
     /** Editing one line of `qmx.yaml`, plus reading what the code really imports. */
@@ -113,7 +108,11 @@ final class UnmatchedFrameworkNamespaceRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Project),
+            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)->withGates(
+                self::populationGate('namespace-scope', new FindingChannel(self::NAME), SymbolLevel::Project, 'configured-framework-selector', self::contextGuard('namespaceClaimsJudged'), 'The run cannot judge whole-project namespace claims.'),
+                self::populationGate('graph-available', new FindingChannel(self::NAME), SymbolLevel::Project, 'configured-framework-selector', self::contextGuard('graphAvailable'), 'The dependency graph is unavailable.', 'invocation'),
+                self::populationGate('classified-names', new FindingChannel(self::NAME), SymbolLevel::Project, 'configured-framework-selector', self::contextGuard('frameworkClassifiedNonempty'), 'The run classified no dependency names.'),
+            ),
         ];
     }
 
@@ -165,57 +164,59 @@ final class UnmatchedFrameworkNamespaceRule extends AbstractRule
             return [];
         }
 
-        if (!$context->projectScope->judgesNamespaceClaims()) {
+        $selectors = $this->coupling->unboundSelectors([]);
+        if ($selectors === []) {
             return [];
         }
-
-        $graph = $context->dependencyGraph;
-        if ($this->coupling->isEmpty() || $graph === null) {
+        $declaration = self::channelDeclarations()[self::NAME];
+        $classified = $this->classifiedNames($context, $declaration, $selectors);
+        if ($classified === null || $classified === []) {
             return [];
         }
-
-        $classified = FrameworkClassificationSites::names(
-            $graph,
-            static fn(SymbolPath $class): bool => $context->metrics->hasSubject(MetricSubject::logicalClass(new LogicalClassPath($class))),
-        );
-        if ($classified === []) {
-            return [];
-        }
-
         $findings = [];
-
         foreach ($this->coupling->unboundSelectors($classified) as $selector) {
-            $findings[] = $this->finding($selector);
+            $findings[] = UnmatchedFrameworkFinding::of($selector, self::NAME);
         }
 
         return $findings;
     }
 
-    private function finding(NamespacePattern $selector): Finding
+    /**
+     * @param list<NamespacePattern> $selectors
+     *
+     * @return list<string>|null
+     */
+    private function classifiedNames(AnalysisContext $context, ChannelDeclaration $declaration, array $selectors): ?array
     {
-        $display = $selector->definition->display();
-
-        return new Finding(
-            location: Location::none(),
-            subject: MetricSubject::aggregate(SymbolPath::forProject()),
-            symbolPath: SymbolPath::forProject(),
-            ruleName: self::NAME,
-            code: self::NAME,
-            message: \sprintf(
-                'The framework namespace selector "%s" matched no class the run analysed or depends on. Nothing was moved'
-                . ' out of the application scope for it, so "coupling.cbo-app" still counts every class it was'
-                . ' written to exclude and "coupling.ce-framework" counts none of them.',
-                $display,
-            ),
-            severity: Severity::Warning,
-            recommendation: \sprintf(
-                'Check "%s" against the names the code really imports. Use exact for one name, subtree for a namespace'
-                . ' and all descendants, or regex for an explicit delimiterless PCRE fragment. Drop the entry if the'
-                . ' dependency is gone.',
-                $display,
-            ),
-            occurrenceKey: OccurrenceKey::semantic(self::OCCURRENCE_KIND, ['selector' => $display]),
+        $scope = $context->projectScope->judgesNamespaceClaims();
+        if (!$scope) {
+            foreach ($selectors as $selector) {
+                $context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Project, PopulationIdentity::selector($selector->definition->display(), 'configured-framework-selector'), $declaration, (static function (): iterable {
+                    yield GateInput::context('namespaceClaimsJudged', false);
+                })());
+            }
+            return null;
+        }
+        $graph = $context->dependencyGraph;
+        if ($graph === null) {
+            $context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Project, PopulationIdentity::invocation(self::NAME), $declaration, (static function (): iterable {
+                yield GateInput::context('namespaceClaimsJudged', true);
+                yield GateInput::context('graphAvailable', false);
+            })());
+            return null;
+        }
+        $classified = FrameworkClassificationSites::names(
+            $graph,
+            static fn(SymbolPath $class): bool => $context->metrics->hasSubject(MetricSubject::logicalClass(new LogicalClassPath($class))),
         );
+        foreach ($selectors as $selector) {
+            $context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Project, PopulationIdentity::selector($selector->definition->display(), 'configured-framework-selector'), $declaration, (static function () use ($classified): iterable {
+                yield GateInput::context('namespaceClaimsJudged', true);
+                yield GateInput::context('graphAvailable', true);
+                yield GateInput::context('frameworkClassifiedNonempty', $classified !== []);
+            })());
+        }
+        return $classified;
     }
 
 }

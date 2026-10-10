@@ -9,13 +9,15 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -64,27 +66,21 @@ final class MaintainabilityRule extends AbstractRule
         }
 
         $findings = [];
+        $declaration = self::channelDeclarations()[self::NAME];
 
         foreach ($context->metrics->allCallables() as $methodInfo) {
             $subject = $methodInfo->subject ?? throw new LogicException('Maintainability findings require an exact callable subject');
-            // Skip test files if configured
-            if ($this->options->excludeTests && $this->isTestFile($methodInfo->file)) {
+            $metrics = null;
+            $options = $this->getEffectiveOptions($context, $this->options, $subject);
+            if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Callable, PopulationIdentity::subject($subject, 'callable'), $declaration, (function () use ($context, $subject, $methodInfo, $options, &$metrics): iterable {
+                yield GateInput::boundName('exclude-tests', $options->excludeTests ? !$this->isTestFile($methodInfo->file) : true, $options->excludeTests);
+                $metrics = $context->metrics->getSubject($subject);
+                yield GateInput::metrics('minimum-statements', $metrics, $options->minStatements);
+                yield GateInput::metrics('maintainability', $metrics);
+            })())) {
                 continue;
             }
-
-            $metrics = $context->metrics->getSubject($subject);
-
-            // Skip methods with too few statements.
-            $statementCount = (int) ($metrics->get(MetricName::SIZE_METHOD_STATEMENT_COUNT) ?? 0);
-            if ($statementCount < $this->options->minStatements) {
-                continue;
-            }
-
             $mi = $metrics->get(MetricName::MAINTAINABILITY_MI);
-
-            if ($mi === null) {
-                continue;
-            }
 
             $miValue = (float) $mi;
             /** @var MaintainabilityOptions $effectiveOptions */
@@ -153,10 +149,13 @@ final class MaintainabilityRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Lower,
-                JudgedMetrics::of(MetricName::MAINTAINABILITY_MI),
+            self::NAME => self::judgingLower(
+                [MetricName::MAINTAINABILITY_MI],
                 SymbolLevel::Callable,
+            )->withGates(
+                self::populationGate('exclude-tests', self::NAME, SymbolLevel::Callable, 'callable', self::nameMatches('exclude-tests', true), 'The configured test-file exclusion applies.'),
+                self::populationGate('minimum-statements', self::NAME, SymbolLevel::Callable, 'callable', self::keyThreshold('minimum-statements', [MetricName::SIZE_METHOD_STATEMENT_COUNT], '>=', 'minimum-statements', 'zero', true), 'Statement count is below the configured minimum.'),
+                self::populationGate('maintainability', self::NAME, SymbolLevel::Callable, 'callable', self::keyPresent('maintainability', [MetricName::MAINTAINABILITY_MI]), 'Maintainability was not published.'),
             ),
         ];
     }

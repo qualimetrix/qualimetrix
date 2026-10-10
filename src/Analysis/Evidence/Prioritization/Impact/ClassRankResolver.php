@@ -13,7 +13,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
- * Resolves a classRank value for a given finding, regardless of its SymbolPath type.
+ * Resolves a ClassRank share value for a given finding, regardless of its SymbolPath type.
  *
  * For method/class-level findings, the classRank is looked up directly.
  * For namespace/file-level findings, a pre-built index is used for O(1) lookup.
@@ -24,17 +24,17 @@ final readonly class ClassRankResolver
      * Builds a lookup index for fast classRank resolution.
      *
      * Iterates all classes once, building:
-     * - file → max classRank among classes in that file
-     * - namespace → max classRank among classes in that namespace (prefix-aware)
-     * - median classRank across all classes (for fallback when classRank is unavailable)
+     * - file → max ClassRank share among classes in that file
+     * - namespace → max ClassRank share among classes in that namespace (prefix-aware)
+     * - median ClassRank share across all classes (for fallback when classRank is unavailable)
      */
     public function buildIndex(MetricRepositoryInterface $metrics, ?NamespaceTree $tree = null): ClassRankIndex
     {
-        /** @var array<string, float> $fileIndex file path → max classRank */
+        /** @var array<string, float> $fileIndex file path → max ClassRank share */
         $fileIndex = [];
-        /** @var array<string, float> $nsIndex namespace → max classRank */
+        /** @var array<string, float> $nsIndex namespace → max ClassRank share */
         $nsIndex = [];
-        /** @var list<float> $allRanks all classRank values for median calculation */
+        /** @var list<float> $allRanks all ClassRank share values for median calculation */
         $allRanks = [];
 
         $tree = $tree ?? new NamespaceTree($metrics->getNamespaces());
@@ -49,7 +49,7 @@ final readonly class ClassRankResolver
                 $symbolInfo->symbolPath->type,
             );
 
-            $value = $symbolInfo->subject === null ? null : $metrics->getSubject($symbolInfo->subject)->get(MetricName::COUPLING_CLASS_RANK);
+            $value = $symbolInfo->subject === null ? null : $metrics->getSubject($symbolInfo->subject)->get(MetricName::COUPLING_CLASS_RANK_SHARE);
             $rank = $this->sanitize($value);
 
             if ($rank === null) {
@@ -122,11 +122,11 @@ final readonly class ClassRankResolver
     }
 
     /**
-     * Resolves the classRank metric for the class associated with a finding.
+     * Resolves the ClassRank share metric for the class associated with a finding.
      *
      * Uses a pre-built index for O(1) namespace/file lookups.
      *
-     * @return float|null The classRank value, or null if not available
+     * @return float|null The ClassRank share value, or null if not available
      */
     public function resolve(Finding $finding, MetricRepositoryInterface $metrics, ClassRankIndex $index): ?float
     {
@@ -144,7 +144,7 @@ final readonly class ClassRankResolver
 
     private function resolveForClassPath(SymbolPath $classPath, MetricRepositoryInterface $metrics): ?float
     {
-        $value = $metrics->getSubject(\Qualimetrix\Core\Symbol\MetricSubject::logicalClass(new \Qualimetrix\Core\Symbol\LogicalClassPath($classPath)))->get(MetricName::COUPLING_CLASS_RANK);
+        $value = $metrics->getSubject(\Qualimetrix\Core\Symbol\MetricSubject::logicalClass(new \Qualimetrix\Core\Symbol\LogicalClassPath($classPath)))->get(MetricName::COUPLING_CLASS_RANK_SHARE);
 
         return $this->sanitize($value);
     }

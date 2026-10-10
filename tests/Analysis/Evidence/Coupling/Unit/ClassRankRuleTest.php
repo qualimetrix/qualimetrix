@@ -4,629 +4,256 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit;
 
-use InvalidArgumentException;
-
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Coupling\ClassRankOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\ClassRankRule;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
+use Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch;
+use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\ClassType;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
+use RuntimeException;
 
 #[CoversClass(ClassRankRule::class)]
 #[CoversClass(ClassRankOptions::class)]
 final class ClassRankRuleTest extends TestCase
 {
     #[Test]
-    public function itReturnsTheCouplingClassRankRuleName(): void
+    public function itDeclaresShareDefaultsAndTheExistingChannelAndCliAliases(): void
     {
-        $rule = new ClassRankRule(new ClassRankOptions());
-
-        self::assertSame('coupling.class-rank', $rule->getName());
-    }
-
-    #[Test]
-    public function itReturnsANonEmptyDescription(): void
-    {
-        $rule = new ClassRankRule(new ClassRankOptions());
-
-        self::assertNotEmpty($rule::getDescription());
-    }
-
-    #[Test]
-    public function itDeclaresClassRankOptionsAsItsOptionsClass(): void
-    {
+        $options = ClassRankOptions::fromResolved(ResolvedOptionsFixture::values(ClassRankOptions::class, []));
+        self::assertSame(5.0, $options->warning);
+        self::assertSame(10.0, $options->error);
+        self::assertSame('coupling.class-rank', (new ClassRankRule($options))->getName());
+        self::assertSame(['class-rank-warning' => 'warning', 'class-rank-error' => 'error'], CliAliasReader::read(ClassRankRule::class));
         self::assertSame(ClassRankOptions::class, ClassRankRule::getOptionsClass());
     }
 
     #[Test]
-    public function itRejectsOptionsOfTheWrongType(): void
+    #[DataProvider('shares')]
+    public function itJudgesRawShareAndRendersTruthfulBoundaryWords(float $share, ?Severity $severity, string $fragment): void
     {
-        $wrongOptions = self::createStub(\Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface::class);
-
-        self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage('Expected');
-
-        new ClassRankRule($wrongOptions);
-    }
-
-    #[Test]
-    public function itProducesNoFindingsWhenDisabled(): void
-    {
-        $rule = new ClassRankRule(new ClassRankOptions(enabled: false));
-
-        $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('allLogicalClasses');
-
-        $context = new AnalysisContext($repository);
-
-        self::assertSame([], $rule->analyze($context));
-    }
-
-    #[Test]
-    public function itProducesNoFindingsWhenThereAreNoClasses(): void
-    {
-        $rule = new ClassRankRule(new ClassRankOptions());
-
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allLogicalClasses')
-            ->willReturn([]);
-
-        $context = new AnalysisContext($repository);
-
-        self::assertSame([], $rule->analyze($context));
-    }
-
-    #[Test]
-    public function itSkipsClassesThatHaveNoClassRankMetric(): void
-    {
-        $rule = new ClassRankRule(new ClassRankOptions());
-
-        $classes = $this->createDummyClasses(100, 'src/SomeClass.php', 10);
-
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allLogicalClasses')
-            ->willReturn($classes);
-        $repository->method('allClassDeclarations')->willReturn($classes);
-        $repository->method('getSubject')
-            ->willReturn(new MetricBag());
-
-        $context = new AnalysisContext($repository);
-
-        self::assertSame([], $rule->analyze($context));
-    }
-
-    #[Test]
-    public function itAppliesAnExactSubjectOverrideBeforeProjectScale(): void
-    {
-        $rule = new ClassRankRule(new ClassRankOptions());
-        $targetPath = SymbolPath::forClass('App', 'Hub');
-        $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('src/Hub.php'), 100);
-        $subject = $targetInfo->subject;
-        self::assertNotNull($subject);
-
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allLogicalClasses')->willReturn($this->createDummyClasses(100));
-        $repository->method('allClassDeclarations')->willReturn([$targetInfo]);
-        $repository->method('getSubject')->willReturn((new MetricBag())->with('coupling.class-rank', 0.03)->with('coupling.ca', 2));
-
-        self::assertCount(1, $rule->analyze(new AnalysisContext($repository)));
-
-        $context = new AnalysisContext(
-            metrics: $repository,
-            thresholdOverrides: [
-                'src/Hub.php' => [
-                    new ThresholdOverride('coupling.class-rank', 0.04, 0.06, 1, $subject, ControlScope::Class_, 100),
-                ],
-            ],
-        );
-
-        self::assertSame([], $rule->analyze($context));
-    }
-
-    #[Test]
-    public function itProducesNoFindingWhenClassRankIsBelowTheWarningThreshold(): void
-    {
-        // With 100 classes, scale factor = 1.0, so thresholds are unchanged
-        $rule = new ClassRankRule(new ClassRankOptions());
-
-        $classes = $this->createDummyClasses(100);
-
-        $metricBag = (new MetricBag())->with('coupling.class-rank', 0.01)->with('coupling.ca', 2);
-
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allLogicalClasses')
-            ->willReturn($classes);
-        $repository->method('allClassDeclarations')->willReturn($classes);
-        $repository->method('getSubject')
-            ->willReturn($metricBag);
-
-        $context = new AnalysisContext($repository);
-        $findings = $rule->analyze($context);
-
-        // All 100 classes have rank 0.01, below warning threshold 0.02
-        self::assertCount(0, $findings);
-    }
-
-    #[Test]
-    public function itReportsAWarningWhenClassRankExceedsTheWarningThreshold(): void
-    {
-        // With 100 classes, scale factor = 1.0, thresholds unchanged
-        $rule = new ClassRankRule(new ClassRankOptions());
-
-        $targetPath = SymbolPath::forClass('App', 'ImportantClass');
-        $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('src/ImportantClass.php'), 10);
-
-        // 0.03 is above warning (0.02) but below error (0.05)
-        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.03)->with('coupling.ca', 2);
-        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.005)->with('coupling.ca', 2);
-
-        $classes = $this->createDummyClasses(99);
-        $classes[] = $targetInfo;
-
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allLogicalClasses')
-            ->willReturn($classes);
-        $repository->method('allClassDeclarations')->willReturn($classes);
-        $repository->method('getSubject')
-            ->willReturnCallback(static fn($subject) => $subject->toSymbolPath()->toCanonical() === $targetPath->toCanonical() ? $targetBag : $normalBag);
-
-        $context = new AnalysisContext($repository);
-        $findings = $rule->analyze($context);
-
-        // Only the target class exceeds the warning threshold
-        self::assertCount(1, $findings);
-        self::assertSame(Severity::Warning, $findings[0]->severity);
-        self::assertStringContainsString('ClassRank is 0.0300', $findings[0]->message);
-        self::assertStringContainsString('scaled for 100 classes', $findings[0]->message);
-        self::assertEqualsWithDelta(0.03, $findings[0]->metricValue, 0.001);
-        self::assertSame('coupling.class-rank', $findings[0]->ruleName);
-        self::assertSame('coupling.class-rank', $findings[0]->code);
-    }
-
-    #[Test]
-    public function itReportsAnErrorWhenClassRankExceedsTheErrorThreshold(): void
-    {
-        // With 100 classes, scale factor = 1.0, thresholds unchanged
-        $rule = new ClassRankRule(new ClassRankOptions());
-
-        $targetPath = SymbolPath::forClass('App', 'CriticalHub');
-        $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('src/CriticalHub.php'), 10);
-
-        // 0.08 is above error threshold (0.05)
-        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.08)->with('coupling.ca', 2);
-        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.005)->with('coupling.ca', 2);
-
-        $classes = $this->createDummyClasses(99);
-        $classes[] = $targetInfo;
-
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allLogicalClasses')
-            ->willReturn($classes);
-        $repository->method('allClassDeclarations')->willReturn($classes);
-        $repository->method('getSubject')
-            ->willReturnCallback(static fn($subject) => $subject->toSymbolPath()->toCanonical() === $targetPath->toCanonical() ? $targetBag : $normalBag);
-
-        $context = new AnalysisContext($repository);
-        $findings = $rule->analyze($context);
-
-        self::assertCount(1, $findings);
-        self::assertSame(Severity::Error, $findings[0]->severity);
-        self::assertEqualsWithDelta(0.08, $findings[0]->metricValue, 0.001);
-    }
-
-    #[Test]
-    #[DataProvider('thresholdDataProvider')]
-    public function itRespectsBoundaryThresholds(
-        float $classRank,
-        float $warning,
-        float $error,
-        ?Severity $expectedSeverity,
-    ): void {
-        $rule = new ClassRankRule(new ClassRankOptions(
-            warning: $warning,
-            error: $error,
-        ));
-
-        $targetPath = SymbolPath::forClass('App', 'TestClass');
-        $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('test.php'), 1);
-
-        $targetBag = (new MetricBag())->with('coupling.class-rank', $classRank)->with('coupling.ca', 2);
-        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.001)->with('coupling.ca', 2);
-
-        // Use 100 classes so scale factor = 1.0
-        $classes = $this->createDummyClasses(99);
-        $classes[] = $targetInfo;
-
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allLogicalClasses')
-            ->willReturn($classes);
-        $repository->method('allClassDeclarations')->willReturn($classes);
-        $repository->method('getSubject')
-            ->willReturnCallback(static fn($subject) => $subject->toSymbolPath()->toCanonical() === $targetPath->toCanonical() ? $targetBag : $normalBag);
-
-        $context = new AnalysisContext($repository);
-        $findings = $rule->analyze($context);
-
-        // Filter to just the target class findings
-        $targetFindings = array_values(array_filter(
-            $findings,
-            static fn($v) => $v->symbolPath === $targetPath,
-        ));
-
-        if ($expectedSeverity === null) {
-            self::assertCount(0, $targetFindings);
-        } else {
-            self::assertCount(1, $targetFindings);
-            self::assertSame($expectedSeverity, $targetFindings[0]->severity);
-            $selectedThreshold = $expectedSeverity === Severity::Error ? $error : $warning;
-            self::assertStringContainsString(($classRank === $selectedThreshold ? 'reaches' : 'exceeds') . ' threshold of', $targetFindings[0]->message);
-            self::assertSame($classRank, $targetFindings[0]->metricValue);
-            self::assertEquals($selectedThreshold, $targetFindings[0]->threshold);
+        $findings = (new ClassRankRule(new ClassRankOptions()))->analyze($this->context([
+            ['Hub', ClassType::Class_, (new MetricBag())->with('coupling.class-rank-share', $share)->with('coupling.ca', 1)],
+        ]));
+        if ($severity === null) {
+            self::assertSame([], $findings);
+            return;
         }
-    }
-
-    /**
-     * @return iterable<string, array{float, float, float, ?Severity}>
-     */
-    public static function thresholdDataProvider(): iterable
-    {
-        yield 'below warning' => [0.01, 0.02, 0.05, null];
-        yield 'at warning' => [0.02, 0.02, 0.05, Severity::Warning];
-        yield 'raw above warning, same four-digit display' => [0.020049, 0.02, 0.05, Severity::Warning];
-        yield 'between warning and error' => [0.03, 0.02, 0.05, Severity::Warning];
-        yield 'at error' => [0.05, 0.02, 0.05, Severity::Error];
-        yield 'above error' => [0.10, 0.02, 0.05, Severity::Error];
-    }
-
-    // --- Threshold scaling tests ---
-
-    #[Test]
-    public function itReturnsAScaleFactorOfOneAt100Classes(): void
-    {
-        self::assertEqualsWithDelta(1.0, ClassRankRule::computeScaleFactor(100), 0.001);
-    }
-
-    #[Test]
-    public function itReturnsAScaleFactorOfFourAt1600Classes(): void
-    {
-        // sqrt(1600/100) = sqrt(16) = 4
-        self::assertEqualsWithDelta(4.0, ClassRankRule::computeScaleFactor(1600), 0.001);
-    }
-
-    #[Test]
-    public function itReturnsAScaleFactorOfHalfAt25Classes(): void
-    {
-        // sqrt(25/100) = sqrt(0.25) = 0.5
-        self::assertEqualsWithDelta(0.5, ClassRankRule::computeScaleFactor(25), 0.001);
-    }
-
-    #[Test]
-    public function itReturnsAScaleFactorOfOneAtZeroClasses(): void
-    {
-        self::assertEqualsWithDelta(1.0, ClassRankRule::computeScaleFactor(0), 0.001);
-    }
-
-    #[Test]
-    public function itLowersEffectiveThresholdsForALargeProject(): void
-    {
-        // With 400 classes: scale factor = sqrt(400/100) = 2.0
-        // Effective warning = 0.02 / 2 = 0.01, effective error = 0.05 / 2 = 0.025
-        $rule = new ClassRankRule(new ClassRankOptions());
-
-        $targetPath = SymbolPath::forClass('App', 'Hub');
-        $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('src/Hub.php'), 10);
-
-        // 0.01 reaches scaled warning and remains below unscaled warning (0.02)
-        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.01)->with('coupling.ca', 2);
-        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.001)->with('coupling.ca', 2);
-
-        $classes = $this->createDummyClasses(399);
-        $classes[] = $targetInfo;
-
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allLogicalClasses')
-            ->willReturn($classes);
-        $repository->method('allClassDeclarations')->willReturn($classes);
-        $repository->method('getSubject')
-            ->willReturnCallback(static fn($subject) => $subject->toSymbolPath()->toCanonical() === $targetPath->toCanonical() ? $targetBag : $normalBag);
-
-        $context = new AnalysisContext($repository);
-        $findings = $rule->analyze($context);
-
-        $targetFindings = array_values(array_filter(
-            $findings,
-            static fn($v) => $v->symbolPath === $targetPath,
-        ));
-
-        self::assertCount(1, $targetFindings);
-        self::assertSame(Severity::Warning, $targetFindings[0]->severity);
-        self::assertStringContainsString('ClassRank is 0.0100, reaches threshold of 0.0100', $targetFindings[0]->message);
-    }
-
-    #[Test]
-    public function itRaisesEffectiveThresholdsForASmallProject(): void
-    {
-        // With 25 classes: scale factor = sqrt(25/100) = 0.5
-        // Effective warning = 0.02 / 0.5 = 0.04, effective error = 0.05 / 0.5 = 0.10
-        $rule = new ClassRankRule(new ClassRankOptions());
-
-        $targetPath = SymbolPath::forClass('App', 'SmallHub');
-        $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('src/SmallHub.php'), 10);
-
-        // 0.03 would normally be a warning with default thresholds,
-        // but with 25 classes, scaled warning = 0.04, so no finding
-        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.03)->with('coupling.ca', 2);
-        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.001)->with('coupling.ca', 2);
-
-        $classes = $this->createDummyClasses(24);
-        $classes[] = $targetInfo;
-
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allLogicalClasses')
-            ->willReturn($classes);
-        $repository->method('allClassDeclarations')->willReturn($classes);
-        $repository->method('getSubject')
-            ->willReturnCallback(static fn($subject) => $subject->toSymbolPath()->toCanonical() === $targetPath->toCanonical() ? $targetBag : $normalBag);
-
-        $context = new AnalysisContext($repository);
-        $findings = $rule->analyze($context);
-
-        $targetFindings = array_values(array_filter(
-            $findings,
-            static fn($v) => $v->symbolPath === $targetPath,
-        ));
-
-        self::assertCount(0, $targetFindings);
-    }
-
-    #[Test]
-    public function itReportsAnErrorAtALowerRankOnALargeProject(): void
-    {
-        // With 1600 classes: scale factor = 4.0
-        // Effective error = 0.05 / 4 = 0.0125
-        $rule = new ClassRankRule(new ClassRankOptions());
-
-        $targetPath = SymbolPath::forClass('App', 'MegaHub');
-        $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('src/MegaHub.php'), 10);
-
-        // 0.02 would normally just be a warning, but with 1600 classes it's an error
-        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.02)->with('coupling.ca', 2);
-        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.0001)->with('coupling.ca', 2);
-
-        $classes = $this->createDummyClasses(1599);
-        $classes[] = $targetInfo;
-
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allLogicalClasses')
-            ->willReturn($classes);
-        $repository->method('allClassDeclarations')->willReturn($classes);
-        $repository->method('getSubject')
-            ->willReturnCallback(static fn($subject) => $subject->toSymbolPath()->toCanonical() === $targetPath->toCanonical() ? $targetBag : $normalBag);
-
-        $context = new AnalysisContext($repository);
-        $findings = $rule->analyze($context);
-
-        $targetFindings = array_values(array_filter(
-            $findings,
-            static fn($v) => $v->symbolPath === $targetPath,
-        ));
-
-        self::assertCount(1, $targetFindings);
-        self::assertSame(Severity::Error, $targetFindings[0]->severity);
-        self::assertStringContainsString('exceeds threshold of 0.0125', $targetFindings[0]->message);
-    }
-
-    #[Test]
-    public function itIncludesTheClassCountInTheFindingMessage(): void
-    {
-        $rule = new ClassRankRule(new ClassRankOptions());
-
-        $targetPath = SymbolPath::forClass('App', 'Hub');
-        $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('src/Hub.php'), 10);
-
-        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.03)->with('coupling.ca', 2);
-        $normalBag = (new MetricBag())->with('coupling.class-rank', 0.001)->with('coupling.ca', 2);
-
-        $classes = $this->createDummyClasses(99);
-        $classes[] = $targetInfo;
-
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allLogicalClasses')
-            ->willReturn($classes);
-        $repository->method('allClassDeclarations')->willReturn($classes);
-        $repository->method('getSubject')
-            ->willReturnCallback(static fn($subject) => $subject->toSymbolPath()->toCanonical() === $targetPath->toCanonical() ? $targetBag : $normalBag);
-
-        $context = new AnalysisContext($repository);
-        $findings = $rule->analyze($context);
-
-        $targetFindings = array_values(array_filter(
-            $findings,
-            static fn($v) => $v->symbolPath === $targetPath,
-        ));
-
-        self::assertCount(1, $targetFindings);
-        self::assertStringContainsString('scaled for 100 classes', $targetFindings[0]->message);
-    }
-
-    /**
-     * PageRank hands every class a floor share of the rank -- the damping base
-     * plus the mass of classes without outgoing edges, spread evenly -- so on
-     * a small or loosely coupled project a class nothing depends on can clear
-     * the scaled threshold on the floor alone, and was then called a hub that
-     * many depend on. A class with no dependents is not a hub.
-     */
-    #[Test]
-    public function itDoesNotCallAClassNothingDependsOnAHub(): void
-    {
-        $rule = new ClassRankRule(new ClassRankOptions());
-        $isolatedPath = SymbolPath::forClass('Iso', 'C1');
-        $hubPath = SymbolPath::forClass('Iso', 'Hub');
-        $classes = [
-            self::subjectInfo($isolatedPath, RelativePath::fromString('src/C1.php'), 3),
-            self::subjectInfo($hubPath, RelativePath::fromString('src/Hub.php'), 3),
-        ];
-        $bags = [
-            $isolatedPath->toCanonical() => (new MetricBag())->with('coupling.class-rank', 0.5)->with('coupling.ca', 0),
-            $hubPath->toCanonical() => (new MetricBag())->with('coupling.class-rank', 0.5)->with('coupling.ca', 1),
-        ];
-
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allLogicalClasses')->willReturn($classes);
-        $repository->method('allClassDeclarations')->willReturn($classes);
-        $repository->method('getSubject')->willReturnCallback(static fn($subject): MetricBag => $bags[$subject->toSymbolPath()->toCanonical()]);
-
-        $findings = $rule->analyze(new AnalysisContext($repository));
-
         self::assertCount(1, $findings);
-        self::assertSame($hubPath, $findings[0]->symbolPath);
-        self::assertStringContainsString('1 class depends on this', (string) $findings[0]->recommendation);
+        self::assertSame($share, $findings[0]->metricValue);
+        self::assertSame($severity, $findings[0]->severity);
+        self::assertStringContainsString($fragment, $findings[0]->message);
+        self::assertStringContainsString('1 class depends', $findings[0]->recommendation ?? '');
     }
 
-    // --- Options tests ---
-
-    #[Test]
-    public function itDefaultsToTheStandardThresholdsAndIsEnabled(): void
+    /** @return iterable<string, array{float, ?Severity, string}> */
+    public static function shares(): iterable
     {
-        $options = new ClassRankOptions();
-
-        self::assertTrue($options->isEnabled());
-        self::assertEqualsWithDelta(0.02, $options->warning, 0.001);
-        self::assertEqualsWithDelta(0.05, $options->error, 0.001);
-    }
-
-    #[Test]
-    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
-    {
-        self::assertEquals(new ClassRankOptions(), ClassRankOptions::fromResolved(ResolvedOptionsFixture::values(ClassRankOptions::class, [])));
-        self::assertFalse(ClassRankOptions::fromResolved(ResolvedOptionsFixture::values(ClassRankOptions::class, ['enabled' => false]))->isEnabled());
+        yield 'healthy' => [4.99, null, ''];
+        yield 'warning equality' => [5.0, Severity::Warning, '5.00× uniform, reaches threshold of 5.00×'];
+        yield 'warning' => [6.0, Severity::Warning, 'exceeds threshold of 5.00×'];
+        yield 'error equality' => [10.0, Severity::Error, 'reaches threshold of 10.00×'];
+        yield 'precision expands' => [5.000049, Severity::Warning, '5.00005× uniform, exceeds threshold of 5.00000×'];
+        yield 'six digits collide' => [5.0000001, Severity::Warning, 'exceeds threshold of 5.000000× (display rounded)'];
     }
 
     #[Test]
-    public function itUsesCustomThresholdsFromArray(): void
+    public function itJudgesOnlyExactPhpClassesEvenWhenKindsShareOneLogicalName(): void
     {
-        $options = ClassRankOptions::fromResolved(ResolvedOptionsFixture::values(ClassRankOptions::class, [
-            'enabled' => true,
-            'warning' => 0.03,
-            'error' => 0.08,
+        $bag = (new MetricBag())->with('coupling.class-rank-share', 20)->with('coupling.ca', 1);
+        $context = $this->context([
+            ['Same', ClassType::Class_, $bag], ['Same', ClassType::Interface_, $bag],
+            ['TraitType', ClassType::Trait_, $bag], ['EnumType', ClassType::Enum_, $bag],
+        ]);
+        $findings = (new ClassRankRule(new ClassRankOptions()))->analyze($context);
+        self::assertCount(1, $findings);
+        self::assertSame('src/0.php', $findings[0]->location->pathString());
+    }
+
+    #[Test]
+    public function itKeepsDuplicateDeclarationsAsIndependentJudgements(): void
+    {
+        $bag = (new MetricBag())->with('coupling.class-rank-share', 6)->with('coupling.ca', 1);
+        $findings = (new ClassRankRule(new ClassRankOptions()))->analyze($this->context([
+            ['Same', ClassType::Class_, $bag], ['Same', ClassType::Class_, $bag],
         ]));
-
-        self::assertTrue($options->isEnabled());
-        self::assertEqualsWithDelta(0.03, $options->warning, 0.001);
-        self::assertEqualsWithDelta(0.08, $options->error, 0.001);
-    }
-
-    #[Test]
-    public function itStaysDisabledWhenExplicitlyDisabledInArray(): void
-    {
-        $options = ClassRankOptions::fromResolved(ResolvedOptionsFixture::values(ClassRankOptions::class, [
-            'enabled' => false,
-        ]));
-
-        self::assertFalse($options->isEnabled());
-    }
-
-    #[Test]
-    public function itReturnsNoSeverityBelowTheWarningThreshold(): void
-    {
-        $options = new ClassRankOptions();
-
-        self::assertNull($options->getSeverity(0.01));
-    }
-
-    #[Test]
-    public function itReturnsWarningSeverityAboveTheWarningThreshold(): void
-    {
-        $options = new ClassRankOptions();
-
-        self::assertSame(Severity::Warning, $options->getSeverity(0.03));
-    }
-
-    #[Test]
-    public function itReturnsErrorSeverityAboveTheErrorThreshold(): void
-    {
-        $options = new ClassRankOptions();
-
-        self::assertSame(Severity::Error, $options->getSeverity(0.08));
-    }
-
-    #[Test]
-    public function itDeclaresCliAliasesForItsThresholds(): void
-    {
-        $aliases = CliAliasReader::read(ClassRankRule::class);
-
-        self::assertArrayHasKey('class-rank-warning', $aliases);
-        self::assertArrayHasKey('class-rank-error', $aliases);
-        self::assertSame('warning', $aliases['class-rank-warning']);
-        self::assertSame('error', $aliases['class-rank-error']);
-    }
-
-    #[Test]
-    public function itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations(): void
-    {
-        $class = SymbolPath::forClass('App\\Service', 'Twin');
-        $first = self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100);
-        $second = self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200);
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allLogicalClasses')->willReturn($this->createDummyClasses(100));
-        $repository->method('allClassDeclarations')->willReturn([$first, $second]);
-        $repository->method('getSubject')->willReturn((new MetricBag())->with('coupling.class-rank', 0.03)->with('coupling.ca', 2));
-
-        $findings = (new ClassRankRule(new ClassRankOptions()))
-            ->analyze(new AnalysisContext($repository));
-
         self::assertCount(2, $findings);
-        $subjects = array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings);
-        sort($subjects);
-        self::assertSame([
-            'declaration:class:App\\Service\\Twin@src/A.php',
-            'declaration:class:App\\Service\\Twin@src/B.php',
-        ], $subjects);
+        self::assertNotSame($findings[0]->subject->toCanonical(), $findings[1]->subject->toCanonical());
     }
 
-    /**
-     * Creates N dummy SymbolInfo instances for class symbols.
-     *
-     * @return list<SymbolInfo>
-     */
-    private function createDummyClasses(int $count, string $file = 'src/Dummy.php', int $line = 1): array
+    #[Test]
+    public function itPreservesHealthyZeroDependentsAndDoesNotSubstituteRawProbability(): void
     {
-        $relFile = RelativePath::fromString($file);
-        $classes = [];
-        for ($i = 0; $i < $count; $i++) {
-            $path = SymbolPath::forClass('App\\Dummy', 'DummyClass' . $i);
-            $classes[] = self::subjectInfo($path, $relFile, $line);
-        }
-
-        return $classes;
+        $rule = new ClassRankRule(new ClassRankOptions());
+        self::assertSame([], $rule->analyze($this->context([
+            ['NoDependents', ClassType::Class_, (new MetricBag())->with('coupling.class-rank-share', 20)->with('coupling.ca', 0)],
+            ['RawOnly', ClassType::Class_, (new MetricBag())->with('coupling.class-rank', 0.9)->with('coupling.ca', 1)],
+        ])));
     }
-    private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
+
+    #[Test]
+    public function itRefusesMissingDependentsAfterPublishedShare(): void
     {
-        $type = $symbolPath->getType();
-        if (\in_array($type, [\Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project], true)) {
-            return new \Qualimetrix\Core\Symbol\SymbolInfo(\Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath), $file, $line);
+        self::expectException(RuntimeException::class);
+        (new ClassRankRule(new ClassRankOptions()))->analyze($this->context([
+            ['Hub', ClassType::Class_, (new MetricBag())->with('coupling.class-rank-share', 20)],
+        ]));
+    }
+
+    #[Test]
+    public function itAppliesAnExactOverrideInShareUnits(): void
+    {
+        $base = $this->context([['Hub', ClassType::Class_, (new MetricBag())->with('coupling.class-rank-share', 6)->with('coupling.ca', 1)]]);
+        $info = iterator_to_array($base->metrics->allClassDeclarations())[0];
+        $subject = $info->subject ?? throw new LogicException('Fixture requires an exact subject.');
+        $override = new ThresholdOverride('coupling.class-rank', 7, 12, 1, $subject, ControlScope::Class_, 100);
+        $context = new AnalysisContext($base->metrics, $base->dependencyGraph, thresholdOverrides: ['src/0.php' => [$override]]);
+        self::assertSame([], (new ClassRankRule(new ClassRankOptions()))->analyze($context));
+    }
+
+    #[Test]
+    public function itRefusesAMeasuredDeclarationWithNoExactKind(): void
+    {
+        $base = $this->context([['Hub', ClassType::Class_, new MetricBag()]]);
+        $graph = self::createStub(DependencyGraphInterface::class);
+        $graph->method('getClassLikeDeclarations')->willReturn([]);
+        self::expectException(LogicException::class);
+        (new ClassRankRule(new ClassRankOptions()))->analyze(new AnalysisContext($base->metrics, $graph));
+    }
+
+    #[Test]
+    public function itRefusesConflictingExactKinds(): void
+    {
+        $base = $this->context([['Hub', ClassType::Class_, new MetricBag()]]);
+        $facts = $base->dependencyGraph?->getClassLikeDeclarations() ?? [];
+        $facts[] = ClassLikeDeclaration::of($facts[0]->declaration, ClassType::Interface_, false, false);
+        $graph = self::createStub(DependencyGraphInterface::class);
+        $graph->method('getClassLikeDeclarations')->willReturn($facts);
+        self::expectException(LogicException::class);
+        (new ClassRankRule(new ClassRankOptions()))->analyze(new AnalysisContext($base->metrics, $graph));
+    }
+
+    #[Test]
+    public function itAcceptsAKnownEmptyGraphAndDoesNotEnumerateWhenDisabled(): void
+    {
+        self::assertSame([], (new ClassRankRule(new ClassRankOptions()))->analyze($this->context([])));
+        $metrics = self::createMock(MetricRepositoryInterface::class);
+        $metrics->expects(self::never())->method('allClassDeclarations');
+        self::assertSame([], (new ClassRankRule(new ClassRankOptions(enabled: false)))->analyze(new AnalysisContext($metrics)));
+    }
+
+    #[Test]
+    public function itRecordsOneUnknownGraphBeforeEnumeratingAnyDeclaration(): void
+    {
+        foreach ([null, false, true] as $selected) {
+            $metrics = self::createMock(MetricRepositoryInterface::class);
+            $metrics->expects(self::never())->method('allClassDeclarations');
+            $metrics->expects(self::never())->method('getSubject');
+            $context = new AnalysisContext($metrics);
+            $session = $selected === null ? null : new PopulationSession(($this->publication($selected))->publishes(...));
+            if ($session !== null) {
+                $context = $context->withPopulationTrace($session);
+            }
+            self::assertSame([], (new ClassRankRule(new ClassRankOptions()))->analyze($context));
+            if ($session !== null) {
+                $population = $session->freeze();
+                self::assertSame(0, $population->judgedCount());
+                self::assertSame($selected ? 1 : 0, $population->unjudgedCount());
+                if ($selected) {
+                    self::assertSame('invocation', $population->abstentions()[0]->unit);
+                    self::assertSame('graph-available', $population->abstentions()[0]->gate);
+                }
+            }
         }
+    }
 
-        \assert($file !== null);
-        $kind = $type === \Qualimetrix\Core\Symbol\SymbolType::Class_ ? null : ($type === \Qualimetrix\Core\Symbol\SymbolType::Function_ ? \Qualimetrix\Core\Symbol\CallableKind::Function : \Qualimetrix\Core\Symbol\CallableKind::Method);
+    #[Test]
+    public function itKeepsKnownEmptyGraphAtZeroAndDoesNotReadExcludedPhpKindMetrics(): void
+    {
+        $session = new PopulationSession(($this->publication())->publishes(...));
+        self::assertSame([], (new ClassRankRule(new ClassRankOptions()))->analyze($this->context([])->withPopulationTrace($session)));
+        self::assertTrue($session->freeze()->isEmpty());
+        $base = $this->context([['OnlyInterface', ClassType::Interface_, new MetricBag()]]);
+        $metrics = self::createMock(MetricRepositoryInterface::class);
+        $metrics->method('allClassDeclarations')->willReturn(iterator_to_array($base->metrics->allClassDeclarations(), false));
+        $metrics->expects(self::never())->method('getSubject');
+        $session = new PopulationSession(($this->publication())->publishes(...));
+        self::assertSame([], (new ClassRankRule(new ClassRankOptions()))->analyze((new AnalysisContext($metrics, $base->dependencyGraph))->withPopulationTrace($session)));
+        self::assertSame(1, $session->freeze()->unjudgedCount());
+        self::assertSame('php-class', $session->freeze()->abstentions()[0]->gate);
+    }
 
-        return new \Qualimetrix\Core\Symbol\SymbolInfo(
-            \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $file, \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
-            $file,
-            $line,
-            $kind,
-        );
+    #[Test]
+    public function itIncludesAbstractClassesAndRefusesExtraGraphDeclarations(): void
+    {
+        $base = $this->context([['AbstractHub', ClassType::Class_, MetricBag::fromArray(['coupling.class-rank-share' => 6, 'coupling.ca' => 1])]]);
+        $facts = $base->dependencyGraph?->getClassLikeDeclarations() ?? [];
+        $abstract = ClassLikeDeclaration::of($facts[0]->declaration, ClassType::Class_, true, false);
+        $graph = self::createStub(DependencyGraphInterface::class);
+        $graph->method('getClassLikeDeclarations')->willReturn([$abstract]);
+        self::assertCount(1, (new ClassRankRule(new ClassRankOptions()))->analyze(new AnalysisContext($base->metrics, $graph)));
+        $extra = ClassLikeDeclaration::of(DeclarationPath::of(SymbolPath::forClass('App', 'Extra'), RelativePath::fromString('src/Extra.php'), DeclarationOrdinal::fromRank(0)), ClassType::Class_, false, false);
+        $extraGraph = self::createStub(DependencyGraphInterface::class);
+        $extraGraph->method('getClassLikeDeclarations')->willReturn([$abstract, $extra]);
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('rosters disagree');
+        (new ClassRankRule(new ClassRankOptions()))->analyze(new AnalysisContext($base->metrics, $extraGraph));
+    }
+
+    private function publication(bool $selected = true): ChannelPublication
+    {
+        $channel = new FindingChannel(ClassRankRule::NAME);
+        return new ChannelPublication(new RuleEnablement([new EnablementDecision(
+            new SelectionCellAddress(ClassRankRule::NAME, $channel, SymbolLevel::Class_, ChannelSelectionRole::Selectable),
+            new AuthoredCellDecision($selected ? CellSwitch::On : CellSwitch::Off, CellAdmission::Direct),
+        )], null));
+    }
+
+    /** @param list<array{string, ClassType, MetricBag}> $members */
+    private function context(array $members): AnalysisContext
+    {
+        $infos = $facts = $bags = [];
+        foreach ($members as $ordinal => [$name, $kind, $bag]) {
+            $file = RelativePath::fromString('src/' . $ordinal . '.php');
+            $path = DeclarationPath::of(SymbolPath::forClass('App', $name), $file, DeclarationOrdinal::fromRank(0));
+            $subject = MetricSubject::declaration($path);
+            $infos[] = new SymbolInfo($subject, $file, 10);
+            $facts[] = ClassLikeDeclaration::of($path, $kind, false, false);
+            $bags[$subject->toCanonical()] = $bag;
+        }
+        $metrics = self::createStub(MetricRepositoryInterface::class);
+        $metrics->method('allClassDeclarations')->willReturn($infos);
+        $metrics->method('getSubject')->willReturnCallback(static fn(MetricSubject $subject): MetricBag => $bags[$subject->toCanonical()]);
+        $graph = self::createStub(DependencyGraphInterface::class);
+        $graph->method('getClassLikeDeclarations')->willReturn($facts);
+        return new AnalysisContext($metrics, $graph);
     }
 }

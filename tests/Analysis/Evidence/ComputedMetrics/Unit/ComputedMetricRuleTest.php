@@ -43,6 +43,65 @@ use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 final class ComputedMetricRuleTest extends TestCase
 {
     #[Test]
+    public function itAccountsTheEmptyProjectCoordinateWithoutInventingClassSubjects(): void
+    {
+        $definition = new ComputedMetricDefinition('computed.empty-project', ['project' => 'throw_if_evaluated()'], 'Project', [SymbolLevel::Project], warningThreshold: 5);
+        $channel = new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($definition->name);
+        $publication = new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement([
+            new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(ComputedMetricRule::NAME, $channel, SymbolLevel::Project, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct)),
+        ], null));
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(($publication)->publishes(...));
+        $repository = new InMemoryMetricRepository();
+        self::assertSame([], iterator_to_array($repository->allClassDeclarations(), false));
+        self::assertSame([], $this->createRuleWithDefinitions([$definition])->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
+        self::assertSame(0, $session->freeze()->judgedCount());
+        self::assertSame(1, $session->freeze()->unjudgedCount());
+        self::assertSame('project', $session->freeze()->abstentions()[0]->unit);
+        self::assertSame(['project:'], $session->freeze()->abstentions()[0]->examples);
+    }
+
+    #[Test]
+    public function itAccountsDefinitionOwnedValuesAndExcludesNonApplicableSubjectsWithoutEvaluatingFormulas(): void
+    {
+        $definitions = [
+            new ComputedMetricDefinition('computed.declaration', ['class' => 'throw_if_evaluated()'], 'Authored', [SymbolLevel::Class_], warningThreshold: 5),
+            new ComputedMetricDefinition('computed.policy', ['class' => 'throw_if_evaluated()'], 'Policy', [SymbolLevel::Class_], warningThreshold: 5, applicability: ['class' => \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricApplicability::positiveSum(['eligible'])]),
+            new ComputedMetricDefinition('health.cohesion', ['class' => 'throw_if_evaluated()'], 'Builtin policy', [SymbolLevel::Class_], warningThreshold: 5, applicability: ['class' => \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricApplicability::anyPresent(['policy-input'])]),
+            new ComputedMetricDefinition('computed.inherited', ['namespace' => 'throw_if_evaluated()'], 'Inherited policy', [SymbolLevel::Project], warningThreshold: 5, applicability: ['namespace' => \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricApplicability::anyPresent(['project-input'])]),
+            new ComputedMetricDefinition('computed.project', ['project' => 'throw_if_evaluated()'], 'Project', [SymbolLevel::Project], warningThreshold: 5),
+        ];
+        $infos = [];
+        foreach (['Missing', 'Healthy', 'Outside'] as $name) {
+            $infos[] = self::subjectInfo(SymbolPath::forClass('Population', $name), RelativePath::fromString('src/' . $name . '.php'), 1);
+        }
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allClassDeclarations')->willReturn($infos);
+        $repository->method('getSubject')->willReturnCallback(static function (MetricSubject $subject): MetricBag {
+            return match ($subject->toSymbolPath()->type) {
+                'Missing' => (new MetricBag())->with('eligible', 1)->with('policy-input', 1),
+                'Healthy' => (new MetricBag())->with('eligible', 1)->with('computed.declaration', 0)->with('computed.policy', 0)->with('policy-input', 1)->with('health.cohesion', 0),
+                'Outside' => (new MetricBag())->with('eligible', 0)->with('computed.declaration', 0)->with('computed.policy', 90)->with('health.cohesion', 90),
+                default => (new MetricBag())->with('computed.inherited', 90),
+            };
+        });
+        $decisions = [];
+        foreach ($definitions as $definition) {
+            $declaration = ComputedMetricChannelFamily::declarationFor($definition->name, $definition->reportingLevels(), $definition->inverted) ?? throw new LogicException('Fixture requires a reporting coordinate.');
+            foreach ($declaration->levels as $level) {
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress($definition->producerRuleName(), new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($definition->name), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
+            }
+        }
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+        $context = (new AnalysisContext($repository))->withPopulationTrace($session);
+        self::assertSame([], $this->createRuleWithDefinitions($definitions)->analyze($context));
+        self::assertSame(4, $session->freeze()->judgedCount());
+        self::assertSame(4, $session->freeze()->unjudgedCount());
+        self::assertSame(['computed.declaration', 'computed.policy', 'computed.project', 'health.cohesion'], array_map(static fn($absence): string => $absence->channel->code, $session->freeze()->abstentions()));
+        self::assertSame('project', $session->freeze()->abstentions()[2]->unit);
+        self::assertStringNotContainsString('Outside', implode(',', $session->freeze()->abstentions()[1]->examples));
+    }
+
+    #[Test]
     public function itReturnsCorrectName(): void
     {
         $rule = $this->createRuleWithDefinitions([]);

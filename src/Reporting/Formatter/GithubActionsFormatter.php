@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\FormatterContext;
@@ -39,6 +41,11 @@ final class GithubActionsFormatter implements FormatterInterface
             $lines[] = $this->formatFinding($finding, $context);
         }
 
+        $warning = $this->populationWarning($report->population);
+        if ($warning !== '') {
+            $lines[] = '::notice title=rule-population.incomplete::' . $this->escapeData($warning);
+        }
+
         foreach (self::notices($report) as $title => $notice) {
             $lines[] = \sprintf('::notice title=%s::%s', $title, $this->escapeData($notice));
         }
@@ -48,6 +55,14 @@ final class GithubActionsFormatter implements FormatterInterface
         }
 
         return new FormattedReport(implode("\n", $lines) . "\n");
+    }
+
+    private function populationWarning(JudgedPopulation $population): string
+    {
+        if ($population->unjudgedCount() === 0) {
+            return '';
+        }
+        return 'Selected judgement incomplete: ' . implode('; ', array_map(static fn($absence): string => \sprintf('%s (%s): %d unjudged %s; %s', $absence->channel->code, $absence->level->value, $absence->count, $absence->unit, $absence->reason), $population->abstentions()));
     }
 
     public function publicationKind(): PublicationKind

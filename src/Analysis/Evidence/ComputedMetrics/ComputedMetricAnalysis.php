@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMe
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Core\Symbol\SymbolLevel;
+use WeakMap;
 
 final class ComputedMetricAnalysis implements
     ComputedMetricConfiguratorInterface,
@@ -18,15 +19,19 @@ final class ComputedMetricAnalysis implements
 {
     private ResolvedComputedMetricDefinitions $definitions;
 
+    /** @var WeakMap<ConfigurationDocument, ResolvedComputedMetricDefinitions> */
+    private WeakMap $resolved;
+
     public function __construct(
         private readonly ComputedMetricsConfigResolver $configResolver,
     ) {
         $this->definitions = new ResolvedComputedMetricDefinitions([]);
+        $this->resolved = new WeakMap();
     }
 
     public function resolve(ConfigurationDocument $document): ResolvedComputedMetricDefinitions
     {
-        return $this->configResolver->resolveWithSources($document->resolved());
+        return $this->resolved[$document] ??= $this->configResolver->resolveWithSources($document->resolved());
     }
 
     public function replace(ResolvedComputedMetricDefinitions $definitions): void

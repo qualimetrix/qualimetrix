@@ -49,14 +49,14 @@ final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdA
      * @param float $maxDistanceWarning Warning threshold for distance
      * @param float $maxDistanceError Error threshold for distance
      * @param list<NamespacePattern>|null $includeNamespaces Override auto-detected project namespaces (null = auto-detect from composer.json)
-     * @param int $minClassCount Minimum number of classes in namespace for analysis (0 = disabled)
+     * @param int $minTypeCount Minimum number of own types in namespace for analysis (0 = disabled)
      */
     public function __construct(
         public bool $enabled = true,
         public float $maxDistanceWarning = 0.3,
         public float $maxDistanceError = 0.5,
         public ?array $includeNamespaces = null,
-        public int $minClassCount = 3,
+        public int $minTypeCount = 3,
     ) {}
 
     public static function fromResolved(ResolvedRuleOptionValues $config): self
@@ -67,7 +67,7 @@ final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdA
             maxDistanceWarning: $thresholds['warning'],
             maxDistanceError: $thresholds['error'],
             includeNamespaces: self::includeNamespaces($config->list('include-namespaces')),
-            minClassCount: $config->integer('min-class-count', 3),
+            minTypeCount: $config->integer('min-type-count', 3),
         );
     }
 
@@ -76,7 +76,7 @@ final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdA
         return RuleOptionKeySet::of([
             'max-distance-error' => RuleOptionShape::number()->orNull(),
             'max-distance-warning' => RuleOptionShape::number()->orNull(),
-            'min-class-count' => RuleOptionShape::integer()->orNull(),
+            'min-type-count' => RuleOptionShape::integer()->orNull(),
             'threshold' => RuleOptionShape::number()->orNull(),
         ])->alsoAcceptedAndValidatedByTheClass(
             'include-namespaces',
@@ -136,7 +136,7 @@ final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdA
             maxDistanceWarning: $warning !== null ? (float) $warning : $this->maxDistanceWarning,
             maxDistanceError: $error !== null ? (float) $error : $this->maxDistanceError,
             includeNamespaces: $this->includeNamespaces,
-            minClassCount: $this->minClassCount,
+            minTypeCount: $this->minTypeCount,
         );
     }
 

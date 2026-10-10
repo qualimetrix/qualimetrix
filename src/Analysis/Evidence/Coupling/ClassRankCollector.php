@@ -45,7 +45,7 @@ final class ClassRankCollector implements GlobalContextCollectorInterface
 
     public function provides(): array
     {
-        return [MetricName::COUPLING_CLASS_RANK];
+        return [MetricName::COUPLING_CLASS_RANK, MetricName::COUPLING_CLASS_RANK_SHARE];
     }
 
     public function getMetricDefinitions(): array
@@ -53,6 +53,23 @@ final class ClassRankCollector implements GlobalContextCollectorInterface
         return [
             new MetricDefinition(
                 name: MetricName::COUPLING_CLASS_RANK,
+                collectedAt: SymbolLevel::Class_,
+                classKeyScope: ClassKeyScope::LogicalName,
+                aggregations: [
+                    SymbolLevel::Namespace_->value => [
+                        AggregationStrategy::Max,
+                        AggregationStrategy::Average,
+                        AggregationStrategy::Percentile95,
+                    ],
+                    SymbolLevel::Project->value => [
+                        AggregationStrategy::Max,
+                        AggregationStrategy::Average,
+                        AggregationStrategy::Percentile95,
+                    ],
+                ],
+            ),
+            new MetricDefinition(
+                name: MetricName::COUPLING_CLASS_RANK_SHARE,
                 collectedAt: SymbolLevel::Class_,
                 classKeyScope: ClassKeyScope::LogicalName,
                 aggregations: [
@@ -82,10 +99,11 @@ final class ClassRankCollector implements GlobalContextCollectorInterface
         $projectClasses = [];
         foreach ($allClasses as $symbolPath) {
             if ($repository->hasSubject(\Qualimetrix\Core\Symbol\MetricSubject::logicalClass(new \Qualimetrix\Core\Symbol\LogicalClassPath($symbolPath)))) {
-                $projectClasses[] = $symbolPath;
+                $projectClasses[$symbolPath->toCanonical()] = $symbolPath;
             }
         }
 
+        $projectClasses = array_values($projectClasses);
         $n = \count($projectClasses);
 
         // Empty graph: skip, no metrics written
@@ -96,6 +114,7 @@ final class ClassRankCollector implements GlobalContextCollectorInterface
         // Single class: rank = 1.0
         if ($n === 1) {
             $repository->addSubjectScalar(\Qualimetrix\Core\Symbol\MetricSubject::logicalClass(new \Qualimetrix\Core\Symbol\LogicalClassPath($projectClasses[0])), MetricName::COUPLING_CLASS_RANK, 1.0);
+            $repository->addSubjectScalar(\Qualimetrix\Core\Symbol\MetricSubject::logicalClass(new \Qualimetrix\Core\Symbol\LogicalClassPath($projectClasses[0])), MetricName::COUPLING_CLASS_RANK_SHARE, 1.0);
 
             return;
         }
@@ -143,6 +162,7 @@ final class ClassRankCollector implements GlobalContextCollectorInterface
         // Write metrics to repository
         foreach ($projectClasses as $i => $symbolPath) {
             $repository->addSubjectScalar(\Qualimetrix\Core\Symbol\MetricSubject::logicalClass(new \Qualimetrix\Core\Symbol\LogicalClassPath($symbolPath)), MetricName::COUPLING_CLASS_RANK, $ranks[$i]);
+            $repository->addSubjectScalar(\Qualimetrix\Core\Symbol\MetricSubject::logicalClass(new \Qualimetrix\Core\Symbol\LogicalClassPath($symbolPath)), MetricName::COUPLING_CLASS_RANK_SHARE, $ranks[$i] * $n);
         }
     }
 

@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Maintainability\Unit;
 
 use InvalidArgumentException;
 
+use LogicException;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -32,6 +33,39 @@ use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 #[CoversClass(MaintainabilityOptions::class)]
 final class MaintainabilityRuleTest extends TestCase
 {
+    #[Test]
+    public function itJudgesZeroAndMissingMiAfterNameSelectionWithoutReadingExcludedBags(): void
+    {
+        $infos = [
+            self::subjectInfo(SymbolPath::forMethod('Population', 'Healthy', 'run'), RelativePath::fromString('src/Healthy.php'), 1),
+            self::subjectInfo(SymbolPath::forMethod('Population', 'Missing', 'run'), RelativePath::fromString('src/Missing.php'), 1),
+            self::subjectInfo(SymbolPath::forMethod('Population', 'Excluded', 'run'), RelativePath::fromString('tests/Excluded.php'), 1),
+        ];
+        $repository = self::createMock(MetricRepositoryInterface::class);
+        $repository->method('allCallables')->willReturn($infos);
+        $repository->expects(self::exactly(2))->method('getSubject')->willReturnCallback(static function (\Qualimetrix\Core\Symbol\MetricSubject $subject): MetricBag {
+            return match ($subject->toSymbolPath()->type) {
+                'Healthy' => (new MetricBag())->with('maintainability.mi', 0)->with('size.method-statement-count', 20)->with('size.loc', 0),
+                'Missing' => (new MetricBag())->with('size.method-statement-count', 20)->with('size.loc', 200),
+                default => throw new LogicException('Excluded metric bags must not be read.'),
+            };
+        });
+        $decisions = [];
+        foreach (MaintainabilityRule::channelDeclarations() as $channel => $declaration) {
+            foreach ($declaration->levels as $level) {
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(MaintainabilityRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
+            }
+        }
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+        $rule = new MaintainabilityRule(new MaintainabilityOptions(minStatements: 15));
+        $findings = $rule->analyze((new AnalysisContext($repository))->withPopulationTrace($session));
+        self::assertCount(1, $findings);
+        self::assertSame(0.0, $findings[0]->metricValue);
+        self::assertSame(1, $session->freeze()->judgedCount());
+        self::assertSame(2, $session->freeze()->unjudgedCount());
+        self::assertSame(['exclude-tests', 'maintainability'], array_column($session->freeze()->abstentions(), 'gate'));
+    }
+
     #[Test]
     public function itGetsName(): void
     {

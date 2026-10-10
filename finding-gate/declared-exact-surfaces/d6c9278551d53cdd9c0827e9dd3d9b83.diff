@@ -1,0 +1,501 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 57587
++visible 42341
+@@ -39,359 +39,0 @@
+-    "abstentions": [
+-        {
+-            "producer": "architecture.layer-declaration",
+-            "channel": "architecture.doubted-assignment",
+-            "level": "project",
+-            "gate": "prepared-evidence",
+-            "reason": "Prepared layer evidence is unavailable. Required population context was not judged.",
+-            "unit": "invocation",
+-            "count": 1,
+-            "examples": [
+-                "architecture.layer-declaration"
+-            ]
+-        },
+-        {
+-            "producer": "architecture.layer-declaration",
+-            "channel": "architecture.layer-overlap",
+-            "level": "project",
+-            "gate": "prepared-evidence",
+-            "reason": "Prepared layer evidence is unavailable. Required population context was not judged.",
+-            "unit": "invocation",
+-            "count": 1,
+-            "examples": [
+-                "architecture.layer-declaration"
+-            ]
+-        },
+-        {
+-            "producer": "architecture.layer-violation",
+-            "channel": "architecture.layer-violation",
+-            "level": "class",
+-            "gate": "prepared-evidence",
+-            "reason": "Prepared layer evidence is unavailable. Required population context was not judged.",
+-            "unit": "invocation",
+-            "count": 1,
+-            "examples": [
+-                "architecture.layer-violation"
+-            ]
+-        },
+-        {
+-            "producer": "code-smell.boolean-argument",
+-            "channel": "code-smell.boolean-argument",
+-            "level": "callable",
+-            "gate": "flag-promoted-properties",
+-            "reason": "Promoted constructor properties are excluded by configuration. Excluded by the declared population flag.",
+-            "unit": "occurrence",
+-            "count": 1,
+-            "examples": [
+-                "[\"declaration:callable:Corpus\\\\Smells\\\\Money::__construct@src\\/Money.php\",0]"
+-            ]
+-        },
+-        {
+-            "producer": "code-smell.constructor-overinjection",
+-            "channel": "code-smell.constructor-overinjection",
+-            "level": "callable",
+-            "gate": "constructor-name",
+-            "reason": "Only constructors are judged. Name is outside the declared population.",
+-            "unit": "callable",
+-            "count": 8,
+-            "examples": [
+-                "declaration:callable:Corpus\\Smells\\Dead::neverCalled@src/Dead.php",
+-                "declaration:callable:Corpus\\Smells\\Dead::value@src/Dead.php",
+-                "declaration:callable:Corpus\\Smells\\Injection::render@src/Injection.php",
+-                "declaration:callable:Corpus\\Smells\\Smells::report@src/Smells.php",
+-                "declaration:callable:Corpus\\Smells\\Suppression::evaluate@src/Suppression.php"
+-            ]
+-        },
+-        {
+-            "producer": "cohesion.lcom",
+-            "channel": "cohesion.lcom",
+-            "level": "class",
+-            "gate": "exclude-readonly",
+-            "reason": "The configured class exclusion applies. Excluded by the declared population flag.",
+-            "unit": "declaration",
+-            "count": 1,
+-            "examples": [
+-                "declaration:class:Corpus\\Smells\\Money@src/Money.php"
+-            ]
+-        },
+-        {
+-            "producer": "cohesion.lcom",
+-            "channel": "cohesion.lcom",
+-            "level": "class",
+-            "gate": "minimum-methods",
+-            "reason": "Methods are below the configured minimum. Metric population boundary was not met.",
+-            "unit": "declaration",
+-            "count": 4,
+-            "examples": [
+-                "declaration:class:Corpus\\Smells\\Dead@src/Dead.php",
+-                "declaration:class:Corpus\\Smells\\Injection@src/Injection.php",
+-                "declaration:class:Corpus\\Smells\\Smells@src/Smells.php",
+-                "declaration:class:Corpus\\Smells\\Suppression@src/Suppression.php"
+-            ]
+-        },
+-        {
+-            "producer": "coupling.cbo",
+-            "channel": "coupling.cbo",
+-            "level": "namespace",
+-            "gate": "own-classes",
+-            "reason": "Own classes are below the configured minimum. Missing metric \"size.class-count\".",
+-            "unit": "namespace",
+-            "count": 1,
+-            "examples": [
+-                "ns:Corpus"
+-            ]
+-        },
+-        {
+-            "producer": "coupling.class-rank",
+-            "channel": "coupling.class-rank",
+-            "level": "class",
+-            "gate": "dependents",
+-            "reason": "A class with no dependents is outside hotspot judgement. Metric population boundary was not met.",
+-            "unit": "declaration",
+-            "count": 5,
+-            "examples": [
+-                "declaration:class:Corpus\\Smells\\Dead@src/Dead.php",
+-                "declaration:class:Corpus\\Smells\\Injection@src/Injection.php",
+-                "declaration:class:Corpus\\Smells\\Money@src/Money.php",
+-                "declaration:class:Corpus\\Smells\\Smells@src/Smells.php",
+-                "declaration:class:Corpus\\Smells\\Suppression@src/Suppression.php"
+-            ]
+-        },
+-        {
+-            "producer": "coupling.distance",
+-            "channel": "coupling.distance",
+-            "level": "namespace",
+-            "gate": "namespace-selected",
+-            "reason": "The namespace is outside the configured project selection. Name is outside the declared population.",
+-            "unit": "namespace",
+-            "count": 1,
+-            "examples": [
+-                "ns:Corpus"
+-            ]
+-        },
+-        {
+-            "producer": "coupling.distance",
+-            "channel": "coupling.distance",
+-            "level": "namespace",
+-            "gate": "own-coupling",
+-            "reason": "The own namespace has no coupling. Metric population boundary was not met.",
+-            "unit": "namespace",
+-            "count": 1,
+-            "examples": [
+-                "ns:Corpus\\Smells"
+-            ]
+-        },
+-        {
+-            "producer": "coupling.instability",
+-            "channel": "coupling.instability",
+-            "level": "class",
+-            "gate": "class-afferent",
+-            "reason": "Class afferent coupling is below its minimum. Metric population boundary was not met.",
+-            "unit": "declaration",
+-            "count": 5,
+-            "examples": [
+-                "declaration:class:Corpus\\Smells\\Dead@src/Dead.php",
+-                "declaration:class:Corpus\\Smells\\Injection@src/Injection.php",
+-                "declaration:class:Corpus\\Smells\\Money@src/Money.php",
+-                "declaration:class:Corpus\\Smells\\Smells@src/Smells.php",
+-                "declaration:class:Corpus\\Smells\\Suppression@src/Suppression.php"
+-            ]
+-        },
+-        {
+-            "producer": "coupling.instability",
+-            "channel": "coupling.instability",
+-            "level": "namespace",
+-            "gate": "namespace-afferent",
+-            "reason": "Namespace afferent coupling is below its minimum. Metric population boundary was not met.",
+-            "unit": "namespace",
+-            "count": 2,
+-            "examples": [
+-                "ns:Corpus",
+-                "ns:Corpus\\Smells"
+-            ]
+-        },
+-        {
+-            "producer": "design.data-class",
+-            "channel": "design.data-class",
+-            "level": "class",
+-            "gate": "class-properties",
+-            "reason": "Data classes require properties. Metric population boundary was not met.",
+-            "unit": "declaration",
+-            "count": 2,
+-            "examples": [
+-                "declaration:class:Corpus\\Smells\\Smells@src/Smells.php",
+-                "declaration:class:Corpus\\Smells\\Suppression@src/Suppression.php"
+-            ]
+-        },
+-        {
+-            "producer": "design.data-class",
+-            "channel": "design.data-class",
+-            "level": "class",
+-            "gate": "promoted-only-class",
+-            "reason": "Promoted-properties-only classes are excluded by configuration. Excluded by the declared population flag.",
+-            "unit": "declaration",
+-            "count": 1,
+-            "examples": [
+-                "declaration:class:Corpus\\Smells\\Injection@src/Injection.php"
+-            ]
+-        },
+-        {
+-            "producer": "design.data-class",
+-            "channel": "design.data-class",
+-            "level": "class",
+-            "gate": "readonly-class",
+-            "reason": "Readonly classes are excluded by configuration. Excluded by the declared population flag.",
+-            "unit": "declaration",
+-            "count": 1,
+-            "examples": [
+-                "declaration:class:Corpus\\Smells\\Money@src/Money.php"
+-            ]
+-        },
+-        {
+-            "producer": "design.dit",
+-            "channel": "design.dit",
+-            "level": "class",
+-            "gate": "logical-class-kind",
+-            "reason": "Only class declarations are judged. Declaration kind is outside the declared population.",
+-            "unit": "declaration",
+-            "count": 10,
+-            "examples": [
+-                "declaration:callable:Corpus\\Smells\\Dead::neverCalled@src/Dead.php",
+-                "declaration:callable:Corpus\\Smells\\Dead::value@src/Dead.php",
+-                "declaration:callable:Corpus\\Smells\\Injection::__construct@src/Injection.php",
+-                "declaration:callable:Corpus\\Smells\\Injection::render@src/Injection.php",
+-                "declaration:callable:Corpus\\Smells\\Money::__construct@src/Money.php"
+-            ]
+-        },
+-        {
+-            "producer": "design.god-class",
+-            "channel": "design.god-class",
+-            "level": "class",
+-            "gate": "method-floor",
+-            "reason": "The class has too few methods for god-class judgement. Metric population boundary was not met.",
+-            "unit": "declaration",
+-            "count": 4,
+-            "examples": [
+-                "declaration:class:Corpus\\Smells\\Dead@src/Dead.php",
+-                "declaration:class:Corpus\\Smells\\Injection@src/Injection.php",
+-                "declaration:class:Corpus\\Smells\\Smells@src/Smells.php",
+-                "declaration:class:Corpus\\Smells\\Suppression@src/Suppression.php"
+-            ]
+-        },
+-        {
+-            "producer": "design.god-class",
+-            "channel": "design.god-class",
+-            "level": "class",
+-            "gate": "readonly-class",
+-            "reason": "Readonly classes are excluded by configuration. Excluded by the declared population flag.",
+-            "unit": "declaration",
+-            "count": 1,
+-            "examples": [
+-                "declaration:class:Corpus\\Smells\\Money@src/Money.php"
+-            ]
+-        },
+-        {
+-            "producer": "design.noc",
+-            "channel": "design.noc",
+-            "level": "class",
+-            "gate": "noc-positive",
+-            "reason": "A class with no children is outside the NOC population. Metric population boundary was not met.",
+-            "unit": "declaration",
+-            "count": 5,
+-            "examples": [
+-                "declaration:class:Corpus\\Smells\\Dead@src/Dead.php",
+-                "declaration:class:Corpus\\Smells\\Injection@src/Injection.php",
+-                "declaration:class:Corpus\\Smells\\Money@src/Money.php",
+-                "declaration:class:Corpus\\Smells\\Smells@src/Smells.php",
+-                "declaration:class:Corpus\\Smells\\Suppression@src/Suppression.php"
+-            ]
+-        },
+-        {
+-            "producer": "design.type-coverage.param",
+-            "channel": "design.type-coverage.param",
+-            "level": "class",
+-            "gate": "typeable-total",
+-            "reason": "This type-coverage dimension requires a positive declaration total. Metric population boundary was not met.",
+-            "unit": "declaration",
+-            "count": 1,
+-            "examples": [
+-                "declaration:class:Corpus\\Smells\\Dead@src/Dead.php"
+-            ]
+-        },
+-        {
+-            "producer": "design.type-coverage.property",
+-            "channel": "design.type-coverage.property",
+-            "level": "class",
+-            "gate": "typeable-total",
+-            "reason": "This type-coverage dimension requires a positive declaration total. Metric population boundary was not met.",
+-            "unit": "declaration",
+-            "count": 2,
+-            "examples": [
+-                "declaration:class:Corpus\\Smells\\Smells@src/Smells.php",
+-                "declaration:class:Corpus\\Smells\\Suppression@src/Suppression.php"
+-            ]
+-        },
+-        {
+-            "producer": "design.type-coverage.return",
+-            "channel": "design.type-coverage.return",
+-            "level": "class",
+-            "gate": "typeable-total",
+-            "reason": "This type-coverage dimension requires a positive declaration total. Metric population boundary was not met.",
+-            "unit": "declaration",
+-            "count": 1,
+-            "examples": [
+-                "declaration:class:Corpus\\Smells\\Money@src/Money.php"
+-            ]
+-        },
+-        {
+-            "producer": "maintainability.mi",
+-            "channel": "maintainability.mi",
+-            "level": "callable",
+-            "gate": "minimum-statements",
+-            "reason": "Statement count is below the configured minimum. Metric population boundary was not met.",
+-            "unit": "callable",
+-            "count": 9,
+-            "examples": [
+-                "declaration:callable:Corpus\\Smells\\Dead::neverCalled@src/Dead.php",
+-                "declaration:callable:Corpus\\Smells\\Dead::value@src/Dead.php",
+-                "declaration:callable:Corpus\\Smells\\Injection::__construct@src/Injection.php",
+-                "declaration:callable:Corpus\\Smells\\Injection::render@src/Injection.php",
+-                "declaration:callable:Corpus\\Smells\\Money::__construct@src/Money.php"
+-            ]
+-        },
+-        {
+-            "producer": "size.class-count",
+-            "channel": "size.class-count",
+-            "level": "namespace",
+-            "gate": "own-count",
+-            "reason": "The own class count was not published. Missing metric \"size.class-count\".",
+-            "unit": "namespace",
+-            "count": 1,
+-            "examples": [
+-                "ns:Corpus"
+-            ]
+-        },
+-        {
+-            "producer": "size.property-count",
+-            "channel": "size.property-count",
+-            "level": "class",
+-            "gate": "exclude-promoted-only",
+-            "reason": "The configured class exclusion applies. Excluded by the declared population flag.",
+-            "unit": "declaration",
+-            "count": 1,
+-            "examples": [
+-                "declaration:class:Corpus\\Smells\\Injection@src/Injection.php"
+-            ]
+-        },
+-        {
+-            "producer": "size.property-count",
+-            "channel": "size.property-count",
+-            "level": "class",
+-            "gate": "exclude-readonly",
+-            "reason": "The configured class exclusion applies. Excluded by the declared population flag.",
+-            "unit": "declaration",
+-            "count": 1,
+-            "examples": [
+-                "declaration:class:Corpus\\Smells\\Money@src/Money.php"
+-            ]
+-        }
+-    ],
+@@ -405,2 +46,27 @@
+-            "impactScore": 60,
+-            "coupling.class-rank-share": 1,
++            "impactScore": 12,
++            "coupling.class-rank": 0.2,
++            "debtMinutes": 20,
++            "file": "src/Injection.php",
++            "line": 7,
++            "subject": "declaration:callable:Corpus\\Smells\\Injection::__construct@src/Injection.php",
++            "symbol": "Corpus\\Smells\\Injection::__construct",
++            "channel": "code-smell.long-parameter-list",
++            "occurrence": null,
++            "edge": null,
++            "namespace": "Corpus\\Smells",
++            "rule": "code-smell.long-parameter-list",
++            "code": "code-smell.long-parameter-list",
++            "severity": "error",
++            "message": "Method has 9 parameters, exceeds threshold of 6. Consider introducing a parameter object",
++            "recommendation": "Parameters: 9 (threshold: 6) \u2014 consider introducing a parameter object",
++            "metricValue": 9,
++            "threshold": 6,
++            "techDebtMinutes": 20,
++            "acceptedLevel": null,
++            "baselineVerdict": null,
++            "baselineReason": null
++        },
++        {
++            "rank": 2,
++            "impactScore": 12,
++            "coupling.class-rank": 0.2,
+@@ -429,28 +95,3 @@
+-            "rank": 2,
+-            "impactScore": 60,
+-            "coupling.class-rank-share": 1,
+-            "debtMinutes": 20,
+-            "file": "src/Injection.php",
+-            "line": 7,
+-            "subject": "declaration:callable:Corpus\\Smells\\Injection::__construct@src/Injection.php",
+-            "symbol": "Corpus\\Smells\\Injection::__construct",
+-            "channel": "code-smell.long-parameter-list",
+-            "occurrence": null,
+-            "edge": null,
+-            "namespace": "Corpus\\Smells",
+-            "rule": "code-smell.long-parameter-list",
+-            "code": "code-smell.long-parameter-list",
+-            "severity": "error",
+-            "message": "Method has 9 parameters, exceeds threshold of 6. Consider introducing a parameter object",
+-            "recommendation": "Parameters: 9 (threshold: 6) \u2014 consider introducing a parameter object",
+-            "metricValue": 9,
+-            "threshold": 6,
+-            "techDebtMinutes": 20,
+-            "acceptedLevel": null,
+-            "baselineVerdict": null,
+-            "baselineReason": null
+-        },
+-        {
+-            "rank": 3,
+-            "impactScore": 45,
+-            "coupling.class-rank-share": 1,
++            "rank": 3,
++            "impactScore": 9,
++            "coupling.class-rank": 0.2,
+@@ -480,2 +121,2 @@
+-            "impactScore": 45,
+-            "coupling.class-rank-share": 1,
++            "impactScore": 9,
++            "coupling.class-rank": 0.2,
+@@ -505,2 +146,2 @@
+-            "impactScore": 45,
+-            "coupling.class-rank-share": 1,
++            "impactScore": 9,
++            "coupling.class-rank": 0.2,
+@@ -530,2 +171,2 @@
+-            "impactScore": 45,
+-            "coupling.class-rank-share": 1,
++            "impactScore": 9,
++            "coupling.class-rank": 0.2,
+@@ -555,2 +196,2 @@
+-            "impactScore": 30,
+-            "coupling.class-rank-share": 1,
++            "impactScore": 6,
++            "coupling.class-rank": 0.2,
+@@ -580,2 +221,2 @@
+-            "impactScore": 30,
+-            "coupling.class-rank-share": 1,
++            "impactScore": 6,
++            "coupling.class-rank": 0.2,
+@@ -605,2 +246,2 @@
+-            "impactScore": 20,
+-            "coupling.class-rank-share": 1,
++            "impactScore": 4,
++            "coupling.class-rank": 0.2,
+@@ -630,19 +271,19 @@
+-            "impactScore": 15,
+-            "coupling.class-rank-share": 1,
+-            "debtMinutes": 15,
+-            "file": "src/Dead.php",
+-            "line": 7,
+-            "subject": "declaration:class:Corpus\\Smells\\Dead@src/Dead.php",
+-            "symbol": "Corpus\\Smells\\Dead",
+-            "channel": "code-smell.unused-private",
+-            "occurrence": null,
+-            "edge": null,
+-            "namespace": "Corpus\\Smells",
+-            "rule": "code-smell.unused-private",
+-            "code": "code-smell.unused-private",
+-            "severity": "warning",
+-            "message": "Unused private property `neverRead`",
+-            "recommendation": "Remove the unused symbol to reduce dead code.",
+-            "metricValue": 3,
+-            "threshold": null,
+-            "techDebtMinutes": 15,
++            "impactScore": 3,
++            "coupling.class-rank": 0.2,
++            "debtMinutes": 5,
++            "file": "src/Smells.php",
++            "line": 10,
++            "subject": "declaration:callable:Corpus\\Smells\\Smells::report@src/Smells.php",
++            "symbol": "Corpus\\Smells\\Smells::report",
++            "channel": "code-smell.debug-code",
++            "occurrence": "9d9a9bef4ea8a01f",
++            "edge": null,
++            "namespace": "Corpus\\Smells",
++            "rule": "code-smell.debug-code",
++            "code": "code-smell.debug-code",
++            "severity": "error",
++            "message": "Debug function call detected - remove before production",
++            "recommendation": "Remove debug statements before merging to production.",
++            "metricValue": 1,
++            "threshold": null,
++            "techDebtMinutes": 5,
+@@ -1394,2 +1035,2 @@
+-ranking-records 25086
+-["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.boolean-argument\",\"code\":\"code-smell.boolean-argument\",\"coupling.class-rank-share\":1,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":10,\"line\":19,\"message\":\"Boolean argument $pretty detected - consider splitting methods or using enums\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":\"84c463896d8cd41b\",\"recommendation\":\"Replace boolean parameter with two explicit methods or use an enum.\",\"rule\":\"code-smell.boolean-argument\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Injection::render@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection::render\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.boolean-argument\",\"code\":\"code-smell.boolean-argument\",\"coupling.class-rank-share\":null,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/AnonymousCallable.php\",\"impactScore\":10,\"line\":10,\"message\":\"Boolean argument $flag detected - consider splitting methods or using enums\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"e20592e46405e960\",\"recommendation\":\"Replace boolean parameter with two explicit methods or use an enum.\",\"rule\":\"code-smell.boolean-argument\",\"severity\":\"warning\",\"subject\":\"file:src/AnonymousCallable.php\",\"symbol\":\"src/AnonymousCallable.php\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.constructor-overinjection\",\"code\":\"code-smell.constructor-overinjection\",\"coupling.class-rank-share\":1,\"debtMinutes\":60,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":60,\"line\":7,\"message\":\"Constructor of Injection has 9 parameters (threshold 8). Consider using a parameter object or splitting responsibilities\",\"metricValue\":9,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Constructor parameters: 9 (threshold: 8) \\u2014 consider splitting responsibilities\",\"rule\":\"code-smell.constructor-overinjection\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Injection::__construct@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection::__construct\",\"techDebtMinutes\":60,\"threshold\":8}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.count-in-loop\",\"code\":\"code-smell.count-in-loop\",\"coupling.class-rank-share\":1,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":10,\"line\":11,\"message\":\"count() in loop condition detected - store in variable before loop\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":\"5c1a23262585b794\",\"recommendation\":\"Store the count result in a variable before the loop.\",\"rule\":\"code-smell.count-in-loop\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Smells::report@src/Smells.php\",\"symbol\":\"Corpus\\\\Smells\\\\Smells::report\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.count-in-loop\",\"code\":\"code-smell.count-in-loop\",\"coupling.class-rank-share\":1,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":10,\"line\":31,\"message\":\"count() in loop condition detected - store in variable before loop\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"5c1a23262585b794\",\"recommendation\":\"Store the count result in a variable before the loop.\",\"rule\":\"code-smell.count-in-loop\",\"severity\":\"warning\",\"subject\":\"file:src/Smells.php\",\"symbol\":\"src/Smells.php\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.debug-code\",\"code\":\"code-smell.debug-code\",\"coupling.class-rank-share\":1,\"debtMinutes\":5,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":15,\"line\":10,\"message\":\"Debug function call detected - remove before production\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":\"9d9a9bef4ea8a01f\",\"recommendation\":\"Remove debug statements before merging to production.\",\"rule\":\"code-smell.debug-code\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Smells::report@src/Smells.php\",\"symbol\":\"Corpus\\\\Smells\\\\Smells::report\",\"techDebtMinutes\":5,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.debug-code\",\"code\":\"code-smell.debug-code\",\"coupling.class-rank-share\":1,\"debtMinutes\":5,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":15,\"line\":30,\"message\":\"Debug function call detected - remove before production\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"9d9a9bef4ea8a01f\",\"recommendation\":\"Remove debug statements before merging to production.\",\"rule\":\"code-smell.debug-code\",\"severity\":\"error\",\"subject\":\"file:src/Smells.php\",\"symbol\":\"src/Smells.php\",\"techDebtMinutes\":5,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.empty-catch\",\"code\":\"code-smell.empty-catch\",\"coupling.class-rank-share\":1,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":30,\"line\":16,\"message\":\"Empty catch block detected - exceptions should not be silently ignored\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":\"4c102a608a3cc500\",\"recommendation\":\"Log or rethrow the exception, or handle it explicitly. A comment alone does not clear this finding; suppress an intentional ignore with `@qmx-ignore code-smell.empty-catch` and a reason.\",\"rule\":\"code-smell.empty-catch\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Smells::report@src/Smells.php\",\"symbol\":\"Corpus\\\\Smells\\\\Smells::report\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.empty-catch\",\"code\":\"code-smell.empty-catch\",\"coupling.class-rank-share\":1,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":30,\"line\":36,\"message\":\"Empty catch block detected - exceptions should not be silently ignored\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"4c102a608a3cc500\",\"recommendation\":\"Log or rethrow the exception, or handle it explicitly. A comment alone does not clear this finding; suppress an intentional ignore with `@qmx-ignore code-smell.empty-catch` and a reason.\",\"rule\":\"code-smell.empty-catch\",\"severity\":\"error\",\"subject\":\"file:src/Smells.php\",\"symbol\":\"src/Smells.php\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.error-suppression\",\"code\":\"code-smell.error-suppression\",\"coupling.class-rank-share\":1,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":10,\"line\":38,\"message\":\"Error suppression (@) on file_get_contents() - handle errors explicitly\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"ce21655efa0f850a\",\"recommendation\":\"Handle the error explicitly with try/catch or conditional checks.\",\"rule\":\"code-smell.error-suppression\",\"severity\":\"warning\",\"subject\":\"file:src/Smells.php\",\"symbol\":\"src/Smells.php\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.error-suppression\",\"code\":\"code-smell.error-suppression\",\"coupling.class-rank-share\":1,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Suppression.php\",\"impactScore\":10,\"line\":9,\"message\":\"Error suppression (@) on file_get_contents() - handle errors explicitly\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":\"ce21655efa0f850a\",\"recommendation\":\"Handle the error explicitly with try/catch or conditional checks.\",\"rule\":\"code-smell.error-suppression\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Suppression::read@src/Suppression.php\",\"symbol\":\"Corpus\\\\Smells\\\\Suppression::read\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.eval\",\"code\":\"code-smell.eval\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":45,\"line\":29,\"message\":\"eval() usage detected - security risk\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"cb4db382fbd60b86\",\"recommendation\":\"Replace eval() with a safer alternative (closures, reflection, or template engine).\",\"rule\":\"code-smell.eval\",\"severity\":\"error\",\"subject\":\"file:src/Smells.php\",\"symbol\":\"src/Smells.php\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.eval\",\"code\":\"code-smell.eval\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":45,\"line\":9,\"message\":\"eval() usage detected - security risk\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":\"cb4db382fbd60b86\",\"recommendation\":\"Replace eval() with a safer alternative (closures, reflection, or template engine).\",\"rule\":\"code-smell.eval\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Smells::report@src/Smells.php\",\"symbol\":\"Corpus\\\\Smells\\\\Smells::report\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.exit\",\"code\":\"code-smell.exit\",\"coupling.class-rank-share\":1,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":10,\"line\":23,\"message\":\"exit()/die() usage detected - use exceptions instead\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":\"3215b3c81a7774ac\",\"recommendation\":\"Throw an exception instead of exit/die to allow proper error handling.\",\"rule\":\"code-smell.exit\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Smells::report@src/Smells.php\",\"symbol\":\"Corpus\\\\Smells\\\\Smells::report\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.exit\",\"code\":\"code-smell.exit\",\"coupling.class-rank-share\":1,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":10,\"line\":44,\"message\":\"exit()/die() usage detected - use exceptions instead\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"3215b3c81a7774ac\",\"recommendation\":\"Throw an exception instead of exit/die to allow proper error handling.\",\"rule\":\"code-smell.exit\",\"severity\":\"warning\",\"subject\":\"file:src/Smells.php\",\"symbol\":\"src/Smells.php\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.goto\",\"code\":\"code-smell.goto\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":45,\"line\":21,\"message\":\"goto statement detected - avoid using goto\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":\"d5cdb2ffde93239f\",\"recommendation\":\"Replace goto with structured control flow (loops, early returns).\",\"rule\":\"code-smell.goto\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Smells::report@src/Smells.php\",\"symbol\":\"Corpus\\\\Smells\\\\Smells::report\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.goto\",\"code\":\"code-smell.goto\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":45,\"line\":42,\"message\":\"goto statement detected - avoid using goto\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"d5cdb2ffde93239f\",\"recommendation\":\"Replace goto with structured control flow (loops, early returns).\",\"rule\":\"code-smell.goto\",\"severity\":\"error\",\"subject\":\"file:src/Smells.php\",\"symbol\":\"src/Smells.php\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.identical-subexpression\",\"code\":\"code-smell.identical-subexpression\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":15,\"line\":18,\"message\":\"Identical sub-expressions on both sides of operator\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":\"3b826cb977193362\",\"recommendation\":\"This looks like a copy-paste error. Verify the intended logic.\",\"rule\":\"code-smell.identical-subexpression\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Smells::report@src/Smells.php\",\"symbol\":\"Corpus\\\\Smells\\\\Smells::report\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.identical-subexpression\",\"code\":\"code-smell.identical-subexpression\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":15,\"line\":39,\"message\":\"Identical sub-expressions on both sides of operator\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"3b826cb977193362\",\"recommendation\":\"This looks like a copy-paste error. Verify the intended logic.\",\"rule\":\"code-smell.identical-subexpression\",\"severity\":\"warning\",\"subject\":\"file:src/Smells.php\",\"symbol\":\"src/Smells.php\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.long-parameter-list\",\"code\":\"code-smell.long-parameter-list\",\"coupling.class-rank-share\":1,\"debtMinutes\":20,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":20,\"line\":19,\"message\":\"Method has 5 parameters, exceeds threshold of 4. Consider introducing a parameter object\",\"metricValue\":5,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Parameters: 5 (threshold: 4) \\u2014 consider introducing a parameter object\",\"rule\":\"code-smell.long-parameter-list\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Injection::render@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection::render\",\"techDebtMinutes\":20,\"threshold\":4}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.long-parameter-list\",\"code\":\"code-smell.long-parameter-list\",\"coupling.class-rank-share\":1,\"debtMinutes\":20,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":60,\"line\":7,\"message\":\"Method has 9 parameters, exceeds threshold of 6. Consider introducing a parameter object\",\"metricValue\":9,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Parameters: 9 (threshold: 6) \\u2014 consider introducing a parameter object\",\"rule\":\"code-smell.long-parameter-list\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Injection::__construct@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection::__construct\",\"techDebtMinutes\":20,\"threshold\":6}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unreachable-code\",\"code\":\"code-smell.unreachable-code\",\"coupling.class-rank-share\":1,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Dead.php\",\"impactScore\":10,\"line\":13,\"message\":\"Found 1 unreachable statement(s) after terminal statement (return/throw/exit/break/continue). Dead code should be removed\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove dead code after the terminal statement.\",\"rule\":\"code-smell.unreachable-code\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Dead::value@src/Dead.php\",\"symbol\":\"Corpus\\\\Smells\\\\Dead::value\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unused-private\",\"code\":\"code-smell.unused-private\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Dead.php\",\"impactScore\":15,\"line\":16,\"message\":\"Unused private method `neverCalled`\",\"metricValue\":3,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove the unused symbol to reduce dead code.\",\"rule\":\"code-smell.unused-private\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\Smells\\\\Dead@src/Dead.php\",\"symbol\":\"Corpus\\\\Smells\\\\Dead\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unused-private\",\"code\":\"code-smell.unused-private\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Dead.php\",\"impactScore\":15,\"line\":7,\"message\":\"Unused private property `neverRead`\",\"metricValue\":3,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove the unused symbol to reduce dead code.\",\"rule\":\"code-smell.unused-private\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\Smells\\\\Dead@src/Dead.php\",\"symbol\":\"Corpus\\\\Smells\\\\Dead\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unused-private\",\"code\":\"code-smell.unused-private\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Dead.php\",\"impactScore\":15,\"line\":8,\"message\":\"Unused private constant `NEVER_USED`\",\"metricValue\":3,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove the unused symbol to reduce dead code.\",\"rule\":\"code-smell.unused-private\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\Smells\\\\Dead@src/Dead.php\",\"symbol\":\"Corpus\\\\Smells\\\\Dead\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unused-private\",\"code\":\"code-smell.unused-private\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":15,\"line\":10,\"message\":\"Unused private property `c`\",\"metricValue\":9,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove the unused symbol to reduce dead code.\",\"rule\":\"code-smell.unused-private\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\Smells\\\\Injection@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unused-private\",\"code\":\"code-smell.unused-private\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":15,\"line\":11,\"message\":\"Unused private property `d`\",\"metricValue\":9,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove the unused symbol to reduce dead code.\",\"rule\":\"code-smell.unused-private\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\Smells\\\\Injection@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unused-private\",\"code\":\"code-smell.unused-private\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":15,\"line\":12,\"message\":\"Unused private property `e`\",\"metricValue\":9,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove the unused symbol to reduce dead code.\",\"rule\":\"code-smell.unused-private\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\Smells\\\\Injection@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unused-private\",\"code\":\"code-smell.unused-private\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":15,\"line\":13,\"message\":\"Unused private property `f`\",\"metricValue\":9,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove the unused symbol to reduce dead code.\",\"rule\":\"code-smell.unused-private\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\Smells\\\\Injection@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unused-private\",\"code\":\"code-smell.unused-private\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":15,\"line\":14,\"message\":\"Unused private property `g`\",\"metricValue\":9,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove the unused symbol to reduce dead code.\",\"rule\":\"code-smell.unused-private\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\Smells\\\\Injection@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unused-private\",\"code\":\"code-smell.unused-private\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":15,\"line\":15,\"message\":\"Unused private property `h`\",\"metricValue\":9,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove the unused symbol to reduce dead code.\",\"rule\":\"code-smell.unused-private\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\Smells\\\\Injection@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unused-private\",\"code\":\"code-smell.unused-private\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":15,\"line\":16,\"message\":\"Unused private property `i`\",\"metricValue\":9,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove the unused symbol to reduce dead code.\",\"rule\":\"code-smell.unused-private\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\Smells\\\\Injection@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unused-private\",\"code\":\"code-smell.unused-private\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":15,\"line\":8,\"message\":\"Unused private property `a`\",\"metricValue\":9,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove the unused symbol to reduce dead code.\",\"rule\":\"code-smell.unused-private\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\Smells\\\\Injection@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unused-private\",\"code\":\"code-smell.unused-private\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":15,\"line\":9,\"message\":\"Unused private property `b`\",\"metricValue\":9,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove the unused symbol to reduce dead code.\",\"rule\":\"code-smell.unused-private\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\Smells\\\\Injection@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection\",\"techDebtMinutes\":15,\"threshold\":null}"]
++ranking-records 24916
++["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.boolean-argument\",\"code\":\"code-smell.boolean-argument\",\"coupling.class-rank\":0.2,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":2,\"line\":19,\"message\":\"Boolean argument $pretty detected - consider splitting methods or using enums\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":\"84c463896d8cd41b\",\"recommendation\":\"Replace boolean parameter with two explicit methods or use an enum.\",\"rule\":\"code-smell.boolean-argument\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Injection::render@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection::render\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.boolean-argument\",\"code\":\"code-smell.boolean-argument\",\"coupling.class-rank\":null,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/AnonymousCallable.php\",\"impactScore\":2,\"line\":10,\"message\":\"Boolean argument $flag detected - consider splitting methods or using enums\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"e20592e46405e960\",\"recommendation\":\"Replace boolean parameter with two explicit methods or use an enum.\",\"rule\":\"code-smell.boolean-argument\",\"severity\":\"warning\",\"subject\":\"file:src/AnonymousCallable.php\",\"symbol\":\"src/AnonymousCallable.php\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.constructor-overinjection\",\"code\":\"code-smell.constructor-overinjection\",\"coupling.class-rank\":0.2,\"debtMinutes\":60,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":12,\"line\":7,\"message\":\"Constructor of Injection has 9 parameters (threshold 8). Consider using a parameter object or splitting responsibilities\",\"metricValue\":9,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Constructor parameters: 9 (threshold: 8) \\u2014 consider splitting responsibilities\",\"rule\":\"code-smell.constructor-overinjection\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Injection::__construct@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection::__construct\",\"techDebtMinutes\":60,\"threshold\":8}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.count-in-loop\",\"code\":\"code-smell.count-in-loop\",\"coupling.class-rank\":0.2,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":2,\"line\":11,\"message\":\"count() in loop condition detected - store in variable before loop\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":\"5c1a23262585b794\",\"recommendation\":\"Store the count result in a variable before the loop.\",\"rule\":\"code-smell.count-in-loop\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Smells::report@src/Smells.php\",\"symbol\":\"Corpus\\\\Smells\\\\Smells::report\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.count-in-loop\",\"code\":\"code-smell.count-in-loop\",\"coupling.class-rank\":0.2,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":2,\"line\":31,\"message\":\"count() in loop condition detected - store in variable before loop\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"5c1a23262585b794\",\"recommendation\":\"Store the count result in a variable before the loop.\",\"rule\":\"code-smell.count-in-loop\",\"severity\":\"warning\",\"subject\":\"file:src/Smells.php\",\"symbol\":\"src/Smells.php\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.debug-code\",\"code\":\"code-smell.debug-code\",\"coupling.class-rank\":0.2,\"debtMinutes\":5,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":3,\"line\":10,\"message\":\"Debug function call detected - remove before production\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":\"9d9a9bef4ea8a01f\",\"recommendation\":\"Remove debug statements before merging to production.\",\"rule\":\"code-smell.debug-code\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Smells::report@src/Smells.php\",\"symbol\":\"Corpus\\\\Smells\\\\Smells::report\",\"techDebtMinutes\":5,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.debug-code\",\"code\":\"code-smell.debug-code\",\"coupling.class-rank\":0.2,\"debtMinutes\":5,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":3,\"line\":30,\"message\":\"Debug function call detected - remove before production\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"9d9a9bef4ea8a01f\",\"recommendation\":\"Remove debug statements before merging to production.\",\"rule\":\"code-smell.debug-code\",\"severity\":\"error\",\"subject\":\"file:src/Smells.php\",\"symbol\":\"src/Smells.php\",\"techDebtMinutes\":5,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.empty-catch\",\"code\":\"code-smell.empty-catch\",\"coupling.class-rank\":0.2,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":6,\"line\":16,\"message\":\"Empty catch block detected - exceptions should not be silently ignored\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":\"4c102a608a3cc500\",\"recommendation\":\"Log or rethrow the exception, or handle it explicitly. A comment alone does not clear this finding; suppress an intentional ignore with `@qmx-ignore code-smell.empty-catch` and a reason.\",\"rule\":\"code-smell.empty-catch\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Smells::report@src/Smells.php\",\"symbol\":\"Corpus\\\\Smells\\\\Smells::report\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.empty-catch\",\"code\":\"code-smell.empty-catch\",\"coupling.class-rank\":0.2,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":6,\"line\":36,\"message\":\"Empty catch block detected - exceptions should not be silently ignored\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"4c102a608a3cc500\",\"recommendation\":\"Log or rethrow the exception, or handle it explicitly. A comment alone does not clear this finding; suppress an intentional ignore with `@qmx-ignore code-smell.empty-catch` and a reason.\",\"rule\":\"code-smell.empty-catch\",\"severity\":\"error\",\"subject\":\"file:src/Smells.php\",\"symbol\":\"src/Smells.php\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.error-suppression\",\"code\":\"code-smell.error-suppression\",\"coupling.class-rank\":0.2,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":2,\"line\":38,\"message\":\"Error suppression (@) on file_get_contents() - handle errors explicitly\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"ce21655efa0f850a\",\"recommendation\":\"Handle the error explicitly with try/catch or conditional checks.\",\"rule\":\"code-smell.error-suppression\",\"severity\":\"warning\",\"subject\":\"file:src/Smells.php\",\"symbol\":\"src/Smells.php\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.error-suppression\",\"code\":\"code-smell.error-suppression\",\"coupling.class-rank\":0.2,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Suppression.php\",\"impactScore\":2,\"line\":9,\"message\":\"Error suppression (@) on file_get_contents() - handle errors explicitly\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":\"ce21655efa0f850a\",\"recommendation\":\"Handle the error explicitly with try/catch or conditional checks.\",\"rule\":\"code-smell.error-suppression\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Suppression::read@src/Suppression.php\",\"symbol\":\"Corpus\\\\Smells\\\\Suppression::read\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.eval\",\"code\":\"code-smell.eval\",\"coupling.class-rank\":0.2,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":9,\"line\":29,\"message\":\"eval() usage detected - security risk\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"cb4db382fbd60b86\",\"recommendation\":\"Replace eval() with a safer alternative (closures, reflection, or template engine).\",\"rule\":\"code-smell.eval\",\"severity\":\"error\",\"subject\":\"file:src/Smells.php\",\"symbol\":\"src/Smells.php\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.eval\",\"code\":\"code-smell.eval\",\"coupling.class-rank\":0.2,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":9,\"line\":9,\"message\":\"eval() usage detected - security risk\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":\"cb4db382fbd60b86\",\"recommendation\":\"Replace eval() with a safer alternative (closures, reflection, or template engine).\",\"rule\":\"code-smell.eval\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Smells::report@src/Smells.php\",\"symbol\":\"Corpus\\\\Smells\\\\Smells::report\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.exit\",\"code\":\"code-smell.exit\",\"coupling.class-rank\":0.2,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":2,\"line\":23,\"message\":\"exit()/die() usage detected - use exceptions instead\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":\"3215b3c81a7774ac\",\"recommendation\":\"Throw an exception instead of exit/die to allow proper error handling.\",\"rule\":\"code-smell.exit\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Smells::report@src/Smells.php\",\"symbol\":\"Corpus\\\\Smells\\\\Smells::report\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.exit\",\"code\":\"code-smell.exit\",\"coupling.class-rank\":0.2,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":2,\"line\":44,\"message\":\"exit()/die() usage detected - use exceptions instead\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"3215b3c81a7774ac\",\"recommendation\":\"Throw an exception instead of exit/die to allow proper error handling.\",\"rule\":\"code-smell.exit\",\"severity\":\"warning\",\"subject\":\"file:src/Smells.php\",\"symbol\":\"src/Smells.php\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.goto\",\"code\":\"code-smell.goto\",\"coupling.class-rank\":0.2,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":9,\"line\":21,\"message\":\"goto statement detected - avoid using goto\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":\"d5cdb2ffde93239f\",\"recommendation\":\"Replace goto with structured control flow (loops, early returns).\",\"rule\":\"code-smell.goto\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Smells::report@src/Smells.php\",\"symbol\":\"Corpus\\\\Smells\\\\Smells::report\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.goto\",\"code\":\"code-smell.goto\",\"coupling.class-rank\":0.2,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":9,\"line\":42,\"message\":\"goto statement detected - avoid using goto\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"d5cdb2ffde93239f\",\"recommendation\":\"Replace goto with structured control flow (loops, early returns).\",\"rule\":\"code-smell.goto\",\"severity\":\"error\",\"subject\":\"file:src/Smells.php\",\"symbol\":\"src/Smells.php\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.identical-subexpression\",\"code\":\"code-smell.identical-subexpression\",\"coupling.class-rank\":0.2,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":3,\"line\":18,\"message\":\"Identical sub-expressions on both sides of operator\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":\"3b826cb977193362\",\"recommendation\":\"This looks like a copy-paste error. Verify the intended logic.\",\"rule\":\"code-smell.identical-subexpression\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Smells::report@src/Smells.php\",\"symbol\":\"Corpus\\\\Smells\\\\Smells::report\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.identical-subexpression\",\"code\":\"code-smell.identical-subexpression\",\"coupling.class-rank\":0.2,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Smells.php\",\"impactScore\":3,\"line\":39,\"message\":\"Identical sub-expressions on both sides of operator\",\"metricValue\":1,\"namespace\":null,\"occurrence\":\"3b826cb977193362\",\"recommendation\":\"This looks like a copy-paste error. Verify the intended logic.\",\"rule\":\"code-smell.identical-subexpression\",\"severity\":\"warning\",\"subject\":\"file:src/Smells.php\",\"symbol\":\"src/Smells.php\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.long-parameter-list\",\"code\":\"code-smell.long-parameter-list\",\"coupling.class-rank\":0.2,\"debtMinutes\":20,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":12,\"line\":7,\"message\":\"Method has 9 parameters, exceeds threshold of 6. Consider introducing a parameter object\",\"metricValue\":9,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Parameters: 9 (threshold: 6) \\u2014 consider introducing a parameter object\",\"rule\":\"code-smell.long-parameter-list\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Injection::__construct@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection::__construct\",\"techDebtMinutes\":20,\"threshold\":6}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.long-parameter-list\",\"code\":\"code-smell.long-parameter-list\",\"coupling.class-rank\":0.2,\"debtMinutes\":20,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":4,\"line\":19,\"message\":\"Method has 5 parameters, exceeds threshold of 4. Consider introducing a parameter object\",\"metricValue\":5,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Parameters: 5 (threshold: 4) \\u2014 consider introducing a parameter object\",\"rule\":\"code-smell.long-parameter-list\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Injection::render@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection::render\",\"techDebtMinutes\":20,\"threshold\":4}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unreachable-code\",\"code\":\"code-smell.unreachable-code\",\"coupling.class-rank\":0.2,\"debtMinutes\":10,\"edge\":null,\"file\":\"src/Dead.php\",\"impactScore\":2,\"line\":13,\"message\":\"Found 1 unreachable statement(s) after terminal statement (return/throw/exit/break/continue). Dead code should be removed\",\"metricValue\":1,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove dead code after the terminal statement.\",\"rule\":\"code-smell.unreachable-code\",\"severity\":\"warning\",\"subject\":\"declaration:callable:Corpus\\\\Smells\\\\Dead::value@src/Dead.php\",\"symbol\":\"Corpus\\\\Smells\\\\Dead::value\",\"techDebtMinutes\":10,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unused-private\",\"code\":\"code-smell.unused-private\",\"coupling.class-rank\":0.2,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Dead.php\",\"impactScore\":3,\"line\":16,\"message\":\"Unused private method `neverCalled`\",\"metricValue\":3,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove the unused symbol to reduce dead code.\",\"rule\":\"code-smell.unused-private\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\Smells\\\\Dead@src/Dead.php\",\"symbol\":\"Corpus\\\\Smells\\\\Dead\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unused-private\",\"code\":\"code-smell.unused-private\",\"coupling.class-rank\":0.2,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Dead.php\",\"impactScore\":3,\"line\":7,\"message\":\"Unused private property `neverRead`\",\"metricValue\":3,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove the unused symbol to reduce dead code.\",\"rule\":\"code-smell.unused-private\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\Smells\\\\Dead@src/Dead.php\",\"symbol\":\"Corpus\\\\Smells\\\\Dead\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unused-private\",\"code\":\"code-smell.unused-private\",\"coupling.class-rank\":0.2,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Dead.php\",\"impactScore\":3,\"line\":8,\"message\":\"Unused private constant `NEVER_USED`\",\"metricValue\":3,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove the unused symbol to reduce dead code.\",\"rule\":\"code-smell.unused-private\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\Smells\\\\Dead@src/Dead.php\",\"symbol\":\"Corpus\\\\Smells\\\\Dead\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unused-private\",\"code\":\"code-smell.unused-private\",\"coupling.class-rank\":0.2,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":3,\"line\":10,\"message\":\"Unused private property `c`\",\"metricValue\":9,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove the unused symbol to reduce dead code.\",\"rule\":\"code-smell.unused-private\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\Smells\\\\Injection@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unused-private\",\"code\":\"code-smell.unused-private\",\"coupling.class-rank\":0.2,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":3,\"line\":11,\"message\":\"Unused private property `d`\",\"metricValue\":9,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove the unused symbol to reduce dead code.\",\"rule\":\"code-smell.unused-private\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\Smells\\\\Injection@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unused-private\",\"code\":\"code-smell.unused-private\",\"coupling.class-rank\":0.2,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":3,\"line\":12,\"message\":\"Unused private property `e`\",\"metricValue\":9,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove the unused symbol to reduce dead code.\",\"rule\":\"code-smell.unused-private\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\Smells\\\\Injection@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unused-private\",\"code\":\"code-smell.unused-private\",\"coupling.class-rank\":0.2,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":3,\"line\":13,\"message\":\"Unused private property `f`\",\"metricValue\":9,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove the unused symbol to reduce dead code.\",\"rule\":\"code-smell.unused-private\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\Smells\\\\Injection@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unused-private\",\"code\":\"code-smell.unused-private\",\"coupling.class-rank\":0.2,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":3,\"line\":14,\"message\":\"Unused private property `g`\",\"metricValue\":9,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove the unused symbol to reduce dead code.\",\"rule\":\"code-smell.unused-private\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\Smells\\\\Injection@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unused-private\",\"code\":\"code-smell.unused-private\",\"coupling.class-rank\":0.2,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":3,\"line\":15,\"message\":\"Unused private property `h`\",\"metricValue\":9,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove the unused symbol to reduce dead code.\",\"rule\":\"code-smell.unused-private\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\Smells\\\\Injection@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unused-private\",\"code\":\"code-smell.unused-private\",\"coupling.class-rank\":0.2,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":3,\"line\":16,\"message\":\"Unused private property `i`\",\"metricValue\":9,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove the unused symbol to reduce dead code.\",\"rule\":\"code-smell.unused-private\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\Smells\\\\Injection@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unused-private\",\"code\":\"code-smell.unused-private\",\"coupling.class-rank\":0.2,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":3,\"line\":8,\"message\":\"Unused private property `a`\",\"metricValue\":9,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove the unused symbol to reduce dead code.\",\"rule\":\"code-smell.unused-private\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\Smells\\\\Injection@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.unused-private\",\"code\":\"code-smell.unused-private\",\"coupling.class-rank\":0.2,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Injection.php\",\"impactScore\":3,\"line\":9,\"message\":\"Unused private property `b`\",\"metricValue\":9,\"namespace\":\"Corpus\\\\Smells\",\"occurrence\":null,\"recommendation\":\"Remove the unused symbol to reduce dead code.\",\"rule\":\"code-smell.unused-private\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\Smells\\\\Injection@src/Injection.php\",\"symbol\":\"Corpus\\\\Smells\\\\Injection\",\"techDebtMinutes\":15,\"threshold\":null}"]

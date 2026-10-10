@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter\Sarif;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\SourceText\SourceBytes;
 use Qualimetrix\Core\Version;
@@ -74,6 +76,10 @@ final class SarifFormatter implements FormatterInterface
             ]];
         }
 
+        foreach ($this->populationNotifications($report->population) as $notification) {
+            $run = self::withNotification($run, 'note', $notification['message']['text'], 'QMX-RULE-POPULATION-INCOMPLETE');
+        }
+
         if ($report->outOfScope !== null && $report->outOfScope->total() > 0) {
             $run = self::withNotification($run, 'note', $report->outOfScope->describe(), 'QMX-DRILL-DOWN-OUT-OF-SCOPE', ['identities' => $report->outOfScope->published()['identities']]);
         }
@@ -116,6 +122,19 @@ final class SarifFormatter implements FormatterInterface
         );
 
         return new FormattedReport($body, $repairs);
+    }
+
+    /** @return list<array{message: array{text: string}}> */
+    private function populationNotifications(JudgedPopulation $population): array
+    {
+        return array_map(static fn($absence): array => ['message' => ['text' => \sprintf(
+            'Selected judgement incomplete: %s (%s), %d unjudged %s; %s',
+            $absence->channel->code,
+            $absence->level->value,
+            $absence->count,
+            $absence->unit,
+            $absence->reason,
+        )]], $population->abstentions());
     }
 
     public function publicationKind(): PublicationKind

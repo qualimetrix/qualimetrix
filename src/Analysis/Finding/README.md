@@ -19,6 +19,20 @@ Finding/
 │   │   ├── RuleEnablementResolver.php
 │   │   ├── RuleNameJudge.php
 │   │   └── StatedEnablement.php
+│   ├── Population/       # declared eligibility and immutable selected judgements
+│   │   ├── PopulationGate.php
+│   │   ├── GatePredicate.php
+│   │   ├── GateInput.php
+│   │   ├── KeyPresent.php
+│   │   ├── KeyThreshold.php
+│   │   ├── FlagExcludes.php
+│   │   ├── KindIn.php
+│   │   ├── NameMatches.php
+│   │   ├── RuleValueThreshold.php
+│   │   ├── ContextGuard.php
+│   │   ├── PopulationIdentity.php
+│   │   ├── RuleAbstention.php
+│   │   └── JudgedPopulation.php
 │   ├── ProjectScope/     # measured judgement, doors, channel lists and selector verdicts
 │   ├── Control/          # finding control scope vocabulary
 │   ├── Filter/           # Ordered finding-filter stages and results
@@ -54,7 +68,11 @@ Finding/
 │   ├── SelectionRefusals.php # contradictory or ineffective authored choices
 │   ├── SelectionCauses.php # complete decisive ties and source ordering
 │   └── EnablementIndex.php # immutable producer/channel cell lookup
+├── Population/           # private per-call accumulation
+│   ├── PopulationSession.php # selected publication, declaration validation and one freeze
+│   └── PopulationTrace.php # unit counts and bounded canonical examples
 ├── SuppressionBinding/   # Whether a configured suppression value named anything the run holds
+│   └── UnboundSuppressionFinding.php # Messages for values that bind to nothing
 ├── RuleExecution.php     # Selects producers, executes them, and returns what happened as a value
 ├── RuleMaterialization.php # Ordered deferred rules and validators for one snapshot identity
 ├── FindingPublication.php # Exclusion accounting and channel-selection projection
@@ -75,7 +93,8 @@ rather than a bare finding list: `$produced` (everything rules and their
 configuration validators produced, before the per-rule exclusion ledger and
 per-finding channel selection ran), `$published` (the subset `execute()` used
 to return), `$exclusions` (`RuleExclusionStats`, unchanged), and
-`$levelActivity` (`LevelActivity`), and `$selection` (`SelectionTrace`). Reporting's
+`$levelActivity` (`LevelActivity`), `$selection` (`SelectionTrace`), and
+`$population` (`JudgedPopulation`). Reporting's
 `SuppressionCompositionBuilder` reads `$produced` and `$exclusions` to publish
 `--format=suppressed`. Run's outward `AnalysisResult::findings()` composes
 execution `$published` with late Inline usage and unmatched-exclude findings;
@@ -431,6 +450,74 @@ an options boundary.
 `FindingNamespace::declared()` reads the symbol namespace and then the exact
 declaration subject when needed. Namespace suppression retains this declared
 view and never imports file-to-namespace attribution from reporting selection.
+
+## Selected rule populations
+
+`JudgedMetrics` remains exposed through `ChannelDeclaration.judges`. Assembly
+validates its catalog keys and the runtime channel registry reads their reach;
+the manifest records these exact readers through the declaration surface. Rule
+authors construct those keys through `AbstractRule` without a direct value-type
+import.
+
+`GatePredicate` is exposed through the public `PopulationGate.predicate` field.
+The manifest records that surface for each exact external consumer of
+`PopulationGate`; those consumers do not need a direct interface import.
+
+`ChannelDeclaration` owns the complete ordered population gates, and
+`AnalysisContext::admit()` uses the same pure eligibility for direct, selected
+and unselected execution. Source-owned inputs are lazy: the first failed gate
+ends eligibility without reading the next operand. A reached invalid operand,
+source, coordinate or identity is refused. Missing publication and measured zero
+are separate observations; the declared predicate chooses whether missing zero
+can pass a native threshold.
+
+`PopulationIdentity` frames binary occurrence, edge and cycle components without
+changing valid UTF-8 hash inputs. Selector and clause factories retain the owning
+canonical identity; bounded abstention examples retain those bytes until report
+publication applies the existing UTF-8 repair.
+
+`RuleExecution` derives one context carrying a fresh `PopulationSession` per
+execution and shares it across every producer. Architecture evidence therefore
+keeps its existing shared-context memoization. Successful eligible native members
+are counted before severity selection; the absence of a finding is not the
+absence of a judgement. Ungated writers count their native entry or copy events,
+while unknown whole evidence uses the declared invocation failure unit.
+
+`AbstractRule` constructs the closed seven predicate forms and their gates for
+subclasses. `judgingHigher()` and `judgingLower()` bind raw metric keys to their
+declared direction. `admittedMetrics()` consumes source-owned preconditions
+before acquiring the exact subject bag, then supplies that bag to the remaining
+lazy operands. Callers state their native roster level explicitly when it can
+differ from the subject kind. `admittedDeclarations()` streams the admitted
+roster with its exact subject and bag, while `admitSubject()` and
+`admitOccurrence()` preserve their distinct accounting identities.
+
+`FindingPublication::populationSession()` creates a fresh accounting session from
+the resolved channel publication for each execution. Its lifetime follows the
+execution, alongside the publication and exclusion ledger.
+
+`ChannelPublication::measure()` streams a hosted audit through the captured
+selection into one private session. The session receives the captured publication
+query as a callable, preserving the snapshot without importing the publication
+service back into its accumulator. `JudgedPopulation` holds the completed
+immutable result without importing its accumulator. `PopulationTrace` publishes
+its compact summary through `JudgedPopulation::fromSummary()` once and retains
+that same partition for repeat freezing.
+
+One immutable partition belongs to a whole execution or hosted audit call.
+Repeat adoption of that partition is idempotent; independent calls add.
+`PopulationTrace` retains no healthy identity or metric input roster. Abstentions
+carry producer, channel, level, failed gate, reason, unit and count, with sorted
+distinct canonical examples capped at five. Counts of different units must stay
+separate. No abstention is a finding, suppression or severity decision.
+
+`UnboundSuppressionAudit::auditResult()` returns `findings` and `population`
+together under the captured `ChannelPublication`. It accounts each configured
+value occurrence, including duplicates and values that bind successfully, and
+freezes one session after the whole native audit. Unknown namespace evidence
+withholds namespace values while leaving independently judged paths measurable.
+Selector displays are reversibly byte-framed before internal JSON identity
+encoding; a CLI source byte and its literal percent spelling stay distinct.
 
 ## Locality
 

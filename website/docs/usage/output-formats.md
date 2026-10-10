@@ -166,7 +166,7 @@ Compact, one-line-per-violation output. Compatible with GCC/Clang error format, 
 **Example output:**
 
 ```
-src/Repository/OrderRepository.php: error[coupling.class-rank]: ClassRank is 0.6491, exceeds threshold of 0.3536 (scaled for 2 classes). This class is a critical hub — changes have wide impact (OrderRepository)
+src/Repository/OrderRepository.php: error[coupling.class-rank]: ClassRank share is 12.98× uniform, exceeds threshold of 10.00×. This class is a critical hub — changes have wide impact (OrderRepository)
 src/Repository/OrderRepository.php: warning[complexity.ccn]: Cyclomatic complexity is 10, reaches threshold of 10. Consider extracting methods or simplifying conditions (OrderRepository::findByCriteria)
 src/Service/UserService.php:9: warning[code-smell.error-suppression]: Error suppression (@) on file_get_contents() - handle errors explicitly
 src/Service/UserService.php: warning[complexity.ccn]: Cyclomatic complexity is 14, exceeds threshold of 10. Consider extracting methods or simplifying conditions (UserService::calculate)
@@ -191,7 +191,7 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
 
 **When to use:** Custom scripts, dashboards, programmatic processing.
 
-**Top-level keys:** `meta`, `summary`, `outOfScope`, `coverage`, `projectScope` (see [Project scope in every format](#project-scope-in-every-format)), `configurationDiagnostics`, `computedMetricOutcomes`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, plus `violationGroups` when `--group-by` is passed — without it, the key is absent entirely, not an empty object.
+**Top-level keys:** `meta`, `summary`, `outOfScope`, `coverage`, `projectScope` (see [Project scope in every format](#project-scope-in-every-format)), `configurationDiagnostics`, `computedMetricOutcomes`, `abstentions`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, plus `violationGroups` when `--group-by` is passed — without it, the key is absent entirely, not an empty object.
 
 `configurationDiagnostics` lists the warnings about the configuration the run accepted — the same ones `check` prints on stderr — and is `[]` when there are none. Each entry is `{"message": "…", "source": [{"kind": "preset", "name": "…", "imported_by": null}, …]}`: `source` names every layer the warning is about, lowest precedence first, in the form a configuration error's `source` uses. For example, `only_rules: []` in `qmx.yaml` over a preset that filters the rules is lawful, and draws one entry naming both.
 
@@ -242,6 +242,7 @@ targets and other formats retain their existing output behavior.
     },
     "configurationDiagnostics": [],
     "computedMetricOutcomes": [],
+    "abstentions": [],
     "health": {
         "complexity": {
             "score": 78.0,
@@ -353,7 +354,7 @@ targets and other formats retain their existing output behavior.
             "baselineVerdict": null,
             "baselineReason": null,
             "impactScore": 3.71,
-            "coupling.class-rank": 0.1237,
+            "coupling.class-rank-share": 3.711,
             "debtMinutes": 30
         }
     ],
@@ -400,9 +401,16 @@ The `worstNamespaces` and `worstClasses` entries include a `violationDensity` fi
 `topIssues` is the same ranked list the `summary` format prints as "Top issues
 by impact"; no other format renders it. Each entry names the rule-specific
 `impactScore` used for ranking and the estimated `debtMinutes`. The
-`coupling.class-rank` key is always present, but its value is `null` unless the
-rule producing the issue reads a coupling-hub signal; `file` and `line` are
-nullable too, because a project-level finding has no source position.
+`coupling.class-rank-share` key is always present. Class and method findings use
+their class's measured share; file and namespace findings use the maximum share
+among their classes. It is `null` when no finite share is available, and for
+function and project findings. Ranking may use the measured median as a fallback
+for `impactScore` without replacing that `null`. `file` and `line` are nullable
+too, because a project-level finding has no source position. The share is raw
+PageRank multiplied by the logical graph vertex count, in multiples of uniform
+probability. Metrics exports retain raw `coupling.class-rank` and also
+publish `coupling.class-rank-share`; ranking never substitutes raw probability
+for missing share.
 
 Each violation carries nullable `acceptedLevel`, `baselineVerdict` and
 `baselineReason`. `baselineVerdict: "breached"` means a compared group exceeded
@@ -816,12 +824,17 @@ GitHub Actions workflow command format. Produces inline annotations that appear 
 
 **When to use:** GitHub Actions CI. Simpler setup than SARIF — no upload step needed.
 
-Workflow command format: `::<level> file=<path>,line=<n>,title=<rule>::<message>` (one line per violation). Mapping: warning → `::warning`, error → `::error`.
+Workflow command format: `::<level> file=<path>,line=<n>,title=<rule>::<message>` (one line per violation). Mapping: info → `::notice`, warning → `::warning`, error → `::error`.
 
 Only `title=` appears on every line. A project-level finding has no source
 position, so it is annotated as `::<level> title=<rule>::<message>` — without
 `file=` and `line=`, which GitHub then shows against the workflow run rather
 than against a line in the diff.
+
+Report diagnostics also use `::notice` with only `title=`: selected populations
+left unjudged (`rule-population.incomplete`), project scope (`run.project-scope`)
+and findings outside a selection (`drill-down.out-of-scope`). These notices
+describe the report without adding violations or changing policy exit status.
 
 <!-- llms:skip-begin -->
 **Example output:**
@@ -1157,6 +1170,37 @@ The baseline
 file — written by `baseline:generate`, `update`, `cleanup`, and rewritten in
 place by `baseline:rename-channels` — is a versioned input artifact the tool
 reads back, with its own schema, not a report.
+
+## Selected rule populations
+
+A rule can decline to judge a selected subject: a required metric was not
+published, its native exclusion applies, or the evidence needed to judge it is
+unknown. This differs from a healthy subject that was judged and produced no
+finding. Disabled and unselected channels contribute no population records.
+
+Every successful check JSON document contains `abstentions`, including `[]`.
+Each nonempty group has `producer`, `channel`, `level`, `gate`, `reason`,
+`unit`, `count` and `examples`. The first failed declared gate owns the group;
+examples are at most five sorted distinct canonical identities. Counts describe
+that gate's native unit, such as declarations, namespaces, cycles or configured
+selectors; do not add different units into a subject total. Independent analysis
+calls retain separate populations when combined; adopting the same frozen
+population twice does not double its counts.
+
+| Format                      | Selected subjects left unjudged                                                                     |
+| --------------------------- | --------------------------------------------------------------------------------------------------- |
+| `text`, `summary`, `health` | A compact indication at normal verbosity and bounded details under `-v`, including without findings |
+| `json`                      | Full top-level `abstentions` groups, at normal and quiet verbosity and in output files              |
+| `sarif`                     | Invocation `note` with descriptor `QMX-RULE-POPULATION-INCOMPLETE`                                  |
+| `github`                    | A `::notice title=rule-population.incomplete::` line                                                |
+| `html`                      | A visible banner and full `abstentions` payload                                                     |
+
+These records do not create violations, change severities or the policy exit
+code, consume baseline ceilings, or increase suppression counts. They remain
+separate from `computedMetricOutcomes`, analysis-file coverage and health-score
+coverage. Metrics, Checkstyle, GitLab, suppressed reports and baselines receive
+no synthetic abstention findings. Silent successful stdout remains empty;
+writing a report file still preserves its format's population information.
 
 ## Analysis coverage in every format
 

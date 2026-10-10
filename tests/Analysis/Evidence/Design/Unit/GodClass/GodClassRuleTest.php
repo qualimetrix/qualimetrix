@@ -12,10 +12,21 @@ use Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassOptions;
 use Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
+use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
+use Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch;
+use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
@@ -23,6 +34,54 @@ use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 #[CoversClass(GodClassOptions::class)]
 final class GodClassRuleTest extends TestCase
 {
+    #[Test]
+    public function itAccountsForWrongLogicalKindsBeforeReadingClassMetrics(): void
+    {
+        $info = self::subjectInfo(SymbolPath::forMethod('App', 'Service', 'run'), RelativePath::fromString('service.php'), 1);
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->expects(self::once())->method('allClassDeclarations')->willReturn([$info]);
+        $repository->expects(self::never())->method('getSubject');
+        $session = self::populationSession(GodClassRule::NAME);
+        self::assertSame([], (new GodClassRule(new GodClassOptions()))->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
+        self::assertSame(0, $session->freeze()->judgedCount());
+        self::assertSame(1, $session->freeze()->unjudgedCount());
+        self::assertSame('logical-class-kind', $session->freeze()->abstentions()[0]->gate);
+    }
+
+    #[Test]
+    public function itSeparatesTooFewEvaluableCriteriaFromEnoughUnmatchedCriteria(): void
+    {
+        $info = self::subjectInfo(SymbolPath::fromClassFqn('App\\Service'), RelativePath::fromString('service.php'), 1);
+        foreach ([false, true] as $enoughCriteria) {
+            $metrics = MetricBag::fromArray(['size.method-count' => 3, 'complexity.wmc' => 0]);
+            if ($enoughCriteria) {
+                $metrics = $metrics->with('cohesion.tcc', 1.0)->with('size.class-loc', 10);
+            }
+            $repository = self::createStub(MetricRepositoryInterface::class);
+            $repository->method('allClassDeclarations')->willReturn([$info]);
+            $repository->method('getSubject')->willReturn($metrics);
+            $session = self::populationSession(GodClassRule::NAME);
+            self::assertSame([], (new GodClassRule(new GodClassOptions()))->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
+            self::assertSame($enoughCriteria ? 1 : 0, $session->freeze()->judgedCount());
+            self::assertSame($enoughCriteria ? 0 : 1, $session->freeze()->unjudgedCount());
+            if (!$enoughCriteria) {
+                self::assertSame('evaluable-criteria', $session->freeze()->abstentions()[0]->gate);
+            }
+        }
+    }
+
+    #[Test]
+    public function itStopsBeforeLaterPopulationInputsAfterReadonlyExclusion(): void
+    {
+        $info = self::subjectInfo(SymbolPath::fromClassFqn('App\\ReadonlyData'), RelativePath::fromString('readonly.php'), 1);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allClassDeclarations')->willReturn([$info]);
+        $repository->method('getSubject')->willReturn(MetricBag::fromArray(['design.is-readonly' => 1, 'size.method-count' => \NAN]));
+        $session = self::populationSession(GodClassRule::NAME);
+        self::assertSame([], (new GodClassRule(new GodClassOptions()))->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
+        self::assertSame('readonly-class', $session->freeze()->abstentions()[0]->gate);
+    }
+
     #[Test]
     public function itGetsName(): void
     {
@@ -529,6 +588,14 @@ final class GodClassRuleTest extends TestCase
             'declaration:class:App\\Service\\Twin@src/A.php',
             'declaration:class:App\\Service\\Twin@src/B.php',
         ], $subjects);
+    }
+
+    private static function populationSession(string $producer, bool $selected = true): PopulationSession
+    {
+        return new PopulationSession((new ChannelPublication(new RuleEnablement([new EnablementDecision(
+            new SelectionCellAddress($producer, new FindingChannel($producer), SymbolLevel::Class_, ChannelSelectionRole::Selectable),
+            new AuthoredCellDecision($selected ? CellSwitch::On : CellSwitch::Off, CellAdmission::Direct),
+        )], null)))->publishes(...));
     }
 
     private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo

@@ -271,3 +271,5 @@ external consumer.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+Maintainability populations retain the effective test-file exclusion, statement-count minimum and MI publication in their native order. The statement-count minimum uses method statement count, not formatting-dependent LOC. Excluded names do not acquire a metric bag. A published MI value is counted before severity selection.

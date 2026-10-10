@@ -23,7 +23,12 @@ use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyThreshold;
+use Qualimetrix\Analysis\Finding\Contract\Population\NameMatches;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleFamily;
@@ -91,6 +96,10 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
                 WorseDirection::Lower,
                 JudgedMetrics::of(MetricName::MAINTAINABILITY_MI),
                 SymbolLevel::Callable,
+            )->withGates(
+                new PopulationGate('exclude-tests', new FindingChannel('maintainability.mi'), SymbolLevel::Callable, 'callable', new NameMatches('exclude-tests', true), 'The configured test-file exclusion applies.'),
+                new PopulationGate('minimum-statements', new FindingChannel('maintainability.mi'), SymbolLevel::Callable, 'callable', new KeyThreshold('minimum-statements', [MetricName::SIZE_METHOD_STATEMENT_COUNT], '>=', 'minimum-statements', 'zero', true), 'Statement count is below the configured minimum.'),
+                new PopulationGate('maintainability', new FindingChannel('maintainability.mi'), SymbolLevel::Callable, 'callable', new KeyPresent('maintainability', [MetricName::MAINTAINABILITY_MI]), 'Maintainability was not published.'),
             ),
             $declarations['maintainability.mi'],
         );

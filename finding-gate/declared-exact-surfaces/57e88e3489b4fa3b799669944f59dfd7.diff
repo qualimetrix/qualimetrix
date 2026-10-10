@@ -1,0 +1,20 @@
+--- candidate
++++ reference (mapped)
+@@ -10,4 +10,4 @@
+-  1. [WRN] 15.0  src/LongCopy.php:6  [15min]
+-         duplication.clone: Duplicated code block (16 code lines, 2 occurrences): "public function total(array $values): int $total = 0; foreach ($values as..." — also at src/ShortCopy.php:6-11
+-         Recommendation: Extract duplicated code into a shared method or class.
+-  2. [WRN] 15.0  src/ShortCopy.php:6  [15min]
++  1. [WRN] 7.50  src/LongCopy.php:6  [15min]
++         duplication.clone: Duplicated code block (16 code lines, 2 occurrences): "public function total(array $values): int $total = 0; foreach ($values as..." — also at src/ShortCopy.php:6-11
++         Recommendation: Extract duplicated code into a shared method or class.
++  2. [WRN] 7.50  src/ShortCopy.php:6  [15min]
+@@ -30,4 +30,4 @@
+-  1. [WRN] 15.0  src/LongCopy.php:6  [15min]
+-         duplication.clone: Duplicated code block (16 code lines, 2 occurrences): "public function total(array $values): int $total = 0; foreach ($values as..." — also at src/ShortCopy.php:6-11
+-         Recommendation: Extract duplicated code into a shared method or class.
+-  2. [WRN] 15.0  src/ShortCopy.php:6  [15min]
++  1. [WRN] 7.50  src/LongCopy.php:6  [15min]
++         duplication.clone: Duplicated code block (16 code lines, 2 occurrences): "public function total(array $values): int $total = 0; foreach ($values as..." — also at src/ShortCopy.php:6-11
++         Recommendation: Extract duplicated code into a shared method or class.
++  2. [WRN] 7.50  src/ShortCopy.php:6  [15min]

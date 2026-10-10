@@ -41,6 +41,44 @@ use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 final class UnmatchedFrameworkNamespaceRuleTest extends TestCase
 {
     #[Test]
+    public function itDistinguishesScopeSelectorsUnknownGraphAndKnownEmptyClassification(): void
+    {
+        foreach ([
+            [$this->context(null, false), 0, 2, 'namespace-scope', 'configured-framework-selector'],
+            [$this->context(null), 0, 1, 'graph-available', 'invocation'],
+            [$this->context($this->graphOf()), 0, 2, 'classified-names', 'configured-framework-selector'],
+            [$this->context($this->graph()), 2, 0, null, null],
+        ] as [$context, $judged, $unjudged, $gate, $unit]) {
+            $decisions = [];
+            foreach (UnmatchedFrameworkNamespaceRule::channelDeclarations() as $channel => $declaration) {
+                foreach ($declaration->levels as $level) {
+                    $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(UnmatchedFrameworkNamespaceRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
+                }
+            }
+            $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+            $findings = $this->rule(['Nope', 'Symfony'])->analyze($context->withPopulationTrace($session));
+            self::assertCount($judged === 0 ? 0 : 1, $findings);
+            self::assertSame($judged, $session->freeze()->judgedCount());
+            self::assertSame($unjudged, $session->freeze()->unjudgedCount());
+            self::assertSame($gate === null ? [] : [[$gate, $unit]], array_map(
+                static fn(\Qualimetrix\Analysis\Finding\Contract\Population\RuleAbstention $absence): array => [$absence->gate, $absence->unit],
+                $session->freeze()->abstentions(),
+            ));
+        }
+        $graph = self::createMock(DependencyGraphInterface::class);
+        $graph->expects(self::never())->method('getAllDependencies');
+        $decisions = [];
+        foreach (UnmatchedFrameworkNamespaceRule::channelDeclarations() as $channel => $declaration) {
+            foreach ($declaration->levels as $level) {
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(UnmatchedFrameworkNamespaceRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
+            }
+        }
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+        self::assertSame([], $this->rule([])->analyze($this->context($graph)->withPopulationTrace($session)));
+        self::assertTrue($session->freeze()->isEmpty());
+    }
+
+    #[Test]
     public function itNamesItselfAfterItsChannel(): void
     {
         self::assertSame('coupling.unmatched-framework-namespace', $this->rule(['Nope'])->getName());

@@ -69,6 +69,7 @@ final class FormatterContextFactory
             detailLimit: $detailLimit,
             isGroupByExplicit: $isGroupByExplicit,
             topIssuesLimit: $topIssuesLimit,
+            verbose: $output->isVerbose(),
         );
     }
 

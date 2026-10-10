@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Run\Integration;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -27,7 +28,6 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
@@ -154,11 +154,12 @@ final class DirectiveAuditUniverseTest extends TestCase
             },
         );
         $rules->method('allRules')->willReturn([]);
-        $rules->method('publication')->willReturn(new ChannelPublication(new RuleEnablement([], null)));
+        $rules->method('publication')->willReturnCallback(static fn(): ChannelPublication => new ChannelPublication(
+            $configuration->enablement() ?? throw new LogicException('The native invocation enablement must be captured before publication.'),
+        ));
 
-        // The pipeline asks the executor which of the late findings this run's
-        // selection publishes. Nothing here selects anything, so the honest
-        // stub answer is the argument — and it must be written down: a stub's
+        // The native captured publication already selected the audit. The stub
+        // keeps its resulting late findings — it must be written down: a stub's
         // default empty array would drop the very finding both cases are about
         // and make the pair pass and fail for reasons that are not the subject.
         $rules->method('publishable')->willReturnArgument(0);

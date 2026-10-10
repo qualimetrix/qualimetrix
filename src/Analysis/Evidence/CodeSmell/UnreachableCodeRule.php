@@ -5,17 +5,18 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\CodeSmell;
 
 use LogicException;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -67,10 +68,12 @@ final class UnreachableCodeRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Higher,
-                JudgedMetrics::of(MetricName::CODE_SMELL_UNREACHABLE_CODE),
+            self::NAME => self::judgingHigher(
+                [MetricName::CODE_SMELL_UNREACHABLE_CODE],
                 SymbolLevel::Callable,
+            )->withGates(
+                self::populationGate('callable-coordinate', self::NAME, SymbolLevel::Callable, 'callable', self::kindIn('callable-coordinate', [SymbolType::Method, SymbolType::Function_]), 'The subject is outside the declared symbol coordinate.'),
+                self::populationGate('published-value', self::NAME, SymbolLevel::Callable, 'callable', self::keyPresent('published-value', [MetricName::CODE_SMELL_UNREACHABLE_CODE]), 'The rule metric was not published.'),
             ),
         ];
     }
@@ -94,19 +97,16 @@ final class UnreachableCodeRule extends AbstractRule
     {
         \assert($this->options instanceof UnreachableCodeOptions);
         $findings = [];
+        $populationDeclaration = self::channelDeclarations()[self::NAME];
 
         foreach ($context->metrics->allCallables() as $symbolInfo) {
             $subject = $symbolInfo->subject ?? throw new LogicException('Unreachable code findings require an exact callable subject');
             $declaration = $subject->declarationPath() ?? throw new LogicException('Unreachable code findings require a declaration subject');
-            if (!\in_array($declaration->logical->getType(), [SymbolType::Method, SymbolType::Function_], true)) {
+            $metrics = $this->admittedMetrics($context, $subject, $populationDeclaration, static fn(MetricBag $metrics): array => [GateInput::metrics('published-value', $metrics)], [GateInput::kind('callable-coordinate', $declaration->logical->getType())], unit: 'callable', level: SymbolLevel::Callable);
+            if ($metrics === null) {
                 continue;
             }
-
-            $metrics = $context->metrics->getSubject($subject);
             $unreachableCount = $metrics->get(MetricName::CODE_SMELL_UNREACHABLE_CODE);
-            if ($unreachableCount === null) {
-                continue;
-            }
 
             $unreachableCountValue = (int) $unreachableCount;
             $severity = $this->getEffectiveSeverity($context, $this->options, $subject, $unreachableCountValue);

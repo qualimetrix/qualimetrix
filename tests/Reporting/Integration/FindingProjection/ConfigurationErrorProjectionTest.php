@@ -5,17 +5,22 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Reporting\Integration\FindingProjection;
 
 use DateTimeImmutable;
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
+use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
@@ -35,6 +40,7 @@ use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 use RuntimeException;
@@ -65,6 +71,8 @@ final class ConfigurationErrorProjectionTest extends TestCase
 
     private const string NAMESPACE = 'App\\Service';
 
+    private ChannelPublication $publication;
+
     /** @var list<string> */
     private array $tempFiles = [];
 
@@ -76,6 +84,10 @@ final class ConfigurationErrorProjectionTest extends TestCase
 
     protected function setUp(): void
     {
+        $configuration = ResolvedOptionsFixture::ready(FindingConfiguration::none(), [
+            new RuleMetadata(UnusedEntryRule::NAME, UnusedEntryRule::getOptionsClass(), UnusedEntryRule::getDescription(), [], false),
+        ]);
+        $this->publication = new ChannelPublication($configuration->enablement ?? throw new LogicException('Fixture requires resolved publication.'));
         $this->suppressions = [];
     }
 
@@ -303,7 +315,7 @@ final class ConfigurationErrorProjectionTest extends TestCase
             );
         }
 
-        return $projector->project($findings, $this->suppressions, $options);
+        return $projector->project($findings, $this->suppressions, $options, $this->publication);
     }
 
     /** @param array<string, list<array<string, mixed>>> $entries */

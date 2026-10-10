@@ -93,11 +93,13 @@ final class StubRuleCoverage
         $enablement = new RuleEnablement($decisions, null);
 
         return new readonly class ($notSelected, $disabledEverywhere, $enablement) implements RuleExecutionInterface {
-            /**
-             * @param list<string> $notSelected
-             * @param list<string> $disabledEverywhere
-             */
-            public function __construct(private array $notSelected, private array $disabledEverywhere, private RuleEnablement $enablement) {}
+            public function __construct(
+                /** @var list<string> */
+                private array $notSelected,
+                /** @var list<string> */
+                private array $disabledEverywhere,
+                private RuleEnablement $enablement,
+            ) {}
 
             public function execute(AnalysisContext $context, ?string $restrictToProducer = null): RuleExecutionResult
             {
@@ -160,8 +162,10 @@ final class StubRuleCoverage
         }
         $root = AbsolutePath::fromString('/tmp/qmx-ceiling-fixture');
         $tree = new class (array_values($files)) implements ProjectTreeQueryInterface {
-            /** @param list<RelativePath> $files */
-            public function __construct(private array $files) {}
+            public function __construct(
+                /** @var list<RelativePath> */
+                private array $files,
+            ) {}
 
             public function snapshot(ProjectScopeUniverse $universe): ProjectTreeSnapshot
             {

@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
+
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
@@ -177,13 +180,13 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
         return $this->refused->all($this->authoredSuppressions(), $this->authoredThresholdOverrides(), $this->authoredThresholdDiagnostics());
     }
 
-    public function auditDirectiveUsage(array $findings, LevelActivity $levelActivity, SubjectCoverageFacts $subjectCoverage): array
+    public function auditDirectiveUsage(array $findings, LevelActivity $levelActivity, SubjectCoverageFacts $subjectCoverage, ChannelPublication $publication): array
     {
         $severity = $this->usageReportingSeverity;
         if ($severity === null) {
-            return [];
+            return ['findings' => [], 'population' => JudgedPopulation::empty()];
         }
 
-        return $this->usage->stale($this->suppressions, $findings, $severity, $levelActivity, $subjectCoverage);
+        return $this->usage->usageResult($this->suppressions, $findings, $severity, $levelActivity, $subjectCoverage, $publication);
     }
 }

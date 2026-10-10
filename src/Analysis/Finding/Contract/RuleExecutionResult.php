@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract;
 
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
+
 /**
  * What one {@see RuleExecutionInterface::execute()} call did, as a value
  * rather than as two separate reads of mutable state.
@@ -43,6 +45,8 @@ namespace Qualimetrix\Analysis\Finding\Contract;
  */
 final readonly class RuleExecutionResult
 {
+    public JudgedPopulation $population;
+
     /**
      * @param list<Finding> $produced Every finding rules and their configuration validators
      *                                produced, before the per-rule exclusion ledger and per-finding
@@ -63,7 +67,10 @@ final readonly class RuleExecutionResult
         public RuleExclusionStats $exclusions,
         public LevelActivity $levelActivity,
         public SelectionTrace $selection = new SelectionTrace(),
-    ) {}
+        ?JudgedPopulation $population = null,
+    ) {
+        $this->population = $population ?? JudgedPopulation::empty();
+    }
 
     /**
      * Combines two runs' results honestly rather than picking one side:
@@ -91,6 +98,7 @@ final readonly class RuleExecutionResult
                 attributions: [...$this->exclusions->attributions, ...$other->exclusions->attributions],
             ),
             selection: $this->selection->merge($other->selection),
+            population: $this->population->merge($other->population),
         );
     }
 

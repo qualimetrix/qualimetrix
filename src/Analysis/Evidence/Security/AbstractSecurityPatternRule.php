@@ -8,9 +8,12 @@ use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Core\Symbol\MetricSubjectCodec;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
@@ -119,6 +122,7 @@ abstract class AbstractSecurityPatternRule extends AbstractRule
 
         $findings = [];
         $type = static::PATTERN_TYPE;
+        $declaration = static::channelDeclarations()[static::NAME];
 
         foreach ($context->metrics->all(SymbolLevel::File) as $fileInfo) {
             $metrics = $context->metrics->get($fileInfo->symbolPath);
@@ -128,8 +132,10 @@ abstract class AbstractSecurityPatternRule extends AbstractRule
                 continue;
             }
 
-            foreach ($entries as $entry) {
+            foreach ($entries as $entryOrdinal => $entry) {
                 $file = $fileInfo->file ?? throw new LogicException('File symbol must carry a relative path');
+                $subject = MetricSubjectCodec::decodeEntry($entry, $file);
+                $context->admit(static::NAME, new FindingChannel(static::NAME), $subject::levelOfCanonical($subject->toCanonical()), PopulationIdentity::occurrence($subject->toCanonical(), $entryOrdinal), $declaration, []);
                 $findings[] = SecurityPatternFinding::fromEntry($entry, $file)->toFinding(
                     static::NAME,
                     $type,

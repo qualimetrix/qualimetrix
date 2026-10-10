@@ -13,22 +13,39 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyLocationInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder;
+use Qualimetrix\Analysis\Evidence\DependencyModel\UnplacedExternalClassSpelling;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
+use Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch;
+use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationOptions;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationRule;
 use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationFinding;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
@@ -1587,9 +1604,101 @@ final class LayerViolationRuleTest extends TestCase
         $finding->toFindings();
     }
 
-    /**
-     * @param list<Dependency> $dependencies
-     */
+    #[Test]
+    public function itAccountsAllowedEdgesAndBothUnassignedEndpointsFromTheSharedWalkOnlyOnce(): void
+    {
+        $options = new LayerViolationOptions();
+        $collector = new LayerEvidenceCollector($options, new UnassignedClassOptions(), new LayerDeclarationOptions(), $this->processor);
+        $rule = new LayerViolationRule($options, $collector);
+        $architecture = $this->buildArchitecture(['controller' => ['App\Controller'], 'repository' => ['App\Repository']], ['controller' => []]);
+        $graph = $this->buildGraph([
+            $this->buildDependency('App\Controller', 'One', 'App\Controller', 'Two'),
+            $this->buildDependency('App\Controller', 'One', 'App\Repository', 'Two'),
+            $this->buildDependency('App\Unknown', 'One', 'App\Repository', 'Two'),
+            $this->buildDependency('App\Controller', 'One', 'App\Unknown', 'Two'),
+        ]);
+        $session = new PopulationSession((new ChannelPublication(new RuleEnablement([
+            new EnablementDecision(
+                new SelectionCellAddress(LayerViolationRule::NAME, new FindingChannel(LayerViolationRule::NAME), SymbolLevel::Class_, ChannelSelectionRole::Selectable),
+                new AuthoredCellDecision(CellSwitch::On, CellAdmission::Direct),
+            ),
+        ], null)))->publishes(...));
+        $context = $this->buildContext($graph, $architecture)->withPopulationTrace($session);
+
+        $collector->collect($context);
+        self::assertCount(1, $rule->analyze($context));
+        $population = $session->freeze();
+        self::assertSame(2, $population->judgedCount());
+        self::assertSame(2, $population->unjudgedCount());
+        self::assertSame(['source-assigned', 'target-assigned'], array_column($population->abstentions(), 'gate'));
+        self::assertSame(['dependency-edge'], array_unique(array_column($population->abstentions(), 'unit')));
+    }
+
+    #[Test]
+    public function itJudgesAuthoredExcludeClausesOnceWithScopeBeforePendingLifecycle(): void
+    {
+        $channel = 'architecture.unmatched-exclude';
+        foreach ([[], [ProjectScopeDoor::Paths]] as $doors) {
+            $processor = new ArchitecturePolicy();
+            $repository = new InMemoryMetricRepository();
+            $this->registerClass($repository, 'App', 'Subject');
+            $graph = $this->buildGraph([]);
+            $architecture = new ArchitectureConfiguration(new LayerRegistry([
+                new LayerDefinition('active', new MembershipSpec(['App'], exclude: new ExcludeSpec(patterns: ['Gone']))),
+                new LayerDefinition('pending', new MembershipSpec(['Future'], exclude: new ExcludeSpec(patterns: ['Gone'])), LayerLifecycle::Pending),
+                new LayerDefinition('without-exclude', new MembershipSpec(['Other'])),
+            ]), AllowListBuilder::policyFromExactMap([]), CoverageMode::Ignore);
+            ProcessorBuilder::prepared($architecture, $graph, $repository, $processor);
+            $session = new PopulationSession((new ChannelPublication(new RuleEnablement([
+                new EnablementDecision(
+                    new SelectionCellAddress(LayerDeclarationRule::NAME, new FindingChannel($channel), SymbolLevel::Project, ChannelSelectionRole::Selectable),
+                    new AuthoredCellDecision(CellSwitch::On, CellAdmission::Direct),
+                ),
+            ], null)))->publishes(...));
+            $context = (new AnalysisContext($repository, $graph, projectScope: new ProjectScopeJudgement($doors)))->withPopulationTrace($session);
+            $options = new LayerDeclarationOptions();
+            $collector = new LayerEvidenceCollector(new LayerViolationOptions(enabled: false), new UnassignedClassOptions(), $options, $processor);
+            $findings = (new LayerDeclarationRule($options, $collector))->analyze($context);
+            $inert = array_filter($findings, static fn($finding): bool => $finding->code === $channel);
+            self::assertCount($doors === [] ? 1 : 0, $inert);
+            self::assertSame($doors === [] ? 1 : 0, $session->freeze()->judgedCount());
+            self::assertSame($doors === [] ? 1 : 2, $session->freeze()->unjudgedCount());
+            self::assertSame($doors === [] ? 'active-clause' : 'namespace-scope', $session->freeze()->abstentions()[0]->gate);
+        }
+    }
+
+    #[Test]
+    public function itCountsNativeDependencyEventsWithoutTreatingTheirSharedExampleAsOneJudgement(): void
+    {
+        $dependency = $this->buildDependency('App\Unknown', 'Source', 'App\Repository', 'Target');
+        $builder = new DependencyGraphBuilder(new UnplacedExternalClassSpelling());
+        foreach ([[], [$dependency, $dependency]] as $dependencies) {
+            $options = new LayerViolationOptions();
+            $collector = new LayerEvidenceCollector($options, new UnassignedClassOptions(), new LayerDeclarationOptions(), $this->processor);
+            $rule = new LayerViolationRule($options, $collector);
+            $architecture = $this->buildArchitecture(['repository' => ['App\Repository']], []);
+            $graph = $builder->build($dependencies, [])->graph;
+            self::assertCount(\count($dependencies), $graph->getAllDependencies());
+            $session = new PopulationSession((new ChannelPublication(new RuleEnablement([
+                new EnablementDecision(
+                    new SelectionCellAddress(LayerViolationRule::NAME, new FindingChannel(LayerViolationRule::NAME), SymbolLevel::Class_, ChannelSelectionRole::Selectable),
+                    new AuthoredCellDecision(CellSwitch::On, CellAdmission::Direct),
+                ),
+            ], null)))->publishes(...));
+            $context = $this->buildContext($graph, $architecture)->withPopulationTrace($session);
+            self::assertSame([], $rule->analyze($context));
+            self::assertSame(0, $session->freeze()->judgedCount());
+            self::assertSame(\count($dependencies), $session->freeze()->unjudgedCount());
+            if ($dependencies !== []) {
+                $absence = $session->freeze()->abstentions()[0];
+                self::assertSame(2, $absence->count);
+                self::assertCount(1, $absence->examples);
+                self::assertSame('dependency-edge', $absence->unit);
+            }
+        }
+    }
+
+    /** @param list<Dependency> $dependencies */
     private function buildGraph(array $dependencies): DependencyGraphInterface
     {
         $stub = self::createStub(DependencyGraphInterface::class);

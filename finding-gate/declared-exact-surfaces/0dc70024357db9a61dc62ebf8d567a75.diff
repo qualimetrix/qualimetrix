@@ -1,0 +1,12 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 596
++visible 342
+@@ -8,1 +8,0 @@
+-Rule population incomplete — callable: 53 judged, 17 not judged; declaration: 50 judged, 45 not judged; directive-site: 1 judged, 0 not judged; invocation: 0 judged, 3 not judged; namespace: 2 judged, 6 not judged; occurrence: 17 judged, 1 not judged.
+@@ -14,1 +13,1 @@
+-invocation-format:health 596
++invocation-format:health 342
+@@ -21,1 +20,0 @@
+-Rule population incomplete — callable: 53 judged, 17 not judged; declaration: 50 judged, 45 not judged; directive-site: 1 judged, 0 not judged; invocation: 0 judged, 3 not judged; namespace: 2 judged, 6 not judged; occurrence: 17 judged, 1 not judged.

@@ -128,6 +128,12 @@ parents. The published `size.class-count.sum` remains a subtree total for other
 consumers. Equality with the configured warning or error boundary is a finding;
 the defaults are 15 and 25 respectively.
 
+Selected rule population distinguishes an unpublished own count from a measured
+zero. The former cannot be judged; the latter is outside the nonempty namespace
+population. A positive count below the finding threshold is a healthy judgement.
+These population outcomes travel separately from findings and do not change the
+exit status.
+
 ### Example
 
 ```php
@@ -405,3 +411,10 @@ algorithms, levels and numeric defaults are unchanged.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+Class method and property populations use the exact declaration roster. A published zero is judged before severity selection; an absent value remains unjudged. Property exclusions keep their native strict flag comparisons and configured order.
+
+Gate construction and lazy declaration-metric admission use Finding-owned
+`AbstractRule` operations. Each rule retains its raw metric keys, coordinate,
+ordered predicates and failure reasons; a refused coordinate never reads its
+metric bag.

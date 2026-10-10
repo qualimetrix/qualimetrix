@@ -38,6 +38,18 @@ final class FormatterContextFactoryTest extends TestCase
     }
 
     #[Test]
+    public function itReadsActualOutputVerbosityAndPreservesItThroughDetailCopies(): void
+    {
+        foreach ([\Symfony\Component\Console\Output\OutputInterface::VERBOSITY_NORMAL => false,
+            \Symfony\Component\Console\Output\OutputInterface::VERBOSITY_VERBOSE => true] as $verbosity => $expected) {
+            $output = new \Symfony\Component\Console\Output\BufferedOutput($verbosity);
+            $context = $this->factory->create($this->createInput([]), $output, $this->formatter, $this->projectRoot());
+            self::assertSame($expected, $context->verbose);
+            self::assertSame($expected, $context->withDetailLimit(3)->verbose);
+        }
+    }
+
+    #[Test]
     public function itSetsTheViolationsOptionToAllWhenAllFlagIsPassed(): void
     {
         $input = $this->createInput(['--all' => true]);

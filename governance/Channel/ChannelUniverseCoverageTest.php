@@ -74,14 +74,14 @@ final class ChannelUniverseCoverageTest extends TestCase
     public const int DECLARED_CHANNEL_COUNT = 63;
 
     /**
-     * Nine subclasses of `AbstractCodeSmellRule`, three of
+     * Eight subclasses of `AbstractCodeSmellRule`, three of
      * `AbstractSecurityPatternRule` and three of
      * `AbstractTypeCoverageRule` declare their channel in the ancestor and
      * bind their own name through late static binding. A scan over
      * `*Rule.php` files does not see them, which is exactly why this count is
      * pinned separately from the total.
      */
-    private const int CHANNELS_DECLARED_BY_AN_ANCESTOR = 15;
+    private const int CHANNELS_DECLARED_BY_AN_ANCESTOR = 14;
 
     #[Test]
     public function itRequiresEveryDeclaredChannelToHaveAProducer(): void
@@ -189,6 +189,10 @@ final class ChannelUniverseCoverageTest extends TestCase
             $name = 'design.type-coverage.' . $facet;
             self::assertSame($name, $universe->producerOf($name), $facet);
         }
+
+        $boolean = new ReflectionClass(\Qualimetrix\Analysis\Evidence\CodeSmell\BooleanArgumentRule::class);
+        self::assertSame($boolean->getName(), $boolean->getMethod('channelDeclarations')->getDeclaringClass()->getName());
+        self::assertSame('code-smell.boolean-argument', $universe->producerOf('code-smell.boolean-argument'));
 
         // Declaration in an abstract ancestor, resolved by late static binding.
         $inherited = self::channelsDeclaredByAnAncestor();

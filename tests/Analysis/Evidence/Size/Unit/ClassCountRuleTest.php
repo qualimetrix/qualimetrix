@@ -30,6 +30,30 @@ use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 final class ClassCountRuleTest extends TestCase
 {
     #[Test]
+    public function itDistinguishesMissingAndZeroOwnCountsFromHealthyNamespaces(): void
+    {
+        $repository = new \Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository();
+        foreach (['Missing' => null, 'Zero' => 0, 'Healthy' => 1] as $name => $count) {
+            $repository->add(SymbolPath::forNamespace('App\\' . $name), MetricBag::fromArray($count === null ? [] : ['size.class-count' => $count]), null, null);
+        }
+        $channel = new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('size.class-count');
+        $publication = new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement([
+            new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
+                new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress('size.class-count', $channel, \Qualimetrix\Core\Symbol\SymbolLevel::Namespace_, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable),
+                new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
+            ),
+        ], null));
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(($publication)->publishes(...));
+        self::assertSame([], (new ClassCountRule(new ClassCountOptions()))->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
+        $population = $session->freeze();
+        self::assertSame(1, $population->judgedCount());
+        self::assertSame(2, $population->unjudgedCount());
+        self::assertSame(['nonempty-count', 'own-count'], array_column($population->abstentions(), 'gate'));
+        self::assertStringContainsString('Zero', $population->abstentions()[0]->examples[0]);
+        self::assertStringContainsString('Missing', $population->abstentions()[1]->examples[0]);
+    }
+
+    #[Test]
     public function itGetsName(): void
     {
         $rule = new ClassCountRule(new ClassCountOptions());

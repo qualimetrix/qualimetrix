@@ -9,14 +9,15 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
-use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -60,10 +61,11 @@ final class NocRule extends AbstractRule
             return [];
         }
 
+        $declaration = self::channelDeclarations()[self::NAME];
         $findings = [];
 
         foreach ($context->metrics->allClassDeclarations() as $classInfo) {
-            $finding = $this->findingForClass($classInfo, $context, $this->options);
+            $finding = $this->findingForClass($classInfo, $context, $this->options, $declaration);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -72,15 +74,18 @@ final class NocRule extends AbstractRule
         return $findings;
     }
 
-    private function findingForClass(SymbolInfo $classInfo, AnalysisContext $context, NocOptions $options): ?Finding
+    private function findingForClass(SymbolInfo $classInfo, AnalysisContext $context, NocOptions $options, ChannelDeclaration $declaration): ?Finding
     {
         $subject = $classInfo->subject ?? throw new LogicException('NOC findings require an exact class declaration subject');
-        if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
-            return null;
-        }
-
-        $noc = $context->metrics->getSubject($subject)->get(MetricName::DESIGN_NOC);
-        if ($noc === null || $noc === 0) {
+        $noc = null;
+        $inputs = (static function () use ($subject, $context, &$noc): iterable {
+            yield GateInput::kind('logicalKind', $subject->toSymbolPath()->getType());
+            $metrics = $context->metrics->getSubject($subject);
+            $noc = $metrics->get(MetricName::DESIGN_NOC);
+            yield GateInput::metrics('noc-present', $metrics);
+            yield GateInput::metrics('noc-positive', $metrics);
+        })();
+        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), $declaration, $inputs)) {
             return null;
         }
 
@@ -131,10 +136,13 @@ final class NocRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Higher,
-                JudgedMetrics::of(MetricName::DESIGN_NOC),
+            self::NAME => self::judgingHigher(
+                [MetricName::DESIGN_NOC],
                 SymbolLevel::Class_,
+            )->withGates(
+                self::populationGate('logical-class-kind', self::NAME, SymbolLevel::Class_, 'declaration', self::kindIn('logicalKind', [SymbolType::Class_]), 'Only class declarations are judged.'),
+                self::populationGate('noc-present', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('noc-present', [MetricName::DESIGN_NOC]), 'The direct-child count was not published.'),
+                self::populationGate('noc-positive', self::NAME, SymbolLevel::Class_, 'declaration', self::keyThreshold('noc-positive', [MetricName::DESIGN_NOC], '>', 0, nonnegative: true), 'A class with no children is outside the NOC population.'),
             ),
         ];
     }

@@ -12,10 +12,21 @@ use Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassOptions;
 use Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
+use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
+use Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch;
+use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
@@ -54,6 +65,78 @@ final class DataClassRuleTest extends TestCase
         }
 
         return $bag;
+    }
+
+    #[Test]
+    public function itAccountsForWrongLogicalKindsBeforeReadingClassMetrics(): void
+    {
+        $info = self::subjectInfo(SymbolPath::forMethod('App', 'Service', 'run'), RelativePath::fromString('service.php'), 1);
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->expects(self::once())->method('allClassDeclarations')->willReturn([$info]);
+        $repository->expects(self::never())->method('getSubject');
+        $session = self::populationSession(DataClassRule::NAME);
+        self::assertSame([], (new DataClassRule(new DataClassOptions()))->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
+        self::assertSame(0, $session->freeze()->judgedCount());
+        self::assertSame(1, $session->freeze()->unjudgedCount());
+        self::assertSame('logical-class-kind', $session->freeze()->abstentions()[0]->gate);
+    }
+
+    #[Test]
+    public function itKeepsPopulationEligibilityIndependentOfAccountingSelection(): void
+    {
+        $info = self::subjectInfo(SymbolPath::fromClassFqn('App\\Data'), RelativePath::fromString('data.php'), 1);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allClassDeclarations')->willReturn([$info]);
+        $repository->method('getSubject')->willReturn($this->makeMetricBag(['design.is-exception' => null]));
+        foreach ([false, true] as $selected) {
+            foreach ([false, true] as $excludeExceptions) {
+                $session = self::populationSession(DataClassRule::NAME, $selected);
+                $context = (new AnalysisContext($repository))->withPopulationTrace($session);
+                $findings = (new DataClassRule(new DataClassOptions(excludeExceptions: $excludeExceptions)))->analyze($context);
+                self::assertCount($excludeExceptions ? 0 : 1, $findings);
+                self::assertSame($selected && !$excludeExceptions ? 1 : 0, $session->freeze()->judgedCount());
+                self::assertSame($selected && $excludeExceptions ? 1 : 0, $session->freeze()->unjudgedCount());
+                if ($selected && $excludeExceptions) {
+                    self::assertSame('exception-classification', $session->freeze()->abstentions()[0]->gate);
+                }
+            }
+        }
+    }
+
+    #[Test]
+    public function itKeepsLiteralFlagsStrictAndBypassesDisabledExceptionReads(): void
+    {
+        $info = self::subjectInfo(SymbolPath::fromClassFqn('App\\Data'), RelativePath::fromString('data.php'), 1);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allClassDeclarations')->willReturn([$info]);
+        $metrics = $this->makeMetricBag()->with('design.is-exception', \NAN);
+        $repository->method('getSubject')->willReturn($metrics);
+        self::assertCount(1, (new DataClassRule(new DataClassOptions(excludeExceptions: false)))->analyze(new AnalysisContext($repository)));
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allClassDeclarations')->willReturn([$info]);
+        $repository->method('getSubject')->willReturn($metrics->with('design.is-interface', 1.0)->with('design.is-abstract', 1.0));
+        self::assertCount(1, (new DataClassRule(new DataClassOptions(excludeExceptions: false)))->analyze(new AnalysisContext($repository)));
+        foreach (['design.is-interface', 'design.is-abstract'] as $key) {
+            $repository = self::createStub(MetricRepositoryInterface::class);
+            $repository->method('allClassDeclarations')->willReturn([$info]);
+            $repository->method('getSubject')->willReturn($metrics->with($key, 1));
+            $session = self::populationSession(DataClassRule::NAME);
+            self::assertSame([], (new DataClassRule(new DataClassOptions(excludeExceptions: false)))->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
+            self::assertSame($key === 'design.is-interface' ? 'interface-class' : 'abstract-class', $session->freeze()->abstentions()[0]->gate);
+        }
+    }
+
+    #[Test]
+    public function itCountsHealthyDataClassJudgementsBeforeTheCompoundFindingThreshold(): void
+    {
+        $info = self::subjectInfo(SymbolPath::fromClassFqn('App\\Behaviour'), RelativePath::fromString('behaviour.php'), 1);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allClassDeclarations')->willReturn([$info]);
+        $repository->method('getSubject')->willReturn($this->makeMetricBag(['design.woc' => 100]));
+        $session = self::populationSession(DataClassRule::NAME);
+        self::assertSame([], (new DataClassRule(new DataClassOptions()))->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
+        self::assertSame(1, $session->freeze()->judgedCount());
+        self::assertSame(0, $session->freeze()->unjudgedCount());
     }
 
     #[Test]
@@ -525,6 +608,14 @@ final class DataClassRuleTest extends TestCase
             'declaration:class:App\\Service\\Twin@src/A.php',
             'declaration:class:App\\Service\\Twin@src/B.php',
         ], $subjects);
+    }
+
+    private static function populationSession(string $producer, bool $selected = true): PopulationSession
+    {
+        return new PopulationSession((new ChannelPublication(new RuleEnablement([new EnablementDecision(
+            new SelectionCellAddress($producer, new FindingChannel($producer), SymbolLevel::Class_, ChannelSelectionRole::Selectable),
+            new AuthoredCellDecision($selected ? CellSwitch::On : CellSwitch::Off, CellAdmission::Direct),
+        )], null)))->publishes(...));
     }
 
     private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo

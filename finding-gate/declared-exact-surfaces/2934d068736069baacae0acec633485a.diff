@@ -1,0 +1,106 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 10734
++visible 8946
+@@ -172,48 +172,0 @@
+-        "description": "ClassRank share is 1.58\u00d7 uniform, exceeds threshold of 1.00\u00d7. This class is a critical hub \u2014 changes have wide impact",
+-        "check_name": "coupling.class-rank",
+-        "fingerprint": "326a97b74f42b130a676d7628a6b3ee6",
+-        "severity": "major",
+-        "location": {
+-            "path": "src/Kernel/Clock.php",
+-            "lines": {
+-                "begin": 5
+-            }
+-        }
+-    },
+-    {
+-        "description": "ClassRank share is 1.31\u00d7 uniform, exceeds threshold of 1.00\u00d7. This class is a critical hub \u2014 changes have wide impact",
+-        "check_name": "coupling.class-rank",
+-        "fingerprint": "03363e02d77ec0ef44617da19e135099",
+-        "severity": "major",
+-        "location": {
+-            "path": "src/Kernel/Logger.php",
+-            "lines": {
+-                "begin": 5
+-            }
+-        }
+-    },
+-    {
+-        "description": "ClassRank share is 1.07\u00d7 uniform, exceeds threshold of 1.00\u00d7. This class is a critical hub \u2014 changes have wide impact",
+-        "check_name": "coupling.class-rank",
+-        "fingerprint": "1b0bd56355cc1f229720062255faeb63",
+-        "severity": "major",
+-        "location": {
+-            "path": "src/Kernel/Uuid.php",
+-            "lines": {
+-                "begin": 5
+-            }
+-        }
+-    },
+-    {
+-        "description": "ClassRank share is 1.16\u00d7 uniform, exceeds threshold of 1.00\u00d7. This class is a critical hub \u2014 changes have wide impact",
+-        "check_name": "coupling.class-rank",
+-        "fingerprint": "5e5e141679274fcdbc0c3864b10f8391",
+-        "severity": "major",
+-        "location": {
+-            "path": "src/Service/UserService.php",
+-            "lines": {
+-                "begin": 12
+-            }
+-        }
+-    },
+-    {
+@@ -316,1 +268,1 @@
+-invocation-format:gitlab 10734
++invocation-format:gitlab 8946
+@@ -483,48 +435,0 @@
+-            }
+-        }
+-    },
+-    {
+-        "description": "ClassRank share is 1.58\u00d7 uniform, exceeds threshold of 1.00\u00d7. This class is a critical hub \u2014 changes have wide impact",
+-        "check_name": "coupling.class-rank",
+-        "fingerprint": "326a97b74f42b130a676d7628a6b3ee6",
+-        "severity": "major",
+-        "location": {
+-            "path": "src/Kernel/Clock.php",
+-            "lines": {
+-                "begin": 5
+-            }
+-        }
+-    },
+-    {
+-        "description": "ClassRank share is 1.31\u00d7 uniform, exceeds threshold of 1.00\u00d7. This class is a critical hub \u2014 changes have wide impact",
+-        "check_name": "coupling.class-rank",
+-        "fingerprint": "03363e02d77ec0ef44617da19e135099",
+-        "severity": "major",
+-        "location": {
+-            "path": "src/Kernel/Logger.php",
+-            "lines": {
+-                "begin": 5
+-            }
+-        }
+-    },
+-    {
+-        "description": "ClassRank share is 1.07\u00d7 uniform, exceeds threshold of 1.00\u00d7. This class is a critical hub \u2014 changes have wide impact",
+-        "check_name": "coupling.class-rank",
+-        "fingerprint": "1b0bd56355cc1f229720062255faeb63",
+-        "severity": "major",
+-        "location": {
+-            "path": "src/Kernel/Uuid.php",
+-            "lines": {
+-                "begin": 5
+-            }
+-        }
+-    },
+-    {
+-        "description": "ClassRank share is 1.16\u00d7 uniform, exceeds threshold of 1.00\u00d7. This class is a critical hub \u2014 changes have wide impact",
+-        "check_name": "coupling.class-rank",
+-        "fingerprint": "5e5e141679274fcdbc0c3864b10f8391",
+-        "severity": "major",
+-        "location": {
+-            "path": "src/Service/UserService.php",
+-            "lines": {
+-                "begin": 12

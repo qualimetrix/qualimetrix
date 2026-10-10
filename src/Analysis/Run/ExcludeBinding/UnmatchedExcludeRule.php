@@ -7,6 +7,10 @@ namespace Qualimetrix\Analysis\Run\ExcludeBinding;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Population\ContextGuard;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -48,6 +52,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * both are compared surfaces, so widening it is a step of its own.
  *
  * **Statelessness:** trivially — `analyze()` does nothing at all.
+ *
+ * @qmx-threshold coupling.instability warning=0.82 -- Discovery diagnostic metadata is composed through its owner and registered rule metadata consumers.
  */
 final class UnmatchedExcludeRule extends AbstractRule
 {
@@ -92,7 +98,14 @@ final class UnmatchedExcludeRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Project),
+            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)->withGates(new PopulationGate(
+                'selector-verdict',
+                new FindingChannel(self::NAME),
+                SymbolLevel::Project,
+                'configured-discovery-selector',
+                new ContextGuard('excludeVerdictJudged'),
+                'The captured exclude selector verdict is unjudged.',
+            )),
         ];
     }
 

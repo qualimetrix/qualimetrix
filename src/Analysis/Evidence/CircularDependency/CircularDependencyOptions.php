@@ -48,14 +48,9 @@ final readonly class CircularDependencyOptions implements RuleOptionsInterface
      * Medium cycles (6-20 classes): warning
      * Large cycles (21+ classes): warning (too large for error-level urgency)
      */
-    public function getSeverity(int|float $value): ?Severity
+    public function getSeverity(int|float $value): Severity
     {
         $cycleSize = (int) $value;
-
-        // Check if cycle exceeds max size (if configured)
-        if ($this->maxCycleSize > 0 && $cycleSize > $this->maxCycleSize) {
-            return null; // Too large, don't report
-        }
 
         // Direct cycle (A→B→A) is typically more severe
         if ($cycleSize <= 2 && $this->directAsError) {

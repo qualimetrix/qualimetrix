@@ -336,8 +336,10 @@ final class AnalysisPipelineTest extends TestCase
             $fileSetInspection,
             $producerGate,
         );
+        $inlinePolicy = self::createStub(InlineDirectivePolicyInterface::class);
+        $inlinePolicy->method('auditDirectiveUsage')->willReturn(['findings' => [], 'population' => \Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation::empty()]);
         $inlineDirectives = new InlineDirectiveRun(
-            self::createStub(InlineDirectivePolicyInterface::class),
+            $inlinePolicy,
             self::createStub(ThresholdDirectiveAuditInterface::class),
         );
 

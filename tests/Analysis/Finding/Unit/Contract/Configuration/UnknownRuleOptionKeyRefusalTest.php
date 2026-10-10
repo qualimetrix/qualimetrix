@@ -475,7 +475,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
         $refusal = $this->refusalFrom(\sprintf("  %s:\n    %s: 3\n", $ruleName, $alias), $ruleName, $optionsClass);
 
         $accepted = $ruleName === 'coupling.distance'
-            ? 'include-namespaces, max-distance-error, max-distance-warning, min-class-count, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold'
+            ? 'include-namespaces, max-distance-error, max-distance-warning, min-type-count, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold'
             : 'callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold';
         $this->assertFileRefusal($refusal, 'Unknown key "rules.' . $ruleName . '.' . $alias . '" in configuration file "%s". Accepted keys: ' . $accepted . '.', ['rules', $ruleName, $alias]);
         self::assertStringContainsString($survivingKey, $refusal->getMessage(), 'the refusal must name the key that replaced the alias');

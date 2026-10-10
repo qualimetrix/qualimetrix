@@ -36,7 +36,7 @@ final class ClassRankResolverTest extends TestCase
     #[Test]
     public function itResolvesAMethodFindingToItsOwningClassRank(): void
     {
-        $classMetrics = (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.05);
+        $classMetrics = (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.9)->with(MetricName::COUPLING_CLASS_RANK_SHARE, 0.05);
 
         $metrics = self::createStub(MetricRepositoryInterface::class);
         $metrics->method('getSubject')->willReturnCallback(
@@ -60,7 +60,7 @@ final class ClassRankResolverTest extends TestCase
     #[Test]
     public function itResolvesAClassFindingToItsOwnClassRank(): void
     {
-        $classMetrics = (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.12);
+        $classMetrics = (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK_SHARE, 0.12);
 
         $metrics = self::createStub(MetricRepositoryInterface::class);
         $metrics->method('getSubject')->willReturnCallback(
@@ -97,9 +97,9 @@ final class ClassRankResolverTest extends TestCase
         $metrics->method('getSubject')->willReturnCallback(
             static function ($subject): MetricBag {
                 return match ($subject->toSymbolPath()->toCanonical()) {
-                    'class:App\Service\UserService' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.01),
-                    'class:App\Service\OrderService' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.05),
-                    'class:App\Service\LogService' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.03),
+                    'class:App\Service\UserService' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK_SHARE, 0.01),
+                    'class:App\Service\OrderService' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK_SHARE, 0.05),
+                    'class:App\Service\LogService' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK_SHARE, 0.03),
                     default => new MetricBag(),
                 };
             },
@@ -126,8 +126,8 @@ final class ClassRankResolverTest extends TestCase
         $metrics->method('getSubject')->willReturnCallback(
             static function ($subject): MetricBag {
                 return match ($subject->toSymbolPath()->toCanonical()) {
-                    'class:App\Service\UserService' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.02),
-                    'class:App\Service\Sub\DeepService' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.08),
+                    'class:App\Service\UserService' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK_SHARE, 0.02),
+                    'class:App\Service\Sub\DeepService' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK_SHARE, 0.08),
                     default => new MetricBag(),
                 };
             },
@@ -155,9 +155,9 @@ final class ClassRankResolverTest extends TestCase
         $metrics->method('getSubject')->willReturnCallback(
             static function ($subject): MetricBag {
                 return match ($subject->toSymbolPath()->toCanonical()) {
-                    'class:App\ClassA' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.01),
-                    'class:App\ClassB' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.07),
-                    'class:App\ClassC' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.99),
+                    'class:App\ClassA' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK_SHARE, 0.01),
+                    'class:App\ClassB' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK_SHARE, 0.07),
+                    'class:App\ClassC' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK_SHARE, 0.99),
                     default => new MetricBag(),
                 };
             },
@@ -188,8 +188,8 @@ final class ClassRankResolverTest extends TestCase
         ]);
         $metrics->method('getSubject')->willReturnCallback(
             static fn($subject): MetricBag => match ($subject->toSymbolPath()->toCanonical()) {
-                'class:App\WithFile' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.05),
-                'class:App\WithoutFile' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.99),
+                'class:App\WithFile' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK_SHARE, 0.05),
+                'class:App\WithoutFile' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK_SHARE, 0.99),
                 default => new MetricBag(),
             },
         );
@@ -257,8 +257,8 @@ final class ClassRankResolverTest extends TestCase
     #[Test]
     public function itFiltersOutNanAndInfiniteClassRankValues(): void
     {
-        $nanMetrics = (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, \NAN);
-        $infMetrics = (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, \INF);
+        $nanMetrics = (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK_SHARE, \NAN);
+        $infMetrics = (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK_SHARE, \INF);
 
         $metrics = self::createStub(MetricRepositoryInterface::class);
 
@@ -282,6 +282,19 @@ final class ClassRankResolverTest extends TestCase
 
         $indexInf = new ClassRankIndex([], [], null);
         self::assertNull($this->resolver->resolve($findingInf, $metricsInf, $indexInf));
+    }
+
+    #[Test]
+    public function itDoesNotUseRawProbabilityWhenShareIsAbsent(): void
+    {
+        $metrics = self::createStub(MetricRepositoryInterface::class);
+        $metrics->method('getSubject')->willReturn((new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.5));
+        $metrics->method('getNamespaces')->willReturn(['App']);
+        $metrics->method('allClassDeclarations')->willReturn([$this->classInfo(SymbolPath::forClass('App', 'A'), RelativePath::fromString('src/A.php'), 1)]);
+        $index = $this->resolver->buildIndex($metrics);
+        self::assertNull($index->getMedianRank());
+        self::assertNull($this->resolver->resolve($this->createFinding(SymbolPath::forClass('App', 'A')), $metrics, $index));
+        self::assertNull($this->resolver->resolve($this->createFinding(SymbolPath::forNamespace('App')), $metrics, $index));
     }
 
     private function createFinding(SymbolPath $symbolPath): Finding

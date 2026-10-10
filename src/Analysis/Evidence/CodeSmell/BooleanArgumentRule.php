@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\CodeSmell;
 
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * Detects boolean arguments in method/function signatures.
@@ -40,25 +42,24 @@ final class BooleanArgumentRule extends AbstractCodeSmellRule
         return BooleanArgumentOptions::class;
     }
 
-    /**
-     * Excludes promoted constructor properties unless `flag_promoted_properties` is enabled.
-     *
-     * @param array<string, mixed> $entry
-     */
-    protected function shouldIncludeEntry(array $entry): bool
+    public static function channelDeclarations(): array
     {
-        if (!parent::shouldIncludeEntry($entry)) {
-            return false;
+        $declaration = parent::channelDeclarations()[self::NAME];
+        $gates = $declaration->populationGates;
+        foreach ([SymbolLevel::Callable, SymbolLevel::File] as $level) {
+            $gates[] = self::populationGate('flag-promoted-properties', self::NAME, $level, 'occurrence', self::flagExcludes('flag-promoted-properties', null, true, false), 'Promoted constructor properties are excluded by configuration.');
         }
+        return [self::NAME => $declaration->withGates(...$gates)];
+    }
 
+    /** @param array<string, mixed> $entry
+     * @return iterable<GateInput>
+     */
+    protected function populationInputs(array $entry): iterable
+    {
+        yield from parent::populationInputs($entry);
         $options = $this->options;
-        if ($options instanceof BooleanArgumentOptions
-            && !$options->flagPromotedProperties
-            && ($entry['promoted'] ?? false) === true
-        ) {
-            return false;
-        }
-
-        return true;
+        $flagPromoted = !$options instanceof BooleanArgumentOptions || $options->flagPromotedProperties;
+        yield GateInput::flag('flag-promoted-properties', $flagPromoted ? null : ($entry['promoted'] ?? false) === true, $flagPromoted);
     }
 }

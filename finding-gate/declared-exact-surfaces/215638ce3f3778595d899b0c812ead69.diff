@@ -1,0 +1,112 @@
+--- candidate
++++ reference (mapped)
+@@ -10,27 +10,27 @@
+-  1. [ERR] 45.0  src/Cart.php:8  [15min]
+-         annotation.unresolved-directive: Suppression "no.such.rule" addresses no channel. No declared name is close to it. Prose belongs after "--".
+-  2. [ERR] 45.0  src/Cart.php:14  [15min]
+-         code-smell.eval: eval() usage detected - security risk (Cart::run)
+-         Recommendation: Replace eval() with a safer alternative (closures, reflection, or template engine).
+-  3. [WRN] 15.0  src/Cart.php:17  [15min]
+-         duplication.clone: Duplicated code block (29 code lines, 3 occurrences): "public function summarise(array $rows, string $mode, int $limit): array..." — also at src/Copy.php:9-38, src/Multi.php:8-37
+-         Recommendation: Extract duplicated code into a shared method or class.
+-  4. [WRN] 15.0  src/Cart.php:19  [15min]
+-         duplication.clone: Duplicated code block (26 code lines, 4 occurrences): "$result = []; $index = 0; foreach ($rows as $key => $row) {" — also at src/Copy.php:11-37, src/Multi.php:10-36, src/NoDeclarations.php:5-31
+-         Recommendation: Extract duplicated code into a shared method or class.
+-  5. [WRN] 15.0  src/Copy.php:8  [15min]
+-         duplication.clone: Duplicated code block (31 code lines, 2 occurrences): "public function summarise(array $rows, string $mode, int $limit): array..." — also at src/Multi.php:7-38
+-         Recommendation: Extract duplicated code into a shared method or class.
+-  6. [WRN] 15.0  src/Copy.php:9  [15min]
+-         duplication.clone: Duplicated code block (29 code lines, 3 occurrences): "public function summarise(array $rows, string $mode, int $limit): array..." — also at src/Cart.php:17-46, src/Multi.php:8-37
+-         Recommendation: Extract duplicated code into a shared method or class.
+-  7. [WRN] 15.0  src/Copy.php:11  [15min]
+-         duplication.clone: Duplicated code block (26 code lines, 4 occurrences): "$result = []; $index = 0; foreach ($rows as $key => $row) {" — also at src/Cart.php:19-45, src/Multi.php:10-36, src/NoDeclarations.php:5-31
+-         Recommendation: Extract duplicated code into a shared method or class.
+-  8. [WRN] 15.0  src/Multi.php:7  [15min]
+-         duplication.clone: Duplicated code block (31 code lines, 2 occurrences): "public function summarise(array $rows, string $mode, int $limit): array..." — also at src/Copy.php:8-39
+-         Recommendation: Extract duplicated code into a shared method or class.
+-  9. [WRN] 15.0  src/Multi.php:8  [15min]
+-         duplication.clone: Duplicated code block (29 code lines, 3 occurrences): "public function summarise(array $rows, string $mode, int $limit): array..." — also at src/Cart.php:17-46, src/Copy.php:9-38
+-         Recommendation: Extract duplicated code into a shared method or class.
+-  10. [WRN] 15.0  src/Multi.php:10  [15min]
++  1. [ERR] 7.50  src/Cart.php:8  [15min]
++         annotation.unresolved-directive: Suppression "no.such.rule" addresses no channel. No declared name is close to it. Prose belongs after "--".
++  2. [ERR] 7.50  src/Cart.php:14  [15min]
++         code-smell.eval: eval() usage detected - security risk (Cart::run)
++         Recommendation: Replace eval() with a safer alternative (closures, reflection, or template engine).
++  3. [WRN] 2.50  src/Cart.php:17  [15min]
++         duplication.clone: Duplicated code block (29 code lines, 3 occurrences): "public function summarise(array $rows, string $mode, int $limit): array..." — also at src/Copy.php:9-38, src/Multi.php:8-37
++         Recommendation: Extract duplicated code into a shared method or class.
++  4. [WRN] 2.50  src/Cart.php:19  [15min]
++         duplication.clone: Duplicated code block (26 code lines, 4 occurrences): "$result = []; $index = 0; foreach ($rows as $key => $row) {" — also at src/Copy.php:11-37, src/Multi.php:10-36, src/NoDeclarations.php:5-31
++         Recommendation: Extract duplicated code into a shared method or class.
++  5. [WRN] 2.50  src/Copy.php:8  [15min]
++         duplication.clone: Duplicated code block (31 code lines, 2 occurrences): "public function summarise(array $rows, string $mode, int $limit): array..." — also at src/Multi.php:7-38
++         Recommendation: Extract duplicated code into a shared method or class.
++  6. [WRN] 2.50  src/Copy.php:9  [15min]
++         duplication.clone: Duplicated code block (29 code lines, 3 occurrences): "public function summarise(array $rows, string $mode, int $limit): array..." — also at src/Cart.php:17-46, src/Multi.php:8-37
++         Recommendation: Extract duplicated code into a shared method or class.
++  7. [WRN] 2.50  src/Copy.php:11  [15min]
++         duplication.clone: Duplicated code block (26 code lines, 4 occurrences): "$result = []; $index = 0; foreach ($rows as $key => $row) {" — also at src/Cart.php:19-45, src/Multi.php:10-36, src/NoDeclarations.php:5-31
++         Recommendation: Extract duplicated code into a shared method or class.
++  8. [WRN] 2.50  src/Multi.php:7  [15min]
++         duplication.clone: Duplicated code block (31 code lines, 2 occurrences): "public function summarise(array $rows, string $mode, int $limit): array..." — also at src/Copy.php:8-39
++         Recommendation: Extract duplicated code into a shared method or class.
++  9. [WRN] 2.50  src/Multi.php:8  [15min]
++         duplication.clone: Duplicated code block (29 code lines, 3 occurrences): "public function summarise(array $rows, string $mode, int $limit): array..." — also at src/Cart.php:17-46, src/Copy.php:9-38
++         Recommendation: Extract duplicated code into a shared method or class.
++  10. [WRN] 2.50  src/Multi.php:10  [15min]
+@@ -101,27 +101,27 @@
+-  1. [ERR] 45.0  src/Cart.php:8  [15min]
+-         annotation.unresolved-directive: Suppression "no.such.rule" addresses no channel. No declared name is close to it. Prose belongs after "--".
+-  2. [ERR] 45.0  src/Cart.php:14  [15min]
+-         code-smell.eval: eval() usage detected - security risk (Cart::run)
+-         Recommendation: Replace eval() with a safer alternative (closures, reflection, or template engine).
+-  3. [WRN] 15.0  src/Cart.php:17  [15min]
+-         duplication.clone: Duplicated code block (29 code lines, 3 occurrences): "public function summarise(array $rows, string $mode, int $limit): array..." — also at src/Copy.php:9-38, src/Multi.php:8-37
+-         Recommendation: Extract duplicated code into a shared method or class.
+-  4. [WRN] 15.0  src/Cart.php:19  [15min]
+-         duplication.clone: Duplicated code block (26 code lines, 4 occurrences): "$result = []; $index = 0; foreach ($rows as $key => $row) {" — also at src/Copy.php:11-37, src/Multi.php:10-36, src/NoDeclarations.php:5-31
+-         Recommendation: Extract duplicated code into a shared method or class.
+-  5. [WRN] 15.0  src/Copy.php:8  [15min]
+-         duplication.clone: Duplicated code block (31 code lines, 2 occurrences): "public function summarise(array $rows, string $mode, int $limit): array..." — also at src/Multi.php:7-38
+-         Recommendation: Extract duplicated code into a shared method or class.
+-  6. [WRN] 15.0  src/Copy.php:9  [15min]
+-         duplication.clone: Duplicated code block (29 code lines, 3 occurrences): "public function summarise(array $rows, string $mode, int $limit): array..." — also at src/Cart.php:17-46, src/Multi.php:8-37
+-         Recommendation: Extract duplicated code into a shared method or class.
+-  7. [WRN] 15.0  src/Copy.php:11  [15min]
+-         duplication.clone: Duplicated code block (26 code lines, 4 occurrences): "$result = []; $index = 0; foreach ($rows as $key => $row) {" — also at src/Cart.php:19-45, src/Multi.php:10-36, src/NoDeclarations.php:5-31
+-         Recommendation: Extract duplicated code into a shared method or class.
+-  8. [WRN] 15.0  src/Multi.php:7  [15min]
+-         duplication.clone: Duplicated code block (31 code lines, 2 occurrences): "public function summarise(array $rows, string $mode, int $limit): array..." — also at src/Copy.php:8-39
+-         Recommendation: Extract duplicated code into a shared method or class.
+-  9. [WRN] 15.0  src/Multi.php:8  [15min]
+-         duplication.clone: Duplicated code block (29 code lines, 3 occurrences): "public function summarise(array $rows, string $mode, int $limit): array..." — also at src/Cart.php:17-46, src/Copy.php:9-38
+-         Recommendation: Extract duplicated code into a shared method or class.
+-  10. [WRN] 15.0  src/Multi.php:10  [15min]
++  1. [ERR] 7.50  src/Cart.php:8  [15min]
++         annotation.unresolved-directive: Suppression "no.such.rule" addresses no channel. No declared name is close to it. Prose belongs after "--".
++  2. [ERR] 7.50  src/Cart.php:14  [15min]
++         code-smell.eval: eval() usage detected - security risk (Cart::run)
++         Recommendation: Replace eval() with a safer alternative (closures, reflection, or template engine).
++  3. [WRN] 2.50  src/Cart.php:17  [15min]
++         duplication.clone: Duplicated code block (29 code lines, 3 occurrences): "public function summarise(array $rows, string $mode, int $limit): array..." — also at src/Copy.php:9-38, src/Multi.php:8-37
++         Recommendation: Extract duplicated code into a shared method or class.
++  4. [WRN] 2.50  src/Cart.php:19  [15min]
++         duplication.clone: Duplicated code block (26 code lines, 4 occurrences): "$result = []; $index = 0; foreach ($rows as $key => $row) {" — also at src/Copy.php:11-37, src/Multi.php:10-36, src/NoDeclarations.php:5-31
++         Recommendation: Extract duplicated code into a shared method or class.
++  5. [WRN] 2.50  src/Copy.php:8  [15min]
++         duplication.clone: Duplicated code block (31 code lines, 2 occurrences): "public function summarise(array $rows, string $mode, int $limit): array..." — also at src/Multi.php:7-38
++         Recommendation: Extract duplicated code into a shared method or class.
++  6. [WRN] 2.50  src/Copy.php:9  [15min]
++         duplication.clone: Duplicated code block (29 code lines, 3 occurrences): "public function summarise(array $rows, string $mode, int $limit): array..." — also at src/Cart.php:17-46, src/Multi.php:8-37
++         Recommendation: Extract duplicated code into a shared method or class.
++  7. [WRN] 2.50  src/Copy.php:11  [15min]
++         duplication.clone: Duplicated code block (26 code lines, 4 occurrences): "$result = []; $index = 0; foreach ($rows as $key => $row) {" — also at src/Cart.php:19-45, src/Multi.php:10-36, src/NoDeclarations.php:5-31
++         Recommendation: Extract duplicated code into a shared method or class.
++  8. [WRN] 2.50  src/Multi.php:7  [15min]
++         duplication.clone: Duplicated code block (31 code lines, 2 occurrences): "public function summarise(array $rows, string $mode, int $limit): array..." — also at src/Copy.php:8-39
++         Recommendation: Extract duplicated code into a shared method or class.
++  9. [WRN] 2.50  src/Multi.php:8  [15min]
++         duplication.clone: Duplicated code block (29 code lines, 3 occurrences): "public function summarise(array $rows, string $mode, int $limit): array..." — also at src/Cart.php:17-46, src/Copy.php:9-38
++         Recommendation: Extract duplicated code into a shared method or class.
++  10. [WRN] 2.50  src/Multi.php:10  [15min]
