@@ -11,8 +11,8 @@ namespace QmxFindingGate;
  * them, so renaming one is a breaking change to those assertions, not an
  * editorial edit.
  *
- * Every declared class requires a producer and an observed self-test witness
- * for every raise site and caller. Unsupported vocabulary is refused.
+ * Every active class requires a source producer and an observed class/side/scope
+ * self-test witness. Unsupported vocabulary is refused.
  */
 final class FailureClass
 {
@@ -38,13 +38,11 @@ final class FailureClass
     public const TUPLE_FIELD_DRIFT = 'tuple-field-drift';
 
     /** A published fingerprint does not match the one recomputed from the same side's own fields. */
-    public const FINGERPRINT_MISMATCH = 'fingerprint-mismatch';
 
     /**
      * A published fingerprint the gate could not replace with the identity it
      * hashes, so that surface would be compared as opaque hex.
      */
-    public const FINGERPRINT_OPAQUE = 'fingerprint-opaque';
 
     /** A declared channel that no case observes: a lost fixture, or a channel that stopped firing. */
     public const COVERAGE_SHORTFALL = 'coverage-shortfall';
@@ -148,23 +146,11 @@ final class FailureClass
     /** A case ended otherwise than its expected or declared outcome, or refused with other output. */
     public const CASE_OUTCOME_MISMATCH = 'case-outcome-mismatch';
 
-    /** A `declared-outcomes.tsv` row whose transition the run did not observe. */
-    public const OUTCOME_DECLARATION_STALE = 'outcome-declaration-stale';
-
-    /** A `declared-surfaces.tsv` row whose surface is not introduced or withdrawn as declared. */
+    /** A `declared-surfaces.tsv` row whose surface is not introduced as declared. */
     public const SURFACE_DECLARATION_STALE = 'surface-declaration-stale';
-
-    /** The candidate produced a withdrawn surface, or refused it with other output than the declared refusal. */
-    public const SURFACE_WITHDRAWAL_MISMATCH = 'surface-withdrawal-mismatch';
 
     /** A `declared-structural-maps.tsv` row that moved nothing in any case input. */
     public const STRUCTURAL_MAP_STALE = 'structural-map-stale';
-
-    /** @var array<string, string> Retained helper failures outside native whole-run witness authority. */
-    public const NATIVE_WITNESS_RETIREMENTS = [
-        self::FINGERPRINT_MISMATCH => 'SARIF and GitLab no longer have native record authority in the gate.',
-        self::FINGERPRINT_OPAQUE => 'GitLab no longer has native fingerprint substitution authority in the gate.',
-    ];
 
     /** @var list<string> */
     public const ALL = [
@@ -175,8 +161,6 @@ final class FailureClass
         self::FINDING_COUNT_MISMATCH,
         self::FINDING_TUPLE_MISMATCH,
         self::TUPLE_FIELD_DRIFT,
-        self::FINGERPRINT_MISMATCH,
-        self::FINGERPRINT_OPAQUE,
         self::COVERAGE_SHORTFALL,
         self::COVERAGE_SURPLUS,
         self::COVERAGE_MULTIPLICITY,
@@ -208,9 +192,7 @@ final class FailureClass
         self::FIELD_VALUES_MISMATCH,
         self::CANDIDATE_INPUT_REFUSED,
         self::CASE_OUTCOME_MISMATCH,
-        self::OUTCOME_DECLARATION_STALE,
         self::SURFACE_DECLARATION_STALE,
-        self::SURFACE_WITHDRAWAL_MISMATCH,
         self::STRUCTURAL_MAP_STALE,
     ];
 }

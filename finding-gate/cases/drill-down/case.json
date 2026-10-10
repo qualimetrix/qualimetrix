@@ -17,5 +17,6 @@
   ],
   "explainSubjects": [
     "file:src/Cart.php"
-  ]
+  ],
+  "captureHtml": true
 }

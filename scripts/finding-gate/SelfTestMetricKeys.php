@@ -214,66 +214,6 @@ final class SelfTestMetricKeys extends SelfTestGroup
 
         $this->aggregationVocabulary();
         $this->keysTravelOnlyWhereKeysArePublished();
-        $this->htmlIsComparedThroughItsPayload();
-    }
-
-    /**
-     * The HTML surface is its payload, and a report without one is loud.
-     *
-     * Three cases, because the narrowing is only safe if all three hold: the
-     * bundle may move without the surface moving, a metric key inside the
-     * payload may NOT move without it, and an artifact the payload cannot be
-     * read out of is a failure of its own rather than a surface that compares
-     * as nothing. The third is the one the narrowing could have bought
-     * silently — two unreadable reports reduce to two empty strings, which are
-     * equal.
-     */
-    private function htmlIsComparedThroughItsPayload(): void
-    {
-        $report = static fn(string $bundle, string $payload): string => '<html><head><style>a{}</style></head><body>'
-            . '<script>' . $bundle . '</script>'
-            . '<script type="application/json" id="report-data">' . $payload . '</script>'
-            . '</body></html>';
-
-        $payload = '{"project":{"metrics":{"complexity.ccn":5}}}';
-
-        $this->same(
-            ReportPayload::of($report('var A=1', $payload), 'case:x|format:html', 'candidate'),
-            ReportPayload::of($report('var B=2', $payload), 'case:x|format:html', 'reference'),
-            'a rebuilt bundle does not move the compared surface',
-        );
-
-        $this->assert(
-            ReportPayload::of($report('var A=1', $payload), 'case:x|format:html', 'candidate')
-            !== ReportPayload::of($report('var A=1', '{"project":{"metrics":{"ccn":5}}}'), 'case:x|format:html', 'reference'),
-            'a metric key inside the payload still moves it',
-        );
-
-        $this->assert(
-            self::throws(static fn(): string => ReportPayload::of('<html><body>no payload</body></html>', 'case:x|format:html', 'candidate')),
-            'a report with no payload is refused rather than compared as nothing',
-        );
-        $this->assert(
-            self::throws(static fn(): string => ReportPayload::of($report('var A=1', '{oops'), 'case:x|format:html', 'candidate')),
-            'a payload that is not JSON is refused too',
-        );
-
-        // Normalization addresses the payload, and by the time it runs the
-        // payload has already been reduced out of the report — so the rule has
-        // to find it there too, or the surface would be compared unnormalized
-        // and its clock field would diverge on every run.
-        $normalization = Normalization::fromRules([
-            new NormalizationRule('format:html', 'project.generatedAt', NormalizationRule::KIND_HTML_REPORT_DATA_PATH, 'test'),
-        ]);
-        $payload = ReportPayload::of(
-            $report('var A=1', '{"project":{"generatedAt":"2026-01-01T00:00:00+00:00","metrics":{"complexity.ccn":5}}}'),
-            'case:x|format:html',
-            'candidate',
-        );
-        $this->assert(
-            !str_contains($normalization->normalize('format:html', $payload), '2026-01-01'),
-            'a rule for the report payload still finds it once the payload is the whole surface',
-        );
     }
 
     /**

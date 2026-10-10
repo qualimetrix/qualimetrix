@@ -30,7 +30,7 @@ final class ValueStage implements SurfaceStage
             return;
         }
         $invocation = $this->plan->invocationOf($pair->key);
-        if ($this->run->publicationForms->recordInvocation($invocation) === false) {
+        if (!$this->run->publicationForms->recordInvocation($invocation)) {
             return;
         }
         $command = $this->plan->commandClassOf($invocation);

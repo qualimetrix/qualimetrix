@@ -6,12 +6,8 @@ namespace QmxFindingGate\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use QmxFindingGate\CaseOutcome;
 use QmxFindingGate\CorpusInvalid;
-use QmxFindingGate\DeclaredOutcomes;
-use QmxFindingGate\Fs;
 use QmxFindingGate\SyntheticTree;
-use QmxFindingGate\Tsv;
 use Qualimetrix\Tests\Analysis\Finding\Support\CorpusCaseRun;
 use RuntimeException;
 
@@ -48,25 +44,6 @@ final class CorpusCaseRunTest extends TestCase
             } finally {
                 SyntheticTree::remove($root);
             }
-        }
-    }
-
-    #[Test]
-    public function itUsesCandidateDeclarationAuthorityForTheObservedOutcome(): void
-    {
-        $tree = SyntheticTree::clean();
-        $tree['candidateDeclarations'][DeclaredOutcomes::INDEX] = Tsv::render(DeclaredOutcomes::COLUMNS, [
-            ['alpha', DeclaredOutcomes::ANALYSIS_TO_REFUSAL, 'declared-outcomes/alpha.json', 'A declared input refusal.'],
-        ]);
-        $tree['candidateDeclarations']['declared-outcomes/alpha.json'] = 'Measured snapshot.';
-        $root = SyntheticTree::fixture($tree);
-        try {
-            $case = CorpusCaseRun::cases($root)[$root . '/finding-gate/cases/alpha'];
-            self::assertFalse(CorpusCaseRun::isAnalysis($case));
-            self::assertSame(CaseOutcome::ANALYSIS, CaseOutcome::of($case, 'reference'));
-            self::assertNull(json_decode(Fs::read($case->directory . '/case.json'), true)['outcome'] ?? null);
-        } finally {
-            SyntheticTree::remove($root);
         }
     }
 

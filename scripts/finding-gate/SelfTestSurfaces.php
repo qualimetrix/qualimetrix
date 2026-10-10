@@ -132,7 +132,7 @@ final class SelfTestSurfaces extends SelfTestGroup
         // quietly sorted by a key its producer never used.
         $this->assert(!PublishedOrder::handles('format:sarif'), 'a surface that does not order by identity is not handled');
         $this->same(
-            Fingerprints::INPUT_FIELDS,
+            ReportRecords::IDENTITY_FIELDS,
             ['channel', 'subject', 'occurrence', 'edge'],
             'the key reads the published identity, whose field set has one owner',
         );

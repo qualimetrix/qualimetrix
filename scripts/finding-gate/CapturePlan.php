@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace QmxFindingGate;
 
 use FilesystemIterator;
-use JsonException;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -72,34 +71,9 @@ final class CapturePlan
         };
         $append('tree', 'rules', 'rules');
         $append('tree', 'graph:export', 'graph:export');
-        $withdrawnFormats = [];
-        foreach ($surfaces->changes() as $surface => $change) {
-            if ($change !== DeclaredSurfaces::WITHDRAWN) {
-                continue;
-            }
-            if (!str_starts_with($surface, 'format:')) {
-                throw new GateError('A withdrawn surface has no known capture command: ' . $surface);
-            }
-            $format = substr($surface, 7);
-            if ($format === '') {
-                throw new GateError('A withdrawn format must have a name.');
-            }
-            $withdrawnFormats[$format] = $surface;
-        }
         foreach ($corpus->cases as $case) {
             $scope = 'case:' . $case->id;
-            $formats = Surfaces::FORMATS;
-            foreach ($withdrawnFormats as $format => $surface) {
-                if ($surfaces->changeFor($surface, $case->id) === null) {
-                    continue;
-                }
-                if (CaseOutcome::of($case, 'reference') !== CaseOutcome::ANALYSIS) {
-                    throw new GateError('Case ' . $case->id . ' cannot establish a withdrawal without a reference analysis.');
-                }
-                if (!\in_array($format, $formats, true)) {
-                    $formats[] = $format;
-                }
-            }
+            $formats = array_values(array_filter(Surfaces::FORMATS, static fn(string $format): bool => $format !== 'html' || $case->captureHtml));
             foreach ($formats as $format) {
                 $append(
                     $scope,
@@ -162,39 +136,6 @@ final class CapturePlan
         }
 
         return new self($descriptors, $artifacts, $changes);
-    }
-
-    /** @param array<string,string> $artifacts */
-    public static function partialViewRefusal(CaseDefinition $case, string $surface, array $artifacts): bool
-    {
-        if (!\in_array($surface, ['format:gitlab', 'format:checkstyle'], true)) {
-            return false;
-        }
-        $selector = null;
-        foreach ($case->args as $argument) {
-            foreach (['--namespace', '--class'] as $option) {
-                if (str_starts_with($argument, $option . '=') && $argument !== $option . '=') {
-                    $selector = $option;
-                }
-            }
-        }
-        $key = 'case:' . $case->id . '|';
-        if ($selector === null || ($artifacts[$key . 'exit:' . $surface] ?? '') !== '3'
-            || !isset($artifacts[$key . $surface], $artifacts[$key . 'stderr:' . $surface])) {
-            return false;
-        }
-        $message = \sprintf('Configuration error: Format "%s" has no place to say the report is a partial view: its consumer reads every entry as a finding. Drop %s, or use a format that says what the selection left out, such as json, sarif or github.', substr($surface, 7), $selector);
-        $stdout = $artifacts[$key . $surface];
-        $stderr = $artifacts[$key . 'stderr:' . $surface];
-        if ($surface === 'format:checkstyle') {
-            return $stdout === '' && str_starts_with($stderr, $message . "\nSource: option " . $selector . ".\nDocs: ");
-        }
-        try {
-            $document = json_decode($stdout, true, 512, \JSON_THROW_ON_ERROR);
-        } catch (JsonException) {
-            return false;
-        }
-        return $stderr === '' && $document === ['error' => $message, 'exit_code' => 3, 'position' => null, 'source' => [['kind' => 'cli', 'name' => $selector, 'imported_by' => null]]];
     }
 
     /** @return list<Descriptor> */

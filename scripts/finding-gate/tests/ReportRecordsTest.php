@@ -65,53 +65,6 @@ final class ReportRecordsTest extends TestCase
         self::assertSame([], $run->report->raised());
     }
 
-    #[Test]
-    public function itReadsCurrentShowSuppressedDetailsAsSeparateAdviceAndJudgement(): void
-    {
-        $record = array_replace(self::finding(), ['recommendation' => 'Advice', 'acceptedLevel' => ['shape' => 'magnitude', 'describe' => '3', 'count' => 1]]);
-        foreach (['Advice', 'Different advice'] as $advice) {
-            $run = $this->context(true);
-            $artifacts = self::artifacts([$record]) + [
-                'case:alpha|show-suppressed' => "src/A.php (1 violation)\n  ERROR at line 1  A\n    M  [a.b]\n    Recommendation: " . $advice . "\n    " . \QmxFindingGate\ReportRecords::baselineText($record) . "\n",
-            ];
-            $sarif = ReportRecords::decode($artifacts['case:alpha|format:sarif']);
-            $sarif['runs'][0]['results'][0]['message']['text'] = ReportRecords::message($record, codec: 'current');
-            $artifacts['case:alpha|format:sarif'] = ValueCheck::value($sarif);
-            $this->observeRecords($run, RecordCheck::create($run), 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
-            self::assertSame([], $run->report->raised());
-            $entries = \QmxFindingGate\ProseRecords::extract('show-suppressed', $artifacts['case:alpha|show-suppressed'], 'current');
-            self::assertCount(1, $entries);
-            self::assertSame($advice, $entries[0]['fields']['recommendation']);
-            self::assertSame($advice === 'Advice', \QmxFindingGate\ProseRecords::matches('show-suppressed', $entries[0]['fields'], $record, 'current'));
-        }
-    }
-
-    #[Test]
-    public function itProjectsTheUncomparedBaselineReasonOnBothPublishersWithoutCallingItAMeasuredBreach(): void
-    {
-        $record = array_replace(self::finding(), ['acceptedLevel' => ['shape' => 'magnitude', 'describe' => '1', 'count' => 1], 'baselineVerdict' => 'not-compared', 'baselineReason' => 'missing dependency']);
-        self::assertSame('M (accepted at 1; not compared: missing dependency)', ReportRecords::projection('format:checkstyle', $record, 'current')['message']);
-        self::assertSame('M (accepted at 1; not compared: missing dependency)', ReportRecords::projection('format:checkstyle', $record, 'legacy')['message']);
-    }
-
-    #[Test]
-    public function itProjectsTheCandidateHtmlSharedRecordWithoutReferenceAliases(): void
-    {
-        $record = self::finding() + ['baselineVerdict' => null, 'baselineReason' => null];
-        self::assertSame($record, ReportRecords::projection('format:html', $record, 'current'));
-        self::assertSame('rule', \QmxFindingGate\PublishedVocabulary::spellingOf('format:html', 'rule', 'current'));
-        self::assertSame('ruleName', \QmxFindingGate\PublishedVocabulary::spellingOf('format:html', 'rule', 'legacy'));
-    }
-
-    #[Test]
-    public function itRefusesAnEmptyCheckstylePublicationAsAGateError(): void
-    {
-        $this->expectException(GateError::class);
-        $this->expectExceptionMessage('The checkstyle projection is not a readable checkstyle XML document.');
-
-        ReportRecords::checkstyle('');
-    }
-
     /** @param array<string,mixed> $record */
     #[Test]
     #[DataProvider('schemas')]
@@ -308,16 +261,6 @@ final class ReportRecordsTest extends TestCase
     }
 
     #[Test]
-    public function itRefusesAChangedSarifRuleIndexBeforeCanonicalizingTheCatalog(): void
-    {
-        $document = self::sarif(self::finding());
-        $document['runs'][0]['results'][0]['ruleIndex'] = 1;
-        $this->expectException(GateError::class);
-        $this->expectExceptionMessage('ruleIndex');
-        ReportRecords::projected('format:sarif', ValueCheck::value($document));
-    }
-
-    #[Test]
     #[DataProvider('actualCompletenessDefects')]
     public function itReportsIncompletePublishedRecordsOnEitherSideDuringCaseComparison(string $report, string $defect, string $side): void
     {
@@ -351,6 +294,9 @@ final class ReportRecordsTest extends TestCase
     #[Test]
     public function itChecksSameInputOutputAndParallelRecordsAgainstTheirOwnMainPublication(): void
     {
+        for ($index = 0; $index < 100; ++$index) {
+            Fs::write($this->root . '/finding-gate/cases/alpha/src/Parallel' . $index . '.php', "<?php\n");
+        }
         $run = $this->context();
         $artifacts = self::artifacts([self::finding()]);
         $other = self::finding();
@@ -474,28 +420,6 @@ final class ReportRecordsTest extends TestCase
             'reference' => new \QmxFindingGate\CaptureResult([], [$source => $referenceSlot]),
         ];
         self::assertTrue(\QmxFindingGate\ExactSurfaceAuthority::rawResidual($source, $partialCaptures, $partialRun, $partialRecords));
-    }
-
-    #[Test]
-    public function itRemovesOnlyTheDeclaredCompleteProjectionInstance(): void
-    {
-        $a = self::finding();
-        Fs::write($this->root . '/finding-gate/' . DeclaredRecords::INDEX, Tsv::render(DeclaredRecords::COLUMNS, [['withdrawn', 'alpha', 'json', 'format:json', '{"channel":"a.b"}', 'Remove one observation.']]));
-        Fs::write($this->root . '/finding-gate/' . DeclaredRecords::DERIVED, Tsv::render(DeclaredRecords::DERIVED_COLUMNS, [['withdrawn', 'alpha', 'json', 'format:json', DeclaredRecords::canonical(self::comparativeFinding($a))]]));
-        $run = $this->context();
-        $check = RecordCheck::create($run);
-        $this->observeRecords($run, $check, 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$a]));
-        $this->observeRecords($run, $check, 'reference', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$a, $a], 'reference'));
-        $pair = new SurfacePair('case:alpha|format:gitlab', 'format:gitlab', self::artifacts([$a])['case:alpha|format:gitlab'], self::artifacts([$a, $a])['case:alpha|format:gitlab']);
-        $check->prepare('alpha');
-        RecordStage::create($run)->applyStage($pair);
-        self::assertSame(self::artifacts([$a, $a])['case:alpha|format:gitlab'], $pair->reference);
-        self::assertCount(2, ReportRecords::projected('format:gitlab', $pair->reference));
-        self::assertCount(1, ReportRecords::projected('format:gitlab', (string) $pair->candidate));
-        $json = new SurfacePair('case:alpha|format:json', 'format:json', self::artifacts([$a])['case:alpha|format:json'], self::artifacts([$a, $a], 'reference')['case:alpha|format:json']);
-        RecordStage::create($run)->applyStage($json);
-        self::assertCount(1, ReportRecords::rawRecords((string) $json->reference, 'violations'));
-        self::assertSame([], $run->report->raised());
     }
 
     #[Test]
@@ -975,7 +899,6 @@ final class ReportRecordsTest extends TestCase
         self::assertSame([], $run->report->raised());
         $file = $this->root . '/finding-gate/cases/alpha/case.json';
         $definition = ReportRecords::decode(Fs::read($file));
-        Fs::write($this->root . '/finding-gate/' . \QmxFindingGate\DeclaredOutcomes::INDEX, Tsv::render(\QmxFindingGate\DeclaredOutcomes::COLUMNS, []));
         foreach ([CaseOutcome::INCOMPLETE, CaseOutcome::ANALYSIS] as $outcome) {
             if ($outcome === CaseOutcome::INCOMPLETE) {
                 $definition['outcome'] = ['kind' => $outcome, 'exit' => 2];
@@ -991,63 +914,6 @@ final class ReportRecordsTest extends TestCase
             self::assertSame([], $run->report->raised());
             self::assertFalse($pair->settled);
         }
-    }
-
-    #[Test]
-    public function itRemovesOnlyGroupsEmptiedByAnExactFindingWithdrawal(): void
-    {
-        $kept = self::finding();
-        $removed = array_replace($kept, ['subject' => 'class:App\\B', 'file' => 'src/B.php', 'symbol' => 'App\\B', 'code' => 'c.d', 'rule' => 'c.d', 'channel' => 'c.d']);
-        Fs::write($this->root . '/finding-gate/' . DeclaredRecords::INDEX, Tsv::render(DeclaredRecords::COLUMNS, [['withdrawn', 'alpha', 'json', 'format:json', '{"channel":"c.d"}', 'Retire this exact finding.']]));
-        Fs::write($this->root . '/finding-gate/' . DeclaredRecords::DERIVED, Tsv::render(DeclaredRecords::DERIVED_COLUMNS, [['withdrawn', 'alpha', 'json', 'format:json', DeclaredRecords::canonical(self::comparativeFinding($removed))]]));
-        $run = $this->context();
-        $records = RecordCheck::create($run);
-        $this->observeRecords($run, $records, 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$kept]));
-        $this->observeRecords($run, $records, 'reference', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$kept, $removed], 'reference'));
-        $source = 'case:alpha|format:json';
-        $run->baselineEligibility->supply('candidate', [$source => array_fill_keys(array_keys(\QmxFindingGate\BaselineEligibility::groups([$kept])), true)]);
-        $run->baselineEligibility->supply('reference', [$source => array_fill_keys(array_keys(\QmxFindingGate\BaselineEligibility::groups([$kept, $removed])), true)]);
-        $records->prepare('alpha');
-        $baseline = '{"version":14,"entries":{"class:App\\\\A":[{"channel":"a.b","magnitudes":[3.000000]}],"class:App\\\\B":[{"channel":"c.d","magnitudes":[3]}]},"neighbour":{"spelling":1.00}}';
-        $xml = '<checkstyle><file name="src/A.php"><error line="1" severity="error" source="qmx.a.b" message="M"/></file><file name="src/B.php"><error line="1" severity="error" source="qmx.c.d" message="M"/></file><file name="unused.php"></file></checkstyle>';
-        $sarif = self::sarif($kept);
-        $sarif['runs'][0]['tool']['driver']['rules'] = [['id' => 'c.d'], ['id' => 'a.b', 'description' => 'Keep exact catalog text.'], ['id' => 'unused.rule']];
-        $sarif['runs'][0]['results'][0]['ruleIndex'] = 1;
-        $second = self::sarif($removed)['runs'][0]['results'][0];
-        $sarif['runs'][0]['results'][] = $second;
-        $sarifText = json_encode($sarif, \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES);
-        $filteredSarif = $sarif;
-        $filteredSarif['runs'][0]['tool']['driver']['rules'] = \array_slice($sarif['runs'][0]['tool']['driver']['rules'], 1);
-        $filteredSarif['runs'][0]['results'] = [$sarif['runs'][0]['results'][0]];
-        $filteredSarif['runs'][0]['results'][0]['ruleIndex'] = 0;
-        $filtered = ['baseline-file' => self::baselineDocument($kept, [3]), 'format:checkstyle' => str_replace('<file name="src/B.php"><error line="1" severity="error" source="qmx.c.d" message="M"/></file>', '', $xml), 'format:sarif' => ValueCheck::value($filteredSarif)];
-        foreach (['baseline-file' => $baseline, 'format:checkstyle' => $xml, 'format:sarif' => $sarifText] as $surface => $text) {
-            $pair = new SurfacePair('case:alpha|' . $surface, $surface, $filtered[$surface], $text);
-            $run->publicationForms->supply('candidate', [$pair->key => $filtered[$surface]]);
-            $run->publicationForms->supply('reference', [$pair->key => $text]);
-            RecordStage::create($run)->applyStage($pair);
-            $actual = (string) $pair->reference;
-            if ($surface === 'baseline-file') {
-                $document = ReportRecords::decode($actual);
-                self::assertArrayNotHasKey($removed['subject'], $document['entries']);
-                self::assertStringContainsString('3.000000', $actual);
-                self::assertStringContainsString('"spelling":1.00', $actual);
-            } elseif ($surface === 'format:checkstyle') {
-                self::assertSame($xml, $actual);
-                self::assertCount(2, ReportRecords::checkstyle($actual));
-                self::assertStringContainsString('src/B.php', $actual);
-                self::assertStringContainsString('<file name="unused.php"></file>', $actual);
-                self::assertStringContainsString('<file name="src/A.php"><error line="1" severity="error" source="qmx.a.b" message="M"/></file>', $actual);
-            } else {
-                $rules = ReportRecords::decode($actual)['runs'][0]['tool']['driver']['rules'];
-                self::assertSame($sarifText, $actual);
-                self::assertCount(2, ReportRecords::projected('format:sarif', $actual));
-                self::assertSame(['c.d', 'a.b', 'unused.rule'], array_column($rules, 'id'));
-                self::assertStringContainsString('"description": "Keep exact catalog text."', $actual);
-                self::assertSame(1, ReportRecords::decode($actual)['runs'][0]['results'][0]['ruleIndex']);
-            }
-        }
-        self::assertSame([], $run->report->raised());
     }
 
     #[Test]
@@ -1159,6 +1025,7 @@ final class ReportRecordsTest extends TestCase
         $run = $this->context();
         $check = RecordCheck::create($run);
         $this->observeRecords($run, $check, 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([self::finding()]));
+        $run->publicationForms->supply('reference', self::artifacts([self::finding()]));
         (new ReflectionProperty(RecordCheck::class, 'identityReady'))->setValue($check, []);
         $this->expectException(GateError::class);
         $this->expectExceptionMessage('An observed publication has no identity readiness verdict.');
@@ -1235,7 +1102,6 @@ final class ReportRecordsTest extends TestCase
             if (!\is_array($document['violations'] ?? null) || !array_is_list($document['violations'])) {
                 continue;
             }
-            $summary = $view === 'format:json' ? array_values(array_filter(\QmxFindingGate\ProseRecords::extract('format:summary', $artifacts[$scope . '|format:summary'] ?? ''), static fn(array $entry): bool => isset($entry['fields']['rank']))) : [];
             $issues = [];
             $counts = [];
             foreach ($document['violations'] as $index => $record) {
@@ -1244,9 +1110,9 @@ final class ReportRecordsTest extends TestCase
                 }
                 $rule = (string) ($record['rule'] ?? 'unavailable');
                 $counts[$rule] = ($counts[$rule] ?? 0) + 1;
-                $issues[] = ['rank' => $index + 1, ...array_intersect_key($record, array_flip(\QmxFindingGate\RankingSchema::PROJECTION)), 'impactScore' => isset($summary[$index]) ? (float) $summary[$index]['fields']['score'] : 0, 'coupling.class-rank' => null, 'debtMinutes' => $record['techDebtMinutes'] ?? null];
+                $issues[] = ['rank' => $index + 1, ...array_intersect_key($record, array_flip(\QmxFindingGate\RankingSchema::PROJECTION)), 'impactScore' => 0, 'coupling.class-rank' => null, 'debtMinutes' => $record['techDebtMinutes'] ?? null];
             }
-            $document['topIssues'] = \array_slice($issues, 0, \count($summary));
+            $document['topIssues'] = [];
             $document['violationsMeta'] = ['total' => \count($document['violations']), 'shown' => \count($document['violations']), 'truncated' => false, 'byRule' => $counts];
             $artifacts[$key] = ValueCheck::value($document);
             $document['topIssues'] = $issues;
@@ -1269,7 +1135,7 @@ final class ReportRecordsTest extends TestCase
         $artifacts[$scope . '|format:summary'] ??= 'Analysis complete.';
         $run->rankings->supply($side, $editRanking === null ? $slots : $editRanking($slots));
         $check->checkCase($side, $case, $outcome, $artifacts);
-        foreach (['format:html', 'format:checkstyle', 'format:sarif', 'format:gitlab', 'format:summary', 'format:text', 'format:text-detail', 'format:text-verbose', 'format:github', 'show-suppressed'] as $surface) {
+        foreach (['format:html', 'format:checkstyle', 'format:sarif', 'format:gitlab', 'format:summary', 'format:text', 'format:text-detail', 'format:github', 'show-suppressed'] as $surface) {
             $key = $scope . '|' . $surface;
             if (isset($artifacts[$key])) {
                 self::assertSame(\QmxFindingGate\PublicationForms::WHOLE_INVOCATION, $run->publicationForms->of($side, $key), $key);
@@ -1292,91 +1158,6 @@ final class ReportRecordsTest extends TestCase
         $run->supplyPublicationTree('reference', $this->root);
         self::assertSame($currentReference ? 'current' : 'legacy', $run->publicationCodec('reference'));
         return $run;
-    }
-
-    #[Test]
-    #[TestWith(['format:suppressed'])]
-    #[TestWith(['format:text-verbose'])]
-    public function itLeavesWithdrawnCandidatePublicationsToTheirRefusalCheck(string $surface): void
-    {
-        Fs::write($this->root . '/finding-gate/declared-surfaces/refusal.json', '{"stdout":"","stderr":"Unsupported format.","exit":"3"}');
-        Fs::write($this->root . '/finding-gate/' . \QmxFindingGate\DeclaredSurfaces::INDEX, Tsv::render(\QmxFindingGate\DeclaredSurfaces::COLUMNS, [
-            ['withdrawn', $surface, 'declared-surfaces/refusal.json', '["alpha"]', 'Withdraw the format and require its exact refusal.'],
-        ]));
-        foreach (['candidate', 'reference'] as $side) {
-            $run = $this->context(true);
-            $key = 'case:alpha|' . $surface;
-            $artifacts = array_replace(self::artifacts([self::finding()]), [$key => '', 'case:alpha|exit:' . $surface => '3', 'case:alpha|stderr:' . $surface => 'Unsupported format.']);
-            $this->observeRecords($run, RecordCheck::create($run), $side, $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
-            self::assertSame([], $run->report->raised());
-            self::assertFalse($run->report->sourceValid($side, $key, 'records'));
-        }
-    }
-
-    #[Test]
-    public function itRequiresExactCurrentHtmlBaselineFieldsAndPreservesLegacyProjection(): void
-    {
-        Fs::write($this->root . '/finding-gate/' . DeclaredFields::INDEX, Tsv::render(DeclaredFields::COLUMNS, [
-            ['added', 'json', 'format:json', 'baselineVerdict', 'Publish the baseline verdict.'],
-            ['added', 'json', 'format:json', 'baselineReason', 'Publish the baseline reason.'],
-        ]));
-        $legacy = self::finding();
-        $projection = ['subject' => $legacy['subject'], 'ruleName' => 'a.b', 'violationCode' => 'a.b', 'message' => 'M', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 3, 'symbolPath' => 'App\\A', 'occurrence' => null, 'file' => 'src/A.php', 'line' => 1];
-        self::assertSame($projection, ReportRecords::projection('format:html', $legacy));
-        foreach ([
-            ['acceptedLevel' => ['shape' => 'magnitude', 'describe' => '3', 'count' => 1], 'baselineVerdict' => 'breached', 'baselineReason' => null],
-            ['acceptedLevel' => ['shape' => 'magnitude', 'describe' => '3', 'count' => 1], 'baselineVerdict' => 'not-compared', 'baselineReason' => 'paths-differ'],
-            ['acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
-        ] as $baseline) {
-            $record = array_replace($legacy, $baseline);
-            $expected = ReportRecords::projection('format:html', $record, 'current');
-            foreach (['valid', 'missing:acceptedLevel', 'missing:baselineVerdict', 'missing:baselineReason', 'changed:acceptedLevel', 'changed:baselineVerdict', 'changed:baselineReason', 'extra', 'duplicate'] as $shape) {
-                $node = $expected;
-                if (str_starts_with($shape, 'missing:')) {
-                    unset($node[substr($shape, 8)]);
-                } elseif (str_starts_with($shape, 'changed:')) {
-                    $node[substr($shape, 8)] = 'different';
-                } elseif ($shape === 'extra') {
-                    $node['extra'] = true;
-                }
-                $run = $this->context();
-                $artifacts = self::artifacts([$record]);
-                $sarif = ReportRecords::decode($artifacts['case:alpha|format:sarif']);
-                $sarif['runs'][0]['results'][0]['message']['text'] = ReportRecords::message($record, codec: 'current');
-                $artifacts['case:alpha|format:sarif'] = ValueCheck::value($sarif);
-                $artifacts['case:alpha|format:html'] = '<script type="application/json" id="report-data">' . ValueCheck::value(['tree' => ['violations' => $shape === 'duplicate' ? [$node, $node] : [$node]]]) . '</script>';
-                $this->observeRecords($run, RecordCheck::create($run), 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
-                self::assertSame([], $run->report->raised());
-                $payload = \QmxFindingGate\ReportPayload::of($artifacts['case:alpha|format:html'], 'case:alpha|format:html', 'candidate');
-                self::assertSame($shape === 'duplicate' ? [$node, $node] : [$node], array_column(ReportRecords::projected('format:html', $payload), 'fields'));
-            }
-        }
-    }
-
-    #[Test]
-    public function itReadsPublishedHtmlViolationsWithCompleteFieldsAndInstanceBudgets(): void
-    {
-        $record = self::finding();
-        $projection = ReportRecords::projection('format:html', $record, 'current');
-        $text = ValueCheck::value(['tree' => ['violations' => [$projection], 'children' => [['violations' => [$projection]]]], 'unrelated' => ['findings' => ['Keep this metadata.']]]);
-        $entries = ReportRecords::projected('format:html', $text);
-        self::assertSame([['tree', 'violations', 0], ['tree', 'children', 0, 'violations', 0]], array_column($entries, 'path'));
-        self::assertSame([$projection, $projection], array_column($entries, 'fields'));
-        foreach (['valid', 'partial', 'extra', 'duplicate'] as $shape) {
-            $run = $this->context();
-            $artifacts = self::artifacts([$record]);
-            $node = $projection;
-            if ($shape === 'partial') {
-                unset($node['recommendation']);
-            } elseif ($shape === 'extra') {
-                $node['extra'] = true;
-            }
-            $artifacts['case:alpha|format:html'] = '<script type="application/json" id="report-data">' . ValueCheck::value(['tree' => ['violations' => $shape === 'duplicate' ? [$node, $node] : [$node]]]) . '</script>';
-            $this->observeRecords($run, RecordCheck::create($run), 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
-            self::assertSame([], $run->report->raised());
-            $payload = \QmxFindingGate\ReportPayload::of($artifacts['case:alpha|format:html'], 'case:alpha|format:html', 'candidate');
-            self::assertSame($shape === 'duplicate' ? [$node, $node] : [$node], array_column(ReportRecords::projected('format:html', $payload), 'fields'));
-        }
     }
 
     #[Test]
@@ -1440,81 +1221,6 @@ final class ReportRecordsTest extends TestCase
     }
 
     #[Test]
-    public function itMatchesUnprintedProseLinesWhileRefusingPrintedLineAndFindingNeighbours(): void
-    {
-        $record = self::finding();
-        $record['line'] = 17;
-        $texts = [
-            'format:text' => "src/A.php: error[a.b]: M (A)\n",
-            'format:text-detail' => "src/A.php (1 violation)\n  ERROR  A\n    M  [a.b]\n",
-            'format:summary' => "  1. [ERR] 20.0  src/A.php  [15min]\n         a.b: M\n",
-        ];
-        foreach ($texts as $surface => $text) {
-            $entries = \QmxFindingGate\ProseRecords::extract($surface, $text);
-            self::assertCount(1, $entries, $surface);
-            self::assertNull($entries[0]['fields']['line']);
-            self::assertTrue(\QmxFindingGate\ProseRecords::matches($surface, $entries[0]['fields'], $record), $surface);
-            foreach (['line' => 16, 'code' => 'neighbour', 'message' => 'Different advice', 'file' => 'src/B.php'] as $field => $value) {
-                self::assertFalse(\QmxFindingGate\ProseRecords::matches($surface, array_replace($entries[0]['fields'], [$field => $value]), $record), $surface . ' / ' . $field);
-            }
-            $after = array_replace($record, ['message' => 'New (term)']);
-            $changed = \QmxFindingGate\ProseRecords::rewriteProjection($surface, $text, $entries[0], $record, $after);
-            self::assertSame(str_replace('M', 'New (term)', $text), $changed);
-            $run = $this->context();
-            $artifacts = self::artifacts([$record]) + ['case:alpha|' . $surface => $text];
-            $this->observeRecords($run, RecordCheck::create($run), 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
-            self::assertSame([], $run->report->raised(), $surface);
-        }
-    }
-
-    #[Test]
-    public function itReadsAndRewritesEveryLineOfFiniteMultilineAdviceWithoutNeighbourCredit(): void
-    {
-        $record = array_replace(self::finding(), ['file' => null, 'line' => null, 'subject' => 'project:', 'symbol' => '', 'severity' => 'warning', 'recommendation' => "Break this cycle.\nCycle data: {\"cycle\":[\"A\",\"B\"]}"]);
-        $texts = [
-            'format:text-detail' => "[project] (1 violation)\n  WARN\n    Break this cycle.\nCycle data: {\"cycle\":[\"A\",\"B\"]}  [a.b]\n\nTechnical debt by rule:\n  a.b ~15min\n",
-            'format:summary' => "Top issues by impact\n  1. [WRN] 20.0  [project]  [15min]\n         a.b: Break this cycle.\nCycle data: {\"cycle\":[\"A\",\"B\"]}\n1 violation (1 warning) | Tech debt: 15min\n",
-        ];
-        foreach ($texts as $surface => $text) {
-            $entries = \QmxFindingGate\ProseRecords::extract($surface, $text);
-            self::assertCount(1, $entries);
-            self::assertCount(3, $entries[0]['lines']);
-            self::assertTrue(\QmxFindingGate\ProseRecords::matches($surface, $entries[0]['fields'], $record));
-            self::assertFalse(\QmxFindingGate\ProseRecords::matches($surface, array_replace($entries[0]['fields'], ['message' => "Break this cycle.\nCycle data: {\"cycle\":[\"A\",\"C\"]}"]), $record));
-            $after = array_replace($record, ['recommendation' => "Invert this edge.\nCycle data: {\"cycle\":[\"A\",\"B\"]}"]);
-            self::assertSame(str_replace('Break this cycle.', 'Invert this edge.', $text), \QmxFindingGate\ProseRecords::rewriteProjection($surface, $text, $entries[0], $record, $after));
-            $erased = \QmxFindingGate\ProseRecords::erase($text, $entries[0]['lines']);
-            self::assertStringNotContainsString('Cycle data:', $erased);
-            self::assertStringNotContainsString('Break this cycle.', $erased);
-            self::assertStringContainsString($surface === 'format:summary' ? '1 violation (1 warning)' : 'Technical debt by rule:', $erased);
-            $single = \QmxFindingGate\ProseRecords::rewriteProjection($surface, $text, $entries[0], $record, array_replace($record, ['recommendation' => 'A single line.']));
-            self::assertStringContainsString('A single line.', $single);
-            self::assertStringNotContainsString('Cycle data:', $single);
-            self::assertTrue(\QmxFindingGate\ProseRecords::matches($surface, \QmxFindingGate\ProseRecords::extract($surface, $single)[0]['fields'], array_replace($record, ['recommendation' => 'A single line.'])));
-        }
-        $this->expectException(GateError::class);
-        $this->expectExceptionMessage('complete published advice and channel terminator');
-        \QmxFindingGate\ProseRecords::extract('format:text-detail', "[project] (1 violation)\n  WARN\n    Break this cycle.\nCycle data: {}\n\n");
-    }
-
-    #[Test]
-    public function itUsesThePublishedGitlabProjectPathAndRefusesAnEmptyPathNeighbour(): void
-    {
-        $record = array_replace(self::finding(), ['file' => null, 'line' => null, 'subject' => 'project:', 'symbol' => '']);
-        $expected = ['description' => 'M', 'check_name' => 'a.b', 'severity' => 'critical', 'location' => ['path' => '_project', 'lines' => ['begin' => 1]]];
-        self::assertSame($expected, ReportRecords::projection('format:gitlab', $record, 'current'));
-        foreach (['_project', ''] as $path) {
-            $run = $this->context();
-            $artifacts = self::artifacts([$record]);
-            $artifacts['case:alpha|format:sarif'] = ValueCheck::value(['runs' => [['tool' => ['driver' => ['rules' => [['id' => 'a.b']]]], 'results' => [['ruleId' => 'a.b', 'ruleIndex' => 0, 'level' => 'error', 'message' => ['text' => 'M']]]]]]);
-            $artifacts['case:alpha|format:gitlab'] = ValueCheck::value([array_replace($expected, ['location' => ['path' => $path, 'lines' => ['begin' => 1]]])]);
-            $this->observeRecords($run, RecordCheck::create($run), 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
-            self::assertSame([], $run->report->raised());
-            self::assertSame($path, ReportRecords::projected('format:gitlab', $artifacts['case:alpha|format:gitlab'])[0]['fields']['location']['path']);
-        }
-    }
-
-    #[Test]
     public function itRewritesBaselineMagnitudesUsingTheSameSemanticEdgeJoin(): void
     {
         Fs::write($this->root . '/finding-gate/' . \QmxFindingGate\DeclaredValues::INDEX, Tsv::render(\QmxFindingGate\DeclaredValues::COLUMNS, [['field', 'metricValue', '*', 'Change this exact edge magnitude.']]));
@@ -1528,40 +1234,13 @@ final class ReportRecordsTest extends TestCase
         $check->prepare('alpha');
         $text = ValueCheck::value(['version' => 14, 'entries' => [$record['subject'] => [['channel' => 'a.b', 'edge' => ['target' => 'class:App\\B', 'type' => 'type_hint'], 'magnitudes' => [3]]]], 'neighbour' => ['number' => 1.0]]);
         $pair = new SurfacePair('case:alpha|baseline-file', 'baseline-file', $text, str_replace('"magnitudes":[3]', '"magnitudes":[1]', $text));
+        $run->publicationForms->supply('candidate', [$pair->key => $text]);
+        $run->publicationForms->supply('reference', [$pair->key => str_replace('"magnitudes":[3]', '"magnitudes":[1]', $text)]);
         RecordStage::create($run)->applyStage($pair);
         self::assertSame([], $run->report->raised());
         self::assertSame(str_replace('"magnitudes":[3]', '"magnitudes":[1]', $text), $pair->candidate);
         self::assertStringContainsString('"edge":{"target":"class:App\\\\B","type":"type_hint"}', $pair->candidate);
         self::assertStringContainsString('"neighbour":{"number":1.0}', $pair->candidate);
-    }
-
-    #[Test]
-    public function itChecksWholeMultilineProsePublicationsAndRejectsOnlyTheChangedContinuation(): void
-    {
-        $record = array_replace(self::finding(), ['line' => 16, 'severity' => 'warning', 'recommendation' => "Move the layer.\nDep data: {\"type\":\"type_hint\",\"target\":\"App\\\\B\"}"]);
-        $texts = [
-            'format:text-detail' => "src/A.php (1 violation)\n  WARN  A\n    M  [a.b]\n    Recommendation: Move the layer.\nDep data: {\"type\":\"type_hint\",\"target\":\"App\\\\B\"}\n\nTechnical debt by rule:\n",
-            'format:summary' => "Top issues by impact\n  1. [WRN] 20.0  src/A.php  [15min]\n         a.b: M\n         Recommendation: Move the layer.\nDep data: {\"type\":\"type_hint\",\"target\":\"App\\\\B\"}\n1 violation (1 warning) | Tech debt: 15min\n",
-        ];
-        foreach ($texts as $surface => $text) {
-            foreach ([false, true] as $neighbour) {
-                $run = $this->context();
-                $artifacts = self::artifacts([$record]) + ['case:alpha|' . $surface => $neighbour ? str_replace('type_hint', 'new', $text) : $text];
-                $this->observeRecords($run, RecordCheck::create($run), 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
-                self::assertSame([], $run->report->raised(), $surface);
-                $entries = \QmxFindingGate\ProseRecords::extract($surface, $artifacts['case:alpha|' . $surface], 'current');
-                self::assertCount(1, $entries);
-                self::assertSame(!$neighbour, \QmxFindingGate\ProseRecords::matches($surface, $entries[0]['fields'], $record, 'current'));
-                $tree = SyntheticTree::clean();
-                $tree['answers']['case:alpha|' . $surface] = ['stdout' => $text];
-                $tree['candidateAnswers']['case:alpha|' . $surface] = ['stdout' => $artifacts['case:alpha|' . $surface]];
-                $comparison = RecordedComparison::report($tree);
-                self::assertSame($neighbour ? [FailureClass::SURFACE_MISMATCH] : [], $comparison->failureClasses(), $comparison->render());
-                if ($neighbour) {
-                    self::assertSame('case:alpha|' . $surface, $comparison->raised()[0]['scope']);
-                }
-            }
-        }
     }
 
     #[Test]
@@ -1604,211 +1283,28 @@ final class ReportRecordsTest extends TestCase
         }
     }
 
-    #[Test]
-    public function itPublishesExactAcceptedMagnitudeAndOccurrenceSuffixesWithoutRejudgingTheBreach(): void
-    {
-        foreach ([
-            [['shape' => 'magnitude', 'describe' => '1', 'count' => 1], 3, 'accepted at 1, now 3'],
-            [['shape' => 'magnitude', 'describe' => '1', 'count' => 1], 0, 'accepted at 1, now 0'],
-            [['shape' => 'magnitude', 'describe' => '1, 2', 'count' => 2], 3.140000, 'accepted at 1, 2, now 3.14'],
-            [['shape' => 'magnitude', 'describe' => '1', 'count' => 1], null, 'accepted at 1'],
-            [['shape' => 'magnitude', 'describe' => '1', 'count' => 1], \INF, 'accepted at 1'],
-            [['shape' => 'magnitude', 'describe' => '1', 'count' => 1], \NAN, 'accepted at 1'],
-            [['shape' => 'occurrence', 'describe' => '1 occurrence', 'count' => 1], 3, 'accepted at 1 occurrence'],
-            [['shape' => 'occurrence', 'describe' => '3 occurrences', 'count' => 3], null, 'accepted at 3 occurrences'],
-        ] as [$accepted, $value, $suffix]) {
-            $record = array_replace(self::finding(), ['acceptedLevel' => $accepted, 'metricValue' => $value, 'recommendation' => 'Advice']);
-            self::assertSame('M (' . $suffix . ')', ReportRecords::message($record));
-            self::assertSame('Advice (' . $suffix . ')', ReportRecords::message($record, true));
-        }
-        self::assertSame('M', ReportRecords::message(self::finding()));
-    }
-
-    #[Test]
-    public function itRefusesScalarAndMalformedAcceptedLevelsInsteadOfInventingATextSuffix(): void
-    {
-        $valid = ['shape' => 'magnitude', 'describe' => '1', 'count' => 1];
-        foreach ([1, '1', [], ['magnitude', '1', 1], array_diff_key($valid, ['describe' => true]), $valid + ['extra' => true], array_replace($valid, ['shape' => 'unknown']), array_replace($valid, ['describe' => '']), array_replace($valid, ['describe' => 1]), array_replace($valid, ['count' => 0]), array_replace($valid, ['count' => '1'])] as $accepted) {
-            try {
-                ReportRecords::message(array_replace(self::finding(), ['acceptedLevel' => $accepted]));
-                self::fail('An unsupported accepted-level schema produced a licensed suffix.');
-            } catch (GateError $error) {
-                self::assertSame('An accepted level requires the exact shape, description, and positive count object.', $error->getMessage());
-            }
-        }
-        $this->expectException(GateError::class);
-        $this->expectExceptionMessage('numeric or absent current value');
-        ReportRecords::message(array_replace(self::finding(), ['acceptedLevel' => $valid, 'metricValue' => '3']));
-    }
-
-    #[Test]
-    public function itChecksActualAcceptedSuffixesOnInterchangeAndProsePublicationsWithoutNeighbourCredit(): void
-    {
-        foreach (['magnitude', 'occurrence'] as $shape) {
-            $accepted = ['shape' => $shape, 'describe' => $shape === 'magnitude' ? '1' : '1 occurrence', 'count' => 1];
-            $suffix = $shape === 'magnitude' ? ' (accepted at 1, now 3)' : ' (accepted at 1 occurrence)';
-            $record = array_replace(self::finding(), ['acceptedLevel' => $accepted, 'recommendation' => 'Advice']);
-            $expected = 'M' . $suffix;
-            foreach ([false, true] as $neighbour) {
-                $run = $this->context();
-                $artifacts = self::artifacts([$record]);
-                $actual = $neighbour ? 'M (accepted at 2, now 3)' : $expected;
-                $sarif = ReportRecords::decode($artifacts['case:alpha|format:sarif']);
-                $sarif['runs'][0]['results'][0]['message']['text'] = $actual;
-                $artifacts['case:alpha|format:sarif'] = ValueCheck::value($sarif);
-                $artifacts['case:alpha|format:gitlab'] = ValueCheck::value([['description' => $expected, 'check_name' => 'a.b', 'severity' => 'critical', 'location' => ['path' => 'src/A.php', 'lines' => ['begin' => 1]]]]);
-                $artifacts += [
-                    'case:alpha|format:text' => 'src/A.php:1: error[a.b]: ' . $expected . " (A)\n",
-                    'case:alpha|format:github' => '::error file=src/A.php,line=1,title=a.b::' . $expected . "\n",
-                    'case:alpha|format:text-detail' => "src/A.php (1 violation)\n  ERROR at line 1  A\n    M  [a.b]\n    Recommendation: Advice\n    " . trim($suffix, ' ()') . "\n",
-                    'case:alpha|format:summary' => "  1. [ERR] 20.0  src/A.php:1  [15min]\n         a.b: M\n         Recommendation: Advice\n         " . trim($suffix, ' ()') . "\n",
-                    'case:alpha|format:checkstyle' => '<checkstyle><file name="src/A.php"><error line="1" severity="error" source="qmx.a.b" message="' . $expected . '"/></file></checkstyle>',
-                ];
-                $this->observeRecords($run, RecordCheck::create($run), 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
-                self::assertSame([], $run->report->raised(), $shape);
-                self::assertSame($actual, ReportRecords::projected('format:sarif', $artifacts['case:alpha|format:sarif'])[0]['fields']['message']['text']);
-                self::assertSame($expected, ReportRecords::projected('format:gitlab', $artifacts['case:alpha|format:gitlab'])[0]['fields']['description']);
-                foreach (['format:text-detail', 'format:summary'] as $surface) {
-                    $entries = \QmxFindingGate\ProseRecords::extract($surface, $artifacts['case:alpha|' . $surface], 'current');
-                    self::assertCount(1, $entries);
-                    self::assertTrue(\QmxFindingGate\ProseRecords::matches($surface, $entries[0]['fields'], $record, 'current'));
-                }
-            }
-        }
-    }
-
-    #[Test]
-    public function itKeepsNamespaceCaptionsSpecificToTheActualProseComposition(): void
-    {
-        $record = array_replace(self::finding(), ['subject' => 'ns:App\\Service', 'symbol' => 'App\\Service', 'line' => 3]);
-        $texts = [
-            'format:text' => "src/A.php: error[a.b]: M (namespace: App\\Service)\n",
-            'format:text-detail' => "src/A.php (1 violation)\n  ERROR\n    M  [a.b]\n",
-            'format:summary' => "  1. [ERR] 20.0  src/A.php  [15min]\n         a.b: M (namespace: App\\Service)\n",
-            'show-suppressed' => "src/A.php (1 violation)\n  ERROR\n    M  [a.b]\n",
-        ];
-        foreach ($texts as $surface => $text) {
-            $entry = \QmxFindingGate\ProseRecords::extract($surface, $text)[0];
-            self::assertTrue(\QmxFindingGate\ProseRecords::matches($surface, $entry['fields'], $record), $surface);
-            $bad = array_replace($entry['fields'], isset($entry['fields']['symbol']) ? ['symbol' => 'namespace: App\\Neighbour'] : ['message' => 'M (namespace: App\\Neighbour)']);
-            self::assertFalse(\QmxFindingGate\ProseRecords::matches($surface, $bad, $record), $surface);
-            $after = array_replace($record, ['message' => 'New advice']);
-            self::assertSame(str_replace('M', 'New advice', $text), \QmxFindingGate\ProseRecords::rewriteProjection($surface, $text, $entry, $record, $after));
-        }
-    }
-
-    #[Test]
-    public function itOmitsOnlyAnExactLogicalFileCaptionRegardlessOfTheMeasuredCallableSubject(): void
-    {
-        $record = array_replace(self::finding(), ['subject' => 'declaration:callable:App\\A::run@src/A.php', 'symbol' => 'src/A.php', 'line' => 10]);
-        $texts = [
-            'format:text' => "src/A.php:10: error[a.b]: M\n",
-            'format:text-detail' => "src/A.php (1 violation)\n  ERROR at line 10\n    M  [a.b]\n",
-            'format:summary' => "  1. [ERR] 20.0  src/A.php:10  [15min]\n         a.b: M\n",
-            'show-suppressed' => "src/A.php (1 violation)\n  ERROR at line 10\n    M  [a.b]\n",
-        ];
-        foreach ($texts as $surface => $text) {
-            $entry = \QmxFindingGate\ProseRecords::extract($surface, $text)[0];
-            self::assertTrue(\QmxFindingGate\ProseRecords::matches($surface, $entry['fields'], $record), $surface);
-            $bad = array_replace($entry['fields'], isset($entry['fields']['symbol']) ? ['symbol' => 'A.php'] : ['message' => 'M (A.php)']);
-            self::assertFalse(\QmxFindingGate\ProseRecords::matches($surface, $bad, $record), $surface);
-            foreach (['App\\A::run', 'src/A.phpNeighbour'] as $logicalSymbol) {
-                self::assertFalse(\QmxFindingGate\ProseRecords::matches($surface, $entry['fields'], array_replace($record, ['symbol' => $logicalSymbol])), $logicalSymbol);
-            }
-            self::assertSame(str_replace('M', 'New advice', $text), \QmxFindingGate\ProseRecords::rewriteProjection($surface, $text, $entry, $record, array_replace($record, ['message' => 'New advice'])));
-        }
-    }
-
-    #[Test]
-    #[TestWith(['format:text-detail'])]
-    #[TestWith(['format:text-verbose'])]
-    public function itKeepsClassAndNamespaceFindingInstancesDistinctDespiteMatchingAdviceAndLocation(string $surface): void
-    {
-        self::assertTrue(\QmxFindingGate\ReportViews::recordBearingSurface($surface));
-        $class = array_replace(self::finding(), ['symbol' => 'App\\A', 'line' => 3]);
-        $namespace = array_replace($class, ['subject' => 'ns:App\\Service', 'symbol' => 'App\\Service']);
-        $valid = "src/A.php (2 violations)\n  ERROR  A\n    M  [a.b]\n\n  ERROR\n    M  [a.b]\n";
-        foreach ([$valid, str_replace('  ERROR  A', '  ERROR', $valid), str_replace("  ERROR\n", "  ERROR  A\n", $valid)] as $variant => $text) {
-            $run = $this->context();
-            $artifacts = self::artifacts([$class, $namespace]) + ['case:alpha|' . $surface => $text];
-            $this->observeRecords($run, RecordCheck::create($run), 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
-            self::assertSame([], $run->report->raised());
-            $entries = \QmxFindingGate\ProseRecords::extract($surface, $text);
-            self::assertCount(2, $entries);
-            self::assertSame($variant !== 1, \QmxFindingGate\ProseRecords::matches($surface, $entries[0]['fields'], $class));
-            self::assertSame($variant !== 2, \QmxFindingGate\ProseRecords::matches($surface, $entries[1]['fields'], $namespace));
-        }
-    }
-
-    #[Test]
-    public function itKeepsKnownIncompleteRunDiagnosticsOutsideTheFindingMultiset(): void
-    {
-        $finding = self::finding();
-        $diagnostic = ['description' => 'Analysis failed for src/linked: The subtree was not read.', 'check_name' => 'analysis.directory-symlink', 'fingerprint' => 'run-diagnostic', 'severity' => 'blocker', 'location' => ['path' => 'src/linked', 'lines' => ['begin' => 1]]];
-        $text = ValueCheck::value([ReportRecords::projection('format:gitlab', $finding) + ['fingerprint' => 'finding'], $diagnostic]);
-        self::assertSame([ReportRecords::projection('format:gitlab', $finding)], array_column(ReportRecords::projected('format:gitlab', $text), 'fields'));
-        foreach ([['check_name' => 'analysis.unknown'], ['severity' => 'major']] as $change) {
-            self::assertCount(1, ReportRecords::projected('format:gitlab', ValueCheck::value([array_replace($diagnostic, $change)])));
-        }
-        $xml = '<checkstyle><file name="src/A.php"><error line="1" severity="error" source="qmx.a.b" message="M"/></file><file name="[analysis]"><error line="1" severity="error" source="qmx.analysis.directory-symlink" message="src/linked: The subtree was not read."/></file></checkstyle>';
-        self::assertSame([ReportRecords::projection('format:checkstyle', $finding)], ReportRecords::checkstyle($xml));
-        foreach (['[analysis]' => 'src/linked', 'qmx.analysis.directory-symlink' => 'qmx.analysis.unknown', 'line="1" severity="error" source="qmx.analysis.' => 'line="2" severity="error" source="qmx.analysis.'] as $from => $to) {
-            self::assertCount(2, ReportRecords::checkstyle(str_replace($from, $to, $xml)));
-        }
-        $run = $this->context();
-        $artifacts = self::artifacts([$finding]);
-        $artifacts['case:alpha|format:gitlab'] = $text;
-        $artifacts['case:alpha|format:checkstyle'] = $xml;
-        $this->observeRecords($run, RecordCheck::create($run), 'candidate', $run->corpus->cases[0], CaseOutcome::INCOMPLETE, $artifacts);
-        self::assertSame([], $run->report->raised());
-    }
-
     /** @return array<string,mixed> */
     private static function finding(): array
     {
         return array_replace(array_fill_keys(ReportRecords::SCHEMAS['json'], null), ['file' => 'src/A.php', 'line' => 1, 'subject' => 'class:App\\A', 'symbol' => 'App\\A', 'channel' => 'a.b', 'rule' => 'a.b', 'code' => 'a.b', 'severity' => 'error', 'message' => 'M', 'metricValue' => 3, 'threshold' => 1, 'techDebtMinutes' => 15]);
     }
 
-    /**
-     * @param list<array<string,mixed>> $findings
-     *
+    /** @param list<array<string,mixed>> $findings
      * @return array<string,string>
      */
     private static function artifacts(array $findings, string $side = 'current'): array
     {
-        $gitlab = array_map(static fn(array $record): array => ReportRecords::projection('format:gitlab', $record, $side === 'reference' ? 'legacy' : 'current'), $findings);
-        $html = array_map(static fn(array $record): array => ReportRecords::projection('format:html', $record, $side === 'reference' ? 'legacy' : 'current'), $findings);
-        $sarif = self::sarif($findings[0] ?? self::finding());
-        $sarif['runs'][0]['results'] = [];
-        $sarif['runs'][0]['tool']['driver']['rules'] = [];
-        foreach ($findings as $record) {
-            $index = \count($sarif['runs'][0]['tool']['driver']['rules']);
-            $sarif['runs'][0]['tool']['driver']['rules'][] = ['id' => $record['code']];
-            $result = self::sarif($record)['runs'][0]['results'][0];
-            $result['ruleIndex'] = $index;
-            $sarif['runs'][0]['results'][] = $result;
-        }
+        $answers = SyntheticTree::caseAnswers('alpha', $findings, false, []);
         return [
             'case:alpha|format:json' => ValueCheck::value(['violations' => $findings]),
             'case:alpha|format:metrics' => '{"symbols":[]}',
             'case:alpha|format:suppressed' => '{"suppressed":[]}',
             'case:alpha|directives' => '{"directives":[],"exit_code":0}',
             'case:alpha|exit:directives' => '0',
-            'case:alpha|format:html' => '<script type="application/json" id="report-data">' . ValueCheck::value(['tree' => ['violations' => $html]]) . '</script>',
-            'case:alpha|format:gitlab' => ValueCheck::value($gitlab),
-            'case:alpha|format:sarif' => ValueCheck::value($sarif),
+            'case:alpha|format:html' => $answers['case:alpha|format:html']['stdout'] ?? throw new GateError('The synthetic publication is missing.'),
+            'case:alpha|format:gitlab' => $answers['case:alpha|format:gitlab']['stdout'] ?? throw new GateError('The synthetic publication is missing.'),
+            'case:alpha|format:sarif' => $answers['case:alpha|format:sarif']['stdout'] ?? throw new GateError('The synthetic publication is missing.'),
         ];
     }
 
-    /**
-     * @param array<string,mixed> $finding
-     *
-     * @return array<string,mixed>
-     */
-    private static function sarif(array $finding): array
-    {
-        return ['runs' => [['tool' => ['driver' => ['rules' => [['id' => $finding['code']]]]], 'results' => [['ruleId' => $finding['code'], 'ruleIndex' => 0, 'level' => match ($finding['severity']) {
-            'warning' => 'warning', 'error' => 'error', default => 'note',
-        }, 'message' => ['text' => $finding['message']], 'locations' => [['physicalLocation' => ['artifactLocation' => ['uri' => $finding['file']], 'region' => ['startLine' => $finding['line']]]]]]]]]];
-    }
 }

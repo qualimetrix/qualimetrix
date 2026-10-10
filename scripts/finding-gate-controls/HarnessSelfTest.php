@@ -378,7 +378,7 @@ final class HarnessSelfTest
                 throw new RuntimeException('Cannot remove the staged record measurement table.');
             }
 
-            $orphan = $scratch->path('finding-gate/declared-outcomes');
+            $orphan = $scratch->path('finding-gate/declared-exact-surfaces');
             if (!is_dir($orphan)) {
                 mkdir($orphan);
             }

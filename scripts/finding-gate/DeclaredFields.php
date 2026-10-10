@@ -298,7 +298,7 @@ final class DeclaredFields
             if ($publication['report'] !== $report) {
                 continue;
             }
-            if ($forms?->schemaPair($publication['case'], $publication['view']) === false) {
+            if ($forms !== null && !$forms->schemaExpected($publication['case'], $publication['view'])) {
                 $outsideViews[$publication['view']] = true;
                 continue;
             }

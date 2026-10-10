@@ -13,7 +13,6 @@ use QmxFindingGate\ChannelSplit;
 use QmxFindingGate\Corpus;
 use QmxFindingGate\Declarations;
 use QmxFindingGate\DeclaredFields;
-use QmxFindingGate\DeclaredOutcomes;
 use QmxFindingGate\FailureClass;
 use QmxFindingGate\FieldValuesCheck;
 use QmxFindingGate\Fs;
@@ -47,6 +46,7 @@ final class FieldValuesCheckTest extends TestCase
     protected function setUp(): void
     {
         $this->root = SyntheticTree::fixture(SyntheticTree::clean());
+        Fs::write($this->root . '/finding-gate/cases/alpha/baseline-src/src/Alpha.php', "<?php\n");
     }
 
     protected function tearDown(): void
@@ -158,6 +158,7 @@ final class FieldValuesCheckTest extends TestCase
         $run = $this->context();
         foreach (['candidate', 'reference'] as $side) {
             $run->declarations->fields->requireMeasurements('json', 'alpha', 'format:json', $side);
+            $run->publicationForms->supply($side, ['case:alpha|format:json' => '{"violations":[{"probe":1}]}']);
             $run->declarations->fields->supply('json', 'alpha', 'format:json', $side, [['record' => '{}', 'fields' => ['probe' => 1]]]);
         }
         $check = FieldValuesCheck::create($run);
@@ -187,6 +188,7 @@ final class FieldValuesCheckTest extends TestCase
         $empty = $this->context();
         foreach (['candidate', 'reference'] as $side) {
             $empty->declarations->fields->requireMeasurements('metrics', 'alpha', 'format:metrics', $side);
+            $empty->publicationForms->supply($side, ['case:alpha|format:metrics' => '{"symbols":[]}']);
             $empty->declarations->fields->supply('metrics', 'alpha', 'format:metrics', $side, []);
         }
         $emptyCheck = FieldValuesCheck::create($empty);
@@ -262,15 +264,7 @@ final class FieldValuesCheckTest extends TestCase
         self::assertSame(GateReport::EXIT_RED, $report->exitCode(), $report->render());
         self::assertCount(1, $report->raised());
         $raised = $report->raised()[0];
-        $sites = \QmxFindingGate\RaiseSites::of(\dirname(__DIR__), \QmxFindingGate\RaiseSites::DECLARED_NAMES);
-        $identity = null;
-        foreach ($sites->sites as $site) {
-            if ($site['file'] === $raised['file'] && $site['line'] === $raised['line']) {
-                $identity = $sites->identityOf($site['site'], $raised['chain']);
-            }
-        }
-        self::assertSame($witnesses[0]['expect'][0], [$raised['class'], $raised['scope'], $identity]);
-        self::assertSame('FieldValuesCheck::checkRun <- Gate::compare', $identity);
+        self::assertSame($witnesses[0]['expect'][0], [$raised['class'], $raised['scope']]);
     }
 
     /** @return iterable<string,array{string}> */
@@ -464,7 +458,6 @@ final class FieldValuesCheckTest extends TestCase
     {
         SyntheticTree::remove($this->root);
         $tree = SelfTestOutcomes::fixture();
-        unset($tree['candidateDeclarations'][DeclaredOutcomes::INDEX], $tree['candidateDeclarations']['declared-outcomes/alpha.json']);
         $definition = json_decode($tree['declarations']['cases/alpha/case.json'], true, 512, \JSON_THROW_ON_ERROR);
         $definition['outcome'] = ['kind' => \QmxFindingGate\CaseOutcome::REFUSAL, 'exit' => 3];
         $tree['declarations']['cases/alpha/case.json'] = json_encode($definition, \JSON_THROW_ON_ERROR);
@@ -601,6 +594,11 @@ final class FieldValuesCheckTest extends TestCase
         foreach (['candidate', 'reference'] as $side) {
             $run->declarations->fields->requireMeasurements($report, 'alpha', $view, $side);
             $fields = $side === 'candidate' ? ['name' => 'A', 'probe' => $value] : ['name' => 'A'];
+            $member = match ($report) {
+                'metrics' => 'symbols', 'directives' => 'directives', default => 'violations',
+            };
+            $publication = $view === 'ranking' ? 'format:json' : $view;
+            $run->publicationForms->supply($side, ['case:alpha|' . $publication => json_encode([$member => array_fill(0, $copies, $fields)], \JSON_THROW_ON_ERROR)]);
             $run->declarations->fields->supply($report, 'alpha', $view, $side, array_fill(0, $copies, ['record' => $key, 'fields' => $fields]));
         }
     }

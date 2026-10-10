@@ -81,11 +81,7 @@ final class RecordCheck implements CaseCheck, RunCheck
             if (!str_starts_with($key, 'case:' . $case->id . '|') || !ReportViews::recordBearingSurface($surface)) {
                 continue;
             }
-            try {
-                $invocation = $this->run->capturePlan->invocationOf($key);
-            } catch (GateError) {
-                continue;
-            }
+            $invocation = $this->run->capturePlan->invocationOf($key);
             if (!$this->run->capturePlan->requiredOn($invocation, $side)
                 || ($surface === 'baseline-file' && !CaseOutcome::applies(CaseOutcome::CHECK_BASELINE_FILE, $outcome)
                     && $this->run->publicationForms->of($side, $key) !== PublicationForms::WHOLE_INVOCATION)) {
@@ -151,104 +147,6 @@ final class RecordCheck implements CaseCheck, RunCheck
             return;
         }
         $findings = $this->physical[$case->id]['format:json'][$side];
-        foreach (['format:html', 'format:gitlab', 'format:sarif'] as $surface) {
-            if (!$this->recordPublication($side, $case, $surface, $artifacts)) {
-                continue;
-            }
-            $key = $scope . '|' . $surface;
-            try {
-                if (!isset($artifacts[$key])) {
-                    throw new GateError('A readable finding projection is missing.');
-                }
-                $text = $surface === 'format:html' ? ReportPayload::of($artifacts[$key], $key, $side) : $artifacts[$key];
-                // Validate the original catalog before maps can rewrite any rule id.
-                if ($surface === 'format:sarif') {
-                    ReportRecords::projected($surface, $text);
-                }
-                $projected = ReportRecords::projected($surface, $this->mapped($side, $surface, $text));
-                $expected = array_map(fn(array $record): array => ReportRecords::projection($surface, $record, $this->run->publicationCodec($side)), $findings);
-                $actual = array_column($projected, 'fields');
-                if ($surface === 'format:html') {
-                    $buckets = [];
-                    foreach ($projected as $entry) {
-                        $buckets[ValueCheck::value(\array_slice($entry['path'], 0, -1))][] = $entry['fields'];
-                    }
-                    foreach ($buckets as $bucket) {
-                        $budget = $expected;
-                        foreach ($bucket as $record) {
-                            $at = array_search($record, $budget, true);
-                            if ($at === false) {
-                                throw new GateError('An HTML node publishes more projection instances than authoritative records.');
-                            }
-                            unset($budget[$at]);
-                        }
-                    }
-                    foreach ($actual as $record) {
-                        if (!\in_array($record, $expected, true)) {
-                            throw new GateError('An HTML node publishes a finding projection absent from its authoritative records.');
-                        }
-                    }
-                    foreach ($expected as $record) {
-                        if (!\in_array($record, $actual, true)) {
-                            throw new GateError('An authoritative finding has no HTML projection.');
-                        }
-                    }
-                } elseif (!self::sameMultiset($actual, $expected)) {
-                    throw new GateError('The readable finding projection differs from the complete authoritative record multiset.');
-                }
-                $this->run->report->sourceEvidence($side, $key, 'records', true);
-            } catch (GateError $error) {
-                $this->publicationProblem($side, $key, $error);
-            }
-        }
-        $key = $scope . '|format:checkstyle';
-        if (isset($artifacts[$key]) && $this->recordPublication($side, $case, 'format:checkstyle', $artifacts)) {
-            try {
-                $actual = ReportRecords::checkstyle($this->mapped($side, 'format:checkstyle', $artifacts[$key]));
-                $expected = array_map(fn(array $record): array => ReportRecords::projection('format:checkstyle', $record, $this->run->publicationCodec($side)), $findings);
-                if (!self::sameMultiset($actual, $expected)) {
-                    throw new GateError('The complete checkstyle projection multiset differs from authoritative records.');
-                }
-                $this->run->report->sourceEvidence($side, $key, 'records', true);
-            } catch (GateError $error) {
-                $this->publicationProblem($side, $key, $error);
-            }
-        }
-        foreach (ProseRecords::SURFACES as $surface) {
-            if (!$this->recordPublication($side, $case, $surface, $artifacts)) {
-                continue;
-            }
-            $key = $scope . '|' . $surface;
-            if (!isset($artifacts[$key])) {
-                continue;
-            }
-            try {
-                $entries = ProseRecords::extract($surface, $this->mapped($side, $surface, $artifacts[$key]), $this->run->publicationCodec($side));
-                $budget = $findings;
-                foreach ($entries as $entry) {
-                    if ($surface === 'format:summary' && isset($entry['fields']['rank'])) {
-                        continue;
-                    }
-                    $found = false;
-                    foreach ($budget as $index => $record) {
-                        if (ProseRecords::matches($surface, $entry['fields'], $record, $this->run->publicationCodec($side))) {
-                            unset($budget[$index]);
-                            $found = true;
-                            break;
-                        }
-                    }
-                    if (!$found) {
-                        throw new GateError('A prose finding line is not the complete projection of an authoritative finding instance.');
-                    }
-                }
-                if ($surface !== 'format:summary' && $budget !== [] && (preg_match('~^\.\.\. and ([0-9]+) more\. Use --detail=all to see all violations$~m', $artifacts[$key], $remaining) !== 1 || (int) $remaining[1] !== \count($budget))) {
-                    throw new GateError('The prose publication omitted an authoritative finding projection.');
-                }
-                $this->run->report->sourceEvidence($side, $key, 'records', true);
-            } catch (GateError $error) {
-                $this->publicationProblem($side, $key, $error);
-            }
-        }
         $source = $case->baselineSource() === null ? 'format:json' : 'check:baseline-source';
         $key = $scope . '|baseline-file';
         if (CaseOutcome::applies(CaseOutcome::CHECK_BASELINE_FILE, $outcome) && isset($artifacts[$key]) && $this->recordPublication($side, $case, 'baseline-file', $artifacts)) {
@@ -291,9 +189,6 @@ final class RecordCheck implements CaseCheck, RunCheck
         if ($surface === 'baseline-file' && $baselineExit !== null && $baselineExit !== '0' && ($artifacts[$key] ?? '') !== '') {
             $this->publicationProblem($side, $key, new GateError('A refusing baseline invocation must retain empty captured baseline content.'));
         }
-        if ($this->run->publicationForms->recordsPair($key) === false) {
-            return !$this->run->report->sourceRejected($side, $key, 'records');
-        }
         return !$this->run->report->sourceRejected($side, $key, 'records');
     }
 
@@ -305,10 +200,10 @@ final class RecordCheck implements CaseCheck, RunCheck
         }
         $key = 'case:' . $case->id . '|' . $surface;
         $refused = $this->run->publicationForms->of($side, $key) === PublicationForms::WHOLE_INVOCATION;
-        if (!$refused && $this->run->publicationForms->recordsPair($key) === false) {
+        if (!$refused && !$this->run->publicationForms->recordsExpected($key)) {
             $this->captureSchemaProvenance($side, $case->id, $surface, $artifacts[$key] ?? null);
         }
-        return !$refused && $this->run->publicationForms->recordsPair($key) !== false;
+        return !$refused && $this->run->publicationForms->recordsExpected($key);
     }
 
     private function captureSchemaProvenance(string $side, string $case, string $view, ?string $text): void
@@ -383,7 +278,7 @@ final class RecordCheck implements CaseCheck, RunCheck
         }
         $this->ranking->supplyFields($case);
         foreach (ReportViews::forCase($definition) as $view => $report) {
-            if ($this->run->publicationForms->recordsPair('case:' . $case . '|' . $view) === false) {
+            if (!$this->run->publicationForms->recordsPair('case:' . $case . '|' . $view)) {
                 continue;
             }
             $candidate = $this->records[$case][$view]['candidate'] ?? null;

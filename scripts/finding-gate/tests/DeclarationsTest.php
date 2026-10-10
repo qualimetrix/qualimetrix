@@ -7,7 +7,6 @@ namespace QmxFindingGate\Tests;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\DeclaredFields;
-use QmxFindingGate\DeclaredOutcomes;
 use QmxFindingGate\DeclaredRecords;
 use QmxFindingGate\DeclaredStructuralMaps;
 use QmxFindingGate\DeclaredSurfaces;
@@ -47,7 +46,6 @@ final class DeclarationsTest extends TestCase
         self::assertSame(0, DeclaredRecords::load($this->root)->count());
         self::assertSame(0, DeclaredValues::load($this->root)->count());
         self::assertSame(0, DeclaredFields::load($this->root)->count());
-        self::assertSame(0, DeclaredOutcomes::load($this->root)->count());
         self::assertSame(0, DeclaredSurfaces::load($this->root)->count());
         self::assertSame(0, DeclaredStructuralMaps::load($this->root)->count());
     }

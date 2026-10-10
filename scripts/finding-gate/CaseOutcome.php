@@ -10,7 +10,7 @@ namespace QmxFindingGate;
  *
  * A case analyses by default. One that exists to exercise a refusal or an
  * incomplete analysis says so in `case.json`, with the exit it must end with;
- * a step that changes how a case ends declares it in `declared-outcomes.tsv`.
+ * both sides are held to the same declared outcome.
  * Whichever it is, a check does not decide for itself whether it applies: it
  * asks {@see self::applies()}, and the table below is the one answer. A check
  * that reads findings has nothing to read in a refusal, and one that holds the
@@ -41,8 +41,6 @@ final class CaseOutcome
 
     public const string CHECK_NORMALIZATION_LEAVES_FINDINGS = 'normalization-leaves-findings';
 
-    public const string CHECK_FINGERPRINTS = 'fingerprints';
-
     /** The case's observed channels count toward coverage. */
     public const string CHECK_COVERAGE = 'coverage';
 
@@ -61,7 +59,6 @@ final class CaseOutcome
         self::CHECK_BASELINE_FILE => [self::ANALYSIS],
         self::CHECK_TUPLE => [self::ANALYSIS, self::INCOMPLETE],
         self::CHECK_NORMALIZATION_LEAVES_FINDINGS => [self::ANALYSIS, self::INCOMPLETE],
-        self::CHECK_FINGERPRINTS => [self::ANALYSIS, self::INCOMPLETE],
         self::CHECK_COVERAGE => [self::ANALYSIS, self::INCOMPLETE],
         self::CHECK_RECORDS => [self::ANALYSIS, self::INCOMPLETE],
         self::CHECK_RANKING => [self::ANALYSIS, self::REFUSAL, self::INCOMPLETE],
@@ -101,26 +98,12 @@ final class CaseOutcome
         return \in_array($outcome, $outcomes, true);
     }
 
-    /**
-     * How the case is expected to end on this side. The side is part of the
-     * question because a declared outcome changes one side only; until the
-     * declared outcomes are read, both sides end as `case.json` says.
-     */
     public static function of(CaseDefinition $case, string $side): string
     {
-        $side = match ($side) {
-            'candidate', 'candidate-1', 'candidate-2' => 'candidate',
-            'reference' => 'reference',
-            default => throw new GateError('Unknown case outcome side: ' . $side),
-        };
-        if ($case->transition === null) {
-            return $case->outcome;
+        if (!\in_array($side, ['candidate', 'candidate-1', 'candidate-2', 'reference'], true)) {
+            throw new GateError('Unknown case outcome side: ' . $side);
         }
-        return match ($case->transition) {
-            DeclaredOutcomes::ANALYSIS_TO_REFUSAL => $side === 'candidate' ? self::REFUSAL : self::ANALYSIS,
-            DeclaredOutcomes::REFUSAL_TO_ANALYSIS => $side === 'reference' ? self::REFUSAL : self::ANALYSIS,
-            default => throw new GateError('Unknown declared case outcome transition: ' . $case->transition),
-        };
+        return $case->outcome;
     }
 
     /**

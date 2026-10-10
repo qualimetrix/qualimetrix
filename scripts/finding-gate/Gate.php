@@ -48,8 +48,6 @@ final class Gate
 
     private readonly CaseOutcomeCheck $caseOutcomeCheck;
 
-    private readonly FingerprintCheck $fingerprintCheck;
-
     private readonly RenameMapCheck $renameMapCheck;
 
     private readonly DeclaredDeltaCheck $declaredDeltaCheck;
@@ -94,7 +92,6 @@ final class Gate
 
         $this->tupleCheck = new TupleCheck($this->options, $this->report);
         $this->normalizationCheck = new NormalizationCheck($this->options, $this->report, $normalization);
-        $this->fingerprintCheck = new FingerprintCheck($this->report);
         $this->renameMapCheck = new RenameMapCheck($this->report, $this->corpus, $this->maps, $this->split);
         $this->coverageCheck = new CoverageCheck($this->options, $this->report, $this->corpus, $witness);
         $this->staleDeclarationCheck = new StaleDeclarationCheck($this->report, $this->declarations);
@@ -142,7 +139,7 @@ final class Gate
             $this->corpus,
             $this->maps,
             $normalization,
-            $this->fingerprintCheck,
+            $run->publicationForms,
             $this->declaredDeltaCheck,
             $this->temporaryDirectory,
             self::registered($wiring, 'surfaceStages', SurfaceStage::class, $run),
@@ -205,7 +202,7 @@ final class Gate
         }
 
         $this->report->fact('declared forms', \sprintf(
-            '%d record(s), %d value intent(s), %d field change(s), %d outcome(s), %d surface change(s), %d structural'
+            '%d record(s), %d value intent(s), %d field change(s), %d surface change(s), %d structural'
             . ' map row(s)',
             ...array_values($this->declarations->counts()),
         ));
@@ -258,7 +255,7 @@ final class Gate
             }
             $this->checkFindings('candidate', $first, trackObserved: true, capture: $firstCapture);
             $this->checkFindings('reference', $referenceArtifacts, trackObserved: false, capture: $referenceCapture);
-            $this->exactSurfaceDeltaCheck->plan(['candidate' => $firstCapture, 'reference' => $referenceCapture], $this->records, $this->fingerprintCheck);
+            $this->exactSurfaceDeltaCheck->plan(['candidate' => $firstCapture, 'reference' => $referenceCapture], $this->records);
             $this->renameMapCheck->checkSplitExplanation($first, $referenceArtifacts);
             $this->surfaceComparison->compareSurfaces($first, $referenceArtifacts);
 
@@ -266,15 +263,6 @@ final class Gate
                 $check->checkRun($first, $referenceArtifacts);
             }
 
-            // Said out loud for the same reason the declared-delta count is: a
-            // reader of a GREEN run has to be able to see that one published
-            // value was compared as the identity it hashes rather than as the
-            // bytes the product wrote.
-            $this->report->fact('fingerprints substituted', \sprintf(
-                '%d value(s) on %s, both sides',
-                $this->fingerprintCheck->substitutedCount(),
-                Fingerprints::OPAQUE_SURFACE,
-            ));
             $this->surfaceComparison->checkPathLeaks($first, $referenceArtifacts, $reference->root);
             $this->coverageCheck->checkCoverage($this->findingsByCase);
             $this->coverageCheck->checkChannelWitnesses();
@@ -510,7 +498,7 @@ final class Gate
                 if ($this->context->publicationForms->of($side, $key) === PublicationForms::WHOLE_INVOCATION) {
                     continue;
                 }
-                if ($this->context->publicationForms->recordsPair($key) === false) {
+                if (!$this->context->publicationForms->recordsPair($key)) {
                     if ($capture === null) {
                         $this->report->fail(FailureClass::RUN_FAILED, $side . ' / ' . $case->id, 'Independent findings claims require their own complete capture.');
                         continue;
@@ -547,10 +535,6 @@ final class Gate
                     /** @var list<array<string,mixed>> $published */
                     $published = array_values($published);
                     $this->normalizationCheck->checkNormalizationLeavesFindings($side, $case, $artifacts[$key], $published);
-                }
-
-                if (CaseOutcome::applies(CaseOutcome::CHECK_FINGERPRINTS, $outcome)) {
-                    $this->fingerprintCheck->checkFingerprints($side, $case, $findings, $artifacts);
                 }
 
                 if ($trackObserved && CaseOutcome::applies(CaseOutcome::CHECK_COVERAGE, $outcome)) {

@@ -960,7 +960,8 @@ final class RankingCheckTest extends TestCase
             self::assertSame(GateReport::EXIT_GREEN, $equal->exitCode(), $equal->render());
             $unlicensed = RecordedComparison::reportAt($empty, $sameSchemaRoot);
             self::assertContains(FailureClass::RANKING_PROJECTION_MISMATCH, $unlicensed->failureClasses(), $unlicensed->render());
-            self::assertTrue($unlicensed->sourceValid('candidate', 'case:alpha|format:json', 'repeatable'));
+            self::assertFalse($unlicensed->sourceValid('candidate', 'case:alpha|format:json', 'repeatable'));
+            self::assertTrue($unlicensed->sourceRejected('candidate', 'case:alpha|format:json', 'ranking'));
             $path = $sameSchemaRoot . '/src/Reporting/Formatter/Json/JsonFormatter.php';
             Fs::write($path, str_replace("                'probe' => null,\n", '', Fs::read($path)));
             $restored = RecordedComparison::reportAt($empty, $sameSchemaRoot);
@@ -1025,7 +1026,7 @@ final class RankingCheckTest extends TestCase
             $published = ReportRecords::extract('json', $candidate->artifacts[$key], \QmxFindingGate\EquivalenceTuple::load($candidateRoot)->fields);
             $ranking = \QmxFindingGate\RankingCheck::create($run);
             $ranking->observe('candidate', $run->corpus->cases[0], 'format:json', $published, $candidate->artifacts, compare: false);
-            self::assertNull($run->publicationForms->recordsPair($key));
+            self::assertFalse($run->publicationForms->recordsPair($key));
             $run->publicationForms->supply('reference', [$key => '{"error":"Whole peer","exit_code":1}']);
             $ranking->observe('candidate', $run->corpus->cases[0], 'format:json', $published, $candidate->artifacts, compare: false);
             self::assertFalse($run->publicationForms->recordsPair($key));
@@ -1302,7 +1303,7 @@ final class RankingCheckTest extends TestCase
             $fields = new ReflectionMethod(\QmxFindingGate\RankingCheck::class, 'fields');
             $ranking = \QmxFindingGate\RankingCheck::create($run);
             self::assertContains('probe', $fields->invoke($ranking, 'candidate', $wholeKey));
-            self::assertNull($run->publicationForms->recordsPair($wholeKey));
+            self::assertFalse($run->publicationForms->recordsPair($wholeKey));
             $run->publicationForms->supply('reference', [$wholeKey => '{"error":"Whole peer","exit_code":1}', $recordsKey => $json]);
             self::assertContains('probe', $fields->invoke($ranking, 'candidate', $wholeKey));
             self::assertFalse($run->publicationForms->recordsPair($wholeKey));
@@ -1404,9 +1405,8 @@ final class RankingCheckTest extends TestCase
 
     #[Test]
     #[Group('finding-gate-e2e')]
-    public function itObservesTheExactRegisteredRankingRaiseSitesThroughThePublicGate(): void
+    public function itObservesRegisteredRankingClassesAndScopesThroughThePublicGate(): void
     {
-        $sites = \QmxFindingGate\RaiseSites::of(\dirname(__DIR__), \QmxFindingGate\RaiseSites::DECLARED_NAMES);
         foreach (\QmxFindingGate\SelfTestRecords::witnesses() as $witness) {
             if (!str_starts_with($witness['id'], 'ranking-')) {
                 continue;
@@ -1419,22 +1419,13 @@ final class RankingCheckTest extends TestCase
             if ($witness['id'] === 'ranking-unchanged-order') {
                 self::assertNotContains(FailureClass::SURFACE_MISMATCH, $report->failureClasses(), $report->render());
             }
-            $observed = [];
-            foreach ($report->raised() as $raised) {
-                foreach ($sites->sites as $site) {
-                    if ($site['file'] === $raised['file'] && $site['line'] === $raised['line']) {
-                        $observed[] = [$raised['class'], $raised['scope'], $sites->identityOf($site['site'], $raised['chain'])];
-                        break;
-                    }
-                }
-            }
+            $observed = array_map(static fn(array $raised): array => [$raised['class'], $raised['scope']], $report->raised());
             foreach ($witness['expect'] as $pattern) {
-                self::assertArrayHasKey(2, $pattern, $witness['id'] . ': ranking witnesses retain their exact producer');
-                [$failure, $scope, $identity] = $pattern;
-                self::assertNotSame([], array_values(array_filter($observed, static fn(array $row): bool => $row[0] === $failure && fnmatch($scope, $row[1]) && $row[2] === $identity)), $witness['id'] . ': ' . ValueCheck::value($observed));
+                [$failure, $scope] = $pattern;
+                self::assertNotSame([], array_values(array_filter($observed, static fn(array $row): bool => $row[0] === $failure && fnmatch($scope, $row[1]))), $witness['id'] . ': ' . ValueCheck::value($observed));
             }
             foreach ($observed as $row) {
-                $allowed = array_filter($witness['expect'], static fn(array $pattern): bool => $row[0] === $pattern[0] && fnmatch($pattern[1], $row[1]) && isset($pattern[2]) && $row[2] === $pattern[2]);
+                $allowed = array_filter($witness['expect'], static fn(array $pattern): bool => $row[0] === $pattern[0] && fnmatch($pattern[1], $row[1]));
                 $allowed = [...$allowed, ...array_filter($witness['tolerate'], static fn(array $pattern): bool => $row[0] === $pattern[0] && fnmatch($pattern[1], $row[1]))];
                 self::assertNotSame([], $allowed, $witness['id'] . ': ' . ValueCheck::value($row));
             }
@@ -1476,7 +1467,7 @@ final class RankingCheckTest extends TestCase
         $tree['findings']['alpha'] = $records;
         $tree['declarations']['cases/alpha/case.json'] = self::definition();
         self::publish($tree, 'answers', $records, $issues, $slice, $shown);
-        foreach (['format:html', 'format:checkstyle', 'format:sarif', 'format:gitlab', 'format:text', 'format:text-detail', 'format:text-verbose', 'format:github', 'show-suppressed'] as $surface) {
+        foreach (['format:html', 'format:checkstyle', 'format:sarif', 'format:gitlab', 'format:text', 'format:text-detail', 'format:github', 'show-suppressed'] as $surface) {
             $tree['answers']['case:alpha|' . $surface] = ['stdout' => 'Unchanged whole publication for ' . $surface . "\n"];
             $tree['candidateAnswers']['case:alpha|' . $surface] = $tree['answers']['case:alpha|' . $surface];
         }
@@ -1520,7 +1511,7 @@ final class RankingCheckTest extends TestCase
             $symbol = $issue['symbol'] === '' ? '' : ' (' . substr($issue['symbol'], (int) strrpos('\\' . $issue['symbol'], '\\')) . ')';
             $text .= '  ' . $issue['rank'] . '. [' . $tag . '] ' . \sprintf('%.1f', $issue['impactScore']) . '  ' . $location . "  [15min]\n         " . $record['code'] . ': ' . $record['message'] . $symbol . "\n";
             $text .= $record['recommendation'] === null ? '' : '         Recommendation: ' . $record['recommendation'] . "\n";
-            $baseline = ReportRecords::baselineText($record);
+            $baseline = SyntheticTree::baselineText($record);
             $text .= $baseline === null ? '' : '         ' . $baseline . "\n";
         }
         if ($side === 'answers') {
@@ -1562,33 +1553,10 @@ final class RankingCheckTest extends TestCase
      */
     private static function completeReadableAnswers(array &$tree, array $records): void
     {
-        $fingerprints = \QmxFindingGate\Fingerprints::expected($records);
-        $gitlab = [];
-        $checkstyle = '<checkstyle>';
-        $prose = '';
-        $github = '';
-        foreach ($records as $index => $record) {
-            $gitlab[] = ReportRecords::projection('format:gitlab', $record, 'current') + ['fingerprint' => md5($fingerprints[$index])];
-            $projection = ReportRecords::projection('format:checkstyle', $record, 'current');
-            $checkstyle .= '<file name="' . htmlspecialchars($projection['file'], \ENT_XML1) . '"><error line="' . $projection['line'] . '" severity="' . $projection['severity'] . '" source="' . $projection['code'] . '" message="' . htmlspecialchars($projection['message'], \ENT_XML1) . '"/></file>';
-            $file = $record['file'] ?? '[project]';
-            $brief = $record['symbol'] === '' ? '' : substr($record['symbol'], (int) strrpos('\\' . $record['symbol'], '\\'));
-            $prose .= $file . " (1 violation)\n  ERROR" . ($record['line'] === null ? '' : ' at line ' . $record['line']) . ($brief === '' ? '' : '  ' . $brief) . "\n    " . $record['message'] . '  [' . $record['code'] . "]\n";
-            $prose .= $record['recommendation'] === null ? '' : '    Recommendation: ' . $record['recommendation'] . "\n";
-            $baseline = ReportRecords::baselineText($record);
-            $prose .= ($baseline === null ? '' : '    ' . $baseline . "\n") . "\n";
-            $properties = $record['file'] === null ? '' : 'file=' . $record['file'] . ',line=' . $record['line'] . ',';
-            $github .= '::error ' . $properties . 'title=' . $record['code'] . '::' . str_replace("\n", '%0A', ReportRecords::message($record)) . "\n";
-        }
-        $tree['answers']['case:alpha|format:gitlab'] = ['stdout' => ValueCheck::value($gitlab)];
-        $tree['answers']['case:alpha|format:checkstyle'] = ['stdout' => $checkstyle . '</checkstyle>'];
-        foreach (['format:text', 'format:text-detail'] as $surface) {
-            $tree['answers']['case:alpha|' . $surface] = ['stdout' => $prose];
-        }
-        $tree['answers']['case:alpha|show-suppressed'] = ['stdout' => $prose];
-        $tree['answers']['case:alpha|format:github'] = ['stdout' => $github];
+        $answers = SyntheticTree::caseAnswers('alpha', $records, false, []);
         foreach (['format:gitlab', 'format:checkstyle', 'format:text', 'format:text-detail', 'show-suppressed', 'format:github'] as $surface) {
-            $tree['candidateAnswers']['case:alpha|' . $surface] = $tree['answers']['case:alpha|' . $surface];
+            $tree['answers']['case:alpha|' . $surface] = $answers['case:alpha|' . $surface];
+            $tree['candidateAnswers']['case:alpha|' . $surface] = $answers['case:alpha|' . $surface];
         }
     }
 

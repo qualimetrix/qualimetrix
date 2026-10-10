@@ -39,7 +39,7 @@ namespace QmxFindingGate;
  *   product that stopped publishing findings in the order of its own sort key
  *   therefore still reddens the gate.
  * - The key is not a blind second copy of the product's. Its field set and the
- *   order of its components come from {@see Fingerprints::INPUT_FIELDS}, the
+ *   order of its components come from {@see ReportRecords::IDENTITY_FIELDS}, the
  *   published identity {@see TupleCheck::checkTuple()} already holds against the
  *   tracked equivalence tuple, so there is one owner for "which fields make a
  *   finding's identity"; a field added there that this class cannot decompose is
@@ -73,7 +73,7 @@ final class PublishedOrder
     /**
      * The identity fields this class knows how to turn into key components.
      *
-     * Held against {@see Fingerprints::INPUT_FIELDS} on every record, so the two
+     * Held against {@see ReportRecords::IDENTITY_FIELDS} on every record, so the two
      * cannot drift apart in silence.
      *
      * @var list<string>
@@ -617,7 +617,7 @@ final class PublishedOrder
      */
     private static function identityFields(): array
     {
-        return Fingerprints::INPUT_FIELDS;
+        return ReportRecords::IDENTITY_FIELDS;
     }
 
     /**

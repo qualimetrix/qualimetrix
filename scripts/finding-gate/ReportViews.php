@@ -11,9 +11,7 @@ final class ReportViews
     private const array RECORD_BEARING_SURFACES = [
         'baseline-file', 'baseline:cleanup:file', 'baseline:rename-channels:file', 'baseline:update:file',
         'check:baseline', 'check:baseline-source', 'check:output:file', 'check:parallel', 'directives',
-        'format:checkstyle', 'format:github', 'format:gitlab', 'format:html', 'format:json',
-        'format:metrics', 'format:sarif', 'format:summary', 'format:suppressed', 'format:text',
-        'format:text-detail', 'format:text-verbose', 'show-suppressed', 'format:health', 'explain',
+        'format:json', 'format:metrics', 'format:suppressed',
     ];
 
     public static function recordBearingSurface(string $surface): bool

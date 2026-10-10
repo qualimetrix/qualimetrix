@@ -125,24 +125,6 @@ final class CapturePlanTest extends TestCase
     }
 
     #[Test]
-    public function itRefusesAWithdrawalWitnessWithoutAReferenceAnalysis(): void
-    {
-        $path = $this->root . '/finding-gate/cases/alpha/case.json';
-        $case = json_decode(Fs::read($path), true, 512, \JSON_THROW_ON_ERROR);
-        $case['outcome'] = ['kind' => 'refusal', 'exit' => 3];
-        Fs::write($path, json_encode($case, \JSON_THROW_ON_ERROR));
-        Fs::write($this->root . '/finding-gate/' . DeclaredSurfaces::INDEX, Tsv::render(
-            DeclaredSurfaces::COLUMNS,
-            [['withdrawn', 'format:retired', 'declared-surfaces/retired.json', '*', 'Remove a report.']],
-        ));
-        Fs::write($this->root . '/finding-gate/declared-surfaces/retired.json', "Refused\n");
-
-        $this->expectException(GateError::class);
-        $this->expectExceptionMessage('cannot establish a withdrawal');
-        $this->plan();
-    }
-
-    #[Test]
     public function itPlansWithdrawalsOnlyForTheirNamedCases(): void
     {
         $alpha = $this->root . '/finding-gate/cases/alpha';
@@ -158,18 +140,13 @@ final class CapturePlanTest extends TestCase
         Fs::write($this->root . '/finding-gate/' . DeclaredSurfaces::INDEX, Tsv::render(
             DeclaredSurfaces::COLUMNS,
             [
-                ['withdrawn', 'format:retired', 'declared-surfaces/retired.json', '["alpha"]', 'Remove a report.'],
                 ['introduced', 'format:json', '-', '["alpha"]', 'Add a report.'],
             ],
         ));
-        Fs::write($this->root . '/finding-gate/declared-surfaces/retired.json', "Refused\n");
 
         $plan = $this->plan();
         $invocations = array_map(static fn(array $row): string => $row['scope'] . '|' . $row['surface'], $plan->invocations());
-        self::assertContains('case:alpha|format:retired', $invocations);
-        self::assertNotContains('case:beta|format:retired', $invocations);
         self::assertContains('case:beta|format:json', $invocations);
-        self::assertSame('withdrawn', $plan->changeOf('case:alpha|format:retired'));
         self::assertNull($plan->changeOf('case:beta|format:json'));
         self::assertFalse($plan->requiredOn('case:alpha|format:json', 'reference'));
         self::assertTrue($plan->requiredOn('case:beta|format:json', 'reference'));
@@ -210,6 +187,60 @@ final class CapturePlanTest extends TestCase
         Fs::removeRecursively($caseDirectory . '/baseline-src');
         Fs::write($caseDirectory . '/case.json', json_encode($case, \JSON_THROW_ON_ERROR));
         self::assertNotContains('check:parallel', array_column($this->plan()->invocations(), 'surface'));
+    }
+
+    #[Test]
+    public function itCapturesHtmlOnlyAfterExplicitOptIn(): void
+    {
+        self::assertContains('format:html', array_column($this->plan()->invocations(), 'surface'));
+        $path = $this->root . '/finding-gate/cases/alpha/case.json';
+        $definition = json_decode(Fs::read($path), true, flags: \JSON_THROW_ON_ERROR);
+        unset($definition['captureHtml']);
+        Fs::write($path, json_encode($definition, \JSON_THROW_ON_ERROR));
+        $surfaces = array_column($this->plan()->invocations(), 'surface');
+        self::assertNotContains('format:html', $surfaces);
+        self::assertContains('format:json', $surfaces);
+        self::assertContains('format:metrics', $surfaces);
+        self::assertNotContains('format:text-verbose', $surfaces);
+    }
+
+    #[Test]
+    public function itGrantsEveryRecordViewOnlyTheSameExplicitPositivePair(): void
+    {
+        $forms = new \QmxFindingGate\PublicationForms($this->plan());
+        $key = 'case:alpha|format:json';
+        self::assertFalse($forms->recordsPair($key));
+        self::assertFalse($forms->recordInvocation('case:alpha|exit:format:json'));
+        self::assertFalse($forms->schemaPair('alpha', 'format:json'));
+        self::assertTrue($forms->recordsExpected($key));
+        $forms->supply('candidate', [$key => '{"violations":[]}']);
+        self::assertFalse($forms->recordsPair($key));
+        self::assertFalse($forms->schemaPair('alpha', 'format:json'));
+        $forms->supply('reference', [$key => '{"error":"Refused input","exit_code":3}']);
+        self::assertFalse($forms->recordsPair($key));
+        self::assertFalse($forms->recordInvocation($key));
+        $forms->supply('reference', [$key => '{"violations":[]}']);
+        self::assertTrue($forms->recordsPair($key));
+        self::assertTrue($forms->recordInvocation('case:alpha|exit:format:json'));
+        self::assertTrue($forms->schemaPair('alpha', 'format:json'));
+        foreach (['candidate', 'reference'] as $side) {
+            $forms->supply($side, ['case:alpha|format:html' => '{"violations":[]}']);
+        }
+        self::assertFalse($forms->recordsPair('case:alpha|format:html'));
+        self::assertFalse($forms->recordInvocation('case:alpha|format:html'));
+    }
+
+    #[Test]
+    public function itRejectsAnUnknownCaptureEvenWhenBothBytesResembleJsonRecords(): void
+    {
+        $forms = new \QmxFindingGate\PublicationForms($this->plan());
+        $key = 'case:unknown|format:json';
+        foreach (['candidate', 'reference'] as $side) {
+            $forms->supply($side, [$key => '{"violations":[]}']);
+        }
+        $this->expectException(GateError::class);
+        $this->expectExceptionMessage('Unknown capture artifact: ' . $key);
+        $forms->recordsPair($key);
     }
 
     private function plan(): CapturePlan

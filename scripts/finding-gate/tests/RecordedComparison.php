@@ -83,6 +83,7 @@ final class RecordedComparison
                 'reference' => self::capture($reference, $run),
             ];
             foreach ($captures as $side => $capture) {
+                $run->publicationForms->supply($side, $capture->artifacts);
                 $run->rankings->supply($side, $capture->rankings);
                 $run->baselineEligibility->supply($side, $capture->baselineEligibility);
             }
@@ -150,14 +151,8 @@ final class RecordedComparison
             if ($derive) {
                 $delta->startDeriving();
             }
-            $fingerprints = new \QmxFindingGate\FingerprintCheck($report);
-            foreach ($captures as $side => $capture) {
-                foreach ($run->corpus->cases as $case) {
-                    $fingerprints->checkFingerprints($side, $case, ReportRecords::decode($capture->rankings['case:' . $case->id . '|format:json']['physical']['stdout'] ?? $capture->rankings['case:' . $case->id . '|format:json']['ranked']['stdout'])['violations'], $capture->artifacts);
-                }
-            }
-            $exact->plan($captures, $records, $fingerprints);
-            $comparison = new \QmxFindingGate\SurfaceComparison($report, $run->corpus, $maps, $run->normalization, $fingerprints, $delta, $root, $stages, $records, $exact);
+            $exact->plan($captures, $records);
+            $comparison = new \QmxFindingGate\SurfaceComparison($report, $run->corpus, $maps, $run->normalization, $run->publicationForms, $delta, $root, $stages, $records, $exact);
             $a = $captures['candidate']->artifacts;
             $b = $captures['reference']->artifacts;
             $renameCheck = new \QmxFindingGate\RenameMapCheck($report, $run->corpus, $maps, $run->split);

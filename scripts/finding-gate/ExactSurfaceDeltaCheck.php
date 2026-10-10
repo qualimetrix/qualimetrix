@@ -21,7 +21,7 @@ final class ExactSurfaceDeltaCheck implements Derivation
     }
 
     /** @param array{candidate:CaptureResult,reference:CaptureResult} $captures */
-    public function plan(array $captures, RecordCheck $verifiedRecords, FingerprintCheck $verifiedFingerprints): void
+    public function plan(array $captures, RecordCheck $verifiedRecords): void
     {
         $this->captures = $captures;
         foreach ($captures as $side => $capture) {
@@ -48,7 +48,6 @@ final class ExactSurfaceDeltaCheck implements Derivation
         );
         $this->run->copyPublicationsTo($trial);
         $records = $verifiedRecords->trialCopy($trial);
-        $fingerprints = $verifiedFingerprints->forkFor($report);
         RankingCheck::create($this->run)->trialCopy($trial);
         ValueCheck::create($this->run)->trialCopy($trial);
         FieldValuesCheck::create($this->run)->trialCopy($trial);
@@ -67,7 +66,7 @@ final class ExactSurfaceDeltaCheck implements Derivation
             $trial->corpus,
             $trial->maps,
             $trial->normalization,
-            $fingerprints,
+            $trial->publicationForms,
             new DeclaredDeltaCheck($trial->options, $report, $declarations->delta, $declarations->fieldMoves, $trial->split, $trial),
             $trial->temporaryDirectory,
             $stages,
@@ -82,7 +81,7 @@ final class ExactSurfaceDeltaCheck implements Derivation
             $footprint = ExactSurfaceAuthority::footprint($key, $this->run);
             $result = $comparison->trialSurface($key, $candidate, $reference, $footprint['residualViews']);
             $authorityResidual = $result['authorityResidual'];
-            if ($result['valid'] && $trial->publicationForms->recordsPair($key) === false) {
+            if ($result['valid'] && !$trial->publicationForms->recordsPair($key)) {
                 $authorityResidual = ExactSurfaceAuthority::rawResidual($key, $captures, $trial, $records);
             }
             if ($result['valid'] && $footprint['rawSources'] !== []) {
@@ -102,7 +101,7 @@ final class ExactSurfaceDeltaCheck implements Derivation
         if ($this->run->isExactSurface($key)) {
             return true;
         }
-        if ($this->run->publicationForms->recordInvocation($key) === false) {
+        if (!$this->run->publicationForms->recordInvocation($key)) {
             foreach ($this->run->publicationForms->invocationArtifacts($key) as $artifact) {
                 if ($this->run->isExactSurface($artifact)) {
                     return true;

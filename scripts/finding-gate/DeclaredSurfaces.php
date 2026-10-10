@@ -6,22 +6,7 @@ namespace QmxFindingGate;
 
 use JsonException;
 
-/**
- * Surfaces a step introduced or withdrew, which makes the list of compared
- * surfaces a property of each side.
- *
- * The candidate's list is the gate's own; the reference's is that list minus
- * the introduced surfaces plus the withdrawn ones. A withdrawn surface is still
- * requested from both sides in its named cases with the command that used to produce it: the
- * reference produces it, and the candidate has to refuse — the removal becomes
- * something the run observes rather than a line deleted from a list. The row
- * of a withdrawn surface names a file under `declared-surfaces/` holding that
- * refusal's normalized JSON envelope (`stdout`, `stderr`, string `exit`) as a
- * derive run measured it, compared byte for
- * byte in every named case, so a refusal for another reason is not the declared one;
- * an introduced surface names none (`-`). A row whose surface was not
- * introduced or withdrawn as declared is stale.
- */
+/** Introduced JSON publications select their exact cases and omit reference capture. */
 final class DeclaredSurfaces
 {
     public const array COLUMNS = ['change', 'surface', 'file', 'cases', 'reason'];
@@ -30,39 +15,32 @@ final class DeclaredSurfaces
 
     public const string INTRODUCED = 'introduced';
 
-    public const string WITHDRAWN = 'withdrawn';
-
-    public const string DIRECTORY = 'declared-surfaces';
-
     public const string NO_FILE = '-';
 
     /** @var array<string, true> */
     private array $credited = [];
 
     /**
-     * @param array<string, string> $changes surface => introduced|withdrawn
-     * @param array<string, string> $refusals withdrawn surface => the declared refusal output
+     * @param array<string, string> $changes surface => introduced
      * @param array<string, list<string>|null> $cases surface => exact case names, or all cases
      */
     private function __construct(
         private readonly array $changes,
-        private readonly array $refusals,
         private readonly array $cases,
     ) {}
 
     public static function load(string $root): self
     {
         $changes = [];
-        $refusals = [];
         $cases = [];
 
         foreach (DeclarationTable::rows($root, self::INDEX, self::COLUMNS) as $index => $row) {
-            DeclarationTable::oneOf(self::INDEX, $index + 1, 'change', $row['change'], [self::INTRODUCED, self::WITHDRAWN]);
+            DeclarationTable::oneOf(self::INDEX, $index + 1, 'change', $row['change'], [self::INTRODUCED]);
 
             if (str_contains($row['surface'], '|')) {
                 throw new GateError(\sprintf(
                     '%s row %d names "%s", an artifact of one scope. A surface is declared for every case at once, by'
-                    . ' its class (e.g. format:text-verbose).',
+                    . ' its class (e.g. format:metrics).',
                     self::INDEX,
                     $index + 1,
                     $row['surface'],
@@ -76,42 +54,13 @@ final class DeclaredSurfaces
             $changes[$row['surface']] = $row['change'];
             $cases[$row['surface']] = self::caseNames($root, $row['cases']);
 
-            if ($row['change'] === self::INTRODUCED) {
-                if ($row['file'] !== self::NO_FILE) {
-                    throw new GateError(\sprintf(
-                        '%s row %d names a refusal file for the introduced surface "%s"; an introduced surface is refused'
-                        . ' by nothing, so its file is "%s".',
-                        self::INDEX,
-                        $index + 1,
-                        $row['surface'],
-                        self::NO_FILE,
-                    ));
-                }
-
-                continue;
+            if ($row['file'] !== self::NO_FILE) {
+                throw new GateError(\sprintf('%s row %d: an introduced surface names no file; use "%s".', self::INDEX, $index + 1, self::NO_FILE));
             }
 
-            if (!str_starts_with($row['file'], self::DIRECTORY . '/') || str_contains($row['file'], '..')) {
-                throw new GateError(\sprintf('%s row %d names "%s", which is not a file under %s/.', self::INDEX, $index + 1, $row['file'], self::DIRECTORY));
-            }
-
-            $path = $root . '/' . $row['file'];
-            $refusal = is_file($path) ? Fs::read($path) : '';
-
-            if ($refusal === '') {
-                throw new GateError(\sprintf(
-                    '%s row %d names %s, which is missing or empty, so it declares no refusal the candidate could be'
-                    . ' held to.',
-                    self::INDEX,
-                    $index + 1,
-                    $row['file'],
-                ));
-            }
-
-            $refusals[$row['surface']] = $refusal;
         }
 
-        return new self($changes, $refusals, $cases);
+        return new self($changes, $cases);
     }
 
     /** A declaration applies only to its named cases; null is a tree invocation. */
@@ -159,59 +108,26 @@ final class DeclaredSurfaces
         return \count($this->changes);
     }
 
-    /**
-     * The surfaces the reference is asked for, given the candidate's.
-     *
-     * @param list<string> $candidateSurfaces
-     *
+    /** @param list<string> $candidateSurfaces
      * @return list<string>
      */
     public function referenceSurfaces(array $candidateSurfaces): array
     {
         foreach ($this->changes as $surface => $change) {
-            $listed = \in_array($surface, $candidateSurfaces, true);
-
-            if ($change === self::INTRODUCED ? !$listed : $listed) {
-                throw new GateError(\sprintf(
-                    '%s declares "%s" %s, and the candidate\'s list %s it.',
-                    self::INDEX,
-                    $surface,
-                    $change,
-                    $listed ? 'still has' : 'does not have',
-                ));
+            if (!\in_array($surface, $candidateSurfaces, true)) {
+                throw new GateError(self::INDEX . ' declares "' . $surface . '" introduced, and the candidate\'s list does not have it.');
             }
         }
-
-        $surfaces = [];
-
-        foreach ($candidateSurfaces as $surface) {
-            if (($this->changes[$surface] ?? null) !== self::INTRODUCED) {
-                $surfaces[] = $surface;
-            }
-        }
-
-        foreach ($this->changes as $surface => $change) {
-            if ($change === self::WITHDRAWN) {
-                $surfaces[] = $surface;
-            }
-        }
-
-        return $surfaces;
+        return array_values(array_filter($candidateSurfaces, fn(string $surface): bool => !isset($this->changes[$surface])));
     }
 
-    /** @return array<string, string> surface => introduced|withdrawn */
+    /** @return array<string, string> surface => introduced */
     public function changes(): array
     {
         return $this->changes;
     }
 
-    /** The declared refusal output of a withdrawn surface, or null. */
-    public function refusalOf(string $surface): ?string
-    {
-        return $this->refusals[$surface] ?? null;
-    }
-
-    /** Records that the run observed this surface introduced or withdrawn as declared. */
+    /** Records that the run observed this surface introduced as declared. */
     public function credit(string $surface): void
     {
         $this->credited[$surface] = true;

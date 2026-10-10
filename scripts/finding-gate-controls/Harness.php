@@ -10,7 +10,6 @@ use QmxFindingGate\DeclaredDelta;
 use QmxFindingGate\DeclaredExactSurfaces;
 use QmxFindingGate\DeclaredFieldMoves;
 use QmxFindingGate\DeclaredFields;
-use QmxFindingGate\DeclaredOutcomes;
 use QmxFindingGate\DeclaredRecords;
 use QmxFindingGate\DeclaredStructuralMaps;
 use QmxFindingGate\DeclaredSurfaces;
@@ -221,7 +220,6 @@ final class Harness
             'finding-gate/' . DeclaredValues::DERIVED => DeclaredValues::DERIVED_COLUMNS,
             'finding-gate/' . DeclaredFields::INDEX => DeclaredFields::COLUMNS,
             'finding-gate/' . DeclaredFields::DERIVED => DeclaredFields::DERIVED_COLUMNS,
-            'finding-gate/' . DeclaredOutcomes::INDEX => DeclaredOutcomes::COLUMNS,
             'finding-gate/' . DeclaredSurfaces::INDEX => DeclaredSurfaces::COLUMNS,
             'finding-gate/' . DeclaredStructuralMaps::INDEX => DeclaredStructuralMaps::COLUMNS,
             'finding-gate/maps/' . RenameMaps::CHANNELS => ['old', 'new', 'reason'],
@@ -238,8 +236,6 @@ final class Harness
         return [
             'finding-gate/' . DeclaredDelta::DIRECTORY,
             'finding-gate/' . DeclaredExactSurfaces::DIRECTORY,
-            'finding-gate/' . DeclaredSurfaces::DIRECTORY,
-            'finding-gate/' . DeclaredOutcomes::DIRECTORY,
         ];
     }
 

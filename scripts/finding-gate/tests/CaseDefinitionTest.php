@@ -10,7 +10,6 @@ use PHPUnit\Framework\TestCase;
 use QmxFindingGate\CaseDefinition;
 use QmxFindingGate\CaseInputTranslation;
 use QmxFindingGate\CaseOutcome;
-use QmxFindingGate\DeclaredOutcomes;
 use QmxFindingGate\DeclaredStructuralMaps;
 use QmxFindingGate\Fs;
 use QmxFindingGate\GateError;
@@ -183,22 +182,6 @@ final class CaseDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function itKeepsDeclaredSideOutcomesWhenMaterializingTheCase(): void
-    {
-        $this->load();
-        $case = CaseDefinition::load($this->case, DeclaredOutcomes::ANALYSIS_TO_REFUSAL);
-        self::assertSame(CaseOutcome::REFUSAL, CaseOutcome::of($case, 'candidate'));
-        self::assertSame(CaseOutcome::ANALYSIS, CaseOutcome::of($case, 'reference'));
-        $copy = $case->withDirectory($this->root . '/materialized/probe');
-        self::assertSame($case->id, $copy->id);
-        self::assertSame($case->paths, $copy->paths);
-        self::assertSame(CaseOutcome::REFUSAL, CaseOutcome::of($copy, 'candidate'));
-        $reverse = CaseDefinition::load($this->case, DeclaredOutcomes::REFUSAL_TO_ANALYSIS);
-        self::assertSame(CaseOutcome::ANALYSIS, CaseOutcome::of($reverse, 'candidate'));
-        self::assertSame(CaseOutcome::REFUSAL, CaseOutcome::of($reverse, 'reference'));
-    }
-
-    #[Test]
     public function itReadsTheExpectedOutcomeAndExit(): void
     {
         $case = $this->load(outcome: ['kind' => 'incomplete', 'exit' => 4]);
@@ -312,6 +295,30 @@ final class CaseDefinitionTest extends TestCase
         $this->expectException(GateError::class);
         $this->expectExceptionMessage('outside its own directory');
         $this->load();
+    }
+
+    #[Test]
+    public function itKeepsExplicitHtmlCaptureWhenMaterializingTheCase(): void
+    {
+        self::assertFalse($this->load()->captureHtml);
+        $case = $this->load(extra: ['captureHtml' => true]);
+        self::assertTrue($case->captureHtml);
+        self::assertTrue($case->withDirectory($this->root . '/materialized/probe')->captureHtml);
+        self::assertFalse($this->load(extra: ['captureHtml' => false])->captureHtml);
+    }
+
+    #[Test]
+    public function itRefusesANonBooleanHtmlCaptureOption(): void
+    {
+        foreach ([null, 1, 'true', []] as $value) {
+            try {
+                $this->load(extra: ['captureHtml' => $value]);
+            } catch (GateError $error) {
+                self::assertStringContainsString('captureHtml', $error->getMessage());
+                continue;
+            }
+            self::fail('A nonboolean HTML capture option was accepted.');
+        }
     }
 
     /**

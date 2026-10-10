@@ -24,18 +24,17 @@ use Throwable;
  * witnesses must hold unchanged while the checks move between files.
  *
  * Each witness names the failures its plant must raise (`expect`: class, scope
- * glob and, when claimed, the {@see RaiseSites} identity — site and caller)
+ * glob, including the side where applicable)
  * and the side effects it may raise (`tolerate`: class and scope glob). A
  * run is held to both directions: an expected failure missing, a failure
- * nothing names, a toleration nothing used and a failure raised from a place
- * the scan of the source does not enumerate are each red. A scenario that runs
+ * nothing names, a toleration nothing used and an unknown failure class are each red. A scenario that runs
  * a writing mode is also held to its exit code and to exactly the declarations
  * it changed. The clean tree underneath all of them must be GREEN, or every
  * observation below could be the stand's own defect.
  *
  * @phpstan-import-type Specification from SyntheticTree
  *
- * @phpstan-type Expected array{0: string, 1: string, 2?: string}
+ * @phpstan-type Expected array{0: string, 1: string}
  * @phpstan-type Tolerated array{0: string, 1: string}
  * @phpstan-type Witness array{
  *     id: string,
@@ -45,7 +44,7 @@ use Throwable;
  *     tolerate: list<Tolerated>,
  *     prepare?: callable(string):void,
  * }
- * @phpstan-type Failure array{class: string, scope: string, detail: string, identity: string}
+ * @phpstan-type Failure array{class: string, scope: string, detail: string}
  * @phpstan-type Run array{failures: list<Failure>, exit: int, changed: list<string>}
  */
 final class CheckWitnesses
@@ -133,31 +132,16 @@ final class CheckWitnesses
     private const string NO_DIFF = "a diff nobody measured\n";
 
     /**
-     * `observed` holds only exact identities an expectation matched. `scoped`
-     * holds classes matched without an exact identity.
+     * `observed` holds classes matched with their required side-specific scopes.
      *
-     * @return array{failures: list<string>, observed: list<string>, scoped: list<string>}
+     * @return array{failures: list<string>, observed: list<string>}
      */
-    public static function observe(RaiseSites $sites): array
+    public static function observe(): array
     {
         $failures = self::unwitnessedModes();
         $observed = [];
-        $scoped = [];
 
-        foreach (self::witnesses() as $witness) {
-            foreach ($witness['expect'] as $pattern) {
-                if (isset($pattern[2]) && !isset($sites->sites[$pattern[2]])) {
-                    $failures[] = \sprintf(
-                        'check witness %s: expects %s from %s, which is no raise site in the gate\'s source.',
-                        $witness['id'],
-                        $pattern[0],
-                        $pattern[2],
-                    );
-                }
-            }
-        }
-
-        $clean = self::run(SyntheticTree::clean(), null, $sites);
+        $clean = self::run(SyntheticTree::clean(), null);
 
         if (\is_string($clean) || $clean['failures'] !== [] || $clean['exit'] !== GateReport::EXIT_GREEN) {
             $failures[] = \sprintf(
@@ -171,7 +155,7 @@ final class CheckWitnesses
             $scenario = $witness['scenario'];
             $specification = ($witness['plant'])(SyntheticTree::clean());
             $mode = self::MODES[$scenario];
-            $run = self::run($specification, $mode['flags'] ?? null, $sites, $witness['prepare'] ?? null);
+            $run = self::run($specification, $mode['flags'] ?? null, $witness['prepare'] ?? null);
 
             if (\is_string($run)) {
                 $failures[] = \sprintf('check witness %s: the %s run did not complete: %s', $witness['id'], $scenario, $run);
@@ -180,9 +164,8 @@ final class CheckWitnesses
             }
 
             $judged = self::judge($scenario, [$witness], $run['failures']);
-            $failures = [...$failures, ...$judged['failures'], ...self::unenumerated($scenario, $run['failures'], $sites)];
+            $failures = [...$failures, ...$judged['failures'], ...self::unknownFailures($run['failures'])];
             $observed = [...$observed, ...$judged['observed']];
-            $scoped = [...$scoped, ...$judged['scoped']];
 
             if ($mode !== null) {
                 $failures = [...$failures, ...self::judgeMode($scenario, $mode, $run)];
@@ -192,7 +175,6 @@ final class CheckWitnesses
         return [
             'failures' => $failures,
             'observed' => array_values(array_unique($observed)),
-            'scoped' => array_values(array_unique($scoped)),
         ];
     }
 
@@ -259,44 +241,6 @@ final class CheckWitnesses
                     $file,
                     $method,
                     $reason,
-                );
-            }
-        }
-
-        return $problems;
-    }
-
-    /**
-     * A raise the scan of the source did not enumerate is a check no witness
-     * could be required for — a callable, a wrapper, a file the scan skipped.
-     *
-     * @param list<Failure> $failures
-     *
-     * @return list<string>
-     */
-    private static function unenumerated(string $scenario, array $failures, RaiseSites $sites): array
-    {
-        $problems = [];
-
-        foreach ($failures as $failure) {
-            if (isset(FailureClass::NATIVE_WITNESS_RETIREMENTS[$failure['class']])) {
-                $problems[] = \sprintf(
-                    'witness registry: the %s run raised retired native class %s @ %s at %s.',
-                    $scenario,
-                    $failure['class'],
-                    $failure['scope'],
-                    $failure['identity'],
-                );
-            }
-
-            if (!isset($sites->sites[$failure['identity']])) {
-                $problems[] = \sprintf(
-                    'witness registry: the %s run raised %s @ %s at %s, which the scan of the gate\'s source does not'
-                    . ' enumerate, so no witness is required for it.',
-                    $scenario,
-                    $failure['class'],
-                    $failure['scope'],
-                    $failure['identity'],
                 );
             }
         }
@@ -391,11 +335,11 @@ final class CheckWitnesses
                     $tree['candidateAnswers']['case:alpha|format:json'] = ['stdout' => '{"violationsMeta":{"total":-1,"truncated":false}}'];
                     return $tree;
                 },
-                [[FailureClass::RUN_FAILED, 'candidate-2 / alpha', 'Gate::captureAuthority <- GateModes::compare']],
+                [[FailureClass::RUN_FAILED, 'candidate-2 / alpha']],
                 [
-                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:json', 'SurfaceComparison::mismatch <- Gate::compare'],
-                    [FailureClass::CANDIDATE_INPUT_REFUSED, 'case:alpha', 'CoverageCheck::inputRefused <- Gate::compare'],
-                    [FailureClass::COVERAGE_SHORTFALL, 'corpus', 'ChannelCoverage::reportShortfall <- CoverageCheck::checkCoverage'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:json'],
+                    [FailureClass::CANDIDATE_INPUT_REFUSED, 'case:alpha'],
+                    [FailureClass::COVERAGE_SHORTFALL, 'corpus'],
                 ],
             ),
             self::witness(
@@ -405,11 +349,11 @@ final class CheckWitnesses
                     $tree['candidateAnswers']['case:alpha|format:json'] = ['stdout' => '{"violationsMeta":{"total":-1,"truncated":false}}'];
                     return $tree;
                 },
-                [[FailureClass::RUN_FAILED, 'candidate-2 / alpha', 'Gate::captureAuthority <- GateModes::deriveDeclarations']],
+                [[FailureClass::RUN_FAILED, 'candidate-2 / alpha']],
                 [
-                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:json', 'SurfaceComparison::mismatch <- Gate::compare'],
-                    [FailureClass::CANDIDATE_INPUT_REFUSED, 'case:alpha', 'CoverageCheck::inputRefused <- Gate::compare'],
-                    [FailureClass::COVERAGE_SHORTFALL, 'corpus', 'ChannelCoverage::reportShortfall <- CoverageCheck::checkCoverage'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:json'],
+                    [FailureClass::CANDIDATE_INPUT_REFUSED, 'case:alpha'],
+                    [FailureClass::COVERAGE_SHORTFALL, 'corpus'],
                 ],
             ),
             self::witness(
@@ -419,15 +363,15 @@ final class CheckWitnesses
                     $tree['candidateAnswers']['case:alpha|format:json'] = ['stdout' => '{"violationsMeta":{"total":-1,"truncated":false}}'];
                     return $tree;
                 },
-                [[FailureClass::RUN_FAILED, 'derive-1 / alpha', 'Gate::captureAuthority <- GateModes::deriveNormalization']],
+                [[FailureClass::RUN_FAILED, 'derive-1 / alpha']],
             ),
             self::witness(
                 'normalization-complete-shape',
                 self::NORMALIZATION_REFUSED,
                 static fn(array $tree): array => SelfTestRecords::rankingWitnessTree($tree, 'shape'),
                 [
-                    [FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:ranking-shape|format:json', 'RankingCheck::projectionProblem <- Gate::captureAuthority'],
-                    [FailureClass::RUN_FAILED, 'derive-1 / ranking-shape', 'Gate::captureAuthority <- GateModes::deriveNormalization'],
+                    [FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:ranking-shape|format:json'],
+                    [FailureClass::RUN_FAILED, 'derive-1 / ranking-shape'],
                 ],
             ),
             self::witness(
@@ -435,9 +379,9 @@ final class CheckWitnesses
                 self::DECLARED_DELTA_REFUSED,
                 static fn(array $tree): array => SelfTestRecords::rankingWitnessTree($tree, 'shape'),
                 [
-                    [FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:ranking-shape|format:json', 'RankingCheck::projectionProblem <- RecordCheck::checkCase'],
-                    [FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:ranking-shape|format:json', 'RankingCheck::projectionProblem <- Gate::captureAuthority'],
-                    [FailureClass::RUN_FAILED, 'candidate-2 / ranking-shape', 'Gate::captureAuthority <- GateModes::deriveDeclarations'],
+                    [FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:ranking-shape|format:json'],
+                    [FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:ranking-shape|format:json'],
+                    [FailureClass::RUN_FAILED, 'candidate-2 / ranking-shape'],
                 ],
                 [[FailureClass::SURFACE_MISMATCH, 'case:ranking-shape|format:json'], [FailureClass::SURFACE_MISMATCH, 'case:ranking-shape|check:output:file']],
             ),
@@ -446,28 +390,11 @@ final class CheckWitnesses
                 self::NORMALIZATION_REFUSED,
                 static fn(array $tree): array => SelfTestRecords::rankingWitnessTree($tree, 'ambiguity'),
                 [
-                    [FailureClass::RECORD_AMBIGUOUS, 'candidate / case:ranking-ambiguity|format:json', 'RankingCheck::anatomy <- Gate::captureAuthority'],
-                    [FailureClass::RUN_FAILED, 'derive-1 / ranking-ambiguity', 'Gate::captureAuthority <- GateModes::deriveNormalization'],
+                    [FailureClass::RECORD_AMBIGUOUS, 'candidate / case:ranking-ambiguity|format:json'],
+                    [FailureClass::RUN_FAILED, 'derive-1 / ranking-ambiguity'],
                 ],
             ),
-            self::witness(
-                'existing-reference-outcome-refusal',
-                self::WHOLE_RUN,
-                static function (array $tree): array {
-                    $tree = SelfTestOutcomes::fixture();
-                    $tree['candidateAnswers'] = [];
-                    $tree['candidateDeclarations'][DeclaredOutcomes::INDEX] = Tsv::render(DeclaredOutcomes::COLUMNS, [
-                        ['alpha', DeclaredOutcomes::REFUSAL_TO_ANALYSIS, 'declared-outcomes/alpha.json', 'Existing reference inputs must be translated.'],
-                    ]);
-                    return $tree;
-                },
-                [
-                    [FailureClass::CASE_OUTCOME_MISMATCH, 'reference / alpha', 'CaseOutcomeCheck::mismatch <- Gate::checkFindings'],
-                    [FailureClass::REFERENCE_INPUT_UNTRANSLATED, 'case:alpha', 'CaseOutcomeCheck::checkRun <- Gate::compare'],
-                    [FailureClass::CASE_OUTCOME_MISMATCH, 'case:alpha / format:json', 'CaseOutcomeCheck::mismatch <- Gate::compare'],
-                    [FailureClass::OUTCOME_DECLARATION_STALE, 'case:alpha', 'StaleDeclarationCheck::checkStaleDeclarations#4 <- Gate::compare'],
-                ],
-            ),
+
             self::witness(
                 'derive-normalization-outcome-mismatch',
                 self::NORMALIZATION_REFUSED,
@@ -481,7 +408,7 @@ final class CheckWitnesses
                     return $tree;
                 },
                 [
-                    [FailureClass::CASE_OUTCOME_MISMATCH, 'derive-1 / alpha', 'CaseOutcomeCheck::mismatch <- Gate::deriveNormalization'],
+                    [FailureClass::CASE_OUTCOME_MISMATCH, 'derive-1 / alpha'],
                 ],
             ),
             self::witness(
@@ -492,7 +419,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::ENV_MISMATCH, 'reference tree', 'Gate::compare <- GateModes::compare']],
+                [[FailureClass::ENV_MISMATCH, 'reference tree']],
             ),
             self::witness(
                 'tuple-drift',
@@ -503,14 +430,14 @@ final class CheckWitnesses
                     return $tree;
                 },
                 [
-                    [FailureClass::RUN_FAILED, 'candidate-2 / alpha', 'Gate::captureAuthority <- GateModes::compare'],
-                    [FailureClass::TUPLE_FIELD_DRIFT, EquivalenceTuple::TRACKED_PATH, 'TupleCheck::checkTuple#1 <- Gate::compare'],
-                    [FailureClass::FINDING_TUPLE_MISMATCH, 'candidate / alpha / finding #0', 'TupleCheck::checkTupleAgainstFindings <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::FINDING_TUPLE_MISMATCH, 'reference / alpha / finding #0', 'TupleCheck::checkTupleAgainstFindings <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|check:output:file', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RUN_FAILED, 'candidate-2 / alpha'],
+                    [FailureClass::TUPLE_FIELD_DRIFT, EquivalenceTuple::TRACKED_PATH],
+                    [FailureClass::FINDING_TUPLE_MISMATCH, 'candidate / alpha / finding #0'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json'],
+                    [FailureClass::FINDING_TUPLE_MISMATCH, 'reference / alpha / finding #0'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|format:json'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|check:output:file'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json'],
                 ],
             ),
             self::witness(
@@ -529,11 +456,11 @@ final class CheckWitnesses
                     return $tree;
                 },
                 [
-                    [FailureClass::TUPLE_FIELD_DRIFT, EquivalenceTuple::TRACKED_PATH, 'TupleCheck::checkTuple#2 <- Gate::compare'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|baseline-file', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|baseline-file', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
+                    [FailureClass::TUPLE_FIELD_DRIFT, EquivalenceTuple::TRACKED_PATH],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|baseline-file'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|format:json'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|baseline-file'],
                 ],
             ),
             self::witness(
@@ -546,7 +473,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::NONDETERMINISM_UNDECLARED, 'case:alpha|format:text', 'NormalizationCheck::checkDeterminism <- Gate::compare']],
+                [[FailureClass::NONDETERMINISM_UNDECLARED, 'case:alpha|format:text']],
                 [[FailureClass::SURFACE_MISMATCH, 'case:alpha|format:text']],
             ),
             self::witness(
@@ -562,7 +489,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::NONDETERMINISM_UNDECLARED, 'case:alpha|stderr:format:summary', 'NormalizationCheck::checkDeterminism <- Gate::compare']],
+                [[FailureClass::NONDETERMINISM_UNDECLARED, 'case:alpha|stderr:format:summary']],
                 [[FailureClass::SURFACE_MISMATCH, 'case:alpha|stderr:format:summary']],
             ),
             self::witness(
@@ -573,7 +500,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::NORMALIZATION_OVERREACH, 'format:metrics / summary.channel', 'NormalizationCheck::checkNormalizationScope <- Gate::compare']],
+                [[FailureClass::NORMALIZATION_OVERREACH, 'format:metrics / summary.channel']],
                 [[FailureClass::NORMALIZATION_STALE, 'format:metrics / summary.channel']],
             ),
             self::witness(
@@ -585,11 +512,11 @@ final class CheckWitnesses
                     return $tree;
                 },
                 [
-                    [FailureClass::NORMALIZATION_OVERREACH, 'candidate / case:alpha|format:json', 'NormalizationCheck::checkNormalizationLeavesFindings <- Gate::checkFindings'],
-                    [FailureClass::NORMALIZATION_OVERREACH, 'reference / case:alpha|format:json', 'NormalizationCheck::checkNormalizationLeavesFindings <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::NORMALIZATION_OVERREACH, 'candidate / case:alpha|format:json', 'NormalizationCheck::checkRun <- Gate::compare'],
-                    [FailureClass::NORMALIZATION_OVERREACH, 'reference / case:alpha|format:json', 'NormalizationCheck::checkRun <- Gate::compare'],
+                    [FailureClass::NORMALIZATION_OVERREACH, 'candidate / case:alpha|format:json'],
+                    [FailureClass::NORMALIZATION_OVERREACH, 'reference / case:alpha|format:json'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json'],
+                    [FailureClass::NORMALIZATION_OVERREACH, 'candidate / case:alpha|format:json'],
+                    [FailureClass::NORMALIZATION_OVERREACH, 'reference / case:alpha|format:json'],
                 ],
             ),
             self::witness(
@@ -600,7 +527,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::NORMALIZATION_STALE, 'format:json / never.present', 'NormalizationCheck::checkStaleNormalization <- Gate::compare']],
+                [[FailureClass::NORMALIZATION_STALE, 'format:json / never.present']],
             ),
             self::witness(
                 'path-leak',
@@ -612,14 +539,14 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::PATH_LEAK, 'reference / case:alpha|format:github', 'SurfaceComparison::checkPathLeaks <- Gate::compare']],
+                [[FailureClass::PATH_LEAK, 'reference / case:alpha|format:github']],
                 [[FailureClass::SURFACE_MISMATCH, 'case:alpha|format:github']],
             ),
             self::witness(
                 'single-producer',
                 self::WHOLE_RUN,
                 static fn(array $tree): array => self::withCase($tree, 'beta', 'replay.alpha', declared: true),
-                [[FailureClass::COVERAGE_MULTIPLICITY, 'corpus', 'CoverageCheck::checkSingleProducer <- Gate::compare']],
+                [[FailureClass::COVERAGE_MULTIPLICITY, 'corpus']],
             ),
             self::witness(
                 'finding-key-set',
@@ -631,12 +558,12 @@ final class CheckWitnesses
                     return $tree;
                 },
                 [
-                    [FailureClass::RUN_FAILED, 'candidate-2 / gamma', 'Gate::captureAuthority <- GateModes::compare'],
-                    [FailureClass::FINDING_TUPLE_MISMATCH, 'candidate / gamma / finding #0', 'TupleCheck::checkTupleAgainstFindings <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:gamma|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|check:output:file', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:json', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RUN_FAILED, 'candidate-2 / gamma'],
+                    [FailureClass::FINDING_TUPLE_MISMATCH, 'candidate / gamma / finding #0'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:json'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:gamma|format:json'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|check:output:file'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:json'],
                 ],
                 [[FailureClass::FINDING_TUPLE_MISMATCH, 'reference / gamma / finding #0']],
             ),
@@ -644,7 +571,7 @@ final class CheckWitnesses
                 'coverage-surplus',
                 self::WHOLE_RUN,
                 static fn(array $tree): array => self::withCase($tree, 'delta', 'replay.undeclared', declared: false),
-                [[FailureClass::COVERAGE_SURPLUS, 'corpus', 'ChannelCoverage::reportSurplus <- CoverageCheck::checkCoverage']],
+                [[FailureClass::COVERAGE_SURPLUS, 'corpus']],
             ),
             self::witness(
                 'witness-disagreement',
@@ -654,7 +581,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::WITNESS_DISAGREEMENT, 'governance/Channel/Fixtures/declared.txt', 'ChannelWitness::checkAgreement <- CoverageCheck::checkChannelWitnesses']],
+                [[FailureClass::WITNESS_DISAGREEMENT, 'governance/Channel/Fixtures/declared.txt']],
             ),
             self::witness(
                 'level-vocabulary-drift',
@@ -664,7 +591,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::LEVEL_VOCABULARY_DRIFT, 'scripts/finding-gate/SubjectLevel.php', 'ChannelWitness::checkLevelVocabulary <- CoverageCheck::checkChannelWitnesses']],
+                [[FailureClass::LEVEL_VOCABULARY_DRIFT, 'scripts/finding-gate/SubjectLevel.php']],
             ),
             self::witness(
                 'malformed-whole-invocations',
@@ -676,8 +603,8 @@ final class CheckWitnesses
                     return $tree;
                 },
                 [
-                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:html', 'SurfaceComparison::mismatch <- Gate::compare'],
-                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:sarif', 'SurfaceComparison::mismatch <- Gate::compare'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:html'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:sarif'],
                 ],
             ),
             self::witness(
@@ -691,7 +618,7 @@ final class CheckWitnesses
                 },
                 [
                     [FailureClass::RUN_FAILED, 'candidate-2 / omega'],
-                    [FailureClass::CANDIDATE_INPUT_REFUSED, 'case:omega', 'CoverageCheck::inputRefused <- Gate::compare'],
+                    [FailureClass::CANDIDATE_INPUT_REFUSED, 'case:omega'],
                 ],
                 [
                     [FailureClass::COVERAGE_SHORTFALL, 'corpus'],
@@ -709,11 +636,11 @@ final class CheckWitnesses
                     return $tree;
                 },
                 [
-                    [FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json', 'RankingCheck::projectionProblem <- Gate::captureAuthority'],
-                    [FailureClass::RUN_FAILED, 'candidate-2 / alpha', 'Gate::captureAuthority <- GateModes::compare'],
-                    [FailureClass::RUN_FAILED, '* / alpha', 'CaseOutcomeCheck::findingsOf#2 <- Gate::checkFindings'],
-                    [FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json', 'RankingCheck::projectionProblem <- RecordCheck::checkCase'],
-                    [FailureClass::RANKING_PROJECTION_MISMATCH, 'reference / case:alpha|format:json', 'RankingCheck::projectionProblem <- RecordCheck::checkCase'],
+                    [FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json'],
+                    [FailureClass::RUN_FAILED, 'candidate-2 / alpha'],
+                    [FailureClass::RUN_FAILED, '* / alpha'],
+                    [FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json'],
+                    [FailureClass::RANKING_PROJECTION_MISMATCH, 'reference / case:alpha|format:json'],
                 ],
                 [
                     [FailureClass::RECORD_PROJECTION_MISMATCH, '* / case:alpha|baseline-file'],
@@ -731,11 +658,11 @@ final class CheckWitnesses
                     return $tree;
                 },
                 [
-                    [FailureClass::RUN_FAILED, '* / alpha / baseline:generate', 'CaseOutcomeCheck::checkBaselineSurface#1 <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|baseline-file', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|baseline-file', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::CASE_OUTCOME_MISMATCH, 'candidate / alpha / baseline:generate', 'CaseOutcomeCheck::mismatch <- Gate::compare'],
-                    [FailureClass::CASE_OUTCOME_MISMATCH, 'reference / alpha / baseline:generate', 'CaseOutcomeCheck::mismatch <- Gate::compare'],
+                    [FailureClass::RUN_FAILED, '* / alpha / baseline:generate'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|baseline-file'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|baseline-file'],
+                    [FailureClass::CASE_OUTCOME_MISMATCH, 'candidate / alpha / baseline:generate'],
+                    [FailureClass::CASE_OUTCOME_MISMATCH, 'reference / alpha / baseline:generate'],
                 ],
             ),
             self::witness(
@@ -748,7 +675,7 @@ final class CheckWitnesses
                     return $tree;
                 },
                 [
-                    [FailureClass::RUN_FAILED, '* / eta / baseline-file', 'CaseOutcomeCheck::checkBaselineSurface#2 <- Gate::checkFindings'],
+                    [FailureClass::RUN_FAILED, '* / eta / baseline-file'],
                 ],
             ),
             self::witness(
@@ -762,7 +689,7 @@ final class CheckWitnesses
                     return $tree;
                 },
                 [
-                    [FailureClass::REFERENCE_INPUT_UNTRANSLATED, 'reference / case:alpha', 'RenameMapCheck::checkReferenceInput <- Gate::compare'],
+                    [FailureClass::REFERENCE_INPUT_UNTRANSLATED, 'reference / case:alpha'],
                 ],
             ),
             self::witness(
@@ -773,7 +700,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::MAP_STALE, '*Replay\Nowhere*', 'RenameMapCheck::checkStaleMaps <- Gate::compare']],
+                [[FailureClass::MAP_STALE, '*Replay\Nowhere*']],
             ),
             self::witness(
                 'split-unmapped',
@@ -785,8 +712,8 @@ final class CheckWitnesses
                     return $tree;
                 },
                 [
-                    [FailureClass::SPLIT_UNMAPPED, 'case:alpha', 'RenameMapCheck::checkSplitExplanation <- Gate::compare'],
-                    [FailureClass::SPLIT_UNMAPPED, 'case:alpha|format:json', 'RecordCheck::prepare <- RecordStage::countInputs'],
+                    [FailureClass::SPLIT_UNMAPPED, 'case:alpha'],
+                    [FailureClass::SPLIT_UNMAPPED, 'case:alpha|format:json'],
                 ],
                 [[FailureClass::MAP_STALE, '*replay.never-*']],
             ),
@@ -798,7 +725,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::CASE_CLAIM_MISMATCH, 'case:alpha', 'CoverageCheck::checkCaseClaim <- Gate::compare']],
+                [[FailureClass::CASE_CLAIM_MISMATCH, 'case:alpha']],
             ),
             self::witness(
                 'coverage-shortfall',
@@ -809,7 +736,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::COVERAGE_SHORTFALL, 'corpus', 'ChannelCoverage::reportShortfall <- CoverageCheck::checkCoverage']],
+                [[FailureClass::COVERAGE_SHORTFALL, 'corpus']],
             ),
             self::witness(
                 'published-order',
@@ -828,7 +755,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::PUBLISHED_ORDER_DRIFT, 'case:alpha|baseline-file', 'SurfaceComparison::checkPublishedOrder <- Gate::compare']],
+                [[FailureClass::PUBLISHED_ORDER_DRIFT, 'case:alpha|baseline-file']],
             ),
             self::witness(
                 'surface-one-side',
@@ -839,7 +766,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::SURFACE_MISMATCH, 'case:alpha|stderr:format:github', 'SurfaceComparison::mismatch <- Gate::compare']],
+                [[FailureClass::SURFACE_MISMATCH, 'case:alpha|stderr:format:github']],
             ),
             self::witness(
                 'surface-differs',
@@ -851,7 +778,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::SURFACE_MISMATCH, 'case:alpha|format:checkstyle', 'SurfaceComparison::mismatch <- Gate::compare']],
+                [[FailureClass::SURFACE_MISMATCH, 'case:alpha|format:checkstyle']],
             ),
             self::witness(
                 'finding-count',
@@ -866,11 +793,11 @@ final class CheckWitnesses
                     return $tree;
                 },
                 [
-                    [FailureClass::FINDING_COUNT_MISMATCH, 'case:zeta', 'SurfaceComparison::compareFindingCounts <- Gate::compare'],
-                    [FailureClass::RECORD_UNDECLARED, 'case:zeta|format:json', 'RecordCheck::observeResidual <- RecordStage::countInputs'],
-                    [FailureClass::SURFACE_MISMATCH, 'case:zeta|baseline-file', 'SurfaceComparison::mismatch <- Gate::compare'],
-                    [FailureClass::SURFACE_MISMATCH, 'case:zeta|check:output:file', 'SurfaceComparison::mismatch <- Gate::compare'],
-                    [FailureClass::SURFACE_MISMATCH, 'case:zeta|show-suppressed', 'SurfaceComparison::mismatch <- Gate::compare'],
+                    [FailureClass::FINDING_COUNT_MISMATCH, 'case:zeta'],
+                    [FailureClass::RECORD_UNDECLARED, 'case:zeta|format:json'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:zeta|baseline-file'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:zeta|check:output:file'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:zeta|show-suppressed'],
                 ],
                 [[FailureClass::SURFACE_MISMATCH, 'case:zeta|format:*']],
             ),
@@ -886,7 +813,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::DELTA_MISMATCH, 'case:alpha|format:metrics', 'DeclaredDeltaCheck::checkAgainstDeclaredDelta#3 <- SurfaceComparison::compareFinalBytes']],
+                [[FailureClass::DELTA_MISMATCH, 'case:alpha|format:metrics']],
             ),
             self::witness(
                 'exact-surface-mismatch',
@@ -899,7 +826,7 @@ final class CheckWitnesses
                     $tree['candidateDeclarations']['declared-exact-surfaces/rules.diff'] = self::NO_DIFF;
                     return $tree;
                 },
-                [[FailureClass::DELTA_MISMATCH, 'case:alpha|rules', 'ExactSurfaceDeltaCheck::checkExact <- SurfaceComparison::compareSurfaces']],
+                [[FailureClass::DELTA_MISMATCH, 'case:alpha|rules']],
             ),
             self::witness(
                 'exact-surface-stale',
@@ -911,7 +838,7 @@ final class CheckWitnesses
                     $tree['candidateDeclarations']['declared-exact-surfaces/rules.diff'] = self::NO_DIFF;
                     return $tree;
                 },
-                [[FailureClass::DELTA_STALE, 'case:alpha|rules', 'ExactSurfaceDeltaCheck::checkStale <- Gate::compare']],
+                [[FailureClass::DELTA_STALE, 'case:alpha|rules']],
             ),
             self::witness(
                 'delta-too-large',
@@ -925,8 +852,8 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::DELTA_TOO_LARGE, 'case:alpha|format:metrics', 'DeclaredDeltaCheck::checkAgainstDeclaredDelta#1 <- SurfaceComparison::compareFinalBytes']],
-                [[FailureClass::DELTA_MISMATCH, 'case:alpha|format:metrics', 'DeclaredDeltaCheck::checkAgainstDeclaredDelta#3 <- SurfaceComparison::compareFinalBytes']],
+                [[FailureClass::DELTA_TOO_LARGE, 'case:alpha|format:metrics']],
+                [[FailureClass::DELTA_MISMATCH, 'case:alpha|format:metrics']],
             ),
             self::witness(
                 'delta-overreach',
@@ -940,19 +867,18 @@ final class CheckWitnesses
                     return $tree;
                 },
                 [
-                    [FailureClass::DELTA_OVERREACH, 'case:alpha|format:json', 'DeclaredDeltaCheck::checkAgainstDeclaredDelta#2 <- SurfaceComparison::compareFinalBytes'],
-                    [FailureClass::VALUE_MISMATCH, 'case:alpha|format:json|record:{"channel":"replay.alpha","subject":"declaration:callable:Replay\\\\Alpha::run@src/Alpha.php","occurrence":null,"edge":null}', 'ValueCheck::measure <- RecordCheck::prepare'],
-                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|check:output:file', 'SurfaceComparison::mismatch <- Gate::compare'],
-                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:checkstyle', 'SurfaceComparison::mismatch <- Gate::compare'],
-                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:github', 'SurfaceComparison::mismatch <- Gate::compare'],
-                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:gitlab', 'SurfaceComparison::mismatch <- Gate::compare'],
-                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:html', 'SurfaceComparison::mismatch <- Gate::compare'],
-                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:sarif', 'SurfaceComparison::mismatch <- Gate::compare'],
-                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:summary', 'SurfaceComparison::mismatch <- Gate::compare'],
-                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:text', 'SurfaceComparison::mismatch <- Gate::compare'],
-                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:text-detail', 'SurfaceComparison::mismatch <- Gate::compare'],
-                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:text-verbose', 'SurfaceComparison::mismatch <- Gate::compare'],
-                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|show-suppressed', 'SurfaceComparison::mismatch <- Gate::compare'],
+                    [FailureClass::DELTA_OVERREACH, 'case:alpha|format:json'],
+                    [FailureClass::VALUE_MISMATCH, 'case:alpha|format:json|record:{"channel":"replay.alpha","subject":"declaration:callable:Replay\\\\Alpha::run@src/Alpha.php","occurrence":null,"edge":null}'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|check:output:file'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:checkstyle'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:github'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:gitlab'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:html'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:sarif'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:summary'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:text'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:text-detail'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|show-suppressed'],
                 ],
                 [[FailureClass::DELTA_MISMATCH, 'case:alpha|format:json']],
             ),
@@ -964,7 +890,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::DELTA_STALE, 'case:alpha|format:health', 'DeclaredDeltaCheck::checkStaleDeclaredDelta <- Gate::compare']],
+                [[FailureClass::DELTA_STALE, 'case:alpha|format:health']],
             ),
             self::witness(
                 'delta-class-requires-each-case-to-move',
@@ -975,8 +901,8 @@ final class CheckWitnesses
                     return $tree;
                 },
                 [
-                    [FailureClass::DELTA_STALE, 'case:alpha|format:health', 'DeclaredDeltaCheck::observeEqual <- SurfaceComparison::compareFinalBytes'],
-                    [FailureClass::DELTA_STALE, 'format:health', 'DeclaredDeltaCheck::checkStaleDeclaredDelta <- Gate::compare'],
+                    [FailureClass::DELTA_STALE, 'case:alpha|format:health'],
+                    [FailureClass::DELTA_STALE, 'format:health'],
                 ],
             ),
             self::witness(
@@ -987,7 +913,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::FIELD_MOVE_STALE, 'case:alpha|format:json', 'DeclaredDeltaCheck::checkStaleFieldMoves <- Gate::compare']],
+                [[FailureClass::FIELD_MOVE_STALE, 'case:alpha|format:json']],
             ),
             self::witness(
                 'stale-record-declarations',
@@ -1005,8 +931,8 @@ final class CheckWitnesses
                     return $tree;
                 },
                 [
-                    [FailureClass::RECORD_STALE, 'case:alpha|format:json', 'StaleDeclarationCheck::checkStaleDeclarations#1 <- Gate::compare'],
-                    [FailureClass::RECORD_STALE, DeclaredRecords::INDEX, 'StaleDeclarationCheck::checkStaleDeclarations#1 <- Gate::compare'],
+                    [FailureClass::RECORD_STALE, 'case:alpha|format:json'],
+                    [FailureClass::RECORD_STALE, DeclaredRecords::INDEX],
                 ],
             ),
             self::witness(
@@ -1019,37 +945,9 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::VALUE_STALE, DeclaredValues::INDEX, 'StaleDeclarationCheck::checkStaleDeclarations#2 <- Gate::compare']],
+                [[FailureClass::VALUE_STALE, DeclaredValues::INDEX]],
             ),
-            self::witness(
-                'stale-outcome-declaration',
-                self::DECLARATIONS,
-                static function (array $tree): array {
-                    $tree = SelfTestOutcomes::fixture();
-                    $tree['candidateAnswers'] = [];
 
-                    return $tree;
-                },
-                [
-                    [FailureClass::CASE_OUTCOME_MISMATCH, 'candidate / alpha', 'CaseOutcomeCheck::mismatch <- Gate::checkFindings'],
-                    [FailureClass::CASE_OUTCOME_MISMATCH, 'case:alpha / format:json', 'CaseOutcomeCheck::mismatch <- Gate::compare'],
-                    [FailureClass::OUTCOME_DECLARATION_STALE, 'case:alpha', 'StaleDeclarationCheck::checkStaleDeclarations#4 <- Gate::compare'],
-                ],
-            ),
-            self::witness(
-                'stale-surface-declaration',
-                self::DECLARATIONS,
-                static function (array $tree): array {
-                    $tree = SelfTestCapture::withdrawnFixture();
-                    $tree['candidateDeclarations']['declared-surfaces/metrics.json'] = self::json(['stdout' => '{"symbols":[]}', 'stderr' => 'a refusal nobody printed', 'exit' => '3']);
-
-                    return $tree;
-                },
-                [
-                    [FailureClass::SURFACE_DECLARATION_STALE, 'format:metrics', 'StaleDeclarationCheck::checkStaleDeclarations#5 <- Gate::compare'],
-                    [FailureClass::SURFACE_WITHDRAWAL_MISMATCH, 'case:alpha|format:metrics', 'CaptureCheck::withdrawal <- Gate::compare'],
-                ],
-            ),
             self::witness(
                 'stale-structural-map',
                 self::DECLARATIONS,
@@ -1060,7 +958,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::STRUCTURAL_MAP_STALE, DeclaredStructuralMaps::INDEX, 'StaleDeclarationCheck::checkStaleDeclarations#6 <- Gate::compare']],
+                [[FailureClass::STRUCTURAL_MAP_STALE, DeclaredStructuralMaps::INDEX]],
             ),
             self::witness(
                 'field-declaration-stale-empty-variant',
@@ -1078,7 +976,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::FIELD_DECLARATION_STALE, DeclaredFields::INDEX, 'StaleDeclarationCheck::checkStaleDeclarations#3 <- Gate::compare']],
+                [[FailureClass::FIELD_DECLARATION_STALE, DeclaredFields::INDEX]],
             ),
             self::witness(
                 'derive-normalization-refuses-a-dead-pass',
@@ -1096,12 +994,10 @@ final class CheckWitnesses
                     [
                         FailureClass::RUN_FAILED,
                         'derive-* / alpha / baseline:generate',
-                        'CaseOutcomeCheck::checkBaselineSurface#1 <- Gate::deriveNormalization',
                     ],
                     [
                         FailureClass::RUN_FAILED,
                         'derive-* / eta / baseline-file',
-                        'CaseOutcomeCheck::checkBaselineSurface#2 <- Gate::deriveNormalization',
                     ],
                 ],
             ),
@@ -1123,7 +1019,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::ENV_MISMATCH, 'reference tree', 'Gate::compare <- GateModes::deriveDeclarations']],
+                [[FailureClass::ENV_MISMATCH, 'reference tree']],
             ),
             self::witness(
                 'derive-declarations-writes-a-measured-diff',
@@ -1154,7 +1050,7 @@ final class CheckWitnesses
 
                     return $tree;
                 },
-                [[FailureClass::DELTA_MISMATCH, 'case:beta|format:metrics', 'DeclaredDeltaCheck::checkDifference <- SurfaceComparison::compareFinalBytes']],
+                [[FailureClass::DELTA_MISMATCH, 'case:beta|format:metrics']],
             ),
             self::witness(
                 'derive-tuple-writes-the-published-fields',
@@ -1183,8 +1079,8 @@ final class CheckWitnesses
                 return $tree;
             },
             [
-                [FailureClass::NONDETERMINISM_UNDECLARED, 'baseline eligibility', 'RankingCheck::checkRepeatedCaptures#1 <- ' . ($scenario === self::WHOLE_RUN ? 'Gate::compare' : 'Gate::deriveNormalization')],
-                [FailureClass::NONDETERMINISM_UNDECLARED, 'case:alpha|format:json', 'RankingCheck::checkRepeatedCaptures#2 <- ' . ($scenario === self::WHOLE_RUN ? 'Gate::compare' : 'Gate::deriveNormalization')],
+                [FailureClass::NONDETERMINISM_UNDECLARED, 'baseline eligibility'],
+                [FailureClass::NONDETERMINISM_UNDECLARED, 'case:alpha|format:json'],
             ],
             [],
             static function (string $root): void {
@@ -1269,7 +1165,7 @@ final class CheckWitnesses
     }
 
     /**
-     * The failures a run raised, each with the identity it was raised at, the
+     * The failures a run raised, each with its class and side-specific scope, the
      * exit code the mode ended with and the declarations it changed — or why
      * it did not finish.
      *
@@ -1279,15 +1175,9 @@ final class CheckWitnesses
      *
      * @return Run|string
      */
-    private static function run(array $specification, ?array $flags, RaiseSites $sites, ?callable $prepare = null): array|string
+    private static function run(array $specification, ?array $flags, ?callable $prepare = null): array|string
     {
         $root = SyntheticTree::create($specification);
-        $siteAt = [];
-
-        foreach ($sites->sites as $site) {
-            $siteAt[$site['file'] . ':' . $site['line']] = $site['site'];
-        }
-
         try {
             if ($prepare !== null) {
                 $prepare($root);
@@ -1308,12 +1198,10 @@ final class CheckWitnesses
             $failures = [];
 
             foreach ($report->raised() as $raised) {
-                $where = $raised['file'] . ':' . $raised['line'];
                 $failures[] = [
                     'class' => $raised['class'],
                     'scope' => $raised['scope'],
                     'detail' => $raised['detail'],
-                    'identity' => isset($siteAt[$where]) ? $sites->identityOf($siteAt[$where], $raised['chain']) : $where,
                 ];
             }
 
@@ -1359,13 +1247,12 @@ final class CheckWitnesses
      * @param list<Witness> $witnesses
      * @param list<Failure> $failures
      *
-     * @return array{failures: list<string>, observed: list<string>, scoped: list<string>}
+     * @return array{failures: list<string>, observed: list<string>}
      */
     private static function judge(string $scenario, array $witnesses, array $failures): array
     {
         $problems = [];
         $observed = [];
-        $scoped = [];
         $accounted = [];
 
         foreach ($witnesses as $witness) {
@@ -1374,23 +1261,18 @@ final class CheckWitnesses
 
                 if ($matched === []) {
                     $problems[] = \sprintf(
-                        'check witness %s: the %s run raised no %s @ %s at %s. It raised: %s',
+                        'check witness %s: the %s run raised no %s @ %s. It raised: %s',
                         $witness['id'],
                         $scenario,
                         $pattern[0],
                         $pattern[1],
-                        $pattern[2] ?? 'any raise site',
                         self::describe($failures),
                     );
 
                     continue;
                 }
 
-                if (isset($pattern[2])) {
-                    $observed[] = $pattern[2];
-                } else {
-                    $scoped[] = $pattern[0];
-                }
+                $observed[] = $pattern[0];
                 $accounted = [...$accounted, ...$matched];
             }
 
@@ -1415,17 +1297,16 @@ final class CheckWitnesses
         foreach ($failures as $index => $failure) {
             if (!\in_array($index, $accounted, true)) {
                 $problems[] = \sprintf(
-                    'check witness %s run: %s @ %s at %s is named by no witness of that run: %s',
+                    'check witness %s run: %s @ %s is named by no witness of that run: %s',
                     $scenario,
                     $failure['class'],
                     $failure['scope'],
-                    $failure['identity'],
                     substr($failure['detail'], 0, 300),
                 );
             }
         }
 
-        return ['failures' => $problems, 'observed' => $observed, 'scoped' => $scoped];
+        return ['failures' => $problems, 'observed' => $observed];
     }
 
     /**
@@ -1440,7 +1321,6 @@ final class CheckWitnesses
 
         foreach ($failures as $index => $failure) {
             if ($failure['class'] === $pattern[0] && fnmatch($pattern[1], $failure['scope'], \FNM_NOESCAPE)
-                && (!isset($pattern[2]) || $failure['identity'] === $pattern[2])
             ) {
                 $matched[] = $index;
             }
@@ -1462,8 +1342,22 @@ final class CheckWitnesses
         }
 
         return implode('; ', array_map(
-            static fn(array $failure): string => $failure['class'] . ' @ ' . $failure['scope'] . ' at ' . $failure['identity'],
+            static fn(array $failure): string => $failure['class'] . ' @ ' . $failure['scope'],
             $failures,
         ));
+    }
+
+    /** @param list<Failure> $failures
+     * @return list<string>
+     */
+    private static function unknownFailures(array $failures): array
+    {
+        $problems = [];
+        foreach ($failures as $failure) {
+            if (!\in_array($failure['class'], FailureClass::ALL, true)) {
+                $problems[] = 'witness registry: unknown observed failure class ' . $failure['class'] . ' @ ' . $failure['scope'];
+            }
+        }
+        return $problems;
     }
 }

@@ -8,7 +8,6 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\JsonText;
-use QmxFindingGate\ReportPayload;
 
 /**
  * A redaction that leaves every byte it does not redact where it was, and
@@ -34,14 +33,6 @@ final class JsonTextTest extends TestCase
         yield 'numbers of every spelling' => ['{"a": -1.50e+3, "b": 0}', 'a', '{"a": "x", "b": 0}', 1];
         yield 'nothing at a deeper path' => ['{"a": 1}', 'a.b', '{"a": 1}', 0];
         yield 'nothing at a shallower path' => ['{"a": {"b": 1}}', 'b', '{"a": {"b": 1}}', 0];
-    }
-
-    #[Test]
-    public function itKeepsTheExactBytesOfTheEmbeddedReadableHtmlPayload(): void
-    {
-        foreach (["{\n  \"a\": 1\n}", '{"a":"b\\/c"}', '{"a":1.50}', '{"a":0,"a":1}'] as $json) {
-            self::assertSame($json, ReportPayload::of('<script type="application/json" id="report-data">' . $json . '</script>', 'case:x|format:html', 'candidate'));
-        }
     }
 
     #[Test]

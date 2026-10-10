@@ -21,6 +21,14 @@ final class GateReportTest extends TestCase
     }
 
     #[Test]
+    public function itPublishesFailureWitnessesWithoutSourceOrCallerIdentity(): void
+    {
+        $report = new GateReport();
+        $report->fail('surface-mismatch', 'candidate / case:alpha|format:text', 'The whole invocation differs.', ['- before']);
+        self::assertSame([['class' => 'surface-mismatch', 'scope' => 'candidate / case:alpha|format:text', 'detail' => 'The whole invocation differs.']], $report->raised());
+    }
+
+    #[Test]
     public function itPublishesEveryDeclarationCountAndNamesTheOnesAGreenRunUsed(): void
     {
         $report = new GateReport();

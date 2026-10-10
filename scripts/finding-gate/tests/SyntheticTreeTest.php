@@ -229,7 +229,8 @@ final class SyntheticTreeTest extends TestCase
                 "    Message  [replay.alpha]\n    Recommendation: Advice\n    " . $fragment . "\n",
                 self::publication($answers, 'format:text-detail'),
             );
-            $html = json_decode(\QmxFindingGate\ReportPayload::of(self::publication($answers, 'format:html'), 'case:alpha|format:html', 'candidate'), true, flags: \JSON_THROW_ON_ERROR);
+            self::assertSame(1, preg_match('~<script type="application/json" id="report-data">(.*?)</script>~s', self::publication($answers, 'format:html'), $matches));
+            $html = json_decode($matches[1], true, flags: \JSON_THROW_ON_ERROR);
             self::assertSame('Message', $html['violations'][0]['message']);
         }
     }
@@ -246,6 +247,26 @@ final class SyntheticTreeTest extends TestCase
             self::assertStringContainsString('  ERROR ' . $finding['file'] . ':' . $finding['line'] . "\n    ", $text);
             self::assertStringNotContainsString('  ' . $finding['symbol'] . "\n", $text);
         }
+    }
+
+    #[Test]
+    public function itRetainsFilelessFindingsOnlyOnFormatsThatPublishThem(): void
+    {
+        $tree = SyntheticTree::clean();
+        $located = $tree['findings']['alpha'][0];
+        $fileless = array_replace($located, ['file' => null, 'line' => null, 'subject' => 'project:', 'symbol' => '']);
+        $answers = SyntheticTree::caseAnswers('alpha', [$located, $fileless], false, []);
+        $json = json_decode(self::publication($answers, 'format:json'), true, flags: \JSON_THROW_ON_ERROR);
+        $sarif = json_decode(self::publication($answers, 'format:sarif'), true, flags: \JSON_THROW_ON_ERROR);
+        $gitlab = json_decode(self::publication($answers, 'format:gitlab'), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertCount(2, $json['violations']);
+        self::assertCount(2, $sarif['runs'][0]['results']);
+        self::assertArrayNotHasKey('locations', $sarif['runs'][0]['results'][1]);
+        self::assertCount(1, $gitlab);
+        self::assertSame($located['file'], $gitlab[0]['location']['path']);
+        self::assertStringNotContainsString('_project', self::publication($answers, 'format:gitlab'));
+        self::assertSame(1, substr_count(self::publication($answers, 'format:checkstyle'), '<file name='));
+        self::assertStringNotContainsString('<file name="">', self::publication($answers, 'format:checkstyle'));
     }
 
     /** @param array<string,array{stdout?:string}> $answers */

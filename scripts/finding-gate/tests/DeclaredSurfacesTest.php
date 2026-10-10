@@ -39,40 +39,32 @@ final class DeclaredSurfacesTest extends TestCase
     {
         $this->write(DeclaredSurfaces::INDEX, DeclaredSurfaces::COLUMNS, [
             [DeclaredSurfaces::INTRODUCED, 'graph:export', DeclaredSurfaces::NO_FILE, '*', 'new'],
-            [DeclaredSurfaces::WITHDRAWN, 'format:text-verbose', DeclaredSurfaces::DIRECTORY . '/text-verbose.txt', '*', 'removed'],
         ]);
-        Fs::write($this->root . '/' . DeclaredSurfaces::DIRECTORY . '/text-verbose.txt', "Unknown format\n");
         $surfaces = DeclaredSurfaces::load($this->root);
 
-        self::assertSame("Unknown format\n", $surfaces->refusalOf('format:text-verbose'));
-        self::assertNull($surfaces->refusalOf('graph:export'));
-
-        self::assertSame(['format:json', 'format:text-verbose'], $surfaces->referenceSurfaces(['format:json', 'graph:export']));
+        self::assertSame(['format:json'], $surfaces->referenceSurfaces(['format:json', 'graph:export']));
         $this->assertRefused(static fn(string $root): mixed => $surfaces->referenceSurfaces(['format:json']), 'does not have it');
     }
 
     #[Test]
     public function itRefusesASurfaceOfOneScope(): void
     {
-        $this->write(DeclaredSurfaces::INDEX, DeclaredSurfaces::COLUMNS, [[DeclaredSurfaces::WITHDRAWN, 'case:smells|format:text', 'declared-surfaces/x.txt', '*', 'why']]);
+        $this->write(DeclaredSurfaces::INDEX, DeclaredSurfaces::COLUMNS, [[DeclaredSurfaces::INTRODUCED, 'case:smells|format:text', '-' , '*', 'why']]);
 
         $this->assertRefused(static fn(string $root): mixed => DeclaredSurfaces::load($root), 'an artifact of one scope');
     }
 
     #[Test]
-    public function itRefusesAWithdrawnSurfaceWithoutItsMeasuredRefusal(): void
+    public function itRefusesRetiredWithdrawalAndSnapshotDeclarations(): void
     {
         $this->write(DeclaredSurfaces::INDEX, DeclaredSurfaces::COLUMNS, [
-            [DeclaredSurfaces::WITHDRAWN, 'format:text-verbose', DeclaredSurfaces::DIRECTORY . '/text-verbose.txt', '*', 'removed'],
+            ['withdrawn', 'format:text', 'declared-surfaces/text.txt', '*', 'removed'],
         ]);
-
-        $this->assertRefused(static fn(string $root): mixed => DeclaredSurfaces::load($root), 'missing or empty');
-
+        $this->assertRefused(static fn(string $root): mixed => DeclaredSurfaces::load($root), 'may only be one of introduced');
         $this->write(DeclaredSurfaces::INDEX, DeclaredSurfaces::COLUMNS, [
-            [DeclaredSurfaces::INTRODUCED, 'graph:export', DeclaredSurfaces::DIRECTORY . '/graph.txt', '*', 'new'],
+            [DeclaredSurfaces::INTRODUCED, 'graph:export', 'declared-surfaces/graph.txt', '*', 'new'],
         ]);
-
-        $this->assertRefused(static fn(string $root): mixed => DeclaredSurfaces::load($root), 'is refused by nothing');
+        $this->assertRefused(static fn(string $root): mixed => DeclaredSurfaces::load($root), 'an introduced surface names no file');
     }
 
     /**

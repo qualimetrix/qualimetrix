@@ -12,17 +12,6 @@ namespace QmxFindingGate;
  */
 final class SelfTestCapture extends SelfTestGroup
 {
-    public function declarations(): void
-    {
-        $tree = self::withdrawnFixture();
-        $report = $this->reportFor($tree);
-        $this->same(GateReport::VERDICT_GREEN, $report->verdict(), 'a declared withdrawal compares its complete refusal and remains GREEN');
-        $tree['candidateAnswers']['case:alpha|format:metrics']['stderr'] = 'another cause';
-        $report = $this->reportFor($tree);
-        $this->assert(self::contains($report, FailureClass::SURFACE_WITHDRAWAL_MISMATCH, 'case:alpha|format:metrics'), 'a neighboring undeclared refusal cause raises surface-withdrawal-mismatch');
-
-    }
-
     public function outputDestination(): void
     {
         $tree = SyntheticTree::clean();
@@ -61,55 +50,20 @@ final class SelfTestCapture extends SelfTestGroup
         $this->assert(self::contains($report, FailureClass::SURFACE_MISMATCH, 'candidate / tree|rules'), 'two equal unknown exit-70 invocations cannot be GREEN');
     }
 
-    public function derivation(): void
-    {
-        $tree = self::withdrawnFixture();
-        $tree['candidateDeclarations']['declared-surfaces/metrics.json'] = "wrong declaration\n";
-        $root = SyntheticTree::create($tree);
-        try {
-            $report = new GateReport();
-            GateModes::run(Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD', '--derive-declarations'], $root), $report);
-            $this->same(GateReport::VERDICT_GREEN, $report->verdict(), 'a derive run measures only the named withdrawn surface');
-            $expected = json_encode(['stdout' => '{"symbols":[]}', 'stderr' => 'unsupported format', 'exit' => '3'], \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES) . "\n";
-            $this->same($expected, Fs::read($root . '/finding-gate/declared-surfaces/metrics.json'), 'withdrawal derive writes the measured complete envelope at the declared file address');
-            $report = new GateReport();
-            GateModes::run(Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root), $report);
-            $this->same(GateReport::VERDICT_GREEN, $report->verdict(), 'the declaration measured by derive is accepted by public compare');
-        } finally {
-            SyntheticTree::remove($root);
-        }
-        $tree = self::withdrawnFixture();
-        $tree['candidateAnswers']['case:alpha|rules'] = ['stdout' => 'an unrelated catalog change'];
-        $root = SyntheticTree::create($tree);
-        try {
-            $before = Fs::read($root . '/finding-gate/declared-surfaces/metrics.json');
-            $report = new GateReport();
-            GateModes::run(Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD', '--derive-declarations'], $root), $report);
-            $this->assert(self::contains($report, FailureClass::SURFACE_MISMATCH, 'case:alpha|rules'), 'derive leaves an unrelated catalog change RED');
-            $this->same($before, Fs::read($root . '/finding-gate/declared-surfaces/metrics.json'), 'a RED derive run does not rewrite the measured declaration');
-        } finally {
-            SyntheticTree::remove($root);
-        }
-    }
-
     /** @return list<Witness> */
     public static function witnesses(): array
     {
         return [CheckWitnesses::witness(
-            'surface-withdrawal-cause',
+            'introduced-surface-without-json-population',
             CheckWitnesses::WHOLE_RUN,
             static function (array $tree): array {
-                $fixture = self::withdrawnFixture();
-                $tree['declarations'] += $fixture['declarations'];
-                $tree['candidateDeclarations'] = [...($tree['candidateDeclarations'] ?? []), ...($fixture['candidateDeclarations'] ?? [])];
-                $tree['answers'] += $fixture['answers'];
-                $tree['candidateAnswers'] += $fixture['candidateAnswers'];
-                $tree['candidateAnswers']['case:alpha|format:metrics']['stderr'] = 'another cause';
-
+                $tree['candidateDeclarations'][DeclaredSurfaces::INDEX] = Tsv::render(DeclaredSurfaces::COLUMNS, [
+                    [DeclaredSurfaces::INTRODUCED, 'format:metrics', DeclaredSurfaces::NO_FILE, '*', 'A new native metrics publication.'],
+                ]);
+                $tree['candidateAnswers']['case:alpha|format:metrics'] = ['stdout' => '{}'];
                 return $tree;
             },
-            [[FailureClass::SURFACE_WITHDRAWAL_MISMATCH, 'case:alpha|format:metrics', 'CaptureCheck::withdrawal <- Gate::compare']],
-            [[FailureClass::SURFACE_DECLARATION_STALE, 'format:metrics']],
+            [[FailureClass::SURFACE_DECLARATION_STALE, 'format:metrics'], [FailureClass::SURFACE_MISMATCH, 'case:alpha|*format:metrics']],
         ), CheckWitnesses::witness(
             'capture-neutral-outcome',
             CheckWitnesses::WHOLE_RUN,
@@ -118,7 +72,7 @@ final class SelfTestCapture extends SelfTestGroup
 
                 return $tree;
             },
-            [[FailureClass::SURFACE_MISMATCH, '* / tree|graph:export', 'CaptureCheck::publicationFailure <- Gate::compare']],
+            [[FailureClass::SURFACE_MISMATCH, '* / tree|graph:export']],
         ), CheckWitnesses::witness(
             'normalization-readable-records',
             CheckWitnesses::WHOLE_RUN,
@@ -127,21 +81,9 @@ final class SelfTestCapture extends SelfTestGroup
 
                 return $tree;
             },
-            [[FailureClass::NORMALIZATION_OVERREACH, '* / case:*|directives', 'NormalizationCheck::checkRun <- Gate::compare']],
+            [[FailureClass::NORMALIZATION_OVERREACH, '* / case:*|directives']],
             [[FailureClass::RECORD_PROJECTION_MISMATCH, '* / case:alpha|directives']],
         )];
-    }
-
-    /** @return Specification */
-    public static function withdrawnFixture(): array
-    {
-        $tree = SyntheticTree::clean();
-        $tree['answers']['case:alpha|format:metrics'] = ['stdout' => '{"symbols":[]}'];
-        $tree['candidateAnswers']['case:alpha|format:metrics'] = ['stdout' => '{"symbols":[]}', 'stderr' => 'unsupported format', 'exit' => 3];
-        $tree['candidateDeclarations'][DeclaredSurfaces::INDEX] = Tsv::render(DeclaredSurfaces::COLUMNS, [[DeclaredSurfaces::WITHDRAWN, 'format:metrics', 'declared-surfaces/metrics.json', '*', 'removed format']]);
-        $tree['candidateDeclarations']['declared-surfaces/metrics.json'] = json_encode(['stdout' => '{"symbols":[]}', 'stderr' => 'unsupported format', 'exit' => '3'], \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES) . "\n";
-
-        return $tree;
     }
 
     /** @param Specification $tree */

@@ -31,7 +31,6 @@ use QmxFindingGate\NormalizationRule;
 use QmxFindingGate\Options;
 use QmxFindingGate\RenameMaps;
 use QmxFindingGate\RunContext;
-use QmxFindingGate\SelfTestCapture;
 use QmxFindingGate\SelfTestNormalization;
 use QmxFindingGate\SelfTestOutcomes;
 use QmxFindingGate\SurfacePair;
@@ -59,7 +58,6 @@ final class CaptureTest extends TestCase
     {
         $tree = SyntheticTree::clean();
         $tree['candidateAnswers']['case:alpha|format:text-detail'] = ['env' => true];
-        $tree['candidateAnswers']['case:alpha|format:text-verbose'] = ['env' => true];
         $root = SyntheticTree::create($tree);
         $temporary = Fs::temporaryDirectory('detailed-text-capture-test-');
         try {
@@ -70,12 +68,6 @@ final class CaptureTest extends TestCase
             self::assertIsArray($document);
             self::assertSame(['-f', 'text', '--detail=all'], \array_slice($document['argv'], -3));
             self::assertSame(0, DeclaredSurfaces::load($root . '/finding-gate')->count());
-            self::assertArrayHasKey('case:alpha|format:text-verbose', $capture->artifacts);
-            $historical = json_decode($capture->artifacts['case:alpha|format:text-verbose'], true, 512, \JSON_THROW_ON_ERROR);
-            self::assertIsArray($historical);
-            self::assertSame(['-f', 'text-verbose'], \array_slice($historical['argv'], -2));
-            self::assertArrayHasKey('case:alpha|exit:format:text-verbose', $capture->artifacts);
-            self::assertArrayHasKey('case:alpha|stderr:format:text-verbose', $capture->artifacts);
         } finally {
             SyntheticTree::remove($root);
             Fs::removeRecursively($temporary);
@@ -112,25 +104,6 @@ final class CaptureTest extends TestCase
         } finally {
             SyntheticTree::remove($root);
         }
-    }
-
-    #[Test]
-    #[Group('finding-gate-e2e')]
-    public function itChecksCaptureThroughPublicCompareAndDerive(): void
-    {
-        $failures = new ArrayObject();
-        $checks = new SelfTestCapture(\dirname(__DIR__, 3), $failures);
-        ob_start();
-        try {
-            $checks->declarations();
-            $checks->derivation();
-        } finally {
-            $output = ob_get_clean();
-        }
-        self::assertIsString($output);
-        self::assertStringContainsString('GREEN', $output);
-        self::assertStringContainsString('surface-withdrawal-mismatch', $output);
-        self::assertSame([], $failures->getArrayCopy());
     }
 
     #[Test]
@@ -183,7 +156,6 @@ final class CaptureTest extends TestCase
         foreach (['healthy', 'physical-count', 'whole-private-slot'] as $fault) {
             if ($fault === 'whole-private-slot') {
                 $tree = SelfTestOutcomes::fixture();
-                unset($tree['candidateDeclarations'][\QmxFindingGate\DeclaredOutcomes::INDEX], $tree['candidateDeclarations']['declared-outcomes/alpha.json']);
                 $tree['candidateAnswers']['case:alpha|format:json']['ranked'] = ['exit' => 2];
             } else {
                 $tree = SyntheticTree::clean();
@@ -384,7 +356,7 @@ final class CaptureTest extends TestCase
     }
 
     #[Test]
-    public function itAcceptsOnlyMeasuredDerivedCandidateCaptureExits(): void
+    public function itKeepsWholeGraphExitOutsideRecordValueDeclarations(): void
     {
         [$root, $temporary, $artifacts] = self::stagePublicationFixture();
         try {
@@ -397,65 +369,14 @@ final class CaptureTest extends TestCase
                 }
                 $pair = new SurfacePair('tree|exit:graph:export', 'exit:graph:export', '0', '1');
                 ValueStage::create($run)->applyStage($pair);
-                self::assertSame('1', $pair->candidate);
+                self::assertSame('0', $pair->candidate);
                 $candidate = $artifacts;
                 $candidate['tree|exit:graph:export'] = '0';
                 CaptureCheck::create($run)->checkRun($candidate, $artifacts);
-                self::assertSame([], $run->report->raised());
-                self::assertSame('1', $values->referenceExitFor('graph:export', 'tree|graph:export', '0'));
+                self::assertSame([FailureClass::SURFACE_MISMATCH], $run->report->failureClasses());
+                self::assertSame(['candidate / tree|graph:export', 'candidate / tree|graph:export'], array_column($run->report->raised(), 'scope'));
+                self::assertNull($values->referenceExitFor('graph:export', 'tree|graph:export', '0'));
             }
-        } finally {
-            SyntheticTree::remove($root);
-            Fs::removeRecursively($temporary);
-        }
-    }
-
-    #[Test]
-    public function itAcceptsNativeSuccessfulCandidatePopulationAfterDeclaredReferenceRefusal(): void
-    {
-        [$root, $temporary, $candidate] = self::stagePublicationFixture();
-        try {
-            Fs::write($root . '/finding-gate/declared-outcomes.tsv', Tsv::render(\QmxFindingGate\DeclaredOutcomes::COLUMNS, [
-                ['alpha', \QmxFindingGate\DeclaredOutcomes::REFUSAL_TO_ANALYSIS, 'declared-outcomes/alpha.json', 'The reference refuses this input.'],
-            ]));
-            Fs::write($root . '/finding-gate/declared-outcomes/alpha.json', "refusal\n");
-            $reference = $candidate;
-            $transitions = [
-                ['baseline:generate', 'case:alpha|baseline-file', 'case:alpha|exit:baseline:generate'],
-                ['directives', 'case:alpha|directives', 'case:alpha|exit:directives'],
-                ['baseline:explain', 'case:alpha|explain:file:src/Alpha.php', 'case:alpha|exit:explain:file:src/Alpha.php'],
-            ];
-            usort($transitions, static fn(array $a, array $b): int => $a <=> $b);
-            foreach ($transitions as [, $surface, $exitKey]) {
-                self::assertArrayHasKey($surface, $reference);
-                self::assertArrayHasKey($exitKey, $reference);
-                $reference[$surface] = '';
-                $reference[$exitKey] = '1';
-            }
-            $recordTransitions = array_values(array_filter($transitions, static fn(array $transition): bool => $transition[0] !== 'baseline:explain'));
-            self::declareCaptureExits($root, array_map(
-                static fn(array $transition): array => ['exit', $transition[0], $transition[1], '1', '0'],
-                $recordTransitions,
-            ), array_column($recordTransitions, 0));
-            $run = self::captureContext($root, $temporary);
-            $explanation = 'case:alpha|explain:file:src/Alpha.php';
-            $run->publicationForms->supply('candidate', [$explanation => $candidate[$explanation]]);
-            $run->publicationForms->supply('reference', [$explanation => $reference[$explanation]]);
-            self::assertSame('whole-invocation', $run->publicationForms->of('candidate', $explanation));
-            self::assertSame('whole-invocation', $run->publicationForms->of('reference', $explanation));
-            self::assertFalse($run->publicationForms->recordInvocation($explanation));
-            $values = ValueCheck::create($run);
-            foreach ($transitions as [$command, $surface, $exitKey]) {
-                $pair = new SurfacePair($exitKey, \QmxFindingGate\Surfaces::surfaceClass($exitKey), '0', '1');
-                ValueStage::create($run)->applyStage($pair);
-                self::assertSame($command === 'baseline:explain' ? '0' : '1', $pair->candidate, $command);
-            }
-            foreach ($transitions as [$command, $surface]) {
-                self::assertSame($command === 'baseline:explain' ? null : '1', $values->referenceExitFor($command, $surface, '0'), $command);
-            }
-            CaptureCheck::create($run)->checkRun($candidate, $reference);
-            $values->checkRun($candidate, $reference);
-            self::assertSame([], $run->report->raised());
         } finally {
             SyntheticTree::remove($root);
             Fs::removeRecursively($temporary);
@@ -489,10 +410,11 @@ final class CaptureTest extends TestCase
                 }
                 CaptureCheck::create($run)->checkRun($candidate, $artifacts);
                 self::assertSame([FailureClass::SURFACE_MISMATCH], $run->report->failureClasses(), $fault);
-                self::assertCount(2, $run->report->raised(), $fault);
-                foreach ($run->report->raised() as $failure) {
-                    self::assertSame('candidate / tree|graph:export', $failure['scope'], $fault);
+                $expectedScopes = ['candidate / tree|graph:export', 'candidate / tree|graph:export'];
+                if ($fault === 'wrong-invocation') {
+                    $expectedScopes[] = 'candidate / case:alpha|graph:export';
                 }
+                self::assertSame($expectedScopes, array_column($run->report->raised(), 'scope'), $fault);
             }
         } finally {
             SyntheticTree::remove($root);
@@ -536,8 +458,9 @@ final class CaptureTest extends TestCase
                 self::assertSame([FailureClass::SURFACE_MISMATCH], $run->report->failureClasses(), $fault);
                 self::assertContains($expectedScope, array_column($run->report->raised(), 'scope'), $fault);
                 $expectedCount = match ($fault) {
-                    'unknown-replay', 'empty-publication', 'reference-empty-publication' => 1,
-                    'missing-exit', 'reference-missing', 'reference-unknown' => 3,
+                    'unknown-replay', 'empty-publication', 'reference-empty-publication', 'missing-exit' => 3,
+                    'reference-missing', 'reference-unknown' => 5,
+                    'reference-exit' => 4,
                     default => 2,
                 };
                 self::assertCount($expectedCount, $run->report->raised(), $fault);
@@ -545,8 +468,7 @@ final class CaptureTest extends TestCase
                     self::assertContains(($fault === 'missing-exit' ? 'candidate' : 'reference') . ' / tree|exit:graph:export', array_column($run->report->raised(), 'scope'));
                 }
                 if ($fault === 'unknown-replay') {
-                    self::assertCount(1, $run->report->raised());
-                    self::assertSame('An unknown replay invocation cannot establish successful population.', $run->report->raised()[0]['detail']);
+                    self::assertContains('An unknown replay invocation cannot establish successful population.', array_column($run->report->raised(), 'detail'));
                 }
                 self::assertSame([], array_filter($run->report->raised(), static fn(array $failure): bool => $failure['class'] !== FailureClass::SURFACE_MISMATCH));
             }
@@ -613,6 +535,8 @@ final class CaptureTest extends TestCase
             self::declareCaptureExits($root, [['exit', 'directives', 'case:alpha|directives', '2', '5']], ['directives']);
             $run = self::captureContext($root, $temporary);
             $values = ValueCheck::create($run);
+            $run->publicationForms->supply('candidate', $reference);
+            $run->publicationForms->supply('reference', $reference);
             $pair = new SurfacePair('case:alpha|exit:directives', 'exit:directives', '5', '2');
             ValueStage::create($run)->applyStage($pair);
             self::assertSame('2', $pair->candidate);

@@ -39,7 +39,7 @@ final class TupleCheck
         // tuple does not compare would be a datum only the hash carries, and
         // replacing the hash would retire it from the comparison — the same hole
         // `normalization-overreach` exists for.
-        $outside = array_values(array_diff(Fingerprints::INPUT_FIELDS, $derived->fields));
+        $outside = array_values(array_diff(ReportRecords::IDENTITY_FIELDS, $derived->fields));
         $this->report->sourceEvidence('*', 'finding', 'tuple-schema', $valid && $outside === []);
 
         if ($outside !== []) {
@@ -59,7 +59,7 @@ final class TupleCheck
     public function checkTupleAgainstFindings(string $side, CaseDefinition $case, EquivalenceTuple $tuple, array $findings): void
     {
         $fields = $side === 'reference'
-            ? DeclaredFields::load($this->options->candidateRoot . '/finding-gate')->referenceFields('json', Fingerprints::SOURCE_VIEW, $tuple->fields)
+            ? DeclaredFields::load($this->options->candidateRoot . '/finding-gate')->referenceFields('json', 'format:json', $tuple->fields)
             : $tuple->fields;
         foreach ($findings as $index => $finding) {
             $keys = array_keys($finding);

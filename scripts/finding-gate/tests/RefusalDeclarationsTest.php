@@ -120,16 +120,12 @@ final class RefusalDeclarationsTest extends TestCase
     }
 
     #[Test]
-    public function itPreservesAMalformedGitLabPublicationError(): void
+    public function itJudgesMalformedGitLabBytesAsOneWholePublication(): void
     {
         $key = 'case:malformed|format:gitlab';
         $report = new GateReport();
-        $check = $this->check($report, [$key]);
-
-        $this->expectException(GateError::class);
-        $this->expectExceptionMessage('GitLab publishes a result list');
-
-        $check->checkDifference($key, '{"probe":1}', '[]');
+        $this->check($report, [$key])->checkDifference($key, '{"probe":1}', '[]');
+        self::assertContains(FailureClass::DELTA_MISMATCH, $report->failureClasses());
     }
 
     #[Test]

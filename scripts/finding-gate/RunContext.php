@@ -45,7 +45,7 @@ final class RunContext
         $this->rankings = new RankingCaptures();
         $this->baselineEligibility = new BaselineEligibility();
         $this->capturePlan = CapturePlan::forCorpus($corpus, $declarations->surfaces);
-        $this->publicationForms = new PublicationForms($this->capturePlan, $report);
+        $this->publicationForms = new PublicationForms($this->capturePlan);
     }
 
     public function supplyPublicationTree(string $side, string $treeRoot): void

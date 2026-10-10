@@ -8,11 +8,9 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\Corpus;
 use QmxFindingGate\CorpusInvalid;
-use QmxFindingGate\DeclaredOutcomes;
 use QmxFindingGate\Fs;
 use QmxFindingGate\GateError;
 use QmxFindingGate\SyntheticTree;
-use QmxFindingGate\Tsv;
 
 final class CorpusTest extends TestCase
 {
@@ -80,16 +78,10 @@ final class CorpusTest extends TestCase
         $definition = json_decode(Fs::read($directory . '/case.json'), true, 512, \JSON_THROW_ON_ERROR);
         $definition['id'] = '42';
         Fs::write($directory . '/case.json', json_encode($definition, \JSON_THROW_ON_ERROR));
-        Fs::write($this->root . '/finding-gate/' . DeclaredOutcomes::INDEX, Tsv::render(DeclaredOutcomes::COLUMNS, [
-            ['42', DeclaredOutcomes::ANALYSIS_TO_REFUSAL, 'declared-outcomes/numeric.json', 'The numeric case retains its declared transition.'],
-        ]));
-        Fs::write($this->root . '/finding-gate/declared-outcomes/numeric.json', "refusal snapshot\n");
-
         $corpus = $this->loadSelected(['42']);
         self::assertCount(1, $corpus->cases);
         self::assertSame('42', $corpus->cases[0]->id);
         self::assertSame($directory, $corpus->cases[0]->directory);
-        self::assertSame(DeclaredOutcomes::ANALYSIS_TO_REFUSAL, $corpus->cases[0]->transition);
     }
 
     #[Test]

@@ -26,7 +26,6 @@ final class CorpusCaseControls
                     'case:config-precedence|format:json',
                 ],
                 FailureClass::DELTA_MISMATCH => [
-                    'case:config-precedence|format:html',
                     'case:config-precedence|format:summary',
                     'case:config-precedence|format:text-detail',
                 ],
@@ -63,7 +62,6 @@ final class CorpusCaseControls
                     'case:threshold-raising|format:json',
                 ],
                 FailureClass::DELTA_MISMATCH => [
-                    'case:threshold-raising|format:html',
                     'case:threshold-raising|format:summary',
                     'case:threshold-raising|format:text-detail',
                 ],
@@ -104,7 +102,6 @@ final class CorpusCaseControls
                     'case:directive-placement|format:suppressed',
                 ],
                 FailureClass::DELTA_MISMATCH => [
-                    'case:directive-placement|format:html',
                     'case:directive-placement|format:summary',
                     'case:directive-placement|format:text-detail',
                 ],
@@ -147,7 +144,6 @@ final class CorpusCaseControls
                     'case:stderr-warning|stderr:format:github',
                     'case:stderr-warning|stderr:format:gitlab',
                     'case:stderr-warning|stderr:format:health',
-                    'case:stderr-warning|stderr:format:html',
                     'case:stderr-warning|stderr:format:json',
                     'case:stderr-warning|stderr:format:metrics',
                     'case:stderr-warning|stderr:format:sarif',
@@ -159,7 +155,6 @@ final class CorpusCaseControls
                 ],
                 FailureClass::DELTA_MISMATCH => [
                     'case:stderr-warning|format:health',
-                    'case:stderr-warning|format:html',
                     'case:stderr-warning|format:summary',
                     'case:stderr-warning|format:text-detail',
                 ],
@@ -189,7 +184,6 @@ final class CorpusCaseControls
                     'case:detectors|stderr:format:github',
                     'case:detectors|stderr:format:metrics',
                     'case:detectors|stderr:format:health',
-                    'case:detectors|stderr:format:html',
                     'case:detectors|stderr:format:suppressed',
                     'case:detectors|stderr:show-suppressed',
                     'case:detectors|stderr:directives',
@@ -205,7 +199,6 @@ final class CorpusCaseControls
                     'case:name-case|stderr:format:github',
                     'case:name-case|stderr:format:metrics',
                     'case:name-case|stderr:format:health',
-                    'case:name-case|stderr:format:html',
                     'case:name-case|stderr:format:suppressed',
                     'case:name-case|stderr:show-suppressed',
                     'case:name-case|stderr:directives',
