@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\MetricHintCatalog;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -69,7 +69,7 @@ final class HealthDecompositionAgreesWithFormulasTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->catalog = new HealthDecompositionCatalog();
+        $this->catalog = new HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression());
         $this->hints = new MetricHintCatalog();
         $this->knees = new FormulaKneeReader();
         $this->expression = new ComputedMetricExpression();

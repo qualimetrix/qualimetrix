@@ -13,7 +13,7 @@ use Qualimetrix\Core\FileTarget\NewName;
 use Qualimetrix\Core\FileTarget\PreparedTarget;
 use Qualimetrix\Core\FileTarget\ResolvedTarget;
 use Qualimetrix\Core\FileTarget\TargetKind;
-use Qualimetrix\Core\FileTarget\TargetPath;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
 use Qualimetrix\Infrastructure\Console\Refusal\FileTargetRefusal;
 use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
@@ -56,7 +56,7 @@ final class RunTargetClaimLifecycle
     {
         foreach ($judged as $subject => $target) {
             if (self::needsStaging($subject, $target)) {
-                $this->signals = StagedSignalGuard::start($target->spelling);
+                $this->signals = StagedSignalGuard::start();
                 break;
             }
         }
@@ -162,8 +162,10 @@ final class RunTargetClaimLifecycle
     /** @param array<string, ResolvedTarget> $judged */
     public function assertCacheClearSafe(array $judged, string $directory): void
     {
-        $cache = TargetPath::resolve($directory);
-        $root = $cache->path?->value() ?? throw new LogicException('Cache root has no path');
+        if (!is_dir($directory)) {
+            return;
+        }
+        $root = AbsolutePath::fromString($directory)->canonicalize()->value();
         foreach ($judged as $subject => $target) {
             $sibling = null;
             if (isset($this->prepared[$subject]) && $this->prepared[$subject]->target() === $target) {

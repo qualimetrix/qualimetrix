@@ -7,16 +7,11 @@ namespace QmxFindingGate;
 use WeakMap;
 use WeakReference;
 
-/** The publications every planned invocation owes, including declared withdrawals. */
-final class CaptureCheck implements SurfaceStage, RunCheck, Derivation
+/** The publications every planned invocation owes, including prospective introduced JSON forms. */
+final class CaptureCheck implements SurfaceStage, RunCheck
 {
     /** @var WeakMap<RunContext,WeakReference<self>>|null */
     private static ?WeakMap $instances = null;
-
-    private bool $deriving = false;
-
-    /** @var array<string,string> surface => normalized refusal envelope */
-    private array $measured = [];
 
     private readonly CapturePlan $plan;
 
@@ -50,8 +45,8 @@ final class CaptureCheck implements SurfaceStage, RunCheck, Derivation
             return;
         }
         $surface = Surfaces::surfaceClass($key);
-        if ($this->plan->changeOf($key) !== null && \in_array($surface, ['format:json', 'format:metrics', 'format:suppressed'], true)
-            && $this->run->publicationForms->recordInvocation($key) !== false) {
+        if ($this->plan->changeOf($key) === DeclaredSurfaces::INTRODUCED && \in_array($surface, ['format:json', 'format:metrics', 'format:suppressed'], true)
+            && $this->run->publicationForms->of('candidate', $key) === PublicationForms::RECORDS) {
             // A declared surface is judged as one complete invocation, not as unrelated byte diffs.
             $pair->settle();
         }
@@ -65,7 +60,10 @@ final class CaptureCheck implements SurfaceStage, RunCheck, Derivation
             $key = Surfaces::key($descriptor['scope'], $descriptor['surface']);
             $change = $this->plan->changeOf($key);
             $case = $this->caseOf($descriptor['scope']);
-            $whole = $this->run->publicationForms->recordInvocation($key) === false;
+            $whole = $change === DeclaredSurfaces::INTRODUCED
+                ? $this->run->publicationForms->of('candidate', $key) !== PublicationForms::RECORDS
+                : !$this->run->publicationForms->recordInvocation($key);
+            $population = !$whole || \in_array($descriptor['commandClass'], ['graph:export', 'rules', 'debug:layer-assignment'], true);
             foreach (['candidate' => $candidate, 'reference' => $reference] as $side => $artifacts) {
                 if ($side === 'reference' && $change === DeclaredSurfaces::INTRODUCED) {
                     continue;
@@ -79,11 +77,11 @@ final class CaptureCheck implements SurfaceStage, RunCheck, Derivation
                 }
                 $analyzing = $case === null || CaseOutcome::of($case, $side) === CaseOutcome::ANALYSIS;
                 $file = $descriptor['outputFileKind'];
-                if (!$whole && $analyzing && $file !== null && ($artifacts[Surfaces::key($descriptor['scope'], $file)] ?? '') === '') {
+                if ($population && $analyzing && $file !== null && ($artifacts[Surfaces::key($descriptor['scope'], $file)] ?? '') === '') {
                     $valid = false;
                     $this->publicationFailure($side . ' / ' . $key, 'The planned file publication is missing or empty.');
                 }
-                if (!$whole && $analyzing && !($change === DeclaredSurfaces::WITHDRAWN && $side === 'candidate') && $key !== 'tree|graph:export' && $descriptor['surface'] !== 'check:output' && ($artifacts[$key] ?? '') === '') {
+                if ($population && $analyzing && $key !== 'tree|graph:export' && $descriptor['surface'] !== 'check:output' && ($artifacts[$key] ?? '') === '') {
                     $valid = false;
                     $this->publicationFailure($side . ' / ' . $key, 'The invocation has no populated publication.');
                 }
@@ -101,7 +99,7 @@ final class CaptureCheck implements SurfaceStage, RunCheck, Derivation
                     $valid = false;
                     $this->publicationFailure($side . ' / ' . $key, 'The neutral empty-directory graph must end in its explicit exit-1 outcome.');
                 }
-                if (!$whole && $analyzing && !($change === DeclaredSurfaces::WITHDRAWN && $side === 'candidate') && !\in_array($populationExit, $allowed, true)) {
+                if ($population && $analyzing && !\in_array($populationExit, $allowed, true)) {
                     $valid = false;
                     $this->publicationFailure($side . ' / ' . $key, 'The process outcome cannot establish successful population for this command.');
                 }
@@ -127,8 +125,6 @@ final class CaptureCheck implements SurfaceStage, RunCheck, Derivation
                 } else {
                     $this->publicationFailure('candidate / ' . $key, 'An introduced surface must publish a populated successful analysis, not an unsupported command refusal.');
                 }
-            } elseif ($change === DeclaredSurfaces::WITHDRAWN) {
-                $this->withdrawal($descriptor, $candidate, $reference);
             }
         }
     }
@@ -136,42 +132,6 @@ final class CaptureCheck implements SurfaceStage, RunCheck, Derivation
     private function publicationFailure(string $scope, string $detail): void
     {
         $this->run->report->fail(FailureClass::SURFACE_MISMATCH, $scope, $detail);
-    }
-
-    /**
-     * @param array{scope:string,surface:string,commandClass:string,outputFileKind:?string} $descriptor
-     * @param array<string,string> $candidate
-     * @param array<string,string> $reference
-     */
-    private function withdrawal(array $descriptor, array $candidate, array $reference): void
-    {
-        $surface = $descriptor['surface'];
-        $key = Surfaces::key($descriptor['scope'], $surface);
-        $exitKey = Surfaces::key($descriptor['scope'], 'exit:' . $surface);
-        $stderrKey = Surfaces::key($descriptor['scope'], 'stderr:' . $surface);
-        $envelope = json_encode([
-            'stdout' => $this->run->normalization->normalize($surface, $candidate[$key] ?? ''),
-            'stderr' => $this->run->normalization->normalize('stderr', $candidate[$stderrKey] ?? ''),
-            'exit' => $candidate[$exitKey] ?? '',
-        ], \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR) . "\n";
-        $valid = ($candidate[$exitKey] ?? '0') !== '0' && ($candidate[$exitKey] ?? '70') !== '70'
-            && (($candidate[$key] ?? '') !== '' || ($candidate[$stderrKey] ?? '') !== '');
-        $case = $this->caseOf($descriptor['scope']);
-        if ($case !== null && CaseOutcome::of($case, 'reference') === CaseOutcome::ANALYSIS) {
-            $valid = $valid && \in_array($reference[$exitKey] ?? '', ['0', '1', '2'], true) && ($reference[$key] ?? '') !== '';
-        }
-        if ($this->deriving) {
-            $expected = $this->measured[$surface] ?? $envelope;
-            $this->measured[$surface] = $expected;
-        } else {
-            $expected = $this->run->declarations->surfaces->refusalOf($surface);
-        }
-        if (!$valid || $expected !== $envelope) {
-            $this->run->report->fail(FailureClass::SURFACE_WITHDRAWAL_MISMATCH, $key, 'A withdrawn surface must produce the exact declared normalized stdout, stderr and exit; an analyzing reference must still publish it.');
-
-            return;
-        }
-        $this->run->declarations->surfaces->credit($surface);
     }
 
     private function caseOf(string $scope): ?CaseDefinition
@@ -185,27 +145,4 @@ final class CaptureCheck implements SurfaceStage, RunCheck, Derivation
         return null;
     }
 
-    public function startDeriving(): void
-    {
-        $this->deriving = true;
-    }
-
-    public function rewriteDerived(): array
-    {
-        $written = [];
-        if (!$this->run->report->canDerive([FailureClass::SURFACE_WITHDRAWAL_MISMATCH, FailureClass::SURFACE_DECLARATION_STALE,
-            FailureClass::NONDETERMINISM_UNDECLARED, FailureClass::PATH_LEAK])) {
-            return [];
-        }
-        foreach (DeclarationTable::rows($this->run->options->candidateRoot . '/finding-gate', DeclaredSurfaces::INDEX, DeclaredSurfaces::COLUMNS) as $row) {
-            $envelope = $this->measured[$row['surface']] ?? null;
-            if ($row['change'] !== DeclaredSurfaces::WITHDRAWN || $envelope === null) {
-                continue;
-            }
-            Fs::write($this->run->options->candidateRoot . '/finding-gate/' . $row['file'], $envelope);
-            $written[] = 'finding-gate/' . $row['file'];
-        }
-
-        return $written;
-    }
 }

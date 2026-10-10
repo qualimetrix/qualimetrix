@@ -117,6 +117,11 @@ final class PathWalk
             throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $this->spelling, 'a parent directory changed during inspection', $parent);
         }
 
+        $createdOwner = CreatedDirectoryOwnership::ownerOf($parent, $parentStat);
+        if ($createdOwner !== null) {
+            return [$parent, EntryControl::privateDirectory(), $createdOwner];
+        }
+
         $effectiveUid = $parentStat['uid'] === 0 && ($parentStat['mode'] & 0022) === 0
             ? 0
             : ProcessOwner::effectiveUid($parent);

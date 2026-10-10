@@ -29,7 +29,9 @@ final class TupleControls
             [new Expectation(FailureClass::TUPLE_FIELD_DRIFT, EquivalenceTuple::TRACKED_PATH),
                 new Expectation(FailureClass::RUN_FAILED, 'candidate-2 / annotations', exactScope: true),
                 ...self::recordExpectations('candidate')],
-            self::invalidCaptureBaselineFailures('candidate'),
+            [...self::invalidCaptureBaselineFailures('candidate'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:drill-down|format:html', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:health|format:html', exactScope: true)],
         );
     }
 
@@ -44,7 +46,9 @@ final class TupleControls
                 'the tracked candidate tuple includes the unannounced member',
             ))->and(self::unavailableFindingValueMeasurements())->and(self::unavailableRankingFieldMeasurements()),
             self::recordExpectations('reference'),
-            self::invalidCaptureBaselineFailures('reference'),
+            [...self::invalidCaptureBaselineFailures('reference'),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:drill-down|format:html', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:health|format:html', exactScope: true)],
         );
     }
 

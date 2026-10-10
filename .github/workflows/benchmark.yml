@@ -40,8 +40,6 @@ jobs:
 
       - name: Run benchmark regression check
         shell: bash
-        env:
-          COMPOSER_PROCESS_TIMEOUT: '0'
         run: |
           set -o pipefail
           composer benchmark:check 2>&1 | tee benchmark.log

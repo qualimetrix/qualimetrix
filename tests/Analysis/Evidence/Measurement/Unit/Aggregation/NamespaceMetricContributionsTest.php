@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation;
 
 use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\NamespaceMetricContributions;
@@ -30,6 +31,22 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 #[CoversClass(FileNamespaceIndex::class)]
 final class NamespaceMetricContributionsTest extends TestCase
 {
+    /** @return iterable<string, array{AggregationStrategy}> */
+    public static function fileContributionStrategies(): iterable
+    {
+        yield 'sum' => [AggregationStrategy::Sum];
+        yield 'count' => [AggregationStrategy::Count];
+        yield 'average' => [AggregationStrategy::Average];
+    }
+
+    #[Test]
+    #[DataProvider('fileContributionStrategies')]
+    public function itRefusesNonzeroTotalsWithoutContributingFiles(AggregationStrategy $strategy): void
+    {
+        self::expectException(LogicException::class);
+        NamespaceMetricContributions::applyFileContributions($strategy, [['total' => 8, 'files' => 0]]);
+    }
+
     #[Test]
     public function itReducesWeightedFileContributionsWithoutLosingIntegerTotalsOrFileCounts(): void
     {
@@ -39,6 +56,8 @@ final class NamespaceMetricContributionsTest extends TestCase
         self::assertSame(4, NamespaceMetricContributions::applyFileContributions(AggregationStrategy::Count, $values));
         self::assertSame(3.75, NamespaceMetricContributions::applyFileContributions(AggregationStrategy::Average, $values));
         self::assertSame(0, NamespaceMetricContributions::applyFileContributions(AggregationStrategy::Average, []));
+        self::assertSame(0, NamespaceMetricContributions::applyFileContributions(AggregationStrategy::Average, [['total' => 0, 'files' => 0]]));
+        self::assertSame(0, NamespaceMetricContributions::applyFileContributions(AggregationStrategy::Average, [['total' => 0.0, 'files' => 0]]));
 
         self::expectException(LogicException::class);
         self::expectExceptionMessage('Unsupported namespace file-contribution strategy');

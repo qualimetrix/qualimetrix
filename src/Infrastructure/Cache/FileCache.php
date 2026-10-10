@@ -70,8 +70,12 @@ final class FileCache implements CacheInterface
         $path = $this->getPath($key);
         $dir = \dirname($path);
 
-        if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
-            throw CacheWriteException::failedToCreateDirectory($dir);
+        if (!is_dir($dir)) {
+            if (@mkdir($dir, 0755, true)) {
+                TargetPath::rememberCreatedDirectory($dir);
+            } elseif (!is_dir($dir)) {
+                throw CacheWriteException::failedToCreateDirectory($dir);
+            }
         }
 
         try {
@@ -169,8 +173,12 @@ final class FileCache implements CacheInterface
     {
         $directory = $this->directory->value();
 
-        if (!is_dir($directory) && !@mkdir($directory, 0755, true) && !is_dir($directory)) {
-            return;
+        if (!is_dir($directory)) {
+            if (@mkdir($directory, 0755, true)) {
+                TargetPath::rememberCreatedDirectory($directory);
+            } elseif (!is_dir($directory)) {
+                return;
+            }
         }
 
         // Same discipline as the entries themselves. A marker torn by a

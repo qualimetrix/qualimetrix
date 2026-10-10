@@ -18,6 +18,14 @@ assembly could then replace an absent class score with a project score.
 
 ## Decision
 
+Formula parsing and evaluation implementations belong to the internal
+`ComputedMetrics\Evaluation` subject, rather than its public contract surface.
+`ComputedMetricEvaluatorInterface` promises run evaluation;
+`ComputedMetricExpressionInterface` promises the expression operations consumed
+by Health. The immutable summary and absence types remain public. Composition
+supplies the expression and decomposition services explicitly, so an importing
+consumer does not depend on formula implementation or construct its dependency.
+
 **Applicability belongs to the selected builtin formula.** Each stored builtin
 formula level carries an explicit Always, AnyPresent or PositiveSum policy.
 Validation examines the raw subject values before a numeric lookup can filter
@@ -67,6 +75,15 @@ percentage metrics and typing health. A positive total with no typed declaration
 remains a measured zero. These changes do not revise the underlying academic
 cohesion metrics or the existing purity adjustment.
 
+The unadjusted LCOM contribution uses the same span at class and namespace
+levels: one connected component has no penalty, and six exhaust that
+contribution. A namespace formerly exhausted it at three, so identical
+unadjusted evidence scored lower merely by aggregation. Restoring the class
+scale removes that discrepancy without changing academic LCOM, applicability
+or the existing class purity adjustment. This is a correction of that scale,
+not evidence that all namespace scores are monotone relative to their member
+classes; the separate purity adjustment and benchmark calibration remain.
+
 **Publication follows the effective formula and exact subject.** Coverage and
 decomposition describe inputs used by the selected formula, not a builtin with
 the same name. An authored constant 80 cannot borrow builtin input evidence.
@@ -100,6 +117,11 @@ statement about all eligible symbols. Remove project fallback for a missing
 selected subject. JSON readers should consume `computedMetricOutcomes` separately
 from findings and configuration diagnostics; prose readers can rely on the same
 bounded summary without enabling a logger.
+
+Replace imports of the concrete `Contract\Evaluation\ComputedMetricEvaluator`
+and `ComputedMetricExpression` with their public interfaces in consuming
+services. Bind those interfaces to their configured implementations and supply
+expression/decomposition dependencies when constructing Health services.
 
 Custom formulas may intentionally leave a value absent or use a meaningful
 `??` fallback. To combine available values, use ordered `weighted_mean` terms

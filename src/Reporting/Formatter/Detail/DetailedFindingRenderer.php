@@ -9,7 +9,9 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
 use Qualimetrix\Reporting\FormatterContext;
 
-/** Composes detailed finding output and its technical-debt breakdown. */
+/** Composes detailed finding output and its technical-debt breakdown. *
+ * @qmx-threshold coupling.instability warning=0.800001 -- Detail publication composes ordering, namespace attribution, finding and debt rendering through few consumers; extracting the composition transfers its outward dependencies.
+ */
 final class DetailedFindingRenderer
 {
     private readonly FindingDetailRenderer $findingDetailRenderer;
@@ -28,7 +30,7 @@ final class DetailedFindingRenderer
         $cap = $context->detailLimit;
         $shown = $cap === null || $cap === 0 ? $findings
             : \Qualimetrix\Reporting\Formatter\Ordering\FindingSorter::worstFirst($findings, $report->topIssues, $cap);
-        $block = $this->render($shown, $context, $findings);
+        $block = $this->render($shown, $context, $report->fileNamespaces, $findings);
 
         $remaining = \count($findings) - \count($shown);
         if ($remaining === 0) {
@@ -47,7 +49,7 @@ final class DetailedFindingRenderer
      *
      * @return string Formatted detail block (without trailing newline)
      */
-    public function render(array $findings, FormatterContext $context, ?array $allFindings = null): string
+    public function render(array $findings, FormatterContext $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces, ?array $allFindings = null): string
     {
         if ($findings === []) {
             $label = $context->namespace !== null || $context->class !== null
@@ -58,7 +60,7 @@ final class DetailedFindingRenderer
         }
 
         return implode("\n", [
-            $this->findingDetailRenderer->render($findings, $context),
+            $this->findingDetailRenderer->render($findings, $context, $fileNamespaces),
             $this->debtBreakdownRenderer->render($findings, $allFindings),
         ]);
     }

@@ -182,7 +182,7 @@ final class HarnessSelfTest
                     ? [true, Shell::read($repository . '/' . $path)] : [false, null];
             }
             $originalTuple = \QmxFindingGate\EquivalenceTuple::derive($repository);
-            $this->same(19, \count($originalTuple->fields), 'the existing finding record publishes nineteen fields');
+            $this->same(20, \count($originalTuple->fields), 'the existing finding record publishes twenty fields');
             $tuplePlant = <<<'PHP'
                 use QmxFindingGate\DeclarationTable;
                 use QmxFindingGate\DeclaredFields;
@@ -309,7 +309,15 @@ final class HarnessSelfTest
                             $check(count($afterIntents) < count($beforeIntents), count($afterDerived) < count($beforeDerived), $name . ': ranking field intentions and measurements are paired, including an empty pair');
                             $fields = DeclaredFields::load($target->path('finding-gate'));
                             $check([], $fields->changes('json', 'ranking'), $name . ': the private tuple plant leaves no unmeasurable ranking field obligations');
-                            $check($name === 'paired' ? ['privateRetained' => 'added'] : [], $fields->changes('json', 'format:json'), $name . ': the retained JSON field obligation survives');
+                            $expectedJsonChanges = $name === 'paired' ? ['privateRetained' => 'added'] : [];
+                            if ($name === 'current') {
+                                foreach ($expectedRows[$index] as $row) {
+                                    if ($row['report'] === 'json' && $row['view'] === 'format:json') {
+                                        $expectedJsonChanges[$row['field']] = $row['change'];
+                                    }
+                                }
+                            }
+                            $check($expectedJsonChanges, $fields->changes('json', 'format:json'), $name . ': the retained JSON field obligation survives');
                             $check($name === 'paired' ? ['privateRanking' => 'added'] : [], $fields->changes('metrics', 'format:metrics'), $name . ': the retained metrics field obligation survives');
                         } finally {
                             $target->remove();
@@ -378,7 +386,7 @@ final class HarnessSelfTest
                 throw new RuntimeException('Cannot remove the staged record measurement table.');
             }
 
-            $orphan = $scratch->path('finding-gate/declared-outcomes');
+            $orphan = $scratch->path('finding-gate/declared-exact-surfaces');
             if (!is_dir($orphan)) {
                 mkdir($orphan);
             }

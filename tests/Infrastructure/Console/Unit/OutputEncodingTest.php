@@ -18,6 +18,17 @@ use Qualimetrix\Tests\Infrastructure\Console\Support\SplitStreamConsoleOutput;
 final class OutputEncodingTest extends TestCase
 {
     #[Test]
+    public function itNamesTheEnvironmentSourceOfAnInvalidMode(): void
+    {
+        try {
+            OutputEncoding::fromEnvironment('maybe');
+            self::fail('Invalid environment value must be refused');
+        } catch (\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal $refusal) {
+            self::assertStringContainsString('environment variable QMX_ASCII', $refusal->sources()[0]->describe());
+        }
+    }
+
+    #[Test]
     public function itDistinguishesFalseValuesFromAnEnabledMode(): void
     {
         foreach ([false, '', '0', 'false', 'no', 'off'] as $value) {

@@ -585,7 +585,7 @@ final class ResultPresenterTest extends TestCase
             new SummaryEnricher(
                 new DebtCalculator($remediation),
                 new ImpactCalculator(new ClassRankResolver(), $remediation),
-                new HealthSummaryBuilder(new HealthMetricCatalog(), $definitions),
+                new HealthSummaryBuilder(new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())), $definitions),
             ),
             new ProfilePresenter($session, new ErrorStream()),
             new ExitCodeResolver(StubChannelDeclarationRegistry::withDefaults()),

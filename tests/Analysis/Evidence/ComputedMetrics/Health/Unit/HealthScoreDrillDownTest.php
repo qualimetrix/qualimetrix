@@ -29,7 +29,7 @@ final class HealthScoreDrillDownTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->drillDown = new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class));
+        $this->drillDown = new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class), new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
     }
 
     // --- buildSubtreeHealthScores ---
@@ -385,7 +385,7 @@ final class HealthScoreDrillDownTest extends TestCase
             classes: [new SymbolInfo($subject, RelativePath::fromString('src/One.php'), 1)],
             classMetrics: [$subject->toCanonical() => MetricBag::fromArray(['cohesion.tcc' => 0.1, 'cohesion.lcom' => 5])],
         );
-        $score = (new HealthScoreDrillDown($catalog))->buildSubtreeHealthScores($repository, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App'))['cohesion'];
+        $score = (new HealthScoreDrillDown($catalog, new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())))->buildSubtreeHealthScores($repository, \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App'))['cohesion'];
         self::assertSame(80.0, $score->score);
         self::assertSame([], $score->worstContributors);
     }

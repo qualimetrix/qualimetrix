@@ -229,6 +229,63 @@ final class TargetPathTest extends TestCase
     }
 
     #[Test]
+    public function itRejudgesACreatedDirectoryAfterItsModeChanges(): void
+    {
+        $base = realpath(sys_get_temp_dir()) . '/qmx-created-' . bin2hex(random_bytes(6));
+        mkdir($base, 0700);
+        file_put_contents($base . '/report.json', '{}');
+        try {
+            TargetPath::rememberCreatedDirectory($base);
+            self::assertSame([], TargetPath::resolve($base . '/report.json')->exposure);
+            chmod($base, 0777);
+            $changed = TargetPath::resolve($base . '/report.json');
+            self::assertNotEmpty($changed->exposure);
+            self::assertSame($base, $changed->exposure[array_key_last($changed->exposure)]->directory);
+        } finally {
+            unlink($base . '/report.json');
+            rmdir($base);
+        }
+    }
+
+    #[Test]
+    public function itRejudgesACreatedDirectoryAfterTheEffectiveOwnerChanges(): void
+    {
+        if (!\function_exists('posix_geteuid')) {
+            self::markTestSkipped('POSIX owner lookup is unavailable');
+        }
+        $base = realpath(sys_get_temp_dir()) . '/qmx-owner-change-' . bin2hex(random_bytes(6));
+        mkdir($base, 0700);
+        file_put_contents($base . '/report.json', '{}');
+        $root = \dirname(__DIR__, 4);
+        $script = <<<'PHP'
+            function posix_geteuid(): int { return $GLOBALS['effectiveUid']; }
+            require $argv[1];
+            $GLOBALS['effectiveUid'] = posix_getuid();
+            \Qualimetrix\Core\FileTarget\TargetPath::rememberCreatedDirectory($argv[2]);
+            $before = \Qualimetrix\Core\FileTarget\TargetPath::resolve($argv[2] . '/report.json');
+            ++$GLOBALS['effectiveUid'];
+            $after = \Qualimetrix\Core\FileTarget\TargetPath::resolve($argv[2] . '/report.json');
+            echo json_encode([count($before->exposure), array_column($after->exposure, 'directory')], JSON_THROW_ON_ERROR);
+            PHP;
+        try {
+            $result = ChildProcess::run([\PHP_BINARY, '-d', 'disable_functions=posix_geteuid', '-r', $script, $root . '/vendor/autoload.php', $base]);
+            self::assertSame(0, $result['exitCode'], $result['stderr']);
+            [$before, $after] = json_decode($result['stdout'], true, flags: \JSON_THROW_ON_ERROR);
+            self::assertSame(0, $before);
+            self::assertContains($base, $after);
+        } finally {
+            unlink($base . '/report.json');
+            rmdir($base);
+        }
+    }
+
+    #[Test]
+    public function itClassifiesARealUnsearchableIntermediateParentAsUnopenable(): void
+    {
+        $this->assertRefusesEntryBehindNonSearchableParent('inner/report.json');
+    }
+
+    #[Test]
     public function itClassifiesAnUninspectableIntermediateParentAsUnopenable(): void
     {
         $base = realpath(sys_get_temp_dir()) . '/qmx-uninspectable-' . bin2hex(random_bytes(6));
@@ -378,6 +435,7 @@ PHP;
         $sealed = $base . '/sealed';
         mkdir($base);
         mkdir($sealed);
+        mkdir($sealed . '/inner');
         file_put_contents($sealed . '/file', 'KEEP');
         symlink('file', $sealed . '/link');
         chmod($sealed, 0000);
@@ -408,7 +466,8 @@ PHP;
                 self::assertSame($path, $failure->spelling);
                 self::assertStringContainsString($sealed, $failure->detail);
                 if ($nativeWarning !== null) {
-                    self::assertStringContainsString($nativeWarning, $failure->detail);
+                    $failedComponent = $sealed . '/' . explode('/', $entry)[0];
+                    self::assertStringContainsString(str_replace($path, $failedComponent, $nativeWarning), $failure->detail);
                 }
             }
         } finally {
@@ -417,6 +476,7 @@ PHP;
             self::assertTrue(is_link($sealed . '/link'));
             unlink($sealed . '/link');
             unlink($sealed . '/file');
+            rmdir($sealed . '/inner');
             rmdir($sealed);
             rmdir($base);
         }

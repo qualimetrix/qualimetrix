@@ -1,0 +1,22 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 14488
++visible 14302
+@@ -306,3 +306,0 @@
+-            "namespaces": [
+-                "Corpus\\DisabledRuleDuplication"
+-            ],
+@@ -332,3 +329,0 @@
+-            "namespaces": [
+-                "Corpus\\DisabledRuleDuplication"
+-            ],
+@@ -358,4 +352,4 @@
+-physical-records 775
+-["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.goto\",\"code\":\"code-smell.goto\",\"edge\":null,\"file\":\"src/Statements.php\",\"line\":9,\"message\":\"goto statement detected - avoid using goto\",\"metricValue\":1,\"namespace\":\"Corpus\\\\DisabledRuleDuplication\",\"namespaces\":[\"Corpus\\\\DisabledRuleDuplication\"],\"occurrence\":\"d5cdb2ffde93239f\",\"recommendation\":\"Replace goto with structured control flow (loops, early returns).\",\"rule\":\"code-smell.goto\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\DisabledRuleDuplication\\\\Statements::run@src/Statements.php\",\"symbol\":\"Corpus\\\\DisabledRuleDuplication\\\\Statements::run\",\"techDebtMinutes\":15,\"threshold\":null}"]
+-ranking-records 845
+-["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.goto\",\"code\":\"code-smell.goto\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Statements.php\",\"impactScore\":45,\"line\":9,\"message\":\"goto statement detected - avoid using goto\",\"metricValue\":1,\"namespace\":\"Corpus\\\\DisabledRuleDuplication\",\"namespaces\":[\"Corpus\\\\DisabledRuleDuplication\"],\"occurrence\":\"d5cdb2ffde93239f\",\"recommendation\":\"Replace goto with structured control flow (loops, early returns).\",\"rule\":\"code-smell.goto\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\DisabledRuleDuplication\\\\Statements::run@src/Statements.php\",\"symbol\":\"Corpus\\\\DisabledRuleDuplication\\\\Statements::run\",\"techDebtMinutes\":15,\"threshold\":null}"]
++physical-records 720
++["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.goto\",\"code\":\"code-smell.goto\",\"edge\":null,\"file\":\"src/Statements.php\",\"line\":9,\"message\":\"goto statement detected - avoid using goto\",\"metricValue\":1,\"namespace\":\"Corpus\\\\DisabledRuleDuplication\",\"occurrence\":\"d5cdb2ffde93239f\",\"recommendation\":\"Replace goto with structured control flow (loops, early returns).\",\"rule\":\"code-smell.goto\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\DisabledRuleDuplication\\\\Statements::run@src/Statements.php\",\"symbol\":\"Corpus\\\\DisabledRuleDuplication\\\\Statements::run\",\"techDebtMinutes\":15,\"threshold\":null}"]
++ranking-records 790
++["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"code-smell.goto\",\"code\":\"code-smell.goto\",\"coupling.class-rank-share\":1,\"debtMinutes\":15,\"edge\":null,\"file\":\"src/Statements.php\",\"impactScore\":45,\"line\":9,\"message\":\"goto statement detected - avoid using goto\",\"metricValue\":1,\"namespace\":\"Corpus\\\\DisabledRuleDuplication\",\"occurrence\":\"d5cdb2ffde93239f\",\"recommendation\":\"Replace goto with structured control flow (loops, early returns).\",\"rule\":\"code-smell.goto\",\"severity\":\"error\",\"subject\":\"declaration:callable:Corpus\\\\DisabledRuleDuplication\\\\Statements::run@src/Statements.php\",\"symbol\":\"Corpus\\\\DisabledRuleDuplication\\\\Statements::run\",\"techDebtMinutes\":15,\"threshold\":null}"]

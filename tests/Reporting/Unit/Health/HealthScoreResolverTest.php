@@ -30,7 +30,7 @@ final class HealthScoreResolverTest extends TestCase
     protected function setUp(): void
     {
         $this->resolver = new HealthScoreResolver(
-            new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class)),
+            new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class), new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())),
         );
     }
 
@@ -43,6 +43,7 @@ final class HealthScoreResolverTest extends TestCase
         ];
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 5,
             filesSkipped: 0,
@@ -67,6 +68,7 @@ final class HealthScoreResolverTest extends TestCase
         ];
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 5,
             filesSkipped: 0,
@@ -103,6 +105,7 @@ final class HealthScoreResolverTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 5,
             filesSkipped: 0,
@@ -128,6 +131,7 @@ final class HealthScoreResolverTest extends TestCase
         $metrics = $this->createMetricRepository(new MetricBag());
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 5,
             filesSkipped: 0,
@@ -164,6 +168,7 @@ final class HealthScoreResolverTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 5,
             filesSkipped: 0,
@@ -192,6 +197,7 @@ final class HealthScoreResolverTest extends TestCase
         $metrics = $this->createMetricRepository(new MetricBag());
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 5,
             filesSkipped: 0,
@@ -218,7 +224,7 @@ final class HealthScoreResolverTest extends TestCase
             classes: [new SymbolInfo($subject, RelativePath::fromString('src/Bare.php'), 1)],
             classMetrics: [$subject->toCanonical() => new MetricBag()],
         );
-        $report = new Report([], 1, 0, 0.0, 0, 0, metrics: $repository, healthScores: [
+        $report = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($repository), [], 1, 0, 0.0, 0, 0, metrics: $repository, healthScores: [
             'overall' => new HealthScore('overall', 80.0, 'Good', 50.0, 25.0, HealthCoverage::notApplicable('project')),
         ]);
         self::assertSame([], $this->resolver->resolve($report, new FormatterContext(class: 'App\\Bare')));

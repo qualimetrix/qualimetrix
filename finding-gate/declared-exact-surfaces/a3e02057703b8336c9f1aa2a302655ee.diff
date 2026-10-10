@@ -1,0 +1,14 @@
+--- candidate
++++ reference (mapped)
+@@ -134,1 +134,1 @@
+-                        "primaryLocationLineHash": "architecture.layer-violation:declaration:class:Corpus\\Utf8\\Public\\K%FF@src/First.php:5c6820f04a5a2275:new:class:Corpus\\Utf8\\Private\\W%FFX"
++                        "primaryLocationLineHash": "architecture.layer-violation:declaration:class:Corpus\\Utf8\\Public\\K%FF@src/First.php:a958228702b2f74d:new:class:Corpus\\Utf8\\Private\\W%FFX"
+@@ -159,1 +159,1 @@
+-                        "primaryLocationLineHash": "architecture.layer-violation:declaration:class:Corpus\\Utf8\\Public\\K%FE@src/Second.php:a37a119ebcae1f7d:new:class:Corpus\\Utf8\\Private\\W%FFX"
++                        "primaryLocationLineHash": "architecture.layer-violation:declaration:class:Corpus\\Utf8\\Public\\K%FE@src/Second.php:0f051a936e8edc45:new:class:Corpus\\Utf8\\Private\\W%FFX"
+@@ -431,1 +431,1 @@
+-                        "primaryLocationLineHash": "architecture.layer-violation:declaration:class:Corpus\\Utf8\\Public\\K%FF@src/First.php:5c6820f04a5a2275:new:class:Corpus\\Utf8\\Private\\W%FFX"
++                        "primaryLocationLineHash": "architecture.layer-violation:declaration:class:Corpus\\Utf8\\Public\\K%FF@src/First.php:a958228702b2f74d:new:class:Corpus\\Utf8\\Private\\W%FFX"
+@@ -456,1 +456,1 @@
+-                        "primaryLocationLineHash": "architecture.layer-violation:declaration:class:Corpus\\Utf8\\Public\\K%FE@src/Second.php:a37a119ebcae1f7d:new:class:Corpus\\Utf8\\Private\\W%FFX"
++                        "primaryLocationLineHash": "architecture.layer-violation:declaration:class:Corpus\\Utf8\\Public\\K%FE@src/Second.php:0f051a936e8edc45:new:class:Corpus\\Utf8\\Private\\W%FFX"

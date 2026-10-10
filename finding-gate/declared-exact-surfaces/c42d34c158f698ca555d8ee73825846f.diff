@@ -1,0 +1,40 @@
+--- candidate
++++ reference (mapped)
+@@ -1,9 +1,9 @@
+-visible 623
+-
+-3 violation(s) suppressed by per-rule suppress_namespaces/suppress_namespace_channels/suppress_paths:
+-  src/Excluded/SilencedByNamespace.php
+-    line 9 — Method has 5 parameters, exceeds threshold of 4. Consider introducing a parameter object [code-smell.long-parameter-list]
+-  src/Excluded/SuppressedInsideExcluded.php
+-    line 14 — Method has 5 parameters, exceeds threshold of 4. Consider introducing a parameter object [code-smell.long-parameter-list]
+-  src/SilencedByPath.php
+-    line 9 — Method has 5 parameters, exceeds threshold of 4. Consider introducing a parameter object [code-smell.long-parameter-list]
++visible 575
++
++3 violation(s) suppressed by per-rule suppress_namespaces/suppress_namespace_channels/suppress_paths:
++  src/Excluded/SilencedByNamespace.php
++    line 9 — Parameters: 5 (threshold: 4) — consider introducing a parameter object [code-smell.long-parameter-list]
++  src/Excluded/SuppressedInsideExcluded.php
++    line 14 — Parameters: 5 (threshold: 4) — consider introducing a parameter object [code-smell.long-parameter-list]
++  src/SilencedByPath.php
++    line 9 — Parameters: 5 (threshold: 4) — consider introducing a parameter object [code-smell.long-parameter-list]
+@@ -20,9 +20,9 @@
+-invocation-stderr 623
+-
+-3 violation(s) suppressed by per-rule suppress_namespaces/suppress_namespace_channels/suppress_paths:
+-  src/Excluded/SilencedByNamespace.php
+-    line 9 — Method has 5 parameters, exceeds threshold of 4. Consider introducing a parameter object [code-smell.long-parameter-list]
+-  src/Excluded/SuppressedInsideExcluded.php
+-    line 14 — Method has 5 parameters, exceeds threshold of 4. Consider introducing a parameter object [code-smell.long-parameter-list]
+-  src/SilencedByPath.php
+-    line 9 — Method has 5 parameters, exceeds threshold of 4. Consider introducing a parameter object [code-smell.long-parameter-list]
++invocation-stderr 575
++
++3 violation(s) suppressed by per-rule suppress_namespaces/suppress_namespace_channels/suppress_paths:
++  src/Excluded/SilencedByNamespace.php
++    line 9 — Parameters: 5 (threshold: 4) — consider introducing a parameter object [code-smell.long-parameter-list]
++  src/Excluded/SuppressedInsideExcluded.php
++    line 14 — Parameters: 5 (threshold: 4) — consider introducing a parameter object [code-smell.long-parameter-list]
++  src/SilencedByPath.php
++    line 9 — Parameters: 5 (threshold: 4) — consider introducing a parameter object [code-smell.long-parameter-list]

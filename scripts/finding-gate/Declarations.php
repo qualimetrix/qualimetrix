@@ -19,7 +19,6 @@ final class Declarations
         public readonly DeclaredRecords $records,
         public readonly DeclaredValues $values,
         public readonly DeclaredFields $fields,
-        public readonly DeclaredOutcomes $outcomes,
         public readonly DeclaredSurfaces $surfaces,
         public readonly DeclaredStructuralMaps $structuralMaps,
     ) {}
@@ -37,7 +36,6 @@ final class Declarations
             DeclaredRecords::load($root),
             DeclaredValues::load($root),
             $fields,
-            DeclaredOutcomes::load($root),
             DeclaredSurfaces::load($root),
             DeclaredStructuralMaps::load($root),
         );
@@ -52,7 +50,6 @@ final class Declarations
             clone $this->records,
             clone $this->values,
             $this->fields->trialCopy(),
-            clone $this->outcomes,
             clone $this->surfaces,
             clone $this->structuralMaps,
         );
@@ -70,7 +67,6 @@ final class Declarations
             'declaredRecordCount' => $this->records->count(),
             'declaredValueCount' => $this->values->count(),
             'declaredFieldCount' => $this->fields->count(),
-            'declaredOutcomeCount' => $this->outcomes->count(),
             'declaredSurfaceCount' => $this->surfaces->count(),
             'structuralMapCount' => $this->structuralMaps->count(),
         ];

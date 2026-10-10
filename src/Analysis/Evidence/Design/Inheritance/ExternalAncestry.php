@@ -22,7 +22,7 @@ final class ExternalAncestry
         $current = ltrim($fqcn, '\\');
         $depth = 0;
         $seen = [];
-        $throwable = null;
+        $throwable = ThrowableReach::Unknown;
 
         for ($step = 0; $step < self::VISIT_CAP; ++$step) {
             $identity = ClassNameSpelling::fold($current);
@@ -34,13 +34,7 @@ final class ExternalAncestry
             }
             $seen[$identity] = true;
 
-            $builtin = PhpBuiltinClassRegistry::canonicalName($current);
-            if ($builtin !== null) {
-                $throwable = $throwable === true || $this->builtinReachesThrowable($builtin);
-                $next = $this->builtinStep($builtin, $depth);
-            } else {
-                $next = $this->sourceStep($current, $depth);
-            }
+            [$next, $throwable] = $this->ancestryStep($current, $depth, $throwable);
             if ($next instanceof ExternalDepth) {
                 return $next;
             }
@@ -54,12 +48,26 @@ final class ExternalAncestry
             : ExternalDepth::brokeAt($depth, $current, $throwable);
     }
 
+    /** @return array{ExternalDepth|string, ThrowableReach} */
+    private function ancestryStep(string $current, int $depth, ThrowableReach $throwable): array
+    {
+        $builtin = PhpBuiltinClassRegistry::canonicalName($current);
+        if ($builtin === null) {
+            return [$this->sourceStep($current, $depth), $throwable];
+        }
+
+        return [
+            $this->builtinStep($builtin, $depth),
+            ($throwable === ThrowableReach::Yes || $this->builtinReachesThrowable($builtin)) ? ThrowableReach::Yes : ThrowableReach::No,
+        ];
+    }
+
     private function builtinStep(string $builtin, int $depth): ExternalDepth|string
     {
         $parents = PhpBuiltinClassHierarchy::extendsOf($builtin) ?? [];
 
         return $parents === []
-            ? ExternalDepth::reachedRoot($depth, $this->builtinReachesThrowable($builtin))
+            ? ExternalDepth::reachedRoot($depth, $this->builtinReachesThrowable($builtin) ? ThrowableReach::Yes : ThrowableReach::No)
             : $parents[0];
     }
 
@@ -72,7 +80,7 @@ final class ExternalAncestry
     private function sourceStep(string $current, int $depth): ExternalDepth|string
     {
         if (!$this->parents->isConfigured()) {
-            return ExternalDepth::noMap($depth);
+            return ExternalDepth::noMap($depth, unresolved: $current);
         }
         $lookup = $this->parents->parentOf($current);
         if (!$lookup->placed) {

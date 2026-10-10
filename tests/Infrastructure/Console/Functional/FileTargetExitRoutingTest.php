@@ -62,6 +62,34 @@ final class FileTargetExitRoutingTest extends TestCase
         self::remove($this->directory);
     }
 
+    /** @return iterable<string, array{list<string>, string, string}> */
+    public static function stagedDoorsWithoutPcntl(): iterable
+    {
+        yield 'report' => [['check', 'Source.php', '--format=json', '--output=report.json'], 'report.json', 'summary'];
+        yield 'profile' => [['check', 'Source.php', '--format=json', '--profile=profile.json'], 'profile.json', 'spans'];
+        yield 'graph' => [['graph:export', 'Source.php', '--format=json', '--output=graph.json'], 'graph.json', 'nodes'];
+        yield 'baseline' => [['baseline:generate', 'baseline.json', 'Source.php'], 'baseline.json', 'entries'];
+    }
+
+    /** @param list<string> $arguments */
+    #[Test]
+    #[DataProvider('stagedDoorsWithoutPcntl')]
+    public function itPublishesCompleteDocumentsAtEveryStagedDoorWithoutPcntl(array $arguments, string $file, string $key): void
+    {
+        $root = \dirname(__DIR__, 4);
+        $result = ChildProcess::run([
+            \PHP_BINARY, '-d', 'disable_functions=pcntl_signal,pcntl_signal_get_handler,pcntl_async_signals',
+            $root . '/bin/qmx', ...$arguments, '--no-cache', '--no-progress', '--workers=0',
+        ]);
+        self::assertSame(0, $result['exitCode'], $result['stderr'] . $result['stdout']);
+        $bytes = file_get_contents($this->directory . '/' . $file);
+        self::assertIsString($bytes);
+        $document = json_decode($bytes, true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($document);
+        self::assertArrayHasKey($key, $document);
+        self::assertSame([], glob($this->directory . '/.qmx-*'));
+    }
+
     /** @return iterable<string, array{class-string<CheckCommand|GraphExportCommand>, string}> */
     public static function provideExposedTargets(): iterable
     {
@@ -159,11 +187,42 @@ final class FileTargetExitRoutingTest extends TestCase
     }
 
     #[Test]
-    public function itRefusesToClearTheCacheContainingTheRequestedReport(): void
+    public function itClearsAnExistingCacheAndWritesAnUnrelatedReport(): void
+    {
+        mkdir($this->directory . '/cache2');
+        $output = $this->directory . '/cache2/report.json';
+        $cacheEntry = $this->directory . '/cache/entry.cache';
+        file_put_contents($cacheEntry, 'OLD CACHE');
+        $command = (new ContainerFactory())->create()->get(CheckCommand::class);
+        self::assertInstanceOf(CheckCommand::class, $command);
+        $tester = new CommandTester($command);
+        $tester->execute([
+            'paths' => [$this->directory . '/Source.php'], '--format' => 'json', '--workers' => '0',
+            '--output' => $output, '--cache-dir' => $this->directory . '/cache', '--clear-cache' => true,
+            '--no-cache' => true,
+        ], ['capture_stderr_separately' => true]);
+        self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
+        self::assertStringContainsString('Cache cleared.', $tester->getErrorOutput());
+        self::assertFileDoesNotExist($cacheEntry);
+        self::assertIsArray(json_decode((string) file_get_contents($output), true, flags: \JSON_THROW_ON_ERROR));
+    }
+
+    /** @return iterable<string, array{bool}> */
+    public static function cacheContainmentTargets(): iterable
+    {
+        yield 'existing report' => [true];
+        yield 'absent report and its prepared sibling' => [false];
+    }
+
+    #[Test]
+    #[DataProvider('cacheContainmentTargets')]
+    public function itRefusesToClearTheCacheContainingTheRequestedReport(bool $existing): void
     {
         $output = $this->directory . '/cache/report.json';
         $cacheEntry = $this->directory . '/cache/entry.cache';
-        file_put_contents($output, 'KEEP REPORT');
+        if ($existing) {
+            file_put_contents($output, 'KEEP REPORT');
+        }
         file_put_contents($cacheEntry, 'KEEP CACHE');
         $command = (new ContainerFactory())->create()->get(CheckCommand::class);
         self::assertInstanceOf(CheckCommand::class, $command);
@@ -178,8 +237,13 @@ final class FileTargetExitRoutingTest extends TestCase
         ], ['capture_stderr_separately' => true]);
 
         self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
-        self::assertStringContainsString('cache', $tester->getDisplay() . $tester->getErrorOutput());
-        self::assertSame('KEEP REPORT', file_get_contents($output));
+        self::assertStringContainsString('cache directory contains a claimed output target', $tester->getDisplay() . $tester->getErrorOutput());
+        if ($existing) {
+            self::assertSame('KEEP REPORT', file_get_contents($output));
+        } else {
+            self::assertFileDoesNotExist($output);
+            self::assertSame(['entry.cache'], array_values(array_diff((array) scandir($this->directory . '/cache'), ['.', '..'])));
+        }
         self::assertSame('KEEP CACHE', file_get_contents($cacheEntry));
         self::assertStringNotContainsString('Report written', $tester->getErrorOutput());
     }
@@ -206,6 +270,7 @@ final class FileTargetExitRoutingTest extends TestCase
         ], ['capture_stderr_separately' => true]);
 
         self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
+        self::assertStringContainsString('cache directory contains a claimed output target', $tester->getDisplay() . $tester->getErrorOutput());
         self::assertSame('KEEP REPORT', file_get_contents($referent));
         self::assertSame('KEEP CACHE', file_get_contents($cacheEntry));
         self::assertTrue(is_link($link));

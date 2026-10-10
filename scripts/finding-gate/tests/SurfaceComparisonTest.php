@@ -15,7 +15,6 @@ use QmxFindingGate\DeclaredFieldMoves;
 use QmxFindingGate\ExactDiff;
 use QmxFindingGate\ExactSurfaceAuthority;
 use QmxFindingGate\FailureClass;
-use QmxFindingGate\FingerprintCheck;
 use QmxFindingGate\Fs;
 use QmxFindingGate\GateError;
 use QmxFindingGate\GateReport;
@@ -43,6 +42,8 @@ final class SurfaceComparisonTest extends TestCase
     #[Test]
     public function itClassifiesBothPublicationFormsBeforeReadingRecordAuthority(): void
     {
+        SyntheticTree::remove($this->root);
+        $this->root = SyntheticTree::fixture(SyntheticTree::captureFixture());
         $caseFile = $this->root . '/finding-gate/cases/alpha/case.json';
         $caseBytes = Fs::read($caseFile);
         $definition = json_decode($caseBytes, true, 512, \JSON_THROW_ON_ERROR);
@@ -89,7 +90,6 @@ final class SurfaceComparisonTest extends TestCase
             ['format:summary', 'No findings', 'whole-invocation', '0', ''],
             ['format:text', 'No findings', 'whole-invocation', '0', ''],
             ['format:text-detail', 'No findings', 'whole-invocation', '0', ''],
-            ['format:text-verbose', 'No findings', 'whole-invocation', '0', ''],
             ['format:github', 'No findings', 'whole-invocation', '0', ''],
             ['show-suppressed', 'No findings', 'whole-invocation', '0', ''],
             ['check:baseline-source', '{"violations":[]}', 'records', '0', ''],
@@ -257,7 +257,7 @@ final class SurfaceComparisonTest extends TestCase
                 $truncated['violationsMeta']['limit'] = 0;
                 $truncated['violationsMeta']['truncated'] = true;
                 $publication = \QmxFindingGate\ValueCheck::value($truncated);
-                $artifacts = array_replace($capture->artifacts, [$key => $publication, 'case:alpha|check:output:file' => $publication]);
+                $artifacts = array_replace($capture->artifacts, [$key => $publication, 'case:alpha|check:output:file' => $publication, 'case:alpha|check:parallel' => $publication]);
                 if ($summaryForm === 'refusal') {
                     $artifacts['case:alpha|format:summary'] = '{"error":"Refused summary","exit_code":3}';
                     $artifacts['case:alpha|exit:format:summary'] = '3';
@@ -325,86 +325,6 @@ final class SurfaceComparisonTest extends TestCase
     }
 
     #[Test]
-    public function itFramesOnlyAnEmptyCapturedDeclaredBaselineRefusalAndKeepsAnalysisAuthority(): void
-    {
-        $tree = \QmxFindingGate\SelfTestOutcomes::fixture();
-        $tree['candidateDeclarations'][\QmxFindingGate\DeclaredOutcomes::INDEX] = Tsv::render(\QmxFindingGate\DeclaredOutcomes::COLUMNS, [
-            ['alpha', \QmxFindingGate\DeclaredOutcomes::REFUSAL_TO_ANALYSIS, 'declared-outcomes/alpha.json', 'The reference refuses the new input.'],
-        ]);
-        $tree['candidateDeclarations'][DeclaredExactSurfaces::INDEX] = Tsv::render(DeclaredExactSurfaces::COLUMNS, [
-            ['alpha', 'baseline-file', 'declared-exact-surfaces/baseline.diff', 'The baseline refusal changes this complete document.'],
-        ]);
-        $tree['candidateDeclarations']['declared-exact-surfaces/baseline.diff'] = "pending\n";
-        $root = SyntheticTree::fixture($tree);
-        try {
-            $maps = RenameMaps::load($root . '/finding-gate/maps', MetricVocabulary::ofTree($root));
-            $run = new RunContext(
-                Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root),
-                new GateReport(),
-                Corpus::load($root),
-                $maps,
-                ChannelSplit::of($maps),
-                MetricVocabulary::ofTree($root),
-                Normalization::fromRules([]),
-                \QmxFindingGate\Declarations::load($root),
-                $root,
-            );
-            $key = 'case:alpha|baseline-file';
-            $required = ExactSurfaceAuthority::footprint($key, $run)['required'];
-            self::assertContains(['side' => 'candidate', 'key' => $key, 'role' => 'records'], $required);
-            self::assertContains(['side' => 'candidate', 'key' => 'case:alpha|format:json', 'role' => 'ranking'], $required);
-            self::assertContains(['side' => 'reference', 'key' => $key, 'role' => 'outcome'], $required);
-            self::assertNotContains(['side' => 'reference', 'key' => $key, 'role' => 'records'], $required);
-            self::assertNotContains(['side' => 'reference', 'key' => 'case:alpha|format:json', 'role' => 'ranking'], $required);
-            self::assertNotContains(['side' => 'reference', 'key' => 'case:alpha|format:json', 'role' => 'tuple'], $required);
-
-            $baseline = "{\n  \"version\": 14,\n  \"entries\": {}\n" . str_repeat("\n", 240) . "}\n";
-            $refusal = "{\"error\":\"Refused input\",\"exit_code\":3,\"position\":null}\n";
-            $candidate = new \QmxFindingGate\CaptureResult([$key => $baseline], []);
-            $reference = new \QmxFindingGate\CaptureResult([
-                $key => '', 'case:alpha|exit:baseline:generate' => '3',
-                'case:alpha|stderr:baseline-file' => "Refused input\n",
-                'case:alpha|format:json' => $refusal,
-            ], []);
-            $pair = new SurfacePair($key, 'baseline-file', $baseline, '');
-            [$candidateFrame, $referenceFrame] = ExactSurfaceAuthority::pair($pair, ['candidate' => $candidate, 'reference' => $reference], $run);
-            self::assertStringContainsString('invocation-baseline-file ', $candidateFrame);
-            self::assertStringContainsString('missing-invocation-artifact ', $candidateFrame);
-            self::assertStringStartsWith("visible 0\n\n", $referenceFrame);
-            self::assertStringContainsString('invocation-exit 1' . "\n" . '3', $referenceFrame);
-            self::assertStringContainsString('invocation-stderr', $referenceFrame);
-            self::assertStringContainsString('invocation-baseline-file 0', $referenceFrame);
-            try {
-                ExactSurfaceAuthority::pair(
-                    $pair,
-                    ['candidate' => $candidate, 'reference' => new \QmxFindingGate\CaptureResult(array_replace($reference->artifacts, [$key => '{}']), [])],
-                    $run,
-                );
-                self::fail('A nonempty captured baseline was accepted as a refusal.');
-            } catch (GateError $error) {
-                self::assertSame(
-                    'A refusing baseline invocation must retain empty captured baseline content.',
-                    $error->getMessage(),
-                );
-            }
-            $changedReference = new \QmxFindingGate\CaptureResult([
-                $key => '', 'case:alpha|exit:baseline:generate' => '2',
-                'case:alpha|stderr:baseline-file' => "Different refusal\n",
-                'case:alpha|format:json' => $refusal,
-            ], []);
-            self::assertNotSame($referenceFrame, ExactSurfaceAuthority::pair($pair, ['candidate' => $candidate, 'reference' => $changedReference], $run)[1]);
-            $changedBaseline = str_replace('"version": 14', '"version": 13', $baseline);
-            self::assertNotSame($candidateFrame, ExactSurfaceAuthority::pair(
-                new SurfacePair($key, 'baseline-file', $changedBaseline, ''),
-                ['candidate' => new \QmxFindingGate\CaptureResult([$key => $changedBaseline], []), 'reference' => $reference],
-                $run,
-            )[0]);
-        } finally {
-            SyntheticTree::remove($root);
-        }
-    }
-
-    #[Test]
     public function itRunsARegisteredStageBeforeTheStepItNames(): void
     {
         $report = new GateReport();
@@ -443,6 +363,9 @@ final class SurfaceComparisonTest extends TestCase
                         \QmxFindingGate\Declarations::load($root),
                         $root,
                     );
+                    foreach (['candidate', 'reference'] as $side) {
+                        $run->publicationForms->supply($side, ['case:alpha|baseline-file' => '{"version":14,"entries":{}}', 'case:alpha|' . $source => '{"violations":[]}']);
+                    }
                     foreach (['candidate' => $candidateState, 'reference' => $referenceState] as $side => $state) {
                         if ($state !== null) {
                             $report->sourceEvidence($side, 'case:alpha|' . $source, 'records', $state);
@@ -508,31 +431,12 @@ final class SurfaceComparisonTest extends TestCase
     }
 
     #[Test]
-    public function itComparesFindingCountsOnlyWhenBothDeclaredSidesPublishFindings(): void
-    {
-        SyntheticTree::remove($this->root);
-        $this->root = SyntheticTree::create(\QmxFindingGate\SelfTestOutcomes::fixture());
-        foreach ([true, false] as $declared) {
-            if (!$declared) {
-                Fs::write($this->root . '/finding-gate/' . \QmxFindingGate\DeclaredOutcomes::INDEX, Tsv::render(\QmxFindingGate\DeclaredOutcomes::COLUMNS, []));
-            }
-            $report = new GateReport();
-            $this->comparison($report, [self::settling('difference')])->compareSurfaces(['case:alpha|format:json' => '{"violations":[]}'], ['case:alpha|format:json' => '{"violations":[{}]}']);
-            if ($declared) {
-                self::assertNotContains(FailureClass::FINDING_COUNT_MISMATCH, $report->failureClasses());
-            } else {
-                self::assertContains(FailureClass::FINDING_COUNT_MISMATCH, $report->failureClasses());
-            }
-        }
-    }
-
-    #[Test]
     public function itComparesTheWholeHtmlRefusalWithoutRequiringAnAnalysisPayload(): void
     {
         Fs::write($this->root . '/finding-gate/cases/alpha/case.json', json_encode([
             'id' => 'alpha', 'description' => 'A configuration refusal before report generation.',
             'paths' => ['src'], 'config' => 'qmx.yaml', 'coverage' => 'auxiliary', 'channels' => [],
-            'outcome' => ['kind' => \QmxFindingGate\CaseOutcome::REFUSAL, 'exit' => 3],
+            'outcome' => ['kind' => \QmxFindingGate\CaseOutcome::REFUSAL, 'exit' => 3], 'captureHtml' => true,
         ], \JSON_THROW_ON_ERROR));
         foreach ([['', '', []], ['Refused input', 'Refused input', []], ['Changed cause', 'Refused input', [FailureClass::SURFACE_MISMATCH]], [null, '', [FailureClass::SURFACE_MISMATCH]]] as [$candidate, $reference, $failures]) {
             $report = new GateReport();
@@ -604,6 +508,9 @@ final class SurfaceComparisonTest extends TestCase
     public function itRefusesAnUnannouncedNeighbourBeforeADerivationWritesAnyFile(): void
     {
         $this->declare('case:alpha|format:text', "--- candidate\n+++ reference (mapped)\n-a\n+A\n");
+        Fs::write($this->root . '/finding-gate/cases/beta/case.json', \QmxFindingGate\ValueCheck::value(['id' => 'beta', 'description' => 'An unannounced neighbouring publication.', 'paths' => ['src'], 'config' => 'qmx.yaml', 'channels' => ['replay.alpha@callable']]));
+        Fs::write($this->root . '/finding-gate/cases/beta/src/Beta.php', '<?php class Beta {}');
+        Fs::write($this->root . '/finding-gate/cases/beta/qmx.yaml', '{}');
         $path = $this->root . '/finding-gate/' . DeclaredDelta::INDEX;
         $before = Fs::read($path);
         $report = new GateReport();
@@ -720,14 +627,11 @@ final class SurfaceComparisonTest extends TestCase
     }
 
     #[Test]
-    public function itRefusesDifferentBytesEvenForAnUnknownSurfaceKey(): void
+    public function itRefusesAnUnknownCaptureSurfaceKey(): void
     {
-        $report = new GateReport();
-        $this->comparison($report, [])->compareSurfaces(['case:alpha|unknown' => 'first'], ['case:alpha|unknown' => 'second']);
-        self::assertSame(1, $report->exitCode());
-        self::assertCount(1, $report->raised());
-        self::assertSame(FailureClass::SURFACE_MISMATCH, $report->raised()[0]['class']);
-        self::assertSame('case:alpha|unknown', $report->raised()[0]['scope']);
+        $this->expectException(GateError::class);
+        $this->expectExceptionMessage('Unknown capture artifact: case:alpha|unknown');
+        $this->comparison(new GateReport(), [])->compareSurfaces(['case:alpha|unknown' => 'first'], ['case:alpha|unknown' => 'second']);
     }
 
     #[Test]
@@ -1347,7 +1251,7 @@ final class SurfaceComparisonTest extends TestCase
             \QmxFindingGate\Declarations::load($this->root),
             $this->root,
         );
-        $capture = static fn(string $ranking): \QmxFindingGate\CaptureResult => new \QmxFindingGate\CaptureResult([], [
+        $capture = static fn(string $ranking): \QmxFindingGate\CaptureResult => new \QmxFindingGate\CaptureResult(['case:alpha|format:json' => $source, 'case:alpha|stderr:format:json' => '', 'case:alpha|exit:format:json' => '2'], [
             'case:alpha|format:json' => ['ranked' => ['stdout' => $ranking, 'stderr' => '', 'exit' => 2], 'physical' => null],
         ]);
         [$candidate, $reference] = ExactSurfaceAuthority::pair(
@@ -1376,14 +1280,14 @@ final class SurfaceComparisonTest extends TestCase
     {
         $maps = RenameMaps::load($this->root . '/finding-gate/maps', MetricVocabulary::ofTree($this->root));
         $options = Options::parse(['gate', '--candidate=' . $this->root, '--reference=HEAD'], $this->root);
-        $fingerprints = new FingerprintCheck($report);
+        $forms = new \QmxFindingGate\PublicationForms(\QmxFindingGate\CapturePlan::forCorpus(Corpus::load($this->root), \QmxFindingGate\DeclaredSurfaces::load($this->root . '/finding-gate')));
 
         return new SurfaceComparison(
             $report,
             Corpus::load($this->root),
             $maps,
             $normalization ?? Normalization::fromRules([]),
-            $fingerprints,
+            $forms,
             new DeclaredDeltaCheck(
                 $options,
                 $report,

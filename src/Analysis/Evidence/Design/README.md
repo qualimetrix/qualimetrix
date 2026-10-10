@@ -40,6 +40,7 @@ Design/
 │   ├── InheritanceOptions.php
 │   ├── InheritanceOutcome.php
 │   ├── InheritanceResolution.php
+│   ├── ThrowableReach.php
 │   ├── InheritanceRule.php
 │   ├── NocCollector.php
 │   ├── NocOptions.php
@@ -78,8 +79,12 @@ port is promised to the composer adapter in `Infrastructure\Composer`, and
 this capability imports neither a composer type nor a parser (ADR 0074).
 
 `InheritanceResolution` represents a private complete answer with
-`InheritanceOutcome`: nullable depth, `Exact`/`Floor`/`Loop`, and nullable knowledge of whether the
-chain reaches PHP's `Throwable`. `ExternalDepth` and `ExternalChainOutcome`
+`InheritanceOutcome`: nullable depth, `Exact`/`Floor`/`Loop`, and explicit
+`ThrowableReach::Yes`/`No`/`Unknown` evidence about PHP's `Throwable`.
+`withPrefix()` extends either a declaration or external rejoin answer with the
+same nullable-depth and positive-Throwable evidence policy.
+Obstruction causes and names travel alongside those independent facts, through
+structured entries on `design.dit-unresolved`. `ExternalDepth` and `ExternalChainOutcome`
 carry external-tail evidence, including an explicit continuation to an already
 analysed name. The same resolver resumes that continuation using every known
 declaration; Composer never chooses one body from that roster. Depth completeness
@@ -128,7 +133,10 @@ unknown exception status when duplicate parent declarations disagree.
   unknown. Proven `Throwable` evidence survives a later unread tail.
   Interfaces, traits and enums receive 0. Size does not classify exceptions.
 - `InheritanceRule` emits at most one warning per enabled `analyze()` call,
-  distinguishing floors, loops, or both. Disabling the rule silences this
+  distinguishing floors, loops, or both. Its `design.dit-unresolved` pointer
+  names at most five distinct obstruction/cause pairs and the exact remainder:
+  absent Composer installation, unread or unplaced source, or a cycle member.
+  Missing installation includes a `composer install` hint. Disabling the rule silences this
   warning while collection still publishes the metric evidence. A numeric
   floor can cross the unchanged thresholds; both its finding and recommendation
   say the DIT is at least the published value. A loop emits no numeric finding.
@@ -263,3 +271,8 @@ than exposing a concrete collector or rule.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+> **Note:** `design.noc` is computed on logical class names. Namespace
+> aggregates sample physical declarations, so a logical name's graph value
+> contributes once per declaration. Namespace sums/counts/averages are
+> declaration-weighted, rather than graph-node or inheritance-edge counts.

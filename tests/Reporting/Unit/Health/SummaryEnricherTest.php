@@ -43,7 +43,7 @@ final class SummaryEnricherTest extends TestCase
             new DebtCalculator($registry),
             new ImpactCalculator(new ClassRankResolver(), $registry),
             new HealthSummaryBuilder(
-                new HealthMetricCatalog(),
+                new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())),
                 self::createStub(ComputedMetricDefinitionCatalogInterface::class),
             ),
         );
@@ -71,6 +71,7 @@ final class SummaryEnricherTest extends TestCase
         ]);
         foreach ([null, $this->createMetricRepository(projectMetrics: MetricBag::fromArray(['size.loc.sum' => 10]))] as $metrics) {
             $report = new Report(
+                \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
                 [],
                 1,
                 0,
@@ -98,6 +99,7 @@ final class SummaryEnricherTest extends TestCase
     public function itReturnsUnchangedReportWhenNoMetrics(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -135,6 +137,7 @@ final class SummaryEnricherTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [$finding, $finding],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -190,6 +193,7 @@ final class SummaryEnricherTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [$finding],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -241,6 +245,7 @@ final class SummaryEnricherTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -284,6 +289,7 @@ final class SummaryEnricherTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -321,6 +327,7 @@ final class SummaryEnricherTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [$finding],
             filesAnalyzed: 42,
             filesSkipped: 3,
@@ -352,6 +359,7 @@ final class SummaryEnricherTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -382,6 +390,7 @@ final class SummaryEnricherTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 50,
             filesSkipped: 0,
@@ -408,6 +417,7 @@ final class SummaryEnricherTest extends TestCase
     public function itNullMetricsReturnsUnchangedReport(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -444,6 +454,7 @@ final class SummaryEnricherTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [$finding, $finding],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -471,6 +482,7 @@ final class SummaryEnricherTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -495,6 +507,7 @@ final class SummaryEnricherTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -523,6 +536,7 @@ final class SummaryEnricherTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -556,6 +570,7 @@ final class SummaryEnricherTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -583,7 +598,7 @@ final class SummaryEnricherTest extends TestCase
                 [\Qualimetrix\Core\Symbol\MetricSubject::aggregate(\Qualimetrix\Core\Symbol\SymbolPath::forProject())],
             ),
         ]);
-        $report = new Report([], 1, 0, 0.0, 0, 0, metrics: $this->createMetricRepository(new MetricBag()), computedMetricEvaluation: $summary);
+        $report = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($this->createMetricRepository(new MetricBag())), [], 1, 0, 0.0, 0, 0, metrics: $this->createMetricRepository(new MetricBag()), computedMetricEvaluation: $summary);
         $enriched = $this->enricher->enrich($report);
         self::assertNotSame($report, $enriched);
         self::assertSame($summary, $enriched->computedMetricEvaluation);

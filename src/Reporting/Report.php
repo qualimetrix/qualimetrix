@@ -19,9 +19,9 @@ use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
 /**
  * Value Object representing the analysis report.
  *
- * @qmx-threshold coupling.cbo warning=36 error=36 -- This immutable report carries the same
+ * @qmx-threshold coupling.cbo warning=37 error=37 -- This immutable report carries the same
  *                publication snapshot to every formatter. Its population field and shared
- *                abstention narrator add intended edges.
+ *                abstention narrator and captured namespace index add intended edges.
  *                Splitting the transport record would distribute these same facts among
  *                objects every formatter still has to read. The exact limit retains one-edge headroom.
  */
@@ -55,6 +55,7 @@ final readonly class Report
      *                                                                                                   refusal envelope's
      */
     public function __construct(
+        public \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces,
         public array $findings,
         public int $filesAnalyzed,
         public int $filesSkipped,

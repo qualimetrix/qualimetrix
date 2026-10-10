@@ -65,7 +65,7 @@ final class ComputedMetricLayeringTest extends TestCase
             ]);
             $repo = new \Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository();
             try {
-                (new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator(
+                (new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricEvaluator(
                     $analysis,
                     self::createStub(\Qualimetrix\Core\Profiler\Contract\ProfilerInterface::class),
                 ))->evaluate($repo, 1);
@@ -93,7 +93,7 @@ final class ComputedMetricLayeringTest extends TestCase
         )), new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag(), \Qualimetrix\Core\Path\RelativePath::fromString('Empty.php'), 1);
         $repo->add(\Qualimetrix\Core\Symbol\SymbolPath::forNamespace('App'), \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag::fromArray(['size.loc' => 1]), null, null);
         try {
-            (new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator($analysis, self::createStub(\Qualimetrix\Core\Profiler\Contract\ProfilerInterface::class)))->evaluate($repo, 1);
+            (new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricEvaluator($analysis, self::createStub(\Qualimetrix\Core\Profiler\Contract\ProfilerInterface::class)))->evaluate($repo, 1);
             self::fail('A measured-level absent key must refuse.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertSame(['preset "strict"'], self::described($refusal));
@@ -552,7 +552,7 @@ final class ComputedMetricLayeringTest extends TestCase
             }
         };
 
-        $analysis = new ComputedMetricAnalysis(new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator(), new HealthFormulaExcluder()));
+        $analysis = new ComputedMetricAnalysis(new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator(), new HealthFormulaExcluder(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())));
 
         self::expectException(LogicException::class);
         self::expectExceptionMessage(ComputedMetricsSection::class . ' must be registered');
@@ -584,7 +584,7 @@ final class ComputedMetricLayeringTest extends TestCase
     {
         $analysis = new ComputedMetricAnalysis(new ComputedMetricsConfigResolver(
             new ComputedMetricFormulaValidator(),
-            $excluder ?? new HealthFormulaExcluder(),
+            $excluder ?? new HealthFormulaExcluder(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()),
         ));
 
         $document = new ConfigurationDocument([], AbsolutePath::fromString('/project'), DocumentComposer::compose(

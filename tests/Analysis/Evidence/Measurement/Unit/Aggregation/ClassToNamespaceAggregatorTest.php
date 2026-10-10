@@ -80,16 +80,14 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         ]), $file, 1);
         $repository->add(SymbolPath::forNamespace('One'), MetricBag::fromArray([
             'size.loc' => 8,
-            'size.loc.count' => 1,
             'size.class-count' => 1,
-            'size.class-count.count' => 1,
-        ]), $file, 2);
+        ])->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.loc'])
+            ->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.class-count']), $file, 2);
         $repository->add(SymbolPath::forNamespace('Two'), MetricBag::fromArray([
             'size.loc' => 9,
-            'size.loc.count' => 1,
             'size.class-count' => 1,
-            'size.class-count.count' => 1,
-        ]), $file, 10);
+        ])->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.loc'])
+            ->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.class-count']), $file, 10);
 
         $definitions = [
             new MetricDefinition('size.loc', SymbolLevel::File, [
@@ -106,6 +104,12 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         self::assertSame(9, $repository->get(SymbolPath::forNamespace('Two'))->get('size.loc.sum'));
         self::assertSame(1, $repository->get(SymbolPath::forNamespace('One'))->get('size.class-count.sum'));
         self::assertSame(1, $repository->get(SymbolPath::forNamespace('Two'))->get('size.class-count.sum'));
+
+        foreach (['One' => 8, 'Two' => 9] as $namespace => $total) {
+            $metrics = $repository->get(SymbolPath::forNamespace($namespace));
+            self::assertSame(1, $metrics->get('size.loc.count'));
+            self::assertEquals($total, $metrics->get('size.loc.avg'));
+        }
     }
 
     #[Test]
@@ -199,16 +203,16 @@ final class ClassToNamespaceAggregatorTest extends TestCase
             SymbolPath::forNamespace($namespace),
             MetricBag::fromArray([
                 'size.class-count' => 6,
-                'size.class-count.count' => 6,
                 'size.abstract-class-count' => 1,
-                'size.abstract-class-count.count' => 6,
                 'size.interface-count' => 1,
-                'size.interface-count.count' => 6,
                 'size.trait-count' => 1,
-                'size.trait-count.count' => 6,
                 'size.enum-count' => 1,
-                'size.enum-count.count' => 6,
-            ]),
+            ])
+                ->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.class-count'])
+                ->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.abstract-class-count'])
+                ->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.interface-count'])
+                ->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.trait-count'])
+                ->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.enum-count']),
             $file,
             1,
         );

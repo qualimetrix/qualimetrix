@@ -19,7 +19,6 @@ final class Corpus
     /** @param list<string> $only */
     public static function load(string $candidateRoot, array $only = []): self
     {
-        $outcomes = DeclaredOutcomes::load($candidateRoot . '/finding-gate');
         try {
             $directories = self::directories($candidateRoot);
         } catch (GateError $error) {
@@ -40,7 +39,7 @@ final class Corpus
         }
 
         try {
-            return self::loadCases($selected, $outcomes);
+            return self::loadCases($selected);
         } catch (GateError $error) {
             throw new CorpusInvalid($error->getMessage(), 0, $error);
         }
@@ -67,11 +66,11 @@ final class Corpus
     }
 
     /** @param list<string> $directories */
-    private static function loadCases(array $directories, DeclaredOutcomes $outcomes): self
+    private static function loadCases(array $directories): self
     {
         $cases = [];
         foreach ($directories as $directory) {
-            $cases[] = CaseDefinition::load($directory, $outcomes->of(basename($directory))['transition'] ?? null);
+            $cases[] = CaseDefinition::load($directory);
         }
         return new self($cases);
     }

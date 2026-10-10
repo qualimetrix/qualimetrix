@@ -168,6 +168,7 @@ final readonly class HtmlFindingPartitioner
         array $nodesByPath,
         array $findingsByNode,
         FormatterContext $context,
+        \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces,
     ): void {
         foreach ($findingsByNode as $nodePath => $findings) {
             $node = $nodesByPath[$nodePath] ?? throw new LogicException(\sprintf(
@@ -176,7 +177,7 @@ final readonly class HtmlFindingPartitioner
             ));
 
             foreach ($findings as $finding) {
-                $node->findings[] = $this->record->of($finding, $context);
+                $node->findings[] = $this->record->of($finding, $context, $fileNamespaces);
             }
         }
     }

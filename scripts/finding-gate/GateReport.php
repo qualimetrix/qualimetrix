@@ -27,17 +27,6 @@ final class GateReport
     /** @var list<array{class: string, scope: string, detail: string, diff: list<string>}> */
     private array $failures = [];
 
-    /**
-     * Where each failure was raised and the methods on the way to it,
-     * innermost first, parallel to `$failures` and never published: the
-     * witness registry holds every raise site, per caller, to a run that
-     * observed it, and a class raised by several checks cannot say which one
-     * spoke.
-     *
-     * @var list<array{file: string, line: int, chain: list<string>}>
-     */
-    private array $raisedAt = [];
-
     /** @var list<string> */
     private array $warnings = [];
 
@@ -111,7 +100,6 @@ final class GateReport
         'declaredRecordCount' => 'declared record(s)',
         'declaredValueCount' => 'declared value intent(s)',
         'declaredFieldCount' => 'declared field change(s)',
-        'declaredOutcomeCount' => 'declared case outcome(s)',
         'declaredSurfaceCount' => 'declared surface change(s)',
         'structuralMapCount' => 'structural map row(s)',
     ];
@@ -162,33 +150,13 @@ final class GateReport
         if ($source !== null) {
             $this->sourceFailures[$index] = $source;
         }
-        $frames = debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS);
-        $chain = [];
 
-        foreach (\array_slice($frames, 1) as $frame) {
-            if (isset($frame['class']) && !str_starts_with($frame['function'], '{closure')) {
-                $chain[] = substr((string) strrchr('\\' . $frame['class'], '\\'), 1) . '::' . $frame['function'];
-            }
-        }
-
-        $this->raisedAt[] = ['file' => $frames[0]['file'] ?? '?', 'line' => $frames[0]['line'] ?? 0, 'chain' => $chain];
     }
 
-    /** @return list<array{class: string, scope: string, detail: string, file: string, line: int, chain: list<string>}> */
+    /** @return list<array{class:string,scope:string,detail:string}> */
     public function raised(): array
     {
-        $raised = [];
-
-        foreach ($this->failures as $index => $failure) {
-            $raised[] = [
-                'class' => $failure['class'],
-                'scope' => $failure['scope'],
-                'detail' => $failure['detail'],
-                ...$this->raisedAt[$index],
-            ];
-        }
-
-        return $raised;
+        return array_map(static fn(array $failure): array => array_intersect_key($failure, array_flip(['class', 'scope', 'detail'])), $this->failures);
     }
 
     public function warn(string $message): void

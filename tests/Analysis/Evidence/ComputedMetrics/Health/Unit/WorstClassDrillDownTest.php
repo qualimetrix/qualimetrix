@@ -31,7 +31,7 @@ final class WorstClassDrillDownTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->drillDown = new WorstClassDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class));
+        $this->drillDown = new WorstClassDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class), new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
     }
 
     // --- buildSubtreeHealthScores ---

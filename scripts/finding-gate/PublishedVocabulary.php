@@ -10,7 +10,7 @@ namespace QmxFindingGate;
  * Reference HTML keeps its legacy aliases; candidate HTML publishes the shared
  * record's canonical keys. A surface absent from the exhaustive key table cannot
  * be licensed by a tuple spelling it never publishes. Prose fields are handled
- * by ProseRecords, including the candidate's independent advice and baseline lines.
+ * in each supported publication. Comparative field moves use authoritative JSON views only.
  */
 final class PublishedVocabulary
 {
@@ -120,7 +120,6 @@ final class PublishedVocabulary
         'summary' => 'prints the message as prose after a bare channel name',
         'text' => 'prints the message as prose after a bare channel name',
         'text-detail' => 'prints the message as prose after a bare channel name',
-        'text-verbose' => 'withdrawn reference surface; prints the message as prose after a bare channel name',
         'github' => 'prints the message as prose after "::"',
         'metrics' => 'publishes measured metrics, not finding records',
         'health' => 'publishes health scores, not finding records',
@@ -203,17 +202,14 @@ final class PublishedVocabulary
         }
         return self::SURFACES[self::syntaxSurface($surfaceClass)]['keys'] ?? [];
     }
-    /** @return list<string> Fields decoded by the complete record comparator. */
+    /** @return list<string> Fields decoded by the JSON record comparator. */
     public static function comparedFieldsOf(string $surface, string $codec = 'current'): array
     {
-        $surface = self::syntaxSurface($surface);
-        return match ($surface) {
+        return match (self::syntaxSurface($surface)) {
             'format:json' => ReportRecords::SCHEMAS['json'],
-            'format:html' => $codec === 'current' ? [...ReportRecords::SCHEMAS['json'], 'baselineVerdict', 'baselineReason'] : ['subject', 'rule', 'code', 'message', 'recommendation', 'severity', 'metricValue', 'symbol', 'occurrence', 'file', 'line'],
             'format:suppressed' => ['rule', 'code', 'subject', 'occurrence', 'edge', 'file', 'line', 'symbol', 'severity', 'message', 'recommendation'],
-            'format:sarif', 'format:gitlab', 'format:checkstyle' => ['code', 'severity', 'message', 'file', 'line'],
             'baseline-file' => ['subject', 'channel', 'occurrence', 'edge'],
-            default => ProseRecords::fieldsOf($surface, $codec),
+            default => [],
         };
     }
 

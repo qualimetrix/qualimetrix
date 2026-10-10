@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\RunTarget;
 
 use Amp\CancelledException;
-use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
 use Revolt\EventLoop;
 use Revolt\EventLoop\CallbackType;
 use Throwable;
@@ -22,70 +21,67 @@ final class StagedSignalGuard
 
     private function __construct(private readonly int $ownerPid) {}
 
-    public static function start(string $spelling): self
+    public static function start(): ?self
     {
-        self::assertAvailable();
-        $ownerPid = self::ownerPid();
-        self::assertNoForeignWatcher($spelling);
+        if (!self::available()) {
+            return null;
+        }
+        $ownerPid = getmypid();
+        if ($ownerPid === false || self::hasForeignWatcher()) {
+            return null;
+        }
+        foreach ([\SIGINT, \SIGTERM] as $signal) {
+            if (pcntl_signal_get_handler($signal) !== \SIG_DFL) {
+                return null;
+            }
+        }
         $guard = new self($ownerPid);
-        $guard->rememberDefaultHandlers($spelling);
-        $guard->register($spelling);
-
-        return $guard;
+        return $guard->register() ? $guard : null;
     }
 
-    private static function assertAvailable(): void
+    private static function available(): bool
     {
         $available = get_defined_functions()['internal'];
         foreach (['pcntl_signal', 'pcntl_signal_get_handler', 'pcntl_async_signals'] as $function) {
             if (!\in_array($function, $available, true)) {
-                throw EnvironmentRefusal::aboutCapability($function, 'Staged regular output', 'Use a PHP runtime with PCNTL or select a stream target.');
+                return false;
             }
         }
+
+        return true;
     }
 
-    private static function ownerPid(): int
-    {
-        $ownerPid = getmypid();
-        if ($ownerPid === false) {
-            throw EnvironmentRefusal::aboutCapability('getmypid', 'Staged regular output', 'The owner process cannot be identified.');
-        }
-
-        return $ownerPid;
-    }
-
-    private static function assertNoForeignWatcher(string $spelling): void
+    private static function hasForeignWatcher(): bool
     {
         foreach (EventLoop::getIdentifiers() as $callbackId) {
             if (EventLoop::getType($callbackId) === CallbackType::Signal) {
-                throw EnvironmentRefusal::aboutFile($spelling, 'stage', 'an existing event-loop signal watcher may replace the staged output handler');
+                return true;
             }
         }
+
+        return false;
     }
 
-    private function rememberDefaultHandlers(string $spelling): void
-    {
-        foreach ([\SIGINT, \SIGTERM] as $signal) {
-            $previous = pcntl_signal_get_handler($signal);
-            if ($previous !== \SIG_DFL) {
-                throw EnvironmentRefusal::aboutFile($spelling, 'stage', 'an existing signal handler owns SIGINT or SIGTERM');
-            }
-            $this->previousHandlers[$signal] = $previous;
-        }
-    }
-
-    private function register(string $spelling): void
+    private function register(): bool
     {
         $this->previousAsync = pcntl_async_signals();
+        foreach ([\SIGINT, \SIGTERM] as $signal) {
+            $this->previousHandlers[$signal] = pcntl_signal_get_handler($signal);
+        }
         try {
             pcntl_async_signals(true);
             foreach ([\SIGINT, \SIGTERM] as $signal) {
-                pcntl_signal($signal, $this->receive(...));
+                if (!pcntl_signal($signal, $this->receive(...))) {
+                    $this->close();
+                    return false;
+                }
             }
-        } catch (Throwable $failure) {
+        } catch (Throwable) {
             $this->close();
-            throw EnvironmentRefusal::aboutFile($spelling, 'stage', 'signal watching is unavailable: ' . $failure->getMessage());
+            return false;
         }
+
+        return true;
     }
 
     public function interruptedSignal(): ?int

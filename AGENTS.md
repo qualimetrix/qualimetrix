@@ -659,7 +659,7 @@ bin/qmx check src/ --baseline=baseline.json
 bin/qmx baseline:generate baseline.json src/
 
 # Benchmarks (metric calibration against real projects)
-cd benchmarks && composer install
+composer install --working-dir=benchmarks --no-scripts
 php scripts/collect-benchmark-data.php [output-file.json]
 composer benchmark:check       # Regression check: health scores vs expected ranges
 composer benchmark:update      # Recalibrate baseline ranges after formula changes

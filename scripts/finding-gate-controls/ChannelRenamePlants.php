@@ -6,8 +6,6 @@ namespace QmxFindingGateControls;
 
 use QmxFindingGate\CaseDefinition;
 use QmxFindingGate\Corpus;
-use QmxFindingGate\DeclaredDelta;
-use QmxFindingGate\FailureClass;
 use QmxFindingGate\SubjectLevel;
 use RuntimeException;
 
@@ -19,9 +17,6 @@ use RuntimeException;
  */
 final class ChannelRenamePlants
 {
-    /** @var array<string, bool> Actual source case directory => published catalogue. */
-    private static array $caseRules = [];
-
     /**
      * The map a control declares: every row the step tracks, plus the control's
      * own.
@@ -74,144 +69,7 @@ final class ChannelRenamePlants
         return self::trackedMapPlus('channels.tsv', $rows, $description);
     }
 
-    /** The scope the `bin/qmx rules` listing is captured under. {@see \QmxFindingGate\TreeRun::rules()}. */
-    public const PRODUCER_LISTING_SURFACE = 'tree|rules';
-
-    /**
-     * The `qmx rules` toleration a control whose mutation moves anything the
-     * listing prints needs — a producer name, or a channel code, since
-     * `RulesCommand` prints both: a producer's own name, and each channel it
-     * judges (`<channel> judges <metric>`). Three controls use it: the two
-     * built on {@see unusedPrivateChannelMutation()}, which renames a producer,
-     * and {@see RenameControls::renameWithoutMap()}, built on {@see lcomChannelMutation()},
-     * which renames a channel while leaving the producing rule's name alone.
-     * {@see RenameControls::referenceInputUntranslated()} touches neither: measured on
-     * `bin/qmx rules` captured before and after its one-literal edit,
-     * byte-identical.
-     *
-     * Whether the reach is a `surface-mismatch` is not a property of the
-     * mutation: it is a property of the step under test. A step that declares a
-     * delta for the listing has that surface compared against its exact diff and
-     * never for equality, so the run reports a delta class there and
-     * {@see Outcome::isDeclarationNoise()} absorbs it — and a toleration would
-     * then match nothing and fail the control as an unmeasured radius
-     * ({@see Outcome::idleTolerations()}). A step that declares nothing gets the
-     * plain surface diff, which without a toleration is an unexplained failure.
-     * Both readings occur on valid inputs: a delta may be declared or absent,
-     * and a toleration pinned to either answer is wrong for the other.
-     *
-     * So the answer is read from the step's own tracked declaration, the way
-     * {@see trackedChannelMapPlus()} reads its rows — through the gate's own
-     * loader, and from the repository rather than a scratch tree, exactly as
-     * {@see Harness::declaredSurfaces()} does. Membership is exact because that
-     * is the rule both the absorber and {@see Control::assertNotPinnedToDeclaredDelta()}
-     * apply, and because this pin names one whole surface rather than a prefix
-     * of several.
-     *
-     * A control that replaces the declared-delta index must derive its listing
-     * expectation from the declaration it plants, rather than call this helper
-     * against the repository's different index.
-     *
-     * @return list<Expectation>
-     */
-    public static function producerListingToleration(): array
-    {
-        $root = \dirname(__DIR__, 2) . '/finding-gate';
-
-        $declared = is_file($root . '/' . DeclaredDelta::INDEX)
-            ? DeclaredDelta::load($root)->surfaces()
-            : [];
-
-        return \in_array(self::PRODUCER_LISTING_SURFACE, $declared, true)
-            ? []
-            : [new Expectation(FailureClass::SURFACE_MISMATCH, self::PRODUCER_LISTING_SURFACE)];
-    }
-
-    /** @return list<Expectation> */
-    public static function caseListingFailures(?string $alreadyCoveredCase = null, bool $declarationReplaced = false): array
-    {
-        $root = \dirname(__DIR__, 2);
-        $declared = $declarationReplaced ? [] : DeclaredDelta::load($root . '/finding-gate')->surfaces();
-        $required = [];
-        foreach (Corpus::load($root)->cases as $case) {
-            $surface = 'case:' . $case->id . '|rules';
-            if ($case->id !== $alreadyCoveredCase && !\in_array($surface, $declared, true)
-                && self::casePublishesRules($case, $root)) {
-                $required[] = new Expectation(FailureClass::SURFACE_MISMATCH, $surface, exactScope: true);
-            }
-        }
-        return $required;
-    }
-
-    private static function casePublishesRules(CaseDefinition $case, string $root): bool
-    {
-        if (\array_key_exists($case->directory, self::$caseRules)) {
-            return self::$caseRules[$case->directory];
-        }
-
-        $child = Shell::start([\PHP_BINARY, $root . '/bin/qmx', 'rules', '--no-ansi'], $case->directory);
-        while (!$child->settled()) {
-            Shell::poll();
-            if ($child->age() > 30.0) {
-                Shell::terminateAll();
-                throw new RuntimeException('The source rules listing timed out for case ' . $case->id . '.');
-            }
-        }
-
-        return self::$caseRules[$case->directory] = self::publishedRules($case->id, $child->result());
-    }
-
-    /** @param array{stdout: string, stderr: string, exit: int} $result */
-    private static function publishedRules(string $case, array $result): bool
-    {
-        if ($result['exit'] === 0 && trim($result['stdout']) !== '') {
-            return true;
-        }
-        if ($result['exit'] === 3 && $result['stdout'] === '' && $result['stderr'] !== '') {
-            return false;
-        }
-
-        throw new RuntimeException(\sprintf(
-            'Cannot classify the source rules listing for case %s (exit %d, stdout %d bytes, stderr %d bytes).',
-            $case,
-            $result['exit'],
-            \strlen($result['stdout']),
-            \strlen($result['stderr']),
-        ));
-    }
-
-    /** @return list<Expectation> */
-    public static function unusedPrivateClaimFailures(): array
-    {
-        $failures = [];
-        foreach (Corpus::load(\dirname(__DIR__, 2))->cases as $case) {
-            if (\in_array('code-smell.unused-private@class', $case->channels, true)) {
-                $failures[] = new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:' . $case->id, exactScope: true);
-            }
-        }
-
-        return $failures;
-    }
-
-    /**
-     * What has to be re-declared when {@see unusedPrivateChannelMutation()}
-     * renames the channel: every claiming case and the tracked declaration fixture.
-     *
-     * Neither is evidence about the channel — both are declarations of it — so a
-     * control that left them stale would fail on the claim check and the witness
-     * and say nothing about the mechanism it is for. Shared by every control
-     * built on that rename so the three cannot drift apart over which
-     * declaration they carry.
-     *
-     * The step's derived declarations are the third, and they were missing until
-     * a step declared a delta for `tree|rules`: the measured diff names whatever
-     * rules fell inside its hunks, so leaving it stale failed one control on the
-     * declaration rather than on the mechanism — and left its twin green, decided
-     * by nothing but which rule the hunks happened to cover.
-     * {@see Mutation::renameInDerivedDeclarations()} carries it, and carries it
-     * unconditionally: a rename that finds nothing there is correct, because what
-     * a derived declaration contains is not a control's business.
-     */
+    /** Scratch declaration changes exercised by the owning semantic-claim mutation checks. */
     public static function unusedPrivateRenameDeclarations(): Mutation
     {
         $mutation = Mutation::edit(
@@ -266,75 +124,60 @@ final class ChannelRenamePlants
         );
     }
 
-    /**
-     * The channel rename both fingerprint controls apply: one product edit, and
-     * the channel code, its declaration key and the published `rule` field all
-     * move with it.
-     *
-     * The rule's `NAME` is that one place — the declaration key, the emitted
-     * `code` and the emitted `ruleName` all read it — so renaming it renames the
-     * channel without letting the two published fields drift apart. A code-only
-     * rename is not expressible: a whole-name row would go on to rewrite the
-     * `rule` field the mutation had left alone. Measured on the green control:
-     * that variant failed on the smells case's `html`, `json` and `text-detail`
-     * surfaces and on `tree|rules`.
-     *
-     * **The new name is the same length as the old one, and that is load-bearing
-     * rather than tidy.** `qmx rules` and `--format=text --detail=all` pad the channel
-     * column to a fixed width, so a name one character longer shifts the text
-     * beside it by one space — a shift no row can declare, because a row
-     * translates a name and not the padding after it. Measured on `qmx rules`
-     * alone: `code-smell.unused-private2` leaves exactly one line differing by
-     * one space, and `code-smell.unused-privat2` leaves the whole output
-     * identical under a single substitution. That is also why this is the shape
-     * a real step's rename has to have, or declare a delta for.
-     *
-     * A private mutation rather than a second caller of {@see
-     * lcomChannelMutation()}: the fingerprint pair needs a case that declares no
-     * delta, and the two controls that share the lcom mutation both pin their
-     * expectations to the whole `case:complexity`, where the declared sarif
-     * surface is one format among twelve and cannot swallow the control.
-     */
-    public static function unusedPrivateChannelMutation(): Mutation
+    /** Both outward fingerprint representations move without changing a finding or Population. */
+    public static function publishedUnusedPrivateFingerprintMutation(): Mutation
     {
         return Mutation::edit(
-            'src/Analysis/Evidence/CodeSmell/UnusedPrivateRule.php',
-            ["public const string NAME = 'code-smell.unused-private';" => "public const string NAME = 'code-smell.unused-privat2';"],
-            'channel code-smell.unused-private -> code-smell.unused-privat2, its code and published rule field together',
+            'src/Reporting/Formatter/Sarif/SarifFormatter.php',
+            [
+                "'primaryLocationLineHash' => \$v->getFingerprint(),"
+                    => "'primaryLocationLineHash' => \$v->code === 'code-smell.unused-private' ? 'unmapped:' . \$v->getFingerprint() : \$v->getFingerprint(),",
+            ],
+            'the unused-private SARIF fingerprint gains an unmapped prefix',
+        )->and(Mutation::edit(
+            'src/Reporting/Formatter/GitLabCodeQualityFormatter.php',
+            [
+                '        return md5($finding->getFingerprint());'
+                    => "        return md5((\$finding->code === 'code-smell.unused-private' ? 'unmapped:' : '') . \$finding->getFingerprint());",
+            ],
+            'the GitLab fingerprint hashes the same changed fingerprint input',
+        ));
+    }
+
+    /** JSON physical records, ranking and producer counts publish the same producer move. */
+    public static function publishedUnusedPrivateProducerMutation(): Mutation
+    {
+        return Mutation::edit(
+            'src/Reporting/Formatter/Json/JsonFindingSection.php',
+            [
+                '        return $this->record->of($finding, $context, $fileNamespaces);'
+                    => "        \$record = \$this->record->of(\$finding, \$context, \$fileNamespaces);\n"
+                        . "        if (\$record['channel'] === 'code-smell.unused-private') {\n"
+                        . "            \$record['rule'] = 'code-smell.unused-privat2';\n"
+                        . "        }\n"
+                        . '        return $record;',
+                '            $rule = $finding->ruleName;'
+                    => "            \$rule = \$finding->code === 'code-smell.unused-private' ? 'code-smell.unused-privat2' : \$finding->ruleName;",
+            ],
+            'only the JSON producer and its complete producer counts move; finding identity and Population stay unchanged',
         );
     }
 
-    /**
-     * The channel rename, shared by the map control and the overreach control.
-     *
-     * The declaration-side fragment was `ChannelDeclaration::magnitude(` when
-     * this control was written; `LcomRule` later moved onto
-     * `ChannelDeclaration::judging(` without changing the shape this control
-     * relies on — the key is still `self::NAME` on its own line, immediately
-     * before the factory call. `LcomRule.php` is the only file this mutation
-     * touches; `LcomVisitor.php` declares
-     * neither `self::NAME` nor `ChannelDeclaration`, so a future rename there
-     * cannot collide with this fragment.
-     *
-     * The renamed channel also gets `describedAs()`, because the product refuses
-     * the rename without it: a channel not named after its producer must carry
-     * its own description (ADR 0081), and a container that does not compile
-     * stops the gate at its channel probe, before any comparison. The text is
-     * the producer's own `getDescription()`, so every published description
-     * stays byte-identical and the channel name remains the only thing moved.
-     */
-    public static function lcomChannelMutation(): Mutation
+    /** The JSON section shares this publication between physical, ranked and grouped findings. */
+    public static function publishedLcomChannelMutation(): Mutation
     {
         return Mutation::edit(
-            'src/Analysis/Evidence/Cohesion/LcomRule.php',
+            'src/Reporting/Formatter/Json/JsonFindingSection.php',
             [
-                'self::NAME => ChannelDeclaration::judging(' => "'cohesion.lcom4' => ChannelDeclaration::judging(",
-                "                SymbolLevel::Class_,\n            ),"
-                    => "                SymbolLevel::Class_,\n            )->describedAs("
-                    . "'Checks Lack of Cohesion of Methods (high values indicate class should be split)'),",
-                'code: self::NAME,' => "code: 'cohesion.lcom4',",
+                '        return $this->record->of($finding, $context, $fileNamespaces);'
+                    => "        \$record = \$this->record->of(\$finding, \$context, \$fileNamespaces);\n"
+                        . "        if (\$record['channel'] === 'cohesion.lcom') {\n"
+                        . "            \$record['channel'] = 'cohesion.lcom4';\n"
+                        . "            \$record['code'] = 'cohesion.lcom4';\n"
+                        . "        }\n"
+                        . '        return $record;',
             ],
-            'channel cohesion.lcom -> cohesion.lcom4, described in its producer\'s own words, the producing rule name left alone',
+            'only the JSON finding channel and code move; producer, metric values and Population stay unchanged',
         );
     }
 }

@@ -1,8 +1,5 @@
 change	report	view	field	reason
-added	json-document	format:json	abstentions	Reports expose the invocation-owned population abstentions separately from findings
-added	json-document	check:output:file	abstentions	Reports expose the invocation-owned population abstentions separately from findings
-added	json-document	check:parallel	abstentions	Reports expose the invocation-owned population abstentions separately from findings
-added	json-document	check:baseline	abstentions	Reports expose the invocation-owned population abstentions separately from findings
-added	json-document	check:baseline-source	abstentions	Reports expose the invocation-owned population abstentions separately from findings
-removed	json	ranking	coupling.class-rank	Top issues replace raw rank with the same uniform-share units used for impact
-added	json	ranking	coupling.class-rank-share	Top issues publish the finite uniform-share value used for impact
+added	json	format:json	namespaces	publishes the complete namespace membership of every finding; file findings use the captured file namespace index and ranked copies retain the same record.
+added	json	check:baseline-source	namespaces	publishes the complete namespace membership of every finding; file findings use the captured file namespace index and ranked copies retain the same record.
+added	json	check:baseline	namespaces	publishes the complete namespace membership of every finding; file findings use the captured file namespace index and ranked copies retain the same record.
+added	json	ranking	namespaces	publishes the complete namespace membership of every finding; file findings use the captured file namespace index and ranked copies retain the same record.

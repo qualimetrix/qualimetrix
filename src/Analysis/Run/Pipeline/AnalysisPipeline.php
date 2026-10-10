@@ -8,7 +8,7 @@ use LogicException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluatorInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
@@ -73,7 +73,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         private readonly RuleProducerPreparation $ruleProducerPreparation,
         private readonly InlineDirectiveRun $inlineDirectiveRun,
         private readonly MeasurementAggregationInterface $measurementAggregation,
-        private readonly ComputedMetricEvaluator $computedMetricEvaluation,
+        private readonly ComputedMetricEvaluatorInterface $computedMetricEvaluation,
         DependencyGraphBuilderInterface $graphBuilder,
         private readonly MetricRepositoryFactoryInterface $repositoryFactory,
         private readonly ProfilerInterface $profiler,

@@ -107,6 +107,9 @@ final class TargetCollisions
         ?FileIdentity $identity,
         ?FileIdentity $standardOutput,
     ): void {
+        if ($judged[$subject]->kind === TargetKind::Descriptor && $judged[$subject]->descriptor !== 1) {
+            return;
+        }
         if ($identity !== null && $standardOutput !== null && $identity->sameAs($standardOutput)) {
             self::refuseCollision($judged, $subject, 'standard output', $identity);
         }

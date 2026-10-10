@@ -113,12 +113,12 @@ final class BaselineCleanupCommand extends BaselineCommand
 
         return $this->withPreparedTarget(
             $document->target,
-            fn(PreparedTarget $prepared, StagedSignalGuard $guard): int => $this->cleanupPrepared($input, $output, $written, $document, $prepared, $guard),
+            fn(PreparedTarget $prepared, ?StagedSignalGuard $guard): int => $this->cleanupPrepared($input, $output, $written, $document, $prepared, $guard),
         );
     }
 
     /** @param list<string> $written */
-    private function cleanupPrepared(InputInterface $input, OutputInterface $output, array $written, BaselineDocument $document, PreparedTarget $prepared, StagedSignalGuard $guard): int
+    private function cleanupPrepared(InputInterface $input, OutputInterface $output, array $written, BaselineDocument $document, PreparedTarget $prepared, ?StagedSignalGuard $guard): int
     {
         $measured = $this->measureAgainstBaseline($this->baselineRun, $this->loader, $input, $output, $document);
 
@@ -168,18 +168,23 @@ final class BaselineCleanupCommand extends BaselineCommand
             return self::SUCCESS;
         }
 
-        $this->writer->write($removal->baseline, $document->target, $context->projectRoot, $prepared, $guard->assertNotInterrupted(...));
+        $this->writer->write($removal->baseline, $document->target, $context->projectRoot, $prepared, $guard === null ? null : $guard->assertNotInterrupted(...));
 
-        $output->writeln(\sprintf(
-            '<info>Removed %d entr%s; %d remain%s (%d including entries that cannot be applied).</info>',
-            \count($removal->removed),
-            \count($removal->removed) === 1 ? 'y' : 'ies',
-            $removal->baseline->count(),
-            $removal->baseline->count() === 1 ? 's' : '',
-            $removal->baseline->totalCount(),
-        ));
+        self::reportRemoval(\count($removal->removed), $removal->baseline->count(), $removal->baseline->totalCount(), $output);
 
         return self::SUCCESS;
+    }
+
+    private static function reportRemoval(int $removed, int $remaining, int $includingInert, OutputInterface $output): void
+    {
+        $output->writeln(\sprintf(
+            '<info>Removed %d entr%s; %d remain%s (%d including entries that cannot be applied).</info>',
+            $removed,
+            $removed === 1 ? 'y' : 'ies',
+            $remaining,
+            $remaining === 1 ? 's' : '',
+            $includingInert,
+        ));
     }
 
     /**

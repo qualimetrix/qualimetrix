@@ -11,36 +11,31 @@ final readonly class ExternalDepth
         public ?int $depth,
         public ExternalChainOutcome $outcome,
         public ?string $unresolved,
-        public ?bool $reachesThrowable,
+        public ThrowableReach $reachesThrowable,
         public ?string $analysedName = null,
     ) {}
 
-    /** @qmx-ignore code-smell.boolean-argument -- reachesThrowable records measured ancestry truth in immutable evidence, not a behavior switch. */
-    public static function reachedRoot(int $depth, bool $reachesThrowable = false): self
+    public static function reachedRoot(int $depth, ThrowableReach $reachesThrowable = ThrowableReach::No): self
     {
         return new self($depth, ExternalChainOutcome::ReachedRoot, null, $reachesThrowable);
     }
 
-    /** @qmx-ignore code-smell.boolean-argument -- reachesThrowable records measured ancestry truth in immutable evidence, not a behavior switch. */
-    public static function noMap(int $depth = 0, ?bool $reachesThrowable = null): self
+    public static function noMap(int $depth = 0, ThrowableReach $reachesThrowable = ThrowableReach::Unknown, ?string $unresolved = null): self
     {
-        return new self($depth, ExternalChainOutcome::NoMapForIt, null, $reachesThrowable);
+        return new self($depth, ExternalChainOutcome::NoMapForIt, $unresolved, $reachesThrowable);
     }
 
-    /** @qmx-ignore code-smell.boolean-argument -- reachesThrowable records measured ancestry truth in immutable evidence, not a behavior switch. */
-    public static function brokeAt(int $depth, string $fqcn, ?bool $reachesThrowable = null): self
+    public static function brokeAt(int $depth, string $fqcn, ThrowableReach $reachesThrowable = ThrowableReach::Unknown): self
     {
         return new self($depth, ExternalChainOutcome::BrokeAt, $fqcn, $reachesThrowable);
     }
 
-    /** @qmx-ignore code-smell.boolean-argument -- reachesThrowable records measured ancestry truth in immutable evidence, not a behavior switch. */
-    public static function loop(string $fqcn, ?bool $reachesThrowable = null): self
+    public static function loop(string $fqcn, ThrowableReach $reachesThrowable = ThrowableReach::Unknown): self
     {
         return new self(null, ExternalChainOutcome::Loop, $fqcn, $reachesThrowable);
     }
 
-    /** @qmx-ignore code-smell.boolean-argument -- reachesThrowable records measured ancestry truth in immutable evidence, not a behavior switch. */
-    public static function reachedAnalysedName(int $depth, string $fqcn, ?bool $reachesThrowable = null): self
+    public static function reachedAnalysedName(int $depth, string $fqcn, ThrowableReach $reachesThrowable = ThrowableReach::Unknown): self
     {
         return new self($depth, ExternalChainOutcome::ReachedAnalysedName, null, $reachesThrowable, $fqcn);
     }

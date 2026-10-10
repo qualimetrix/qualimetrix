@@ -174,12 +174,7 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
 
     public function addScalar(SymbolPath $symbol, string $key, int|float $value): void
     {
-        if ($symbol->getType() === SymbolType::Class_) {
-            throw new LogicException('Class scalar writes require an explicit class subject');
-        }
-        if (\in_array($symbol->getType(), [SymbolType::Method, SymbolType::Function_], true)) {
-            return;
-        }
+        AggregateMetricIndex::assertAggregateSymbol($symbol);
 
         $this->addSubjectScalar(MetricSubject::aggregate($symbol), $key, $value);
     }
@@ -221,22 +216,12 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
             $this->classScopes->assertKey($key, ClassKeyScope::Declaration);
         }
         $stored = $this->subjectIndex->addScalarToExisting($subject, $key, $value);
-        if ($stored !== null) {
-            $this->indexExactSubject($stored['info'], $stored['metrics']);
-        }
+        $this->indexExactSubject($stored['info'], $stored['metrics']);
     }
 
     private function metricsOfSymbol(SymbolPath $symbol): ?MetricBag
     {
-        $symbol = $this->canonicalNamespaceSymbol($symbol);
-        $aggregate = $this->aggregateIndex->get($symbol);
-        if ($aggregate !== null) {
-            return $aggregate;
-        }
-
-        return $symbol->getType() === SymbolType::Class_
-            ? $this->logicalClassIndex->logicalClassMetrics($symbol)
-            : $this->subjectIndex->logicalCallableMetrics($symbol->toCanonical());
+        return $this->aggregateIndex->get($this->canonicalNamespaceSymbol($symbol));
     }
 
     private function metricsOfSubject(MetricSubject $subject): ?MetricBag

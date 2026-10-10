@@ -10,13 +10,11 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -147,26 +145,16 @@ final class LongParameterListRule extends AbstractRule
     ): ?Finding {
         /** @var LongParameterListOptions $effectiveOptions */
         $effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
-        $severity = $effectiveOptions->getSeverity($parameterCountValue);
-
-        if ($severity === null) {
-            return null;
-        }
-
-        $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
         $kind = $symbolType === SymbolType::Function_ ? 'Function' : 'Method';
-
-        return new Finding(
-            location: new Location($symbolInfo->file, $symbolInfo->line),
-            subject: $subject,
-            symbolPath: $subject->toSymbolPath(),
-            ruleName: $this->getName(),
-            code: self::NAME,
-            message: \sprintf('%s has %d parameters, ' . ThresholdCrossing::of($parameterCountValue, $threshold)->value . ' threshold of %d. Consider introducing a parameter object', $kind, $parameterCountValue, $threshold),
-            severity: $severity,
-            metricValue: $parameterCountValue,
-            recommendation: \sprintf('Parameters: %d (threshold: %d) — consider introducing a parameter object', $parameterCountValue, $threshold),
-            threshold: $threshold,
+        return $this->thresholdFinding(
+            $symbolInfo,
+            $parameterCountValue,
+            $effectiveOptions->getSeverity($parameterCountValue),
+            ['warning' => $effectiveOptions->warning, 'error' => $effectiveOptions->error],
+            static fn(int|float $threshold, ThresholdCrossing $crossing): array => [
+                \sprintf('%s has %d parameters, %s threshold of %d. Consider introducing a parameter object', $kind, $parameterCountValue, $crossing->value, $threshold),
+                \sprintf('Parameters: %d (threshold: %d) — consider introducing a parameter object', $parameterCountValue, $threshold),
+            ],
         );
     }
 
@@ -181,25 +169,15 @@ final class LongParameterListRule extends AbstractRule
         $effectiveOptions = $override === null
             ? $options
             : $options->withVoOverride($override->warning, $override->error);
-        $severity = $effectiveOptions->getVoSeverity($parameterCount);
-
-        if ($severity === null) {
-            return null;
-        }
-
-        $threshold = $severity === Severity::Error ? $effectiveOptions->voError : $effectiveOptions->voWarning;
-
-        return new Finding(
-            location: new Location($symbolInfo->file, $symbolInfo->line),
-            subject: $subject,
-            symbolPath: $subject->toSymbolPath(),
-            ruleName: $this->getName(),
-            code: self::NAME,
-            message: \sprintf('VO constructor has %d promoted parameters, ' . ThresholdCrossing::of($parameterCount, $threshold)->value . ' threshold of %d. Consider splitting the value object', $parameterCount, $threshold),
-            severity: $severity,
-            metricValue: $parameterCount,
-            recommendation: \sprintf('Parameters: %d (VO threshold: %d) — consider splitting the value object', $parameterCount, $threshold),
-            threshold: $threshold,
+        return $this->thresholdFinding(
+            $symbolInfo,
+            $parameterCount,
+            $effectiveOptions->getVoSeverity($parameterCount),
+            ['warning' => $effectiveOptions->voWarning, 'error' => $effectiveOptions->voError],
+            static fn(int|float $threshold, ThresholdCrossing $crossing): array => [
+                \sprintf('VO constructor has %d promoted parameters, %s threshold of %d. Consider splitting the value object', $parameterCount, $crossing->value, $threshold),
+                \sprintf('Parameters: %d (VO threshold: %d) — consider splitting the value object', $parameterCount, $threshold),
+            ],
         );
     }
 

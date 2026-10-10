@@ -12,7 +12,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * Resolves the exact declarations owned by each logical layer target.
  *
  * A dependency graph deliberately uses logical classes. Layer-violation
- * occurrences retain each exact declaration selected by a logical target.
+ * count units retain each exact declaration selected by a logical target.
  * This index preserves their cardinality and canonical order; source
  * declarations own the findings and their declaration controls.
  */

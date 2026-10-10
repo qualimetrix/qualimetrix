@@ -10,13 +10,11 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -92,28 +90,15 @@ final class NocRule extends AbstractRule
         $nocValue = (int) $noc;
         /** @var NocOptions $effectiveOptions */
         $effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
-        $severity = $effectiveOptions->getSeverity($nocValue);
-        if ($severity === null) {
-            return null;
-        }
-
-        $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
-
-        return new Finding(
-            location: new Location($classInfo->file, $classInfo->line),
-            subject: $subject,
-            symbolPath: $subject->toSymbolPath(),
-            ruleName: $this->getName(),
-            code: self::NAME,
-            message: \sprintf(
-                'NOC (Number of Children) is %d, ' . ThresholdCrossing::of($nocValue, $threshold)->value . ' threshold of %d. Consider using interfaces instead of inheritance',
-                $nocValue,
-                $threshold,
-            ),
-            severity: $severity,
-            metricValue: $nocValue,
-            recommendation: \sprintf('NOC: %d (threshold: %d) — too many direct subclasses', $nocValue, $threshold),
-            threshold: $threshold,
+        return $this->thresholdFinding(
+            $classInfo,
+            $nocValue,
+            $effectiveOptions->getSeverity($nocValue),
+            ['warning' => $effectiveOptions->warning, 'error' => $effectiveOptions->error],
+            static fn(int|float $threshold, ThresholdCrossing $crossing): array => [
+                \sprintf('NOC (Number of Children) is %d, %s threshold of %d. Consider using interfaces instead of inheritance', $nocValue, $crossing->value, $threshold),
+                \sprintf('NOC: %d (threshold: %d) — too many direct subclasses', $nocValue, $threshold),
+            ],
         );
     }
 

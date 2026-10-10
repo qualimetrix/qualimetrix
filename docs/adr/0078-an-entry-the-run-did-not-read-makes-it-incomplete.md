@@ -120,11 +120,10 @@ way to analyse a tree reached through a link at all.
   tool's to extend, and a reader that fails closed on a new reason loses the
   whole report to learn nothing.
 - **If exit 4 is unwanted for a known entry**, exclude the directory that holds
-  it: `exclude:` prunes a directory before the walk records anything about it,
-  so `exclude: [{subtree: build/link-farm}]` (ADR 0077 syntax) takes both a
-  directory symlink and an unlistable directory out of `failures[]` and the run
-  is complete again. `exclude:` prunes directories only, so it cannot do this
-  for a non-regular `*.php` entry: remove or rename that entry, or point the
-  run at a path that does not contain it. Silencing the whole class is
-  deliberately not offered — a switch that turns unread code back into a clean
-  report is the state this decision exists to remove.
+  it or the entry itself: authored `exclude:` selectors remove explicitly named
+  and discovered files/directories before analysis, including non-regular PHP
+  entries, directory symlinks and unlistable directories. An explicitly named
+  excluded path is not followed; a fully excluded invocation succeeds without
+  collection. The report records the excluded population. Exclusion declares
+  analysed scope; it does not turn an unread entry inside that scope into a
+  clean finding verdict.

@@ -5,24 +5,24 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\ExclusionDelta;
+use Qualimetrix\Analysis\Policy\Baseline\Ceiling\SubjectRegion;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence;
-use Qualimetrix\Core\Path\RelativePath;
 
-/** Proof that a file identity's own source population was removed by a new exclusion. */
+/** Proof that an identity's own source file was removed by a new exclusion. */
 final class ExclusionRemovedPopulation
 {
     private function __construct() {}
 
     public static function proves(BaselineEntry $entry, Baseline $baseline, RunCoverage $coverage): bool
     {
-        if (!str_starts_with($entry->identity->subjectKey, 'file:')
+        $file = SubjectRegion::subjectFile($entry->identity);
+        if ($file === null
             || !$coverage->analysis->isComplete()
             || $coverage->scope->paths() !== $baseline->scope) {
             return false;
         }
 
-        $file = RelativePath::fromString(substr($entry->identity->subjectKey, 5));
         if (!$coverage->scope->coversPath($file->value())) {
             return false;
         }

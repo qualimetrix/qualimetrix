@@ -14,8 +14,8 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\MetricLookup;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\MetricLookup;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\WeightedHealthFormula;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -27,7 +27,7 @@ final class HealthFormulaExcluderTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->excluder = new HealthFormulaExcluder();
+        $this->excluder = new HealthFormulaExcluder(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression());
     }
 
     #[Test]
@@ -188,7 +188,7 @@ final class HealthFormulaExcluderTest extends TestCase
     #[Test]
     public function itTreatsAnUnknownDimensionAsTheCallersDefect(): void
     {
-        $excluder = new HealthFormulaExcluder();
+        $excluder = new HealthFormulaExcluder(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression());
         $definitions = array_values(ComputedMetricDefaults::getDefaults());
 
         self::expectException(LogicException::class);
@@ -200,7 +200,7 @@ final class HealthFormulaExcluderTest extends TestCase
     #[Test]
     public function itExcludingOverallDimensionDoesNotThrow(): void
     {
-        $excluder = new HealthFormulaExcluder();
+        $excluder = new HealthFormulaExcluder(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression());
         $definitions = array_values(ComputedMetricDefaults::getDefaults());
 
         $result = $excluder->applyExcludeHealth($definitions, ['health.overall'], self::refuseOverall());

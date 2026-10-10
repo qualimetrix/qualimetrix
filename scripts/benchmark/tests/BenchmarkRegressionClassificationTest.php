@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Benchmark\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Symfony\Component\Filesystem\Filesystem;
@@ -85,7 +86,7 @@ PHP);
 
         // An infrastructure failure ('brokeninfra') is present, so the whole write is
         // blocked (partial corpus) even though 'fresh' and part of 'nometric' succeeded.
-        self::assertSame(1, $process->getExitCode(), $process->getErrorOutput());
+        self::assertSame(2, $process->getExitCode(), $process->getErrorOutput());
         self::assertSame($originalBaseline, file_get_contents($baselinePath));
 
         $errorOutput = $process->getErrorOutput();
@@ -146,7 +147,7 @@ PHP);
         $process = new Process([\PHP_BINARY, 'scripts/benchmark-regression.php', '--update-baselines'], $fixtureRoot);
         $process->run();
 
-        self::assertSame(1, $process->getExitCode(), $process->getErrorOutput());
+        self::assertSame(2, $process->getExitCode(), $process->getErrorOutput());
         self::assertStringContainsString('onlybroken: benchmark path not found', $process->getErrorOutput());
         self::assertSame($originalBaseline, file_get_contents($baselinePath));
     }
@@ -414,10 +415,65 @@ PHP);
 
         $errorOutput = $process->getErrorOutput();
 
-        self::assertSame(1, $process->getExitCode(), $errorOutput);
+        self::assertSame(2, $process->getExitCode(), $errorOutput);
         self::assertStringContainsString('pathless: baseline entry declares no `path`', $errorOutput);
         // An infrastructure refusal blocks the write for the whole corpus.
         self::assertSame($originalBaseline, file_get_contents($baselinePath));
+    }
+
+    #[TestWith([5])]
+    #[TestWith([124])]
+    #[Test]
+    public function itDistinguishesAnalysisFailureFromAScoreRegression(int $childExit): void
+    {
+        $fixtureRoot = $this->createFixtureRoot();
+        $this->copyScript($fixtureRoot);
+        mkdir($fixtureRoot . '/fixtures/project', recursive: true);
+        $baselinePath = $this->writeBaseline($fixtureRoot, [
+            'project' => ['path' => 'fixtures/project', 'expectations' => ['health.overall' => [0, 100]]],
+        ]);
+        $originalBaseline = (string) file_get_contents($baselinePath);
+        $this->writeFakeQmx($fixtureRoot, \sprintf('exit(%d);', $childExit));
+
+        $process = new Process([\PHP_BINARY, 'scripts/benchmark-regression.php', '--update-baselines'], $fixtureRoot);
+        $process->run();
+
+        self::assertSame(2, $process->getExitCode(), $process->getErrorOutput());
+        self::assertStringContainsString(\sprintf('analysis exited with code %d', $childExit), $process->getErrorOutput());
+        self::assertSame($originalBaseline, file_get_contents($baselinePath));
+    }
+
+    #[Test]
+    public function itReleasesEachReportBeforeMeasuringTheNextProjectWithinTheParentBudget(): void
+    {
+        $fixtureRoot = $this->createFixtureRoot();
+        $this->copyScript($fixtureRoot);
+        mkdir($fixtureRoot . '/fixtures/first', recursive: true);
+        mkdir($fixtureRoot . '/fixtures/second', recursive: true);
+        $projects = [
+            'first' => ['path' => 'fixtures/first', 'expectations' => ['health.overall' => [40, 60]]],
+        ];
+        $this->writeFakeQmx($fixtureRoot, <<<'PHP'
+$symbols = [['type' => 'project', 'name' => 'p', 'metrics' => ['health.overall' => 50]]];
+$name = str_repeat('x', 3 * 1024 * 1024);
+for ($index = 0; $index < 16; ++$index) {
+    $symbols[] = ['type' => 'class', 'name' => $name . $index, 'metrics' => ['health.overall' => 50]];
+}
+PHP);
+        $this->writeBaseline($fixtureRoot, $projects);
+        $single = new Process([\PHP_BINARY, '-d', 'memory_limit=128M', 'scripts/benchmark-regression.php'], $fixtureRoot);
+        $single->run();
+        self::assertSame(0, $single->getExitCode(), $single->getErrorOutput());
+        self::assertStringContainsString('All 1 projects within expected ranges.', $single->getErrorOutput());
+
+        $projects['second'] = ['path' => 'fixtures/second', 'expectations' => ['health.overall' => [40, 60]]];
+        $this->writeBaseline($fixtureRoot, $projects);
+        $pair = new Process([\PHP_BINARY, '-d', 'memory_limit=128M', 'scripts/benchmark-regression.php'], $fixtureRoot);
+        $pair->run();
+        self::assertSame(0, $pair->getExitCode(), $pair->getErrorOutput());
+        self::assertStringContainsString('All 2 projects within expected ranges.', $pair->getErrorOutput());
+        self::assertMatchesRegularExpression('/\bfirst\s+.*50\.0/', $pair->getErrorOutput());
+        self::assertMatchesRegularExpression('/\bsecond\s+.*50\.0/', $pair->getErrorOutput());
     }
 
     private function createFixtureRoot(): string
@@ -460,7 +516,9 @@ PHP);
     private function writeBaseline(string $fixtureRoot, array $projects): string
     {
         $baselinePath = $fixtureRoot . '/docs/internal/benchmark-baselines.json';
-        mkdir(\dirname($baselinePath), recursive: true);
+        if (!is_dir(\dirname($baselinePath))) {
+            mkdir(\dirname($baselinePath), recursive: true);
+        }
         $encoded = json_encode(
             ['updated_at' => '2000-01-01', 'projects' => $projects],
             \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR,

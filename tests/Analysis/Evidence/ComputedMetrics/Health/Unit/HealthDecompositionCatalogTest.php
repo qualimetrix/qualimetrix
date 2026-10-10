@@ -17,7 +17,7 @@ final class HealthDecompositionCatalogTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->provider = new HealthDecompositionCatalog();
+        $this->provider = new HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression());
     }
 
     #[Test]

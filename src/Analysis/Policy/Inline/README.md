@@ -203,7 +203,10 @@ When published, these configuration errors end `check` regardless of
 `fail_on`, and baselines or source suppressions cannot accept them.
 Their producer is `annotation.directive`. `UnusedDirectiveRule` owns
 ordinary debt `annotation.unused-directive`, defaults to Warning, and arms
-usage accounting after rule execution. Explicit
+usage accounting after rule execution. A complete selected-universe run still
+judges dead Run-reach directives when an unrelated PHP file is generated or
+configured-excluded; explicit path narrowing and failed/unknown discovery retain
+Unmeasured. Explicit
 `unused-directive-severity: info` preserves Info.
 Top-level path suppression, baseline and git scope can narrow that debt;
 namespace suppression does not match its file subject, and the producer's

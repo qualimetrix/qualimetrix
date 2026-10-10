@@ -17,8 +17,8 @@ final readonly class PathAbsenceProof
     /** @param list<string> $remaining */
     public function assertFinalAbsent(array $remaining, string $parent): void
     {
-        $this->assertLstatFailure($remaining);
         $this->assertUsableParent($parent);
+        $this->assertLstatFailure($remaining);
     }
 
     /** @param list<string> $remaining */

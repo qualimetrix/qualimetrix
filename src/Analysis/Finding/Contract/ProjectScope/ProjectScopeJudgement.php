@@ -6,7 +6,7 @@ namespace Qualimetrix\Analysis\Finding\Contract\ProjectScope;
 
 use LogicException;
 
-/** Two measured questions: declaration absence and authored exclude selectors. */
+/** Measured scope questions derived from one set of withholding doors. */
 final readonly class ProjectScopeJudgement
 {
     /**
@@ -70,6 +70,17 @@ final readonly class ProjectScopeJudgement
         if ($selector->outcome === ExcludeSelectorOutcome::NotJudged && $selector->removedEntries !== []) {
             throw new LogicException('A bound selector remains Removed on a partial run');
         }
+    }
+
+    public function judgesSelectedUniverse(): bool
+    {
+        foreach ($this->namespaceWithheldBy as $door) {
+            if ($door === ProjectScopeDoor::Paths || $door === ProjectScopeDoor::UnknownUniverse) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public function judgesNamespaceClaims(): bool

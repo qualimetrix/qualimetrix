@@ -1,0 +1,31 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 1355
++visible 1947
+@@ -21,3 +21,12 @@
+-</checkstyle>
+-
+-invocation-format:checkstyle 1355
++  <file name="Corpus\NameCase">
++    <error line="1" severity="warning" message="Class count is 6, exceeds threshold of 1. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
++  </file>
++  <file name="Corpus\NameCase\Web">
++    <error line="1" severity="warning" message="Class count is 2, exceeds threshold of 1. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
++  </file>
++  <file name="[project]">
++    <error line="1" severity="error" message="Circular dependency (2 classes): B → FOO → B" source="qmx.architecture.circular-dependency"/>
++  </file>
++</checkstyle>
++
++invocation-format:checkstyle 1947
+@@ -42,0 +51,9 @@
++  </file>
++  <file name="Corpus\NameCase">
++    <error line="1" severity="warning" message="Class count is 6, exceeds threshold of 1. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
++  </file>
++  <file name="Corpus\NameCase\Web">
++    <error line="1" severity="warning" message="Class count is 2, exceeds threshold of 1. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
++  </file>
++  <file name="[project]">
++    <error line="1" severity="error" message="Circular dependency (2 classes): B → FOO → B" source="qmx.architecture.circular-dependency"/>

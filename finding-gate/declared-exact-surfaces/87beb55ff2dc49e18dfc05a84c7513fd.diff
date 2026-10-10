@@ -1,0 +1,24 @@
+--- candidate
++++ reference (mapped)
+@@ -1,5 +1,5 @@
+-visible 200
+-
+-1 violation(s) suppressed by @qmx-ignore tags across the whole run (reporting selectors are not applied):
+-  src/Suppressed.php
+-    line 14 — eval() usage detected - security risk [code-smell.eval]
++visible 246
++
++1 violation(s) suppressed by @qmx-ignore tags across the whole run (reporting selectors are not applied):
++  src/Suppressed.php
++    line 14 — Replace eval() with a safer alternative (closures, reflection, or template engine). [code-smell.eval]
+@@ -20,5 +20,5 @@
+-invocation-stderr 200
+-
+-1 violation(s) suppressed by @qmx-ignore tags across the whole run (reporting selectors are not applied):
+-  src/Suppressed.php
+-    line 14 — eval() usage detected - security risk [code-smell.eval]
++invocation-stderr 246
++
++1 violation(s) suppressed by @qmx-ignore tags across the whole run (reporting selectors are not applied):
++  src/Suppressed.php
++    line 14 — Replace eval() with a safer alternative (closures, reflection, or template engine). [code-smell.eval]

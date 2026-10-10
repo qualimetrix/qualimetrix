@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationHelper;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MetricAggregator;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountCollector;
 use Qualimetrix\Core\Path\RelativePath;
@@ -240,18 +241,18 @@ final class AbstractnessCollectorTest extends TestCase
             SymbolPath::forNamespace($namespace),
             MetricBag::fromArray([
                 'size.class-count' => 6,
-                'size.class-count.count' => 6,
                 'size.abstract-class-count' => 1,
-                'size.abstract-class-count.count' => 6,
                 'size.interface-count' => 0,
-                'size.interface-count.count' => 6,
                 'size.trait-count' => 0,
-                'size.trait-count.count' => 6,
                 'size.enum-count' => 0,
-                'size.enum-count.count' => 6,
                 'size.implementing-enum-count' => 0,
-                'size.implementing-enum-count.count' => 6,
-            ]),
+            ])
+                ->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.class-count'])
+                ->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.abstract-class-count'])
+                ->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.interface-count'])
+                ->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.trait-count'])
+                ->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.enum-count'])
+                ->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.implementing-enum-count']),
             $file,
             1,
         );

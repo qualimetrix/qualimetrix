@@ -42,7 +42,7 @@ final class MetricsJsonFormatterTest extends TestCase
     public function itPublishesTheDocumentationAddressesWithoutDisplacingEitherVersion(): void
     {
         $data = json_decode(
-            $this->formatter->format(new Report([], 0, 0, 0.0, 0, 0), new FormatterContext())->body,
+            $this->formatter->format(new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 0, 0, 0.0, 0, 0), new FormatterContext())->body,
             true,
             512,
             \JSON_THROW_ON_ERROR,
@@ -74,6 +74,7 @@ final class MetricsJsonFormatterTest extends TestCase
     public function itFormatsWithNullMetrics(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
@@ -119,6 +120,7 @@ final class MetricsJsonFormatterTest extends TestCase
             });
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($repository),
             findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
@@ -196,6 +198,7 @@ final class MetricsJsonFormatterTest extends TestCase
         $repository->method('getSubject')->willReturn(MetricBag::fromArray(['complexity.ccn' => 1]));
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($repository),
             findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
@@ -238,6 +241,7 @@ final class MetricsJsonFormatterTest extends TestCase
         $repository->method('getSubject')->willReturn(MetricBag::fromArray([]));
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($repository),
             findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
@@ -271,6 +275,7 @@ final class MetricsJsonFormatterTest extends TestCase
             ]));
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($repository),
             findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
@@ -320,6 +325,7 @@ final class MetricsJsonFormatterTest extends TestCase
             ]));
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($repository),
             findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
@@ -350,6 +356,7 @@ final class MetricsJsonFormatterTest extends TestCase
     public function itProducesValidJson(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 0,
             filesSkipped: 0,

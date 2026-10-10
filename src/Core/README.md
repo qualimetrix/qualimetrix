@@ -39,6 +39,7 @@ Core/
 ├── Environment/
 │   └── EnvironmentFailureInterface.php    # Neutral delivery/storage failure marker
 ├── FileTarget/
+│   ├── CreatedDirectoryOwnership.php
 │   ├── DirectoryFacts.php
 │   ├── EntryControl.php
 │   ├── EntryFacts.php
@@ -991,10 +992,19 @@ configurations; unavailable or ambiguous evidence stays exposed.
 `NssPrivateGroupRoster` proves membership from all selected source rows.
 `NativeNssEnumerator` owns bounded native enumeration; its two-second deadline
 and output cap retain conservative refusal on incomplete evidence. The private
-group proof rereads the configuration after enumeration. `PathAbsenceProof`
+group proof rereads the configuration after its first enumeration. Positive and
+conservative negative answers are retained per effective UID/GID for the process;
+a fork starts a fresh native membership owner. `PathAbsenceProof`
 classifies failed path inspection only after checking the parent evidence.
 `TargetPath::resolve()` accepts an optional membership port, and `ResolvedTarget`
 retains it through claim, replacement and lock rechecks.
+`TargetPath::rememberCreatedDirectory()` lets Cache retain ownership of a private
+directory it just created. Internal `CreatedDirectoryOwnership` retains these
+process-owned facts separately from the component walk. `PathWalk` reuses its
+judgement only while the physical directory's inode, mode, UID, GID and effective
+process owner agree.
+A changed directory returns to ordinary judgement; a fork drops these facts.
+The directory walk and publication identity checks still run on every write.
 
 Held regular files open without truncation and are checked against their judged
 inode before a write. Staged replacement preserves the final bytes until atomic

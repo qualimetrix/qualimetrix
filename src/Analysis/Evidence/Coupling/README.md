@@ -472,3 +472,8 @@ Coupling rules use Finding’s protected population declaration factories. Their
 source-owned lazy inputs retain namespace admission before metric reads and
 exact PHP-kind checks before class bag acquisition. The ClassRank finding
 builder receives the same full declaration used by its invocation.
+
+> **Note:** `coupling.class-rank` is computed on logical class names. Namespace
+> aggregates sample physical declarations, so a logical name's graph value
+> contributes once per declaration. Namespace sums/counts/averages are
+> declaration-weighted, rather than graph-node or inheritance-edge counts.

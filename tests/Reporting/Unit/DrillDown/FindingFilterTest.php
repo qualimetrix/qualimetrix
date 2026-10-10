@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Reporting\Unit\DrillDown;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
@@ -34,6 +35,55 @@ final class FindingFilterTest extends TestCase
         $this->filter = new FindingFilter();
     }
 
+    /** @return iterable<string, array{list<string>, ?string, list<string>, string}> */
+    public static function namespacePublicationCases(): iterable
+    {
+        yield 'named file' => [['Shop'], null, ['Shop'], 'Shop'];
+        yield 'multiple file' => [['Shop', 'Other'], null, ['Other', 'Shop'], 'Other, Shop'];
+        yield 'global file' => [[], null, [''], '(global)'];
+        yield 'declaration owns its namespace' => [['Other'], 'Shop', ['Shop'], 'Shop'];
+    }
+
+    /**
+     * @param list<string> $declared
+     * @param list<string> $expected
+     */
+    #[Test]
+    #[DataProvider('namespacePublicationCases')]
+    public function itPublishesTheNamespacesUsedForSelection(array $declared, ?string $own, array $expected, string $group): void
+    {
+        $file = RelativePath::fromString('src/Multi.php');
+        $repository = new InMemoryMetricRepository();
+        foreach ($declared as $i => $namespace) {
+            $repository->addSubject(MetricSubject::declaration(DeclarationPath::of(
+                SymbolPath::forClass($namespace, 'Marker' . $i),
+                $file,
+                DeclarationOrdinal::fromRank(0),
+            )), new MetricBag(), $file, 1 + $i);
+        }
+        $symbol = SymbolPath::forFile($file);
+        $subject = $own === null ? MetricSubject::aggregate($symbol) : MetricSubject::declaration(DeclarationPath::of(
+            SymbolPath::forMethod($own, 'Cart', 'run'),
+            $file,
+            DeclarationOrdinal::fromRank(0),
+        ));
+        $finding = new Finding(new Location($file, 7), $subject, $symbol, 'duplication.clone', 'duplication.clone', 'Physical copy', Severity::Warning);
+        $index = FileNamespaceIndex::fromRepository($repository);
+        $context = new FormatterContext(namespace: $expected === ['']
+            ? \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::regex('^$')
+            : \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact('Shop'));
+        $selected = $this->filter->filterFindings([$finding], $context, $index);
+        self::assertSame([$finding], $selected);
+        self::assertSame($finding->getFingerprint(), $selected[0]->getFingerprint());
+        $record = (new \Qualimetrix\Reporting\Formatter\FindingRecord(
+            new \Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry(self::createStub(\Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface::class), ['duplication.clone' => 1]),
+            new \Qualimetrix\Reporting\Formatter\Json\JsonSanitizer(),
+        ))->of($selected[0], $context, $index);
+        self::assertSame(\count($expected) === 1 ? $expected[0] : null, $record['namespace']);
+        self::assertSame($expected, $record['namespaces']);
+        self::assertSame([$group => [$finding]], \Qualimetrix\Reporting\Formatter\Ordering\FindingSorter::group($selected, \Qualimetrix\Reporting\GroupBy::NamespaceName, $index));
+    }
+
     // --- filterFindings ---
 
     #[Test]
@@ -46,7 +96,7 @@ final class FindingFilterTest extends TestCase
 
         $context = new FormatterContext();
 
-        $result = $this->filter->filterFindings($findings, $context);
+        $result = $this->filter->filterFindings($findings, $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertCount(2, $result);
     }
@@ -61,7 +111,7 @@ final class FindingFilterTest extends TestCase
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact('App\\Service'));
 
-        $result = $this->filter->filterFindings($findings, $context);
+        $result = $this->filter->filterFindings($findings, $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertCount(1, $result);
         self::assertSame('Foo', $result[0]->symbolPath->type);
@@ -77,7 +127,7 @@ final class FindingFilterTest extends TestCase
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'));
 
-        $result = $this->filter->filterFindings($findings, $context);
+        $result = $this->filter->filterFindings($findings, $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertCount(1, $result);
         self::assertSame('Gateway', $result[0]->symbolPath->type);
@@ -92,7 +142,7 @@ final class FindingFilterTest extends TestCase
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'));
 
-        $result = $this->filter->filterFindings($findings, $context);
+        $result = $this->filter->filterFindings($findings, $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertSame([], $result);
     }
@@ -112,7 +162,7 @@ final class FindingFilterTest extends TestCase
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::regex('App\\\\[^\\\\]+\\\\Order'));
 
-        $result = $this->filter->filterFindings($findings, $context);
+        $result = $this->filter->filterFindings($findings, $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertCount(2, $result);
     }
@@ -127,7 +177,7 @@ final class FindingFilterTest extends TestCase
 
         $context = new FormatterContext(class: 'App\\Service\\UserService');
 
-        $result = $this->filter->filterFindings($findings, $context);
+        $result = $this->filter->filterFindings($findings, $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertCount(1, $result);
         self::assertSame('UserService', $result[0]->symbolPath->type);
@@ -149,7 +199,7 @@ final class FindingFilterTest extends TestCase
 
         $context = new FormatterContext(class: 'App\\Service\\UserService');
 
-        $result = $this->filter->filterFindings([$finding], $context);
+        $result = $this->filter->filterFindings([$finding], $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertSame([], $result);
     }
@@ -163,7 +213,7 @@ final class FindingFilterTest extends TestCase
 
         $context = new FormatterContext(class: 'GlobalClass');
 
-        $result = $this->filter->filterFindings($findings, $context);
+        $result = $this->filter->filterFindings($findings, $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertCount(1, $result);
     }
@@ -216,7 +266,7 @@ final class FindingFilterTest extends TestCase
         $global = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::regex('.*'));
         $shop = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('Shop'));
 
-        foreach ([null, FileNamespaceIndex::fromRepository(null)] as $index) {
+        foreach ([FileNamespaceIndex::fromRepository(null)] as $index) {
             self::assertSame([$finding], $this->filter->filterFindings([$finding], $global, $index));
             self::assertSame([], $this->filter->filterFindings([$finding], $shop, $index));
             self::assertSame([], $this->filter->filterFindings([$finding], new FormatterContext(class: 'Shop\\Cart'), $index));
@@ -345,7 +395,7 @@ final class FindingFilterTest extends TestCase
             \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App'),
             \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact('App\\Service'),
         ] as $selector) {
-            $result = $this->filter->filterFindings($findings, new FormatterContext(namespace: $selector));
+            $result = $this->filter->filterFindings($findings, new FormatterContext(namespace: $selector), \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
             foreach ($result as $finding) {
                 self::assertNotSame(

@@ -212,12 +212,11 @@ the final file exists and is writable. Move the destination or make its parent
 writable/searchable before running qmx.
 
 SIGINT/SIGTERM before publication discard the run's own sibling and return
-128 + signal. Staged regular output requires pcntl, default SIGINT/SIGTERM handlers
-and no registered event-loop signal callbacks; otherwise exit 3 precedes
-preparation and analysis. Descriptor/stream output and log-only runs remain
-available. Replacing signal handlers during the operation is unsupported.
-SIGKILL, failed cleanup and already published targets are outside that
-cleanup guarantee. A later profile failure does not roll back a published report.
+128 + signal when pcntl and exclusive signal ownership are available. Otherwise
+ordinary atomic publication proceeds without replacing foreign handlers, and
+interruption may leave the private sibling. Replacing handlers during a guarded
+operation is unsupported. SIGKILL, failed cleanup and already published targets
+are also outside that cleanup guarantee. A later profile failure does not roll back a published report.
 
 A symbolic link is followed only when another user cannot place that directory
 entry; accepted links remain intact and write their resolved referents. This
@@ -1386,7 +1385,8 @@ list. For values and layer forms see [Configuration](../getting-started/configur
 
 `QMX_ASCII` is judged before any command runs. Case-insensitive
 `1/true/yes/on` enables ASCII; `0/false/no/off`, empty and absence select
-Unicode. Other values refuse with exit 3 and name the accepted values.
+Unicode. Other values refuse with exit 3 and name the accepted values;
+structured refusals identify `source.kind: environment` and `source.name: QMX_ASCII`.
 
 The mode affects the four prose analysis formats and every ErrorStream
 diagnostic, including progress, stdout reports and `--output` report files.

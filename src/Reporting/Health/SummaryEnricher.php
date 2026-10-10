@@ -52,6 +52,7 @@ final readonly class SummaryEnricher
         $topIssues = $this->impactCalculator->computeTopIssues($report->findings, $metrics, $tree);
 
         return new Report(
+            fileNamespaces: $report->fileNamespaces,
             findings: $report->findings,
             filesAnalyzed: $report->filesAnalyzed,
             filesSkipped: $report->filesSkipped,

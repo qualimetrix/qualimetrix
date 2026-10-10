@@ -40,7 +40,7 @@ final class ViolationDensityTest extends TestCase
     protected function setUp(): void
     {
         $this->builder = new HealthSummaryBuilder(
-            new HealthMetricCatalog(),
+            new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())),
             self::createStub(ComputedMetricDefinitionCatalogInterface::class),
         );
     }
@@ -66,6 +66,7 @@ final class ViolationDensityTest extends TestCase
         $findings = $this->createFindingsForClass('App\\Service', 'HeavyService', 10);
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -105,6 +106,7 @@ final class ViolationDensityTest extends TestCase
         $findings = $this->createFindingsForClass('App\\Payment', 'PaymentService', 5);
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -138,6 +140,7 @@ final class ViolationDensityTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -173,6 +176,7 @@ final class ViolationDensityTest extends TestCase
         $findings = $this->createFindingsForClass('App\\Service', 'EmptyClass', 3);
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -208,6 +212,7 @@ final class ViolationDensityTest extends TestCase
         $findings = $this->createFindingsForClass('App\\Service', 'NoLocClass', 2);
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -244,6 +249,7 @@ final class ViolationDensityTest extends TestCase
         $findings = $this->createFindingsForClass('App\\Service', 'OddClass', 7);
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,

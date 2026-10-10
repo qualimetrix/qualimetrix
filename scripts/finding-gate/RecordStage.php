@@ -32,7 +32,7 @@ final class RecordStage implements SurfaceStage
         foreach ($this->run->corpus->cases as $case) {
             $this->records->prepare($case->id);
             $key = 'case:' . $case->id . '|format:json';
-            if ($this->run->isExactSurface($key) || $this->run->publicationForms->recordsPair($key) === false) {
+            if ($this->run->isExactSurface($key) || !$this->run->publicationForms->recordsPair($key)) {
                 continue;
             }
             foreach (['candidate', 'reference'] as $side) {
@@ -70,10 +70,11 @@ final class RecordStage implements SurfaceStage
 
     public function applyStage(SurfacePair $pair): void
     {
-        if (!str_starts_with($pair->key, 'case:') || $pair->candidate === null || $pair->reference === null) {
+        if (!str_starts_with($pair->key, 'case:') || !ReportViews::recordBearingSurface($pair->surface)
+            || $pair->candidate === null || $pair->reference === null) {
             return;
         }
-        if ($this->run->publicationForms->recordsPair($pair->key) === false) {
+        if (!$this->run->publicationForms->recordsPair($pair->key)) {
             return;
         }
         $case = substr($pair->key, 5, (int) strpos($pair->key, '|') - 5);
@@ -90,7 +91,7 @@ final class RecordStage implements SurfaceStage
             default => $report === null ? 'format:json' : ReportViews::main($report),
         };
         $sourceView = $pair->surface === 'baseline-file' ? $this->baselineView($case) : $view;
-        if ($this->run->publicationForms->recordsPair('case:' . $case . '|' . $sourceView) === false) {
+        if (!$this->run->publicationForms->recordsPair('case:' . $case . '|' . $sourceView)) {
             return;
         }
         $definition = $this->definition($case);
@@ -108,12 +109,6 @@ final class RecordStage implements SurfaceStage
             try {
                 if ($report !== null) {
                     $text = $this->primary($case, $report, $view, $side, $text);
-                } elseif (\in_array($pair->surface, ['format:html', 'format:sarif', 'format:gitlab'], true)) {
-                    $text = $this->structured($case, $side, $pair->surface, $text);
-                } elseif (\in_array($pair->surface, ProseRecords::SURFACES, true)) {
-                    $text = $this->prose($case, $side, $pair->surface, $text);
-                } elseif ($pair->surface === 'format:checkstyle') {
-                    $text = $this->checkstyle($case, $side, $text);
                 } elseif ($pair->surface === 'baseline-file') {
                     $text = $this->baseline($case, $side, $text);
                 }
@@ -185,153 +180,6 @@ final class RecordStage implements SurfaceStage
             }
         }
         return $edits === [] ? $text : ReportRecords::edit($text, $edits);
-    }
-
-    private function structured(string $case, string $side, string $surface, string $text): string
-    {
-        $projected = ReportRecords::projected($surface, $text);
-        $removed = array_map(fn(array $record): array => ReportRecords::projection($surface, RankingSchema::physical($record), $this->run->publicationCodec($side)), $this->records->licensedResiduals($case, 'format:json', $side));
-        $edits = [];
-        $budgets = [];
-        foreach ($projected as $entry) {
-            $path = $entry['path'];
-            $bucket = $surface === 'format:html' ? ValueCheck::value(\array_slice($path, 0, -1)) : '*';
-            $budgets[$bucket] ??= $removed;
-            $at = array_search($entry['fields'], $budgets[$bucket], true);
-            if ($at !== false) {
-                $edits[ValueCheck::value($path)] = null;
-                unset($budgets[$bucket][$at]);
-                continue;
-            }
-            foreach ($this->records->authority($case, 'format:json', $side) as $record) {
-                if (ReportRecords::projection($surface, $record, $this->run->publicationCodec($side)) !== $entry['fields']) {
-                    continue;
-                }
-                $base = $this->records->base('json', 'format:json', [$record])[0];
-                $replacement = $this->records->replacement($case, 'format:json', $side, $base);
-                if ($replacement === $base) {
-                    break;
-                }
-                $changed = ReportRecords::projection($surface, $replacement, $this->run->publicationCodec($side));
-                foreach ($changed as $field => $value) {
-                    if ($value === $entry['fields'][$field]) {
-                        continue;
-                    }
-                    $target = match ($surface) {
-                        'format:sarif' => match ($field) {
-                            'file' => [...$path, 'locations', 0, 'physicalLocation', 'artifactLocation', 'uri'],
-                            'line' => [...$path, 'locations', 0, 'physicalLocation', 'region', 'startLine'],
-                            'message' => [...$path, 'message', 'text'],
-                            default => [...$path, $field],
-                        },
-                        default => [...$path, $field],
-                    };
-                    $edits[ValueCheck::value($target)] = ValueCheck::value($surface === 'format:sarif' && $field === 'message' ? $value['text'] : $value);
-                }
-                break;
-            }
-        }
-        $text = $edits === [] ? $text : ReportRecords::edit($text, $edits);
-        return $surface === 'format:sarif' && $removed !== [] ? $this->sarifCatalog($text, array_column($removed, 'ruleId')) : $text;
-    }
-
-    /** @param list<string> $removedCodes */
-    private function sarifCatalog(string $text, array $removedCodes): string
-    {
-        $document = ReportRecords::decode($text);
-        $edits = [];
-        foreach ($document['runs'] as $runIndex => $run) {
-            $used = array_column($run['results'], 'ruleId');
-            $rules = array_values(array_filter($run['tool']['driver']['rules'], static fn(array $rule): bool => !\in_array($rule['id'], $removedCodes, true) || \in_array($rule['id'], $used, true)));
-            $indices = array_flip(array_column($rules, 'id'));
-            foreach ($run['tool']['driver']['rules'] as $index => $rule) {
-                if (\in_array($rule['id'], $removedCodes, true) && !\in_array($rule['id'], $used, true)) {
-                    $edits[ValueCheck::value(['runs', $runIndex, 'tool', 'driver', 'rules', $index])] = null;
-                }
-            }
-            foreach ($run['results'] as $index => $record) {
-                if ($record['ruleIndex'] !== $indices[$record['ruleId']]) {
-                    $edits[ValueCheck::value(['runs', $runIndex, 'results', $index, 'ruleIndex'])] = ValueCheck::value($indices[$record['ruleId']]);
-                }
-            }
-        }
-        return ReportRecords::edit($text, $edits);
-    }
-
-    private function prose(string $case, string $side, string $surface, string $text): string
-    {
-        $removed = array_map(RankingSchema::physical(...), $this->records->licensedResiduals($case, 'format:json', $side));
-        $published = $this->records->authority($case, 'format:json', $side);
-        foreach (array_reverse(ProseRecords::extract($surface, $text, $this->run->publicationCodec($side))) as $entry) {
-            if ($surface === 'format:summary' && isset($entry['fields']['rank']) && RankingCheck::create($this->run)->observed($case, 'format:json', $side)) {
-                $text = ProseRecords::erase($text, $entry['lines']);
-                continue;
-            }
-            foreach ($published as $index => $record) {
-                if (!ProseRecords::matches($surface, $entry['fields'], $record, $this->run->publicationCodec($side))) {
-                    continue;
-                }
-                unset($published[$index]);
-                $at = array_search($record, $removed, true);
-                if ($at !== false) {
-                    $text = ProseRecords::erase($text, $entry['lines']);
-                    unset($removed[$at]);
-                } else {
-                    $base = $this->records->base('json', 'format:json', [$record])[0];
-                    $replacement = $this->records->replacement($case, 'format:json', $side, $base);
-                    if ($replacement !== $base) {
-                        $text = ProseRecords::rewriteProjection($surface, $text, $entry, $record, $replacement, $this->run->publicationCodec($side));
-                    }
-                }
-                break;
-            }
-        }
-        return $text;
-    }
-
-    private function checkstyle(string $case, string $side, string $text): string
-    {
-        $removed = array_map(fn(array $record): array => ReportRecords::projection('format:checkstyle', RankingSchema::physical($record), $this->run->publicationCodec($side)), $this->records->licensedResiduals($case, 'format:json', $side));
-        $published = $this->records->authority($case, 'format:json', $side);
-        $rebuilt = preg_replace_callback('~<file\b[^>]*name="([^"]*)"[^>]*>(.*?)</file>~s', function (array $file) use ($case, $side, &$removed, &$published): string {
-            $name = html_entity_decode($file[1], \ENT_QUOTES | \ENT_XML1, 'UTF-8');
-            $body = preg_replace_callback('~<error\b[^>]*/>~s', function (array $error) use ($name, $case, $side, &$removed, &$published): string {
-                preg_match_all('~\b([a-z]+)="([^"]*)"~', $error[0], $attributes, \PREG_SET_ORDER);
-                $values = [];
-                foreach ($attributes as $attribute) {
-                    $values[$attribute[1]] = html_entity_decode($attribute[2], \ENT_QUOTES | \ENT_XML1, 'UTF-8');
-                }
-                $projection = ['file' => $name, 'line' => isset($values['line']) ? (int) $values['line'] : null, 'severity' => $values['severity'] ?? null, 'code' => $values['source'] ?? null, 'message' => $values['message'] ?? null];
-                $at = array_search($projection, $removed, true);
-                if ($at !== false) {
-                    unset($removed[$at]);
-                    return '';
-                }
-                foreach ($published as $index => $record) {
-                    if (ReportRecords::projection('format:checkstyle', $record, $this->run->publicationCodec($side)) !== $projection) {
-                        continue;
-                    }
-                    unset($published[$index]);
-                    $base = $this->records->base('json', 'format:json', [$record])[0];
-                    $replacement = $this->records->replacement($case, 'format:json', $side, $base);
-                    if ($replacement === $base) {
-                        return $error[0];
-                    }
-                    $changed = ReportRecords::projection('format:checkstyle', $replacement, $this->run->publicationCodec($side));
-                    if ($changed['file'] !== $name) {
-                        throw new GateError('A checkstyle file move cannot rewrite an unrelated file group.');
-                    }
-                    $values = ['line' => $changed['line'], 'severity' => $changed['severity'], 'source' => $changed['code'], 'message' => $changed['message']];
-                    return preg_replace_callback('~\b(line|severity|source|message)="([^"]*)"~', static fn(array $attribute): string => $attribute[1] . '="' . htmlspecialchars((string) $values[$attribute[1]], \ENT_QUOTES | \ENT_XML1, 'UTF-8') . '"', $error[0]) ?? throw new GateError('Cannot rewrite an exact checkstyle projection.');
-                }
-                return $error[0];
-            }, $file[2]);
-            if ($body !== null && $body !== $file[2] && trim($body) === '') {
-                return '';
-            }
-            return str_replace($file[2], $body ?? throw new GateError('Cannot read checkstyle error elements.'), $file[0]);
-        }, $text);
-        return $rebuilt ?? throw new GateError('Cannot read checkstyle file elements.');
     }
 
     private function definition(string $case): CaseDefinition

@@ -54,7 +54,6 @@ final class SelectorYamlDecoder
     private function definition(mixed $value, ConfigurationOrigin $origin, array $position): array
     {
         $entryPosition = self::position($position);
-        self::refuseArchitecturePattern($value, $origin, $entryPosition);
         $mapping = self::oneEntryMapping($value, $origin, $entryPosition);
         $kind = self::selectorKind($mapping, $origin, $position, $entryPosition);
         $kindPosition = self::position([...$position, $kind]);
@@ -64,27 +63,6 @@ final class SelectorYamlDecoder
             return [SelectorDefinition::fromKindAndValue($kind, $pattern), $kindPosition];
         } catch (InvalidArgumentException $e) {
             throw ConfigurationRefusal::at($origin, $kindPosition, $e->getMessage(), $e);
-        }
-    }
-
-    private static function refuseArchitecturePattern(
-        mixed $value,
-        ConfigurationOrigin $origin,
-        RefusedPosition $position,
-    ): void {
-        if (\is_string($value) && str_ends_with($value, '\\**')) {
-            $subtree = substr($value, 0, -3);
-            if ($subtree !== '') {
-                throw ConfigurationRefusal::at(
-                    $origin,
-                    $position,
-                    \sprintf(
-                        'Selector entries use explicit selector mappings; "%s" is an Architecture pattern; write {subtree: %s}.',
-                        $value,
-                        rtrim($subtree, '\\'),
-                    ),
-                );
-            }
         }
     }
 

@@ -12,7 +12,6 @@ final class Surfaces
         'summary',
         'text',
         'text-detail',
-        'text-verbose',
         'json',
         'checkstyle',
         'sarif',

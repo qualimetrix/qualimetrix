@@ -21,7 +21,7 @@ final class FindingSorter
      *
      * @return list<Finding>
      */
-    public static function sort(array $findings, GroupBy $groupBy): array
+    public static function sort(array $findings, GroupBy $groupBy, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces): array
     {
         usort($findings, match ($groupBy) {
             GroupBy::None => self::bySeverityFileLine(...),
@@ -29,7 +29,7 @@ final class FindingSorter
             GroupBy::Rule => self::byRuleSeverityFileLine(...),
             GroupBy::Severity => self::bySeverityFileLine(...),
             GroupBy::ClassName => self::byClassSeverityLine(...),
-            GroupBy::NamespaceName => self::byNamespaceSeverityLine(...),
+            GroupBy::NamespaceName => static fn(Finding $a, Finding $b): int => self::byNamespaceSeverityLine($a, $b, $fileNamespaces),
         });
 
         return $findings;
@@ -42,7 +42,7 @@ final class FindingSorter
      *
      * @return array<string, list<Finding>> Group key => findings
      */
-    public static function group(array $findings, GroupBy $groupBy): array
+    public static function group(array $findings, GroupBy $groupBy, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces): array
     {
         $groups = [];
 
@@ -53,7 +53,7 @@ final class FindingSorter
                 GroupBy::Rule => $finding->ruleName,
                 GroupBy::Severity => $finding->severity->value,
                 GroupBy::ClassName => self::extractClassName($finding),
-                GroupBy::NamespaceName => self::extractNamespaceName($finding),
+                GroupBy::NamespaceName => self::extractNamespaceName($finding, $fileNamespaces),
             };
 
             $groups[$key][] = $finding;
@@ -130,9 +130,9 @@ final class FindingSorter
         return $comparison !== 0 ? $comparison : self::bySeverityFileLine($a, $b);
     }
 
-    private static function byNamespaceSeverityLine(Finding $a, Finding $b): int
+    private static function byNamespaceSeverityLine(Finding $a, Finding $b, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces): int
     {
-        $comparison = self::extractNamespaceName($a) <=> self::extractNamespaceName($b);
+        $comparison = self::extractNamespaceName($a, $fileNamespaces) <=> self::extractNamespaceName($b, $fileNamespaces);
 
         return $comparison !== 0 ? $comparison : self::bySeverityFileLine($a, $b);
     }
@@ -157,11 +157,9 @@ final class FindingSorter
     /**
      * Extracts the namespace for grouping. Uses the canonical global namespace label when no namespace is named.
      */
-    private static function extractNamespaceName(Finding $finding): string
+    private static function extractNamespaceName(Finding $finding, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces): string
     {
-        $ns = $finding->symbolPath->namespace ?? '';
-
-        return \Qualimetrix\Core\Symbol\SymbolPath::forNamespace($ns)->toString();
+        return \Qualimetrix\Reporting\FindingProjection\FindingNamespaces::group($finding, $fileNamespaces);
     }
 
     private static function severityOrder(Severity $severity): int

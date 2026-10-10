@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration;
 
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpressionInterface;
 use Symfony\Component\ExpressionLanguage\Node\ConstantNode;
 use Symfony\Component\ExpressionLanguage\Node\FunctionNode;
 use Symfony\Component\ExpressionLanguage\Node\Node;
@@ -14,7 +14,7 @@ use Symfony\Component\ExpressionLanguage\SyntaxError;
 final class WeightedHealthFormula
 {
     /** @return array<string, array{weight: float}>|null */
-    public static function termsOf(ComputedMetricExpression $expression, string $formula): ?array
+    public static function termsOf(ComputedMetricExpressionInterface $expression, string $formula): ?array
     {
         try {
             $node = $expression->parse($formula)->getNodes();
@@ -32,7 +32,7 @@ final class WeightedHealthFormula
         }
         $terms = [];
         for ($index = 0; $index < $argumentCount; $index += 2) {
-            $term = self::termOf($arguments[$index], $arguments[$index + 1]);
+            $term = self::termOf($expression, $arguments[$index], $arguments[$index + 1]);
             if ($term === null || isset($terms[$term['key']])) {
                 return null;
             }
@@ -43,9 +43,9 @@ final class WeightedHealthFormula
     }
 
     /** @return array{key: string, weight: float}|null */
-    private static function termOf(Node $value, Node $weightNode): ?array
+    private static function termOf(ComputedMetricExpressionInterface $expression, Node $value, Node $weightNode): ?array
     {
-        $key = ComputedMetricExpression::keyReadFrom($value);
+        $key = $expression::keyReadFrom($value);
         $weight = self::weightOf($weightNode);
 
         return $key !== null && str_starts_with($key, 'health.') && $weight !== null

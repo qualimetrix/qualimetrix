@@ -274,7 +274,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
             ->setArgument('$composerReader', new Reference(ComposerManifestReaderInterface::class))
             ->setPublic(true);
 
-        $computedMetricEvaluation = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluator';
+        $computedMetricEvaluation = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluatorInterface';
 
         // AnalysisPipeline owns the complete phase order while every capability
         // retains its own state behind a narrow public contract.

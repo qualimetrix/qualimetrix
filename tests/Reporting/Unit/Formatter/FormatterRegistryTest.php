@@ -116,7 +116,7 @@ final class FormatterRegistryTest extends TestCase
         $registry->register($second);
 
         $formatter = $registry->get('text');
-        $report = new Report([], 0, 0, 0.0, 0, 0);
+        $report = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 0, 0, 0.0, 0, 0);
 
         self::assertSame('second', $formatter->format($report, new FormatterContext())->body);
     }

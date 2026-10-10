@@ -59,78 +59,6 @@ PHP;
     }
 
     #[Test]
-    public function itCreditsOnlyTheDeclaredEmptyCapturedBaselineRefusal(): void
-    {
-        $tree = SelfTestOutcomes::fixture();
-        $tree['candidateDeclarations'][\QmxFindingGate\DeclaredExactSurfaces::INDEX] = \QmxFindingGate\Tsv::render(\QmxFindingGate\DeclaredExactSurfaces::COLUMNS, [
-            ['alpha', 'baseline-file', 'declared-exact-surfaces/baseline.diff', 'The baseline refusal changes this complete document.'],
-        ]);
-        $tree['candidateDeclarations']['declared-exact-surfaces/baseline.diff'] = "pending\n";
-        $root = SyntheticTree::fixture($tree);
-        try {
-            $maps = RenameMaps::load($root . '/finding-gate/maps', MetricVocabulary::ofTree($root));
-            $corpus = Corpus::load($root);
-            $case = $corpus->cases[0];
-            $refusal = json_encode(['error' => 'Refused input', 'exit_code' => 3, 'position' => null], \JSON_THROW_ON_ERROR) . "\n";
-            $base = [];
-            $plan = \QmxFindingGate\CapturePlan::forCorpus($corpus, Declarations::load($root)->surfaces);
-            foreach ($plan->invocations() as $descriptor) {
-                if ($descriptor['scope'] !== 'case:alpha' || $descriptor['commandClass'] !== 'check') {
-                    continue;
-                }
-                $surface = $descriptor['surface'];
-                $base['case:alpha|' . $surface] = $surface === 'format:json' ? $refusal : "Refused input\n";
-                $base['case:alpha|stderr:' . $surface] = "Refused input\n";
-                $base['case:alpha|exit:' . $surface] = '3';
-                if ($descriptor['outputFileKind'] !== null) {
-                    $base['case:alpha|' . $descriptor['outputFileKind']] = '';
-                }
-            }
-            $base['case:alpha|baseline-file'] = '';
-            $base['case:alpha|exit:baseline:generate'] = '3';
-            $base['case:alpha|stderr:baseline-file'] = "Refused input\n";
-            foreach ([
-                'valid whole invocation' => [[], false],
-                'nonempty captured baseline' => [['case:alpha|baseline-file' => '{}'], true],
-                'successful baseline exit' => [['case:alpha|exit:baseline:generate' => '0'], false],
-                'silent baseline refusal' => [['case:alpha|stderr:baseline-file' => ''], false],
-            ] as $label => [$changes, $productFailure]) {
-                $report = new GateReport();
-                $run = new RunContext(
-                    Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root),
-                    $report,
-                    $corpus,
-                    $maps,
-                    ChannelSplit::of($maps),
-                    MetricVocabulary::ofTree($root),
-                    Normalization::fromRules([]),
-                    Declarations::load($root),
-                    $root,
-                );
-                $check = CaseOutcomeCheck::create($run);
-                $check->startDeriving();
-                $candidate = array_replace($base, $changes);
-                $check->checkCase('candidate', $case, CaseOutcome::REFUSAL, $candidate);
-                $check->checkRun($candidate, [
-                    'case:alpha|format:json' => '{"violations":[]}',
-                    'case:alpha|exit:format:json' => '0',
-                ]);
-                self::assertFalse($report->sourceValid('candidate', 'case:alpha|baseline-file', 'outcome'), $label . ': ' . $report->render());
-                self::assertSame($productFailure, \in_array(FailureClass::CASE_OUTCOME_MISMATCH, $report->failureClasses(), true), $label . ': ' . $report->render());
-                if ($productFailure) {
-                    self::assertContains(
-                        'A refusing baseline invocation must retain empty captured baseline content.',
-                        array_column($report->raised(), 'detail'),
-                        $label,
-                    );
-                }
-            }
-        } finally {
-            SyntheticTree::remove($root);
-        }
-    }
-
-    #[Test]
     public function itHoldsAnAnalysisToItsBaselineFile(): void
     {
         self::assertSame([FailureClass::RUN_FAILED, FailureClass::RUN_FAILED], $this->failuresWithoutABaselineFile(null));
@@ -219,18 +147,18 @@ PHP;
         $envelope = ['error' => 'Refused input', 'exit_code' => 3, 'position' => null,
             'source' => [['kind' => 'resolved', 'name' => null, 'imported_by' => null]]];
         yield 'the coherent envelope' => [json_encode($envelope, \JSON_THROW_ON_ERROR), 0];
-        yield 'a different exit' => [json_encode(array_replace($envelope, ['exit_code' => 2]), \JSON_THROW_ON_ERROR), 0];
-        yield 'no exact error keys' => ['{"error":"Refused input","exit_code":3}', 0];
-        yield 'the envelope before source publication' => ['{"error":"Refused input","exit_code":3,"position":null}', 0];
-        yield 'a malformed position' => [json_encode(array_replace($envelope, ['position' => 'unknown']), \JSON_THROW_ON_ERROR), 0];
-        yield 'an empty error' => [json_encode(array_replace($envelope, ['error' => '']), \JSON_THROW_ON_ERROR), 0];
+        yield 'a different exit' => [json_encode(array_replace($envelope, ['exit_code' => 2]), \JSON_THROW_ON_ERROR), 1];
+        yield 'no exact error keys' => ['{"error":"Refused input","exit_code":3}', 1];
+        yield 'the envelope before source publication' => ['{"error":"Refused input","exit_code":3,"position":null}', 1];
+        yield 'a malformed position' => [json_encode(array_replace($envelope, ['position' => 'unknown']), \JSON_THROW_ON_ERROR), 1];
+        yield 'an empty error' => [json_encode(array_replace($envelope, ['error' => '']), \JSON_THROW_ON_ERROR), 1];
         yield 'an analysis envelope' => ['{"violations":[]}', 1];
-        yield 'malformed JSON' => ['not JSON', 0];
+        yield 'malformed JSON' => ['not JSON', 1];
     }
 
     #[Test]
     #[DataProvider('provideRefusalEnvelopes')]
-    public function itJudgesOnlyNativeRecordsAgainstADeclaredRefusalEnvelope(string $json, int $failures): void
+    public function itRequiresACoherentRefusalEnvelope(string $json, int $failures): void
     {
         $tree = SyntheticTree::clean();
         $tree['declarations']['cases/alpha/case.json'] = json_encode([
@@ -242,11 +170,50 @@ PHP;
         try {
             $corpus = Corpus::load($root);
             $report = new GateReport();
-            (new CaseOutcomeCheck($report, $corpus))->checkCase('candidate', $corpus->cases[0], CaseOutcome::REFUSAL, [
+            $forms = new \QmxFindingGate\PublicationForms(\QmxFindingGate\CapturePlan::forCorpus($corpus, \QmxFindingGate\DeclaredSurfaces::load($root . '/finding-gate')));
+            $artifacts = [
                 'case:alpha|exit:format:json' => '3', 'case:alpha|stderr:format:json' => 'Refused input',
                 'case:alpha|format:json' => $json,
-            ]);
+            ];
+            foreach (['candidate', 'reference'] as $side) {
+                $forms->supply($side, $artifacts);
+            }
+            (new CaseOutcomeCheck($report, $corpus, $forms))->checkCase('candidate', $corpus->cases[0], CaseOutcome::REFUSAL, $artifacts);
             self::assertSame(array_fill(0, $failures, FailureClass::CASE_OUTCOME_MISMATCH), array_column($report->raised(), 'class'));
+        } finally {
+            SyntheticTree::remove($root);
+        }
+    }
+
+    #[Test]
+    public function itRequiresEachSidesOwnDeclaredRefusalExitEvenWhenBothSidesAgree(): void
+    {
+        $tree = SyntheticTree::clean();
+        $tree['declarations']['cases/alpha/case.json'] = json_encode([
+            'id' => 'alpha', 'description' => 'A refusal with an exact declared exit.', 'paths' => ['src'],
+            'config' => 'qmx.yaml', 'channels' => ['replay.alpha@callable'],
+            'outcome' => ['kind' => CaseOutcome::REFUSAL, 'exit' => 5],
+        ], \JSON_THROW_ON_ERROR);
+        $root = SyntheticTree::fixture($tree);
+        try {
+            $corpus = Corpus::load($root);
+            $report = new GateReport();
+            $forms = new \QmxFindingGate\PublicationForms(\QmxFindingGate\CapturePlan::forCorpus($corpus, \QmxFindingGate\DeclaredSurfaces::load($root . '/finding-gate')));
+            $check = new CaseOutcomeCheck($report, $corpus, $forms);
+            $artifacts = [
+                'case:alpha|exit:format:json' => '3', 'case:alpha|stderr:format:json' => '',
+                'case:alpha|format:json' => '{"error":"Refused input","exit_code":3,"position":null,"source":null}',
+            ];
+            foreach (['candidate', 'reference'] as $side) {
+                $forms->supply($side, $artifacts);
+            }
+            foreach (['candidate', 'reference'] as $side) {
+                $check->checkCase($side, $corpus->cases[0], CaseOutcome::REFUSAL, $artifacts);
+            }
+            self::assertSame([
+                [FailureClass::CASE_OUTCOME_MISMATCH, 'candidate / alpha'],
+                [FailureClass::CASE_OUTCOME_MISMATCH, 'reference / alpha'],
+            ], array_map(static fn(array $failure): array => [$failure['class'], $failure['scope']], $report->raised()));
         } finally {
             SyntheticTree::remove($root);
         }

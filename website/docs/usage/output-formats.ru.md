@@ -341,6 +341,7 @@ JSON из конфигурации следует тому же пути; фай
             "occurrence": null,
             "edge": null,
             "namespace": "App\\Service",
+            "namespaces": ["App\\Service"],
             "rule": "complexity.ccn",
             "code": "complexity.ccn",
             "severity": "error",
@@ -367,6 +368,7 @@ JSON из конфигурации следует тому же пути; фай
             "occurrence": null,
             "edge": null,
             "namespace": "App\\Service",
+            "namespaces": ["App\\Service"],
             "rule": "complexity.ccn",
             "code": "complexity.ccn",
             "severity": "error",
@@ -450,12 +452,22 @@ SARIF дополнительно использует уведомление и�
 
 
 `json.violations`, `json.topIssues` и HTML используют одинаковые ключи находки:
-`file`, `line`, `symbol`, `channel`, `subject`, `occurrence`, `edge`, `namespace`,
+`file`, `line`, `symbol`, `channel`, `subject`, `occurrence`, `edge`, `namespace`, `namespaces`,
 `rule`, `code`, `severity`, `message`, `recommendation`, `metricValue`, `threshold`,
 `techDebtMinutes`, `acceptedLevel`, `baselineVerdict`, `baselineReason`.
 В HTML используй `rule/code/symbol` вместо `ruleName/violationCode/symbolPath`.
 Диагностика, рекомендация и baseline status показаны отдельно; наличие потолка
 само по себе не доказывает измеренного превышения.
+
+`namespaces` содержит те же пространства имён, что используют выбор и
+группировка. Объявление сохраняет свой неймспейс; файловая находка несёт
+неймспейсы измеренных точных объявлений и логических классов в файле.
+Блоки namespace без таких объявлений отсутствуют в индексе. Пустой список
+заменяется на `[""]` для отображения как global, даже если в исходнике есть
+блок namespace. Проектная
+находка несёт `[]`. `namespace` — единственное имя (в том числе `""` для global)
+или `null` для нескольких имён и проектных находок. Файловая находка с несколькими
+неймспейсами входит в одну отсортированную группу и не дублируется.
 
 `outOfScope` добавляет `identities`: мультимножество `channel`, `subject`,
 `occurrence`, `edge` и `severity`, сохраняющее отдельные occurrences.
@@ -488,7 +500,7 @@ optional edge`. `symbol` — логическая проекция для ото
 
 При использовании `--group-by=class` или `--group-by=namespace` нарушения организуются в объект `violationGroups`. Каждая группа — это `{count, violations}`: счётчик нарушений и их массив; собственных `errorCount`, `warningCount` или `violationDensity` у группы нет.
 
-Ключи группы — не всегда FQCN класса или пространство имён. Для `--group-by=class`: ключ — это FQCN класса для находки уровня класса, путь к файлу для находки уровня файла без контекста класса, и пустая строка `""` для находки уровня проекта (у неё нет ни класса, ни файла). Для `--group-by=namespace`: ключ — это пространство имён для класса внутри него, `(global)` для класса без пространства имён, и `(project)` для находки уровня проекта.
+Ключи группы — не всегда FQCN класса или пространство имён. Для `--group-by=class`: ключ — это FQCN класса для находки уровня класса, путь к файлу для находки уровня файла без контекста класса, и пустая строка `""` для находки уровня проекта (у неё нет ни класса, ни файла). Для `--group-by=namespace`: ключ соединяет отсортированные имена через `, `, показывает пустое имя как `(global)` и использует `[project]` для находки уровня проекта.
 
 <!-- llms:skip-begin -->
 ```json
@@ -639,6 +651,10 @@ bin/qmx check src/ --format=metrics --no-progress > metrics.json
 
 Checkstyle 3.0 XML: `<file name="...">` с вложенными `<error line="" severity="error|warning|info" message="" source="qmx.<rule>"/>`.
 
+Обычные находки требуют файла исходника. Безфайловые находки неймспейса и
+проекта пропускаются; для полного набора используй JSON или SARIF. Ошибки
+охвата сохраняют свою отдельную проекцию.
+
 Выборка `--namespace`/`--class` с этим форматом отклоняется (код 3): каждый
 `<error>` для его читателя — ошибка, поэтому сказать, что отчёт перечисляет
 лишь часть прогона, было бы нечем.
@@ -778,6 +794,10 @@ SARIF 2.1.0: `runs[].results[]` с `ruleId`, `ruleIndex` (позиция пра�
 **Когда использовать:** GitLab CI/CD с отчётами Code Quality.
 
 Массив объектов с `description`, `check_name`, `fingerprint`, `severity` (critical/major/info), `location.{path,lines.begin}`. Маппинг: error → critical, warning → major, info → info.
+
+Обычные находки требуют пути исходника в `location.path`. Безфайловые находки
+неймспейса и проекта пропускаются; для полного набора используй JSON или SARIF.
+Ошибки охвата сохраняют свою отдельную проекцию.
 
 Выборка `--namespace`/`--class` с этим форматом отклоняется (код 3): каждая
 запись — проблема в виджете merge request, поэтому сказать, что отчёт

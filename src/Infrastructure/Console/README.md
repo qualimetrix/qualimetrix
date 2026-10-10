@@ -294,16 +294,18 @@ sibling inside the physical cache root before clearing or analysis.
 `StagedSignalGuard` scopes SIGINT/SIGTERM to the current staged operation, latches
 interruption across worker recovery, checks it before publication and restores
 handlers and asynchronous-signal mode after cleanup. Its own siblings are removed
-before returning 128 + signal. Staged regular output requires pcntl, default
-SIGINT/SIGTERM handlers and no registered Revolt signal callbacks; otherwise it
-refuses before preparation or analysis with exit 3. Descriptor/stream output and
-log-only runs remain available. The guard uses raw asynchronous pcntl handlers;
+before returning 128 + signal when pcntl and exclusive signal ownership are
+available. Missing pcntl, foreign handlers or pending Revolt signal callbacks
+leave ordinary private-sibling and atomic publication available, without
+installing a guard or replacing foreign handlers. The guard uses raw
+asynchronous pcntl handlers;
 interruption propagates through worker recovery as `Amp\CancelledException`, and
 the worker pool kills pending workers instead of awaiting graceful shutdown.
 Revolt's public callback inspection does not expose the signal number, so even a
-pending callback for another signal prevents preparation. Replacing handlers
-during the operation is unsupported. Cleanup is not guaranteed for SIGKILL, cleanup
-failure or an already published target. Each target has its own atomic
+pending callback for another signal prevents guard installation. Replacing
+handlers during a guarded operation is unsupported. Without a safely attached
+guard, interruption may leave the private sibling; cleanup is also not guaranteed
+for SIGKILL, cleanup failure or an already published target. Each target has its own atomic
 publication; later profile failure does not roll back a published report.
 The shared logger buffers early records, attaches its claimed target, latches
 append failures and reports lost records at settle before report publication.
@@ -363,6 +365,8 @@ reconstruct.
 ### BaselineCleanupCommand
 
 Inspect stale candidates; comparable absence does not itself prove that code was fixed.
+The command reports removal counts only after the guarded atomic baseline write
+has completed; count pluralization is separate from selection and publication.
 
 **Name:** `baseline:cleanup`
 
@@ -487,8 +491,9 @@ projection. The rule's remediation estimate is 5 minutes. Audit findings never
 enter the measured set, capture or accept-new; authored path/namespace
 suppression and Git projection cannot hide them. When unselected, stderr reports
 counts only. Uncompared entries likewise produce count diagnostics, not path dumps.
-Nine finding formats publish the audit; Metrics, Health and Suppressed retain
-their own subjects. All twelve preserve the ordinary failure policy: an isolated
+Six finding formats publish the audit; Checkstyle and GitLab Code Quality omit
+its fileless project subject, while Metrics, Health and Suppressed retain their
+own subjects. All eleven preserve the ordinary failure policy: an isolated
 audit warning exits 0 by default, with `--fail-on=error` or `none`, and 1 with
 `--fail-on=warning`. Incomplete analysis has priority and exits 4.
 

@@ -59,7 +59,7 @@ final class ComputedMetricsInternalTopologyTest extends TestCase
     public function itAcceptsTheMaterializedInternalDag(): void
     {
         $declarations = $this->productionDeclarations();
-        self::assertCount(65, $declarations);
+        self::assertCount(67, $declarations);
 
         foreach ($declarations as $source => $path) {
             $sourceZone = $this->zone($source);
@@ -251,13 +251,10 @@ final class ComputedMetricsInternalTopologyTest extends TestCase
             return 'HealthInternal';
         }
         if (str_starts_with($fqcn, self::ROOT_PREFIX . 'Contract\\')) {
-            if ($fqcn === self::ROOT_PREFIX . 'Contract\\Evaluation\\ComputedMetricEvaluator') {
-                return 'RootInternal';
-            }
-
             return 'RootContract';
         }
         if (str_starts_with($fqcn, self::ROOT_PREFIX . 'Configuration\\')
+            || str_starts_with($fqcn, self::ROOT_PREFIX . 'Evaluation\\')
             || str_starts_with($fqcn, self::ROOT_PREFIX . 'Finding\\')) {
             $relative = substr($fqcn, \strlen(self::ROOT_PREFIX));
             if (substr_count($relative, '\\') !== 1) {

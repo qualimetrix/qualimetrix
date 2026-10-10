@@ -14,10 +14,10 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricsSection;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ExcludeHealthSection;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricOutcome;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricSubjectEvaluation;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\MetricLookup;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricOutcome;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricSubjectEvaluation;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\MetricLookup;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\HealthCalibration\AggregationScheme;
@@ -695,7 +695,7 @@ final class HealthCalibrationBenchTest extends TestCase
     {
         return (new ComputedMetricsConfigResolver(
             new ComputedMetricFormulaValidator(),
-            new HealthFormulaExcluder(),
+            new HealthFormulaExcluder(new ComputedMetricExpression()),
         ))->resolve(DocumentComposer::compose(new DocumentSchema([new ComputedMetricsSection(), new ExcludeHealthSection()]), []));
     }
 
@@ -774,7 +774,7 @@ final class HealthCalibrationBenchTest extends TestCase
     {
         return array_map(static fn(Subject $subject): string => $subject->name, $subjects);
     }
-    /** The accepted formulas before nullable participation, over fully measured subjects. */
+    /** The accepted formulas and shared LCOM scale over fully measured subjects. */
     #[Test]
     public function itPreservesAllApplicableScoresWithStrictFloatingPointEquality(): void
     {
@@ -787,8 +787,8 @@ final class HealthCalibrationBenchTest extends TestCase
     },
     "health.cohesion": {
         "class": "clamp((((m[\"size.method-count\"] ?? 0) < 6 ? (m[\"cohesion.tcc\"] ?? 0.5) : (m[\"cohesion.tcc\"] ?? 0)) + (1 - ((m[\"size.method-count\"] ?? 0) < 6 ? (m[\"cohesion.tcc\"] ?? 0.5) : (m[\"cohesion.tcc\"] ?? 0))) * ((m[\"cohesion.pure-method-count\"] ?? 0) \/ max(m[\"size.method-count\"] ?? 1, 1)) * 0.4) ** 0.5 * 50 + (1 - clamp((max((m[\"cohesion.lcom\"] ?? 0) - (m[\"cohesion.pure-method-count\"] ?? 0) * 0.7, 1) - 1) \/ 5, 0, 1)) * 50, 0, 100)",
-        "namespace": "clamp((m[\"cohesion.tcc.avg\"] ?? 0.5) ** 0.5 * 50 + (1 - clamp(((m[\"cohesion.lcom.avg\"] ?? 0) - 1) \/ 2, 0, 1)) * 50, 0, 100)",
-        "project": "clamp((m[\"cohesion.tcc.avg\"] ?? 0.5) ** 0.5 * 50 + (1 - clamp(((m[\"cohesion.lcom.avg\"] ?? 0) - 1) \/ 2, 0, 1)) * 50, 0, 100)"
+        "namespace": "clamp((m[\"cohesion.tcc.avg\"] ?? 0.5) ** 0.5 * 50 + (1 - clamp(((m[\"cohesion.lcom.avg\"] ?? 0) - 1) \/ 5, 0, 1)) * 50, 0, 100)",
+        "project": "clamp((m[\"cohesion.tcc.avg\"] ?? 0.5) ** 0.5 * 50 + (1 - clamp(((m[\"cohesion.lcom.avg\"] ?? 0) - 1) \/ 5, 0, 1)) * 50, 0, 100)"
     },
     "health.coupling": {
         "class": "clamp(100 * 15 \/ (15 + max((m[\"coupling.ce-packages\"] ?? 0) * 3.0 + (m[\"coupling.ce\"] ?? 0) ** 0.5 * 0.5 - 5, 0)), 0, 100)",

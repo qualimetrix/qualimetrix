@@ -1,106 +1,185 @@
 --- candidate
 +++ reference (mapped)
 @@ -1,1 +1,1 @@
--visible 10734
-+visible 8946
-@@ -172,48 +172,0 @@
--        "description": "ClassRank share is 1.58\u00d7 uniform, exceeds threshold of 1.00\u00d7. This class is a critical hub \u2014 changes have wide impact",
--        "check_name": "coupling.class-rank",
--        "fingerprint": "326a97b74f42b130a676d7628a6b3ee6",
--        "severity": "major",
--        "location": {
--            "path": "src/Kernel/Clock.php",
--            "lines": {
--                "begin": 5
--            }
--        }
--    },
--    {
--        "description": "ClassRank share is 1.31\u00d7 uniform, exceeds threshold of 1.00\u00d7. This class is a critical hub \u2014 changes have wide impact",
--        "check_name": "coupling.class-rank",
--        "fingerprint": "03363e02d77ec0ef44617da19e135099",
--        "severity": "major",
--        "location": {
--            "path": "src/Kernel/Logger.php",
--            "lines": {
--                "begin": 5
--            }
--        }
--    },
--    {
--        "description": "ClassRank share is 1.07\u00d7 uniform, exceeds threshold of 1.00\u00d7. This class is a critical hub \u2014 changes have wide impact",
--        "check_name": "coupling.class-rank",
--        "fingerprint": "1b0bd56355cc1f229720062255faeb63",
--        "severity": "major",
--        "location": {
--            "path": "src/Kernel/Uuid.php",
--            "lines": {
--                "begin": 5
--            }
--        }
--    },
--    {
--        "description": "ClassRank share is 1.16\u00d7 uniform, exceeds threshold of 1.00\u00d7. This class is a critical hub \u2014 changes have wide impact",
--        "check_name": "coupling.class-rank",
--        "fingerprint": "5e5e141679274fcdbc0c3864b10f8391",
--        "severity": "major",
--        "location": {
--            "path": "src/Service/UserService.php",
--            "lines": {
--                "begin": 12
--            }
--        }
--    },
--    {
-@@ -316,1 +268,1 @@
--invocation-format:gitlab 10734
-+invocation-format:gitlab 8946
-@@ -483,48 +435,0 @@
--            }
--        }
--    },
--    {
--        "description": "ClassRank share is 1.58\u00d7 uniform, exceeds threshold of 1.00\u00d7. This class is a critical hub \u2014 changes have wide impact",
--        "check_name": "coupling.class-rank",
--        "fingerprint": "326a97b74f42b130a676d7628a6b3ee6",
--        "severity": "major",
--        "location": {
--            "path": "src/Kernel/Clock.php",
--            "lines": {
--                "begin": 5
--            }
--        }
--    },
--    {
--        "description": "ClassRank share is 1.31\u00d7 uniform, exceeds threshold of 1.00\u00d7. This class is a critical hub \u2014 changes have wide impact",
--        "check_name": "coupling.class-rank",
--        "fingerprint": "03363e02d77ec0ef44617da19e135099",
--        "severity": "major",
--        "location": {
--            "path": "src/Kernel/Logger.php",
--            "lines": {
--                "begin": 5
--            }
--        }
--    },
--    {
--        "description": "ClassRank share is 1.07\u00d7 uniform, exceeds threshold of 1.00\u00d7. This class is a critical hub \u2014 changes have wide impact",
--        "check_name": "coupling.class-rank",
--        "fingerprint": "1b0bd56355cc1f229720062255faeb63",
--        "severity": "major",
--        "location": {
--            "path": "src/Kernel/Uuid.php",
--            "lines": {
--                "begin": 5
--            }
--        }
--    },
--    {
--        "description": "ClassRank share is 1.16\u00d7 uniform, exceeds threshold of 1.00\u00d7. This class is a critical hub \u2014 changes have wide impact",
--        "check_name": "coupling.class-rank",
--        "fingerprint": "5e5e141679274fcdbc0c3864b10f8391",
--        "severity": "major",
--        "location": {
--            "path": "src/Service/UserService.php",
--            "lines": {
--                "begin": 12
+-visible 7663
++visible 10734
+@@ -136,0 +136,36 @@
++        "description": "Afferent coupling too high: 5 classes depend on this (CBO: 2 namespaces, threshold: 2)",
++        "check_name": "coupling.cbo",
++        "fingerprint": "de13930b6056920ad963eb0305458e1f",
++        "severity": "major",
++        "location": {
++            "path": "Corpus\\Coupling\\Kernel",
++            "lines": {
++                "begin": 1
++            }
++        }
++    },
++    {
++        "description": "Efferent coupling too high: depends on 6 classes (CBO: 3 namespaces, threshold: 2)",
++        "check_name": "coupling.cbo",
++        "fingerprint": "9fb6e29187711545faf3651ead919c1f",
++        "severity": "major",
++        "location": {
++            "path": "Corpus\\Coupling\\Service",
++            "lines": {
++                "begin": 1
++            }
++        }
++    },
++    {
++        "description": "Efferent coupling too high: depends on 5 classes (CBO: 2 namespaces, threshold: 2)",
++        "check_name": "coupling.cbo",
++        "fingerprint": "a9c1a7666db77a0323d7ff684d4a9462",
++        "severity": "major",
++        "location": {
++            "path": "Corpus\\Coupling\\Wiring",
++            "lines": {
++                "begin": 1
++            }
++        }
++    },
++    {
+@@ -180,0 +216,24 @@
++            }
++        }
++    },
++    {
++        "description": "Distance from main sequence is 1.00 (A=0.00, I=0.00), exceeds threshold of 0.90. Balance abstractness and stability",
++        "check_name": "coupling.distance",
++        "fingerprint": "6227623d314544b5f393a25115b44ff5",
++        "severity": "critical",
++        "location": {
++            "path": "Corpus\\Coupling\\Kernel",
++            "lines": {
++                "begin": 1
++            }
++        }
++    },
++    {
++        "description": "Distance from main sequence is 0.25 (A=0.00, I=0.75), exceeds threshold of 0.05. Balance abstractness and stability",
++        "check_name": "coupling.distance",
++        "fingerprint": "7e5bc2e1a3761e13319c3f4604e97e7d",
++        "severity": "major",
++        "location": {
++            "path": "Corpus\\Coupling\\Service",
++            "lines": {
++                "begin": 1
+@@ -230,3 +290,27 @@
+-    }
+-]
+-invocation-format:gitlab 7663
++    },
++    {
++        "description": "Instability is 0.75 (Ca=2, Ce=6), exceeds threshold of 0.40. Reduce outgoing dependencies",
++        "check_name": "coupling.instability",
++        "fingerprint": "f95f2367b59a4866bdc78727c8ef6a9c",
++        "severity": "major",
++        "location": {
++            "path": "Corpus\\Coupling\\Service",
++            "lines": {
++                "begin": 1
++            }
++        }
++    },
++    {
++        "description": "The framework namespace selector \"subtree:NoSuchVendor\\Framework\" matched no class the run analysed or depends on. Nothing was moved out of the application scope for it, so \"coupling.cbo-app\" still counts every class it was written to exclude and \"coupling.ce-framework\" counts none of them.",
++        "check_name": "coupling.unmatched-framework-namespace",
++        "fingerprint": "b11482bcd05fc53b6fc344f6f57f50e7",
++        "severity": "major",
++        "location": {
++            "path": "_project",
++            "lines": {
++                "begin": 1
++            }
++        }
++    }
++]
++invocation-format:gitlab 10734
+@@ -367,0 +451,36 @@
++        "description": "Afferent coupling too high: 5 classes depend on this (CBO: 2 namespaces, threshold: 2)",
++        "check_name": "coupling.cbo",
++        "fingerprint": "de13930b6056920ad963eb0305458e1f",
++        "severity": "major",
++        "location": {
++            "path": "Corpus\\Coupling\\Kernel",
++            "lines": {
++                "begin": 1
++            }
++        }
++    },
++    {
++        "description": "Efferent coupling too high: depends on 6 classes (CBO: 3 namespaces, threshold: 2)",
++        "check_name": "coupling.cbo",
++        "fingerprint": "9fb6e29187711545faf3651ead919c1f",
++        "severity": "major",
++        "location": {
++            "path": "Corpus\\Coupling\\Service",
++            "lines": {
++                "begin": 1
++            }
++        }
++    },
++    {
++        "description": "Efferent coupling too high: depends on 5 classes (CBO: 2 namespaces, threshold: 2)",
++        "check_name": "coupling.cbo",
++        "fingerprint": "a9c1a7666db77a0323d7ff684d4a9462",
++        "severity": "major",
++        "location": {
++            "path": "Corpus\\Coupling\\Wiring",
++            "lines": {
++                "begin": 1
++            }
++        }
++    },
++    {
+@@ -415,0 +535,24 @@
++        "description": "Distance from main sequence is 1.00 (A=0.00, I=0.00), exceeds threshold of 0.90. Balance abstractness and stability",
++        "check_name": "coupling.distance",
++        "fingerprint": "6227623d314544b5f393a25115b44ff5",
++        "severity": "critical",
++        "location": {
++            "path": "Corpus\\Coupling\\Kernel",
++            "lines": {
++                "begin": 1
++            }
++        }
++    },
++    {
++        "description": "Distance from main sequence is 0.25 (A=0.00, I=0.75), exceeds threshold of 0.05. Balance abstractness and stability",
++        "check_name": "coupling.distance",
++        "fingerprint": "7e5bc2e1a3761e13319c3f4604e97e7d",
++        "severity": "major",
++        "location": {
++            "path": "Corpus\\Coupling\\Service",
++            "lines": {
++                "begin": 1
++            }
++        }
++    },
++    {
+@@ -459,0 +603,24 @@
++            }
++        }
++    },
++    {
++        "description": "Instability is 0.75 (Ca=2, Ce=6), exceeds threshold of 0.40. Reduce outgoing dependencies",
++        "check_name": "coupling.instability",
++        "fingerprint": "f95f2367b59a4866bdc78727c8ef6a9c",
++        "severity": "major",
++        "location": {
++            "path": "Corpus\\Coupling\\Service",
++            "lines": {
++                "begin": 1
++            }
++        }
++    },
++    {
++        "description": "The framework namespace selector \"subtree:NoSuchVendor\\Framework\" matched no class the run analysed or depends on. Nothing was moved out of the application scope for it, so \"coupling.cbo-app\" still counts every class it was written to exclude and \"coupling.ce-framework\" counts none of them.",
++        "check_name": "coupling.unmatched-framework-namespace",
++        "fingerprint": "b11482bcd05fc53b6fc344f6f57f50e7",
++        "severity": "major",
++        "location": {
++            "path": "_project",
++            "lines": {
++                "begin": 1

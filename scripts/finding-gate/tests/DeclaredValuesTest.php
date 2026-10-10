@@ -99,6 +99,9 @@ final class DeclaredValuesTest extends TestCase
         $run = $this->context();
         $writer = ValueDerivation::create($run);
         $writer->startDeriving();
+        foreach (['candidate', 'reference'] as $side) {
+            $run->publicationForms->supply($side, ['case:alpha|format:json' => '{"violations":[]}']);
+        }
         $pair = new SurfacePair('case:alpha|exit:format:json', 'exit:format:json', '5', '2');
         ValueStage::create($run)->applyStage($pair);
         ValueCheck::create($run)->checkRun([], []);

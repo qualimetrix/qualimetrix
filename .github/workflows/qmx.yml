@@ -161,6 +161,13 @@ jobs:
       - name: Install dependencies
         run: composer install --no-progress --prefer-dist --optimize-autoloader
 
+      - name: Cache PHP CS Fixer file results
+        uses: actions/cache@v5
+        with:
+          path: .php-cs-fixer.cache
+          key: ${{ runner.os }}-php-cs-fixer-${{ matrix.php-version }}-${{ hashFiles('.php-cs-fixer.dist.php', 'composer.lock') }}-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-php-cs-fixer-${{ matrix.php-version }}-${{ hashFiles('.php-cs-fixer.dist.php', 'composer.lock') }}-
+
       # `composer check` builds the website with mkdocs --strict, so the docs
       # toolchain has to be present here too — otherwise that step fails on a
       # missing interpreter instead of on documentation problems.

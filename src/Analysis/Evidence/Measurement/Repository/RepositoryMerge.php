@@ -16,6 +16,23 @@ use Qualimetrix\Core\Symbol\SymbolInfo;
  */
 final class RepositoryMerge
 {
+    /**
+     * @param array<string, MetricBag> $metrics
+     * @param array<string, SymbolInfo> $infos
+     */
+    public static function store(string $canonical, SymbolInfo $info, MetricBag $incoming, array &$metrics, array &$infos): SymbolInfo
+    {
+        if (isset($metrics[$canonical])) {
+            $metrics[$canonical] = self::metrics($metrics[$canonical], $incoming);
+            $infos[$canonical] = self::subjectInfo($infos[$canonical], $info);
+        } else {
+            $metrics[$canonical] = $incoming;
+            $infos[$canonical] = $info;
+        }
+
+        return $infos[$canonical];
+    }
+
     public static function metrics(MetricBag $left, MetricBag $right): MetricBag
     {
         return $left->merge($right);

@@ -29,9 +29,7 @@ finding-gate/
 ├── declared-values.derived.tsv
 ├── declared-fields.tsv         # added/removed report fields
 ├── declared-fields.derived.tsv
-├── declared-outcomes.tsv        # case transitions and exact refusal snapshots
-├── declared-outcomes/
-├── declared-surfaces.tsv        # introduced/withdrawn publications
+├── declared-surfaces.tsv        # introduced JSON publications
 ├── declared-surfaces/
 ├── declared-structural-maps.tsv # translated configuration paths
 ├── declared-delta.tsv           # exact residual diffs, after record/value work
@@ -59,23 +57,22 @@ own positive native typed population. Everything else supplied is
 `whole-invocation`; missing prospective captures remain distinct from supplied
 empty bytes. No exit code, error envelope or outcome selects the form.
 
-These 12 report and explanation views are always whole invocations:
+These 11 report and explanation views are always whole invocations:
 `format:html`, `format:checkstyle`, `format:sarif`, `format:gitlab`,
 `format:summary`, `format:text`, `format:text-detail`,
-`format:text-verbose`, `format:github`, `show-suppressed`, `format:health`, and
+`format:github`, `show-suppressed`, `format:health`, and
 the `explain:<subject>` publications from `baseline:explain`. SARIF and GitLab
-are excluded even though their serialization is JSON. Their standalone
-decoders remain callable, but the gate gives them no record, projection,
-fingerprint or ranking authority. Health and baseline explanations retain
+are excluded even though their serialization is JSON. The gate gives them no
+record, projection, fingerprint or ranking authority. Health and baseline explanations retain
 their native process outcomes without exit-value translation. Command
 catalogues, graph exports and debug surfaces retain their own byte and
 successful-population contracts.
 
-The finite capture list retains the historical `text-verbose` CLI address on
-every corpus case, even though the product no longer supports that format.
-Its unsupported-format response is compared against the reference invocation
-as complete bytes and an exact process outcome. No withdrawal-form declaration
-is needed to keep that historical address captured.
+HTML capture is explicit: `captureHtml` is an optional boolean in `case.json`,
+false by default. The real corpus captures the whole HTML viewer only for
+`health` and `drill-down`; synthetic alpha fixtures opt in explicitly. Other
+formats keep their planned comparisons. The removed `text-verbose` format is
+not captured.
 
 Eligible JSON decoding preserves native objects and arrays before associative
 conversion: `{}` in a list position is not an empty `[]`. A JSON view must
@@ -87,10 +84,10 @@ is a whole invocation, not an empty record population.
 If either side is `whole-invocation`, comparison retains normalized stdout,
 stderr, exact exit and planned output-file artifacts, including captured missing
 markers. It does not extract a payload, translate record vocabulary, substitute
-records/values/fingerprints or reorder records. Equal malformed invocations are
+records/values or reorder records. Equal malformed invocations are
 equivalent: this gate proves equivalence, while product tests prove health.
 Differences require an exact complete-surface declaration covering that whole
-invocation. Outcome-transition, partial-view-refusal and record/value forms
+invocation. Record/value forms
 cannot license these differences. Declaration-form guards require an explicit
 applicable declaration and its JSON evidence; they never judge a whole pair.
 Product promises, including empty baseline content after failed generation,
@@ -101,13 +98,9 @@ read a fixed set of subject-owned `wiring-*.php` files. Unknown files, unknown
 keys, duplicate registrations and unloaded checks are refused. The retired
 `pending` key is not accepted, even with an empty value. Every failure class
 retains a source producer. Every active class requires an observed whole-run
-witness, and every active raise site and caller requires an exact observation
-except `run-failed`:
-its self-test claim is the failure class, side and scope. A scope-only witness
-does not credit any exact source site or caller. `fingerprint-mismatch` and
-`fingerprint-opaque` remain valid helper failure classes but have retired native
-whole-run witness obligations: their SARIF/GitLab sources are excluded from
-record authority. An unexpected native occurrence of either class is RED.
+witness matched by failure class and side-specific scope. Native PHP parsing
+inventories source producers; source method names, lines and callers carry no
+witness obligation. Unknown failure vocabulary and unwitnessed classes are RED.
 
 ## Case definition and coverage
 
@@ -377,15 +370,14 @@ checked inside the side. Both candidate passes validate complete physical and
 ranked multisets, retaining duplicate counts. Support metadata, unrelated
 health values and support formatting are not claimed as cross-side publications.
 
-## Value, schema, outcome and surface declarations
+## Value, schema and surface declarations
 
-| Table                          | Authored columns                       | What the run measures                                                          |
-| ------------------------------ | -------------------------------------- | ------------------------------------------------------------------------------ |
-| `declared-values.tsv`          | `kind, key, level, reason`             | Exact values, exits or moved occurrences in `declared-values.derived.tsv`      |
-| `declared-fields.tsv`          | `change, report, view, field, reason`  | Added values per case and record in `declared-fields.derived.tsv`              |
-| `declared-outcomes.tsv`        | `case, transition, file, reason`       | Exact normalized refusal snapshot under `declared-outcomes/`                   |
-| `declared-surfaces.tsv`        | `change, surface, file, cases, reason` | Exact withdrawal refusal under `declared-surfaces/`, or introduced publication |
-| `declared-structural-maps.tsv` | `document, from, to, shape, reason`    | Exact translated document paths, retaining the declared value shape            |
+| Table                          | Authored columns                       | What the run measures                                                     |
+| ------------------------------ | -------------------------------------- | ------------------------------------------------------------------------- |
+| `declared-values.tsv`          | `kind, key, level, reason`             | Exact values, exits or moved occurrences in `declared-values.derived.tsv` |
+| `declared-fields.tsv`          | `change, report, view, field, reason`  | Added values per case and record in `declared-fields.derived.tsv`         |
+| `declared-surfaces.tsv`        | `change, surface, file, cases, reason` | Introduced JSON publication; `file` must be `-`                           |
+| `declared-structural-maps.tsv` | `document, from, to, shape, reason`    | Exact translated document paths, retaining the declared value shape       |
 
 Value kinds are `field`, `metric`, `exit` and `order`. Field and metric
 intentions use an exact subject level or `*`. Exit intentions name a command
@@ -408,20 +400,14 @@ Refusal envelope keys come from one explicit array literal passed to
 Indirect envelope construction is refused. Changing a refusal while it remains a
 refusal uses an exact surface delta.
 
-An outcome declaration names the transition and its refusal file. Declaration
-forms require their own applicable JSON view and a records pair. Introduced and
-withdrawn publication forms likewise apply only to JSON, metrics and suppressed
-JSON views. A differing whole publication requires an exact complete-invocation
-declaration.
-A whole invocation does not credit an outcome or publication form, even if
-its bytes look like the declared refusal.
-
-Surface declarations use `cases=*` for every case, or a nonempty JSON list of
-exact case names. An eligible withdrawn format is captured in those cases;
-historical addresses already in the finite capture list remain captured in all
-cases. Selected
-reference ownership and case-input translation retain their checks; other
-formats and excluded cases retain ordinary comparisons.
+Each case's own `outcome.exit` and refusal envelope are checked independently
+on candidate and reference, including two equally wrong whole invocations.
+Outcome transitions and withdrawal snapshots are not declaration forms.
+Introduced publication forms apply only to JSON, metrics and suppressed JSON
+views, with `file=-`. Their `cases` column is `*` or a nonempty JSON list of
+exact case names. Selected reference ownership and case-input translation retain
+their checks; other formats and excluded cases retain ordinary comparisons.
+A differing whole publication requires an exact complete-invocation declaration.
 
 The existing selector/diagnostic predicates do not validate arbitrary
 Checkstyle or GitLab whole publications. They cannot veto exact whole evidence
@@ -488,14 +474,10 @@ Report-value rows apply only to quoted enumerable values in the suppressed
 report. A plain word in its prose is not translated. Renaming a padded display
 name can also move alignment, which requires a residual structural diff.
 
-## What a fingerprint is compared by
-
-The native gate compares GitLab and SARIF as complete invocations. It no longer
-recomputes or substitutes their fingerprints as record authority. The retained
-standalone helpers can report `fingerprint-opaque` or
-`fingerprint-mismatch`; these names remain in the failure vocabulary but are
-retired from native whole-run witness coverage. An unexpected native occurrence
-is still a self-test failure.
+GitLab and SARIF fingerprints remain part of their complete invocation bytes.
+There is no standalone fingerprint decoder or substitution authority.
+The historical `fingerprint-no-map` negative control still requires an unmapped
+channel change to remain visible on those whole invocations.
 
 ## What publication order is compared by
 
@@ -785,13 +767,10 @@ failures and timeouts fail before controls run. A refusal outcome for analysis
 alone does not determine whether `rules` publishes a catalogue.
 
 `composer gate:self-test` runs the gate's observed witnesses and the
-controls harness's mechanics. Recognized raise sites are enumerated with their
-nearest callers. The witness registry requires exact whole-run observations for
-every active class except `run-failed`; for that class it requires an actual
-class/side/scope observation without claiming site or caller coverage. The two
-retired fingerprint classes keep source producer and vocabulary checks without
-native exact-site credit.
-An unexplained source occurrence or stale source exception still fails.
+controls harness's mechanics. Native PHP parsing inventories failure-class
+producers. Every active failure class requires an actual whole-run observation
+with its side and scope. Source locations and callers carry no witness credit.
+Unknown vocabulary and a missing producer or observed class still fail.
 Controls add corpus evidence; they do not replace observed self-test witnesses.
 
 Control expectations describe their mutation's measured failure classes and
@@ -892,17 +871,12 @@ Each limit needs its own product or delivery check:
   and path/cwd semantics do not prove configured rule execution.
 - Selector reach or metric-expression grammar after a split: unsupported touched
   forms refuse; use selector and computed-metric tests.
-- Dynamically assembled source method names, overridden dispatch and distinct
-  execution paths with the same nearest caller: source enumeration does not
-  resolve those runtime behaviours.
-- A reference refusal with exit 3 is reported as an untranslated input before
-  an otherwise declarable refusal-to-analysis outcome reaches comparison.
+- Source producer inventory does not prove runtime branch coverage; whole-run
+  witnesses match classes and side-specific scopes.
 - Refusal positions can change with configuration-layer placement even where a
   declared delta explains only the published source.
 - Backward-moving clocks are exercised only for `AnalysisPipeline` and
   `ProcessHandle::age`; other elapsed-time uses have no clock-rollback check.
-- Refusal-envelope field derivation depends on the current token order between
-  `writeEnvelope` and its array literal.
 - Recorded comparisons do not reproduce `Gate::compare` ordering, reference
   input checks, outcome checks, path leaks, stale declarations or repeat capture.
 - Gate controls remain above the 20-minute target; their nightly timeout and

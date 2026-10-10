@@ -34,7 +34,7 @@ final class TopIssuesRendererTest extends TestCase
     public function itKeepsTheNamespaceMessageAndRecommendationInTopIssues(): void
     {
         $finding = self::finding(Location::none(), SymbolPath::forNamespace('Shop'), 'computed', 'health.cohesion', 'Measured cohesion is low.', Severity::Warning, recommendation: 'Split the namespace.');
-        $report = new Report([$finding], 1, 0, 0, 0, 1, topIssues: [new RankedIssue($finding, 10, null, 5, 1)]);
+        $report = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [$finding], 1, 0, 0, 0, 1, topIssues: [new RankedIssue($finding, 10, null, 5, 1)]);
         $lines = [];
         $this->renderer->render($report, new FormatterContext(useColor: false), $this->color, $lines);
         $output = implode("\n", $lines);
@@ -49,6 +49,7 @@ final class TopIssuesRendererTest extends TestCase
     public function itRendersTopIssues(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -90,6 +91,7 @@ final class TopIssuesRendererTest extends TestCase
     public function itSkipsRenderingWhenNoTopIssues(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -111,6 +113,7 @@ final class TopIssuesRendererTest extends TestCase
     public function itSkipsRenderingWhenLimitIsZero(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -134,6 +137,7 @@ final class TopIssuesRendererTest extends TestCase
     public function itRespectsLimit(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -171,6 +175,7 @@ final class TopIssuesRendererTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
@@ -210,6 +215,7 @@ final class TopIssuesRendererTest extends TestCase
             [100.6, '101'],
         ] as [$score, $formatted]) {
             $report = new Report(
+                fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
                 findings: [],
                 filesAnalyzed: 1,
                 filesSkipped: 0,
@@ -239,6 +245,7 @@ final class TopIssuesRendererTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -286,6 +293,7 @@ final class TopIssuesRendererTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -330,6 +338,7 @@ final class TopIssuesRendererTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
@@ -364,6 +373,7 @@ final class TopIssuesRendererTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
@@ -400,6 +410,7 @@ final class TopIssuesRendererTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
@@ -436,6 +447,7 @@ final class TopIssuesRendererTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
@@ -468,6 +480,7 @@ final class TopIssuesRendererTest extends TestCase
     public function itRendersTheRankingItIsGivenWithoutReapplyingTheDrillDown(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,

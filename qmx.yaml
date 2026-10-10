@@ -261,16 +261,18 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions'
-        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricBranchTrace'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary'
-        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator'
-        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression'
-        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricOutcome'
-        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricReads'
-        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricSubjectEvaluation'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluatorInterface'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpressionInterface'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence'
-        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\MetricLookup'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricBranchTrace'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricEvaluator'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricOutcome'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricReads'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricSubjectEvaluation'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\MetricLookup'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Finding\ComputedMetricFindingBuilder'
     - name: analysis-evidence-computedmetrics-health
       patterns:
@@ -391,6 +393,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\NocCollector'
         - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\NocOptions'
         - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\NocRule'
+        - 'Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach'
         - 'Qualimetrix\Analysis\Evidence\Design\TypeCoverage\AbstractTypeCoverageRule'
         - 'Qualimetrix\Analysis\Evidence\Design\TypeCoverage\ParamTypeCoverageRule'
         - 'Qualimetrix\Analysis\Evidence\Design\TypeCoverage\PropertyTypeCoverageRule'
@@ -1080,6 +1083,7 @@ architecture:
         - 'Qualimetrix\Core\Environment\EnvironmentFailureInterface'
     - name: core-filetarget
       patterns:
+        - 'Qualimetrix\Core\FileTarget\CreatedDirectoryOwnership'
         - 'Qualimetrix\Core\FileTarget\DirectoryFacts'
         - 'Qualimetrix\Core\FileTarget\EntryControl'
         - 'Qualimetrix\Core\FileTarget\EntryFacts'
@@ -1438,6 +1442,7 @@ architecture:
         - 'Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface'
         - 'Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest'
         - 'Qualimetrix\Reporting\FindingProjection\Contract\GitScopeResult'
+        - 'Qualimetrix\Reporting\FindingProjection\FindingNamespaces'
         - 'Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions'
         - 'Qualimetrix\Reporting\FindingProjection\FindingProjectionResult'
         - 'Qualimetrix\Reporting\FindingProjection\FindingProjector'
@@ -1859,207 +1864,88 @@ rules:
   coupling.cbo:
     suppress_namespaces:
       - subtree: Qualimetrix\Analysis\Finding\Contract
-      # The configuration-refusal carrier: ConfigurationRefusal itself plus
-      # the three value types it composes (ADR 0050). Five capability owners
-      # and the console throw or catch this one type, which is what a
-      # contract is for; CBO counts exactly that reach and calls it a magnet.
-      # Measured after X15: ConfigurationRefusal 50, ConfigurationOrigin 44,
-      # ConfigurationSource 44 against a class error bound of 30 — every
-      # point of it inbound, from owners that are supposed to name it.
-      # Blanket by prefix, and deliberately so: this exact sub-namespace
-      # holds nothing but the carrier's own value types, and a future
-      # sibling there would be one of them. Scoped to `\Refusal` and not to
-      # the parent `\Contract` namespace it lives under — X15's review found
-      # the wider prefix silently also suppressing four unrelated,
-      # unmeasured types (`ConfigurationDocument`, `KnownRuleNamesProviderInterface`,
-      # `Discovery\ComposerAutoloadPathReaderInterface`,
-      # `Pipeline\ConfigurationPipelineInterface`,
-      # `Pipeline\ConfigurationResolutionRequest`); re-measured after
-      # narrowing to just `\Refusal` and only `ConfigurationDocument` of
-      # those five turned out to actually exceed the threshold (see below) —
-      # the other four are unsuppressed and clean.
+      # The refusal carrier and its origin/position values preserve authored provenance
+      # across owner sections and Console adapters. This subtree is limited to that
+      # public refusal vocabulary; other Configuration contracts remain judged.
       - subtree: Qualimetrix\Analysis\Configuration\Contract\Refusal
-      # Reconfirmed 2026-08-26 for a namespace that grew: SymbolLevel and its
-      # projection moved in here (rule-vocabulary plan Ш5e2b). This line decides
-      # publication, not detection: a point threshold inside the namespace still
-      # decides whether a hub is reported at all, hence whether it shows up under
-      # `--show-suppressed` and in the suppression count. Measured cost of
-      # narrowing this to point thresholds instead: four classes here exceed the
-      # class CBO threshold (SymbolPath 72, MetricSubject 46, SymbolType 35,
-      # SymbolInfo 33), the namespace union exceeds its own (55), and two classes
-      # exceed ClassRank. Decided 2026-08-26 not to narrow: a point threshold
-      # inside an excluded namespace still decides detection, so narrowing would
-      # redistribute the silencing rather than add measurement — and the namespace
-      # union it leaves behind is not addressable by a point threshold at all.
-      # Owner closed the question on 2026-09-01: this line stands as measured,
-      # and nothing further is owed to it.
+      # Exact declaration identities, logical symbols and level projections are shared
+      # by evidence repositories, finding channels and publication. This subtree binds
+      # only that neutral identity language; unrelated Core subjects stay measured.
       - subtree: Qualimetrix\Core\Symbol
       - subtree: Qualimetrix\Core\Path
     suppress_namespace_channels:
       # The exact declaration census exposes these orchestration namespace unions.
-      # Their required capability composition gives own unions 22, 67, 40, 18 and 78;
+      # Their required capability composition spans the exact subject contracts;
       # moving the wiring only moves the signal. Declaration checks remain active.
       coupling.cbo:
-        # Contract readership gives namespace unions 21 and 16; declaration quality stays measured.
+        # Contract readership is intentional; declaration quality stays measured.
         - exact: 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition'
-        - exact: 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation'
         - exact: 'Qualimetrix\Analysis\Run\Pipeline'
         - exact: 'Qualimetrix\Infrastructure\Console'
         - exact: 'Qualimetrix\Infrastructure\Console\Command'
         - exact: 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass'
         - exact: 'Qualimetrix\Infrastructure\DependencyInjection\Configurator'
       coupling.cbo:namespace:
-        # Publishing byte-distinct JSON group keys adds the required neutral SourceBytes boundary; own union 16.
-        - exact: 'Qualimetrix\Reporting\Formatter\Json'
         # These exact contract namespaces grow with their intended named readers.
-        # Own namespace unions are 32 and 19; declaration-level quality remains measured.
         - exact: 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract'
         - exact: 'Qualimetrix\Analysis\Policy\Architecture\Contract'
-        # Worker composition must carry the registered Finding forms service: own CBO 15→16 (Ca=3, Ce=23).
-        # Removing that edge would replace the public contract with private Finding construction.
-        - exact: 'Qualimetrix\Infrastructure\Parallel'
-        # Baseline joins acceptance, scope, measurement and finding contracts; namespace union 21 follows those boundaries.
+        # Baseline joins acceptance, scope, measurement and finding contracts.
         - exact: 'Qualimetrix\Analysis\Policy\Baseline'
-        # Authored directive values are shared contracts: inbound namespace union 17.
+        # Authored directive values are shared contracts read by their named consumers.
         - exact: 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive'
-        # Shared run policies and scope records: Ca=30, Ce=9, namespace CBO=16.
+        # Shared run policies and scope records are read across capability owners.
         - exact: 'Qualimetrix\Analysis\Run\Contract\Configuration'
         # Own declarations are shared Run phase ports and result/coverage contracts.
         - exact: 'Qualimetrix\Analysis\Run\Contract\Pipeline'
-        # The document schema is a shared authored-value vocabulary: 19 inbound namespaces, 35 classes.
+        # The document schema is a shared authored-value vocabulary.
         - exact: 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema'
         # Shared authored-value contracts have intentional inbound reach from
-        # named section owners; namespace CBO is 16 at the inclusive bound 16.
+        # named section owners.
         - exact: 'Qualimetrix\Analysis\Configuration\Contract\Document'
-        # Re-measured 2026-09-24 over the classes the namespace declares itself
-        # (`coupling.cbo-own`, the scope the rule judges): union 19, the same as
-        # at ddc4dff9. Numbers further down are from when the entry was written.
-        # Raw 18 is the required union of eight inbound and twelve outbound
-        # Inline contract dependencies. Exact channel scope keeps declaration
-        # CBO, children, and every other coupling channel active.
+        # Authored directive parsing and suppression consumers read the same public
+        # Inline facts. Only this exact namespace channel is excluded; declaration
+        # quality and descendant namespaces remain judged.
         - exact: 'Qualimetrix\Analysis\Policy\Inline\Contract'
-        # Shared exact/subtree/regex primitives intentionally form one neutral
-        # vocabulary used by configuration, analysis, reporting, and console
-        # adapters. The namespace union is 21 after the bound selector contract
-        # landed; declaration-level CBO and every other coupling channel remain
-        # active, so only this namespace-granularity hub finding is excluded.
+        # Exact/subtree/regex values define one separator-bound selector language for
+        # configuration, evidence and publication. Exact namespace scope leaves their
+        # declarations and future child namespaces measured.
         - exact: 'Qualimetrix\Core\Pattern'
-        # Summary renderers compose the stable report/context boundary with
-        # finding, debt, filtering, health, and ANSI vocabularies. The namespace
-        # union is 16 after FormatterContext gained the bound selector; class
-        # CBO and every other coupling channel remain active.
+        # Summary composes finding/debt narration, health projection and terminal output
+        # through the shared Report and FormatterContext boundary. Exact namespace scope
+        # does not exclude the individual renderers or other coupling channels.
         - exact: 'Qualimetrix\Reporting\Formatter\Summary'
-        # Re-measured 2026-09-24 over the classes the namespace declares itself
-        # (`coupling.cbo-own`, the scope the rule judges): union 17, the same as
-        # at ddc4dff9. Numbers further down are from when the entry was written.
-        # The Reporting vocabulary root, 16 against an inclusive 16. This is
-        # the same namespace-granularity artefact the
-        # `Analysis\Configuration\Contract` entry in this list records, and
-        # here the run says so outright: `coupling.cbo` moves 15 -> 16
-        # while `coupling.ca` (12) and `coupling.ce` (57) do not move at all.
-        # No class gained or lost an edge; only the number of namespaces those
-        # same edges are spread over changed. Measured with
-        # `bin/qmx check src/ --format=metrics`, both sides, on the commit this
-        # change starts from and on the result.
-        #
-        # The cause is retiring the `Formatter\Support` bucket, which replaced
-        # one importing namespace with two: `Formatter\Detail\FindingDetailRenderer`
-        # and `Formatter\Ordering\FindingSorter` named `GroupBy` and
-        # `FormatterContext` from inside `Support` before and name the same two
-        # types from their own subjects now. That part is counted from imports
-        # rather than read off the graph, so it is offered as the explanation
-        # of a delta the tool reports, not as a reconstruction of the metric.
-        #
-        # The counterfactual of removing this entry is putting the bucket back,
-        # so no refactoring is offered. Moving `GroupBy` down into `Ordering`
-        # was rejected on a count rather than a run: eleven namespaces name
-        # that enum, so it would turn a leaf into a hub and add an edge from
-        # this root besides. Exact channel scope keeps declaration-level class
-        # CBO, every child namespace, and every other coupling channel active.
+        # Report, context and grouping values are shared by renderers in distinct
+        # publication subjects. Keeping Detail and Ordering separate changes the namespace
+        # census without adding a new responsibility to those public values.
         - exact: 'Qualimetrix\Reporting'
-        # Re-measured 2026-09-24 over the classes the namespace declares itself
-        # (`coupling.cbo-own`, the scope the rule judges): union 20, the same as
-        # at ddc4dff9. Numbers further down are from when the entry was written.
-        # The configuration hub, union 16 against an inclusive 16. The one edge
-        # that moved it from 15 is afferent, and it is X18's own cure:
-        # `Evidence\Coupling\CouplingAnalysis` stopped throwing a bare
-        # `InvalidArgumentException` and now names `ConfigSchema` and
-        # `ConfigurationRefusal` so a bad coupling option is refused under the
-        # `Configuration error:` framing. Measured, not assumed: the afferent
-        # namespace set goes 14 -> 15 and the single new member is
-        # `Analysis\Evidence\Coupling`; drop that one import and the union is
-        # back at 15, under the ceiling. The counterfactual of removing it is
-        # therefore exactly "undo the cure", which is why no refactoring is
-        # offered here. A point `@qmx-threshold` does not address this: the
-        # subject is `ns:Qualimetrix\Analysis\Configuration`, and a tag on the
-        # file the finding is attributed to was probed on this tree -- the
-        # violation stood and `bin/qmx directives` reported the directive inert.
-        # Exact channel scope keeps declaration-level class CBO, every child
-        # namespace and every other coupling channel measured.
+        # Capability-owned resolvers read the shared document vocabulary and translate
+        # configuration refusals through their authored origins. Removing those imports
+        # would disconnect the common refusal and document contracts from their consumers.
         - exact: 'Qualimetrix\Analysis\Configuration'
-        # Re-measured 2026-09-24 over the classes the namespace declares itself
-        # (`coupling.cbo-own`, the scope the rule judges): union 20, the same as
-        # at ddc4dff9. Numbers further down are from when the entry was written.
-        # The formatter namespace, union 16 against an inclusive 16, and the
-        # same shape: the edge that moved it from 15 is afferent, from
-        # `Reporting\Configuration\OutputFormatResolver`, which now names
-        # `FormatterRegistryInterface` to judge an output format against the
-        # registered formatters; at 72f18239 it wrapped whatever string it was
-        # given in an `OutputFormat` and checked nothing. Measured: the
-        # efferent namespace set is unchanged at 6 and the afferent set goes
-        # 9 -> 10 with that one new member, so 6 + 10 = 16. Note this corrects
-        # the efferent reading the rule's message suggests -- the breach is on
-        # the inbound half. Point thresholds do not reach a namespace subject
-        # (probed as above), and removing the edge means undoing X18's cure:
-        # the resolver was given the registry so an unknown output format is
-        # refused under the `Configuration error:` framing. No refactoring is
-        # offered here for the same reason as the entry above.
+        # OutputFormatResolver consults FormatterRegistryInterface to refuse an unknown
+        # format before publication. The incoming registry reader is required to judge
+        # that authored value; exact scope leaves formatter implementations judged.
         - exact: 'Qualimetrix\Reporting\Formatter'
-        # The Measurement contract namespace, whose union is 47 against a
-        # threshold of 25 — measured 2026-09-21, and the number is a dated
-        # measurement rather than a ceiling, because this channel is suppressed
-        # outright for this namespace. It was ratcheted at 44. The one edge that
-        # moved it to 45 is `Infrastructure\DependencyInjection\CompilerPass`: the channel
-        # compiler pass now reads `MetricName`'s constants by reflection to
-        # check at build time that a channel's declared judged metric exists
-        # (ADR 0046), and the union is counted at namespace granularity, so one
-        # new importing namespace is one edge. Measured: reverting the second
-        # new importer (`HealthDimensionCatalog`) leaves the union at 45, so it
-        # is this namespace alone. Two importing namespaces joined after that.
-        # The one this file can attribute is the 47th, `Reporting\DrillDown`:
-        # `DrillDownBinding` moved there to sit beside the `FindingFilter` its
-        # docblock says it must agree with, and it reads this repository through
-        # `MetricRepositoryInterface` and `NamespaceTree`. `Infrastructure\Console`
-        # did not leave the union with it — `LayerAssignmentResolver` still
-        # imports from here — which is why the step is +1 and not 0. The 46th
-        # predates that move and is not attributed here. The check cannot move
-        # anywhere cheaper —
-        # every namespace already in the union is an analysis capability, not a
-        # composition root — and a namespace channel is not addressable by
-        # `@qmx-threshold`. Class CBO is governed separately by exact path
-        # exclusions and point thresholds; its metric facts remain published.
+        # Collectors, evidence rules and health/publication consumers share MetricName,
+        # metric bags and the repository read port. The channel compiler validates judged
+        # metric keys against that same vocabulary. Exact namespace scope leaves each
+        # contract declaration and future child namespaces judged.
         - exact: 'Qualimetrix\Analysis\Evidence\Measurement\Contract'
     suppress_paths:
-      # Shared declaration metadata and numbering promises: Ca/Ce 34/3 and 22/1.
-      # Their measured CBO 37 and 23 is the intended contract readership.
-      - exact: src/Analysis/Evidence/Measurement/Contract/MetricDefinition.php
-      - exact: src/Analysis/Evidence/Measurement/Contract/DeclarationIndexAwareInterface.php
-      # Shared repository read port: 42 inbound classes, total CBO 48, at its explicit bound.
-      - exact: src/Analysis/Evidence/Measurement/Contract/MetricRepositoryInterface.php
-      # Shared formatter publication port: 15 inbound classes, total CBO 20, at its explicit bound.
-      - exact: src/Reporting/Formatter/FormatterInterface.php
-      # The dependency-kind vocabulary has 21 incoming readers and no outgoing types.
+      # The dependency-kind vocabulary is a shared inbound contract.
       - exact: src/Analysis/Evidence/DependencyModel/Contract/DependencyType.php
-      # The metric-value contract has 67 incoming readers and one outgoing type.
+      # The metric-value contract is read across capability owners.
       - exact: src/Analysis/Evidence/Measurement/Contract/MetricBag.php
-      # Run evidence and memoized scope queries form a shared contract (Ca=16, Ce=10, CBO=26).
+      # RunCoverage retains analyzed-source coverage and memoized scope queries for
+      # baseline admission; its inbound reach follows that shared evidence contract.
       - exact: src/Analysis/Policy/Baseline/Contract/RunCoverage.php
-      # These internal baseline vocabulary hubs have four outgoing types each.
-      # Their measured inbound populations are 19, 17 and 21 consumers.
+      # Baseline, entry and identity values are read by capture, matching and ceiling
+      # judgement within the acceptance lifecycle; their reach follows those uses.
       - exact: src/Analysis/Policy/Baseline/Baseline.php
       - exact: src/Analysis/Policy/Baseline/BaselineEntry.php
       - exact: src/Analysis/Policy/Baseline/BaselineIdentity.php
-      # MetricName is an afferent vocabulary contract hub (raw CBO 73), not outbound entanglement.
+      # MetricName is the common key vocabulary read by collectors, formulas and
+      # judging channel declarations; splitting it would split the same metric language.
       - exact: src/Analysis/Evidence/Measurement/Contract/MetricName.php
       # The graph contract is intentionally a widely consumed type hub. Keep this
       # exact declaration measured by other rules without excluding its siblings.
@@ -2070,21 +1956,25 @@ rules:
       # The section declaration language is built by each owner; its reach
       # reflects those consumers and its declaration vocabulary.
       - exact: src/Analysis/Configuration/Contract/Document/Schema/NodeSchema.php
-      # Provenance is read by document owners and refusal adapters: inbound Ca=17,
-      # CBO=20. The exact carrier's readership is its contract responsibility.
+      # Document owners and refusal adapters read authored source provenance from
+      # this carrier; those consumers are its contract responsibility.
       - exact: src/Analysis/Configuration/Contract/Document/Provenance.php
-      # RunConfiguration is the shared run-policy carrier: inbound Ca=17, CBO=21.
-      # Its exact declaration deliberately serves those named run consumers.
+      # RunConfiguration carries discovery, collection and rule policies to named
+      # Run and delivery consumers; its reach follows that shared run boundary.
       - exact: src/Analysis/Run/Contract/Configuration/RunConfiguration.php
-      # Definition is an immutable contract read by 18 types; CBO 22 measures that reach.
+      # Authored formula, applicability and threshold consumers read the same
+      # immutable computed-metric definition contract.
       - exact: src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricDefinition.php
-      # The file-failure carrier has Ca=19/Ce=2: one typed cause shared by its readers.
+      # File-target readers share one typed failure cause so refusal and cleanup
+      # retain the same filesystem outcome.
       - exact: src/Core/FileTarget/FileTargetFailure.php
-      # These neutral read/facade types have Ca/Ce 17/5 and 12/8; splitting the
-      # path facade adds another outgoing edge rather than removing its responsibility.
+      # ResolvedTarget retains judged path membership and identity facts; TargetPath
+      # provides their shared resolution facade. Splitting the facade adds a forwarding
+      # dependency without separating that filesystem responsibility.
       - exact: src/Core/FileTarget/ResolvedTarget.php
       - exact: src/Core/FileTarget/TargetPath.php
-      # The neutral namespace-pattern value has eighteen readers and two outgoing types.
+      # NamespacePattern binds the shared selector definition to namespace separators
+      # for authored configuration, finding exclusion and reporting drill-down.
       - exact: src/Core/Pattern/NamespacePattern.php
       # AST visitors depend on many php-parser node types (not actionable coupling).
       # Exact capability roots preserve the visitor exclusion without enrolling
@@ -2101,25 +1991,16 @@ rules:
       - regex: 'src/Analysis/Evidence/Cohesion/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Complexity/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Coupling/.*Visitor\.php'
-      - regex: 'src/Analysis/Evidence/Design/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Maintainability/.*Visitor\.php'
-      - regex: 'src/Analysis/Evidence/Security/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Size/.*Visitor\.php'
       # DI configurators wire all services (coupling is their job)
       - subtree: src/Infrastructure/DependencyInjection
       # Infrastructure console commands and pipeline orchestrators need many deps
       - subtree: src/Infrastructure/Console
       - subtree: src/Analysis/Run/Pipeline
-      # `ConfigurationDocument`, which the `\Refusal` entry above deliberately
-      # does not sweep in: the shared configuration document every capability's
-      # resolver reads to build its own view. Measured on this tree: CBO 27
-      # against the class thresholds below (`warning: 20, error: 30`) — past
-      # the warning bound and reported as `warning`, a connectivity magnet for
-      # the same reason as the carrier, many named readers of one document, but
-      # a distinct type, so it carries its own line and its own number. Written
-      # as a path because `suppress_namespaces` matches namespaces, and a class
-      # name written there matches nothing — measured: the entry looked right
-      # and suppressed nothing.
+      # ConfigurationDocument is the shared resolved authored document read by each
+      # capability resolver. This exact path remains separate from the Refusal subtree
+      # and does not enroll unrelated Configuration contracts.
       - exact: src/Analysis/Configuration/Contract/ConfigurationDocument.php
     namespace:
       warning: 16
@@ -2151,7 +2032,6 @@ rules:
       - subtree: Qualimetrix\Analysis\Finding\Contract
       # Shared symbol and level vocabulary intentionally connects evidence and finding consumers.
       - subtree: Qualimetrix\Core\Symbol
-      - subtree: Qualimetrix\Analysis\Finding\Rule
       - subtree: Qualimetrix\Core\Path
 
   # Distance: leaf namespaces holding pure value objects, enums, and exceptions
@@ -2162,197 +2042,170 @@ rules:
   #
   # Note on scope: plain `suppress_namespaces` entries match by prefix, so the two
   # entries below are blankets — `Qualimetrix\Core` covers the whole
-  # Core tree (including the umbrella namespace itself, D=0.71) and the
-  # Analysis.Policy.Architecture Layer root deliberately covers its Expansion
-  # child. Configuration/Allow is a separate concrete selector/value/parser
-  # leaf, so it has its own prefix.
+  # Core tree and the Architecture Layer subtree including its Expansion child.
+  # Configuration/Allow owns a separate concrete selector/value/parser leaf.
   coupling.distance:
     suppress_namespaces:
       # The concrete population language is a shared contract hub for judging rules and publication consumers.
       - exact: 'Qualimetrix\Analysis\Finding\Contract\Population'
-      # Concrete prose operations and glyph values need no abstract provider; A=0, I=1/3 gives D=2/3.
+      # Prose operations and glyph values provide concrete terminal rendering;
+      # there is no independent abstract provider to introduce for those operations.
       - exact: 'Qualimetrix\Reporting\Formatter\Prose'
-      # Baseline's concrete public facts form a contract hub (raw distance 0.659091).
+      # Baseline contract values carry acceptance, coverage and current-measurement
+      # facts to their named readers; concrete facts need no abstract provider.
       - exact: 'Qualimetrix\Analysis\Policy\Baseline\Contract'
-      # Private token representation stays inside one duplication owner; local D=1 is not a module boundary.
+      # Token normalization is a private duplication representation, so its concrete
+      # values stay inside the duplication lifecycle rather than inventing a module port.
       - exact: 'Qualimetrix\Analysis\Evidence\Duplication\Normalization'
-      # Four concrete indexing operations need no abstract provider; one additional internal reader yields Ca=Ce=5, D=0.5.
+      # Token window, suffix and hash indexing are concrete operations owned by
+      # duplication matching; their local abstractness does not justify a provider port.
       - exact: 'Qualimetrix\Analysis\Evidence\Duplication\Index'
-      # Five concrete refusal adapters intentionally share framing: A=0, Ca=14/Ce=13, D=0.518519.
-      - exact: 'Qualimetrix\Infrastructure\Console\Refusal'
-      # The same concrete authored directive contract has intentional distance 0.52.
+      # Authored directive records carry source spelling, subjects and positions to
+      # parsing and audit readers; this concrete vocabulary has no provider lifecycle.
       - exact: 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive'
-      # Five concrete scope conclusions are shared contracts: A=0, I=0.272727, D=0.727273.
+      # ProjectScope values publish source-universe and narrowed-scope conclusions
+      # to Run and reporting; concrete conclusions do not require abstract services.
       - exact: 'Qualimetrix\Analysis\Finding\Contract\ProjectScope'
-      # Concrete readonly resolved values implement sibling-owned public ports; local A=0, I=0.5.
+      # Resolved document forms implement Configuration read ports outside this
+      # namespace; local abstractness omits the public promises those forms implement.
       - exact: 'Qualimetrix\Analysis\Configuration\Document\Resolved'
-      # Three internal concrete override types implement a sibling-owned validator port; local A=0, I=1/3.
+      # Internal override parsing and validation implement Finding contracts outside
+      # this namespace; local abstractness omits the promise they implement.
       - exact: 'Qualimetrix\Analysis\Finding\Rule\Override'
       - subtree: Qualimetrix\Core
       - subtree: Qualimetrix\Analysis\Policy\Architecture\Layer
       - subtree: Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow
       - subtree: Qualimetrix\Analysis\Evidence\Prioritization\Debt
       - subtree: Qualimetrix\Infrastructure\Serializer
-      # Immutable score values form a stable concrete contract leaf. Its exact
-      # namespace has A=0/I=0 by design; `[Q]` prevents descendant enrollment.
+      # Immutable score and coverage values carry health facts through the public
+      # contract; exact namespace scope leaves future child namespaces judged.
       - exact: 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score'
       # Concrete metadata catalogs implement a sibling Contract-owned public
       # surface. Exact-namespace abstractness therefore cannot see that port.
       - exact: 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata'
-      # This public-surface root unions independently consumed Finding
-      # contracts; its exact-root aggregate distance is 0.6209039548022599.
+      # The exact public vocabulary combines finding transports, channel declarations
+      # and execution outcomes consumed by evidence, policy and publication.
       - exact: 'Qualimetrix\Analysis\Finding\Contract'
-      # The rule contract language combines interfaces, immutable values,
-      # enums, readers, and selectors; exact-root distance is 0.505982905982906.
+      # The rule language combines interfaces, immutable declarations, band values
+      # and selectors consumed by evidence producers; the local concrete ratio mixes
+      # those distinct public promises.
       - exact: 'Qualimetrix\Analysis\Finding\Contract\Rule'
-      # Concrete validators implement an externally consumed override language,
-      # making local A/I incomplete; exact-root distance is 0.7375.
+      # Concrete override validators implement an externally consumed Finding
+      # language; their local abstractness omits that cross-namespace contract.
       - exact: 'Qualimetrix\Analysis\Finding\Contract\Rule\Override'
-      # The threshold penalizes consolidation itself here, and that is measured
-      # rather than argued. Four copies of the retired-suppression vocabulary
-      # were folded into one owner, which is the only direction the manifest
-      # allows: `Analysis\Finding` already imports `Analysis\Configuration`, so
-      # the reverse edge would be a cycle. Folding them adds afferent edges and
-      # nothing else — abstractness is unchanged, instability falls to 4/38, and
-      # D = |A + I - 1| rises for that reason alone. The counterfactual was
-      # measured, not assumed: leaving the spelling fold in `Core` and moving
-      # only the vocabulary gives 0.677, over the same ceiling, because the
-      # edges are the cause and the class placement is not. Exact-root aggregate
-      # distance is 0.686404. `[Q]` keeps every child namespace (Contract,
-      # Loader, Pipeline, Preset, Discovery) measured, and a namespace channel
-      # is not addressable by `@qmx-threshold` — probed on this tree: a point
-      # override on the file the finding is attributed to left the violation
-      # standing and the audit reported that directive inert.
+      # Retired option spelling and vocabulary are centralized in Configuration.
+      # Finding already reads Configuration, so placing those authored keys in Finding
+      # would reverse the allowed dependency direction. The exact root remains separate
+      # from its document, loader and pipeline subjects.
       - exact: 'Qualimetrix\Analysis\Configuration'
       - exact: 'Qualimetrix\Analysis\Configuration\Contract\Refusal'
-      # The section declaration language has one port, a concrete builder,
-      # value types and enums. Moving its two internal helpers computes to
-      # 0.689 from the dependency graph, still above the warning ceiling,
-      # and makes the contract depend on the engine. Its parent with the
-      # resolved shape interfaces measures 0.486.
+      # The authored section language combines a public registration port, a builder
+      # and immutable value vocabulary. Moving its judgement helpers into the engine
+      # would make the public declaration language depend on that implementation.
       - exact: 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema'
-      # Shared manifest ports and immutable facts form a stable concrete hub;
-      # exact Contract distance is 0.604167 (A=0.333333, I=0.062500).
+      # Manifest reader ports and immutable source facts are consumed across
+      # discovery, scope, configuration and publication as one invocation snapshot.
       - exact: 'Qualimetrix\Analysis\ProjectManifest\Contract'
-      # Shared run policies and scope records deliberately have many consumers;
-      # exact Contract configuration distance is 0.684615 (A=0.20, I=0.115385).
+      # Run policy and source-scope contracts carry the same decisions to discovery,
+      # collection, rule execution and delivery consumers.
       - exact: 'Qualimetrix\Analysis\Run\Contract\Configuration'
     max_distance_warning: 0.5
     max_distance_error: 0.7
 
   size.class-count:
     suppress_namespaces:
-      # Own class count 37; temporary until this exact subject is split.
+      # Temporary until this exact subject is split.
       - exact: 'Qualimetrix\Analysis\Evidence\CodeSmell'
-      # Own class count 25; temporary until this exact subject is split.
+      # Temporary until this exact subject is split.
       - exact: 'Qualimetrix\Analysis\Evidence\Coupling'
-      # Own class count 28; temporary until this exact subject is split.
+      # Temporary until this exact subject is split.
       - exact: 'Qualimetrix\Analysis\Finding\Contract\Rule'
-      # Own class count 53; temporary until this exact subject is split.
+      # Temporary until this exact subject is split.
       - exact: 'Qualimetrix\Analysis\Policy\Baseline'
-      # Own class count 55; temporary until this exact subject is split.
+      # Temporary until this exact subject is split.
       - exact: 'Qualimetrix\Infrastructure\Console'
 
   coupling.instability:
     suppress_namespace_channels:
-      # Console composes delivery for capabilities: Ca=3, Ce=234, I=0.987342.
-      # Its required dependency direction is the same as the measured command adapters.
+      # Console composes configuration, analysis and publication through capability
+      # contracts; its delivery direction is outward to those subjects.
       coupling.instability:
         - exact: 'Qualimetrix\Infrastructure\Console'
       coupling.instability:namespace:
-        # Container assembly references the registered Finding forms service: Ca=4, Ce=35→36, I=0.9.
-        # Moving that required wiring only transfers the edge; declaration-level checks stay active.
+        # Container assembly reads the registered Finding forms service to compose
+        # the declared option language; moving that wiring only moves the same dependency.
         - exact: 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass'
         # Only two orchestration/composition readers consume this directive policy leaf.
         - exact: 'Qualimetrix\Analysis\Policy\Inline\Directive'
-        # Ca=3 / Ce=62 (I=0.953846), ratcheted at 0.953125 when Ce was 61. The
-        # one new efferent class is `Analysis\Finding\Contract\JudgedMetrics`,
-        # which each judging rule in this package names in its own channel
-        # declaration (ADR 0046). A leaf evidence capability is efferent by its
-        # nature — its rules and collectors depend outward on the Finding
-        # vocabulary, the Measurement contract and the Core symbols, while only
-        # three classes anywhere depend on it inward — so every future addition
-        # to the declaration vocabulary crosses this again by the same
-        # mechanism. There is no per-class fix that keeps a rule able to declare
-        # what it judges, and a namespace channel is not addressable by
-        # `@qmx-threshold`.
+        # Coupling rules and collectors read judged-metric declarations, Measurement
+        # contracts and Core symbols. Composition consumes that evidence capability;
+        # its outward direction follows those required metric and rule vocabularies.
         - exact: 'Qualimetrix\Analysis\Evidence\Coupling'
-        # Ca=2 / Ce=22 (I=0.916667). Unmeasured until its second afferent edge:
-        # `Infrastructure\DependencyInjection\Configurator` now names
-        # `UnboundSuppressionRule` by `::class` so the architecture manifest can
-        # bind the registration, which lifts Ca over `min_afferent: 2` below.
-        # Ce did not move. The namespace is the unbound-suppression audit and
-        # its rule, a leaf that reads the Finding and Configuration vocabularies
-        # and is read back only by the console and the container, and a
-        # namespace channel is not addressable by `@qmx-threshold`.
+        # UnboundSuppressionRule reads Finding and Configuration vocabulary to audit
+        # authored suppressions; Console and container registration consume that leaf.
         - exact: 'Qualimetrix\Analysis\Finding\SuppressionBinding'
-        # Ca=3 / Ce=32 (I=0.914286). Scope checking and two composition
-        # adapters read this internal group of four run configuration operations;
-        # one additional incoming edge alone would put I below 0.9.
+        # Scope checking and composition adapters read the internal run-configuration
+        # operations that translate resolved policies into one invocation.
         - exact: 'Qualimetrix\Analysis\Run\Configuration'
-        # Ca=2 / Ce=20 (I=0.909091). This discovery audit reads the run and
-        # finding vocabularies; two orchestration readers do not make it a hub.
-        - exact: 'Qualimetrix\Analysis\Run\ExcludeBinding'
-        # Ca=2 / Ce=171 (I=0.988439). Composition adapters name their exact
-        # services; moving one incoming edge cannot reduce that responsibility.
+        # Exact DI configurators name the capability services they assemble. Moving an
+        # incoming composition edge does not remove those registration dependencies.
         - exact: 'Qualimetrix\Infrastructure\DependencyInjection\Configurator'
     suppress_paths:
-      # Exact finding attribution has two readers and thirteen required evidence types.
-      # Moving one reader transfers the small-population instability signal (0.866667).
-      - exact: src/Analysis/Evidence/ComputedMetrics/Health/Offender/WorstOffenderBuilder.php
-      # These exact run-bound operations have two readers each; splitting moved that same small-population signal.
       - exact: src/Analysis/Evidence/DependencyModel/Extraction/DependencyRecorder.php
       - exact: src/Analysis/Policy/Architecture/Layer/ClassContext/Ancestry.php
       - exact: src/Analysis/Policy/Architecture/Layer/ClassContext/ClassContextFactory.php
       - exact: src/Analysis/Policy/Architecture/Layer/ClassContext/KnownTypes.php
       - exact: src/Infrastructure/Composer/ComposerAutoloadMap.php
       - exact: src/Infrastructure/Composer/DeclaredSupertypeReader.php
-      # Two internal credential classifiers read this native type policy: Ca=2, Ce=9, I=0.818182.
-      # Moving a reader only transfers the small-population signal.
+      # Credential classifiers share native value interpretation through CredentialValue;
+      # its outgoing type policy follows that classification responsibility.
       - exact: src/Analysis/Evidence/Security/Credential/CredentialValue.php
-      # Each exact operation has only two readers; moving one edge relocates instability.
-      # Measured I: 0.857143, 0.8, 0.888889, 0.8 and 0.857143 respectively.
+      # Baseline parsing, capture, update and comparability each compose the acceptance
+      # vocabulary; ChannelUniverse composes registered channel declarations. These
+      # exact operations remain distinct from sibling and future operations.
       - exact: src/Analysis/Policy/Baseline/BaselineEntryParser.php
       - exact: src/Analysis/Policy/Baseline/BaselineGenerator.php
       - exact: src/Analysis/Policy/Baseline/BaselineUpdater.php
       - exact: src/Analysis/Policy/Baseline/Ceiling/EntryComparability.php
       - exact: src/Infrastructure/Rule/ChannelUniverse.php
-      # Two cache readers consume this storage adapter (Ca=2, Ce=11).
-      # Instability reflects the reader population after separating directory operations.
+      # FileCache implements serialized entry persistence over the judged file-target
+      # lifecycle; directory management remains a separate storage operation.
       - exact: src/Infrastructure/Cache/FileCache.php
-      # Two Baseline writers consume this document guard (Ca=2, Ce=10).
-      # Instability reflects the small reader population; other signals remain active.
+      # BaselineDocumentWriter guards the held document identity and atomic write
+      # lifecycle used by baseline capture and update.
       - exact: src/Analysis/Policy/Baseline/BaselineDocumentWriter.php
-      # Cleanup composes ten dependencies for two readers; instability reflects that small population.
+      # BaselineCleaner joins loaded acceptance entries, measured scope and channel
+      # declarations to judge stale/inert entries before replacement.
       - exact: src/Analysis/Policy/Baseline/BaselineCleaner.php
-      # Each operation has two readers; its required vocabulary determines Ce,
-      # and relocating one reader merely transfers this instability signal.
+      # FrameworkNamespaceSelectorParser judges framework namespace selectors;
+      # LayersValidator judges authored layer declarations; RuleOptionDocumentForms
+      # builds owner-provided option forms. Their outgoing vocabularies belong to
+      # those separate exact configuration responsibilities.
       - exact: src/Analysis/Evidence/Coupling/Configuration/FrameworkNamespaceSelectorParser.php
       - exact: src/Analysis/Policy/Architecture/Configuration/LayersValidator.php
-      - exact: src/Infrastructure/Parallel/Strategy/AmphpParallelStrategy.php
       - exact: src/Analysis/Finding/RuleConfiguration/OptionForms/RuleOptionDocumentForms.php
-      - exact: src/Infrastructure/Parallel/FileProcessingTask.php
-      # The policy composes ten dependencies for two run-level readers (Ca=2).
+      # InlineDirectivePolicy joins authored directives, producer declarations and
+      # source locations before rule execution; its dependencies establish that judgement.
       - exact: src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php
-      # These exact vocabulary, document, specificity and DI declarations have Ca=2.
-      # Instability's small-population verdict is structural; other quality signals remain active.
+      # LayerReading composes authored document layers; class/namespace options
+      # implement their required band and override language; SelectionSpecificity
+      # orders authored selectors; ConfigurationConfigurator composes that document
+      # engine. These are exact operations rather than a blanket over their owners.
       - exact: src/Analysis/Configuration/Document/LayerReading.php
       - exact: src/Analysis/Evidence/Complexity/ClassCognitiveComplexityOptions.php
       - exact: src/Analysis/Evidence/Complexity/ClassComplexityOptions.php
       - exact: src/Analysis/Evidence/Coupling/ClassCboOptions.php
       - exact: src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php
       - exact: src/Analysis/Evidence/Coupling/NamespaceCboOptions.php
-      - exact: src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php
       - exact: src/Analysis/Finding/Selection/SelectionSpecificity.php
       - exact: src/Infrastructure/DependencyInjection/Configurator/ConfigurationConfigurator.php
-      # Most visitors and DI configurators stay below the afferent floor. The
-      # exact low-Ca declarations above are the measured exceptions, not a role blanket.
+      # UsageTrackingTrait records private member usage during AST traversal; the
+      # exact trait does not enroll other visitors or future capability siblings.
       - exact: src/Analysis/Evidence/CodeSmell/UsageTrackingTrait.php
-      - exact: src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php
       # Console commands/orchestrators sit at the top of the stack: I→1 is correct there
       - subtree: src/Infrastructure/Console
-      # Abstract base classes aggregate deps from all subclasses — instability is
-      # structural. Its only afferent edges are the three type-coverage subclasses.
+      # AbstractTypeCoverageRule joins the shared type-coverage judgement used by
+      # its concrete parameter, return and property producers.
       - exact: src/Analysis/Evidence/Design/TypeCoverage/AbstractTypeCoverageRule.php
     class:
       min_afferent: 2
@@ -2366,45 +2219,22 @@ rules:
   # AST visitors inherently have high NPath/CCN/WMC due to many node type branches.
   # This is structural complexity from matching PHP AST node types, not a design flaw.
   #
-  # Scope note: these four rules used to exclude whole role trees plus
-  # `src/Reporting/Health`, `src/Analysis/Pipeline`, and `src/Baseline`, while the
-  # justification above only ever covered visitors. Of the 43 files hiding under them,
-  # 16 were real visitors and 27 were not — the exclusions were burying ~79 genuine
-  # violations, 21 of them error-level. Those files were refactored instead (see
-  # ThresholdParser, LcomClassData, GodClassRule, DataClassRule, the Summary renderers,
-  # DuplicationDetector, ComputedMetricEvaluator), and the lists below are now narrowed
-  # to what the justification actually says. Two methods that genuinely measure table
-  # size rather than decision depth carry a per-symbol `@qmx-threshold` instead
-  # (SarifRuleCollector::getRuleDescription, MetricEnricher::enrich).
-  # The exact trait path does the same AST node-type dispatch without carrying
-  # the Visitor suffix.
+  # Each regex below names an existing evidence capability and its AST visitors;
+  # non-visitor orchestration and rule judgement stay measured.
   complexity.npath:
     suppress_paths:
       - regex: 'src/Analysis/Evidence/CodeSmell/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Cohesion/.*Visitor\.php'
       # No Complexity root: no visitor there branches on node types past the
       # bound, and an entry that suppresses nothing would hide the first one that does.
-      - regex: 'src/Analysis/Evidence/Coupling/.*Visitor\.php'
-      - regex: 'src/Analysis/Evidence/Design/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Maintainability/.*Visitor\.php'
-      - regex: 'src/Analysis/Evidence/Security/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Size/.*Visitor\.php'
-      - exact: src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php
 
-  # Code duplication: Options classes share fromArray/threshold patterns by convention.
-  # Raised min_tokens from 70→100 to reduce structural similarity false positives.
-  # The MetricHintProvider entry was removed once the rule stopped reporting duplicates
-  # that lie entirely inside constant data tables — its 22 hits were all inside
-  # `const array METRICS`/`RANGES`, so the exclusion is now a no-op (verified: zero delta).
+  # Options classes implement the same resolved factory, band and metadata
+  # language. Token normalization erases differing channel literals.
   duplication.clone:
     min_tokens: 100
     suppress_paths:
-      # These exact rules share only normalized Finding/threshold framing, not a common judgement.
-      # DIT uses exact declarations; NOC uses logical aggregates; the other pair crosses owners.
-      - exact: src/Analysis/Evidence/CodeSmell/LongParameterListRule.php
-      - exact: src/Analysis/Evidence/Size/MethodCountRule.php
-      - exact: src/Analysis/Evidence/Design/Inheritance/InheritanceRule.php
-      - exact: src/Analysis/Evidence/Design/Inheritance/NocRule.php
       - regex: 'src/Analysis/Evidence/CodeSmell/.*Options\.php'
       - regex: 'src/Analysis/Evidence/Cohesion/.*Options\.php'
       - regex: 'src/Analysis/Evidence/Complexity/.*Options\.php'
@@ -2413,33 +2243,14 @@ rules:
       - regex: 'src/Analysis/Evidence/Maintainability/.*Options\.php'
       - regex: 'src/Analysis/Evidence/Security/.*Options\.php'
       - regex: 'src/Analysis/Evidence/Size/.*Options\.php'
-      - exact: src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php
-      # X16's two new rules live outside `Evidence/`, so the capability roots
-      # above do not reach them. Their options classes match each other over a
-      # 30-line window that is the mandatory `RuleOptionsInterface` shape and
-      # nothing else: a channel-name constant, the `enabled` promoted property,
-      # `fromArray()`, `isEnabled()`, `getSeverity()` and `acceptedOptionKeys()`.
-      # Everything that differs inside that window is a literal — the channel
-      # names — and literals are normalized before matching, which is the same
-      # mechanism that put the eight capability roots above on this list. There
-      # is no behaviour in the window to extract: a shared base class would hold
-      # the interface's own signatures.
-      # Both sides are listed because each copy of a block is a finding of its
-      # own (ADR 0085): an entry for one side leaves the other reported.
+      # SuppressionBinding options implement the same declared enabled/severity
+      # metadata and resolved factory contract. Token normalization erases their
+      # channel literals; extracting only interface-shaped metadata adds no behaviour.
       - regex: 'src/Analysis/Finding/SuppressionBinding/.*Options\.php'
-      - regex: 'src/Analysis/Run/ExcludeBinding/.*Options\.php'
-      # CboRule and InstabilityRule match on 34 lines that hold no behaviour: the
-      # class line, the five metadata constants every rule must declare, and the
-      # name/description/supported-levels accessors the rule interface mandates.
-      # Identifiers and literals are normalized before matching, so two rules
-      # implementing one interface are indistinguishable from a copy — the same
-      # mechanism that put the eight `*Options.php` roots above on this list. The
-      # only member inside the window with a body worth sharing is
-      # getSupportedLevels(), whose literal differs in three of the five
-      # hierarchical rules, so no base class can hold it. The window opened when
-      # the retired `requires()` metadata, which used to differ between the two,
-      # was deleted; nothing was copied.
-      # Both rules are listed, for the reason given above the ExcludeBinding entry.
+      # CboRule and InstabilityRule implement the same required name, level and
+      # options metadata. Token normalization erases different channel literals;
+      # their actual coupling judgements remain independent. Both exact rules are
+      # named because each copy receives its own clone finding.
       - exact: src/Analysis/Evidence/Coupling/CboRule.php
       - exact: src/Analysis/Evidence/Coupling/InstabilityRule.php
 
@@ -2448,13 +2259,10 @@ rules:
       - regex: 'src/Analysis/Evidence/CodeSmell/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Cohesion/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Complexity/.*Visitor\.php'
-      - regex: 'src/Analysis/Evidence/Coupling/.*Visitor\.php'
-      - regex: 'src/Analysis/Evidence/Design/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Maintainability/.*Visitor\.php'
       # No Security root: no visitor there branches on node types past the bound,
       # and an entry that suppresses nothing would hide the first one that does.
       - regex: 'src/Analysis/Evidence/Size/.*Visitor\.php'
-      - exact: src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php
 
   complexity.wmc:
     suppress_paths:
@@ -2462,9 +2270,7 @@ rules:
       - regex: 'src/Analysis/Evidence/Cohesion/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Complexity/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Coupling/.*Visitor\.php'
-      - regex: 'src/Analysis/Evidence/Design/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Maintainability/.*Visitor\.php'
-      - regex: 'src/Analysis/Evidence/Security/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Size/.*Visitor\.php'
 
   complexity.cognitive:
@@ -2472,10 +2278,7 @@ rules:
       - regex: 'src/Analysis/Evidence/CodeSmell/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Cohesion/.*Visitor\.php'
       # No Complexity root, for the reason given under complexity.npath.
-      - regex: 'src/Analysis/Evidence/Coupling/.*Visitor\.php'
-      - regex: 'src/Analysis/Evidence/Design/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Maintainability/.*Visitor\.php'
-      - regex: 'src/Analysis/Evidence/Security/.*Visitor\.php'
 
   # --- Code Smells ---
 
@@ -2519,7 +2322,7 @@ rules:
     warning: 8
     error: 12
     suppress_paths:
-      # Eight independent run facts and eight authored definition facts are immutable data, not services.
+      # Prepared run and authored computed-metric definitions carry immutable facts, not service groups.
       - exact: src/Analysis/Run/Pipeline/PreparedRun.php
       - exact: src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricDefinition.php
       # Mandatory independent declaration, policy and evidence facts are not injected services.
@@ -2537,7 +2340,7 @@ rules:
       - exact: src/Analysis/Policy/Baseline/Contract/CeilingOutcome.php
       - exact: src/Analysis/Policy/Baseline/Contract/CurrentMeasurement.php
       - exact: src/Reporting/FindingProjection/FindingProjectionResult.php
-      # Eight immutable authored/control facts, with no injected services.
+      # Authored suppressions, report context and successful file results carry independent immutable facts.
       - exact: src/Analysis/Policy/Inline/Contract/Suppression/Suppression.php
       - exact: src/Reporting/Report.php
       - exact: src/Reporting/FormatterContext.php
@@ -2550,12 +2353,11 @@ rules:
 
   code-smell.constructor-overinjection:
     suppress_paths:
-      # Eight independent run facts and eight authored definition facts are immutable data, not services.
+      # Prepared run and authored computed-metric definitions carry immutable facts, not service groups.
       - exact: src/Analysis/Run/Pipeline/PreparedRun.php
       - exact: src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricDefinition.php
       # Mandatory independent declaration, policy and evidence facts are not injected services.
       - exact: src/Analysis/Evidence/DependencyModel/Contract/Dependency.php
-      - exact: src/Analysis/Evidence/DependencyModel/DependencyGraph.php
       - exact: src/Analysis/Policy/Architecture/Contract/ExternalSupertypes.php
       - exact: src/Analysis/Policy/Architecture/Contract/LayerAssignment.php
       - exact: src/Analysis/Policy/Architecture/Layer/ClassContext/ClassContext.php
@@ -2569,7 +2371,7 @@ rules:
       - exact: src/Analysis/Policy/Baseline/Contract/CeilingOutcome.php
       - exact: src/Analysis/Policy/Baseline/Contract/CurrentMeasurement.php
       - exact: src/Reporting/FindingProjection/FindingProjectionResult.php
-      # Eight immutable authored/control facts, with no injected services.
+      # Authored suppressions, report context and successful file results carry independent immutable facts.
       - exact: src/Analysis/Policy/Inline/Contract/Suppression/Suppression.php
       - exact: src/Reporting/Report.php
       - exact: src/Reporting/FormatterContext.php
@@ -2621,120 +2423,38 @@ rules:
   # Health debt is ratcheted in qmx-baseline.json; new regressions fail selfcheck.
   health.cohesion:
     suppress_paths:
-      # Stateless collector metadata and one abstractness lifecycle share no instance fields (LCOM 4, score 40).
+      # Collector metadata operations and abstractness calculation use no shared
+      # instance fields; the lifecycle concerns one stateless metric collector.
       - exact: src/Analysis/Evidence/Coupling/AbstractnessCollector.php
-      # Serializer identity, availability and native encode/decode implement one stateless protocol (LCOM 4, score 40).
+      # Serializer identity, availability and native encode/decode implement one
+      # stateless codec protocol without shared instance fields.
       - exact: src/Infrastructure/Serializer/IgbinarySerializer.php
-      # A stateless XML formatter's metadata and document-writing methods share no fields by design (40).
-      - exact: src/Reporting/Formatter/CheckstyleFormatter.php
-      # Immutable spelling and namespace-prefix projections share one binding, while field cohesion measures their separate lookup maps (40).
+      # Immutable spelling and namespace-prefix projections expose the same bound
+      # type vocabulary through separate lookup maps.
       - exact: src/Analysis/Policy/Architecture/Layer/ClassContext/NameSpellingIndex.php
-      # Early input refusal and post-run projection are separate phases of one Console adapter (40).
+      # Early input refusal and post-run finding projection are separate phases
+      # of the same Console invocation adapter.
       - exact: src/Infrastructure/Console/FindingFilterOrchestrator.php
-      # Membership provenance and identity comparisons read independent snapshot facts (40).
+      # ResolvedTarget retains judged membership, path spelling and identity facts;
+      # its lookups read independent parts of that immutable target snapshot.
       - exact: src/Core/FileTarget/ResolvedTarget.php
-      # Stateless option wording operations read the same declaration vocabulary, without fields (40).
-      - exact: src/Analysis/Finding/RuleConfiguration/OptionForms/RuleOptionShapeWording.php
-      # Immutable independent outcome facts share no fields between lookup methods (40).
+      # Immutable ceiling outcome lookups read independent acceptance, scope and
+      # comparison facts.
       - exact: src/Analysis/Policy/Baseline/Contract/CeilingOutcome.php
-      # Static catalog operations and one aggregation lifecycle do not share fields (40).
-      - exact: src/Analysis/Evidence/Measurement/Aggregation/MeasurementAggregationService.php
-      # Command lifecycle and stateless narration reproduce the adjacent command precedent (40).
-      - exact: src/Infrastructure/Console/Command/BaselineUpdateCommand.php
-      # Immutable rule options separate static declaration/factory from independent enabled and error fields.
+      # Immutable duplication options separate static declaration and resolved
+      # construction from independent enablement and severity facts.
       - exact: src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php
       # The readonly snapshot has independent live and provenance observations over coherent facts.
       - exact: src/Analysis/Finding/Contract/EnablementDecision.php
-      # A console command shares no fields by construction: `configure()` touches
-      # none of them and the helpers are static, so shared-field cohesion
-      # mis-models the design rather than reporting debt. The four classes
-      # listed next sit at exactly 40 and are the whole of that debt on this
-      # root today. (`DirectivesCommand` stood here through X14; X15 removed
-      # its own `reportError()` helper, which raised its cohesion to 75.36 —
-      # above this rule's warning boundary — so the entry suppressed nothing
-      # and was dropped rather than carried forward inert. `BaselineUpdateCommand`
-      # left the same way once the baseline capability began answering whether
-      # an update changed anything.)
-      #
-      # Named one by one rather than by the namespace they share, and the
-      # difference is measured, not stylistic. The namespace form took the
-      # channel off all nineteen classes of the root and off every command
-      # written after it; `CheckCommand` sits at exactly 50.0 against a warning
-      # boundary of 50.0, so it publishes nothing today and would publish on the
-      # first method that lowers it. Oracle: with the boundary moved to 51, the
-      # namespace form suppresses CheckCommand's finding and this form publishes
-      # it. At the real boundary the published set of `bin/qmx check src/` is
-      # identical under both — 221 findings, byte for byte — so this buys the
-      # early signal back at no cost to the ratchet.
-      #
-      # What it costs instead: a listed file whose cohesion later rises leaves a
-      # path exclusion that silences nothing and says so to nobody. An exclusion
-      # has no staleness verdict, unlike an inline directive; that is the price
-      # of keeping the decision in configuration rather than in six docblocks.
-      - exact: src/Infrastructure/Console/Command/BaselineCleanupCommand.php
-      - exact: src/Infrastructure/Console/Command/BaselineExplainCommand.php
-      - exact: src/Infrastructure/Console/Command/BaselineGenerateCommand.php
-      - exact: src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php
-      # X15 adds two more of the same shape. `GraphExportCommand` measured
-      # 40.0 before the round touched it and measures the same after, so it
-      # is the existing debt of this root becoming visible, not new debt.
-      # `BaselineRenameChannelsCommand` is the one the round moved, and the
-      # mechanism was measured rather than assumed: splitting its
-      # `doExecute()` took it from 4 methods to 9, and `health.cohesion`
-      # gives a fixed boost only below 6, so the score fell while LCOM stayed
-      # at 3. The metric reports the cliff, not the design.
-      #
-      # `Application` is the round's own new debt, named as such: adding
-      # `configureIO()` (the `--silent` demotion above) took it from 30.0 to
-      # 20.0, which crosses this rule's own error/warning boundary (25.0) —
-      # `docs/internal/generated/suppression/composition.tsv` records the
-      # entry's severity as `error` where it was `warning` before this round.
-      # Accepted rather than split further: `doRun()`, `renderThrowable()`,
-      # `applyWorkingDirOption()` and `configureIO()` are four independent
-      # ladder/IO concerns that share no fields by construction, the same
-      # argument the class comment above makes for the seven listed commands.
-      - exact: src/Infrastructure/Console/Application.php
-      - exact: src/Infrastructure/Console/Command/GraphExportCommand.php
-      - exact: src/Infrastructure/Console/Command/BaselineRenameChannelsCommand.php
-      # TCC=0/LCOM=3 measure three independent refusal facts, not its static
-      # factories; health 30 stays unchanged when those factories are moved.
+      # ConfigurationRefusal retains independent origin, position, summary and cause
+      # facts. Static factories and refusal formatting do not establish shared
+      # instance-field usage.
       - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php
     suppress_namespace_channels:
       health.cohesion:
-        # Catalog classes score 71.2–83.3 individually; partial TCC plus static LCOM yields aggregate 43.1.
-        - exact: 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata'
-        # Stateless serializer alternatives have no measured TCC; LCOM 8/3 gives 16.7 after removing invented TCC.
-        - exact: 'Qualimetrix\Infrastructure\Serializer'
         # Stateless expansion algorithms and their immutable result do not share
         # fields; cohesion is structurally inapplicable only to this exact root.
         - exact: 'Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion'
-        # The exact root recursively unions independent Debt and Impact
-        # subjects; shared-field cohesion 48.6 is not a root invariant.
+        # The namespace health aggregate combines independent Debt and Impact
+        # subjects whose instance fields belong to separate lifecycles.
         - exact: 'Qualimetrix\Analysis\Evidence\Prioritization'
-        # X16's exclude-binding root: three classes (46.7). Measured, not
-        # argued: `cohesion.tcc.count` is 1 there, so the namespace TCC and LCC
-        # averages the score is built from are decided by a single class — the
-        # `*Options` one. The rule and the probe beside it each hold one field
-        # or none, which leaves them no pair of methods that could share a
-        # field, so they contribute no TCC at all. And that one options class
-        # measures TCC 0 by construction of the mandatory
-        # `RuleOptionsInterface` shape: `isEnabled()` reads the single
-        # `enabled` field and `getSeverity()` reads none, so the class has
-        # exactly one method pair and it shares nothing.
-        #
-        # The same shape inside a larger root is dissolved by its neighbours
-        # and never reaches the boundary: X16 added an options class of exactly
-        # this shape to `Evidence\Coupling` (TCC 0, class score 65.3) and that
-        # namespace does not report. So the finding is a property of how small
-        # the root is, not of its design, and splitting further only makes the
-        # roots smaller. The channel is excluded, not the rule: class-level
-        # cohesion inside the root stays measured, and every other channel of
-        # the namespace stays measured with it. Exact root — `[Q]` keeps a
-        # future child namespace judged on its own.
-        #
-        # `Finding\SuppressionBinding` sat here for the same reason and was
-        # removed in X16's F1: the scope-judgement class the round added is a
-        # second TCC contributor, the average is no longer one class's, and the
-        # namespace stopped reporting. The entry was measured inert, and an
-        # inert suppression is exactly what this round is about.
-        - exact: 'Qualimetrix\Analysis\Run\ExcludeBinding'

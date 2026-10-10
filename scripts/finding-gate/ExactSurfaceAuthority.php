@@ -32,7 +32,7 @@ final class ExactSurfaceAuthority
     {
         $surface = Surfaces::surfaceClass($key);
         $case = str_starts_with($key, 'case:') ? substr($key, 5, (int) strpos($key, '|') - 5) : null;
-        if ($run->publicationForms->recordsPair($key) === false) {
+        if (!$run->publicationForms->recordsPair($key) && !$run->publicationForms->recordsExpected($key)) {
             $required = [];
             foreach ($run->publicationForms->invocationArtifacts($key) as $artifact) {
                 foreach (['candidate', 'reference'] as $side) {
@@ -47,12 +47,6 @@ final class ExactSurfaceAuthority
             return ['rawSources' => [], 'residualViews' => [$key], 'required' => $required, 'schemas' => []];
         }
         $bearing = $case !== null && ReportViews::recordBearingSurface($surface);
-        $refusalSides = [];
-        if ($surface === 'baseline-file') {
-            foreach (['candidate', 'reference'] as $side) {
-                $refusalSides[$side] = self::declaredBaselineRefusal($key, $side, $run);
-            }
-        }
         $source = $bearing ? self::source($surface, $case) : null;
         $rawSources = $source === null ? [] : [$source];
         $residualViews = [$key];
@@ -77,9 +71,6 @@ final class ExactSurfaceAuthority
             $sources['case:' . $case . '|format:json'][] = 'outcome';
             if ($surface !== 'baseline-file' && !\in_array($surface, ['baseline:cleanup:file', 'baseline:rename-channels:file', 'baseline:update:file'], true)) {
                 $sources[$key] = array_values(array_unique([...($sources[$key] ?? []), 'records']));
-            }
-            if (\in_array($surface, ['format:sarif', 'format:gitlab'], true)) {
-                $sources[$key][] = 'fingerprint';
             }
             if (\in_array($surface, ['check:output:file', 'check:parallel'], true)) {
                 $schemaViews['json-document' . "\0" . $surface] = true;
@@ -109,8 +100,7 @@ final class ExactSurfaceAuthority
         $schemas = [];
         if ($case !== null) {
             foreach ($run->declarations->fields->requiredPublications($case) as $publication) {
-                if (($refusalSides[$publication['side']] ?? false)
-                    || !isset($schemaViews[$publication['report'] . "\0" . $publication['view']])) {
+                if (!isset($schemaViews[$publication['report'] . "\0" . $publication['view']])) {
                     continue;
                 }
                 $schemas[] = [
@@ -124,9 +114,7 @@ final class ExactSurfaceAuthority
         $required = [];
         foreach ($sources as $sourceKey => $roles) {
             foreach (['candidate', 'reference'] as $side) {
-                $sideRoles = ($refusalSides[$side] ?? false)
-                    ? ['capture', 'surface', 'normalization', 'path', 'outcome']
-                    : array_unique($roles);
+                $sideRoles = array_unique($roles);
                 foreach ($sideRoles as $role) {
                     $required[] = ['side' => $side, 'key' => $sourceKey, 'role' => $role];
                 }
@@ -138,9 +126,7 @@ final class ExactSurfaceAuthority
         if ($bearing && !\in_array($surface, ['format:metrics', 'format:suppressed', 'directives'], true)) {
             $required[] = ['side' => '*', 'key' => 'finding', 'role' => 'tuple-schema'];
             foreach (['candidate', 'reference'] as $side) {
-                if (!($refusalSides[$side] ?? false)) {
-                    $required[] = ['side' => $side, 'key' => 'case:' . $case . '|format:json', 'role' => 'tuple'];
-                }
+                $required[] = ['side' => $side, 'key' => 'case:' . $case . '|format:json', 'role' => 'tuple'];
             }
         }
         return ['rawSources' => $rawSources, 'residualViews' => $residualViews, 'required' => $required, 'schemas' => $schemas];
@@ -153,7 +139,7 @@ final class ExactSurfaceAuthority
             throw new GateError('An exact surface has no complete visible publication: ' . $pair->key);
         }
         $framed = self::frame('visible', $visible);
-        if ($run->publicationForms->recordsPair($pair->key) === false) {
+        if (!$run->publicationForms->recordsPair($pair->key)) {
             if ($pair->surface === 'baseline-file') {
                 $scope = substr($pair->key, 0, (int) strpos($pair->key, '|'));
                 $exit = $capture->artifacts[$scope . '|exit:baseline:generate'] ?? null;
@@ -162,9 +148,6 @@ final class ExactSurfaceAuthority
                 }
             }
             return $framed . self::invocationFrame($pair->key, $side, $capture, $run);
-        }
-        if ($pair->surface === 'baseline-file' && self::declaredBaselineRefusal($pair->key, $side, $run)) {
-            return $framed . self::baselineRefusalFrame($pair->key, $visible, $capture, $run);
         }
         if (!ReportViews::recordBearingSurface($pair->surface)) {
             return $framed;
@@ -188,45 +171,6 @@ final class ExactSurfaceAuthority
         $slot = $capture->rankings[$source] ?? throw new GateError('An exact surface has no complete finding authority: ' . $source);
         [$physical, $ranking] = self::rawPopulation($slot, $source, $side, $run);
         return $framed . self::frame('physical-records', $physical) . self::frame('ranking-records', $ranking);
-    }
-
-    private static function declaredBaselineRefusal(string $key, string $side, RunContext $run): bool
-    {
-        if ($run->publicationForms->recordsPair($key) === false) {
-            return false;
-        }
-        if (Surfaces::surfaceClass($key) !== 'baseline-file' || !str_starts_with($key, 'case:')) {
-            return false;
-        }
-        $case = substr($key, 5, (int) strpos($key, '|') - 5);
-        if ($run->declarations->outcomes->of($case) === null || !$run->declarations->exactSurfaces->has($key)) {
-            return false;
-        }
-        foreach ($run->corpus->cases as $definition) {
-            if ($definition->id === $case) {
-                return CaseOutcome::of($definition, $side) === CaseOutcome::REFUSAL;
-            }
-        }
-        return false;
-    }
-
-    private static function baselineRefusalFrame(string $key, string $visible, CaptureResult $capture, RunContext $run): string
-    {
-        $scope = substr($key, 0, (int) strpos($key, '|'));
-        $file = $capture->artifacts[$key] ?? null;
-        $exit = $capture->artifacts[$scope . '|exit:baseline:generate'] ?? null;
-        $stderr = $capture->artifacts[$scope . '|stderr:baseline-file'] ?? null;
-        $refusal = $capture->artifacts[$scope . '|format:json'] ?? null;
-        $envelope = \is_string($refusal) ? json_decode($refusal, true) : null;
-        if ($visible !== '' || $file !== '' || !\is_string($exit) || !ctype_digit($exit)
-            || (int) $exit < 1 || (int) $exit > 255 || $exit === '70'
-            || !\is_string($stderr) || $stderr === '' || !\is_array($envelope)
-            || !\is_string($envelope['error'] ?? null) || $envelope['error'] === '') {
-            throw new GateError('A declared baseline refusal requires empty captured baseline content, a non-analysis exit, stderr and a JSON refusal.');
-        }
-        return self::frame('baseline-exit', $exit)
-            . self::frame('baseline-stderr', $run->normalization->normalize('stderr:baseline-file', $stderr))
-            . self::frame('refusal', $run->normalization->normalize('format:json', $refusal));
     }
 
     /** @param array{ranked:array{stdout:string,stderr:string,exit:int},physical:?array{stdout:string,stderr:string,exit:int}} $slot
@@ -268,7 +212,7 @@ final class ExactSurfaceAuthority
         foreach ($captures as $side => $capture) {
             $run->publicationForms->supply($side, $capture->artifacts);
         }
-        if ($run->publicationForms->recordsPair($source) === false) {
+        if (!$run->publicationForms->recordsPair($source)) {
             return self::invocationFrame($source, 'candidate', $captures['candidate'], $run)
                 !== self::invocationFrame($source, 'reference', $captures['reference'], $run);
         }
@@ -319,11 +263,15 @@ final class ExactSurfaceAuthority
                     $rows[$side][] = ['raw' => $canonical, 'decoded' => ReportRecords::object($canonical)];
                 }
             }
+            $projections = [];
+            foreach (['candidate', 'reference'] as $side) {
+                $projections[$side] = $kind === 'ranking' && ($rows[$side] ?? []) !== [] ? RankingSchema::derive($run->publicationTree($side))->fields : [];
+            }
             $operations = $records->exactOperations($case, $view);
             $schema = self::schemaUnits($rows, $kind, $report, $view, $case, $run, $records);
-            $allowed = self::admissible($rows, $operations, $kind, $report, $schema);
+            $allowed = self::admissible($rows, $operations, $kind, $report, $schema, $projections);
             foreach (['candidate', 'reference'] as $side) {
-                $rows[$side] = self::erase($rows[$side] ?? [], $operations, $side, $kind, $report, $schema, $allowed);
+                $rows[$side] = self::erase($rows[$side] ?? [], $operations, $side, $kind, $report, $schema, $allowed, $projections);
                 $bags[$kind][$side] = array_column($rows[$side], 'raw');
                 sort($bags[$kind][$side], \SORT_STRING);
             }
@@ -346,9 +294,11 @@ final class ExactSurfaceAuthority
     }
 
     /** @param array<string,mixed> $endpoint
+     * @param list<string> $fields
+     *
      * @return array<string,mixed>
      */
-    private static function endpoint(array $endpoint, string $kind): array
+    private static function endpoint(array $endpoint, string $kind, array $fields): array
     {
         if ($kind !== 'ranking') {
             return RankingSchema::physical($endpoint);
@@ -362,7 +312,7 @@ final class ExactSurfaceAuthority
                 $ranked[$field] = $endpoint['ranking.' . $field];
             }
         }
-        return $ranked;
+        return array_intersect_key($ranked, array_flip($fields));
     }
 
     /** @param list<string> $path
@@ -464,10 +414,11 @@ final class ExactSurfaceAuthority
     /** @param array<string,list<array{raw:string,decoded:array<string,mixed>}>> $rows
      * @param list<array{candidate:?array<string,mixed>,reference:?array<string,mixed>,paths:list<list<string>>,whole:bool}> $operations
      * @param array<string,list<string>> $schema
+     * @param array<string,list<string>> $projections
      *
      * @return array<string,true>
      */
-    private static function admissible(array $rows, array $operations, string $kind, string $report, array $schema): array
+    private static function admissible(array $rows, array $operations, string $kind, string $report, array $schema, array $projections): array
     {
         $allowed = [];
         foreach (['candidate', 'reference'] as $side) {
@@ -485,9 +436,9 @@ final class ExactSurfaceAuthority
                 if ($paths === [] && !$operation['whole']) {
                     continue;
                 }
-                $expected = $report === 'json' ? self::endpoint($endpoint, $kind) : $endpoint;
+                $expected = $report === 'json' ? self::endpoint($endpoint, $kind, $projections[$side]) : $endpoint;
                 $cohort = self::compatibleKey($expected, $schema[$side]);
-                $signature = self::operationKey($operation, $kind, $report);
+                $signature = self::operationKey($operation, $kind, $report, $projections);
                 $cohorts[$cohort]['signatures'][$signature] = ($cohorts[$cohort]['signatures'][$signature] ?? 0) + 1;
             }
             foreach ($cohorts as $cohort => $group) {
@@ -506,7 +457,7 @@ final class ExactSurfaceAuthority
         }
         $shared = [];
         foreach ($operations as $operation) {
-            $signature = self::operationKey($operation, $kind, $report);
+            $signature = self::operationKey($operation, $kind, $report, $projections);
             $candidateNeeded = $operation['candidate'] !== null && ($operation['whole'] || self::operationPaths($operation, $kind) !== []);
             $referenceNeeded = $operation['reference'] !== null && ($operation['whole'] || self::operationPaths($operation, $kind) !== []);
             if ((!$candidateNeeded || isset($allowed['candidate'][$signature]))
@@ -539,8 +490,10 @@ final class ExactSurfaceAuthority
         return $paths;
     }
 
-    /** @param array{candidate:?array<string,mixed>,reference:?array<string,mixed>,paths:list<list<string>>,whole:bool} $operation */
-    private static function operationKey(array $operation, string $kind, string $report): string
+    /** @param array{candidate:?array<string,mixed>,reference:?array<string,mixed>,paths:list<list<string>>,whole:bool} $operation
+     * @param array<string,list<string>> $projections
+     */
+    private static function operationKey(array $operation, string $kind, string $report, array $projections): string
     {
         if ($kind !== 'ranking' || $report !== 'json') {
             return DeclaredRecords::canonical($operation);
@@ -556,8 +509,8 @@ final class ExactSurfaceAuthority
             $transitions[] = $transition;
         }
         return self::decodedKey([
-            'candidate' => $operation['candidate'] === null ? null : self::endpoint($operation['candidate'], $kind),
-            'reference' => $operation['reference'] === null ? null : self::endpoint($operation['reference'], $kind),
+            'candidate' => $operation['candidate'] === null ? null : self::endpoint($operation['candidate'], $kind, $projections['candidate']),
+            'reference' => $operation['reference'] === null ? null : self::endpoint($operation['reference'], $kind, $projections['reference']),
             'transitions' => $transitions,
             'whole' => $operation['whole'],
         ]);
@@ -566,11 +519,12 @@ final class ExactSurfaceAuthority
     /** @param list<array{raw:string,decoded:array<string,mixed>}> $rows
      * @param list<array{candidate:?array<string,mixed>,reference:?array<string,mixed>,paths:list<list<string>>,whole:bool}> $operations
      * @param array<string,list<string>> $schema
+     * @param array<string,list<string>> $projections
      * @param array<string,true> $allowed
      *
      * @return list<array{raw:string,decoded:array<string,mixed>}>
      */
-    private static function erase(array $rows, array $operations, string $side, string $kind, string $report, array $schema, array $allowed): array
+    private static function erase(array $rows, array $operations, string $side, string $kind, string $report, array $schema, array $allowed, array $projections): array
     {
         $indicesByDecoded = [];
         foreach ($rows as $index => $row) {
@@ -582,13 +536,13 @@ final class ExactSurfaceAuthority
             if ($endpoint === null) {
                 continue;
             }
-            $expected = $report === 'json' ? self::endpoint($endpoint, $kind) : $endpoint;
+            $expected = $report === 'json' ? self::endpoint($endpoint, $kind, $projections[$side]) : $endpoint;
             $paths = self::operationPaths($operation, $kind);
             if ($paths === [] && !$operation['whole']) {
                 continue;
             }
             $cohort = self::compatibleKey($expected, $schema[$side]);
-            $signature = self::operationKey($operation, $kind, $report);
+            $signature = self::operationKey($operation, $kind, $report, $projections);
             if (!isset($allowed[$signature])) {
                 continue;
             }

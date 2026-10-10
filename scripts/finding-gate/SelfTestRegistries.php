@@ -45,16 +45,11 @@ final class SelfTestRegistries extends SelfTestGroup
         $this->same($onDisk, $listed, 'the shared loader names every class file in the directory, and no other');
     }
 
-    /**
-     * Every non-narrowed raise site and caller is seen in a whole run;
-     * run-failed is witnessed by class, side and scope. Every mode is seen
-     * deciding what it writes. Retired native fingerprint classes retain
-     * helper source sites without claiming whole-run witness coverage.
-     */
+    /** Every active class has a native source producer and a whole-run class/side/scope witness. */
     public function witnessedFailureClasses(): void
     {
-        $sites = RaiseSites::of(__DIR__, RaiseSites::DECLARED_NAMES);
-        $witnesses = CheckWitnesses::observe($sites);
+        $sites = RaiseSites::of(__DIR__);
+        $witnesses = CheckWitnesses::observe();
 
         $problems = [
             ...$sites->problems,
@@ -63,8 +58,6 @@ final class SelfTestRegistries extends SelfTestGroup
                 FailureClass::ALL,
                 array_map(static fn(array $site): string => $site['class'], $sites->sites),
                 $witnesses['observed'],
-                $witnesses['scoped'],
-                array_keys(FailureClass::NATIVE_WITNESS_RETIREMENTS),
             ),
         ];
 

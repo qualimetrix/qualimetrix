@@ -37,13 +37,6 @@ final class UnreadAncestryDiagnosticRunTest extends TestCase
         self::removeTree($this->workingDirectory);
     }
 
-    /**
-     * With no install, the run cannot name a class, because it never placed
-     * one. The fixture has to carry a class with an external parent all the
-     * same: four branches of the depth walk return before anything outside the
-     * analysed path is consulted, so a tree without one asks nothing, observes
-     * nothing, and would pass this case for the wrong reason.
-     */
     #[Test]
     public function itSaysTheRunHadNoInstallToReadThrough(): void
     {
@@ -53,7 +46,10 @@ final class UnreadAncestryDiagnosticRunTest extends TestCase
 
         self::assertStringContainsString('publish DIT lower bounds', $stderr);
         self::assertSame(1, substr_count($stderr, 'DIT:'));
-        self::assertStringNotContainsString('Vendor\\Absent\\Base', $stderr);
+        self::assertStringContainsString('Vendor\\Absent\\Base', $stderr);
+        self::assertStringContainsString('no composer install', $stderr);
+        self::assertStringContainsString('run composer install', $stderr);
+        self::assertStringContainsString('design.dit-unresolved', $stderr);
     }
 
     /**
@@ -71,6 +67,7 @@ final class UnreadAncestryDiagnosticRunTest extends TestCase
 
         self::assertStringContainsString('incomplete inheritance chain(s) publish DIT lower bounds', $stderr);
         self::assertStringNotContainsString('no composer install', $stderr);
+        self::assertStringContainsString('Vendor\\Absent\\Base', $stderr);
     }
 
     /**
@@ -90,6 +87,7 @@ final class UnreadAncestryDiagnosticRunTest extends TestCase
 
         self::assertStringContainsString('incomplete inheritance chain(s) publish DIT lower bounds', $stderr);
         self::assertStringNotContainsString('Acme\\Mid\\Middle', $stderr);
+        self::assertStringContainsString('Acme\\Far\\Faraway', $stderr);
     }
 
     /**
@@ -227,6 +225,20 @@ final class UnreadAncestryDiagnosticRunTest extends TestCase
         self::assertSame(1, substr_count($run['stderr'], 'DIT:'));
         self::assertStringContainsString('lower bounds', $run['stderr']);
         self::assertStringContainsString('cyclic inheritance chain(s) have no numeric DIT', $run['stderr']);
+        self::assertStringContainsString('Probe\\App\\Loop', $run['stderr']);
+        self::assertStringContainsString('design.dit-unresolved', $run['stderr']);
+    }
+
+    #[Test]
+    public function itBoundsDistinctObstructionSamplesAndNamesTheRemainder(): void
+    {
+        for ($index = 0; $index < 7; ++$index) {
+            $this->write('/src/Leaf' . $index . '.php', '<?php namespace Probe\\App; class Leaf' . $index . ' extends \\Vendor\\Missing\\Parent' . $index . ' {}');
+        }
+        $stderr = $this->runBinary();
+        self::assertSame(1, substr_count($stderr, 'DIT:'));
+        self::assertSame(5, substr_count($stderr, 'Vendor\\Missing\\Parent'));
+        self::assertStringContainsString('and 2 more', $stderr);
     }
 
     private function writeAnalysedClass(string $parentFqcn): void

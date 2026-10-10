@@ -52,6 +52,7 @@ Reporting/
 │   ├── Contract/                          # Framework-free Git scope port and request/result
 │   ├── FindingProjectionOptions.php      # Immutable projection controls
 │   ├── FindingProjectionResult.php       # Reported, measured, accepted, and stale facts
+│   ├── FindingNamespaces.php             # One namespace answer for selection, grouping and records
 │   ├── FindingProjector.php              # Authoritative suppression/filtering order
 │   ├── BaselineFindingProjection.php     # One held-document ceiling judgement and late baseline audit
 │   ├── ConfiguredExclusionProjection.php # Ordered path and namespace exclusion operations
@@ -71,7 +72,7 @@ Reporting/
     ├── FormatterInterface.php              # Formatter contract
     ├── FormattedReport.php                 # Published body and repaired-string count
     ├── PublicationKind.php                 # Prose or native structured document kind
-    ├── FindingRecord.php                   # Nineteen fields shared by JSON and HTML
+    ├── FindingRecord.php                   # Twenty fields shared by JSON and HTML
     ├── FindingPlace.php                    # Fileless namespace or project presentation
     ├── Ordering/FindingSorter.php          # Severity/impact selection before grouping
     ├── FormatOptionKeysInterface.php       # Opt-in: the --format-opt keys a formatter reads
@@ -135,10 +136,30 @@ Reporting/
 
 ### Published finding records
 
-`Formatter\FindingRecord` builds the same nineteen fields for JSON violations,
+`Formatter\FindingRecord` builds the same twenty fields for JSON violations,
 ranked topIssues and HTML: file, line, subject, symbol, channel, occurrence,
-edge, namespace, rule, code, severity, message, recommendation, metricValue,
+edge, namespace, namespaces, rule, code, severity, message, recommendation, metricValue,
 threshold, techDebtMinutes, acceptedLevel, baselineVerdict and baselineReason.
+`Report` carries one required `FileNamespaceIndex`. The presenter creates it
+once from the measured repository and passes that same instance to selection
+and report assembly; enrichment preserves it. A standalone `ReportBuilder`
+creates it once from its own metrics when no prepared index was supplied.
+`FindingFilter`, `FindingSorter`, detail rendering and `FindingRecord` require
+that index explicitly. `FindingNamespaces` gives declarations their own
+namespace, file aggregates the namespaces of measured exact declarations and
+logical classes in their physical file (sorted for publication), and projects
+no namespace. Namespace blocks without such declarations are absent from this
+index. An empty file membership uses the empty string as a global reporting
+fallback; it does not prove that the source has no namespace block. `namespace` is that string
+when exactly one namespace applies (including `''`); it is null for multiple
+namespaces or a project finding. `namespaces` carries the complete captured membership.
+Namespace grouping joins multiple displayed names in one group and keeps each
+finding once; `(global)` is a display label, and `[project]` names project scope.
+Global drill-down uses `regex:^$`; selectors naming `(global)` are refused.
+Hints quote the entire selector with POSIX single quotes, including embedded
+apostrophes. The `--show-suppressed` list prints the original diagnostic message;
+recommendations remain separate fields on report records.
+
 Display file/symbol differ from exact canonical identity. HTML uses published
 repository metric bags and never recomputes subtree health.
 
@@ -323,6 +344,7 @@ Today's union: `contributors` (health), `limit`, `rank-by`, `top`, `violations`
 final readonly class Report
 {
     public function __construct(
+        public FileNamespaceIndex $fileNamespaces,
         public array $findings,
         public int $filesAnalyzed,
         public int $filesSkipped,
@@ -541,9 +563,10 @@ Decode a key with `rawurldecode`; `file` remains display text.
 
 **`outOfScope`:** always present. `null` without `--namespace`/`--class`; under a selection, `{violationCount, errorCount, warningCount, infoCount, identities}` of the run's findings the selection left out, zeroes when it left none. The exit code is resolved over `summary` and `outOfScope` together. `metrics` publishes the same count names and identities; `sarif`, `github` and `html` add one diagnostic entry under `drill-down.out-of-scope` only when something lies outside (see `DrillDown\OutOfScopeFindings`). `gitlab` and `checkstyle` have no entry that is not a finding to their consumer, so `OutOfScopeFindings::FORMATS_WITHOUT_A_PLACE` names them and the command line refuses a selection under them. `suppressed` describes the whole run and refuses either selector before analysis.
 
-Namespace drill-down selects a file finding when any namespace declared in its
-physical file matches the selector. Files without declarations use the global
-namespace; a missing repository has the same reporting fallback. A declaration
+Namespace drill-down selects a file finding when any namespace in its captured
+file membership matches the selector. A namespace block without a measured
+exact declaration or logical class does not select that file finding. Empty
+membership and a missing repository use the same global reporting fallback. A declaration
 finding keeps its declared namespace even in a multi-namespace file. Class
 selection never selects a file aggregate. Binding counts retain their existing
 namespace and ranked-offender universe.
@@ -610,7 +633,11 @@ target. Established no-edge and fully typed fingerprints remain unchanged.
 
 **Name:** `checkstyle`
 
-Checkstyle XML for Jenkins/SonarQube. Example:
+Checkstyle XML for Jenkins/SonarQube. Ordinary findings require a real
+`location.file`; fileless namespace and project findings are omitted. A
+namespace finding tied to a real source file remains, with line 1 when no line
+is supplied. Incomplete-analysis diagnostics retain their separate `[analysis]`
+file group. JSON and SARIF retain the full finding set. Example:
 
 ```xml
 <checkstyle version="3.0">
@@ -687,6 +714,10 @@ Results will appear in **Security** -> **Code scanning alerts**.
 **Name:** `gitlab`
 
 Code Climate JSON for GitLab MR. Uses fingerprinting for tracking fixes.
+Ordinary findings require a real `location.file`; fileless namespace and
+project findings are omitted because the report schema requires a source path.
+Source-located namespace findings remain, defaulting to line 1. Analysis
+failures keep their real failure paths. JSON and SARIF retain the full set.
 
 ### Severity Mapping
 
@@ -924,24 +955,25 @@ projection. The rule's remediation estimate is 5 minutes. Audit findings never
 enter the measured set, capture or accept-new; authored path/namespace
 suppression and Git projection cannot hide them. When unselected, stderr reports
 counts only. Uncompared entries likewise produce count diagnostics, not path dumps.
-Nine finding formats publish the audit; Metrics, Health and Suppressed retain
-their own subjects. All twelve preserve the ordinary failure policy: an isolated
+Six finding formats publish the fileless audit: Text, JSON, SARIF, GitHub, HTML
+and Summary. Checkstyle and GitLab omit it; Metrics, Health and Suppressed retain
+their own subjects. All eleven preserve the ordinary failure policy: an isolated
 audit warning exits 0 by default, with `--fail-on=error` or `none`, and 1 with
 `--fail-on=warning`. Incomplete analysis has priority and exits 4.
 
 ## Formatter Comparison
 
-| Characteristic          | Summary | Text   | Text Verbose | JSON    | Checkstyle        | SARIF        | GitLab | GitHub         | Metrics | Health | Html            | Suppressed |
-| ----------------------- | ------- | ------ | ------------ | ------- | ----------------- | ------------ | ------ | -------------- | ------- | ------ | --------------- | ---------- |
-| **ANSI Colors**         | Yes     | Yes    | Yes          | No      | No                | No           | No     | No             | No      | Yes    | No              | No         |
-| **Health overview**     | Yes     | No     | No           | No      | No                | No           | No     | No             | No      | Yes    | Yes             | No         |
-| **Grouping**            | No      | No     | Yes (file)   | No      | No                | No           | No     | No             | No      | No     | No              | No         |
-| **Readability**         | High    | High   | High         | No      | No                | No           | No     | No             | No      | High   | Visual          | No         |
-| **CI/CD integration**   | No      | No     | No           | Generic | Jenkins/SonarQube | GitHub/Azure | GitLab | GitHub Actions | Custom  | No     | CI artifacts    | Auditing   |
-| **IDE support**         | No      | No     | No           | No      | Limited           | VS Code/JB   | No     | No             | No      | No     | No              | No         |
-| **PHPMD compatibility** | No      | Full   | No           | No      | Full              | No           | No     | No             | No      | No     | No              | No         |
-| **Fingerprinting**      | No      | No     | No           | No      | No                | Yes          | Yes    | No             | No      | No     | No              | No         |
-| **Output**              | STDOUT  | STDOUT | STDOUT       | STDOUT  | STDOUT            | STDOUT       | STDOUT | STDOUT         | STDOUT  | STDOUT | File (--output) | STDOUT     |
+| Characteristic          | Summary | Text   | JSON    | Checkstyle        | SARIF        | GitLab | GitHub         | Metrics | Health | Html            | Suppressed |
+| ----------------------- | ------- | ------ | ------- | ----------------- | ------------ | ------ | -------------- | ------- | ------ | --------------- | ---------- |
+| **ANSI Colors**         | Yes     | Yes    | No      | No                | No           | No     | No             | No      | Yes    | No              | No         |
+| **Health overview**     | Yes     | No     | No      | No                | No           | No     | No             | No      | Yes    | Yes             | No         |
+| **Grouping**            | No      | No     | No      | No                | No           | No     | No             | No      | No     | No              | No         |
+| **Readability**         | High    | High   | No      | No                | No           | No     | No             | No      | High   | Visual          | No         |
+| **CI/CD integration**   | No      | No     | Generic | Jenkins/SonarQube | GitHub/Azure | GitLab | GitHub Actions | Custom  | No     | CI artifacts    | Auditing   |
+| **IDE support**         | No      | No     | No      | Limited           | VS Code/JB   | No     | No             | No      | No     | No              | No         |
+| **PHPMD compatibility** | No      | Full   | No      | Full              | No           | No     | No             | No      | No     | No              | No         |
+| **Fingerprinting**      | No      | No     | No      | No                | Yes          | Yes    | No             | No      | No     | No              | No         |
+| **Output**              | STDOUT  | STDOUT | STDOUT  | STDOUT            | STDOUT       | STDOUT | STDOUT         | STDOUT  | STDOUT | File (--output) | STDOUT     |
 
 ### Choosing the Right Format
 

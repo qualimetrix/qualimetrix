@@ -71,7 +71,7 @@ final class SyntheticTree
      */
     public static function clean(): array
     {
-        $fields = ['file', 'line', 'subject', 'symbol', 'channel', 'occurrence', 'edge', 'namespace', 'rule', 'code', 'severity', 'message', 'recommendation', 'metricValue', 'threshold', 'techDebtMinutes', 'acceptedLevel'];
+        $fields = ReportRecords::SCHEMAS['json'];
 
         return [
             'cases' => ['alpha' => ['replay.alpha@callable']],
@@ -89,7 +89,7 @@ final class SyntheticTree
             'maps' => [],
             'declaredDelta' => [],
             'fieldMoves' => [],
-            'declarations' => [],
+            'declarations' => ['cases/alpha/case.json' => self::json(['id' => 'alpha', 'description' => 'A replayed case.', 'paths' => ['src'], 'config' => 'qmx.yaml', 'channels' => ['replay.alpha@callable'], 'captureHtml' => true])],
             'lock' => "{\"replay\": \"lock\"}\n",
             'candidateLock' => null,
         ];
@@ -103,7 +103,7 @@ final class SyntheticTree
     public static function captureFixture(): array
     {
         $tree = self::clean();
-        $definition = ['id' => 'alpha', 'description' => 'Every capture invocation.', 'paths' => ['src'], 'config' => 'qmx.yaml', 'channels' => ['replay.alpha@callable'], 'explainSubjects' => ['file:src/Alpha.php'], 'layerAssignmentSubjects' => ['Replay\Alpha', 'Replay\Beta'], 'renameChannelsMap' => 'channels.tsv'];
+        $definition = ['id' => 'alpha', 'description' => 'Every capture invocation.', 'captureHtml' => true, 'paths' => ['src'], 'config' => 'qmx.yaml', 'channels' => ['replay.alpha@callable'], 'explainSubjects' => ['file:src/Alpha.php'], 'layerAssignmentSubjects' => ['Replay\Alpha', 'Replay\Beta'], 'renameChannelsMap' => 'channels.tsv'];
         $tree['declarations']['cases/alpha/case.json'] = self::json($definition);
         $tree['declarations']['cases/alpha/channels.tsv'] = "old\tnew\treason\nreplay.alpha\treplay.beta\treplayed\n";
         $tree['declarations']['cases/alpha/baseline-src/src/Alpha.php'] = "<?php\n";
@@ -123,7 +123,7 @@ final class SyntheticTree
     {
         $file = str_contains($subject, '@') ? substr($subject, (int) strrpos($subject, '@') + 1) : 'src/Alpha.php';
         $symbol = preg_replace('/^declaration:(?:callable|class):/', '', explode('@', $subject)[0]);
-        $values = ['file' => $file, 'line' => 1, 'subject' => $subject, 'symbol' => $symbol, 'channel' => $channel, 'occurrence' => null, 'edge' => null, 'namespace' => 'Replay', 'rule' => $channel, 'code' => $channel, 'severity' => 'error', 'message' => 'replayed', 'recommendation' => null, 'metricValue' => 1, 'threshold' => 0, 'techDebtMinutes' => 15, 'acceptedLevel' => null];
+        $values = ['file' => $file, 'line' => 1, 'subject' => $subject, 'symbol' => $symbol, 'channel' => $channel, 'occurrence' => null, 'edge' => null, 'namespace' => 'Replay', 'namespaces' => ['Replay'], 'rule' => $channel, 'code' => $channel, 'severity' => 'error', 'message' => 'replayed', 'recommendation' => null, 'metricValue' => 1, 'threshold' => 0, 'techDebtMinutes' => 15, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null];
         $finding = [];
 
         foreach ($fields as $field) {
@@ -329,7 +329,17 @@ final class SyntheticTree
     public static function caseAnswers(string $id, array $findings, bool $truncated, array $definition): array
     {
         $scope = 'case:' . $id;
-        $expected = Fingerprints::expected($findings);
+        $expected = array_map(static function (array $finding): string {
+            $parts = [(string) $finding['channel'], (string) $finding['subject']];
+            if (\is_string($finding['occurrence'] ?? null)) {
+                $parts[] = $finding['occurrence'];
+            }
+            if (\is_array($edge = $finding['edge'] ?? null)) {
+                $target = \is_string($edge['target'] ?? null) ? $edge['target'] : '';
+                $parts[] = \is_string($edge['type'] ?? null) ? $edge['type'] . ':' . $target : 'untyped-edge:' . \strlen($target) . ':' . $target;
+            }
+            return implode(':', $parts);
+        }, $findings);
         $answers = [];
 
         foreach (Surfaces::FORMATS as $format) {
@@ -371,12 +381,16 @@ final class SyntheticTree
             }
             $annotatedMessage = $message . $suffix;
             $code = $finding['code'];
-            $sarif[] = ['ruleId' => $code, 'ruleIndex' => $ruleIndexes[$code], 'level' => $finding['severity'] === 'info' ? 'note' : $finding['severity'], 'message' => ['text' => $annotatedMessage], 'partialFingerprints' => ['primaryLocationLineHash' => $expected[$index]], 'locations' => [['physicalLocation' => ['artifactLocation' => ['uri' => $file], 'region' => ['startLine' => $line]]]]];
-            $gitlab[] = ['description' => $annotatedMessage, 'check_name' => $code, 'severity' => match ($finding['severity']) {
-                'error' => 'critical', 'warning' => 'major', default => 'info',
-            }, 'fingerprint' => md5($expected[$index]), 'location' => ['path' => $file ?? '_project', 'lines' => ['begin' => $line]]];
-            $html[] = ReportRecords::projection('format:html', $finding, 'current');
-            $checkstyle .= '<file name="' . htmlspecialchars((string) $file, \ENT_XML1) . '"><error line="' . $line . '" severity="' . $finding['severity'] . '" source="qmx.' . $code . '" message="' . htmlspecialchars($annotatedMessage, \ENT_XML1) . '"/></file>';
+            $result = ['ruleId' => $code, 'ruleIndex' => $ruleIndexes[$code], 'level' => $finding['severity'] === 'info' ? 'note' : $finding['severity'], 'message' => ['text' => $annotatedMessage], 'partialFingerprints' => ['primaryLocationLineHash' => $expected[$index]]];
+            if ($file !== null) {
+                $result['locations'] = [['physicalLocation' => ['artifactLocation' => ['uri' => $file], 'region' => ['startLine' => $line ?? 1]]]];
+                $gitlab[] = ['description' => $annotatedMessage, 'check_name' => $code, 'severity' => match ($finding['severity']) {
+                    'error' => 'critical', 'warning' => 'major', default => 'info',
+                }, 'fingerprint' => md5($expected[$index]), 'location' => ['path' => $file, 'lines' => ['begin' => $line ?? 1]]];
+                $checkstyle .= '<file name="' . htmlspecialchars($file, \ENT_XML1) . '"><error line="' . ($line ?? 1) . '" severity="' . $finding['severity'] . '" source="qmx.' . $code . '" message="' . htmlspecialchars($annotatedMessage, \ENT_XML1) . '"/></file>';
+            }
+            $sarif[] = $result;
+            $html[] = array_intersect_key($finding, array_flip(ReportRecords::SCHEMAS['json']));
             $brief = (string) $finding['symbol'];
             $separator = strrpos($brief, '\\');
             if ($separator !== false) {
@@ -391,7 +405,7 @@ final class SyntheticTree
             };
             $prose .= '  ' . $severity . ' ' . $file . ':' . $line . ($brief === '' ? '' : '  ' . $brief) . "\n    " . $advice . '  [' . $code . "]\n";
             $prose .= $finding['recommendation'] === null ? '' : '    Recommendation: ' . $finding['recommendation'] . "\n";
-            $baseline = ReportRecords::baselineText($finding);
+            $baseline = self::baselineText($finding);
             $prose .= $baseline === null ? '' : '    ' . $baseline . "\n";
             $escape = static fn(string $value): string => strtr($value, ['%' => '%25', "\r" => '%0D', "\n" => '%0A', ':' => '%3A', ',' => '%2C']);
             $github .= '::' . ($finding['severity'] === 'info' ? 'notice' : $finding['severity']) . ' file=' . $escape((string) $file) . ',line=' . $line . ',title=' . $escape((string) $code) . '::' . strtr($annotatedMessage, ['%' => '%25', "\r" => '%0D', "\n" => '%0A']) . "\n";
@@ -403,7 +417,6 @@ final class SyntheticTree
         $answers[Surfaces::key($scope, 'format:text')] = ['stdout' => $prose === '' ? "No findings\n" : $prose];
         $answers[Surfaces::key($scope, 'format:github')] = ['stdout' => $github === '' ? "No findings\n" : $github];
         $answers[Surfaces::key($scope, 'format:text-detail')] = $answers[Surfaces::key($scope, 'format:text')];
-        $answers[Surfaces::key($scope, 'format:text-verbose')] = $answers[Surfaces::key($scope, 'format:text')];
         $answers[Surfaces::key($scope, 'format:suppressed')] = ['stdout' => self::json(['suppressed' => [], 'byMechanism' => [], 'neverMatched' => []])];
         $answers[Surfaces::key($scope, 'show-suppressed')] = $answers[Surfaces::key($scope, 'format:text')];
         $json = $answers[Surfaces::key($scope, 'format:json')]['stdout'];
@@ -463,15 +476,9 @@ final class SyntheticTree
             };
             $issues[] = [
                 'rank' => 0,
-                'file' => $finding['file'],
-                'line' => $finding['line'],
-                'symbol' => $finding['symbol'],
-                'rule' => $finding['rule'],
-                'severity' => $finding['severity'],
-                'message' => $finding['message'],
-                'recommendation' => $finding['recommendation'],
+                ...array_intersect_key($finding, array_flip(RankingSchema::PROJECTION)),
                 'impactScore' => (float) ($weight * (int) $finding['techDebtMinutes']),
-                'coupling.class-rank' => 1.0,
+                'coupling.class-rank-share' => 1.0,
                 'debtMinutes' => $finding['techDebtMinutes'],
             ];
         }
@@ -544,7 +551,7 @@ final class SyntheticTree
             $last = \count($lines) - 1;
             $indent = str_repeat(' ', \strlen((string) $issue['rank']) + 8);
             $lines[$last] .= $finding['recommendation'] === null ? '' : $indent . 'Recommendation: ' . $finding['recommendation'] . "\n";
-            $baseline = ReportRecords::baselineText($finding);
+            $baseline = self::baselineText($finding);
             $lines[$last] .= $baseline === null ? '' : $indent . $baseline . "\n";
         }
         return $lines;
@@ -552,7 +559,7 @@ final class SyntheticTree
 
     private static function rankingSource(): string
     {
-        $fields = ['rank', 'file', 'line', 'symbol', 'rule', 'severity', 'message', 'recommendation', 'impactScore', 'coupling.class-rank', 'debtMinutes'];
+        $fields = RankingSchema::FIELDS;
         $members = implode('', array_map(static fn(string $field): string => "                '" . $field . "' => null,\n", $fields));
         return "<?php\nfinal class JsonFormatter\n{\n    private function formatTopIssues(): array\n    {\n        \$result = [];\n        foreach ([] as \$issue) {\n            \$result[] = [\n" . $members . "            ];\n        }\n        return \$result;\n    }\n}\n";
     }
@@ -1027,5 +1034,55 @@ final class SyntheticTree
             }
 
             PHP;
+    }
+
+    /** @param array<string,mixed> $record */
+    public static function baselineText(array $record): ?string
+    {
+        if ($record['acceptedLevel'] === null) {
+            return null;
+        }
+        $annotated = self::message($record);
+        $suffix = substr($annotated, \strlen((string) $record['message']) + 2, -1);
+        if (($record['baselineVerdict'] ?? null) === 'not-compared') {
+            return 'accepted at ' . $record['acceptedLevel']['describe'] . '; not compared: ' . $record['baselineReason'];
+        }
+        return $suffix;
+    }
+
+    /** @param array<string,mixed> $record */
+    public static function message(array $record, bool $advice = false, string $codec = 'legacy'): string
+    {
+        $text = $advice && $record['recommendation'] !== null ? $record['recommendation'] : $record['message'];
+        if (!\is_string($text)) {
+            throw new GateError('A finding publishes no message string.');
+        }
+        $accepted = $record['acceptedLevel'];
+        if ($accepted === null) {
+            return $text;
+        }
+        if (!\is_array($accepted) || array_is_list($accepted) || array_diff(array_keys($accepted), ['shape', 'describe', 'count']) !== []
+            || \count($accepted) !== 3 || !\in_array($accepted['shape'] ?? null, ['magnitude', 'occurrence'], true)
+            || !\is_string($accepted['describe'] ?? null) || $accepted['describe'] === ''
+            || !\is_int($accepted['count'] ?? null) || $accepted['count'] < 1) {
+            throw new GateError('An accepted level requires the exact shape, description, and positive count object.');
+        }
+        $suffix = 'accepted at ' . $accepted['describe'];
+        if (($record['baselineVerdict'] ?? null) === 'not-compared') {
+            return $text . ' (' . $suffix . '; not compared: ' . $record['baselineReason'] . ')';
+        }
+        if ($accepted['shape'] === 'magnitude') {
+            $current = $record['metricValue'];
+            if ($current !== null && !\is_int($current) && !\is_float($current)) {
+                throw new GateError('An accepted magnitude requires a numeric or absent current value.');
+            }
+            if (\is_int($current)) {
+                $suffix .= ', now ' . $current;
+            } elseif (\is_float($current) && is_finite($current)) {
+                $formatted = rtrim(rtrim(\sprintf('%.6F', $current), '0'), '.');
+                $suffix .= ', now ' . ($formatted === '' || $formatted === '-' ? '0' : $formatted);
+            }
+        }
+        return $text . ' (' . $suffix . ')';
     }
 }

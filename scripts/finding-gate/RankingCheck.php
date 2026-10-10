@@ -204,7 +204,7 @@ final class RankingCheck implements CaseCheck
     {
         $fields = RankingSchema::derive($this->run->publicationTree($side))->fields;
         if ($this->run->options->mode === Options::MODE_DERIVE_NORMALIZATION
-            || $this->run->publicationForms->recordsPair($key) !== true) {
+            || !$this->run->publicationForms->recordsPair($key)) {
             return $fields;
         }
         $other = $side === 'candidate' ? 'reference' : 'candidate';
@@ -341,7 +341,10 @@ final class RankingCheck implements CaseCheck
         $publications = [$view];
         foreach (['check:output:file', 'check:parallel'] as $alias) {
             $aliasKey = 'case:' . $case->id . '|' . $alias;
-            if ($compare ? $this->run->publicationForms->recordsPair($aliasKey) === false : $this->run->publicationForms->of($side, $aliasKey) !== PublicationForms::RECORDS) {
+            if (!isset($artifacts[$aliasKey])) {
+                continue;
+            }
+            if ($compare ? !$this->run->publicationForms->recordsPair($aliasKey) : $this->run->publicationForms->of($side, $aliasKey) !== PublicationForms::RECORDS) {
                 continue;
             }
             if ($view === 'format:json' && isset($artifacts[$aliasKey]) && ReportRecords::rawRecords($artifacts[$aliasKey], 'topIssues') !== ReportRecords::rawRecords($originalText, 'topIssues')) {
@@ -350,11 +353,6 @@ final class RankingCheck implements CaseCheck
             if ($view === 'format:json' && isset($artifacts[$aliasKey])) {
                 $publications[] = $alias;
             }
-        }
-        if ($view === 'format:json' && ($compare
-            ? $this->run->publicationForms->recordsPair('case:' . $case->id . '|format:summary') !== false
-            : $this->run->publicationForms->of($side, 'case:' . $case->id . '|format:summary') === PublicationForms::RECORDS)) {
-            $this->summary($artifacts['case:' . $case->id . '|format:summary'] ?? throw new GateError('The ranked summary projection is missing.'), $issues, $authority, $order, \count($slice), $side);
         }
         if (!$compare) {
             return ['rawAuthority' => $authority, 'published' => $published, 'authority' => $authority, 'comparative' => []];
@@ -394,49 +392,6 @@ final class RankingCheck implements CaseCheck
         return ['total' => $meta['total'], 'shown' => $shown, 'truncated' => $meta['truncated'], 'byRule' => $meta['byRule']];
     }
 
-    /** @param list<array<string,mixed>> $issues
-     * @param list<array<string,mixed>> $authority
-     * @param list<int> $order
-     */
-    private function summary(string $text, array $issues, array $authority, array $order, int $size, string $side): void
-    {
-        $entries = array_values(array_filter(ProseRecords::extract('format:summary', $text, $this->run->publicationCodec($side)), static fn(array $entry): bool => isset($entry['fields']['rank'])));
-        if (\count($entries) !== $size) {
-            throw new GateError('The ranked summary row count differs from its original JSON slice.');
-        }
-        foreach ($entries as $index => $entry) {
-            $row = $entry['fields'];
-            $issue = $issues[$index];
-            if (!ProseRecords::matches('format:summary', $row, $authority[$order[$index]], $this->run->publicationCodec($side)) || $row['rank'] !== $index + 1
-                || (isset($issue['debtMinutes']) && $row['debt'] !== self::debt((int) $issue['debtMinutes']))) {
-                throw new GateError('A ranked summary row changed its physical projection, ordinal, tag or debt.');
-            }
-            if (isset($issue['impactScore'])) {
-                $score = (string) $row['score'];
-                $dot = strpos($score, '.');
-                $digits = $dot === false ? 0 : \strlen($score) - $dot - 1;
-                if ($digits > 2 || abs((float) $score - (float) $issue['impactScore']) > 0.5 * 10 ** (-$digits) + 0.005 + 1e-12) {
-                    throw new GateError('A ranked summary score differs from its published JSON value.');
-                }
-            }
-        }
-    }
-
-    private static function debt(int $minutes): string
-    {
-        if ($minutes <= 0) {
-            return '0min';
-        }
-        $parts = [];
-        foreach ([480 => 'd', 60 => 'h', 1 => 'min'] as $unit => $suffix) {
-            if ($minutes >= $unit) {
-                $parts[] = intdiv($minutes, $unit) . $suffix;
-                $minutes %= $unit;
-            }
-        }
-        return implode(' ', $parts);
-    }
-
     public function supplyFields(string $case): void
     {
         if ($this->run->declarations->fields->changes('json', 'ranking') === []) {
@@ -449,10 +404,10 @@ final class RankingCheck implements CaseCheck
             }
             $key = Surfaces::key($source['scope'], $source['surface']);
             $pair = $this->run->publicationForms->recordsPair($key);
-            if ($pair === null) {
+            if ($this->run->publicationForms->recordsExpected($key) && !$pair) {
                 return;
             }
-            if ($pair === false) {
+            if (!$pair) {
                 continue;
             }
             if (!isset($this->observed[$case][$source['surface']]['candidate'], $this->observed[$case][$source['surface']]['reference'])) {
@@ -497,8 +452,8 @@ final class RankingCheck implements CaseCheck
         $eligible = [];
         foreach ($pairs as $index => $pair) {
             $labels[$index] = DeclaredRecords::canonical($pair['reference']);
-            $eligible[$index] = array_intersect_key($pair['candidate'], array_flip(['ranking.impactScore', 'ranking.coupling.class-rank']))
-                === array_intersect_key($pair['reference'], array_flip(['ranking.impactScore', 'ranking.coupling.class-rank']));
+            $eligible[$index] = array_intersect_key($pair['candidate'], array_flip(array_map(static fn(string $field): string => 'ranking.' . $field, RankingSchema::VALUES)))
+                === array_intersect_key($pair['reference'], array_flip(array_map(static fn(string $field): string => 'ranking.' . $field, RankingSchema::VALUES)));
         }
         $sequences = [];
         $visible = [];

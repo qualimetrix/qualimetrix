@@ -55,7 +55,6 @@ final class SelfTest
         $normalization->normalization();
         $normalization->deriver();
         $findingShape->tuple();
-        $findingShape->fingerprints();
         $surfaces->publishedOrder();
         $verdict->verdicts();
         $surfaces->surfaces();

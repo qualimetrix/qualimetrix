@@ -125,7 +125,7 @@ final class ExternalAncestryTest extends TestCase
         self::assertSame(64, $answer->depth);
         self::assertSame(ExternalChainOutcome::BrokeAt, $answer->outcome);
         self::assertSame('Vendor\\C64', $answer->unresolved);
-        self::assertNull($answer->reachesThrowable);
+        self::assertSame(\Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::Unknown, $answer->reachesThrowable);
     }
 
     #[Test]
@@ -134,7 +134,7 @@ final class ExternalAncestryTest extends TestCase
         $answer = $this->ancestry([])->depthOf('Probe\\PeclException');
         self::assertSame(0, $answer->depth);
         self::assertSame(ExternalChainOutcome::BrokeAt, $answer->outcome);
-        self::assertNull($answer->reachesThrowable);
+        self::assertSame(\Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::Unknown, $answer->reachesThrowable);
     }
 
     #[Test]
@@ -147,7 +147,7 @@ final class ExternalAncestryTest extends TestCase
             self::assertSame(ExternalChainOutcome::ReachedAnalysedName, $answer->outcome);
             self::assertSame(ltrim($prefix === 0 ? $name : 'APP\a', '\\'), $answer->analysedName);
             self::assertNull($answer->unresolved);
-            self::assertNull($answer->reachesThrowable);
+            self::assertSame(\Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::Unknown, $answer->reachesThrowable);
             self::assertFalse($answer->isComplete());
             self::assertSame($prefix === 0 ? [] : ['Vendor\B'], $queries);
         }
@@ -156,7 +156,7 @@ final class ExternalAncestryTest extends TestCase
         self::assertSame(2, $builtin->depth);
         self::assertSame(ExternalChainOutcome::ReachedAnalysedName, $builtin->outcome);
         self::assertSame('Error', $builtin->analysedName);
-        self::assertTrue($builtin->reachesThrowable);
+        self::assertSame(\Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::Yes, $builtin->reachesThrowable);
         self::assertSame([], $queries);
     }
 
@@ -174,7 +174,9 @@ final class ExternalAncestryTest extends TestCase
             $answer = (new ExternalAncestry($source))->depthOf('Vendor\B');
             self::assertSame($outcome, $answer->outcome);
             self::assertSame($depth, $answer->depth);
-            self::assertSame($truth, $answer->reachesThrowable);
+            self::assertSame(match ($truth) {
+                true => \Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::Yes, false => \Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::No, null => \Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::Unknown,
+            }, $answer->reachesThrowable);
             self::assertNull($answer->analysedName);
         }
     }
@@ -208,7 +210,7 @@ final class ExternalAncestryTest extends TestCase
             $answer = $ancestry->depthOf($name, ['app\a' => true]);
             self::assertSame($depth, $answer->depth);
             self::assertSame(ExternalChainOutcome::ReachedRoot, $answer->outcome);
-            self::assertTrue($answer->reachesThrowable);
+            self::assertSame(\Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::Yes, $answer->reachesThrowable);
         }
         self::assertSame([], $queries);
     }

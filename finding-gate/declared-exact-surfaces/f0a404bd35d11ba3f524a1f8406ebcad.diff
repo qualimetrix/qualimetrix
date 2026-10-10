@@ -1,0 +1,25 @@
+--- candidate
++++ reference (mapped)
+@@ -1,7 +1,15 @@
+-visible 67
+-<?xml version="1.0" encoding="UTF-8"?>
+-<checkstyle version="3.0"/>
+-
+-invocation-format:checkstyle 67
+-<?xml version="1.0" encoding="UTF-8"?>
+-<checkstyle version="3.0"/>
++visible 266
++<?xml version="1.0" encoding="UTF-8"?>
++<checkstyle version="3.0">
++  <file name="[project]">
++    <error line="1" severity="warning" message="Circular dependency (3 classes): A → B → C → A" source="qmx.architecture.circular-dependency"/>
++  </file>
++</checkstyle>
++
++invocation-format:checkstyle 266
++<?xml version="1.0" encoding="UTF-8"?>
++<checkstyle version="3.0">
++  <file name="[project]">
++    <error line="1" severity="warning" message="Circular dependency (3 classes): A → B → C → A" source="qmx.architecture.circular-dependency"/>
++  </file>
++</checkstyle>

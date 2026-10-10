@@ -125,18 +125,24 @@ declared knee-less and rechecked as such.
 
 ```text
 ComputedMetrics/
-├── Contract/                         # subject contracts and internal evaluation values
+├── Contract/                         # subject contracts
 │   ├── Configuration/                # runtime configuration and Health exclusion promises
 │   ├── Definition/                   # definitions, dimensions, and immutable sourced snapshot
 │   │   └── ComputedMetricApplicability.php # selected builtin input policy
-│   ├── Evaluation/                   # evaluation service and immutable outcomes
-│   │   ├── ComputedMetricSubjectEvaluation.php # pure evaluation over raw subject values
-│   │   ├── ComputedMetricOutcome.php          # value, inapplicability, absence, or failure
+│   ├── Evaluation/                   # exact Run and Health ports and published absence values
+│   │   ├── ComputedMetricEvaluatorInterface.php # Run evaluation port
+│   │   ├── ComputedMetricExpressionInterface.php # Health formula operations
 │   │   ├── ComputedMetricEvaluationSummary.php # bounded successful absence groups
-│   │   ├── ComputedMetricValueAbsence.php      # reason counts, keys, and exact samples
-│   │   ├── ComputedMetricReads.php            # strict and nullable input reads
-│   │   └── ComputedMetricBranchTrace.php      # one native run's reached reads and entered operands
+│   │   └── ComputedMetricValueAbsence.php      # reason counts, keys, and exact samples
 │   └── Finding/                      # computed finding channel family
+├── Evaluation/                       # internal formula engine and subject evaluation
+│   ├── ComputedMetricEvaluator.php
+│   ├── ComputedMetricExpression.php
+│   ├── ComputedMetricSubjectEvaluation.php
+│   ├── ComputedMetricOutcome.php
+│   ├── ComputedMetricReads.php
+│   ├── ComputedMetricBranchTrace.php
+│   └── MetricLookup.php
 ├── Configuration/
 │   ├── ComputedMetricsSection.php            # the `computed_metrics:` section declared to the document, and where an entry sits in it
 │   ├── ExcludeHealthSection.php              # the `exclude_health:` section declared to the document
@@ -225,7 +231,10 @@ two native positions.
 
 - `ComputedMetricConfiguratorInterface` —
   `Infrastructure\Console\AnalysisRuntimeConfigurator`.
-- `ComputedMetricEvaluator` — `Analysis\Run\Pipeline\AnalysisPipeline`.
+- `ComputedMetricEvaluatorInterface` — `Analysis\Run\Pipeline\AnalysisPipeline`.
+- `ComputedMetricExpressionInterface` — Health's `HealthFormulaExcluder`,
+  `WeightedHealthFormula`, and `HealthDecompositionCatalog`. Composition injects
+  the same formula implementation; Health never constructs an internal engine.
 - `ComputedMetricEvaluationSummary` and `ComputedMetricValueAbsence` — immutable
   successful absence values transported by normal Run results and Reporting.
   Pure subject evaluation and its closed outcomes remain internal; catalog and
@@ -344,6 +353,14 @@ internal, and unclassified Contract imports fail closed.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+## Cohesion score scale
+
+The unadjusted LCOM half uses a span of five at class and namespace levels:
+one connected component has no penalty and six exhaust the contribution.
+Namespace aggregation alone must not change that scale. Class purity adjustment
+and the populations covered by the two levels still differ; this does not
+promise that every namespace score exceeds its lowest member score.
 
 ## Formula reach for baseline comparison
 

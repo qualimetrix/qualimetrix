@@ -99,8 +99,8 @@ final class HtmlDebtCalculatorTest extends TestCase
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
         $node->findings = [
-            ['subject' => 'declaration:class:s@f:0', 'rule' => 'r1', 'code' => 'r1', 'channel' => 'r1', 'edge' => null, 'namespace' => null, 'threshold' => null, 'techDebtMinutes' => 0, 'message' => 'm', 'recommendation' => null, 'severity' => 'warning', 'metricValue' => 1, 'symbol' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 1, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
-            ['subject' => 'declaration:class:s@f:1', 'rule' => 'r2', 'code' => 'r2', 'channel' => 'r2', 'edge' => null, 'namespace' => null, 'threshold' => null, 'techDebtMinutes' => 0, 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 2, 'symbol' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 2, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
+            ['subject' => 'declaration:class:s@f:0', 'rule' => 'r1', 'code' => 'r1', 'channel' => 'r1', 'edge' => null, 'namespace' => '', 'namespaces' => [''], 'threshold' => null, 'techDebtMinutes' => 0, 'message' => 'm', 'recommendation' => null, 'severity' => 'warning', 'metricValue' => 1, 'symbol' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 1, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
+            ['subject' => 'declaration:class:s@f:1', 'rule' => 'r2', 'code' => 'r2', 'channel' => 'r2', 'edge' => null, 'namespace' => '', 'namespaces' => [''], 'threshold' => null, 'techDebtMinutes' => 0, 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 2, 'symbol' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 2, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
         ];
         $node->debtMinutes = 60;
 
@@ -118,14 +118,14 @@ final class HtmlDebtCalculatorTest extends TestCase
 
         $childA = new HtmlTreeNode('A', 'App\\A', 'class');
         $childA->findings = [
-            ['subject' => 'declaration:class:s@f:0', 'rule' => 'r1', 'code' => 'r1', 'channel' => 'r1', 'edge' => null, 'namespace' => null, 'threshold' => null, 'techDebtMinutes' => 0, 'message' => 'm', 'recommendation' => null, 'severity' => 'warning', 'metricValue' => 1, 'symbol' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 1, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
+            ['subject' => 'declaration:class:s@f:0', 'rule' => 'r1', 'code' => 'r1', 'channel' => 'r1', 'edge' => null, 'namespace' => '', 'namespaces' => [''], 'threshold' => null, 'techDebtMinutes' => 0, 'message' => 'm', 'recommendation' => null, 'severity' => 'warning', 'metricValue' => 1, 'symbol' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 1, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
         ];
         $childA->debtMinutes = 30;
 
         $childB = new HtmlTreeNode('B', 'App\\B', 'class');
         $childB->findings = [
-            ['subject' => 'declaration:class:s@f:1', 'rule' => 'r2', 'code' => 'r2', 'channel' => 'r2', 'edge' => null, 'namespace' => null, 'threshold' => null, 'techDebtMinutes' => 0, 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 2, 'symbol' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 2, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
-            ['subject' => 'declaration:class:s@f:2', 'rule' => 'r3', 'code' => 'r3', 'channel' => 'r3', 'edge' => null, 'namespace' => null, 'threshold' => null, 'techDebtMinutes' => 0, 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 3, 'symbol' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 3, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
+            ['subject' => 'declaration:class:s@f:1', 'rule' => 'r2', 'code' => 'r2', 'channel' => 'r2', 'edge' => null, 'namespace' => '', 'namespaces' => [''], 'threshold' => null, 'techDebtMinutes' => 0, 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 2, 'symbol' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 2, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
+            ['subject' => 'declaration:class:s@f:2', 'rule' => 'r3', 'code' => 'r3', 'channel' => 'r3', 'edge' => null, 'namespace' => '', 'namespaces' => [''], 'threshold' => null, 'techDebtMinutes' => 0, 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 3, 'symbol' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 3, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
         ];
         $childB->debtMinutes = 45;
 
@@ -152,14 +152,14 @@ final class HtmlDebtCalculatorTest extends TestCase
 
         $classA = new HtmlTreeNode('ClassA', 'App\\ClassA', 'class');
         $classA->findings = [
-            ['subject' => 'declaration:class:s@f:0', 'rule' => 'r1', 'code' => 'r1', 'channel' => 'r1', 'edge' => null, 'namespace' => null, 'threshold' => null, 'techDebtMinutes' => 0, 'message' => 'm', 'recommendation' => null, 'severity' => 'warning', 'metricValue' => 1, 'symbol' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 1, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
+            ['subject' => 'declaration:class:s@f:0', 'rule' => 'r1', 'code' => 'r1', 'channel' => 'r1', 'edge' => null, 'namespace' => '', 'namespaces' => [''], 'threshold' => null, 'techDebtMinutes' => 0, 'message' => 'm', 'recommendation' => null, 'severity' => 'warning', 'metricValue' => 1, 'symbol' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 1, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
         ];
         $classA->debtMinutes = 20;
 
         $classB = new HtmlTreeNode('ClassB', 'App\\ClassB', 'class');
         $classB->findings = [
-            ['subject' => 'declaration:class:s@f:1', 'rule' => 'r2', 'code' => 'r2', 'channel' => 'r2', 'edge' => null, 'namespace' => null, 'threshold' => null, 'techDebtMinutes' => 0, 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 2, 'symbol' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 2, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
-            ['subject' => 'declaration:class:s@f:2', 'rule' => 'r3', 'code' => 'r3', 'channel' => 'r3', 'edge' => null, 'namespace' => null, 'threshold' => null, 'techDebtMinutes' => 0, 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 3, 'symbol' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 3, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
+            ['subject' => 'declaration:class:s@f:1', 'rule' => 'r2', 'code' => 'r2', 'channel' => 'r2', 'edge' => null, 'namespace' => '', 'namespaces' => [''], 'threshold' => null, 'techDebtMinutes' => 0, 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 2, 'symbol' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 2, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
+            ['subject' => 'declaration:class:s@f:2', 'rule' => 'r3', 'code' => 'r3', 'channel' => 'r3', 'edge' => null, 'namespace' => '', 'namespaces' => [''], 'threshold' => null, 'techDebtMinutes' => 0, 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 3, 'symbol' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 3, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
         ];
         $classB->debtMinutes = 40;
 

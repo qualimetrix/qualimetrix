@@ -1,0 +1,22 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 17361
++visible 17195
+@@ -454,3 +454,0 @@
+-            "namespaces": [
+-                "Corpus\\StderrWarning"
+-            ],
+@@ -480,3 +477,0 @@
+-            "namespaces": [
+-                "Corpus\\StderrWarning"
+-            ],
+@@ -506,4 +500,4 @@
+-physical-records 722
+-["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"design.dit\",\"code\":\"design.dit\",\"edge\":null,\"file\":\"src/Child.php\",\"line\":7,\"message\":\"DIT is at least 1, reaches threshold of 1. Prefer composition over deep inheritance\",\"metricValue\":1,\"namespace\":\"Corpus\\\\StderrWarning\",\"namespaces\":[\"Corpus\\\\StderrWarning\"],\"occurrence\":null,\"recommendation\":\"DIT is at least 1 (threshold: 1) \\u2014 deep inheritance, fragile hierarchy\",\"rule\":\"design.dit\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\StderrWarning\\\\Child@src/Child.php\",\"symbol\":\"Corpus\\\\StderrWarning\\\\Child\",\"techDebtMinutes\":30,\"threshold\":1}"]
+-ranking-records 792
+-["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"design.dit\",\"code\":\"design.dit\",\"coupling.class-rank-share\":1,\"debtMinutes\":30,\"edge\":null,\"file\":\"src/Child.php\",\"impactScore\":30,\"line\":7,\"message\":\"DIT is at least 1, reaches threshold of 1. Prefer composition over deep inheritance\",\"metricValue\":1,\"namespace\":\"Corpus\\\\StderrWarning\",\"namespaces\":[\"Corpus\\\\StderrWarning\"],\"occurrence\":null,\"recommendation\":\"DIT is at least 1 (threshold: 1) \\u2014 deep inheritance, fragile hierarchy\",\"rule\":\"design.dit\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\StderrWarning\\\\Child@src/Child.php\",\"symbol\":\"Corpus\\\\StderrWarning\\\\Child\",\"techDebtMinutes\":30,\"threshold\":1}"]
++physical-records 677
++["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"design.dit\",\"code\":\"design.dit\",\"edge\":null,\"file\":\"src/Child.php\",\"line\":7,\"message\":\"DIT is at least 1, reaches threshold of 1. Prefer composition over deep inheritance\",\"metricValue\":1,\"namespace\":\"Corpus\\\\StderrWarning\",\"occurrence\":null,\"recommendation\":\"DIT is at least 1 (threshold: 1) \\u2014 deep inheritance, fragile hierarchy\",\"rule\":\"design.dit\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\StderrWarning\\\\Child@src/Child.php\",\"symbol\":\"Corpus\\\\StderrWarning\\\\Child\",\"techDebtMinutes\":30,\"threshold\":1}"]
++ranking-records 747
++["{\"acceptedLevel\":null,\"baselineReason\":null,\"baselineVerdict\":null,\"channel\":\"design.dit\",\"code\":\"design.dit\",\"coupling.class-rank-share\":1,\"debtMinutes\":30,\"edge\":null,\"file\":\"src/Child.php\",\"impactScore\":30,\"line\":7,\"message\":\"DIT is at least 1, reaches threshold of 1. Prefer composition over deep inheritance\",\"metricValue\":1,\"namespace\":\"Corpus\\\\StderrWarning\",\"occurrence\":null,\"recommendation\":\"DIT is at least 1 (threshold: 1) \\u2014 deep inheritance, fragile hierarchy\",\"rule\":\"design.dit\",\"severity\":\"warning\",\"subject\":\"declaration:class:Corpus\\\\StderrWarning\\\\Child@src/Child.php\",\"symbol\":\"Corpus\\\\StderrWarning\\\\Child\",\"techDebtMinutes\":30,\"threshold\":1}"]

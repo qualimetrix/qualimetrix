@@ -12,7 +12,7 @@ use Qualimetrix\Reporting\FormatterContext;
 /**
  * The finding fields shared by structured reports and ranked issues.
  *
- * @phpstan-type PublishedRecord array{file: ?string, line: ?int, subject: string, symbol: string, channel: string, occurrence: ?string, edge: ?array{target: string, type?: string}, namespace: ?string, rule: string, code: string, severity: string, message: string, recommendation: ?string, metricValue: int|float|null, threshold: int|float|null, techDebtMinutes: int, acceptedLevel: ?array{shape: string, describe: string, count: int}, baselineVerdict: ?string, baselineReason: ?string}
+ * @phpstan-type PublishedRecord array{file: ?string, line: ?int, subject: string, symbol: string, channel: string, occurrence: ?string, edge: ?array{target: string, type?: string}, namespace: ?string, namespaces: list<string>, rule: string, code: string, severity: string, message: string, recommendation: ?string, metricValue: int|float|null, threshold: int|float|null, techDebtMinutes: int, acceptedLevel: ?array{shape: string, describe: string, count: int}, baselineVerdict: ?string, baselineReason: ?string}
  */
 final readonly class FindingRecord
 {
@@ -22,9 +22,9 @@ final readonly class FindingRecord
     ) {}
 
     /** @return PublishedRecord */
-    public function of(Finding $finding, FormatterContext $context): array
+    public function of(Finding $finding, FormatterContext $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces): array
     {
-        $ns = $finding->symbolPath->namespace ?? '';
+        $namespaces = \Qualimetrix\Reporting\FindingProjection\FindingNamespaces::of($finding, $fileNamespaces);
         $file = $finding->location->file === null
             ? null
             : $context->relativizePath($finding->location->file);
@@ -38,7 +38,8 @@ final readonly class FindingRecord
             'channel' => $finding->channel()->code,
             'occurrence' => $finding->occurrenceKey?->value,
             'edge' => PublishedFinding::edge($finding),
-            'namespace' => $ns !== '' ? $ns : null,
+            'namespace' => \count($namespaces) === 1 ? $namespaces[0] : null,
+            'namespaces' => $namespaces,
             'rule' => $finding->ruleName,
             'code' => $finding->code,
             'severity' => $finding->severity->value,

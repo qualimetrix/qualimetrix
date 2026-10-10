@@ -32,7 +32,7 @@ final readonly class ProjectHealthScoreBuilder
         private HealthMetricCatalog $hintProvider,
         private ComputedMetricDefinitionCatalogInterface $definitionCatalog,
     ) {
-        $this->decomposition = new HealthDecompositionCatalog();
+        $this->decomposition = $this->hintProvider->decomposition();
         $this->coverage = new CoverageReader($this->decomposition);
         $this->decompositionBuilder = new HealthDecompositionBuilder($this->hintProvider, $this->coverage);
         $this->contributorRanker = new ContributorRanker();

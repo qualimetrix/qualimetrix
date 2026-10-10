@@ -32,8 +32,11 @@ mapping positions to their observed shapes, such as
 `intersection_type` relation entries cannot become current dependencies.
 
 A forbidden edge belongs to its exact source declaration. Owned target
-declarations remain ordered occurrence evidence, including duplicate targets;
-changing the subject does not discard their identities or cardinality. Source
+declarations remain ordered count units, including duplicate targets. Occurrence
+identity uses exact source, logical target and dependency kind, independently of
+which physical target files were selected. An unmeasured target contributes one
+logical unit; a narrowed population retains the accepted identity as
+not-compared and cannot tighten its count. Source
 annotations control outgoing projections. A target annotation does not waive an
 incoming violation, and its unused verdict still requires judged coverage.
 
@@ -44,7 +47,9 @@ Membership and `exclude` have six criterion kinds: `patterns`, `attributes`,
 own-member attributes are distinct facts. Anonymous or nested declarations do
 not lend attributes to their enclosing named class. Capture patterns remain an
 Architecture grammar distinct from public `exact | subtree | regex` selectors;
-each rejects the other's form with an accepted equivalent. A template with
+Architecture membership rejects public selector forms with an accepted pattern
+equivalent. Public selectors require explicit kind syntax; YAML schema and CLI
+shape refusals do not translate a bare Architecture pattern. A template with
 `match: any` must not contain a captureless pattern; `match: all` may combine it
 with a capturing criterion.
 

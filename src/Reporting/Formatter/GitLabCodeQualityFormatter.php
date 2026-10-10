@@ -23,6 +23,10 @@ final class GitLabCodeQualityFormatter implements FormatterInterface
         $issues = [];
 
         foreach ($report->findings as $finding) {
+            if ($finding->location->file === null) {
+                continue;
+            }
+
             $issues[] = [
                 // The Code Climate spec has no field for the accepted level, so
                 // a measured breach (ADR 0017) carries it in the free-text
@@ -34,11 +38,9 @@ final class GitLabCodeQualityFormatter implements FormatterInterface
                 'fingerprint' => $this->generateFingerprint($finding),
                 'severity' => $this->mapSeverity($finding->severity),
                 'location' => [
-                    'path' => $finding->location->file === null
-                        ? (PublishedFinding::place($finding)->level === \Qualimetrix\Core\Symbol\SymbolLevel::Project ? '_project' : PublishedFinding::place($finding)->name)
-                        : $context->relativizePath($finding->location->file),
+                    'path' => $context->relativizePath($finding->location->file),
                     'lines' => [
-                        'begin' => $finding->location->file === null ? 1 : ($finding->location->line ?? 1),
+                        'begin' => $finding->location->line ?? 1,
                     ],
                 ],
             ];

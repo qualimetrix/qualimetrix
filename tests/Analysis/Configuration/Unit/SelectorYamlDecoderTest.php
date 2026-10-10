@@ -89,22 +89,6 @@ final class SelectorYamlDecoderTest extends TestCase
         }
     }
 
-    #[Test]
-    public function itRefusesAnArchitectureGlobInANamespaceSelectorWithTheEquivalent(): void
-    {
-        try {
-            $this->decoder()->decodeNamespace(
-                'App\\Domain\\**',
-                self::origin(),
-                ['suppress_namespaces', '0'],
-            );
-            self::fail('Expected the foreign Architecture grammar to be refused.');
-        } catch (ConfigurationRefusal $refusal) {
-            self::assertStringContainsString('write {subtree: App\\Domain}', $refusal->summary());
-            self::assertSame(['suppress_namespaces', '0'], $refusal->position()?->segments);
-        }
-    }
-
     private function decoder(): SelectorYamlDecoder
     {
         return new SelectorYamlDecoder();

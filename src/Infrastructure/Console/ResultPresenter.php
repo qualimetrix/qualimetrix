@@ -106,12 +106,14 @@ final class ResultPresenter
         $this->assertDrillDownBinds($context, $analysisResult);
 
         // Apply --namespace/--class drill-down filter centrally (all formatters benefit)
-        $filteredFindings = $this->findingFilter->filterFindings($findings, $context, FileNamespaceIndex::fromRepository($analysisResult->measured->repository));
+        $fileNamespaces = FileNamespaceIndex::fromRepository($analysisResult->measured->repository);
+        $filteredFindings = $this->findingFilter->filterFindings($findings, $context, $fileNamespaces);
 
         // Build and output report with filtered findings
         $coverage = ReportCoverageProjection::of($analysisResult->measured->coverage, $projectRoot);
 
         $reportBuilder = ReportBuilder::create()
+            ->fileNamespaces($fileNamespaces)
             ->addFindings($filteredFindings)
             ->filesAnalyzed($analysisResult->measured->coverage->analyzedFilesCount())
             ->filesSkipped($analysisResult->measured->coverage->skippedFilesCount())

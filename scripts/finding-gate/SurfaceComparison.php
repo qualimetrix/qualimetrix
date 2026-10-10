@@ -16,10 +16,7 @@ final class SurfaceComparison
      * settles — equal, or reported as not comparable — goes no further.
      *
      * - `presence`: both sides produced it.
-     * - `payload`: the HTML report is reduced to its payload, before anything is
-     *   substituted or translated ({@see ReportPayload}).
      * - `published-order`: each side is in the order of its own producer's key.
-     * - `fingerprints`: each side's published hashes become the identities they hash.
      * - `translation`: the reference is translated by the maps.
      * - `reorder`: the translated reference is put back into its key's order.
      * - `normalization`: both sides lose the fields normalization excludes.
@@ -27,9 +24,7 @@ final class SurfaceComparison
      */
     public const array STAGES = [
         'presence',
-        'payload',
         'published-order',
-        'fingerprints',
         'translation',
         'reorder',
         'normalization',
@@ -45,7 +40,7 @@ final class SurfaceComparison
         private readonly Corpus $corpus,
         private readonly RenameMaps $maps,
         private readonly Normalization $normalization,
-        private readonly FingerprintCheck $fingerprintCheck,
+        private readonly PublicationForms $publicationForms,
         private readonly DeclaredDeltaCheck $declaredDeltaCheck,
         private readonly string $temporaryDirectory,
         array $stages = [],
@@ -67,9 +62,7 @@ final class SurfaceComparison
         }
 
         $this->registered = $registered;
-        if (PublicationForms::forReport($report) === null) {
-            new PublicationForms(CapturePlan::forCorpus($corpus, DeclaredSurfaces::load(\dirname($corpus->cases[0]->directory, 2))), $report);
-        }
+
     }
 
     /**
@@ -78,9 +71,9 @@ final class SurfaceComparison
      */
     public function compareSurfaces(array $candidate, array $reference): void
     {
-        $forms = PublicationForms::forReport($this->report);
-        $forms?->supply('candidate', $candidate);
-        $forms?->supply('reference', $reference);
+        $forms = $this->publicationForms;
+        $forms->supply('candidate', $candidate);
+        $forms->supply('reference', $reference);
         $countCandidate = $candidate;
         $countReference = $reference;
         foreach ($this->registered['difference'] ?? [] as $stage) {
@@ -127,8 +120,8 @@ final class SurfaceComparison
     public function trialSurface(string $key, string $candidate, string $reference, array $residualViews): array
     {
         Interruption::raiseIfRequested();
-        PublicationForms::forReport($this->report)?->supply('candidate', [$key => $candidate]);
-        PublicationForms::forReport($this->report)?->supply('reference', [$key => $reference]);
+        $this->publicationForms->supply('candidate', [$key => $candidate]);
+        $this->publicationForms->supply('reference', [$key => $reference]);
         foreach ($this->registered['difference'] ?? [] as $stage) {
             if ($stage instanceof RecordStage) {
                 $stage->countInputs([$key => $candidate], [$key => $reference]);
@@ -150,9 +143,6 @@ final class SurfaceComparison
     private function applyRegisteredStages(string $step, SurfacePair $pair): bool
     {
         foreach ($this->registered[$step] ?? [] as $stage) {
-            if (PublicationForms::forReport($this->report)?->recordInvocation($pair->key) === false) {
-                continue;
-            }
             $stage->applyStage($pair);
             if ($pair->settled) {
                 return true;
@@ -166,8 +156,8 @@ final class SurfaceComparison
      */
     private function trialStep(string $step, SurfacePair $pair, array $residualViews): ?array
     {
-        if (PublicationForms::forReport($this->report)?->recordInvocation($pair->key) === false
-            && \in_array($step, ['payload', 'published-order', 'fingerprints', 'translation', 'reorder'], true)) {
+        if (\in_array($step, ['published-order', 'translation', 'reorder'], true)
+            && !$this->publicationForms->recordInvocation($pair->key)) {
             return null;
         }
         if ($step === 'difference') {
@@ -180,29 +170,12 @@ final class SurfaceComparison
         if ($step === 'presence') {
             return null;
         }
-        if ($step === 'payload') {
-            if ($pair->surface === 'format:html') {
-                try {
-                    $pair->candidate = ReportPayload::of((string) $pair->candidate, $pair->key, 'candidate');
-                    $pair->reference = ReportPayload::of((string) $pair->reference, $pair->key, 'reference');
-                } catch (GateError) {
-                    return ['valid' => false, 'visibleResidual' => false, 'authorityResidual' => false];
-                }
-            }
-            return null;
-        }
         if ($step === 'published-order') {
             $pair->ordered = PublishedOrder::handles($pair->surface);
             return null;
         }
         try {
-            if ($step === 'fingerprints') {
-                $pair->candidate = $this->fingerprintCheck->trialSubstitute('candidate', $pair->key, (string) $pair->candidate);
-                $pair->reference = $this->fingerprintCheck->trialSubstitute('reference', $pair->key, (string) $pair->reference);
-                if ($pair->candidate === null || $pair->reference === null) {
-                    return ['valid' => false, 'visibleResidual' => false, 'authorityResidual' => false];
-                }
-            } elseif ($step === 'translation') {
+            if ($step === 'translation') {
                 $this->translation($pair);
             } elseif ($step === 'reorder') {
                 $this->reorder($pair);
@@ -217,15 +190,13 @@ final class SurfaceComparison
 
     private function step(string $step, SurfacePair $pair): void
     {
-        if (PublicationForms::forReport($this->report)?->recordInvocation($pair->key) === false
-            && \in_array($step, ['payload', 'published-order', 'fingerprints', 'translation', 'reorder'], true)) {
+        if (\in_array($step, ['published-order', 'translation', 'reorder'], true)
+            && !$this->publicationForms->recordInvocation($pair->key)) {
             return;
         }
         match ($step) {
             'presence' => $this->checkPresence($pair),
-            'payload' => $this->extractPayload($pair),
             'published-order' => $this->verifyPublishedOrder($pair),
-            'fingerprints' => $this->fingerprints($pair),
             'translation' => $this->translation($pair),
             'reorder' => $this->reorder($pair),
             'normalization' => $this->normalization($pair),
@@ -244,23 +215,6 @@ final class SurfaceComparison
     }
 
     /**
-     * Reduced first, before anything is substituted or translated. A row of a
-     * map counts as used the moment it substitutes something, so translating
-     * the whole file would let a row fire inside the bundle — minified
-     * JavaScript that carries every metric key as a literal — and stop being
-     * reported stale, having proved nothing on the surface that is actually
-     * compared.
-     */
-    private function extractPayload(SurfacePair $pair): void
-    {
-        if ($pair->surface !== 'format:html') {
-            return;
-        }
-        $pair->candidate = ReportPayload::of((string) $pair->candidate, $pair->key, 'candidate');
-        $pair->reference = ReportPayload::of((string) $pair->reference, $pair->key, 'reference');
-    }
-
-    /**
      * The reference's records are translated and then put back into the order
      * their new names give, because a rename moves them: the product sorts
      * findings by an identity whose first component is the channel code, and
@@ -272,18 +226,6 @@ final class SurfaceComparison
     private function verifyPublishedOrder(SurfacePair $pair): void
     {
         $pair->ordered = $this->checkPublishedOrder($pair->key, $pair->surface, (string) $pair->candidate, (string) $pair->reference);
-    }
-
-    /**
-     * Substitute first, translate second. The candidate's text is not
-     * translated at all; the reference's is, and by then its hashes have
-     * already become the identities they hash, so a declared row reaches them
-     * like it reaches every other name.
-     */
-    private function fingerprints(SurfacePair $pair): void
-    {
-        $pair->candidate = $this->fingerprintCheck->substituteFingerprints('candidate', $pair->key, (string) $pair->candidate);
-        $pair->reference = $this->fingerprintCheck->substituteFingerprints('reference', $pair->key, (string) $pair->reference);
     }
 
     private function translation(SurfacePair $pair): void
@@ -321,7 +263,7 @@ final class SurfaceComparison
     private function compareFinalBytes(SurfacePair $pair): void
     {
         if ($pair->candidate !== $pair->reference) {
-            if (PublicationForms::forReport($this->report)?->recordInvocation($pair->key) === false) {
+            if (!$this->publicationForms->recordInvocation($pair->key)) {
                 $this->mismatch($pair->key, 'The whole invocation differs and requires an exact complete-surface delta.', Diff::between((string) $pair->candidate, (string) $pair->reference, 'candidate', 'reference'));
             } elseif ($this->declaredDeltaCheck->hasIntention($pair->key)) {
                 $this->declaredDeltaCheck->checkDifference($pair->key, (string) $pair->candidate, (string) $pair->reference);
@@ -397,7 +339,7 @@ final class SurfaceComparison
                 continue;
             }
             $key = Surfaces::key('case:' . $case->id, 'format:json');
-            if (PublicationForms::forReport($this->report)?->recordsPair($key) === false) {
+            if (!$this->publicationForms->recordsPair($key)) {
                 continue;
             }
             if ($this->exact?->selected($key) === true) {

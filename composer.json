@@ -121,8 +121,14 @@
         "install:js": "cd html-report && ([ -d node_modules ] && echo 'node_modules present, skipping npm ci' || npm ci)",
         "cs-check": "php-cs-fixer fix --dry-run --diff",
         "cs-fix": "php-cs-fixer fix",
-        "benchmark:check": "php scripts/benchmark-regression.php",
-        "benchmark:update": "php scripts/benchmark-regression.php --update-baselines",
+        "benchmark:check": [
+            "Composer\\Config::disableProcessTimeout",
+            "php scripts/benchmark-regression.php"
+        ],
+        "benchmark:update": [
+            "Composer\\Config::disableProcessTimeout",
+            "php scripts/benchmark-regression.php --update-baselines"
+        ],
         "health:bench": "php scripts/health-calibration.php",
         "architecture:generate": "php scripts/generate-modular-architecture.php",
         "architecture:check": "php scripts/generate-modular-architecture.php --check",

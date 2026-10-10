@@ -391,6 +391,8 @@ final class GitLabCodeQualityFormatterTest extends TestCase
 
         $issue = $data[0];
         // Namespace findings without line should default to line 1
+        self::assertCount(1, $data);
+        self::assertSame('src/Service/UserService.php', $issue['location']['path']);
         self::assertSame(1, $issue['location']['lines']['begin']);
     }
 
@@ -462,29 +464,45 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itUsesTheNamespacePathForAFilelessFinding(): void
+    public function itPublishesOnlySourceLocatedFindingsInMixedAndFilelessReports(): void
     {
-        $report = ReportBuilder::create()
-            ->addFinding(self::finding(
+        $fileless = [];
+        foreach ([SymbolPath::forNamespace('App'), SymbolPath::forNamespace(''), SymbolPath::forProject()] as $symbol) {
+            $fileless[] = self::finding(
                 location: Location::none(),
-                symbolPath: SymbolPath::forNamespace('App'),
-                ruleName: 'architecture',
-                code: 'architecture.circular',
-                message: 'Circular dependency detected',
-                severity: Severity::Error,
-            ))
-            ->filesAnalyzed(10)
-            ->filesSkipped(0)
-            ->duration(0.1)
-            ->build();
+                symbolPath: $symbol,
+                ruleName: 'aggregate.rule',
+                code: 'aggregate.rule',
+                message: 'Aggregate finding',
+                severity: Severity::Warning,
+            );
+        }
 
-        $output = $this->formatter->format($report, new FormatterContext())->body;
-        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
-
-        $issue = $data[0];
-        self::assertSame('App', $issue['location']['path']);
-        self::assertNotSame('.', $issue['location']['path']);
-        self::assertNotSame('', $issue['location']['path']);
+        foreach ([true, false] as $includeSource) {
+            $builder = ReportBuilder::create()->addFindings($fileless);
+            if ($includeSource) {
+                $builder->addFinding(self::finding(
+                    location: new Location(RelativePath::fromString('src/A.php'), 12),
+                    symbolPath: SymbolPath::forClass('App', 'A'),
+                    ruleName: 'source.rule',
+                    code: 'source.rule',
+                    message: 'Source finding',
+                    severity: Severity::Error,
+                ));
+            }
+            $output = $this->formatter->format($builder->build(), new FormatterContext())->body;
+            $issues = json_decode($output, true, flags: \JSON_THROW_ON_ERROR);
+            self::assertIsList($issues);
+            self::assertCount($includeSource ? 1 : 0, $issues);
+            if ($includeSource) {
+                self::assertSame(['description', 'check_name', 'fingerprint', 'severity', 'location'], array_keys($issues[0]));
+                self::assertSame('Source finding', $issues[0]['description']);
+                self::assertSame('source.rule', $issues[0]['check_name']);
+                self::assertSame('critical', $issues[0]['severity']);
+                self::assertMatchesRegularExpression('/^[a-f0-9]{32}$/', $issues[0]['fingerprint']);
+                self::assertSame(['path' => 'src/A.php', 'lines' => ['begin' => 12]], $issues[0]['location']);
+            }
+        }
     }
 
     #[Test]

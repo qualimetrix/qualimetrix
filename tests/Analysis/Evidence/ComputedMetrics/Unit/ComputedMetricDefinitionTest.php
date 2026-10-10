@@ -294,7 +294,7 @@ final class ComputedMetricDefinitionTest extends TestCase
     #[Test]
     public function itKeepsBareBuiltinAndSyntheticDefinitionsDistinct(): void
     {
-        $resolver = new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator(), new HealthFormulaExcluder());
+        $resolver = new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator(), new HealthFormulaExcluder(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
         $document = DocumentComposer::compose(new DocumentSchema([new ComputedMetricsSection(), new ExcludeHealthSection()]), [
             new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml'), AuthoredNode::fromPlain(['computed_metrics' => ['health.cohesion' => null]])),
         ]);

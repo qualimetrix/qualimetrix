@@ -1112,6 +1112,35 @@ final class InMemoryMetricRepositoryTest extends TestCase
         }
     }
 
+    /** @return iterable<string, array{SymbolPath}> */
+    public static function scalarDeclarationSymbols(): iterable
+    {
+        yield 'class' => [SymbolPath::forClass('App', 'Absent')];
+        yield 'method' => [SymbolPath::forMethod('App', 'Absent', 'run')];
+        yield 'function' => [SymbolPath::forGlobalFunction('App', 'absent')];
+    }
+
+    #[Test]
+    #[DataProvider('scalarDeclarationSymbols')]
+    public function itRefusesScalarWritesWithoutAnExactDeclaration(SymbolPath $logical): void
+    {
+        self::expectException(LogicException::class);
+        (new InMemoryMetricRepository())->addScalar($logical, 'value', 7);
+    }
+
+    #[Test]
+    #[DataProvider('scalarDeclarationSymbols')]
+    public function itRefusesScalarWritesToMissingExactDeclarations(SymbolPath $logical): void
+    {
+        $subject = MetricSubject::declaration(DeclarationPath::of(
+            $logical,
+            RelativePath::fromString('src/Absent.php'),
+            DeclarationOrdinal::fromRank(0),
+        ));
+        self::expectException(LogicException::class);
+        $this->declarationRepository(['value'])->addSubjectScalar($subject, 'value', 7);
+    }
+
     #[Test]
     public function itAddsOneScalarOnlyToAnExistingExactClassDeclaration(): void
     {
@@ -1140,7 +1169,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $subject = MetricSubject::declaration($declaration);
 
         self::expectException(LogicException::class);
-        self::expectExceptionMessage('Class scalar requires an existing exact declaration');
+        self::expectExceptionMessage('Scalar requires an existing exact declaration');
         $repository->addSubjectScalar($subject, 'design.dit', 7);
     }
 

@@ -44,7 +44,7 @@ final class TextFormatterTest extends TestCase
     {
         $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
         $trace->record('fixture.rule', new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('fixture.channel'), \Qualimetrix\Core\Symbol\SymbolLevel::Project, \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::selector('project:fixture', 'project'), 'published', 'The fixture value is absent.');
-        $report = new \Qualimetrix\Reporting\Report([], 0, 0, 0, 0, 0, population: $trace->freeze());
+        $report = new \Qualimetrix\Reporting\Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 0, 0, 0, 0, 0, population: $trace->freeze());
         $compact = $this->formatter->format($report, new FormatterContext(useColor: false))->body;
         self::assertSame(1, substr_count($compact, 'Rule population incomplete'));
         self::assertStringContainsString('project: 0 judged, 1 not judged', $compact);
@@ -61,7 +61,7 @@ final class TextFormatterTest extends TestCase
         $low = self::finding(new Location(RelativePath::fromString('src/B.php'), 1), SymbolPath::forClass('Shop', 'B'), 'complexity.ccn', 'complexity.ccn', 'Hidden low impact', Severity::Error);
         $high = self::finding(new Location(RelativePath::fromString('src/Z.php'), 1), SymbolPath::forClass('Shop', 'Z'), 'complexity.ccn', 'complexity.ccn', 'Shown high impact', Severity::Error);
         $ranked = [new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($high, 50, null, 5, 3), new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($low, 10, null, 5, 3)];
-        $report = new \Qualimetrix\Reporting\Report([$warning, $low, $high], 3, 0, 0, 2, 1, topIssues: $ranked);
+        $report = new \Qualimetrix\Reporting\Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [$warning, $low, $high], 3, 0, 0, 2, 1, topIssues: $ranked);
         $output = $this->formatter->format($report, new FormatterContext(useColor: false, detailLimit: 1, topIssuesLimit: 0))->body;
 
         self::assertStringContainsString('Shown high impact', $output);
@@ -789,12 +789,12 @@ final class TextFormatterTest extends TestCase
                 [\Qualimetrix\Core\Symbol\MetricSubject::aggregate(\Qualimetrix\Core\Symbol\SymbolPath::forProject())],
             ),
         ]);
-        $report = new \Qualimetrix\Reporting\Report([], 1, 0, 0.0, 0, 0, computedMetricEvaluation: $summary);
+        $report = new \Qualimetrix\Reporting\Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 1, 0, 0.0, 0, 0, computedMetricEvaluation: $summary);
         $body = $this->formatter->format($report, new FormatterContext(useColor: false))->body;
         self::assertStringContainsString('Computed metric computed.custom (project): not measured', $body);
         self::assertStringContainsString('missing keys [missing.input] for 2 subject(s)', $body);
         self::assertStringContainsString('no value for 1 subject(s)', $body);
-        $withScores = new \Qualimetrix\Reporting\Report([], 1, 0, 0.0, 0, 0, healthScores: [
+        $withScores = new \Qualimetrix\Reporting\Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 1, 0, 0.0, 0, 0, healthScores: [
             'overall' => new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore('overall', 0.0, 'Critical', 50.0, 25.0, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage::notApplicable('composes dimensions')),
         ], computedMetricEvaluation: $summary);
         $alongside = $this->formatter->format($withScores, new FormatterContext(useColor: false))->body;

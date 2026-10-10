@@ -413,6 +413,8 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertSame(12, $m->get(MetricName::SIZE_SYMBOL_METHOD_COUNT), 'Service symbolMethodCount');
         self::assertSame(4, $m->get(MetricName::SIZE_SYMBOL_CLASS_COUNT), 'Service symbolClassCount');
         self::assertSame(281, $m->get('size.loc.sum'), 'Service loc.sum = own spans 95 + 63 + Auth spans 57 + 66');
+        self::assertSame(4, $m->get('size.loc.count'));
+        self::assertSame(70.25, $m->get('size.loc.avg'));
     }
 
     // ──────────────────────────────────────────────────────────────────
@@ -430,6 +432,8 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertSame(20, $m->get(MetricName::SIZE_SYMBOL_METHOD_COUNT), 'App symbolMethodCount');
         self::assertSame(7, $m->get(MetricName::SIZE_SYMBOL_CLASS_COUNT), 'App symbolClassCount');
         self::assertSame(413, $m->get('size.loc.sum'), 'App loc.sum = Repository 114 + Service 281 + ValueObject 18');
+        self::assertSame(8, $m->get('size.loc.count'));
+        self::assertSame(51.625, $m->get('size.loc.avg'));
     }
 
     #[Test]
@@ -532,6 +536,18 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertSame(1, $nsMetrics->get(MetricName::SIZE_SYMBOL_CLASS_COUNT), 'global ns symbolClassCount');
         self::assertSame(28, $nsMetrics->get('size.loc.sum'), 'global ns loc.sum');
     }
+    #[Test]
+    public function itExportsTheFileAndLineOfAClassWithoutMethods(): void
+    {
+        $report = \Qualimetrix\Reporting\ReportBuilder::create()->metrics(self::$repository)->build();
+        $json = (new \Qualimetrix\Reporting\Formatter\MetricsJsonFormatter())->format($report, new \Qualimetrix\Reporting\FormatterContext())->body;
+        $records = json_decode($json, true, flags: \JSON_THROW_ON_ERROR)['symbols'];
+        $empty = array_values(array_filter($records, static fn(array $record): bool => $record['type'] === 'class' && $record['name'] === 'GoldenMetrics\\App\\ValueObject\\EmptyMarker'));
+        self::assertCount(1, $empty);
+        self::assertSame('tests/Analysis/Evidence/Measurement/Fixtures/GoldenMetrics/App/ValueObject/EmptyMarker.php', $empty[0]['file']);
+        self::assertSame(19, $empty[0]['line']);
+    }
+
     private static function metricsFor(SymbolPath $logical): MetricBag
     {
         $matches = [];

@@ -26,7 +26,7 @@ final class JsonOffenderSectionDensityTest extends TestCase
     protected function setUp(): void
     {
         $this->section = new JsonOffenderSection(
-            new WorstClassDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class)),
+            new WorstClassDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class), new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())),
             new FindingFilter(),
             new JsonSanitizer(),
         );
@@ -79,6 +79,7 @@ final class JsonOffenderSectionDensityTest extends TestCase
         // Instead, test with the raw formatWorstOffenders via formatNamespaces (since it delegates)
         // For classes, we need to use formatClasses via Report
         $report = new \Qualimetrix\Reporting\Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,

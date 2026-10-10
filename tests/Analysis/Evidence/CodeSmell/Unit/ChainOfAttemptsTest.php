@@ -21,6 +21,13 @@ final class ChainOfAttemptsTest extends TestCase
      */
     public static function provideChainAttemptShapes(): iterable
     {
+        yield 'nullsafe return' => ['<?php foreach ($a as $x) { try { return $o?->parse($x); } catch (Throwable) {} }', 1];
+        yield 'assigned nullsafe' => ['<?php foreach ($a as $x) { try { $r = $o?->parse($x); return $r; } catch (Throwable) {} }', 1];
+        yield 'shell return' => ['<?php foreach ($a as $x) { try { return `cmd`; } catch (Throwable) {} }', 1];
+        yield 'eval return' => ['<?php foreach ($a as $x) { try { return eval($x); } catch (Throwable) {} }', 1];
+        yield 'deferred nullsafe' => ['<?php foreach ($a as $x) { try { return fn () => $o?->parse($x); } catch (Throwable) {} }', 0];
+        yield 'deferred shell' => ['<?php foreach ($a as $x) { try { return fn () => `cmd`; } catch (Throwable) {} }', 0];
+        yield 'deferred eval' => ['<?php foreach ($a as $x) { try { return fn () => eval($x); } catch (Throwable) {} }', 0];
         yield 'return ends the try' => ['<?php foreach ($a as $x) { try { return work($x); } catch (Throwable) {} }', 1];
         yield 'continue skips a fallback' => ['<?php foreach ($a as $x) { try { work($x); continue; } catch (Throwable) {} fallback($x); }', 1];
         yield 'continue with nothing to skip' => ['<?php foreach ($a as $x) { try { work($x); continue; } catch (Throwable) {} }', 0];

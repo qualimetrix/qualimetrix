@@ -451,8 +451,7 @@ final class DistanceRuleTest extends TestCase
             SymbolPath::forNamespace($namespace),
             MetricBag::fromArray([
                 'size.class-count' => 1,
-                'size.class-count.count' => 6,
-            ]),
+            ])->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.class-count']),
             $file,
             1,
         );

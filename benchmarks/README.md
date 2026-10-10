@@ -89,10 +89,10 @@ composer install --working-dir=benchmarks --no-scripts
 php scripts/collect-benchmark-data.php [output-file.json]
 
 # Regression check — verify health scores are within expected ranges
-COMPOSER_PROCESS_TIMEOUT=0 composer benchmark:check
+composer benchmark:check
 
 # Update baselines after intentional formula changes
-COMPOSER_PROCESS_TIMEOUT=0 composer benchmark:update
+composer benchmark:update
 ```
 
 Output is written to `docs/internal/benchmark-data.json` by default.
@@ -107,6 +107,12 @@ configuration receives a larger deadline.
 
 `composer benchmark:check` runs Qualimetrix on all open-source benchmark projects and compares
 project-level health scores against expected ranges in `docs/internal/benchmark-baselines.json`.
+
+Exit 0 means every expected metric was measured within its accepted range.
+Exit 1 means a measured regression, an expected metric left unmeasured, or
+incomplete coverage in a valid analysis document. Exit 2 means infrastructure
+failure, including a missing project path or a failed or timed-out analysis
+process. Any incomplete corpus blocks baseline replacement for the whole set.
 
 The authoritative regression verdict is the stable `benchmark` CI job. It
 installs both the root and benchmark lock files independently and runs for every

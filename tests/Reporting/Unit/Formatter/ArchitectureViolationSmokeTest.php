@@ -129,16 +129,16 @@ final class ArchitectureViolationSmokeTest extends TestCase
     #[Test]
     public function itRendersArchitectureViolationsViaJsonFormatter(): void
     {
-        $hintProvider = new HealthMetricCatalog();
+        $hintProvider = new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
         $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $namespaceDrillDown = new HealthScoreDrillDown($definitionCatalog);
+        $namespaceDrillDown = new HealthScoreDrillDown($definitionCatalog, new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
         $sanitizer = new JsonSanitizer();
         $findingFilter = new FindingFilter();
         $remediationTimeRegistry = new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues());
         $formatter = new JsonFormatter(
             new DebtCalculator($remediationTimeRegistry),
             new JsonHealthSection(new HealthScoreResolver($namespaceDrillDown), $sanitizer),
-            new JsonOffenderSection(new WorstClassDrillDown($definitionCatalog), $findingFilter, $sanitizer),
+            new JsonOffenderSection(new WorstClassDrillDown($definitionCatalog, new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())), $findingFilter, $sanitizer),
             new JsonFindingSection($remediationTimeRegistry, $sanitizer),
         );
 
@@ -196,7 +196,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
                 new \Qualimetrix\Reporting\Formatter\Html\HtmlProjectMetadata(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()),
                 new \Qualimetrix\Reporting\Formatter\FindingRecord(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()), new \Qualimetrix\Reporting\Formatter\Json\JsonSanitizer()),
             ),
-            new HealthHintProjector(new HealthMetricCatalog()),
+            new HealthHintProjector(new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()))),
         );
 
         $report = $this->buildArchitectureReport();
@@ -236,10 +236,11 @@ final class ArchitectureViolationSmokeTest extends TestCase
         }
 
         $files = $doc->getElementsByTagName('file');
-        self::assertGreaterThan(0, $files->length, 'Expected at least one <file> element');
+        self::assertSame(1, $files->length);
+        self::assertSame(self::SOURCE_FILE, $files->item(0)?->getAttribute('name'));
 
         $errors = $doc->getElementsByTagName('error');
-        self::assertSame($this->expectedViolationCount(), $errors->length);
+        self::assertSame(1, $errors->length);
 
         $sources = [];
         foreach ($errors as $errorNode) {
@@ -249,7 +250,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
             $sources[] = $errorNode->getAttribute('source');
         }
 
-        foreach ($this->expectedRuleNames() as $rule) {
+        foreach ([LayerViolationRule::NAME] as $rule) {
             self::assertContains('qmx.' . $rule, $sources, "Checkstyle should emit source for rule {$rule}");
         }
     }
@@ -299,10 +300,10 @@ final class ArchitectureViolationSmokeTest extends TestCase
         $issues = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertIsArray($issues);
-        self::assertSame($this->expectedViolationCount(), \count($issues));
+        self::assertCount(1, $issues);
 
         $checkNames = array_map(static fn(array $issue): string => $issue['check_name'], $issues);
-        foreach ($this->expectedRuleNames() as $rule) {
+        foreach ([LayerViolationRule::NAME] as $rule) {
             self::assertContains($rule, $checkNames, "GitLab should emit issue for {$rule}");
         }
 
@@ -313,16 +314,15 @@ final class ArchitectureViolationSmokeTest extends TestCase
             self::assertContains($severity, $validSeverities, "GitLab severity '{$severity}' is not in the spec");
         }
 
-        // Project-level diagnostics must collapse to the documented '_project' sentinel
         $paths = array_map(static fn(array $issue): string => $issue['location']['path'], $issues);
-        self::assertContains('_project', $paths, 'Project-level diagnostics should map to _project path');
+        self::assertSame([self::SOURCE_FILE], $paths);
     }
 
     #[Test]
     public function itRunsHealthFormatterOnArchitectureOnlyReport(): void
     {
-        $hintProvider = new HealthMetricCatalog();
-        $drillDown = new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class));
+        $hintProvider = new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
+        $drillDown = new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class), new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
         $resolver = new HealthScoreResolver($drillDown);
         $formatter = new HealthTextFormatter($resolver);
 
@@ -340,11 +340,11 @@ final class ArchitectureViolationSmokeTest extends TestCase
     {
         $registry = new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues());
         $debtCalculator = new DebtCalculator($registry);
-        $hintProvider = new HealthMetricCatalog();
+        $hintProvider = new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
         $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $namespaceDrillDown = new HealthScoreDrillDown($definitionCatalog);
+        $namespaceDrillDown = new HealthScoreDrillDown($definitionCatalog, new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
         $findingFilter = new FindingFilter();
-        $offenderListRenderer = new OffenderListRenderer($findingFilter, new WorstClassDrillDown($definitionCatalog));
+        $offenderListRenderer = new OffenderListRenderer($findingFilter, new WorstClassDrillDown($definitionCatalog, new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())));
         $formatter = new SummaryFormatter(
             new DetailedFindingRenderer($debtCalculator),
             new HealthBarRenderer(new HealthScoreResolver($namespaceDrillDown)),

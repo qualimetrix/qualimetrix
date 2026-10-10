@@ -1184,6 +1184,10 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\UnassignedClass\\UnassignedClassLayerRequirement"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\OutputEncoding"
         }
       ]
     },
@@ -1444,6 +1448,10 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\UnassignedClass\\UnassignedClassLayerRequirement"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\OutputEncoding"
         }
       ]
     },
@@ -2867,54 +2875,36 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricBranchTrace": {
-      "path": "src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricBranchTrace.php",
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Evaluation\\ComputedMetricBranchTrace": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Evaluation/ComputedMetricBranchTrace.php",
       "kind": "class",
       "owner": "Analysis.Evidence.ComputedMetrics",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluator": {
-      "path": "src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricEvaluator.php",
-      "kind": "class",
-      "owner": "Analysis.Evidence.ComputedMetrics",
-      "visibility": "contract",
-      "consumers": [
-        {
-          "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline"
-        }
-      ]
-    },
-    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricExpression": {
-      "path": "src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricExpression.php",
-      "kind": "class",
-      "owner": "Analysis.Evidence.ComputedMetrics",
-      "visibility": "contract",
-      "consumers": [
-        {
-          "owner": "Analysis.Evidence.ComputedMetrics.Health",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\HealthFormulaExcluder"
-        },
-        {
-          "owner": "Analysis.Evidence.ComputedMetrics.Health",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\WeightedHealthFormula"
-        },
-        {
-          "owner": "Analysis.Evidence.ComputedMetrics.Health",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\HealthDecompositionCatalog"
-        }
-      ]
-    },
-    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricReads": {
-      "path": "src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricReads.php",
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Evaluation\\ComputedMetricEvaluator": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Evaluation/ComputedMetricEvaluator.php",
       "kind": "class",
       "owner": "Analysis.Evidence.ComputedMetrics",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\MetricLookup": {
-      "path": "src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/MetricLookup.php",
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Evaluation\\ComputedMetricExpression": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Evaluation/ComputedMetricExpression.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.ComputedMetrics",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Evaluation\\ComputedMetricReads": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Evaluation/ComputedMetricReads.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.ComputedMetrics",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Evaluation\\MetricLookup": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Evaluation/MetricLookup.php",
       "kind": "class",
       "owner": "Analysis.Evidence.ComputedMetrics",
       "visibility": "internal",
@@ -5130,6 +5120,10 @@
         {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector"
         }
       ]
     },
@@ -5569,7 +5563,7 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluator"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Evaluation\\ComputedMetricEvaluator"
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
@@ -5686,6 +5680,10 @@
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Score\\ProjectHealthScoreBuilder"
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluatorInterface"
         }
       ]
     },
@@ -7901,6 +7899,10 @@
         {
           "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryFinding"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingNamespaces"
         }
       ]
     },
@@ -8192,10 +8194,6 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule"
         },
         {
@@ -8256,14 +8254,6 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\AbstractTypeCoverageRule"
         },
         {
@@ -8289,10 +8279,6 @@
         {
           "owner": "Analysis.Evidence.Size",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\ClassCountRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountRule"
         },
         {
           "owner": "Analysis.Evidence.Size",
@@ -11743,10 +11729,6 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeOptions"
         },
         {
@@ -11907,15 +11889,7 @@
         },
         {
           "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocOptions"
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule"
         },
         {
           "owner": "Analysis.Evidence.Design",
@@ -11976,10 +11950,6 @@
         {
           "owner": "Analysis.Evidence.Size",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountOptions"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountRule"
         },
         {
           "owner": "Analysis.Evidence.Size",
@@ -12087,10 +12057,6 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Json\\JsonFormatter"
-        },
-        {
-          "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Ordering\\FindingSorter"
         },
         {
@@ -12144,6 +12110,10 @@
         {
           "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryFinding"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Json\\JsonFormatter"
         }
       ]
     },
@@ -16597,6 +16567,10 @@
         {
           "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\RecordedRootPresence"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\RunTargetClaimLifecycle"
         }
       ]
     },
@@ -17069,10 +17043,6 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\ProjectScope\\SubjectCoverageObservation"
-        },
-        {
-          "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\ExclusionRemovedPopulation"
         },
         {
           "owner": "Analysis.Policy.Baseline",
@@ -17574,7 +17544,7 @@
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluator"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Evaluation\\ComputedMetricEvaluator"
         },
         {
           "owner": "Analysis.Evidence.Measurement",
@@ -18310,7 +18280,7 @@
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluator"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Evaluation\\ComputedMetricEvaluator"
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
@@ -18591,6 +18561,14 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\AbstractRule"
         }
       ]
     },
@@ -18722,7 +18700,7 @@
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluator"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Evaluation\\ComputedMetricEvaluator"
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
@@ -19134,10 +19112,6 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\GitLabCodeQualityFormatter"
-        },
-        {
-          "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\PublishedFinding"
         },
         {
@@ -19174,7 +19148,7 @@
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricSubjectEvaluation"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Evaluation\\ComputedMetricSubjectEvaluation"
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
@@ -19334,7 +19308,7 @@
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluator"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Evaluation\\ComputedMetricEvaluator"
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
@@ -19630,10 +19604,6 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Ordering\\FindingSorter"
-        },
-        {
-          "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\PublishedFinding"
         },
         {
@@ -19831,6 +19801,10 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\KindIn"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingNamespaces"
         }
       ]
     },
@@ -23857,10 +23831,6 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\RunTargetClaimLifecycle"
-        },
-        {
-          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Hook\\HookEntryAccess"
         }
       ]
@@ -25815,6 +25785,46 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\DrillDown\\FindingFilter"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingNamespaces"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Report"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\ReportBuilder"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\FindingRecord"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Ordering\\FindingSorter"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Json\\JsonFindingSection"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Json\\JsonFormatter"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Detail\\DetailedFindingRenderer"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Detail\\FindingDetailRenderer"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlFindingPartitioner"
         }
       ]
     },
@@ -25929,15 +25939,15 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricOutcome": {
-      "path": "src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricOutcome.php",
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Evaluation\\ComputedMetricOutcome": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Evaluation/ComputedMetricOutcome.php",
       "kind": "class",
       "owner": "Analysis.Evidence.ComputedMetrics",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricSubjectEvaluation": {
-      "path": "src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricSubjectEvaluation.php",
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Evaluation\\ComputedMetricSubjectEvaluation": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Evaluation/ComputedMetricSubjectEvaluation.php",
       "kind": "class",
       "owner": "Analysis.Evidence.ComputedMetrics",
       "visibility": "internal",
@@ -26616,6 +26626,59 @@
       "path": "src/Analysis/Policy/Baseline/EntryBinding/UnusedEntryFinding.php",
       "kind": "class",
       "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluatorInterface": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricEvaluatorInterface.php",
+      "kind": "interface",
+      "owner": "Analysis.Evidence.ComputedMetrics",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricExpressionInterface": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricExpressionInterface.php",
+      "kind": "interface",
+      "owner": "Analysis.Evidence.ComputedMetrics",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\HealthFormulaExcluder"
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Configuration\\WeightedHealthFormula"
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\HealthDecompositionCatalog"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\ThrowableReach": {
+      "path": "src/Analysis/Evidence/Design/Inheritance/ThrowableReach.php",
+      "kind": "enum",
+      "owner": "Analysis.Evidence.Design",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Reporting\\FindingProjection\\FindingNamespaces": {
+      "path": "src/Reporting/FindingProjection/FindingNamespaces.php",
+      "kind": "class",
+      "owner": "Reporting",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\FileTarget\\CreatedDirectoryOwnership": {
+      "path": "src/Core/FileTarget/CreatedDirectoryOwnership.php",
+      "kind": "class",
+      "owner": "Core.FileTarget",
       "visibility": "internal",
       "consumers": []
     }

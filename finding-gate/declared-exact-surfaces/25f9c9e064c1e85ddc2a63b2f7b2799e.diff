@@ -1,0 +1,37 @@
+--- candidate
++++ reference (mapped)
+@@ -1,4 +1,30 @@
+-visible 2
+-[]
+-invocation-format:gitlab 2
+-[]
++visible 377
++[
++    {
++        "description": "Circular dependency (3 classes): A \u2192 B \u2192 C \u2192 A",
++        "check_name": "architecture.circular-dependency",
++        "fingerprint": "6b963aab6ea5ecfe2944606e5382978f",
++        "severity": "major",
++        "location": {
++            "path": "_project",
++            "lines": {
++                "begin": 1
++            }
++        }
++    }
++]
++invocation-format:gitlab 377
++[
++    {
++        "description": "Circular dependency (3 classes): A \u2192 B \u2192 C \u2192 A",
++        "check_name": "architecture.circular-dependency",
++        "fingerprint": "6b963aab6ea5ecfe2944606e5382978f",
++        "severity": "major",
++        "location": {
++            "path": "_project",
++            "lines": {
++                "begin": 1
++            }
++        }
++    }
++]

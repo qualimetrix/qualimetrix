@@ -46,7 +46,9 @@ final class JsonFindingSectionTest extends TestCase
     {
         $base = self::finding(location: Location::none(), symbolPath: SymbolPath::forProject(), ruleName: 'complexity.ccn', code: 'complexity.ccn', message: 'high complexity', severity: Severity::Warning, metricValue: 20);
         $accepted = new AcceptedLevel([30], 1);
-        $rows = $this->section->format([$base, $base->reportedAsBreach($accepted), $base->reportedUncompared($accepted, 'paths-differ')], new FormatterContext());
+        $rows = $this->section->format([$base, $base->reportedAsBreach($accepted), $base->reportedUncompared($accepted, 'paths-differ')], new FormatterContext(), \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
+        self::assertNull($rows[0]['namespace']);
+        self::assertSame([], $rows[0]['namespaces']);
         self::assertNull($rows[0]['acceptedLevel']);
         self::assertNull($rows[0]['baselineVerdict']);
         self::assertNull($rows[0]['baselineReason']);
@@ -62,7 +64,7 @@ final class JsonFindingSectionTest extends TestCase
     #[Test]
     public function itFormatsEmptyFindings(): void
     {
-        $result = $this->section->format([], new FormatterContext());
+        $result = $this->section->format([], new FormatterContext(), \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertSame([], $result);
     }
@@ -83,7 +85,7 @@ final class JsonFindingSectionTest extends TestCase
         );
 
         $context = new FormatterContext(basePath: '/project');
-        $result = $this->section->format([$finding], $context);
+        $result = $this->section->format([$finding], $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertCount(1, $result);
         $item = $result[0];
@@ -122,7 +124,7 @@ final class JsonFindingSectionTest extends TestCase
             dependencyTarget: $target,
             dependencyType: DependencyType::New_,
             occurrenceKey: OccurrenceKey::semantic('dependency', ['name' => 'target']),
-        )], new FormatterContext());
+        )], new FormatterContext(), \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertSame($subject->toCanonical(), $result[0]['subject']);
         self::assertSame($logical->toString(), $result[0]['symbol']);
@@ -146,7 +148,7 @@ final class JsonFindingSectionTest extends TestCase
             message: 'target only',
             severity: Severity::Warning,
             dependencyTarget: $target,
-        )], new FormatterContext());
+        )], new FormatterContext(), \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertSame(['target' => 'class:App\\Target'], $result[0]['edge']);
     }
@@ -164,7 +166,7 @@ final class JsonFindingSectionTest extends TestCase
             metricValue: 31,
         ))->reportedAsBreach(new AcceptedLevel([25.0], 1));
 
-        $result = $this->section->format([$finding], new FormatterContext());
+        $result = $this->section->format([$finding], new FormatterContext(), \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertSame(
             ['shape' => 'magnitude', 'describe' => '25', 'count' => 1],
@@ -186,7 +188,7 @@ final class JsonFindingSectionTest extends TestCase
             severity: Severity::Warning,
         ))->reportedAsBreach(new AcceptedLevel(null, 3));
 
-        $result = $this->section->format([$finding], new FormatterContext());
+        $result = $this->section->format([$finding], new FormatterContext(), \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertSame(
             ['shape' => 'occurrence', 'describe' => '3 occurrences', 'count' => 3],
@@ -207,7 +209,7 @@ final class JsonFindingSectionTest extends TestCase
         );
 
         $context = new FormatterContext();
-        $result = $this->section->format([$finding], $context);
+        $result = $this->section->format([$finding], $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertCount(1, $result);
         self::assertNull($result[0]['file']);
@@ -226,10 +228,10 @@ final class JsonFindingSectionTest extends TestCase
         );
 
         $context = new FormatterContext();
-        $result = $this->section->format([$finding], $context);
+        $result = $this->section->format([$finding], $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertCount(1, $result);
-        self::assertNull($result[0]['namespace']);
+        self::assertSame('', $result[0]['namespace']);
     }
 
     #[Test]
@@ -247,7 +249,7 @@ final class JsonFindingSectionTest extends TestCase
         );
 
         $context = new FormatterContext();
-        $result = $this->section->format([$finding], $context);
+        $result = $this->section->format([$finding], $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
 
         self::assertNull($result[0]['metricValue']);
         self::assertNull($result[0]['threshold']);

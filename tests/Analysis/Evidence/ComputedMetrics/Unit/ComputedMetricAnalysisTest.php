@@ -144,7 +144,7 @@ final class ComputedMetricAnalysisTest extends TestCase
     private function analysis(): ComputedMetricAnalysis
     {
         return new ComputedMetricAnalysis(
-            new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator(), new HealthFormulaExcluder()),
+            new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator(), new HealthFormulaExcluder(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())),
         );
     }
 

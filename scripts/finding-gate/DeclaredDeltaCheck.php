@@ -195,7 +195,7 @@ final class DeclaredDeltaCheck implements Derivation
     /** @return list<array<string,mixed>> */
     private function comparedPublications(string $surface, string $text, string $codec): array
     {
-        if (\in_array($surface, ['format:json', 'format:suppressed', 'format:sarif', 'format:gitlab'], true)) {
+        if (\in_array($surface, ['format:json', 'format:suppressed'], true)) {
             $document = ReportRecords::decode($text);
             if (\is_string($document['error'] ?? null) && \is_int($document['exit_code'] ?? null)) {
                 return [];
@@ -219,37 +219,6 @@ final class DeclaredDeltaCheck implements Derivation
                 $records[] = $record;
             }
             return $records;
-        }
-        if (\in_array($surface, ['format:html', 'format:sarif', 'format:gitlab'], true)) {
-            $records = [];
-            $aliases = match ($surface) {
-                'format:html' => $codec === 'current' ? [] : ['ruleName' => 'rule', 'violationCode' => 'code', 'symbolPath' => 'symbol'],
-                'format:sarif' => ['ruleId' => 'code', 'level' => 'severity'],
-                default => ['description' => 'message', 'check_name' => 'code'],
-            };
-            foreach (ReportRecords::projected($surface, $text) as $entry) {
-                $record = $entry['fields'];
-                foreach ($aliases as $published => $field) {
-                    if (\array_key_exists($published, $record)) {
-                        $record[$field] = $record[$published];
-                        unset($record[$published]);
-                    }
-                }
-                if ($surface === 'format:sarif') {
-                    $record['message'] = $record['message']['text'];
-                } elseif ($surface === 'format:gitlab') {
-                    $record['file'] = $record['location']['path'];
-                    $record['line'] = $record['location']['lines']['begin'];
-                }
-                $records[] = $record;
-            }
-            return $records;
-        }
-        if ($surface === 'format:checkstyle') {
-            return ReportRecords::checkstyle($text);
-        }
-        if (\in_array($surface, ProseRecords::SURFACES, true)) {
-            return array_column(ProseRecords::extract($surface, $text, $codec), 'fields');
         }
         if ($surface === 'baseline-file') {
             $document = ReportRecords::decode($text);

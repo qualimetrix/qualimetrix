@@ -35,6 +35,8 @@ use Throwable;
  * - Collector classes synchronized with DI container
  *
  * @see https://github.com/amphp/parallel
+ *
+ * @qmx-threshold coupling.instability warning=0.857143 -- This execution adapter binds worker, cancellation and collection contracts with few strategy consumers; splitting it transfers the same transport dependencies.
  */
 final class AmphpParallelStrategy implements ExecutionStrategyInterface, ParallelCapableInterface
 {

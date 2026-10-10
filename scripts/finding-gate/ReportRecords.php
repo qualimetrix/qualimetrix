@@ -4,17 +4,18 @@ declare(strict_types=1);
 
 namespace QmxFindingGate;
 
-use DOMDocument;
 use JsonException;
 use stdClass;
 
 /** Published records, their complete schemas, and edits confined to their byte spans. */
 final class ReportRecords
 {
+    public const array IDENTITY_FIELDS = ['channel', 'subject', 'occurrence', 'edge'];
+
     public const array ANALYSIS_DIAGNOSTICS = ['analysis.parse', 'analysis.processing', 'analysis.directory-symlink', 'analysis.not-regular-file', 'analysis.unreadable-directory'];
 
     public const array SCHEMAS = [
-        'json' => ['file', 'line', 'subject', 'symbol', 'channel', 'occurrence', 'edge', 'namespace', 'rule', 'code', 'severity', 'message', 'recommendation', 'metricValue', 'threshold', 'techDebtMinutes', 'acceptedLevel'],
+        'json' => ['file', 'line', 'subject', 'symbol', 'channel', 'occurrence', 'edge', 'namespace', 'namespaces', 'rule', 'code', 'severity', 'message', 'recommendation', 'metricValue', 'threshold', 'techDebtMinutes', 'acceptedLevel', 'baselineVerdict', 'baselineReason'],
         'suppressed' => ['mechanism', 'suppressor', 'rule', 'channel', 'subject', 'occurrence', 'edge', 'file', 'line', 'symbol', 'severity', 'message', 'recommendation'],
         'metrics' => ['type', 'name', 'file', 'line', 'metrics'],
         'directives' => ['file', 'line', 'form', 'target', 'effect', 'reason', 'masked_by', 'boundary_observable', 'refusals'],
@@ -207,97 +208,6 @@ final class ReportRecords
     }
 
     /**
-     * @param array<string,mixed> $record
-     *
-     * @return array<string,mixed>
-     */
-    public static function projection(string $surface, array $record, string $codec = 'legacy'): array
-    {
-        $message = self::message($record, codec: $codec);
-        $severity = $record['severity'];
-        if ($codec === 'current' && $surface === 'format:html') {
-            return array_intersect_key($record, array_flip([...self::SCHEMAS['json'], 'baselineVerdict', 'baselineReason']));
-        }
-        $place = $codec === 'current' ? self::place($record) : '[project]';
-        if ($codec === 'current' && $surface === 'format:sarif' && $record['file'] === null && $place !== '[project]') {
-            $message = $place . ': ' . $message;
-        }
-        return match ($surface) {
-            'format:html' => ['subject' => $record['subject'], 'ruleName' => $record['rule'], 'violationCode' => $record['code'], 'message' => $record['message'], 'recommendation' => $record['recommendation'], 'severity' => $severity, 'metricValue' => $record['metricValue'], 'symbolPath' => $record['symbol'], 'occurrence' => $record['occurrence'], 'file' => $record['file'], 'line' => $record['line']]
-                + (\array_key_exists('baselineVerdict', $record) && \array_key_exists('baselineReason', $record)
-                    ? ['acceptedLevel' => $record['acceptedLevel'], 'baselineVerdict' => $record['baselineVerdict'], 'baselineReason' => $record['baselineReason']]
-                    : []),
-            'format:checkstyle' => ['file' => $record['file'] ?? $place, 'line' => $record['line'] ?? 1, 'severity' => $severity, 'code' => 'qmx.' . $record['code'], 'message' => $message],
-            'format:gitlab' => ['description' => $message, 'check_name' => $record['code'], 'severity' => match ($severity) {
-                'error' => 'critical', 'warning' => 'major', default => 'info',
-            }, 'location' => ['path' => $record['file'] ?? ($place === '[project]' ? '_project' : $place), 'lines' => ['begin' => $record['line'] ?? 1]]],
-            'format:sarif' => ['ruleId' => $record['code'], 'level' => match ($severity) {
-                'warning' => 'warning', 'error' => 'error', default => 'note',
-            }, 'message' => ['text' => $message], 'file' => $record['file'], 'line' => $record['file'] === null ? null : ($record['line'] ?? 1)],
-            default => throw new GateError('Unknown finding projection: ' . $surface),
-        };
-    }
-
-    /** @param array<string,mixed> $record */
-    public static function place(array $record): string
-    {
-        if (SubjectLevel::of((string) $record['subject']) === 'project') {
-            return '[project]';
-        }
-        return $record['namespace'] ?? '(global)';
-    }
-
-    /** @param array<string,mixed> $record */
-    public static function baselineText(array $record): ?string
-    {
-        if ($record['acceptedLevel'] === null) {
-            return null;
-        }
-        $annotated = self::message($record);
-        $suffix = substr($annotated, \strlen((string) $record['message']) + 2, -1);
-        if (($record['baselineVerdict'] ?? null) === 'not-compared') {
-            return 'accepted at ' . $record['acceptedLevel']['describe'] . '; not compared: ' . $record['baselineReason'];
-        }
-        return $suffix;
-    }
-
-    /** @param array<string,mixed> $record */
-    public static function message(array $record, bool $advice = false, string $codec = 'legacy'): string
-    {
-        $text = $advice && $record['recommendation'] !== null ? $record['recommendation'] : $record['message'];
-        if (!\is_string($text)) {
-            throw new GateError('A finding publishes no message string.');
-        }
-        $accepted = $record['acceptedLevel'];
-        if ($accepted === null) {
-            return $text;
-        }
-        if (!\is_array($accepted) || array_is_list($accepted) || array_diff(array_keys($accepted), ['shape', 'describe', 'count']) !== []
-            || \count($accepted) !== 3 || !\in_array($accepted['shape'] ?? null, ['magnitude', 'occurrence'], true)
-            || !\is_string($accepted['describe'] ?? null) || $accepted['describe'] === ''
-            || !\is_int($accepted['count'] ?? null) || $accepted['count'] < 1) {
-            throw new GateError('An accepted level requires the exact shape, description, and positive count object.');
-        }
-        $suffix = 'accepted at ' . $accepted['describe'];
-        if (($record['baselineVerdict'] ?? null) === 'not-compared') {
-            return $text . ' (' . $suffix . '; not compared: ' . $record['baselineReason'] . ')';
-        }
-        if ($accepted['shape'] === 'magnitude') {
-            $current = $record['metricValue'];
-            if ($current !== null && !\is_int($current) && !\is_float($current)) {
-                throw new GateError('An accepted magnitude requires a numeric or absent current value.');
-            }
-            if (\is_int($current)) {
-                $suffix .= ', now ' . $current;
-            } elseif (\is_float($current) && is_finite($current)) {
-                $formatted = rtrim(rtrim(\sprintf('%.6F', $current), '0'), '.');
-                $suffix .= ', now ' . ($formatted === '' || $formatted === '-' ? '0' : $formatted);
-            }
-        }
-        return $text . ' (' . $suffix . ')';
-    }
-
-    /**
      * Paths retain their original record order and bytes; only a licensed member is replaced or removed.
      *
      * @param array<string,string|null> $edits JSON encoded paths => replacement JSON, or null for deletion
@@ -444,129 +354,6 @@ final class ReportRecords
         }
     }
 
-    /** @return list<array{path:list<string|int>,fields:array<string,mixed>}> */
-    public static function projected(string $surface, string $text): array
-    {
-        $native = self::native($text);
-        $document = self::decode($text);
-        $records = [];
-        if ($surface === 'format:html') {
-            $tree = $native instanceof stdClass ? ($native->tree ?? $native) : null;
-            if (!self::nativeHtml($tree)) {
-                throw new GateError('An HTML payload requires its observed finding list.');
-            }
-            self::html($document['tree'] ?? $document, isset($document['tree']) ? ['tree'] : [], $records);
-        } elseif ($surface === 'format:gitlab') {
-            if (!\is_array($native)) {
-                throw new GateError('GitLab publishes a result list.');
-            }
-            foreach ($document as $index => $record) {
-                if (!$native[$index] instanceof stdClass || !\is_array($record) || !isset($record['check_name'])) {
-                    throw new GateError('A GitLab result requires a check_name.');
-                }
-                if (\in_array($record['check_name'], self::ANALYSIS_DIAGNOSTICS, true) && ($record['severity'] ?? null) === 'blocker') {
-                    continue;
-                }
-                unset($record['fingerprint']);
-                $records[] = ['path' => [$index], 'fields' => $record];
-            }
-        } elseif ($surface === 'format:sarif') {
-            if (!$native instanceof stdClass || !\is_array($native->runs ?? null)) {
-                throw new GateError('SARIF publishes a run list.');
-            }
-            foreach ($document['runs'] as $runIndex => $run) {
-                $nativeRun = $native->runs[$runIndex];
-                if (!$nativeRun instanceof stdClass || !\is_array($nativeRun->results ?? null)
-                    || !\is_array($nativeRun->tool->driver->rules ?? null)) {
-                    throw new GateError('SARIF requires results and their rule catalog.');
-                }
-                foreach ($nativeRun->tool->driver->rules as $rule) {
-                    if (!$rule instanceof stdClass || !\is_string($rule->id ?? null)) {
-                        throw new GateError('A SARIF rule catalog requires its native rule objects.');
-                    }
-                }
-                foreach ($run['results'] as $index => $record) {
-                    if (!$nativeRun->results[$index] instanceof stdClass || !\is_array($record) || !\is_int($record['ruleIndex'] ?? null)
-                        || ($run['tool']['driver']['rules'][$record['ruleIndex']]['id'] ?? null) !== ($record['ruleId'] ?? null)) {
-                        throw new GateError('A SARIF ruleIndex disagrees with its own published ruleId catalog.');
-                    }
-                    $location = $record['locations'][0]['physicalLocation'] ?? null;
-                    $records[] = ['path' => ['runs', $runIndex, 'results', $index], 'fields' => [
-                        'ruleId' => $record['ruleId'], 'level' => $record['level'] ?? null, 'message' => $record['message'] ?? null,
-                        'file' => $location === null ? null : ($location['artifactLocation']['uri'] ?? null),
-                        'line' => $location === null ? null : ($location['region']['startLine'] ?? null),
-                    ]];
-                }
-            }
-        } else {
-            throw new GateError('Unknown structured finding projection.');
-        }
-        return $records;
-    }
-
-    /** @return list<array<string,mixed>> */
-    public static function checkstyle(string $text): array
-    {
-        $document = new DOMDocument();
-        $previous = libxml_use_internal_errors(true);
-        try {
-            if ($text === '' || !$document->loadXML($text, \LIBXML_NONET) || $document->documentElement?->tagName !== 'checkstyle') {
-                throw new GateError('The checkstyle projection is not a readable checkstyle XML document.');
-            }
-            $records = [];
-            foreach ($document->getElementsByTagName('file') as $file) {
-                if (!$file->hasAttribute('name')) {
-                    throw new GateError('A checkstyle file publishes no path.');
-                }
-                foreach ($file->getElementsByTagName('error') as $error) {
-                    foreach (['line', 'severity', 'source', 'message'] as $field) {
-                        if (!$error->hasAttribute($field)) {
-                            throw new GateError('A checkstyle error publishes no ' . $field);
-                        }
-                    }
-                    if ($file->getAttribute('name') === '[analysis]' && $error->getAttribute('severity') === 'error'
-                        && $error->getAttribute('line') === '1'
-                        && \in_array(substr($error->getAttribute('source'), 4), self::ANALYSIS_DIAGNOSTICS, true)
-                        && str_starts_with($error->getAttribute('source'), 'qmx.')) {
-                        continue;
-                    }
-                    $records[] = ['file' => $file->getAttribute('name'), 'line' => (int) $error->getAttribute('line'), 'severity' => $error->getAttribute('severity'), 'code' => $error->getAttribute('source'), 'message' => $error->getAttribute('message')];
-                }
-            }
-            return $records;
-        } finally {
-            libxml_clear_errors();
-            libxml_use_internal_errors($previous);
-        }
-    }
-
-    /**
-     * @param array<mixed> $value
-     * @param list<string|int> $path
-     * @param list<array{path:list<string|int>,fields:array<string,mixed>}> $records
-     */
-    private static function html(array $value, array $path, array &$records): void
-    {
-        foreach ($value as $key => $child) {
-            if ($key === 'violations') {
-                if (!\is_array($child) || !array_is_list($child)) {
-                    throw new GateError('An HTML node requires its finding list.');
-                }
-                foreach ($child as $index => $record) {
-                    if (!\is_array($record) || array_is_list($record)) {
-                        throw new GateError('An HTML finding is an object.');
-                    }
-                    /** @var array<string,mixed> $record */
-                    $records[] = ['path' => [...$path, $key, $index], 'fields' => $record];
-                }
-            } elseif ($key === 'children' && \is_array($child)) {
-                foreach ($child as $index => $node) {
-                    self::html($node, [...$path, $key, $index], $records);
-                }
-            }
-        }
-    }
-
     private static function native(string $text): mixed
     {
         try {
@@ -618,32 +405,6 @@ final class ReportRecords
             }
         }
         return self::object($text);
-    }
-
-    private static function nativeHtml(mixed $value): bool
-    {
-        if (!$value instanceof stdClass || !property_exists($value, 'violations')) {
-            return false;
-        }
-        if (!\is_array($value->violations)) {
-            throw new GateError('An HTML node requires its finding list.');
-        }
-        foreach ($value->violations as $record) {
-            if (!$record instanceof stdClass) {
-                throw new GateError('An HTML finding is an object.');
-            }
-        }
-        if (property_exists($value, 'children')) {
-            if (!\is_array($value->children)) {
-                throw new GateError('An HTML node requires its child list.');
-            }
-            foreach ($value->children as $child) {
-                if (!self::nativeHtml($child)) {
-                    throw new GateError('An HTML child requires its finding population.');
-                }
-            }
-        }
-        return true;
     }
 
     private static function space(string $text, int &$at): void

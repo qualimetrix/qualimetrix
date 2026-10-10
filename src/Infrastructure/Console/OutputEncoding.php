@@ -19,8 +19,11 @@ final class OutputEncoding
         ];
 
         return $modes[strtolower($value === false ? '' : $value)]
-            ?? throw ConfigurationRefusal::aboutCommandLineInput(
-                'QMX_ASCII',
+            ?? throw ConfigurationRefusal::aboutInput(
+                \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin::of(
+                    \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource::Environment,
+                    'QMX_ASCII',
+                ),
                 'QMX_ASCII accepts 1/true/yes/on or 0/false/no/off/empty; received ' . $value . '.',
             );
     }

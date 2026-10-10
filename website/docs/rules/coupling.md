@@ -726,6 +726,12 @@ Prioritization consumes share, uses its measured median for an unranked finding,
 and publishes `coupling.class-rank-share` in JSON top issues. It never substitutes raw
 probability for missing share.
 
+!!! info "Deviation from original spec"
+    Namespace and project ClassRank aggregates sample physical class
+    declarations. Each declaration repeats its logical node's rank and share,
+    so sums, counts and averages are declaration-weighted. Raw PageRank sums
+    to 1 over logical nodes before this projection, not over declarations.
+
 ### Configuration
 
 ```yaml

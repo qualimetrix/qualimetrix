@@ -188,6 +188,15 @@ or namespaces.
 
 `extends`, `implements`, class `attributes`, and `member_attributes` are
 answered first from the declaration edges this run recorded.
+A layer violation belongs to its exact source declaration. Its occurrence uses
+that source, the referenced logical target and dependency kind, so source-only
+selection or renaming a target file cannot move the accepted identity. Multiple
+owned target declarations remain count units within the same occurrence group.
+When the run does not know the target declaration, it emits one logical-target
+unit; it cannot infer that target's physical file or declaration cardinality.
+A narrowed Run-reach population remains `not-compared` with the matched accepted
+level and its ordinary severity; it does not tighten the baseline count.
+
 `ClassContextFactory` coordinates the run's **class universe** alongside its
 graph and Architecture's external-supertype source
 (`ArchitecturePolicy::prepare()` is the single binding point). It follows a

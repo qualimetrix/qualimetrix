@@ -111,7 +111,7 @@ final class OutputFormatSchemaConsistencyTest extends TestCase
                 expectedExit: 2,
                 expectedCoverage: ['complete' => true],
                 contentRequirements: [
-                    'a namespace group key, `(global)` for the class outside every namespace, and `(project)`',
+                    'a namespace group key, `(global)` for the class outside every namespace, and `[project]`',
                 ],
             ),
             new OutputFormatScenario(
@@ -507,8 +507,8 @@ final class OutputFormatSchemaConsistencyTest extends TestCase
             'group-by-class: a class FQCN group key, a file-path group key and the empty project key' => \array_key_exists('', self::violationGroupsOf($byClass))
                 && self::anyGroupKey(self::violationGroupsOf($byClass), static fn(string $k): bool => str_ends_with($k, '.php'))
                 && self::anyGroupKey(self::violationGroupsOf($byClass), static fn(string $k): bool => str_contains($k, '\\')),
-            'group-by-namespace: a namespace group key, `(global)` for the class outside every namespace, and `(project)`' => \array_key_exists('(global)', self::violationGroupsOf($byNamespace))
-                && \array_key_exists('(project)', self::violationGroupsOf($byNamespace))
+            'group-by-namespace: a namespace group key, `(global)` for the class outside every namespace, and `[project]`' => \array_key_exists('(global)', self::violationGroupsOf($byNamespace))
+                && \array_key_exists('[project]', self::violationGroupsOf($byNamespace))
                 && self::anyGroupKey(self::violationGroupsOf($byNamespace), static fn(string $k): bool => str_contains($k, '\\')),
             'broken: one unparsable file, so `coverage.failures[]` is not empty' => $broken['coverage']['failures'] !== [],
             'empty: a complete run that finds nothing at all' => $empty['violations'] === [],

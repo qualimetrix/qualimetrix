@@ -158,6 +158,61 @@ final class CheckCommandProjectionOptionsBeforeAnalysisTest extends TestCase
         }
     }
 
+    #[Test]
+    public function itSuppressesAFilelessNamespaceByNamespaceRatherThanByPath(): void
+    {
+        $dir = sys_get_temp_dir() . '/qmx-namespace-suppression-' . bin2hex(random_bytes(6));
+        mkdir($dir);
+        $config = $dir . '/qmx.yaml';
+        file_put_contents($dir . '/A.php', <<<'PHP'
+            <?php
+
+            namespace App\Aggregate;
+
+            final class A
+            {
+                public function dependency(): \External\B
+                {
+                    return new \External\B();
+                }
+            }
+            PHP);
+        $base = <<<'YAML'
+            only_rules: [coupling.cbo]
+            rules:
+              coupling.cbo:
+                class: {enabled: false}
+                namespace: {warning: 1, error: 100, min_class_count: 1}
+            YAML;
+        $previous = getcwd();
+        self::assertNotFalse($previous);
+        chdir($dir);
+
+        try {
+            foreach (['' => 1, "\nsuppress_paths: [{regex: '.*'}]\n" => 1, "\nsuppress_namespaces: [{exact: 'App\\Aggregate'}]\n" => 0] as $suppression => $count) {
+                file_put_contents($config, $base . $suppression);
+                [$command] = $this->createCommand();
+                $tester = new CommandTester($command);
+                $exit = $tester->execute(
+                    ['paths' => [$dir], '--config' => $config, '--format' => 'json', '--no-cache' => true, '--workers' => '0'],
+                    ['capture_stderr_separately' => true],
+                );
+                self::assertSame(0, $exit, $tester->getDisplay() . $tester->getErrorOutput());
+                /** @var array{violations: list<array{file: ?string, subject: string, code: string}>} $payload */
+                $payload = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+                self::assertCount($count, $payload['violations'], $suppression);
+                if ($count === 1) {
+                    self::assertNull($payload['violations'][0]['file']);
+                    self::assertSame('ns:App\\Aggregate', $payload['violations'][0]['subject']);
+                    self::assertSame('coupling.cbo', $payload['violations'][0]['code']);
+                }
+            }
+        } finally {
+            chdir($previous);
+            (new Filesystem())->remove($dir);
+        }
+    }
+
     /**
      * A well-formed `--baseline` naming a file that does not exist is a
      * question the file system answers, not the option parser — yet it needs

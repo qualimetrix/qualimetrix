@@ -665,11 +665,10 @@ final class ChannelEmissionStaticGuardTest extends TestCase
     }
 
     /**
-     * Walks from the concrete rule class upward through its ancestors until
-     * one of them textually contains a `new Finding(...)` construction —
-     * the emission may be inherited (AbstractCodeSmellRule,
-     * AbstractSecurityPatternRule) rather than declared on the concrete
-     * class itself.
+     * Reads constructions on the concrete rule and its subject-owned bases.
+     * AbstractRule's shared threshold emitter participates only when that
+     * chain calls thresholdFinding(); unrelated multi-channel rules do not
+     * emit their producer name merely because they inherit the helper.
      *
      * @param class-string $ruleClass
      *
@@ -678,18 +677,33 @@ final class ChannelEmissionStaticGuardTest extends TestCase
     private static function findEmissionSites(string $ruleClass): array
     {
         $current = $ruleClass;
+        $sites = [];
+        $usesThresholdFinding = false;
+        $finder = new NodeFinder();
 
         while ($current !== false && $current !== AbstractRule::class) {
-            $sites = self::findFindingSitesDeclaredOn($current);
-
-            if ($sites !== []) {
-                return $sites;
+            array_push($sites, ...self::findFindingSitesDeclaredOn($current));
+            $classNode = self::findClassNode($current);
+            if ($classNode !== null) {
+                /** @var list<MethodCall> $calls */
+                $calls = $finder->findInstanceOf($classNode, MethodCall::class);
+                foreach ($calls as $call) {
+                    if ($call->var instanceof Variable && $call->var->name === 'this'
+                        && $call->name instanceof Identifier && $call->name->toString() === 'thresholdFinding'
+                    ) {
+                        $usesThresholdFinding = true;
+                    }
+                }
             }
 
             $current = get_parent_class($current);
         }
 
-        return [];
+        if ($usesThresholdFinding) {
+            array_push($sites, ...self::findFindingSitesDeclaredOn(AbstractRule::class));
+        }
+
+        return $sites;
     }
 
     /**

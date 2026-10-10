@@ -229,7 +229,8 @@ final class SyntheticTreeTest extends TestCase
                 "    Message  [replay.alpha]\n    Recommendation: Advice\n    " . $fragment . "\n",
                 self::publication($answers, 'format:text-detail'),
             );
-            $html = json_decode(\QmxFindingGate\ReportPayload::of(self::publication($answers, 'format:html'), 'case:alpha|format:html', 'candidate'), true, flags: \JSON_THROW_ON_ERROR);
+            self::assertSame(1, preg_match('~<script type="application/json" id="report-data">(.*?)</script>~s', self::publication($answers, 'format:html'), $matches));
+            $html = json_decode($matches[1], true, flags: \JSON_THROW_ON_ERROR);
             self::assertSame('Message', $html['violations'][0]['message']);
         }
     }
@@ -245,6 +246,48 @@ final class SyntheticTreeTest extends TestCase
             $text = self::publication($answers, 'format:text-detail');
             self::assertStringContainsString('  ERROR ' . $finding['file'] . ':' . $finding['line'] . "\n    ", $text);
             self::assertStringNotContainsString('  ' . $finding['symbol'] . "\n", $text);
+        }
+    }
+
+    #[Test]
+    public function itRetainsFilelessFindingsOnlyOnFormatsThatPublishThem(): void
+    {
+        $tree = SyntheticTree::clean();
+        $located = $tree['findings']['alpha'][0];
+        $fileless = array_replace($located, ['file' => null, 'line' => null, 'subject' => 'project:', 'symbol' => '', 'namespace' => null, 'namespaces' => []]);
+        $answers = SyntheticTree::caseAnswers('alpha', [$located, $fileless], false, []);
+        $json = json_decode(self::publication($answers, 'format:json'), true, flags: \JSON_THROW_ON_ERROR);
+        $sarif = json_decode(self::publication($answers, 'format:sarif'), true, flags: \JSON_THROW_ON_ERROR);
+        $gitlab = json_decode(self::publication($answers, 'format:gitlab'), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertCount(2, $json['violations']);
+        self::assertCount(2, $sarif['runs'][0]['results']);
+        self::assertArrayNotHasKey('locations', $sarif['runs'][0]['results'][1]);
+        self::assertCount(1, $gitlab);
+        self::assertSame($located['file'], $gitlab[0]['location']['path']);
+        self::assertStringNotContainsString('_project', self::publication($answers, 'format:gitlab'));
+        self::assertSame(1, substr_count(self::publication($answers, 'format:checkstyle'), '<file name='));
+        self::assertStringNotContainsString('<file name="">', self::publication($answers, 'format:checkstyle'));
+    }
+
+    #[Test]
+    public function itPreservesNamespaceMembershipsInJsonHtmlAndRankedRecords(): void
+    {
+        $tree = SyntheticTree::clean();
+        $findings = [];
+        foreach ([['', ['']], ['Replay', ['Replay']], [null, ['Replay\\A', 'Replay\\B']], [null, []]] as $index => [$namespace, $namespaces]) {
+            $findings[] = array_replace($tree['findings']['alpha'][0], ['subject' => 'file:src/Member' . $index . '.php', 'namespace' => $namespace, 'namespaces' => $namespaces]);
+        }
+        $answers = SyntheticTree::caseAnswers('alpha', $findings, false, []);
+        $json = json_decode(self::publication($answers, 'format:json'), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame($findings, \QmxFindingGate\ReportRecords::extract('json', self::publication($answers, 'format:json'), \QmxFindingGate\ReportRecords::SCHEMAS['json']));
+        self::assertSame(1, preg_match('~<script type="application/json" id="report-data">(.*?)</script>~s', self::publication($answers, 'format:html'), $matches));
+        $html = json_decode($matches[1], true, flags: \JSON_THROW_ON_ERROR);
+        foreach ([$json['violations'], $json['topIssues'], $html['violations']] as $records) {
+            self::assertSame(['', 'Replay', null, null], array_column($records, 'namespace'));
+            self::assertSame([[''], ['Replay'], ['Replay\\A', 'Replay\\B'], []], array_column($records, 'namespaces'));
+        }
+        foreach ($json['topIssues'] as $index => $issue) {
+            self::assertSame($findings[$index], array_intersect_key($issue, array_flip(\QmxFindingGate\ReportRecords::SCHEMAS['json'])));
         }
     }
 

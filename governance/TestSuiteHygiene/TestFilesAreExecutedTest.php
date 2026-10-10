@@ -122,7 +122,6 @@ final class TestFilesAreExecutedTest extends TestCase
             . '::itMatchesAFreshSelfAnalysisOfSrc',
         'Qualimetrix\Governance\GeneratedArtifactFreshness\HtmlBundleFreshnessTest'
             . '::itMatchesAFreshBuildOfHtmlReportSrc',
-        'QmxFindingGate\\Tests\\CaptureTest::itChecksCaptureThroughPublicCompareAndDerive',
         'QmxFindingGate\\Tests\\CaptureTest::itDerivesNormalizationOnlyAfterValidatingFullPhysicalAndRefusalCaptures',
         'QmxFindingGate\\Tests\\CaptureTest::itRefusesAMissingReplayKeyThroughThePublicGateWithoutWriting',
         'QmxFindingGate\\Tests\\CaptureTest::itRefusesPrivateEvidenceThatChangesOnlyOnTheSecondCandidatePass',
@@ -147,7 +146,7 @@ final class TestFilesAreExecutedTest extends TestCase
         'QmxFindingGate\\Tests\\RankingCheckTest::itDoesNotDeriveHiddenRankingDriftBesideAnUnrelatedSurfaceFailure',
         'QmxFindingGate\\Tests\\RankingCheckTest::itIgnoresRepeatedRankPositionsAndPrivateLayoutOutsideThePublishedSlice',
         'QmxFindingGate\\Tests\\RankingCheckTest::itLicensesAnExactHiddenPhysicalValueAndRefusesAnUnlistedHiddenKeyWithoutWriting',
-        'QmxFindingGate\\Tests\\RankingCheckTest::itObservesTheExactRegisteredRankingRaiseSitesThroughThePublicGate',
+        'QmxFindingGate\\Tests\\RankingCheckTest::itObservesRegisteredRankingClassesAndScopesThroughThePublicGate',
         'QmxFindingGate\\Tests\\RankingCheckTest::itPreservesCompleteRepeatedOccurrenceCountsAcrossCandidatePasses',
         'QmxFindingGate\\Tests\\RankingCheckTest::itRefusesFifthPassHiddenRankingDriftWithoutWritingNormalization',
         'QmxFindingGate\\Tests\\RankingCheckTest::itRefusesHiddenValueDriftInTheSecondCandidateCapture',

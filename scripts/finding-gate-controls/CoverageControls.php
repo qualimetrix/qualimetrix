@@ -53,7 +53,7 @@ final class CoverageControls
                 new Expectation(FailureClass::COVERAGE_SHORTFALL, 'corpus'),
                 new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:detectors-smells'),
             ],
-            [new Expectation(FailureClass::FIELD_VALUES_MISMATCH, 'declared-fields.derived.tsv', exactScope: true)],
+            [...Controls::fieldValueToleration()],
         );
     }
 
@@ -107,7 +107,7 @@ final class CoverageControls
                 'the corpus\' user-defined computed metric stops being computed per class, and keeps firing per namespace and project',
             ),
             [new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:health')],
-            [new Expectation(FailureClass::FIELD_VALUES_MISMATCH, 'declared-fields.derived.tsv', exactScope: true)],
+            [...Controls::fieldValueToleration()],
         );
     }
 }

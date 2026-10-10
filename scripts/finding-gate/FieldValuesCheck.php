@@ -62,7 +62,7 @@ final class FieldValuesCheck implements RunCheck, Derivation
                         break;
                     }
                 }
-                if ($invocation === null || $this->run->publicationForms->recordInvocation($invocation) === false) {
+                if ($invocation === null || !$this->run->publicationForms->recordsExpected($invocation)) {
                     continue;
                 }
                 foreach (['candidate' => $candidate, 'reference' => $reference] as $side => $artifacts) {
@@ -82,7 +82,7 @@ final class FieldValuesCheck implements RunCheck, Derivation
         foreach (DeclaredFields::REPORTS as $report) {
             foreach ($fields->measurements($report, $this->run->publicationForms) as $publication) {
                 $view = $publication['view'];
-                if ($this->run->publicationForms->schemaPair($publication['case'], $view) === false) {
+                if (!$this->run->publicationForms->schemaPair($publication['case'], $view)) {
                     continue;
                 }
                 $valid = true;

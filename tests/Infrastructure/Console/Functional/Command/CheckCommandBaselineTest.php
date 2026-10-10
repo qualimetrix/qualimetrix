@@ -291,7 +291,7 @@ final class CheckCommandBaselineTest extends TestCase
     }
 
     #[Test]
-    public function itPublishesUnusedEntriesInNineFormatsAndGatesAllTwelveFormats(): void
+    public function itPublishesUnusedEntriesInSixFormatsAndGatesAllElevenFormats(): void
     {
         $this->writeFixture("<?php\nfinal class Clean {}\n");
         file_put_contents($this->configPath, "only_rules: ['code-smell.goto', 'baseline.unused-entry']\nsuppress_paths: [{regex: '.*'}]\nsuppress_namespaces: [{regex: '.*'}]\n");
@@ -316,8 +316,8 @@ final class CheckCommandBaselineTest extends TestCase
         $this->git('git config user.name Test');
         $this->git('git add .');
         $this->git('git commit -qm initial');
-        $findingFormats = ['text', 'json', 'checkstyle', 'sarif', 'gitlab', 'github', 'html', 'summary'];
-        foreach ([...$findingFormats, 'metrics', 'health', 'suppressed'] as $format) {
+        $findingFormats = ['text', 'json', 'sarif', 'github', 'html', 'summary'];
+        foreach ([...$findingFormats, 'checkstyle', 'gitlab', 'metrics', 'health', 'suppressed'] as $format) {
             $options = ['--baseline' => $this->baselinePath, '--format' => $format, '--report' => 'git:staged'];
             foreach (['warning' => 1, 'error' => 0, 'none' => 0] as $policy => $exit) {
                 $tester = $this->runCheck([...$options, '--fail-on' => $policy], captureErrors: true);

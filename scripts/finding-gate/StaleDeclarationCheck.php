@@ -49,14 +49,6 @@ final class StaleDeclarationCheck
             );
         }
 
-        foreach ($this->declarations->outcomes->stale() as $stale) {
-            $this->report->fail(
-                FailureClass::OUTCOME_DECLARATION_STALE,
-                $stale['scope'],
-                $stale['detail'] . self::consumedBy('no case outcome the run observed'),
-            );
-        }
-
         foreach ($this->declarations->surfaces->stale() as $stale) {
             $this->report->fail(
                 FailureClass::SURFACE_DECLARATION_STALE,

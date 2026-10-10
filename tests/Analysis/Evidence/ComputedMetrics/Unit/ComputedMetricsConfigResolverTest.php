@@ -35,7 +35,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     {
         $this->resolver = new ComputedMetricsConfigResolver(
             new ComputedMetricFormulaValidator(),
-            new HealthFormulaExcluder(),
+            new HealthFormulaExcluder(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()),
         );
     }
 
@@ -149,13 +149,13 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         $overall = $this->findByName($result, 'health.overall');
         self::assertNotNull($overall);
         $classFormula = $overall->formulas['class'] ?? '';
-        $expression = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression();
+        $expression = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression();
         self::assertSame([
             'health.complexity' => ['weight' => 0.35],
             'health.cohesion' => ['weight' => 0.25],
             'health.coupling' => ['weight' => 0.25],
         ], \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\WeightedHealthFormula::termsOf($expression, $classFormula));
-        [$missing, $value] = $expression->evaluateOn($classFormula, new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\MetricLookup([
+        [$missing, $value] = $expression->evaluateOn($classFormula, new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\MetricLookup([
             'health.complexity' => 100, 'health.cohesion' => 100, 'health.coupling' => 100,
         ]));
         self::assertSame([], $missing);

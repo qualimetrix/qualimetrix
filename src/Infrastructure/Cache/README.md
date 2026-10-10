@@ -127,7 +127,11 @@ serializer changes retain the previous marker after incomplete clear.
 Entry publication uses Core's judged `FileReplacement`: the complete payload
 is flushed before atomic replacement, an existing mode is preserved, and a
 failed write cleans its owned temporary sibling. Serializer-marker publication
-retains its separate implementation.
+retains its separate implementation. Newly created private cache and shard
+directories retain Core's process-owned ownership proof; each entry still checks
+their physical identity and mode. Pre-existing, replaced or newly exposed
+directories use ordinary target judgement. Private group membership is enumerated
+once per effective UID/GID across all entries in the process, including refusals.
 
 **Storage structure:**
 ```

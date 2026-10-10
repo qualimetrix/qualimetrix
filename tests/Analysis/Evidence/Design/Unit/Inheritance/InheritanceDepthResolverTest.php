@@ -29,6 +29,15 @@ use Qualimetrix\Tests\Analysis\Evidence\Design\Support\FixedParentSource;
 #[CoversClass(InheritanceResolution::class)]
 final class InheritanceDepthResolverTest extends TestCase
 {
+    private static function throwableReach(?bool $truth): \Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach
+    {
+        return match ($truth) {
+            true => \Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::Yes,
+            false => \Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::No,
+            null => \Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::Unknown,
+        };
+    }
+
     /** @return iterable<string, array{string, int, bool}> */
     public static function builtinCases(): iterable
     {
@@ -46,7 +55,7 @@ final class InheritanceDepthResolverTest extends TestCase
         $answer = $resolver->depthOf($declarations[0]);
         self::assertSame($depth, $answer->depth);
         self::assertSame(InheritanceOutcome::Exact, $answer->outcome);
-        self::assertSame($truth, $answer->reachesThrowable);
+        self::assertSame(self::throwableReach($truth), $answer->reachesThrowable);
     }
 
     /** @return iterable<string, array{?string, ?string, ?int, InheritanceOutcome, ?bool}> */
@@ -78,7 +87,7 @@ final class InheritanceDepthResolverTest extends TestCase
         $answer = $resolver->depthOf($declarations[3]);
         self::assertSame($depth, $answer->depth);
         self::assertSame($outcome, $answer->outcome);
-        self::assertSame($truth, $answer->reachesThrowable);
+        self::assertSame(self::throwableReach($truth), $answer->reachesThrowable);
         self::assertSame($answer, $resolver->depthOf($declarations[3]));
     }
 
@@ -91,7 +100,7 @@ final class InheritanceDepthResolverTest extends TestCase
                 $answer = $resolver->depthOf($declaration);
                 self::assertNull($answer->depth);
                 self::assertSame(InheritanceOutcome::Loop, $answer->outcome);
-                self::assertNull($answer->reachesThrowable);
+                self::assertSame(\Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::Unknown, $answer->reachesThrowable);
                 self::assertSame($answer, $resolver->depthOf($declaration));
             }
         }
@@ -103,9 +112,9 @@ final class InheritanceDepthResolverTest extends TestCase
         [$resolver, $declarations] = $this->resolver([['App\Dup', null], ['App\Dup', 'RuntimeException'], ['App\Child', 'App\Dup']]);
         self::assertSame(0, $resolver->depthOf($declarations[0])->depth);
         self::assertSame(2, $resolver->depthOf($declarations[1])->depth);
-        self::assertFalse($resolver->depthOf($declarations[0])->reachesThrowable);
-        self::assertTrue($resolver->depthOf($declarations[1])->reachesThrowable);
-        self::assertNull($resolver->depthOf($declarations[2])->reachesThrowable);
+        self::assertSame(\Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::No, $resolver->depthOf($declarations[0])->reachesThrowable);
+        self::assertSame(\Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::Yes, $resolver->depthOf($declarations[1])->reachesThrowable);
+        self::assertSame(\Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::Unknown, $resolver->depthOf($declarations[2])->reachesThrowable);
     }
 
     #[Test]
@@ -114,7 +123,7 @@ final class InheritanceDepthResolverTest extends TestCase
         [$resolver, $declarations] = $this->resolver([['App\Exception', null], ['App\Error', 'App\Exception'], ['App\Child', 'App\Error']]);
         foreach ($declarations as $i => $declaration) {
             self::assertSame($i, $resolver->depthOf($declaration)->depth);
-            self::assertFalse($resolver->depthOf($declaration)->reachesThrowable);
+            self::assertSame(\Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::No, $resolver->depthOf($declaration)->reachesThrowable);
         }
     }
 
@@ -126,7 +135,7 @@ final class InheritanceDepthResolverTest extends TestCase
             $answer = $resolver->depthOf($declaration);
             self::assertSame($i + 1, $answer->depth);
             self::assertSame(InheritanceOutcome::Floor, $answer->outcome);
-            self::assertTrue($answer->reachesThrowable);
+            self::assertSame(\Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::Yes, $answer->reachesThrowable);
         }
     }
 
@@ -140,7 +149,7 @@ final class InheritanceDepthResolverTest extends TestCase
         self::assertNull($resolver->depthOf($declarations[1])->depth);
         self::assertSame(InheritanceOutcome::Loop, $resolver->depthOf($declarations[1])->outcome);
         self::assertSame(4, $resolver->depthOf($declarations[2])->depth);
-        self::assertTrue($resolver->depthOf($declarations[2])->reachesThrowable);
+        self::assertSame(\Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::Yes, $resolver->depthOf($declarations[2])->reachesThrowable);
     }
 
     #[Test]
@@ -153,10 +162,10 @@ final class InheritanceDepthResolverTest extends TestCase
             $answer = $resolver->depthOf($declarations[2]);
             self::assertSame(4, $answer->depth);
             self::assertSame(InheritanceOutcome::Exact, $answer->outcome);
-            self::assertNull($answer->reachesThrowable);
+            self::assertSame(\Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::Unknown, $answer->reachesThrowable);
             foreach ($parents as $i => $parent) {
                 self::assertSame($parent === null ? 0 : 2, $resolver->depthOf($declarations[$i])->depth);
-                self::assertSame($parent !== null, $resolver->depthOf($declarations[$i])->reachesThrowable);
+                self::assertSame($parent !== null ? \Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::Yes : \Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::No, $resolver->depthOf($declarations[$i])->reachesThrowable);
             }
         }
     }
@@ -172,11 +181,11 @@ final class InheritanceDepthResolverTest extends TestCase
                 $answer = $resolver->depthOf($declarations[$i]);
                 self::assertSame(InheritanceOutcome::Loop, $answer->outcome);
                 self::assertNull($answer->depth);
-                self::assertNull($answer->reachesThrowable);
+                self::assertSame(\Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::Unknown, $answer->reachesThrowable);
             }
             $root = $resolver->depthOf($declarations[array_search(null, $parents, true)]);
             self::assertSame(0, $root->depth);
-            self::assertFalse($root->reachesThrowable);
+            self::assertSame(\Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::No, $root->reachesThrowable);
         }
     }
 
@@ -194,7 +203,7 @@ final class InheritanceDepthResolverTest extends TestCase
                 $answer = $resolver->depthOf($declarations[2]);
                 self::assertSame(InheritanceOutcome::Loop, $answer->outcome);
                 self::assertNull($answer->depth);
-                self::assertNull($answer->reachesThrowable);
+                self::assertSame(\Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::Unknown, $answer->reachesThrowable);
                 self::assertSame($answer, $resolver->depthOf($declarations[2]));
                 self::assertSame(0, $resolver->depthOf($declarations[array_search(null, $parents, true)])->depth);
             }
@@ -217,7 +226,7 @@ final class InheritanceDepthResolverTest extends TestCase
                 $answer = $resolver->depthOf($declarations[2]);
                 self::assertSame($depth, $answer->depth);
                 self::assertSame($outcome, $answer->outcome);
-                self::assertSame($truth, $answer->reachesThrowable);
+                self::assertSame(self::throwableReach($truth), $answer->reachesThrowable);
             }
         }
     }
@@ -232,7 +241,7 @@ final class InheritanceDepthResolverTest extends TestCase
             $answer = $resolver->depthOf($declarations[2]);
             self::assertSame($outcome, $answer->outcome);
             self::assertSame($outcome === InheritanceOutcome::Loop ? null : 3, $answer->depth);
-            self::assertTrue($answer->reachesThrowable);
+            self::assertSame(\Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::Yes, $answer->reachesThrowable);
         }
     }
 
@@ -250,7 +259,7 @@ final class InheritanceDepthResolverTest extends TestCase
             $answer = $resolver->depthOf($declarations[2]);
             self::assertSame($length <= 64 ? $length + 3 : 65, $answer->depth);
             self::assertSame($length <= 64 ? InheritanceOutcome::Exact : InheritanceOutcome::Floor, $answer->outcome);
-            self::assertNull($answer->reachesThrowable);
+            self::assertSame(\Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::Unknown, $answer->reachesThrowable);
         }
     }
 
@@ -264,7 +273,7 @@ final class InheritanceDepthResolverTest extends TestCase
             $answer = $resolver->depthOf($declarations[1]);
             self::assertSame($outcome, $answer->outcome);
             self::assertSame($outcome === InheritanceOutcome::Loop ? null : 4, $answer->depth);
-            self::assertTrue($answer->reachesThrowable);
+            self::assertSame(\Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::Yes, $answer->reachesThrowable);
         }
     }
 
@@ -279,7 +288,7 @@ final class InheritanceDepthResolverTest extends TestCase
                 $answer = $resolver->depthOf($declarations[2]);
                 self::assertSame($outcome, $answer->outcome);
                 self::assertSame($outcome === InheritanceOutcome::Loop ? null : 6, $answer->depth);
-                self::assertNull($answer->reachesThrowable);
+                self::assertSame(\Qualimetrix\Analysis\Evidence\Design\Inheritance\ThrowableReach::Unknown, $answer->reachesThrowable);
             }
         }
     }

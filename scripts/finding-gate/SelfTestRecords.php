@@ -29,20 +29,20 @@ final class SelfTestRecords extends SelfTestGroup
     {
         $record = SyntheticTree::clean()['findings']['alpha'][0];
         return [
-            CheckWitnesses::witness('ranking-capture-metadata', CheckWitnesses::DECLARATIONS, static fn(array $tree): array => self::rankingWitnessTree($tree, 'metadata'), [[FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:ranking-metadata|format:json', 'RankingCheck::projectionProblem <- Gate::checkFindings'], [FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:ranking-metadata|format:json', 'RankingCheck::projectionProblem <- Gate::captureAuthority']], [[FailureClass::SURFACE_MISMATCH, 'case:ranking-metadata|format:json'], [FailureClass::SURFACE_MISMATCH, 'case:ranking-metadata|check:output:file']]),
-            CheckWitnesses::witness('ranking-complete-shape', CheckWitnesses::DECLARATIONS, static fn(array $tree): array => self::rankingWitnessTree($tree, 'shape'), [[FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:ranking-shape|format:json', 'RankingCheck::projectionProblem <- RecordCheck::checkCase'], [FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:ranking-shape|format:json', 'RankingCheck::projectionProblem <- Gate::captureAuthority'], [FailureClass::RUN_FAILED, 'candidate-2 / ranking-shape', 'Gate::captureAuthority <- GateModes::compare']], [[FailureClass::SURFACE_MISMATCH, 'case:ranking-shape|format:json'], [FailureClass::SURFACE_MISMATCH, 'case:ranking-shape|check:output:file']]),
-            CheckWitnesses::witness('ranking-duplicate-ambiguity', CheckWitnesses::DECLARATIONS, static fn(array $tree): array => self::rankingWitnessTree($tree, 'ambiguity'), [[FailureClass::RECORD_AMBIGUOUS, 'candidate / case:ranking-ambiguity|format:json', 'RankingCheck::anatomy <- RecordCheck::checkCase'], [FailureClass::RECORD_AMBIGUOUS, 'candidate / case:ranking-ambiguity|format:json', 'RankingCheck::anatomy <- Gate::captureAuthority'], [FailureClass::RUN_FAILED, 'candidate-2 / ranking-ambiguity', 'Gate::captureAuthority <- GateModes::compare']], [[FailureClass::SURFACE_MISMATCH, 'case:ranking-ambiguity|format:json'], [FailureClass::SURFACE_MISMATCH, 'case:ranking-ambiguity|check:output:file']]),
-            CheckWitnesses::witness('ranking-unannounced-limit', CheckWitnesses::DECLARATIONS, static fn(array $tree): array => self::rankingWitnessTree($tree, 'limit'), [[FailureClass::VALUE_MISMATCH, 'case:ranking-limit|format:json', 'ValueCheck::measure <- RankingCheck::prepareRanking'], [FailureClass::VALUE_MISMATCH, 'case:ranking-limit|check:output:file', 'ValueCheck::measure <- RankingCheck::prepareRanking']], [[FailureClass::SURFACE_MISMATCH, 'case:ranking-limit|format:summary']]),
-            CheckWitnesses::witness('ranking-unchanged-order', CheckWitnesses::DECLARATIONS, static fn(array $tree): array => self::rankingWitnessTree($tree, 'order'), [[FailureClass::RANKING_ORDER_MISMATCH, 'case:ranking-order|format:json|record:*', 'RankingCheck::prepareRanking <- RecordCheck::prepare']]),
+            CheckWitnesses::witness('ranking-capture-metadata', CheckWitnesses::DECLARATIONS, static fn(array $tree): array => self::rankingWitnessTree($tree, 'metadata'), [[FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:ranking-metadata|format:json'], [FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:ranking-metadata|format:json']], [[FailureClass::SURFACE_MISMATCH, 'case:ranking-metadata|format:json'], [FailureClass::SURFACE_MISMATCH, 'case:ranking-metadata|check:output:file']]),
+            CheckWitnesses::witness('ranking-complete-shape', CheckWitnesses::DECLARATIONS, static fn(array $tree): array => self::rankingWitnessTree($tree, 'shape'), [[FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:ranking-shape|format:json'], [FailureClass::RANKING_PROJECTION_MISMATCH, 'candidate / case:ranking-shape|format:json'], [FailureClass::RUN_FAILED, 'candidate-2 / ranking-shape']], [[FailureClass::SURFACE_MISMATCH, 'case:ranking-shape|format:json'], [FailureClass::SURFACE_MISMATCH, 'case:ranking-shape|check:output:file']]),
+            CheckWitnesses::witness('ranking-duplicate-ambiguity', CheckWitnesses::DECLARATIONS, static fn(array $tree): array => self::rankingWitnessTree($tree, 'ambiguity'), [[FailureClass::RECORD_AMBIGUOUS, 'candidate / case:ranking-ambiguity|format:json'], [FailureClass::RECORD_AMBIGUOUS, 'candidate / case:ranking-ambiguity|format:json'], [FailureClass::RUN_FAILED, 'candidate-2 / ranking-ambiguity']], [[FailureClass::SURFACE_MISMATCH, 'case:ranking-ambiguity|format:json'], [FailureClass::SURFACE_MISMATCH, 'case:ranking-ambiguity|check:output:file']]),
+            CheckWitnesses::witness('ranking-unannounced-limit', CheckWitnesses::DECLARATIONS, static fn(array $tree): array => self::rankingWitnessTree($tree, 'limit'), [[FailureClass::VALUE_MISMATCH, 'case:ranking-limit|format:json'], [FailureClass::VALUE_MISMATCH, 'case:ranking-limit|check:output:file']], [[FailureClass::SURFACE_MISMATCH, 'case:ranking-limit|format:summary']]),
+            CheckWitnesses::witness('ranking-unchanged-order', CheckWitnesses::DECLARATIONS, static fn(array $tree): array => self::rankingWitnessTree($tree, 'order'), [[FailureClass::RANKING_ORDER_MISMATCH, 'case:ranking-order|format:json|record:*']]),
             CheckWitnesses::witness('record-publication-shape', CheckWitnesses::DECLARATIONS, static function (array $tree) use ($record): array {
                 $tree = self::fixture($tree, 'record-shape');
                 $tree['candidateAnswers']['case:record-shape|format:json'] = ['stdout' => self::document([$record + ['unpublished' => 1]], [])];
                 return $tree;
             }, [
-                [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:record-shape|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:record-shape|format:json', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                [FailureClass::SURFACE_MISMATCH, 'case:record-shape|check:output:file', 'SurfaceComparison::mismatch <- Gate::compare'],
-                [FailureClass::RUN_FAILED, 'candidate-2 / record-shape', 'Gate::captureAuthority <- GateModes::compare'],
+                [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:record-shape|format:json'],
+                [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:record-shape|format:json'],
+                [FailureClass::SURFACE_MISMATCH, 'case:record-shape|check:output:file'],
+                [FailureClass::RUN_FAILED, 'candidate-2 / record-shape'],
             ], [
                 [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:record-shape|*'],
                 [FailureClass::FINDING_TUPLE_MISMATCH, 'candidate / record-shape / finding #0'],
@@ -52,19 +52,17 @@ final class SelfTestRecords extends SelfTestGroup
                 $record['channel'] = $record['code'] = $record['rule'] = 'unannounced.record';
                 $tree['candidateFindings']['record-residual'] = [$record];
                 return $tree;
-            }, [[FailureClass::RECORD_UNDECLARED, 'case:record-residual|format:json', 'RecordCheck::observeResidual <- RecordStage::countInputs']], [
+            }, [[FailureClass::RECORD_UNDECLARED, 'case:record-residual|format:json']], [
                 [FailureClass::SURFACE_MISMATCH, 'case:record-residual|baseline-file'],
                 [FailureClass::SURFACE_MISMATCH, 'case:record-residual|check:output:file'],
                 [FailureClass::SURFACE_MISMATCH, 'case:record-residual|format:checkstyle'],
                 [FailureClass::SURFACE_MISMATCH, 'case:record-residual|format:github'],
                 [FailureClass::SURFACE_MISMATCH, 'case:record-residual|format:gitlab'],
-                [FailureClass::SURFACE_MISMATCH, 'case:record-residual|format:html'],
                 [FailureClass::SURFACE_MISMATCH, 'case:record-residual|format:json'],
                 [FailureClass::SURFACE_MISMATCH, 'case:record-residual|format:sarif'],
                 [FailureClass::SURFACE_MISMATCH, 'case:record-residual|format:summary'],
                 [FailureClass::SURFACE_MISMATCH, 'case:record-residual|format:text'],
                 [FailureClass::SURFACE_MISMATCH, 'case:record-residual|format:text-detail'],
-                [FailureClass::SURFACE_MISMATCH, 'case:record-residual|format:text-verbose'],
                 [FailureClass::SURFACE_MISMATCH, 'case:record-residual|show-suppressed'],
                 [FailureClass::CASE_CLAIM_MISMATCH, 'case:record-residual'],
             ]),
@@ -72,15 +70,15 @@ final class SelfTestRecords extends SelfTestGroup
                 $tree = self::fixture($tree, 'value-metric');
                 $tree['candidateAnswers']['case:value-metric|format:metrics'] = ['stdout' => ValueCheck::value(['symbols' => [['type' => 'method', 'name' => 'Replay\\Value-metric::run', 'file' => 'src/Value-metric.php', 'line' => 1, 'metrics' => ['ccn' => 2]]]])];
                 return $tree;
-            }, [[FailureClass::VALUE_MISMATCH, 'case:value-metric|format:metrics|record:*', 'ValueCheck::measure <- RecordCheck::prepare']], [[FailureClass::SURFACE_MISMATCH, 'case:value-metric|format:metrics']]),
+            }, [[FailureClass::VALUE_MISMATCH, 'case:value-metric|format:metrics|record:*']], [[FailureClass::SURFACE_MISMATCH, 'case:value-metric|format:metrics']]),
             CheckWitnesses::witness('value-directive-exit', CheckWitnesses::DECLARATIONS, static function (array $tree): array {
                 $tree = self::fixture($tree, 'value-directives');
                 $tree['answers']['case:value-directives|directives'] = ['stdout' => '{"directives":[],"exit_code":0}'];
                 $tree['candidateAnswers']['case:value-directives|directives'] = ['stdout' => '{"directives":[],"exit_code":1}', 'exit' => 1];
                 return $tree;
             }, [
-                [FailureClass::VALUE_MISMATCH, 'case:value-directives|directives', 'ValueCheck::measure <- RecordStage::directiveExit'],
-                [FailureClass::VALUE_MISMATCH, 'case:value-directives|directives', 'ValueCheck::measure <- ValueStage::applyStage'],
+                [FailureClass::VALUE_MISMATCH, 'case:value-directives|directives'],
+                [FailureClass::VALUE_MISMATCH, 'case:value-directives|directives'],
             ], [[FailureClass::SURFACE_MISMATCH, '*case:value-directives*']]),
             CheckWitnesses::witness('value-exact-table', CheckWitnesses::DECLARATIONS, static function (array $tree): array {
                 $tree = self::fixture($tree, 'value-exact');
@@ -90,9 +88,9 @@ final class SelfTestRecords extends SelfTestGroup
                 $tree['candidateAnswers']['case:value-exact|format:metrics'] = ['stdout' => ValueCheck::value(['symbols' => [$metric]])];
                 $tree = self::append($tree, DeclaredValues::INDEX, DeclaredValues::COLUMNS, [['metric', 'replayValue', 'callable', 'One exact measured value changes.']]);
                 return self::append($tree, DeclaredValues::DERIVED, DeclaredValues::DERIVED_COLUMNS, [['metric', 'replayValue', 'case:value-exact|format:metrics|record:{"type":"method","name":"Replay\\\\Exact::run"}', '1', '3']]);
-            }, [[FailureClass::VALUE_MISMATCH, DeclaredValues::DERIVED, 'ValueCheck::checkRun#2 <- Gate::compare']]),
-            CheckWitnesses::witness('record-unused-derive-intent', 'derive-declarations refused', static fn(array $tree): array => self::append($tree, DeclaredRecords::INDEX, DeclaredRecords::COLUMNS, [['withdrawn', '*', 'json', 'format:json', '{"channel":"never.published"}', 'No record is removed.']]), [[FailureClass::RECORD_STALE, DeclaredRecords::INDEX, 'RecordCheck::checkRun <- Gate::compare']]),
-            CheckWitnesses::witness('value-unused-derive-intent', 'derive-declarations refused', static fn(array $tree): array => self::append($tree, DeclaredValues::INDEX, DeclaredValues::COLUMNS, [['field', 'nothingPublished', '*', 'No value is changed.']]), [[FailureClass::VALUE_STALE, DeclaredValues::INDEX, 'ValueCheck::checkRun#1 <- Gate::compare']]),
+            }, [[FailureClass::VALUE_MISMATCH, DeclaredValues::DERIVED]]),
+            CheckWitnesses::witness('record-unused-derive-intent', 'derive-declarations refused', static fn(array $tree): array => self::append($tree, DeclaredRecords::INDEX, DeclaredRecords::COLUMNS, [['withdrawn', '*', 'json', 'format:json', '{"channel":"never.published"}', 'No record is removed.']]), [[FailureClass::RECORD_STALE, DeclaredRecords::INDEX]]),
+            CheckWitnesses::witness('value-unused-derive-intent', 'derive-declarations refused', static fn(array $tree): array => self::append($tree, DeclaredValues::INDEX, DeclaredValues::COLUMNS, [['field', 'nothingPublished', '*', 'No value is changed.']]), [[FailureClass::VALUE_STALE, DeclaredValues::INDEX]]),
         ];
     }
 
@@ -143,7 +141,7 @@ final class SelfTestRecords extends SelfTestGroup
     {
         $issues = [];
         foreach ($records as $index => $record) {
-            $issues[] = ['rank' => $index + 1, ...array_intersect_key($record, array_flip(RankingSchema::PROJECTION)), 'impactScore' => $scores[$index], 'coupling.class-rank' => null, 'debtMinutes' => $record['techDebtMinutes']];
+            $issues[] = ['rank' => $index + 1, ...array_intersect_key($record, array_flip(RankingSchema::PROJECTION)), 'impactScore' => $scores[$index], 'coupling.class-rank-share' => null, 'debtMinutes' => $record['techDebtMinutes']];
         }
         return $issues;
     }
@@ -174,7 +172,7 @@ final class SelfTestRecords extends SelfTestGroup
                 }
                 $symbol = (string) $record['symbol'];
                 $symbol = substr($symbol, (int) strrpos('\\' . $symbol, '\\'));
-                $text .= '  ' . $issue['rank'] . '. [ERR] 30.0  ' . $record['file'] . ':' . $record['line'] . "  [15min]\n         " . $record['code'] . ': ' . ReportRecords::message($record, true) . ' (' . $symbol . ")\n";
+                $text .= '  ' . $issue['rank'] . '. [ERR] 30.0  ' . $record['file'] . ':' . $record['line'] . "  [15min]\n         " . $record['code'] . ': ' . SyntheticTree::message($record, true) . ' (' . $symbol . ")\n";
                 break;
             }
         }

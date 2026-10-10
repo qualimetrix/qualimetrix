@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Console\Integration;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
@@ -265,22 +266,49 @@ final class FindingFilterOrchestratorTest extends TestCase
         self::assertStringContainsString('[complexity.ccn]', $display);
     }
 
+    /** @return iterable<string, array{bool, string}> */
+    public static function suppressionSelectorCells(): iterable
+    {
+        foreach ([true => 'tag', false => 'per-rule'] as $tag => $mechanism) {
+            foreach (['namespace', 'class'] as $selector) {
+                yield $mechanism . ' / ' . $selector => [(bool) $tag, $selector];
+            }
+        }
+    }
+
     #[Test]
-    public function itNamesTheWholeRunWhenSuppressedDetailsAreShownBesideAReportingSelector(): void
+    #[DataProvider('suppressionSelectorCells')]
+    public function itNamesTheWholeRunWhenSuppressedDetailsAreShownBesideAReportingSelector(bool $tag, string $selector): void
     {
         $finding = self::finding('src/Service/UserService.php', 'Other', 'Outside');
-        $stats = new RuleExclusionStats(namespaceExclusionsByRule: ['complexity.ccn' => 1], excludedFindings: [$finding]);
+        $stats = $tag ? new RuleExclusionStats() : new RuleExclusionStats(namespaceExclusionsByRule: ['complexity.ccn' => 1], excludedFindings: [$finding]);
+        $directives = $tag ? ['src/Service/UserService.php' => [new \Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression(
+            'complexity.ccn',
+            'Fixture',
+            1,
+            \Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType::File,
+            0,
+        )]] : [];
         $output = new BufferedOutput();
-        $this->filterAndReport(
+        $result = $this->filterAndReport(
             $this->createOrchestrator(),
-            $this->createAnalysisResult(stats: $stats),
-            $this->createInput(['--show-suppressed' => true, '--namespace' => 'subtree:Shop']),
+            $this->createAnalysisResult($tag ? [$finding] : [], stats: $stats, suppressions: $directives),
+            $this->createInput(['--show-suppressed' => true, '--' . $selector => $selector === 'namespace' ? 'subtree:Shop' : 'Shop\\Cart']),
             self::diagnosticConsole($output),
             $this->createScopeResolution(),
         );
 
         $display = $output->fetch();
+        self::assertSame([], $result->findings);
+        if ($tag) {
+            self::assertSame([$finding], $result->removedBy(\Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage::Suppression));
+        } else {
+            self::assertSame(1, \count($stats->excludedFindings));
+        }
+        self::assertStringContainsString('1 violation(s) suppressed by ' . ($tag ? '@qmx-ignore tags' : 'per-rule suppress_namespaces/suppress_namespace_channels/suppress_paths'), $display);
         self::assertStringContainsString('across the whole run (reporting selectors are not applied)', $display);
+        self::assertStringContainsString('CCN too high', $display);
+        self::assertStringNotContainsString('Simplify this callable', $display);
         self::assertStringContainsString('[complexity.ccn]', $display);
         self::assertStringContainsString('src/Service/UserService.php', $display);
     }
@@ -442,6 +470,7 @@ final class FindingFilterOrchestratorTest extends TestCase
             message: 'CCN too high',
             severity: Severity::Error,
             metricValue: 25,
+            recommendation: 'Simplify this callable',
         );
     }
 
@@ -576,8 +605,9 @@ final class FindingFilterOrchestratorTest extends TestCase
 
     /**
      * @param list<Finding> $findings
+     * @param array<string, list<\Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression>> $suppressions
      */
-    private function createAnalysisResult(array $findings = [], RuleExclusionStats $stats = new RuleExclusionStats(), ?\Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement $projectScope = null): AnalysisResult
+    private function createAnalysisResult(array $findings = [], RuleExclusionStats $stats = new RuleExclusionStats(), ?\Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement $projectScope = null, array $suppressions = []): AnalysisResult
     {
         $repository = self::createStub(MetricRepositoryInterface::class);
 
@@ -591,7 +621,7 @@ final class FindingFilterOrchestratorTest extends TestCase
                 subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [RelativePath::fromString('src/Service/UserService.php')], []),
             ),
             directives: new DirectiveObservations(
-                suppressions: [],
+                suppressions: $suppressions,
                 thresholdOverrides: [],
             ),
             ruleExecution: new RuleExecutionResult($findings, $findings, $stats, LevelActivity::empty()),

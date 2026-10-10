@@ -24,24 +24,24 @@ final class FindingDetailRenderer
      *
      * @return list<Finding>
      */
-    public static function order(array $findings, FormatterContext $context): array
+    public static function order(array $findings, FormatterContext $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces): array
     {
-        return FindingSorter::sort($findings, self::effectiveGroupBy($context));
+        return FindingSorter::sort($findings, self::effectiveGroupBy($context), $fileNamespaces);
     }
 
     /** @param list<Finding> $findings */
-    public function render(array $findings, FormatterContext $context): string
+    public function render(array $findings, FormatterContext $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces): string
     {
         $color = new AnsiColor($context->useColor);
         $lines = [];
         $effectiveGroupBy = self::effectiveGroupBy($context);
-        $sorted = FindingSorter::sort($findings, $effectiveGroupBy);
+        $sorted = FindingSorter::sort($findings, $effectiveGroupBy, $fileNamespaces);
 
         if ($effectiveGroupBy === GroupBy::None) {
             $this->renderFlat($sorted, $color, $context, $lines);
         } else {
             $this->renderGrouped(
-                FindingSorter::group($sorted, $effectiveGroupBy),
+                FindingSorter::group($sorted, $effectiveGroupBy, $fileNamespaces),
                 $effectiveGroupBy,
                 $color,
                 $context,

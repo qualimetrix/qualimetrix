@@ -50,11 +50,11 @@ final class SummaryFormatterTest extends TestCase
     {
         $registry = new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues());
         $debtCalculator = new DebtCalculator($registry);
-        $hintProvider = new HealthMetricCatalog();
+        $hintProvider = new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
         $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $namespaceDrillDown = new HealthScoreDrillDown($definitionCatalog);
+        $namespaceDrillDown = new HealthScoreDrillDown($definitionCatalog, new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
         $findingFilter = new FindingFilter();
-        $offenderListRenderer = new OffenderListRenderer($findingFilter, new WorstClassDrillDown($definitionCatalog));
+        $offenderListRenderer = new OffenderListRenderer($findingFilter, new WorstClassDrillDown($definitionCatalog, new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())));
         $this->formatter = new SummaryFormatter(
             new DetailedFindingRenderer($debtCalculator),
             new HealthBarRenderer(new HealthScoreResolver($namespaceDrillDown)),
@@ -71,7 +71,7 @@ final class SummaryFormatterTest extends TestCase
     {
         $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
         $trace->record('fixture.rule', new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('fixture.channel'), \Qualimetrix\Core\Symbol\SymbolLevel::Project, \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::selector('project:fixture', 'project'), 'published', 'The fixture value is absent.');
-        $report = new \Qualimetrix\Reporting\Report([], 0, 0, 0, 0, 0, population: $trace->freeze());
+        $report = new \Qualimetrix\Reporting\Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 0, 0, 0, 0, 0, population: $trace->freeze());
         $compact = $this->formatter->format($report, new FormatterContext(useColor: false))->body;
         self::assertSame(1, substr_count($compact, 'Rule population incomplete'));
         self::assertStringContainsString('project: 0 judged, 1 not judged', $compact);
@@ -88,7 +88,7 @@ final class SummaryFormatterTest extends TestCase
         $low = self::finding(new Location(RelativePath::fromString('src/B.php'), 1), SymbolPath::forClass('Shop', 'B'), 'complexity.ccn', 'complexity.ccn', 'Hidden low impact', Severity::Error);
         $high = self::finding(new Location(RelativePath::fromString('src/Z.php'), 1), SymbolPath::forClass('Shop', 'Z'), 'complexity.ccn', 'complexity.ccn', 'Shown high impact', Severity::Error);
         $ranked = [new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($high, 50, null, 5, 3), new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($low, 10, null, 5, 3)];
-        $report = new \Qualimetrix\Reporting\Report([$warning, $low, $high], 3, 0, 0, 2, 1, topIssues: $ranked);
+        $report = new \Qualimetrix\Reporting\Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [$warning, $low, $high], 3, 0, 0, 2, 1, topIssues: $ranked);
         $output = $this->formatter->format($report, new FormatterContext(useColor: false, detailLimit: 1, topIssuesLimit: 0))->body;
 
         self::assertStringContainsString('Shown high impact', $output);
@@ -114,7 +114,7 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('accepted at 25; not compared: analysis-incomplete', $output);
         self::assertStringNotContainsString('now 31', $output);
         $ranked = new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($finding, 1.0, null, 5, 1);
-        $report = new Report([$finding], 1, 0, 0.0, 0, 1, topIssues: [$ranked, $ranked]);
+        $report = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [$finding], 1, 0, 0.0, 0, 1, topIssues: [$ranked, $ranked]);
         $topOutput = $this->formatter->format($report, new FormatterContext(useColor: false, topIssuesLimit: 1))->body;
         self::assertSame(1, substr_count($topOutput, 'accepted at 25; not compared: analysis-incomplete'));
         self::assertStringNotContainsString('now 31', $topOutput);
@@ -1118,6 +1118,7 @@ final class SummaryFormatterTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 50,
             filesSkipped: 0,
@@ -1174,6 +1175,7 @@ final class SummaryFormatterTest extends TestCase
         $metrics->method('getSubject')->willReturn($classMetrics);
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 50,
             filesSkipped: 0,
@@ -1204,6 +1206,7 @@ final class SummaryFormatterTest extends TestCase
         $metrics->method('all')->willReturn([]);
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 50,
             filesSkipped: 0,
@@ -1345,6 +1348,7 @@ final class SummaryFormatterTest extends TestCase
         $selected = (new FindingFilter())->filterFindings($report->findings, $context, FileNamespaceIndex::fromRepository($report->metrics));
 
         return new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: $selected,
             filesAnalyzed: $report->filesAnalyzed,
             filesSkipped: $report->filesSkipped,
@@ -1386,6 +1390,7 @@ final class SummaryFormatterTest extends TestCase
         }
 
         return new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: $findings,
             filesAnalyzed: $filesAnalyzed,
             filesSkipped: 0,
@@ -1422,12 +1427,12 @@ final class SummaryFormatterTest extends TestCase
                 [\Qualimetrix\Core\Symbol\MetricSubject::aggregate(\Qualimetrix\Core\Symbol\SymbolPath::forProject())],
             ),
         ]);
-        $report = new Report([], 1, 0, 0.0, 0, 0, computedMetricEvaluation: $summary);
+        $report = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 1, 0, 0.0, 0, 0, computedMetricEvaluation: $summary);
         $body = $this->formatter->format($report, new FormatterContext(useColor: false))->body;
         self::assertStringContainsString('Computed metric computed.custom (project): not measured', $body);
         self::assertStringContainsString('missing keys [missing.input] for 2 subject(s)', $body);
         self::assertStringContainsString('no value for 1 subject(s)', $body);
-        $withScores = new \Qualimetrix\Reporting\Report([], 1, 0, 0.0, 0, 0, healthScores: [
+        $withScores = new \Qualimetrix\Reporting\Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 1, 0, 0.0, 0, 0, healthScores: [
             'overall' => new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore('overall', 0.0, 'Critical', 50.0, 25.0, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage::notApplicable('composes dimensions')),
         ], computedMetricEvaluation: $summary);
         $alongside = $this->formatter->format($withScores, new FormatterContext(useColor: false))->body;

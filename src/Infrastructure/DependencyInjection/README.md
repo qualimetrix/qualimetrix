@@ -21,6 +21,10 @@ namespace and exact owned resource roots. LCOM tagged collections and Coupling
 aliases remain explicit in their respective configurators. Prototypes and
 loaders are not cached or registered as services.
 
+`ComputedMetricsConfigurator` registers configuration and evaluation separately.
+Its expression and evaluator aliases retain their explicit shared implementation
+bindings; configuration and Health consume those same expression services.
+
 ## Invocation source bindings
 
 `ComposerManifestReaderInterface` and `ManifestSnapshotControlInterface` alias

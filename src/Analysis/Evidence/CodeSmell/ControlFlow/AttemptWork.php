@@ -6,10 +6,13 @@ namespace Qualimetrix\Analysis\Evidence\CodeSmell\ControlFlow;
 
 use PhpParser\Node;
 use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\Eval_;
 use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Expr\Include_;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Expr\NullsafeMethodCall;
+use PhpParser\Node\Expr\ShellExec;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Expr\Throw_;
 use PhpParser\Node\FunctionLike;
@@ -42,13 +45,15 @@ final class AttemptWork
 
             private function isExecutedWork(Node $node): bool
             {
-                if ($node instanceof FuncCall || $node instanceof MethodCall || $node instanceof StaticCall) {
+                if ($node instanceof FuncCall || $node instanceof MethodCall || $node instanceof NullsafeMethodCall || $node instanceof StaticCall) {
                     return !$node->isFirstClassCallable();
                 }
 
                 return $node instanceof New_
                     || $node instanceof Include_
-                    || $node instanceof Throw_;
+                    || $node instanceof Throw_
+                    || $node instanceof ShellExec
+                    || $node instanceof Eval_;
             }
         };
 

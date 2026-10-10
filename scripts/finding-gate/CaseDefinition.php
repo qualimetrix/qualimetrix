@@ -33,6 +33,7 @@ final class CaseDefinition
      * exists to end otherwise; see {@see CaseOutcome}.
      */
     public const array SCHEMA = [
+        'captureHtml' => 'whether to capture the complete HTML invocation (default false)',
         'id' => 'the directory name',
         'description' => 'what the case is for',
         'coverage' => 'authoritative (default) or auxiliary',
@@ -101,7 +102,7 @@ final class CaseDefinition
         public readonly ?int $outcomeExit,
         private readonly array $layerSubjects,
         private readonly ?string $channelMap,
-        public readonly ?string $transition = null,
+        public readonly bool $captureHtml = false,
     ) {}
 
     public function withDirectory(string $directory): self
@@ -120,7 +121,7 @@ final class CaseDefinition
             $this->outcomeExit,
             $this->layerSubjects,
             $this->channelMap,
-            $this->transition,
+            $this->captureHtml,
         );
     }
 
@@ -129,7 +130,7 @@ final class CaseDefinition
         return $this->coverage === self::COVERAGE_AUXILIARY;
     }
 
-    public static function load(string $directory, ?string $transition = null): self
+    public static function load(string $directory): self
     {
         $id = basename($directory);
         $file = $directory . '/case.json';
@@ -146,6 +147,9 @@ final class CaseDefinition
             throw new GateError(\sprintf('%s declares unknown key(s): %s.', $file, implode(', ', $unknown)));
         }
 
+        if (\array_key_exists('captureHtml', $decoded) && !\is_bool($decoded['captureHtml'])) {
+            throw new GateError($file . ': captureHtml must be a boolean.');
+        }
         $coverage = $decoded['coverage'] ?? self::COVERAGE_AUTHORITATIVE;
 
         if (!\in_array($coverage, [self::COVERAGE_AUTHORITATIVE, self::COVERAGE_AUXILIARY], true)) {
@@ -177,7 +181,7 @@ final class CaseDefinition
             $outcomeExit,
             self::strings($decoded, 'layerAssignmentSubjects', $file, optional: true),
             \array_key_exists('renameChannelsMap', $decoded) ? self::string($decoded, 'renameChannelsMap', $file) : null,
-            $transition,
+            $decoded['captureHtml'] ?? false,
         );
 
         if ($case->id !== $id) {

@@ -16,6 +16,11 @@ final readonly class EntryControl
         private ?string $writableBy,
     ) {}
 
+    public static function privateDirectory(): self
+    {
+        return new self(false, false, null, false, false, false, null);
+    }
+
     public static function of(
         DirectoryFacts $parent,
         EntryFacts $entry,
@@ -65,7 +70,7 @@ final readonly class EntryControl
     private static function groupExposure(DirectoryFacts $parent, int $effectiveUid, ?PrivateGroupMembership $membership): ?string
     {
         if (($parent->mode & 0020) === 0
-            || ($membership ?? new NativePrivateGroupMembership())->isPrivatePrimaryGroup($effectiveUid, $parent->group)) {
+            || ($membership ?? NativePrivateGroupMembership::forProcess())->isPrivatePrimaryGroup($effectiveUid, $parent->group)) {
             return null;
         }
 

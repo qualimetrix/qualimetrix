@@ -12,6 +12,8 @@ use Qualimetrix\Core\Symbol\FileDeclarationIndex;
  * The index arrives per file from whoever owns the traversal; an implementor
  * never creates one, because a private index would number a subset of the file
  * and agree with the other producers only by accident.
+ *
+ * @qmx-threshold coupling.cbo 23 -- Declaration producers share the traversal-owned index promise; splitting that promise duplicates numbering authority.
  */
 interface DeclarationIndexAwareInterface
 {

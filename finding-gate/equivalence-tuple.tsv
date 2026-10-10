@@ -7,6 +7,7 @@ channel	src/Reporting/Formatter/FindingRecord.php::of
 occurrence	src/Reporting/Formatter/FindingRecord.php::of
 edge	src/Reporting/Formatter/FindingRecord.php::of
 namespace	src/Reporting/Formatter/FindingRecord.php::of
+namespaces	src/Reporting/Formatter/FindingRecord.php::of
 rule	src/Reporting/Formatter/FindingRecord.php::of
 code	src/Reporting/Formatter/FindingRecord.php::of
 severity	src/Reporting/Formatter/FindingRecord.php::of

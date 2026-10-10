@@ -116,17 +116,18 @@ siblings; an unsuccessful removal remains a reported failure.
 
 Console's `StagedSignalGuard` owns SIGINT/SIGTERM only for the current staged
 operation, latches interruption across worker recovery, checks it at publication
-and restores handlers and async mode after cleanup. Staged regular output requires
-pcntl, default SIGINT/SIGTERM handlers and no registered Revolt signal callbacks,
-otherwise an early
-environment refusal precedes sibling creation and analysis. Descriptor/stream
-output and log-only runs remain available. Interrupted commands return 128 +
+and restores handlers and async mode after cleanup. PCNTL, default SIGINT/SIGTERM
+handlers and no registered Revolt signal callbacks permit this extra cleanup;
+they are not requirements for ordinary staged publication. Without safe signal
+ownership, private-sibling preparation and atomic publication still work, but an
+interruption may leave the private sibling. Guarded interrupted commands return 128 +
 signal after cleanup. Raw asynchronous handlers interrupt a blocking worker
 receive; cancellation bypasses per-file recovery and kills pending workers.
 An event-loop signal watcher can replace a raw handler and defer interruption
 until workers finish, so the guard installs no such watcher. Public callback
 inspection cannot identify its signal number; any registered signal callback
-therefore refuses preparation. Replacing handlers later in the operation is
+therefore leaves signal ownership with the existing handler instead of attaching
+the guard. Replacing handlers later in a guarded operation is
 unsupported. SIGKILL, cleanup failures and already published targets are
 outside this guarantee. Publication is atomic per target; later profile failure
 does not roll back an already published report.

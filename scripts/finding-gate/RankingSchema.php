@@ -7,9 +7,9 @@ namespace QmxFindingGate;
 /** The complete ranked publisher schema, with one physical/comparative boundary. */
 final readonly class RankingSchema
 {
-    public const array PROJECTION = ['file', 'line', 'symbol', 'rule', 'severity', 'message', 'recommendation'];
-    public const array VALUES = ['impactScore', 'coupling.class-rank'];
-    public const array FIELDS = ['rank', 'file', 'line', 'symbol', 'rule', 'severity', 'message', 'recommendation', 'impactScore', 'coupling.class-rank', 'debtMinutes'];
+    public const array PROJECTION = ReportRecords::SCHEMAS['json'];
+    public const array VALUES = ['impactScore', 'coupling.class-rank', 'coupling.class-rank-share'];
+    public const array FIELDS = ['rank', 'impactScore', 'coupling.class-rank-share', 'debtMinutes', ...self::PROJECTION];
 
     /** @param list<string> $fields */
     private function __construct(public array $fields) {}
@@ -108,7 +108,7 @@ final readonly class RankingSchema
                     continue;
                 }
                 $value = $record[$field];
-                if ($field === 'coupling.class-rank' && $value === null) {
+                if (str_starts_with($field, 'coupling.class-rank') && $value === null) {
                     continue;
                 }
                 if ((!\is_int($value) && !\is_float($value)) || !is_finite((float) $value)) {

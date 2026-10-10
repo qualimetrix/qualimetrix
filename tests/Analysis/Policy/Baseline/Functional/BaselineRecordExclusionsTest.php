@@ -93,6 +93,28 @@ final class BaselineRecordExclusionsTest extends TestCase
     }
 
     #[Test]
+    public function itOffersAndRemovesADeclarationWhoseOwnSourceWasExcluded(): void
+    {
+        file_put_contents($this->root . '/src/Foo.php', '<?php namespace App; class Foo { public function run($a) { '
+            . str_repeat('if ($a) { echo 1; } ', 20) . '} }');
+        $generated = $this->execute(BaselineGenerateCommand::class, ['baseline' => $this->path, 'paths' => ['src'], '--only-rule' => ['complexity.ccn']]);
+        self::assertSame(0, $generated->getStatusCode(), $generated->getDisplay());
+        self::assertCount(1, $this->payload()['entries']);
+        $before = (string) file_get_contents($this->path);
+        $config = (string) file_get_contents($this->root . '/qmx.yaml');
+        file_put_contents($this->root . '/qmx.yaml', "exclude: [{exact: 'src/Foo.php'}]\n" . $config);
+        $cleanup = $this->execute(BaselineCleanupCommand::class, ['baseline' => $this->path, 'paths' => ['src'], '--only-rule' => ['complexity.ccn']]);
+        self::assertSame(0, $cleanup->getStatusCode(), $cleanup->getDisplay());
+        self::assertStringContainsString('declaration:callable:App\\Foo::run@src/Foo.php', $cleanup->getDisplay());
+        self::assertStringContainsString('newly excluded', $cleanup->getDisplay());
+        self::assertSame($before, file_get_contents($this->path));
+        $record = $this->execute(BaselineUpdateCommand::class, ['baseline' => $this->path, 'paths' => ['src'], '--record-exclusions' => true, '--only-rule' => ['complexity.ccn']]);
+        self::assertSame(0, $record->getStatusCode(), $record->getDisplay() . $record->getErrorOutput());
+        self::assertStringContainsString('exclusions-removed-population', $record->getDisplay());
+        self::assertSame([], $this->payload()['entries']);
+    }
+
+    #[Test]
     public function itRemovesARecordedGroupThatTheNewExclusionProvesGone(): void
     {
         file_put_contents($this->root . '/src/Foo.php', '<?php goto done; done: echo 1;');
@@ -154,20 +176,19 @@ final class BaselineRecordExclusionsTest extends TestCase
     }
 
     #[Test]
-    public function itRefusesToInferAnArchitectureSourceFromATargetIdentity(): void
+    public function itRemovesAnExcludedArchitectureSourceWithExactDeclarationProvenance(): void
     {
         $generated = $this->execute(BaselineGenerateCommand::class, ['baseline' => $this->path, 'paths' => ['src'], '--only-rule' => ['architecture.layer-violation']]);
         self::assertSame(0, $generated->getStatusCode(), $generated->getDisplay() . $generated->getErrorOutput());
         self::assertSame(1, array_sum(array_map('count', $this->payload()['entries'])));
-        $before = (string) file_get_contents($this->path);
         $config = (string) file_get_contents($this->root . '/qmx.yaml');
         file_put_contents($this->root . '/qmx.yaml', "exclude: [{exact: 'src/Foo.php'}]\n" . $config);
 
         $record = $this->execute(BaselineUpdateCommand::class, ['baseline' => $this->path, 'paths' => ['src'], '--record-exclusions' => true, '--only-rule' => ['architecture.layer-violation']]);
 
-        self::assertSame(3, $record->getStatusCode(), $record->getDisplay() . $record->getErrorOutput());
-        self::assertSame($before, file_get_contents($this->path));
-        self::assertStringContainsString('refused', $record->getDisplay());
+        self::assertSame(0, $record->getStatusCode(), $record->getDisplay() . $record->getErrorOutput());
+        self::assertSame([], $this->payload()['entries']);
+        self::assertStringContainsString('exclusions-removed-population', $record->getDisplay());
     }
 
     #[Test]

@@ -24,6 +24,16 @@ use Qualimetrix\Reporting\DrillDown\DrillDownBinding;
 final class DrillDownBindingTest extends TestCase
 {
     #[Test]
+    public function itBindsTheEmptyGlobalNamespaceInsteadOfItsDisplayLabel(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $repository->add(SymbolPath::forNamespace(''), new MetricBag(), null, null);
+        $binding = new DrillDownBinding();
+        self::assertSame(0, $binding->namespaceBindings(\Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('(global)'), $repository, null));
+        self::assertSame(1, $binding->namespaceBindings(\Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::regex('^$'), $repository, null));
+    }
+
+    #[Test]
     public function itBindsANamespaceThatNamesAnAnalyzedOne(): void
     {
         // The namespace itself and the one class canonical name under it: the
