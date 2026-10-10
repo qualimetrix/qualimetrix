@@ -73,7 +73,12 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
             $this->scriptSteps($scripts, 'check'),
         );
         self::assertSame(
-            ['@check:docs', '@check:artifacts', '@check:self'],
+            [
+                'Composer\\Config::disableProcessTimeout',
+                '@check:docs',
+                '@check:artifacts',
+                '@check:self',
+            ],
             $this->scriptSteps($scripts, 'check:remaining'),
         );
         self::assertContains('@architecture:check', $this->scriptSteps($scripts, 'check:artifacts'));

@@ -17,6 +17,9 @@ Complete validation finishes the code tests before starting PHPStan alongside
 the remaining documentation, artifact and self-analysis checks. Their existing
 internal order and failure rules remain. Standalone `check:code` still runs
 all code checks, including PHPStan; it does not run the other groups.
+The remaining-check child explicitly disables Composer's process timeout,
+preserving the previous complete check's policy in the new process.
+Leaf tools keep their existing deadlines.
 
 Reuse the existing two-child coordinator and its process-group cleanup. Do not
 add a gate, result-cache shortcut, exclusion or larger deadline. Both child

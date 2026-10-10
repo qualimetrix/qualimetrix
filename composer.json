@@ -275,6 +275,7 @@
             "python3 scripts/check-code-parallel/check-code-parallel.py"
         ],
         "check:remaining": [
+            "Composer\\Config::disableProcessTimeout",
             "@check:docs",
             "@check:artifacts",
             "@check:self"

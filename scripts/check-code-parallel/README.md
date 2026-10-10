@@ -17,6 +17,9 @@ remaining-check order, with section labels and each exit code. Regular files
 avoid a pipe writer blocking while the coordinator waits for the other command. The
 temporary directory is removed after publication. The coordinator does not
 change the process umask, environment, or cache settings.
+The remaining-check Composer process disables its own process timeout, as
+the previous complete check did. That setting is local to each Composer
+process, so the child declares it explicitly; leaf-tool deadlines remain.
 
 On SIGINT or SIGTERM, the coordinator sends TERM to both owned process groups,
 waits up to 30 seconds for the complete groups, sends KILL to any survivors, reaps
