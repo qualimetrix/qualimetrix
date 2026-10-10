@@ -31,9 +31,9 @@ final readonly class KindIn implements GatePredicate
     public function evaluate(GateInput $input): ?string
     {
         $input->requireVariant('kind', $this->source);
-        if ($input->kind === null || $input->kind::class !== $this->kinds[0]::class) {
+        if (($input->kindValue())::class !== $this->kinds[0]::class) {
             throw new LogicException('Population kind has the wrong enum domain.');
         }
-        return \in_array($input->kind, $this->kinds, true) ? null : 'Declaration kind is outside the declared population.';
+        return \in_array($input->kindValue(), $this->kinds, true) ? null : 'Declaration kind is outside the declared population.';
     }
 }

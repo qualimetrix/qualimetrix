@@ -40,7 +40,7 @@ final readonly class UnmatchedExcludeAudit
                 ];
             }
         })();
-        return JudgedPopulation::measure($publication, UnmatchedExcludeRule::NAME, $channel, SymbolLevel::Project, $declaration, $members);
+        return ($publication)->measure(UnmatchedExcludeRule::NAME, $channel, SymbolLevel::Project, $declaration, $members);
     }
 
     /** @return list<Finding> */

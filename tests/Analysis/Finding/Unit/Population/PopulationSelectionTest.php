@@ -40,7 +40,7 @@ final class PopulationSelectionTest extends TestCase
         $members = (static function (): iterable {
             yield throw new LogicException('Disabled roster was advanced.');
         })();
-        $population = JudgedPopulation::measure($this->publication(false), 'fixture.population', new FindingChannel('fixture.population'), SymbolLevel::Project, $this->declaration(), $members);
+        $population = ($this->publication(false))->measure('fixture.population', new FindingChannel('fixture.population'), SymbolLevel::Project, $this->declaration(), $members);
         self::assertTrue($population->isEmpty());
     }
 
@@ -49,7 +49,7 @@ final class PopulationSelectionTest extends TestCase
     {
         $context = new \Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext(self::createStub(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface::class));
         foreach ([null, false, true] as $selected) {
-            $session = $selected === null ? null : new \Qualimetrix\Analysis\Finding\Population\PopulationSession($this->publication($selected));
+            $session = $selected === null ? null : new \Qualimetrix\Analysis\Finding\Population\PopulationSession(($this->publication($selected))->publishes(...));
             $bound = $session === null ? $context : $context->withPopulationTrace($session);
             foreach ([false, true] as $present) {
                 self::assertSame($present, $bound->admit('fixture.population', new FindingChannel('fixture.population'), SymbolLevel::Project, PopulationIdentity::occurrence('member', (int) $present), $this->declaration(), [GateInput::metrics('value', MetricBag::fromArray($present ? ['value' => 0] : []))]));
@@ -66,7 +66,7 @@ final class PopulationSelectionTest extends TestCase
     {
         foreach ([null, false, true] as $selected) {
             $context = new \Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext(self::createStub(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface::class));
-            $session = $selected === null ? null : new \Qualimetrix\Analysis\Finding\Population\PopulationSession($this->publication($selected));
+            $session = $selected === null ? null : new \Qualimetrix\Analysis\Finding\Population\PopulationSession(($this->publication($selected))->publishes(...));
             $bound = $session === null ? $context : $context->withPopulationTrace($session);
             $inputs = (static function (): iterable {
                 yield GateInput::metrics('value', new MetricBag());
@@ -109,7 +109,7 @@ final class PopulationSelectionTest extends TestCase
         foreach ([null, false, true] as $selected) {
             $context = new \Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext(self::createStub(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface::class));
             if ($selected !== null) {
-                $context = $context->withPopulationTrace(new \Qualimetrix\Analysis\Finding\Population\PopulationSession($this->publication($selected)));
+                $context = $context->withPopulationTrace(new \Qualimetrix\Analysis\Finding\Population\PopulationSession(($this->publication($selected))->publishes(...)));
             }
             try {
                 $context->admit('fixture.population', new FindingChannel('fixture.population'), SymbolLevel::Project, PopulationIdentity::invocation('fixture.population'), $this->declaration(), [GateInput::metrics('value', MetricBag::fromArray(['value' => 0]))]);
@@ -126,7 +126,7 @@ final class PopulationSelectionTest extends TestCase
         foreach ([null, false, true] as $selected) {
             $context = new \Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext(self::createStub(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface::class));
             if ($selected !== null) {
-                $context = $context->withPopulationTrace(new \Qualimetrix\Analysis\Finding\Population\PopulationSession($this->publication($selected)));
+                $context = $context->withPopulationTrace(new \Qualimetrix\Analysis\Finding\Population\PopulationSession(($this->publication($selected))->publishes(...)));
             }
             try {
                 $context->admit('fixture.population', new FindingChannel('fixture.population'), SymbolLevel::Project, PopulationIdentity::invocation('fixture.population'), $this->declaration(), [GateInput::metrics('value', new MetricBag())]);
@@ -163,7 +163,7 @@ final class PopulationSelectionTest extends TestCase
         })());
         self::assertNotNull($failure);
         self::assertSame('prepared', $failure['gate']);
-        $population = JudgedPopulation::measure($this->publication(), 'fixture.population', $channel, SymbolLevel::Project, $declaration, [['identity' => PopulationIdentity::invocation('fixture.population'), 'inputs' => [GateInput::metrics('value', MetricBag::fromArray(['value' => 0])), GateInput::context('preparedEvidenceAvailable', false)]]]);
+        $population = ($this->publication())->measure('fixture.population', $channel, SymbolLevel::Project, $declaration, [['identity' => PopulationIdentity::invocation('fixture.population'), 'inputs' => [GateInput::metrics('value', MetricBag::fromArray(['value' => 0])), GateInput::context('preparedEvidenceAvailable', false)]]]);
         self::assertSame('invocation', $population->abstentions()[0]->unit);
         self::assertSame(1, $population->unjudgedCount());
     }

@@ -43,6 +43,7 @@ Inline/
 │   │   ├── AuthoredDirectiveGroup.php # one authored @qmx-threshold, its bindings, site and subjects
 │   │   ├── DirectiveMaskingCoalition.php # which threshold directives of one rule hide one another
 │   │   ├── DirectiveUsage.php      # what each authored suppression did
+│   │   ├── DirectiveUsagePopulation.php # selected judgement of authored suppression sites
 │   │   ├── DirectiveMeasurability.php # addressed producer and subject-coverage evidence
 │   │   ├── ExecutionFingerprint.php # what one rule execution produced, compared as a whole
 │   │   ├── MaskingOutcome.php      # what the sweep decided about one group, before it is reported

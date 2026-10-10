@@ -456,10 +456,10 @@ final class TypeCoverageRuleTest extends TestCase
 
     private static function populationSession(string $producer, bool $selected = true): PopulationSession
     {
-        return new PopulationSession(new ChannelPublication(new RuleEnablement([new EnablementDecision(
+        return new PopulationSession((new ChannelPublication(new RuleEnablement([new EnablementDecision(
             new SelectionCellAddress($producer, new FindingChannel($producer), SymbolLevel::Class_, ChannelSelectionRole::Selectable),
             new AuthoredCellDecision($selected ? CellSwitch::On : CellSwitch::Off, CellAdmission::Direct),
-        )], null)));
+        )], null)))->publishes(...));
     }
 
     private static function subjectInfo(SymbolPath $symbolPath, RelativePath $file, int $line): SymbolInfo

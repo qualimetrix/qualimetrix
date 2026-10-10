@@ -23,7 +23,10 @@ final readonly class RuleValueThreshold implements GatePredicate
         if ($this->nonpositiveBypasses && $boundary <= 0) {
             return null;
         }
-        $value = $input->number ?? throw new LogicException('Missing declared rule count.');
+        $value = $input->scalar() ?? throw new LogicException('Missing declared rule count.');
+        if (!\is_int($value) && !\is_float($value)) {
+            throw new LogicException('Rule count input must be numeric.');
+        }
         if ($value < 0) {
             throw new LogicException('A rule population count cannot be negative.');
         }

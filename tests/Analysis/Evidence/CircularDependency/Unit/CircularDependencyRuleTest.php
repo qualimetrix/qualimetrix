@@ -50,7 +50,7 @@ final class CircularDependencyRuleTest extends TestCase
             ),
         ], null));
         foreach ([2, 0, -1] as $ceiling) {
-            $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession($publication);
+            $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(($publication)->publishes(...));
             $findings = $this->rule(new CircularDependencyOptions(maxCycleSize: $ceiling))->analyze(
                 (new AnalysisContext(new InMemoryMetricRepository()))->withPopulationTrace($session),
             );

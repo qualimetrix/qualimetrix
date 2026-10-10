@@ -37,7 +37,7 @@ final class PopulationSessionTest extends TestCase
         $population = $this->measured(20, true);
         self::assertSame(20, $population->judgedCount());
         self::assertSame([], $population->abstentions());
-        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession($this->publication());
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(($this->publication())->publishes(...));
         $context = (new \Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext(new \Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository()))->withPopulationTrace($session);
         $weakContext = WeakReference::create($context);
         $weakInputs = [];
@@ -81,7 +81,7 @@ final class PopulationSessionTest extends TestCase
         $bag = MetricBag::fromArray(['value' => 0]);
         $weak = WeakReference::create($bag);
         $members = [['identity' => PopulationIdentity::occurrence('healthy', 0), 'inputs' => [GateInput::metrics('value', $bag)]]];
-        $population = JudgedPopulation::measure($this->publication(), 'fixture.population', new FindingChannel('fixture.population'), SymbolLevel::Project, $this->declaration(), $members);
+        $population = ($this->publication())->measure('fixture.population', new FindingChannel('fixture.population'), SymbolLevel::Project, $this->declaration(), $members);
         unset($bag, $members);
         gc_collect_cycles();
         self::assertNull($weak->get());
@@ -100,7 +100,7 @@ final class PopulationSessionTest extends TestCase
                 unset($bag, $identity);
             }
         })();
-        $streamed = JudgedPopulation::measure($this->publication(), 'fixture.population', new FindingChannel('fixture.population'), SymbolLevel::Project, $this->declaration(), $members);
+        $streamed = ($this->publication())->measure('fixture.population', new FindingChannel('fixture.population'), SymbolLevel::Project, $this->declaration(), $members);
         self::assertSame(20, $streamed->judgedCount());
     }
     private function publication(bool $selected = true): ChannelPublication
@@ -131,6 +131,6 @@ final class PopulationSessionTest extends TestCase
                 yield ['identity' => PopulationIdentity::occurrence('member', $ordinal), 'inputs' => [GateInput::metrics('value', MetricBag::fromArray($present ? ['value' => 0] : []))]];
             }
         })();
-        return JudgedPopulation::measure($this->publication(), 'fixture.population', new FindingChannel('fixture.population'), SymbolLevel::Project, $this->declaration(), $members);
+        return ($this->publication())->measure('fixture.population', new FindingChannel('fixture.population'), SymbolLevel::Project, $this->declaration(), $members);
     }
 }

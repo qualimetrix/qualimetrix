@@ -43,7 +43,7 @@ final class ClassCountRuleTest extends TestCase
                 new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
             ),
         ], null));
-        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession($publication);
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(($publication)->publishes(...));
         self::assertSame([], (new ClassCountRule(new ClassCountOptions()))->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
         $population = $session->freeze();
         self::assertSame(1, $population->judgedCount());

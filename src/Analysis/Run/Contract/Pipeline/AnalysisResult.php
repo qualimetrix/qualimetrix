@@ -19,6 +19,9 @@ final readonly class AnalysisResult
     /**
      * @param list<Finding> $latePublished
      * @param list<array{publishedCount: int<0, max>, lateCount: int<0, max>}> $publicationOrder
+     *
+     * @qmx-threshold code-smell.constructor-overinjection warning=9 error=9 -- Eight independent immutable observations describe one ordered run result. Splitting them would relocate the same transport record; the exclusive boundary keeps the next field visible.
+     * @qmx-threshold code-smell.long-parameter-list warning=9 error=9 -- Eight independent immutable observations describe one ordered run result. Splitting them would relocate the same transport record; the exclusive boundary keeps the next field visible.
      */
     private function __construct(
         public MeasuredRunResult $measured,

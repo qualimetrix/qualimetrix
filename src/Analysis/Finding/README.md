@@ -72,6 +72,7 @@ Finding/
 │   ├── PopulationSession.php # selected publication, declaration validation and one freeze
 │   └── PopulationTrace.php # unit counts and bounded canonical examples
 ├── SuppressionBinding/   # Whether a configured suppression value named anything the run holds
+│   └── UnboundSuppressionFinding.php # Messages for values that bind to nothing
 ├── RuleExecution.php     # Selects producers, executes them, and returns what happened as a value
 ├── RuleMaterialization.php # Ordered deferred rules and validators for one snapshot identity
 ├── FindingPublication.php # Exclusion accounting and channel-selection projection
@@ -470,6 +471,21 @@ keeps its existing shared-context memoization. Successful eligible native member
 are counted before severity selection; the absence of a finding is not the
 absence of a judgement. Ungated writers count their native entry or copy events,
 while unknown whole evidence uses the declared invocation failure unit.
+
+`AbstractRule` constructs the closed seven predicate forms and their gates for
+subclasses. `judgingHigher()` and `judgingLower()` bind raw metric keys to their
+declared direction. `admittedMetrics()` consumes source-owned preconditions
+before acquiring the exact subject bag, then supplies that bag to the remaining
+lazy operands. Callers state their native roster level explicitly when it can
+differ from the subject kind.
+
+`ChannelPublication::measure()` streams a hosted audit through the captured
+selection into one private session. The session receives the captured publication
+query as a callable, preserving the snapshot without importing the publication
+service back into its accumulator. `JudgedPopulation` holds the completed
+immutable result without importing its accumulator. `PopulationTrace` publishes
+its compact summary through `JudgedPopulation::fromSummary()` once and retains
+that same partition for repeat freezing.
 
 One immutable partition belongs to a whole execution or hosted audit call.
 Repeat adoption of that partition is idempotent; independent calls add.

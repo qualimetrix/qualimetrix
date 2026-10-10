@@ -190,7 +190,7 @@ final class ErrorSuppressionRuleTest extends TestCase
         $publication = new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement([
             new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(ErrorSuppressionRule::NAME, $channel, SymbolLevel::File, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct)),
         ], null));
-        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession($publication);
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(($publication)->publishes(...));
         $context = (new AnalysisContext($repository))->withPopulationTrace($session);
         $findings = $rule->analyze($context);
         self::assertSame(2, $session->freeze()->judgedCount());

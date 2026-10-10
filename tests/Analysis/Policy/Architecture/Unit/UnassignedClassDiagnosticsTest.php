@@ -307,12 +307,12 @@ final class UnassignedClassDiagnosticsTest extends TestCase
         self::assertCount(2, iterator_to_array($repository->allLogicalClasses()));
         $graph = $this->buildGraph([]);
         ProcessorBuilder::prepared($architecture, $graph, $repository, $this->processor);
-        $session = new PopulationSession(new ChannelPublication(new RuleEnablement([
+        $session = new PopulationSession((new ChannelPublication(new RuleEnablement([
             new EnablementDecision(
                 new SelectionCellAddress(UnassignedClassRule::NAME, new FindingChannel(UnassignedClassRule::NAME), SymbolLevel::Project, ChannelSelectionRole::Selectable),
                 new AuthoredCellDecision(CellSwitch::On, CellAdmission::Direct),
             ),
-        ], null)));
+        ], null)))->publishes(...));
         $context = (new AnalysisContext($repository, $graph))->withPopulationTrace($session);
 
         self::assertSame(1, $rule->analyze($context)[0]->metricValue);

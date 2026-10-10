@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract\Population;
 
 use LogicException;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 
 final readonly class KeyThreshold implements GatePredicate
 {
@@ -28,17 +29,17 @@ final readonly class KeyThreshold implements GatePredicate
     public function evaluate(GateInput $input): ?string
     {
         $input->requireVariant('metrics', $this->source);
-        $bag = $input->bag ?? throw new LogicException('Metrics input has no bag.');
+        $bag = $input->metricBag();
         $sum = 0;
         $firstMissing = null;
         foreach ($this->keys as $key) {
             $value = $bag->get($key);
             if ($value === null) {
-                if ($this->missing === 'exclude') {
-                    return 'Missing metric "' . $key . '".';
-                }
                 $firstMissing ??= $key;
-                $value = $this->missing === 'refuse' ? $bag->require($key) : 0;
+            }
+            $value = $this->readValue($bag, $key, $value);
+            if ($value === null) {
+                return 'Missing metric "' . $key . '".';
             }
             if (!is_finite((float) $value) || ($this->nonnegative && $value < 0)) {
                 throw new LogicException('Invalid measured population count.');
@@ -52,6 +53,18 @@ final readonly class KeyThreshold implements GatePredicate
             return null;
         }
         return $firstMissing === null ? 'Metric population boundary was not met.' : 'Missing metric "' . $firstMissing . '".';
+    }
+
+    private function readValue(MetricBag $bag, string $key, int|float|null $value): int|float|null
+    {
+        if ($value !== null) {
+            return $value;
+        }
+        return match ($this->missing) {
+            'zero' => 0,
+            'refuse' => $bag->require($key),
+            default => null,
+        };
     }
 
     public static function compare(int|float $value, string $comparison, int|float $boundary): bool

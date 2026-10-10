@@ -29,7 +29,7 @@ final readonly class KeyPresent implements GatePredicate
         } else {
             throw new LogicException('Population key alternatives require the declared selector.');
         }
-        $bag = $input->bag ?? throw new LogicException('Metrics input has no bag.');
+        $bag = $input->metricBag();
         $value = $bag->get($key);
         if ($value !== null && !is_finite((float) $value)) {
             throw new LogicException('Measured population value must be finite.');

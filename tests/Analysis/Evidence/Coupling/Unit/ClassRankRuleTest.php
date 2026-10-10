@@ -178,7 +178,7 @@ final class ClassRankRuleTest extends TestCase
             $metrics->expects(self::never())->method('allClassDeclarations');
             $metrics->expects(self::never())->method('getSubject');
             $context = new AnalysisContext($metrics);
-            $session = $selected === null ? null : new PopulationSession($this->publication($selected));
+            $session = $selected === null ? null : new PopulationSession(($this->publication($selected))->publishes(...));
             if ($session !== null) {
                 $context = $context->withPopulationTrace($session);
             }
@@ -198,14 +198,14 @@ final class ClassRankRuleTest extends TestCase
     #[Test]
     public function itKeepsKnownEmptyGraphAtZeroAndDoesNotReadExcludedPhpKindMetrics(): void
     {
-        $session = new PopulationSession($this->publication());
+        $session = new PopulationSession(($this->publication())->publishes(...));
         self::assertSame([], (new ClassRankRule(new ClassRankOptions()))->analyze($this->context([])->withPopulationTrace($session)));
         self::assertTrue($session->freeze()->isEmpty());
         $base = $this->context([['OnlyInterface', ClassType::Interface_, new MetricBag()]]);
         $metrics = self::createMock(MetricRepositoryInterface::class);
         $metrics->method('allClassDeclarations')->willReturn(iterator_to_array($base->metrics->allClassDeclarations(), false));
         $metrics->expects(self::never())->method('getSubject');
-        $session = new PopulationSession($this->publication());
+        $session = new PopulationSession(($this->publication())->publishes(...));
         self::assertSame([], (new ClassRankRule(new ClassRankOptions()))->analyze((new AnalysisContext($metrics, $base->dependencyGraph))->withPopulationTrace($session)));
         self::assertSame(1, $session->freeze()->unjudgedCount());
         self::assertSame('php-class', $session->freeze()->abstentions()[0]->gate);

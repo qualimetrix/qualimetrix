@@ -169,12 +169,12 @@ final class UnmatchedTypeDiagnosticTest extends TestCase
         $missing = self::type('App\Missing', ['architecture', 'layers', '0', 'extends', '1']);
         $evidence = $this->evidence([new LayerDefinition('typed', new MembershipSpec(extends: [$known->fqn, $missing->fqn], namedTypes: [$known, $missing]))], [SymbolPath::forClass('App', 'Known')]);
         foreach ([[], [ProjectScopeDoor::Paths]] as $doors) {
-            $session = new PopulationSession(new ChannelPublication(new RuleEnablement([
+            $session = new PopulationSession((new ChannelPublication(new RuleEnablement([
                 new EnablementDecision(
                     new SelectionCellAddress(LayerDeclarationRule::NAME, new FindingChannel('architecture.unmatched-type'), SymbolLevel::Project, ChannelSelectionRole::Selectable),
                     new AuthoredCellDecision(CellSwitch::On, CellAdmission::Direct),
                 ),
-            ], null)));
+            ], null)))->publishes(...));
             $scope = new ProjectScopeJudgement($doors);
             $context = (new AnalysisContext(new InMemoryMetricRepository(), projectScope: $scope))->withPopulationTrace($session);
             $findings = UnmatchedTypeDiagnostic::forEvidence($evidence, $scope, $context);

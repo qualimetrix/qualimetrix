@@ -31,6 +31,6 @@ final readonly class ContextGuard implements GatePredicate
             return null;
         }
         $input->requireVariant('context', $this->source);
-        return $input->bound === true ? null : 'Required population context was not judged.';
+        return $input->scalar() === true ? null : 'Required population context was not judged.';
     }
 }

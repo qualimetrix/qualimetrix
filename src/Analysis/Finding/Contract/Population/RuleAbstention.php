@@ -10,7 +10,12 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 
 final readonly class RuleAbstention
 {
-    /** @param list<string> $examples */
+    /**
+     * @param list<string> $examples
+     *
+     * @qmx-threshold code-smell.constructor-overinjection warning=9 error=9 -- Eight independent immutable observations describe one compact abstention group. Splitting them would relocate the same transport record; the exclusive boundary keeps the next field visible.
+     * @qmx-threshold code-smell.long-parameter-list warning=9 error=9 -- Eight independent immutable observations describe one compact abstention group. Splitting them would relocate the same transport record; the exclusive boundary keeps the next field visible.
+     */
     public function __construct(
         public string $producer,
         public FindingChannel $channel,

@@ -116,3 +116,11 @@ and `computedMetricOutcomes`. Audit callers must consume findings and
 population together. The [Changelog](../../CHANGELOG.md) records the breaking
 surfaces; no compatibility shim, generic lifecycle port or inferred global
 population registry is introduced.
+
+Rule authoring constructs the same closed predicates through `AbstractRule`;
+its lazy metric helper runs declared preconditions before acquiring the subject
+bag. Hosted measurement belongs to the captured `ChannelPublication`, which
+streams one reached member through its private session. The immutable result
+imports no accumulator, and freezing the trace reuses its published partition.
+This keeps declaration construction and invocation lifetime with Finding while
+removing producer/helper and mutable/immutable dependency cycles.

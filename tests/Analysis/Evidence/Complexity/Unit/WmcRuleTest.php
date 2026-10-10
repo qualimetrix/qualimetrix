@@ -47,7 +47,7 @@ final class WmcRuleTest extends TestCase
                 );
             }
         }
-        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)));
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
         $context = (new AnalysisContext($repository))->withPopulationTrace($session);
         self::assertSame([], $rule->analyze($context));
         self::assertSame(1, $session->freeze()->judgedCount());

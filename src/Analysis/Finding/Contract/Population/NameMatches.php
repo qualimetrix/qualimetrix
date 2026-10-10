@@ -21,6 +21,6 @@ final readonly class NameMatches implements GatePredicate
         if (!$input->active($this->activeWhen)) {
             return null;
         }
-        return ($input->bound ?? throw new LogicException('Missing bound population name.')) ? null : 'Name is outside the declared population.';
+        return ($input->scalar() ?? throw new LogicException('Missing bound population name.')) === true ? null : 'Name is outside the declared population.';
     }
 }

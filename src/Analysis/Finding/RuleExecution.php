@@ -63,7 +63,7 @@ final class RuleExecution implements RuleExecutionInterface
         $this->publication->begin();
 
         $enablement = $this->readyEnablement();
-        $population = new PopulationSession(new ChannelPublication($enablement), $restrictToProducer);
+        $population = new PopulationSession((new ChannelPublication($enablement))->publishes(...), $restrictToProducer);
         $context = $context->withPopulationTrace($population);
         $removed = [];
         foreach ($this->materialization->activeRules($enablement, $restrictToProducer) as $rule) {

@@ -1617,12 +1617,12 @@ final class LayerViolationRuleTest extends TestCase
             $this->buildDependency('App\Unknown', 'One', 'App\Repository', 'Two'),
             $this->buildDependency('App\Controller', 'One', 'App\Unknown', 'Two'),
         ]);
-        $session = new PopulationSession(new ChannelPublication(new RuleEnablement([
+        $session = new PopulationSession((new ChannelPublication(new RuleEnablement([
             new EnablementDecision(
                 new SelectionCellAddress(LayerViolationRule::NAME, new FindingChannel(LayerViolationRule::NAME), SymbolLevel::Class_, ChannelSelectionRole::Selectable),
                 new AuthoredCellDecision(CellSwitch::On, CellAdmission::Direct),
             ),
-        ], null)));
+        ], null)))->publishes(...));
         $context = $this->buildContext($graph, $architecture)->withPopulationTrace($session);
 
         $collector->collect($context);
@@ -1649,12 +1649,12 @@ final class LayerViolationRuleTest extends TestCase
                 new LayerDefinition('without-exclude', new MembershipSpec(['Other'])),
             ]), AllowListBuilder::policyFromExactMap([]), CoverageMode::Ignore);
             ProcessorBuilder::prepared($architecture, $graph, $repository, $processor);
-            $session = new PopulationSession(new ChannelPublication(new RuleEnablement([
+            $session = new PopulationSession((new ChannelPublication(new RuleEnablement([
                 new EnablementDecision(
                     new SelectionCellAddress(LayerDeclarationRule::NAME, new FindingChannel($channel), SymbolLevel::Project, ChannelSelectionRole::Selectable),
                     new AuthoredCellDecision(CellSwitch::On, CellAdmission::Direct),
                 ),
-            ], null)));
+            ], null)))->publishes(...));
             $context = (new AnalysisContext($repository, $graph, projectScope: new ProjectScopeJudgement($doors)))->withPopulationTrace($session);
             $options = new LayerDeclarationOptions();
             $collector = new LayerEvidenceCollector(new LayerViolationOptions(enabled: false), new UnassignedClassOptions(), $options, $processor);
@@ -1679,12 +1679,12 @@ final class LayerViolationRuleTest extends TestCase
             $architecture = $this->buildArchitecture(['repository' => ['App\Repository']], []);
             $graph = $builder->build($dependencies, [])->graph;
             self::assertCount(\count($dependencies), $graph->getAllDependencies());
-            $session = new PopulationSession(new ChannelPublication(new RuleEnablement([
+            $session = new PopulationSession((new ChannelPublication(new RuleEnablement([
                 new EnablementDecision(
                     new SelectionCellAddress(LayerViolationRule::NAME, new FindingChannel(LayerViolationRule::NAME), SymbolLevel::Class_, ChannelSelectionRole::Selectable),
                     new AuthoredCellDecision(CellSwitch::On, CellAdmission::Direct),
                 ),
-            ], null)));
+            ], null)))->publishes(...));
             $context = $this->buildContext($graph, $architecture)->withPopulationTrace($session);
             self::assertSame([], $rule->analyze($context));
             self::assertSame(0, $session->freeze()->judgedCount());

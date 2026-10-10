@@ -8,12 +8,9 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
-use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
 
 use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
-use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -22,10 +19,8 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Directive\RefusedDirectives;
-use Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * The post-execution half of the inline-directive subject: what each authored
@@ -94,10 +89,11 @@ final class DirectiveUsage
      */
     public function verdicts(array $suppressionsByFile, array $findings, LevelActivity $activity, SubjectCoverageFacts $subjectCoverage): array
     {
-        return array_map(
-            static fn(array $pair): DirectiveVerdict => $pair['verdict'],
-            $this->evaluate($suppressionsByFile, $findings, $activity, $subjectCoverage),
-        );
+        $verdicts = [];
+        foreach ($this->evaluate($suppressionsByFile, $findings, $activity, $subjectCoverage) as $pair) {
+            $verdicts[] = $pair['verdict'];
+        }
+        return $verdicts;
     }
 
     /**
@@ -119,23 +115,18 @@ final class DirectiveUsage
     ): array {
         $stale = [];
 
-        $channel = new FindingChannel(\Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy::UNUSED_DIRECTIVE_NAME);
-        if (!$publication->publishes(UnusedDirectiveRule::NAME, $channel, SymbolLevel::File)) {
+        if (!DirectiveUsagePopulation::selected($publication)) {
             return ['findings' => [], 'population' => JudgedPopulation::empty()];
         }
-        $members = (function () use ($suppressionsByFile, $findings, $activity, $subjectCoverage, $severity, &$stale): iterable {
+        $verdicts = (function () use ($suppressionsByFile, $findings, $activity, $subjectCoverage, $severity, &$stale): iterable {
             foreach ($this->evaluate($suppressionsByFile, $findings, $activity, $subjectCoverage) as $pair) {
-                $site = $pair['verdict']->site;
-                yield [
-                    'identity' => PopulationIdentity::selector(json_encode([$site->file->value(), $site->line, $site->position, $site->form, $site->target], \JSON_THROW_ON_ERROR), 'directive-site'),
-                    'inputs' => [GateInput::context('directiveScopeMeasured', $pair['verdict']->reason === null)],
-                ];
+                yield $pair['verdict'];
                 if ($pair['verdict']->effect === DirectiveEffect::Inert) {
                     $stale[] = StaleDirectiveFinding::of($pair['verdict']->site->file, $pair['directive'], $severity);
                 }
             }
         })();
-        $population = JudgedPopulation::measure($publication, UnusedDirectiveRule::NAME, $channel, SymbolLevel::File, UnusedDirectiveRule::channelDeclarations()[$channel->code], $members);
+        $population = DirectiveUsagePopulation::measure($publication, $verdicts);
         return ['findings' => $stale, 'population' => $population];
     }
 
@@ -187,12 +178,11 @@ final class DirectiveUsage
      * @param array<string, list<Suppression>> $suppressionsByFile
      * @param list<Finding> $findings
      *
-     * @return list<array{verdict: DirectiveVerdict, directive: Suppression}>
+     * @return iterable<array{verdict: DirectiveVerdict, directive: Suppression}>
      */
-    private function evaluate(array $suppressionsByFile, array $findings, LevelActivity $activity, SubjectCoverageFacts $subjectCoverage): array
+    private function evaluate(array $suppressionsByFile, array $findings, LevelActivity $activity, SubjectCoverageFacts $subjectCoverage): iterable
     {
         $findings = $this->suppressible($findings);
-        $evaluated = [];
 
         foreach ($suppressionsByFile as $file => $fileSuppressions) {
             foreach (self::groupByAuthoredSite($fileSuppressions) as $group) {
@@ -209,7 +199,7 @@ final class DirectiveUsage
                     default => DirectiveEffect::Inert,
                 };
 
-                $evaluated[] = [
+                yield [
                     'verdict' => new DirectiveVerdict(
                         site: new DirectiveSite(
                             file: RelativePath::fromString($file),
@@ -226,7 +216,6 @@ final class DirectiveUsage
             }
         }
 
-        return $evaluated;
     }
 
     /**

@@ -106,7 +106,7 @@ final readonly class UnboundSuppressionAudit
             return ['findings' => [], 'population' => JudgedPopulation::empty()];
         }
         $findings = [];
-        $session = new PopulationSession($publication);
+        $session = new PopulationSession(($publication)->publishes(...));
 
         foreach ($this->configuredValues($suppressPaths, $suppressNamespaces) as $ordinal => $value) {
             $channel = new FindingChannel($value['channel']);

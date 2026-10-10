@@ -835,7 +835,7 @@ final class DistanceRuleTest extends TestCase
             new SelectionCellAddress(DistanceRule::NAME, $channel, SymbolLevel::Namespace_, ChannelSelectionRole::Selectable),
             new AuthoredCellDecision(CellSwitch::On, CellAdmission::Direct),
         )], null));
-        $session = new PopulationSession($publication);
+        $session = new PopulationSession(($publication)->publishes(...));
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 3));
         self::assertSame([], $rule->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
         self::assertSame(0, $session->freeze()->judgedCount());

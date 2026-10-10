@@ -47,7 +47,7 @@ final class NpathComplexityRuleTest extends TestCase
                 );
             }
         }
-        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)));
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
         $context = (new AnalysisContext($repository))->withPopulationTrace($session);
         self::assertSame([], $rule->analyzeLevel(\Qualimetrix\Core\Symbol\SymbolLevel::Class_, $context));
         self::assertSame(1, $session->freeze()->judgedCount());
@@ -870,7 +870,7 @@ final class NpathComplexityRuleTest extends TestCase
                 new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
             ),
         ], null));
-        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession($publication);
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(($publication)->publishes(...));
         $context = (new AnalysisContext($repository))->withPopulationTrace($session);
         self::assertSame([], (new NpathComplexityRule(new NpathComplexityOptions()))->analyzeLevel(SymbolLevel::Callable, $context));
         $population = $session->freeze();

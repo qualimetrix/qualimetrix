@@ -26,11 +26,14 @@ final readonly class FlagExcludes implements GatePredicate
         if (!$input->active($this->activeWhen)) {
             return null;
         }
-        $value = $this->key === null ? $input->flag : ($input->bag ?? throw new LogicException('Metrics input has no bag.'))->get($this->key);
+        $value = $this->key === null ? $input->scalar() : ($input->metricBag())->get($this->key);
         if ($value !== null && !is_finite((float) $value)) {
             throw new LogicException('Population flag must be finite.');
         }
-        $excluded = $this->nonzero ? $value !== null && $value !== 0 : $value === $this->forbidden;
-        return $excluded ? 'Excluded by the declared population flag.' : null;
+        return $this->excludes($value) ? 'Excluded by the declared population flag.' : null;
+    }
+    private function excludes(int|float|bool|null $value): bool
+    {
+        return $this->nonzero ? $value !== null && $value !== 0 : $value === $this->forbidden;
     }
 }

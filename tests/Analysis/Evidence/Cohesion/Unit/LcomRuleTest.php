@@ -49,7 +49,7 @@ final class LcomRuleTest extends TestCase
                 );
             }
         }
-        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)));
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
         $context = (new AnalysisContext($repository))->withPopulationTrace($session);
         self::assertSame([], $rule->analyze($context));
         self::assertSame(1, $session->freeze()->judgedCount());
@@ -518,7 +518,7 @@ final class LcomRuleTest extends TestCase
                 self::subjectInfo(SymbolPath::forMethod('App', 'Service', 'known'), RelativePath::fromString('src/Service.php'), 1),
             ]);
             $scope = new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement($whole ? [] : [\Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor::Paths]);
-            $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession($publication);
+            $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(($publication)->publishes(...));
             $context = (new AnalysisContext($repository, projectScope: $scope))->withPopulationTrace($session);
             $findings = \Qualimetrix\Analysis\Evidence\Cohesion\LcomExcludedMethods::findings($context, new LcomOptions(excludeMethods: ['KNOWN', 'known', 'Missing', 'MISSING']), LcomRule::NAME, LcomRule::channelDeclarations()['cohesion.unmatched-exclude-method']);
             self::assertCount($whole ? 1 : 0, $findings);

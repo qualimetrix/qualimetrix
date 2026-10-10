@@ -49,6 +49,6 @@ final class PopulationTrace
 
     public function freeze(): JudgedPopulation
     {
-        return $this->frozen ??= JudgedPopulation::fromTrace($this);
+        return $this->frozen ??= JudgedPopulation::fromSummary($this->summary());
     }
 }

@@ -171,7 +171,7 @@ final class HostedPopulationTest extends TestCase
                     }
                 }
             }
-            $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)));
+            $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
             $context = (new \Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext($repository, $contextGraph))->withPopulationTrace($session);
             foreach ($rules as $rule) {
                 self::assertSame([], $rule->analyze($context));

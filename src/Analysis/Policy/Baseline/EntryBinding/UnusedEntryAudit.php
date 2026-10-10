@@ -68,7 +68,7 @@ final readonly class UnusedEntryAudit
             );
         }
 
-        return ['findings' => $this->execution->publishable($findings), 'population' => JudgedPopulation::measure($publication, UnusedEntryRule::NAME, $channel, SymbolLevel::Project, UnusedEntryRule::channelDeclarations()[BaselineAuditChannels::UNUSED_ENTRY], $members)];
+        return ['findings' => $this->execution->publishable($findings), 'population' => ($publication)->measure(UnusedEntryRule::NAME, $channel, SymbolLevel::Project, UnusedEntryRule::channelDeclarations()[BaselineAuditChannels::UNUSED_ENTRY], $members)];
     }
 
     /**
