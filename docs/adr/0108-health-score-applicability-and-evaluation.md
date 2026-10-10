@@ -83,6 +83,10 @@ scale removes that discrepancy without changing academic LCOM, applicability
 or the existing class purity adjustment. This is a correction of that scale,
 not evidence that all namespace scores are monotone relative to their member
 classes; the separate purity adjustment and benchmark calibration remain.
+The built-in project score inherits this namespace formula and evaluates the
+project aggregate inputs directly. The correction also changes project cohesion
+and its weighted contribution to overall. Re-anchor only affected benchmark
+ranges and review namespace/project health limits and accepted findings.
 
 **Publication follows the effective formula and exact subject.** Coverage and
 decomposition describe inputs used by the selected formula, not a builtin with
