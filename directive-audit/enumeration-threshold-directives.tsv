@@ -69,7 +69,8 @@ src/Analysis/Evidence/Measurement/Repository/InMemoryMetricRepository.php	25	com
 src/Reporting/Formatter/Health/HealthTextFormatter.php	33	complexity.wmc	warning=62 -- The health view intentionally selects compact or verbose
 src/Analysis/Evidence/Coupling/CboRule.php	42	coupling.cbo	22 -- Raw CBO 21: this hierarchical rule's own dependencies plus
 src/Analysis/Evidence/Coupling/DistanceRule.php	53	coupling.cbo	22 -- Raw CBO 21 includes the ThresholdCrossing wording contract
-src/Analysis/Evidence/Coupling/RfcLocalFlow.php	12	coupling.cbo	warning=23 -- The closed PHP control-flow grammar must invalidate receiver evidence across every supported region; splitting the node vocabulary transfers the same dependencies.
+src/Analysis/Evidence/Coupling/RfcLocalFlow.php	12	coupling.cbo	warning=24 -- The closed PHP control-flow grammar must invalidate receiver evidence across every supported region; splitting the node vocabulary transfers the same dependencies.
+src/Analysis/Evidence/Coupling/RfcReceiverTypes.php	13	coupling.cbo	warning=21 -- Receiver evidence recognizes the supported PHP type and write-target grammar; splitting its node vocabulary transfers the same dependencies.
 src/Analysis/Evidence/Measurement/Contract/AbstractCollector.php	18	coupling.cbo	27 -- Measurement collector base is a stable provider-owned extension hub; current raw CBO 26 gets one-edge headroom.
 src/Analysis/Evidence/Measurement/Contract/AggregationStrategy.php	10	coupling.cbo	38 -- Aggregation definitions and consumers intentionally share this provider-owned enum; current raw CBO 37 gets one-edge headroom.
 src/Analysis/Evidence/Measurement/Contract/DeclarationIndexAwareInterface.php	16	coupling.cbo	23 -- Declaration producers share the traversal-owned index promise; splitting that promise duplicates numbering authority.
@@ -86,7 +87,7 @@ src/Reporting/Report.php	22	coupling.cbo	warning=37 error=37 -- This immutable r
 src/Analysis/Evidence/ComputedMetrics/Configuration/ComputedMetricsSection.php	25	coupling.instability	warning=0.85 -- Ca=2, Ce=11: the owned section schema
 src/Analysis/Evidence/ComputedMetrics/Evaluation/ComputedMetricReads.php	31	coupling.instability	warning=0.800001 -- Formula traversal depends on expression node kinds and has a small incoming population; splitting that traversal transfers its node dependencies.
 src/Analysis/Evidence/Coupling/RfcCollector.php	21	coupling.instability	warning=0.800001 -- The collection adapter reads exact declaration and metric transports; its small incoming population does not model that required outward composition.
-src/Analysis/Evidence/Coupling/RfcReceiverTypes.php	13	coupling.instability	warning=0.875001 -- Receiver evidence reads the supported PHP type and expression grammar; its small incoming population does not model that required outward composition.
+src/Analysis/Evidence/Coupling/RfcReceiverTypes.php	15	coupling.instability	warning=0.875001 -- Receiver evidence reads the supported PHP type and expression grammar; its small incoming population does not model that required outward composition.
 src/Analysis/Evidence/Design/DataClass/DataClassOptions.php	28	coupling.instability	warning=0.81 -- The eighth efferent edge is
 src/Analysis/Evidence/Design/GodClass/GodClassOptions.php	36	coupling.instability	warning=0.81 -- The eighth efferent edge is
 src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	26	coupling.instability	warning=0.95 error=0.95 -- A composition root depends outward on everything it assembles and is depended on by one trait; instability near one is its shape, not its defect.

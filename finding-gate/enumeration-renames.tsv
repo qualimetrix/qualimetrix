@@ -36,7 +36,7 @@ complexity.ccn	channel	?		77	1618	2	3	15	200	0	288	0	0	0	0
 complexity.cognitive	channel	?		21	109	2	2	9	56	0	264	0	0	0	0
 complexity.npath	channel	?		18	126	2	2	3	51	0	258	0	0	0	0
 complexity.wmc	channel	?		27	183	2	2	2	39	0	228	0	0	0	0
-coupling.cbo	channel	?		71	396	2	5	9	132	0	333	0	0	0	0
+coupling.cbo	channel	?		72	396	2	5	9	132	0	333	0	0	0	0
 coupling.class-rank	channel	?		23	105	0	2	1	43	0	271	0	0	0	0
 coupling.distance	channel	?		41	110	2	2	1	48	0	176	0	0	0	0
 coupling.instability	channel	?		74	139	2	4	5	60	0	341	0	0	0	0
@@ -82,7 +82,7 @@ coupling.abstractness	metric-key	?		36	36	0	0	0	4	0	103	0	0	0	0
 coupling.abstractness-own	metric-key	?		9	23	0	0	0	5	0	88	0	0	0	0
 coupling.ca	metric-key	?		29	80	0	0	0	14	0	298	0	0	0	0
 coupling.ca-own	metric-key	?		9	27	0	0	0	8	0	88	0	0	0	0
-coupling.cbo	metric-key	?		71	396	2	5	9	132	0	333	0	0	0	0
+coupling.cbo	metric-key	?		72	396	2	5	9	132	0	333	0	0	0	0
 coupling.cbo-app	metric-key	?		24	22	0	0	0	19	0	210	0	0	0	0
 coupling.cbo-own	metric-key	?		11	20	0	0	0	12	0	88	0	0	0	0
 coupling.ce	metric-key	?		43	106	0	0	0	18	0	314	0	0	0	0
@@ -180,7 +180,7 @@ complexity.cognitive	producer	?		21	109	2	2	9	56	0	264	0	0	0	0
 complexity.npath	producer	?		18	126	2	2	3	51	0	258	0	0	0	0
 complexity.wmc	producer	?		27	183	2	2	2	39	0	228	0	0	0	0
 computed	producer	?		143	169	0	1	0	63	0	72	0	0	0	0
-coupling.cbo	producer	?		71	396	2	5	9	132	0	333	0	0	0	0
+coupling.cbo	producer	?		72	396	2	5	9	132	0	333	0	0	0	0
 coupling.class-rank	producer	?		23	105	0	2	1	43	0	271	0	0	0	0
 coupling.distance	producer	?		41	110	2	2	1	48	0	176	0	0	0	0
 coupling.instability	producer	?		74	139	2	4	5	60	0	341	0	0	0	0
