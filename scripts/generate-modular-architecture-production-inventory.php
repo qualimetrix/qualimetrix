@@ -888,6 +888,11 @@ if ($documentationProbe !== null) {
     fwrite(STDOUT, implode("\t", documentationDisposition($documentationProbe)) . "\n");
     exit(0);
 }
+$actualBindingOperations = [];
+if ($compositionProbe === null) {
+    $actualBindingOperations = classifyCompositionBindingOperations($root, $manifest, $sourceOverrides);
+    validateCompositionBindingOperations($manifest, $actualBindingOperations);
+}
 $rows = declarations($root, $sourceOverrides);
 if ($rows === []) {
     fail('no production declarations found');
@@ -997,7 +1002,6 @@ if ($compositionProbe !== null) {
     exit(0);
 }
 
-$actualBindingOperations = classifyCompositionBindingOperations($root, $manifest, $byName, $sourceOverrides);
 $authorization = validateAuthorizations($manifest, $byName, $observedPairs, $rows, $actualBindingOperations);
 $enforcement = buildEnforcementProjection($manifest, $byName, $observedPairs);
 assertDag($enforcement['allow'], 'generated qmx allow graph');
@@ -1389,12 +1393,11 @@ function failSetDifference(string $label, array $expected, array $actual): never
  * deliberately do not contribute evidence.
  *
  * @param array<string, mixed> $manifest
- * @param array<string, array<string, mixed>> $byName
  * @param array<string, string> $sourceOverrides
  *
  * @return array<string, list<string>> exact source\0target => sorted operations
  */
-function classifyCompositionBindingOperations(string $root, array $manifest, array $byName, array $sourceOverrides): array
+function classifyCompositionBindingOperations(string $root, array $manifest, array $sourceOverrides): array
 {
     $targetsBySource = [];
     foreach ($manifest['declarations'] as $target => $entry) {
@@ -1410,7 +1413,7 @@ function classifyCompositionBindingOperations(string $root, array $manifest, arr
     $finder = new NodeFinder();
     $operations = [];
     foreach ($targetsBySource as $source => $targets) {
-        $path = $byName[$source]['path'] ?? null;
+        $path = $manifest['declarations'][$source]['path'] ?? null;
         if (!is_string($path)) {
             fail("composition binding source {$source} has no production path");
         }
@@ -1531,6 +1534,38 @@ function classifyCompositionBindingOperations(string $root, array $manifest, arr
     }
 
     return $result;
+}
+
+/**
+ * @param array<string, mixed> $manifest
+ * @param array<string, list<string>> $actualBindingOperations
+ */
+function validateCompositionBindingOperations(array $manifest, array $actualBindingOperations): void
+{
+    foreach ($manifest['declarations'] as $target => $entry) {
+        foreach ($entry['consumers'] as $consumer) {
+            if (($consumer['relation'] ?? 'import') !== 'composition_binding') {
+                continue;
+            }
+            $source = $consumer['source_fqcn'];
+            $declared = $consumer['operations'];
+            sort($declared, SORT_STRING);
+            $actual = $actualBindingOperations[$source . "\0" . $target] ?? [];
+            sort($actual, SORT_STRING);
+            if ($actual === []) {
+                fail("unclassified composition_binding {$source} -> {$target}: no Symfony container binding operation");
+            }
+            if ($declared !== $actual) {
+                fail(sprintf(
+                    'composition_binding operation mismatch %s -> %s: declared=[%s] actual=[%s]',
+                    $source,
+                    $target,
+                    implode(',', $declared),
+                    implode(',', $actual),
+                ));
+            }
+        }
+    }
 }
 
 function methodName(Node\Expr\MethodCall $call): ?string
@@ -1878,25 +1913,7 @@ function validateAuthorizations(array $manifest, array $byName, array $observedP
     }
     validateContractCompositions($manifest, $byName, $observedPairs, $consumerUse);
     validateContractSurfaces($manifest, $byName, $observedPairs, $consumerUse);
-    foreach ($bindings as $pair => &$binding) {
-        $declared = $binding['consumer']['operations'];
-        sort($declared, SORT_STRING);
-        $actual = $binding['actual_operations'];
-        sort($actual, SORT_STRING);
-        if ($actual === []) {
-            [$source, $target] = explode("\0", $pair, 2);
-            fail("unclassified composition_binding {$source} -> {$target}: no Symfony container binding operation");
-        }
-        if ($declared !== $actual) {
-            [$source, $target] = explode("\0", $pair, 2);
-            fail(sprintf(
-                'composition_binding operation mismatch %s -> %s: declared=[%s] actual=[%s]',
-                $source,
-                $target,
-                implode(',', $declared),
-                implode(',', $actual),
-            ));
-        }
+    foreach ($bindings as &$binding) {
         $binding['used'] = true;
     }
     unset($binding);
