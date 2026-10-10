@@ -90,7 +90,7 @@ final class OutputFormatSchemaConsistencyTest extends TestCase
                 contentRequirements: [
                     'a project-level finding, so a SARIF result has no `locations` and a top issue has no `file`',
                     'a finding carrying a typed `edge`',
-                    'a top issue with a non-null `coupling.class-rank` and one without',
+                    'a top issue with a non-null `coupling.class-rank-share` and one without',
                     'a global function, so the `metrics` `type` enum can publish `function`',
                 ],
             ),
@@ -498,8 +498,8 @@ final class OutputFormatSchemaConsistencyTest extends TestCase
                 && self::anyEntry($results, static fn(array $r): bool => !isset($r['locations']))
                 && self::anyEntry($results, static fn(array $r): bool => isset($r['locations'])),
             'full: a finding carrying a typed `edge`' => self::anyEntry($violations, static fn(array $v): bool => \is_array($v['edge']) && isset($v['edge']['type'])),
-            'full: a top issue with a non-null `coupling.class-rank` and one without' => self::anyEntry($topIssues, static fn(array $t): bool => $t['coupling.class-rank'] !== null)
-                && self::anyEntry($topIssues, static fn(array $t): bool => $t['coupling.class-rank'] === null),
+            'full: a top issue with a non-null `coupling.class-rank-share` and one without' => self::anyEntry($topIssues, static fn(array $t): bool => $t['coupling.class-rank-share'] !== null)
+                && self::anyEntry($topIssues, static fn(array $t): bool => $t['coupling.class-rank-share'] === null),
             'full: a global function, so the `metrics` `type` enum can publish `function`' => self::anyEntry(
                 self::symbolsOf(OutputFormatObservation::json(self::scenario('full'), 'metrics')),
                 static fn(array $symbol): bool => $symbol['type'] === 'function',
@@ -875,6 +875,10 @@ final class OutputFormatSchemaConsistencyTest extends TestCase
                 '(root)' => [
                     [self::PAGE_EN, 'json', '/\*\*Top-level keys:\*\*(?<keys>.*?`violationGroups`)/su', true],
                     [self::PAGE_RU, 'json', '/\*\*Ключи верхнего уровня:\*\*(?<keys>.*?`violationGroups`)/su', true],
+                ],
+                'abstentions[]' => [
+                    [self::PAGE_EN, 'Selected', '/Each nonempty group has(?<keys>.*?)\.\s+The first/su'],
+                    [self::PAGE_RU, 'Популяции', '/Непустая группа несёт(?<keys>.*?)\.\s+Группа/su'],
                 ],
                 'violationGroups.{}' => [
                     [self::PAGE_EN, 'json', '/Each group is\s+(?<keys>`\{count, violations\}`)/su'],

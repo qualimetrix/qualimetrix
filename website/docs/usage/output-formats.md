@@ -401,11 +401,14 @@ The `worstNamespaces` and `worstClasses` entries include a `violationDensity` fi
 `topIssues` is the same ranked list the `summary` format prints as "Top issues
 by impact"; no other format renders it. Each entry names the rule-specific
 `impactScore` used for ranking and the estimated `debtMinutes`. The
-`coupling.class-rank-share` key is always present, but its value is `null` unless the
-rule producing the issue reads a coupling-hub signal; `file` and `line` are
-nullable too, because a project-level finding has no source position. The share
-is raw PageRank multiplied by the logical graph vertex count, in multiples of
-uniform probability. Metrics exports retain raw `coupling.class-rank` and also
+`coupling.class-rank-share` key is always present. Class and method findings use
+their class's measured share; file and namespace findings use the maximum share
+among their classes. It is `null` when no finite share is available, and for
+function and project findings. Ranking may use the measured median as a fallback
+for `impactScore` without replacing that `null`. `file` and `line` are nullable
+too, because a project-level finding has no source position. The share is raw
+PageRank multiplied by the logical graph vertex count, in multiples of uniform
+probability. Metrics exports retain raw `coupling.class-rank` and also
 publish `coupling.class-rank-share`; ranking never substitutes raw probability
 for missing share.
 
@@ -821,12 +824,17 @@ GitHub Actions workflow command format. Produces inline annotations that appear 
 
 **When to use:** GitHub Actions CI. Simpler setup than SARIF — no upload step needed.
 
-Workflow command format: `::<level> file=<path>,line=<n>,title=<rule>::<message>` (one line per violation). Mapping: warning → `::warning`, error → `::error`.
+Workflow command format: `::<level> file=<path>,line=<n>,title=<rule>::<message>` (one line per violation). Mapping: info → `::notice`, warning → `::warning`, error → `::error`.
 
 Only `title=` appears on every line. A project-level finding has no source
 position, so it is annotated as `::<level> title=<rule>::<message>` — without
 `file=` and `line=`, which GitHub then shows against the workflow run rather
 than against a line in the diff.
+
+Report diagnostics also use `::notice` with only `title=`: selected populations
+left unjudged (`rule-population.incomplete`), project scope (`run.project-scope`)
+and findings outside a selection (`drill-down.out-of-scope`). These notices
+describe the report without adding violations or changing policy exit status.
 
 <!-- llms:skip-begin -->
 **Example output:**
