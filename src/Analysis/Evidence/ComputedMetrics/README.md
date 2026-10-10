@@ -361,6 +361,10 @@ one connected component has no penalty and six exhaust the contribution.
 Namespace aggregation alone must not change that scale. Class purity adjustment
 and the populations covered by the two levels still differ; this does not
 promise that every namespace score exceeds its lowest member score.
+The built-in project cohesion score inherits the namespace formula and evaluates
+it on project aggregate inputs, rather than averaging namespace health scores.
+The shared-scale correction therefore also changes project cohesion and its
+contribution to project overall; review limits and accepted ranges at both levels.
 
 ## Formula reach for baseline comparison
 

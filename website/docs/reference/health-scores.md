@@ -78,6 +78,8 @@ Combines available TCC (Tight Class Cohesion) and LCOM4 contributions and divide
 
 The unadjusted LCOM contribution uses the same span of five at class and namespace levels: one component receives no penalty, and six exhaust the contribution. The class purity adjustment remains separate; matching this scale does not guarantee monotonicity between every namespace and its member classes.
 
+The built-in project cohesion score inherits the namespace formula and uses project aggregate inputs directly; it does not average namespace health scores. The change from span two to five therefore also changes project cohesion and its contribution to overall. Review namespace/project health limits and accepted benchmark ranges.
+
 ### Coupling
 
 Uses hyperbolic decay (`K / (K + penalty)`) for smooth scoring.
