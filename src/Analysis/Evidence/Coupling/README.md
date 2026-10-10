@@ -464,3 +464,8 @@ judges whole-project scope, then graph availability, then the actual names
 classified by coupling. An unknown graph contributes one invocation; an
 empty configured selector roster contributes none. Known selector rosters
 retain their configured-selector unit.
+
+Coupling rules use Finding’s protected population declaration factories. Their
+source-owned lazy inputs retain namespace admission before metric reads and
+exact PHP-kind checks before class bag acquisition. The ClassRank finding
+builder receives the same full declaration used by its invocation.

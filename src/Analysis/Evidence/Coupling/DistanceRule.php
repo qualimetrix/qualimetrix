@@ -13,14 +13,8 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Finding\Contract\Population\ContextGuard;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
-use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
-use Qualimetrix\Analysis\Finding\Contract\Population\KeyThreshold;
-use Qualimetrix\Analysis\Finding\Contract\Population\NameMatches;
-use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -28,7 +22,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
-use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Pattern\NamespaceMatcher;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -253,16 +246,15 @@ final class DistanceRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Higher,
-                JudgedMetrics::of(MetricName::COUPLING_DISTANCE_OWN),
+            self::NAME => self::judgingHigher(
+                [MetricName::COUPLING_DISTANCE_OWN],
                 SymbolLevel::Namespace_,
             )->withGates(
-                new PopulationGate('namespace-known', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', new ContextGuard('namespaceCoordinateKnown'), 'The namespace coordinate is unknown.'),
-                new PopulationGate('namespace-selected', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', new NameMatches('namespace-selected'), 'The namespace is outside the configured project selection.'),
-                new PopulationGate('own-types', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', new KeyThreshold('own-types', [MetricName::SIZE_CLASS_COUNT, MetricName::SIZE_TRAIT_COUNT, MetricName::SIZE_INTERFACE_COUNT, MetricName::SIZE_IMPLEMENTING_ENUM_COUNT], '>=', 'own-types', 'zero', true), 'The own type population is below its minimum.'),
-                new PopulationGate('own-distance', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', new KeyPresent('own-distance', [MetricName::COUPLING_DISTANCE_OWN]), 'Own distance was not published.'),
-                new PopulationGate('own-coupling', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', new KeyThreshold('own-coupling', [MetricName::COUPLING_CA_OWN, MetricName::COUPLING_CE_OWN], '>', 0, 'refuse', true), 'The own namespace has no coupling.'),
+                self::populationGate('namespace-known', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', self::contextGuard('namespaceCoordinateKnown'), 'The namespace coordinate is unknown.'),
+                self::populationGate('namespace-selected', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', self::nameMatches('namespace-selected'), 'The namespace is outside the configured project selection.'),
+                self::populationGate('own-types', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', self::keyThreshold('own-types', [MetricName::SIZE_CLASS_COUNT, MetricName::SIZE_TRAIT_COUNT, MetricName::SIZE_INTERFACE_COUNT, MetricName::SIZE_IMPLEMENTING_ENUM_COUNT], '>=', 'own-types', 'zero', true), 'The own type population is below its minimum.'),
+                self::populationGate('own-distance', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', self::keyPresent('own-distance', [MetricName::COUPLING_DISTANCE_OWN]), 'Own distance was not published.'),
+                self::populationGate('own-coupling', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', self::keyThreshold('own-coupling', [MetricName::COUPLING_CA_OWN, MetricName::COUPLING_CE_OWN], '>', 0, 'refuse', true), 'The own namespace has no coupling.'),
             ),
         ];
     }

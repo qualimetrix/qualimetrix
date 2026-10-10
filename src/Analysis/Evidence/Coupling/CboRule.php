@@ -10,21 +10,15 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
-use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
-use Qualimetrix\Analysis\Finding\Contract\Population\KeyThreshold;
-use Qualimetrix\Analysis\Finding\Contract\Population\KindIn;
 
-use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -135,20 +129,17 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Higher,
-                JudgedMetrics::of(
-                    MetricName::COUPLING_CBO,
+            self::NAME => self::judgingHigher(
+                [MetricName::COUPLING_CBO,
                     MetricName::COUPLING_CBO_APP,
-                    MetricName::COUPLING_CBO_OWN,
-                ),
+                    MetricName::COUPLING_CBO_OWN,],
                 SymbolLevel::Class_,
                 SymbolLevel::Namespace_,
             )->withGates(
-                new PopulationGate('class-coordinate', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
-                new PopulationGate('class-cbo', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KeyPresent('class-cbo', ['all' => MetricName::COUPLING_CBO, 'application' => MetricName::COUPLING_CBO_APP]), 'The selected CBO publication is unavailable.'),
-                new PopulationGate('own-classes', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', new KeyThreshold('own-classes', [MetricName::SIZE_CLASS_COUNT], '>=', 'own-classes', 'zero', true), 'Own classes are below the configured minimum.'),
-                new PopulationGate('own-cbo', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', new KeyPresent('own-cbo', [MetricName::COUPLING_CBO_OWN]), 'Own CBO was not published.'),
+                self::populationGate('class-coordinate', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', self::kindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
+                self::populationGate('class-cbo', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', self::keyPresent('class-cbo', ['all' => MetricName::COUPLING_CBO, 'application' => MetricName::COUPLING_CBO_APP]), 'The selected CBO publication is unavailable.'),
+                self::populationGate('own-classes', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', self::keyThreshold('own-classes', [MetricName::SIZE_CLASS_COUNT], '>=', 'own-classes', 'zero', true), 'Own classes are below the configured minimum.'),
+                self::populationGate('own-cbo', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', self::keyPresent('own-cbo', [MetricName::COUPLING_CBO_OWN]), 'Own CBO was not published.'),
             ),
         ];
     }

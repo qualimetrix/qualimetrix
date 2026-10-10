@@ -11,14 +11,9 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
-use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
-use Qualimetrix\Analysis\Finding\Contract\Population\KeyThreshold;
-use Qualimetrix\Analysis\Finding\Contract\Population\KindIn;
 
-use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -26,7 +21,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
-use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -138,18 +132,17 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::judging(
-                WorseDirection::Higher,
-                JudgedMetrics::of(MetricName::COUPLING_INSTABILITY),
+            self::NAME => self::judgingHigher(
+                [MetricName::COUPLING_INSTABILITY],
                 SymbolLevel::Class_,
                 SymbolLevel::Namespace_,
             )->withGates(
-                new PopulationGate('class-coordinate', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
-                new PopulationGate('class-instability', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KeyPresent('class-instability', [MetricName::COUPLING_INSTABILITY]), 'Class instability was not published.'),
-                new PopulationGate('class-afferent', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KeyThreshold('class-afferent', [MetricName::COUPLING_CA], '>=', 'class-afferent', 'zero', true), 'Class afferent coupling is below its minimum.'),
-                new PopulationGate('namespace-classes', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', new KeyThreshold('namespace-classes', [MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)], '>=', 'namespace-classes', 'zero', true), 'Subtree classes are below the configured minimum.'),
-                new PopulationGate('namespace-instability', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', new KeyPresent('namespace-instability', [MetricName::COUPLING_INSTABILITY]), 'Namespace instability was not published.'),
-                new PopulationGate('namespace-afferent', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', new KeyThreshold('namespace-afferent', [MetricName::COUPLING_CA], '>=', 'namespace-afferent', 'zero', true), 'Namespace afferent coupling is below its minimum.'),
+                self::populationGate('class-coordinate', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', self::kindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
+                self::populationGate('class-instability', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', self::keyPresent('class-instability', [MetricName::COUPLING_INSTABILITY]), 'Class instability was not published.'),
+                self::populationGate('class-afferent', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', self::keyThreshold('class-afferent', [MetricName::COUPLING_CA], '>=', 'class-afferent', 'zero', true), 'Class afferent coupling is below its minimum.'),
+                self::populationGate('namespace-classes', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', self::keyThreshold('namespace-classes', [MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)], '>=', 'namespace-classes', 'zero', true), 'Subtree classes are below the configured minimum.'),
+                self::populationGate('namespace-instability', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', self::keyPresent('namespace-instability', [MetricName::COUPLING_INSTABILITY]), 'Namespace instability was not published.'),
+                self::populationGate('namespace-afferent', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', self::keyThreshold('namespace-afferent', [MetricName::COUPLING_CA], '>=', 'namespace-afferent', 'zero', true), 'Namespace afferent coupling is below its minimum.'),
             ),
         ];
     }

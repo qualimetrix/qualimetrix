@@ -6,19 +6,15 @@ namespace Qualimetrix\Analysis\Evidence\Coupling;
 
 use LogicException;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Finding\Contract\Population\ContextGuard;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
 
-use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
-use Qualimetrix\Analysis\Finding\Contract\Population\KeyThreshold;
-use Qualimetrix\Analysis\Finding\Contract\Population\KindIn;
-use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -75,42 +71,57 @@ final class ClassRankRule extends AbstractRule
         $findings = [];
         foreach ($classes as $info) {
             $subject = $info->subject ?? throw new LogicException('ClassRank requires an exact declaration subject.');
-            $fact = $facts[$subject->toCanonical()];
-            $metrics = null;
-            if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), $declaration, (static function () use ($context, $subject, $fact, &$metrics): iterable {
-                yield GateInput::context('graphAvailable', true);
-                yield GateInput::kind('class-coordinate', $subject->toSymbolPath()->getType());
-                yield GateInput::kind('php-class', $fact->type);
-                $metrics = $context->metrics->getSubject($subject);
-                yield GateInput::metrics('class-rank-share', $metrics);
-                yield GateInput::metrics('dependents', $metrics);
-            })())) {
-                continue;
+            $finding = $this->findingForClass($info, $facts[$subject->toCanonical()]->type, $context, $declaration);
+            if ($finding !== null) {
+                $findings[] = $finding;
             }
-            $rank = (float) $metrics->require(MetricName::COUPLING_CLASS_RANK_SHARE);
-            /** @var ClassRankOptions $options */
-            $options = $this->getEffectiveOptions($context, $this->options, $subject);
-            $severity = $options->getSeverity($rank);
-            if ($severity === null) {
-                continue;
-            }
-            $threshold = $severity === Severity::Error ? $options->error : $options->warning;
-            [$valueText, $thresholdText, $rounded] = self::display($rank, $threshold);
-            $dependents = (int) $metrics->require(MetricName::COUPLING_CA);
-            $findings[] = new Finding(
-                location: new Location($info->file, $info->line),
-                subject: $subject,
-                symbolPath: $subject->toSymbolPath(),
-                ruleName: self::NAME,
-                code: self::NAME,
-                message: \sprintf('ClassRank share is %s× uniform, %s threshold of %s×%s. This class is a critical hub — changes have wide impact', $valueText, ThresholdCrossing::of($rank, $threshold)->value, $thresholdText, $rounded ? ' (display rounded)' : ''),
-                severity: $severity,
-                metricValue: $rank,
-                threshold: $threshold,
-                recommendation: \sprintf('ClassRank share: %s× uniform (threshold: %s×%s) — coupling hotspot, %d %s on this', $valueText, $thresholdText, $rounded ? ', display rounded' : '', $dependents, $dependents === 1 ? 'class depends' : 'classes depend'),
-            );
         }
         return $findings;
+    }
+
+    private function findingForClass(SymbolInfo $info, ClassType $type, AnalysisContext $context, ChannelDeclaration $declaration): ?Finding
+    {
+        $subject = $info->subject ?? throw new LogicException('ClassRank requires an exact declaration subject.');
+        $metrics = $this->admittedMetrics(
+            $context,
+            $subject,
+            $declaration,
+            static function (MetricBag $metrics): iterable {
+                yield GateInput::metrics('class-rank-share', $metrics);
+                yield GateInput::metrics('dependents', $metrics);
+            },
+            (static function () use ($subject, $type): iterable {
+                yield GateInput::context('graphAvailable', true);
+                yield GateInput::kind('class-coordinate', $subject->toSymbolPath()->getType());
+                yield GateInput::kind('php-class', $type);
+            })(),
+            level: SymbolLevel::Class_,
+        );
+        if ($metrics === null) {
+            return null;
+        }
+        $rank = (float) $metrics->require(MetricName::COUPLING_CLASS_RANK_SHARE);
+        /** @var ClassRankOptions $options */
+        $options = $this->getEffectiveOptions($context, $this->options, $subject);
+        $severity = $options->getSeverity($rank);
+        if ($severity === null) {
+            return null;
+        }
+        $threshold = $severity === Severity::Error ? $options->error : $options->warning;
+        [$valueText, $thresholdText, $rounded] = self::display($rank, $threshold);
+        $dependents = (int) $metrics->require(MetricName::COUPLING_CA);
+        return new Finding(
+            location: new Location($info->file, $info->line),
+            subject: $subject,
+            symbolPath: $subject->toSymbolPath(),
+            ruleName: self::NAME,
+            code: self::NAME,
+            message: \sprintf('ClassRank share is %s× uniform, %s threshold of %s×%s. This class is a critical hub — changes have wide impact', $valueText, ThresholdCrossing::of($rank, $threshold)->value, $thresholdText, $rounded ? ' (display rounded)' : ''),
+            severity: $severity,
+            metricValue: $rank,
+            threshold: $threshold,
+            recommendation: \sprintf('ClassRank share: %s× uniform (threshold: %s×%s) — coupling hotspot, %d %s on this', $valueText, $thresholdText, $rounded ? ', display rounded' : '', $dependents, $dependents === 1 ? 'class depends' : 'classes depend'),
+        );
     }
 
     /** @param list<SymbolInfo> $classes
@@ -179,11 +190,11 @@ final class ClassRankRule extends AbstractRule
     {
         return [
             self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Class_)->readingRunEvidence()->withGates(
-                new PopulationGate('graph-available', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new ContextGuard('graphAvailable'), 'The dependency graph is unavailable.', 'invocation'),
-                new PopulationGate('class-coordinate', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KindIn('class-coordinate', [SymbolType::Class_]), 'ClassRank requires a class coordinate.'),
-                new PopulationGate('php-class', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KindIn('php-class', [ClassType::Class_]), 'Only exact PHP classes are judged.'),
-                new PopulationGate('class-rank-share', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KeyPresent('class-rank-share', [MetricName::COUPLING_CLASS_RANK_SHARE]), 'ClassRank share was not published.'),
-                new PopulationGate('dependents', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', new KeyThreshold('dependents', [MetricName::COUPLING_CA], '>', 0, 'refuse', true), 'A class with no dependents is outside hotspot judgement.'),
+                self::populationGate('graph-available', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', self::contextGuard('graphAvailable'), 'The dependency graph is unavailable.', 'invocation'),
+                self::populationGate('class-coordinate', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', self::kindIn('class-coordinate', [SymbolType::Class_]), 'ClassRank requires a class coordinate.'),
+                self::populationGate('php-class', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', self::kindIn('php-class', [ClassType::Class_]), 'Only exact PHP classes are judged.'),
+                self::populationGate('class-rank-share', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', self::keyPresent('class-rank-share', [MetricName::COUPLING_CLASS_RANK_SHARE]), 'ClassRank share was not published.'),
+                self::populationGate('dependents', new FindingChannel(self::NAME), SymbolLevel::Class_, 'declaration', self::keyThreshold('dependents', [MetricName::COUPLING_CA], '>', 0, 'refuse', true), 'A class with no dependents is outside hotspot judgement.'),
             ),
         ];
     }

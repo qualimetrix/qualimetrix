@@ -10,10 +10,8 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
-use Qualimetrix\Analysis\Finding\Contract\Population\ContextGuard;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
 
-use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -120,9 +118,9 @@ final class UnmatchedFrameworkNamespaceRule extends AbstractRule
     {
         return [
             self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)->withGates(
-                new PopulationGate('namespace-scope', new FindingChannel(self::NAME), SymbolLevel::Project, 'configured-framework-selector', new ContextGuard('namespaceClaimsJudged'), 'The run cannot judge whole-project namespace claims.'),
-                new PopulationGate('graph-available', new FindingChannel(self::NAME), SymbolLevel::Project, 'configured-framework-selector', new ContextGuard('graphAvailable'), 'The dependency graph is unavailable.', 'invocation'),
-                new PopulationGate('classified-names', new FindingChannel(self::NAME), SymbolLevel::Project, 'configured-framework-selector', new ContextGuard('frameworkClassifiedNonempty'), 'The run classified no dependency names.'),
+                self::populationGate('namespace-scope', new FindingChannel(self::NAME), SymbolLevel::Project, 'configured-framework-selector', self::contextGuard('namespaceClaimsJudged'), 'The run cannot judge whole-project namespace claims.'),
+                self::populationGate('graph-available', new FindingChannel(self::NAME), SymbolLevel::Project, 'configured-framework-selector', self::contextGuard('graphAvailable'), 'The dependency graph is unavailable.', 'invocation'),
+                self::populationGate('classified-names', new FindingChannel(self::NAME), SymbolLevel::Project, 'configured-framework-selector', self::contextGuard('frameworkClassifiedNonempty'), 'The run classified no dependency names.'),
             ),
         ];
     }
@@ -180,6 +178,25 @@ final class UnmatchedFrameworkNamespaceRule extends AbstractRule
             return [];
         }
         $declaration = self::channelDeclarations()[self::NAME];
+        $classified = $this->classifiedNames($context, $declaration, $selectors);
+        if ($classified === null || $classified === []) {
+            return [];
+        }
+        $findings = [];
+        foreach ($this->coupling->unboundSelectors($classified) as $selector) {
+            $findings[] = $this->finding($selector);
+        }
+
+        return $findings;
+    }
+
+    /**
+     * @param list<NamespacePattern> $selectors
+     *
+     * @return list<string>|null
+     */
+    private function classifiedNames(AnalysisContext $context, ChannelDeclaration $declaration, array $selectors): ?array
+    {
         $scope = $context->projectScope->judgesNamespaceClaims();
         if (!$scope) {
             foreach ($selectors as $selector) {
@@ -187,7 +204,7 @@ final class UnmatchedFrameworkNamespaceRule extends AbstractRule
                     yield GateInput::context('namespaceClaimsJudged', false);
                 })());
             }
-            return [];
+            return null;
         }
         $graph = $context->dependencyGraph;
         if ($graph === null) {
@@ -195,7 +212,7 @@ final class UnmatchedFrameworkNamespaceRule extends AbstractRule
                 yield GateInput::context('namespaceClaimsJudged', true);
                 yield GateInput::context('graphAvailable', false);
             })());
-            return [];
+            return null;
         }
         $classified = FrameworkClassificationSites::names(
             $graph,
@@ -208,15 +225,7 @@ final class UnmatchedFrameworkNamespaceRule extends AbstractRule
                 yield GateInput::context('frameworkClassifiedNonempty', $classified !== []);
             })());
         }
-        if ($classified === []) {
-            return [];
-        }
-        $findings = [];
-        foreach ($this->coupling->unboundSelectors($classified) as $selector) {
-            $findings[] = $this->finding($selector);
-        }
-
-        return $findings;
+        return $classified;
     }
 
     private function finding(NamespacePattern $selector): Finding
