@@ -1,0 +1,52 @@
+--- candidate
++++ reference (mapped)
+@@ -116,0 +116,4 @@
++                "cohesion.lcom.avg": 1.2,
++                "cohesion.lcom.max": 2,
++                "cohesion.lcom.p95": 1.7999999999999998,
++                "cohesion.lcom.count": 5,
+@@ -255,4 +259,0 @@
+-                "cohesion.lcom.avg": 1.2,
+-                "cohesion.lcom.max": 2,
+-                "cohesion.lcom.p95": 1.7999999999999998,
+-                "cohesion.lcom.count": 5,
+@@ -341,0 +341,4 @@
++                "cohesion.lcom.avg": 1.2,
++                "cohesion.lcom.max": 2,
++                "cohesion.lcom.p95": 1.7999999999999998,
++                "cohesion.lcom.count": 5,
+@@ -493,4 +497,0 @@
+-                "cohesion.lcom.avg": 1.2,
+-                "cohesion.lcom.max": 2,
+-                "cohesion.lcom.p95": 1.7999999999999998,
+-                "cohesion.lcom.count": 5,
+@@ -570,0 +570,4 @@
++                "cohesion.lcom.avg": 1.2,
++                "cohesion.lcom.max": 2,
++                "cohesion.lcom.p95": 1.7999999999999998,
++                "cohesion.lcom.count": 5,
+@@ -719,4 +723,0 @@
+-                "cohesion.lcom.avg": 1.2,
+-                "cohesion.lcom.max": 2,
+-                "cohesion.lcom.p95": 1.7999999999999998,
+-                "cohesion.lcom.count": 5,
+@@ -802,0 +802,1 @@
++                "cohesion.lcom": 1,
+@@ -867,1 +868,0 @@
+-                "cohesion.lcom": 1,
+@@ -894,0 +894,1 @@
++                "cohesion.lcom": 1,
+@@ -959,1 +960,0 @@
+-                "cohesion.lcom": 1,
+@@ -986,0 +986,1 @@
++                "cohesion.lcom": 1,
+@@ -1050,1 +1051,0 @@
+-                "cohesion.lcom": 1,
+@@ -1077,0 +1077,1 @@
++                "cohesion.lcom": 2,
+@@ -1142,1 +1143,0 @@
+-                "cohesion.lcom": 2,
+@@ -1169,0 +1169,1 @@
++                "cohesion.lcom": 1,
+@@ -1233,1 +1234,0 @@
+-                "cohesion.lcom": 1,
