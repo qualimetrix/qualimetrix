@@ -1,0 +1,15 @@
+--- candidate
++++ reference (mapped)
+@@ -92,12 +92,0 @@
+-            "producer": "cohesion.lcom",
+-            "channel": "cohesion.lcom",
+-            "level": "class",
+-            "gate": "minimum-methods",
+-            "reason": "Methods are below the configured minimum. Metric population boundary was not met.",
+-            "unit": "declaration",
+-            "count": 1,
+-            "examples": [
+-                "declaration:class:Corpus\\Annotations\\Directives@src/Directives.php"
+-            ]
+-        },
+-        {

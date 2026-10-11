@@ -1,0 +1,64 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 8168
++visible 7988
+@@ -6,2 +6,2 @@
+-Rule population incomplete — callable: 107 judged, 33 not judged; declaration: 169 judged, 43 not judged; invocation: 0 judged, 3 not judged; namespace: 57 judged, 20 not judged; project: 7 judged, 0 not judged.
+-Health ███████████████████████░░░░░░░ 75.3% Critical
++Rule population incomplete — callable: 107 judged, 33 not judged; declaration: 170 judged, 42 not judged; invocation: 0 judged, 3 not judged; namespace: 57 judged, 20 not judged; project: 7 judged, 0 not judged.
++Health ██████████████████████░░░░░░░░ 75.0% Critical
+@@ -21,6 +21,6 @@
+-  Coupling        ████████████████████████░░░░░░ 80.8% Critical
+-                   computed over 4 of 5 namespaces declaring a type (80%)
+-                   ↳ Distance (own): 0.7 (target: below 0.3) — poor balance of abstraction and stability in its own classes
+-                   ↳ Ce pkg (avg): 0.5 (target: joint breadth at most 4 (3 * Ce pkg avg + 0.5 * sqrt(Ce avg))) — contributes to joint breadth with average outgoing class dependencies
+-                   ↳ Ce (avg): 1.2 (target: joint breadth at most 4 (3 * Ce pkg avg + 0.5 * sqrt(Ce avg))) — contributes to joint breadth with average package dependencies
+-                   ↳ Ce (max): 5 (target: below 30) — no class exceeds the outgoing dependency ceiling
++  Coupling        ████████████████████████░░░░░░ 78.9% Critical
++                   computed over 5 of 5 namespaces declaring a type (100%)
++                   ↳ Distance (own): 0.8 (target: below 0.3) — poor balance of abstraction and stability in its own classes
++                   ↳ CBO (avg): 2.5 (target: below 8) — reasonable coupling
++                   ↳ CBO (p95): 5.6 (target: below 15) — even the most coupled classes stay contained
++                   ↳ CBO (max): 6 (target: below 30) — no single class dominates the graph
+@@ -39,3 +39,3 @@
+-  72.0 Corpus\Health\Engine (3 classes in subtree, 30 violations, 19.9/100 LOC) — high complexity, low type safety
+-  74.5 CorpusHttp (1 classes in subtree, 11 violations, 34.4/100 LOC) — low type safety, high complexity
+-  81.7 Corpus\Health\Support (3 classes in subtree, 21 violations, 24.1/100 LOC) — low type safety, high coupling
++  72.0 Corpus\Health\Engine (3 classes in subtree, 31 violations, 20.5/100 LOC) — high complexity, low type safety
++  74.5 CorpusHttp (1 classes in subtree, 11 violations, 34.4/100 LOC) — low type safety, high complexity
++  77.9 Corpus\Health\Engine\Stage (1 classes in subtree, 11 violations, 39.3/100 LOC) — low type safety, hard to maintain
+@@ -82,1 +82,1 @@
+-90 violations (74 errors, 16 warnings) | Tech debt: 2d 6h 30min (4383.1 min/kLOC to fix)
++91 violations (75 errors, 16 warnings) | Tech debt: 2d 6h 45min (4431.8 min/kLOC to fix)
+@@ -87,1 +87,1 @@
+-invocation-format:summary 8168
++invocation-format:summary 7988
+@@ -92,2 +92,2 @@
+-Rule population incomplete — callable: 107 judged, 33 not judged; declaration: 169 judged, 43 not judged; invocation: 0 judged, 3 not judged; namespace: 57 judged, 20 not judged; project: 7 judged, 0 not judged.
+-Health ███████████████████████░░░░░░░ 75.3% Critical
++Rule population incomplete — callable: 107 judged, 33 not judged; declaration: 170 judged, 42 not judged; invocation: 0 judged, 3 not judged; namespace: 57 judged, 20 not judged; project: 7 judged, 0 not judged.
++Health ██████████████████████░░░░░░░░ 75.0% Critical
+@@ -107,6 +107,6 @@
+-  Coupling        ████████████████████████░░░░░░ 80.8% Critical
+-                   computed over 4 of 5 namespaces declaring a type (80%)
+-                   ↳ Distance (own): 0.7 (target: below 0.3) — poor balance of abstraction and stability in its own classes
+-                   ↳ Ce pkg (avg): 0.5 (target: joint breadth at most 4 (3 * Ce pkg avg + 0.5 * sqrt(Ce avg))) — contributes to joint breadth with average outgoing class dependencies
+-                   ↳ Ce (avg): 1.2 (target: joint breadth at most 4 (3 * Ce pkg avg + 0.5 * sqrt(Ce avg))) — contributes to joint breadth with average package dependencies
+-                   ↳ Ce (max): 5 (target: below 30) — no class exceeds the outgoing dependency ceiling
++  Coupling        ████████████████████████░░░░░░ 78.9% Critical
++                   computed over 5 of 5 namespaces declaring a type (100%)
++                   ↳ Distance (own): 0.8 (target: below 0.3) — poor balance of abstraction and stability in its own classes
++                   ↳ CBO (avg): 2.5 (target: below 8) — reasonable coupling
++                   ↳ CBO (p95): 5.6 (target: below 15) — even the most coupled classes stay contained
++                   ↳ CBO (max): 6 (target: below 30) — no single class dominates the graph
+@@ -125,3 +125,3 @@
+-  72.0 Corpus\Health\Engine (3 classes in subtree, 30 violations, 19.9/100 LOC) — high complexity, low type safety
+-  74.5 CorpusHttp (1 classes in subtree, 11 violations, 34.4/100 LOC) — low type safety, high complexity
+-  81.7 Corpus\Health\Support (3 classes in subtree, 21 violations, 24.1/100 LOC) — low type safety, high coupling
++  72.0 Corpus\Health\Engine (3 classes in subtree, 31 violations, 20.5/100 LOC) — high complexity, low type safety
++  74.5 CorpusHttp (1 classes in subtree, 11 violations, 34.4/100 LOC) — low type safety, high complexity
++  77.9 Corpus\Health\Engine\Stage (1 classes in subtree, 11 violations, 39.3/100 LOC) — low type safety, hard to maintain
+@@ -168,1 +168,1 @@
+-90 violations (74 errors, 16 warnings) | Tech debt: 2d 6h 30min (4383.1 min/kLOC to fix)
++91 violations (75 errors, 16 warnings) | Tech debt: 2d 6h 45min (4431.8 min/kLOC to fix)

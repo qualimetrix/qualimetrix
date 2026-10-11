@@ -1,0 +1,80 @@
+--- candidate
++++ reference (mapped)
+@@ -1,8 +1,8 @@
+-visible 4548
+-Health Report (Qualimetrix dev-main) — 8 files analyzed
+-
+-Findings: 74 error(s), 16 warning(s), 0 info
+-
+-Analysis complete: 8 analyzed, 0 generated file(s) excluded.
+-
+-Rule population incomplete — callable: 107 judged, 33 not judged; declaration: 169 judged, 43 not judged; invocation: 0 judged, 3 not judged; namespace: 57 judged, 20 not judged; project: 7 judged, 0 not judged.
++visible 4361
++Health Report (Qualimetrix dev-main) — 8 files analyzed
++
++Findings: 75 error(s), 16 warning(s), 0 info
++
++Analysis complete: 8 analyzed, 0 generated file(s) excluded.
++
++Rule population incomplete — callable: 107 judged, 33 not judged; declaration: 170 judged, 42 not judged; invocation: 0 judged, 3 not judged; namespace: 57 judged, 20 not judged; project: 7 judged, 0 not judged.
+@@ -13,5 +13,5 @@
+-  Coupling           80.8%   ▼ Critical         80%  warn < 100  err < 100
+-  Typing             51.9%   ▼ Critical         n/a  warn < 100  err < 100
+-  Maintainability    70.8%   ▼ Critical        100%  warn < 100  err < 100
+-  ─────────────────────────────────────────────────────────────────
+-  Overall            75.3%   ▼ Critical         n/a  warn < 100  err < 100
++  Coupling           78.9%   ▼ Critical        100%  warn < 100  err < 100
++  Typing             51.9%   ▼ Critical         n/a  warn < 100  err < 100
++  Maintainability    70.8%   ▼ Critical        100%  warn < 100  err < 100
++  ─────────────────────────────────────────────────────────────────
++  Overall            75.0%   ▼ Critical         n/a  warn < 100  err < 100
+@@ -39,5 +39,5 @@
+-    Computed over 4 of 5 namespaces declaring a type (80%), from coupling.distance-own.count
+-    Distance (own)                0.7   (target: below 0.3) — poor balance of abstraction and stability in its own classes
+-    Ce pkg (avg)                  0.5   (target: joint breadth at most 4 (3 * Ce pkg avg + 0.5 * sqrt(Ce avg))) — contributes to joint breadth with average outgoing class dependencies
+-    Ce (avg)                      1.2   (target: joint breadth at most 4 (3 * Ce pkg avg + 0.5 * sqrt(Ce avg))) — contributes to joint breadth with average package dependencies
+-    Ce (max)                        5   (target: below 30) — no class exceeds the outgoing dependency ceiling
++    Computed over 5 of 5 namespaces declaring a type (100%), from coupling.distance-own.count
++    Distance (own)                0.8   (target: below 0.3) — poor balance of abstraction and stability in its own classes
++    CBO (avg)                     2.5   (target: below 8) — reasonable coupling
++    CBO (p95)                     5.6   (target: below 15) — even the most coupled classes stay contained
++    CBO (max)                       6   (target: below 30) — no single class dominates the graph
+@@ -65,8 +65,8 @@
+-invocation-format:health 4548
+-Health Report (Qualimetrix dev-main) — 8 files analyzed
+-
+-Findings: 74 error(s), 16 warning(s), 0 info
+-
+-Analysis complete: 8 analyzed, 0 generated file(s) excluded.
+-
+-Rule population incomplete — callable: 107 judged, 33 not judged; declaration: 169 judged, 43 not judged; invocation: 0 judged, 3 not judged; namespace: 57 judged, 20 not judged; project: 7 judged, 0 not judged.
++invocation-format:health 4361
++Health Report (Qualimetrix dev-main) — 8 files analyzed
++
++Findings: 75 error(s), 16 warning(s), 0 info
++
++Analysis complete: 8 analyzed, 0 generated file(s) excluded.
++
++Rule population incomplete — callable: 107 judged, 33 not judged; declaration: 170 judged, 42 not judged; invocation: 0 judged, 3 not judged; namespace: 57 judged, 20 not judged; project: 7 judged, 0 not judged.
+@@ -77,5 +77,5 @@
+-  Coupling           80.8%   ▼ Critical         80%  warn < 100  err < 100
+-  Typing             51.9%   ▼ Critical         n/a  warn < 100  err < 100
+-  Maintainability    70.8%   ▼ Critical        100%  warn < 100  err < 100
+-  ─────────────────────────────────────────────────────────────────
+-  Overall            75.3%   ▼ Critical         n/a  warn < 100  err < 100
++  Coupling           78.9%   ▼ Critical        100%  warn < 100  err < 100
++  Typing             51.9%   ▼ Critical         n/a  warn < 100  err < 100
++  Maintainability    70.8%   ▼ Critical        100%  warn < 100  err < 100
++  ─────────────────────────────────────────────────────────────────
++  Overall            75.0%   ▼ Critical         n/a  warn < 100  err < 100
+@@ -103,5 +103,5 @@
+-    Computed over 4 of 5 namespaces declaring a type (80%), from coupling.distance-own.count
+-    Distance (own)                0.7   (target: below 0.3) — poor balance of abstraction and stability in its own classes
+-    Ce pkg (avg)                  0.5   (target: joint breadth at most 4 (3 * Ce pkg avg + 0.5 * sqrt(Ce avg))) — contributes to joint breadth with average outgoing class dependencies
+-    Ce (avg)                      1.2   (target: joint breadth at most 4 (3 * Ce pkg avg + 0.5 * sqrt(Ce avg))) — contributes to joint breadth with average package dependencies
+-    Ce (max)                        5   (target: below 30) — no class exceeds the outgoing dependency ceiling
++    Computed over 5 of 5 namespaces declaring a type (100%), from coupling.distance-own.count
++    Distance (own)                0.8   (target: below 0.3) — poor balance of abstraction and stability in its own classes
++    CBO (avg)                     2.5   (target: below 8) — reasonable coupling
++    CBO (p95)                     5.6   (target: below 15) — even the most coupled classes stay contained
++    CBO (max)                       6   (target: below 30) — no single class dominates the graph

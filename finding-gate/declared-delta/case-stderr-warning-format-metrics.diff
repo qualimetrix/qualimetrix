@@ -1,0 +1,23 @@
+--- candidate
++++ reference (mapped)
+@@ -138,2 +138,1 @@
+-                "coupling.distance-own.avg": 0,
+-                "coupling.distance-own.count": 1,
++                
+@@ -195,0 +194,3 @@
++                "coupling.distance-own.avg": 0,
++                "coupling.distance-own.count": 1,
++                
+@@ -328,1 +330,3 @@
+-                "coupling.distance-own": 0,
++                
++                "coupling.distance-own": 0,
++                
+@@ -387,0 +391,1 @@
++                
+@@ -508,0 +513,1 @@
++                
+@@ -566,0 +572,1 @@
++                
+@@ -620,0 +627,1 @@
++                

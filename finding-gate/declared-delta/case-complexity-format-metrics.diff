@@ -1,0 +1,21 @@
+--- candidate
++++ reference (mapped)
+@@ -457,0 +457,1 @@
++                
+@@ -688,0 +689,1 @@
++                
+@@ -894,3 +896,1 @@
+-                
+-                "cohesion.lcom": 1,
+-                
++                "cohesion.lcom": 1,
+@@ -988,3 +988,1 @@
+-                
+-                "cohesion.lcom": 2,
+-                
++                "cohesion.lcom": 2,
+@@ -1083,3 +1081,1 @@
+-                
+-                "cohesion.lcom": 4,
+-                
++                "cohesion.lcom": 4,

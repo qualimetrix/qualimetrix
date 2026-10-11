@@ -1,0 +1,15 @@
+--- candidate
++++ reference (mapped)
+@@ -138,2 +138,1 @@
+-                "coupling.distance-own.avg": 0,
+-                "coupling.distance-own.count": 1,
++                
+@@ -195,1 +194,3 @@
+-                "coupling.class-rank-share.count": 1
++                "coupling.class-rank-share.count": 1,
++                "coupling.distance-own.avg": 0,
++                "coupling.distance-own.count": 1
+@@ -329,0 +330,1 @@
++                
+@@ -507,0 +509,1 @@
++                

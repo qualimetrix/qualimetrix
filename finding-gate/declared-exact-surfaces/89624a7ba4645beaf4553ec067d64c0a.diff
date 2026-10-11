@@ -1,0 +1,55 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 13499
++visible 13673
+@@ -17,2 +17,3 @@
+-Corpus\Health\Support: error[health.coupling]: Corpus\Health\Support: health.coupling = 75.0 (error threshold: below 100.0) (namespace: Corpus\Health\Support)
+-[project]: error[health.coupling]: (project): health.coupling = 80.8 (error threshold: below 100.0)
++Corpus\Health\Engine\Stage: error[health.coupling]: Corpus\Health\Engine\Stage: health.coupling = 75.0 (error threshold: below 100.0) (namespace: Corpus\Health\Engine\Stage)
++Corpus\Health\Support: error[health.coupling]: Corpus\Health\Support: health.coupling = 75.0 (error threshold: below 100.0) (namespace: Corpus\Health\Support)
++[project]: error[health.coupling]: (project): health.coupling = 78.9 (error threshold: below 100.0)
+@@ -40,3 +41,3 @@
+-Corpus\Health\Engine\Stage: error[health.overall]: Corpus\Health\Engine\Stage: health.overall = 82.9 (error threshold: below 100.0) (namespace: Corpus\Health\Engine\Stage)
+-Corpus\Health\Support: error[health.overall]: Corpus\Health\Support: health.overall = 81.7 (error threshold: below 100.0) (namespace: Corpus\Health\Support)
+-[project]: error[health.overall]: (project): health.overall = 75.3 (error threshold: below 100.0)
++Corpus\Health\Engine\Stage: error[health.overall]: Corpus\Health\Engine\Stage: health.overall = 77.9 (error threshold: below 100.0) (namespace: Corpus\Health\Engine\Stage)
++Corpus\Health\Support: error[health.overall]: Corpus\Health\Support: health.overall = 81.7 (error threshold: below 100.0) (namespace: Corpus\Health\Support)
++[project]: error[health.overall]: (project): health.overall = 75.0 (error threshold: below 100.0)
+@@ -93,7 +94,7 @@
+-Qualimetrix dev-main: 74 error(s), 16 warning(s) in 8 file(s)
+-Analysis complete: 8 analyzed, 0 generated file(s) excluded.
+-Technical debt: 2d 6h 30min
+-Rule population incomplete — callable: 107 judged, 33 not judged; declaration: 169 judged, 43 not judged; invocation: 0 judged, 3 not judged; namespace: 57 judged, 20 not judged; project: 7 judged, 0 not judged.
+-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
+-
+-invocation-format:text 13499
++Qualimetrix dev-main: 75 error(s), 16 warning(s) in 8 file(s)
++Analysis complete: 8 analyzed, 0 generated file(s) excluded.
++Technical debt: 2d 6h 45min
++Rule population incomplete — callable: 107 judged, 33 not judged; declaration: 170 judged, 42 not judged; invocation: 0 judged, 3 not judged; namespace: 57 judged, 20 not judged; project: 7 judged, 0 not judged.
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-format:text 13673
+@@ -115,2 +116,3 @@
+-Corpus\Health\Support: error[health.coupling]: Corpus\Health\Support: health.coupling = 75.0 (error threshold: below 100.0) (namespace: Corpus\Health\Support)
+-[project]: error[health.coupling]: (project): health.coupling = 80.8 (error threshold: below 100.0)
++Corpus\Health\Engine\Stage: error[health.coupling]: Corpus\Health\Engine\Stage: health.coupling = 75.0 (error threshold: below 100.0) (namespace: Corpus\Health\Engine\Stage)
++Corpus\Health\Support: error[health.coupling]: Corpus\Health\Support: health.coupling = 75.0 (error threshold: below 100.0) (namespace: Corpus\Health\Support)
++[project]: error[health.coupling]: (project): health.coupling = 78.9 (error threshold: below 100.0)
+@@ -138,3 +140,3 @@
+-Corpus\Health\Engine\Stage: error[health.overall]: Corpus\Health\Engine\Stage: health.overall = 82.9 (error threshold: below 100.0) (namespace: Corpus\Health\Engine\Stage)
+-Corpus\Health\Support: error[health.overall]: Corpus\Health\Support: health.overall = 81.7 (error threshold: below 100.0) (namespace: Corpus\Health\Support)
+-[project]: error[health.overall]: (project): health.overall = 75.3 (error threshold: below 100.0)
++Corpus\Health\Engine\Stage: error[health.overall]: Corpus\Health\Engine\Stage: health.overall = 77.9 (error threshold: below 100.0) (namespace: Corpus\Health\Engine\Stage)
++Corpus\Health\Support: error[health.overall]: Corpus\Health\Support: health.overall = 81.7 (error threshold: below 100.0) (namespace: Corpus\Health\Support)
++[project]: error[health.overall]: (project): health.overall = 75.0 (error threshold: below 100.0)
+@@ -191,4 +193,4 @@
+-Qualimetrix dev-main: 74 error(s), 16 warning(s) in 8 file(s)
+-Analysis complete: 8 analyzed, 0 generated file(s) excluded.
+-Technical debt: 2d 6h 30min
+-Rule population incomplete — callable: 107 judged, 33 not judged; declaration: 169 judged, 43 not judged; invocation: 0 judged, 3 not judged; namespace: 57 judged, 20 not judged; project: 7 judged, 0 not judged.
++Qualimetrix dev-main: 75 error(s), 16 warning(s) in 8 file(s)
++Analysis complete: 8 analyzed, 0 generated file(s) excluded.
++Technical debt: 2d 6h 45min
++Rule population incomplete — callable: 107 judged, 33 not judged; declaration: 170 judged, 42 not judged; invocation: 0 judged, 3 not judged; namespace: 57 judged, 20 not judged; project: 7 judged, 0 not judged.

@@ -1,0 +1,93 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 27854
++visible 28155
+@@ -106,4 +106,8 @@
+-Corpus\Health\Engine\Stage (5 violations)
+-  ERROR
+-    Corpus\Health\Engine\Stage: health.complexity = 93.5 (error threshold: below 100.0)  [health.complexity]
+-    Recommendation: Complexity health: 93.5 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.
++Corpus\Health\Engine\Stage (6 violations)
++  ERROR
++    Corpus\Health\Engine\Stage: health.complexity = 93.5 (error threshold: below 100.0)  [health.complexity]
++    Recommendation: Complexity health: 93.5 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.
++
++  ERROR
++    Corpus\Health\Engine\Stage: health.coupling = 75.0 (error threshold: below 100.0)  [health.coupling]
++    Recommendation: Coupling health: 75.0 (threshold: 100.0) — Reduce coupling by applying dependency inversion, introducing interfaces, and limiting the number of direct dependencies.
+@@ -120,2 +124,2 @@
+-    Corpus\Health\Engine\Stage: health.overall = 82.9 (error threshold: below 100.0)  [health.overall]
+-    Recommendation: Overall health: 82.9 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.
++    Corpus\Health\Engine\Stage: health.overall = 77.9 (error threshold: below 100.0)  [health.overall]
++    Recommendation: Overall health: 77.9 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.
+@@ -166,2 +170,2 @@
+-    (project): health.coupling = 80.8 (error threshold: below 100.0)  [health.coupling]
+-    Recommendation: Coupling health: 80.8 (threshold: 100.0) — Reduce coupling by applying dependency inversion, introducing interfaces, and limiting the number of direct dependencies.
++    (project): health.coupling = 78.9 (error threshold: below 100.0)  [health.coupling]
++    Recommendation: Coupling health: 78.9 (threshold: 100.0) — Reduce coupling by applying dependency inversion, introducing interfaces, and limiting the number of direct dependencies.
+@@ -178,2 +182,2 @@
+-    (project): health.overall = 75.3 (error threshold: below 100.0)  [health.overall]
+-    Recommendation: Overall health: 75.3 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.
++    (project): health.overall = 75.0 (error threshold: below 100.0)  [health.overall]
++    Recommendation: Overall health: 75.0 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.
+@@ -384,9 +388,9 @@
+-  health.cohesion                          ~1h 45min (7 violations)
+-  health.coupling                          ~1h 45min (7 violations)
+-
+-Qualimetrix dev-main: 74 error(s), 16 warning(s) in 8 file(s)
+-Analysis complete: 8 analyzed, 0 generated file(s) excluded.
+-Rule population incomplete — callable: 107 judged, 33 not judged; declaration: 169 judged, 43 not judged; invocation: 0 judged, 3 not judged; namespace: 57 judged, 20 not judged; project: 7 judged, 0 not judged.
+-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
+-
+-invocation-format:text-detail 27854
++  health.coupling                          ~2h       (8 violations)
++  health.cohesion                          ~1h 45min (7 violations)
++
++Qualimetrix dev-main: 75 error(s), 16 warning(s) in 8 file(s)
++Analysis complete: 8 analyzed, 0 generated file(s) excluded.
++Rule population incomplete — callable: 107 judged, 33 not judged; declaration: 170 judged, 42 not judged; invocation: 0 judged, 3 not judged; namespace: 57 judged, 20 not judged; project: 7 judged, 0 not judged.
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-format:text-detail 28155
+@@ -497,4 +501,8 @@
+-Corpus\Health\Engine\Stage (5 violations)
+-  ERROR
+-    Corpus\Health\Engine\Stage: health.complexity = 93.5 (error threshold: below 100.0)  [health.complexity]
+-    Recommendation: Complexity health: 93.5 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.
++Corpus\Health\Engine\Stage (6 violations)
++  ERROR
++    Corpus\Health\Engine\Stage: health.complexity = 93.5 (error threshold: below 100.0)  [health.complexity]
++    Recommendation: Complexity health: 93.5 (threshold: 100.0) — Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.
++
++  ERROR
++    Corpus\Health\Engine\Stage: health.coupling = 75.0 (error threshold: below 100.0)  [health.coupling]
++    Recommendation: Coupling health: 75.0 (threshold: 100.0) — Reduce coupling by applying dependency inversion, introducing interfaces, and limiting the number of direct dependencies.
+@@ -511,2 +519,2 @@
+-    Corpus\Health\Engine\Stage: health.overall = 82.9 (error threshold: below 100.0)  [health.overall]
+-    Recommendation: Overall health: 82.9 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.
++    Corpus\Health\Engine\Stage: health.overall = 77.9 (error threshold: below 100.0)  [health.overall]
++    Recommendation: Overall health: 77.9 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.
+@@ -557,2 +565,2 @@
+-    (project): health.coupling = 80.8 (error threshold: below 100.0)  [health.coupling]
+-    Recommendation: Coupling health: 80.8 (threshold: 100.0) — Reduce coupling by applying dependency inversion, introducing interfaces, and limiting the number of direct dependencies.
++    (project): health.coupling = 78.9 (error threshold: below 100.0)  [health.coupling]
++    Recommendation: Coupling health: 78.9 (threshold: 100.0) — Reduce coupling by applying dependency inversion, introducing interfaces, and limiting the number of direct dependencies.
+@@ -569,2 +577,2 @@
+-    (project): health.overall = 75.3 (error threshold: below 100.0)  [health.overall]
+-    Recommendation: Overall health: 75.3 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.
++    (project): health.overall = 75.0 (error threshold: below 100.0)  [health.overall]
++    Recommendation: Overall health: 75.0 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.
+@@ -775,6 +783,6 @@
+-  health.cohesion                          ~1h 45min (7 violations)
+-  health.coupling                          ~1h 45min (7 violations)
+-
+-Qualimetrix dev-main: 74 error(s), 16 warning(s) in 8 file(s)
+-Analysis complete: 8 analyzed, 0 generated file(s) excluded.
+-Rule population incomplete — callable: 107 judged, 33 not judged; declaration: 169 judged, 43 not judged; invocation: 0 judged, 3 not judged; namespace: 57 judged, 20 not judged; project: 7 judged, 0 not judged.
++  health.coupling                          ~2h       (8 violations)
++  health.cohesion                          ~1h 45min (7 violations)
++
++Qualimetrix dev-main: 75 error(s), 16 warning(s) in 8 file(s)
++Analysis complete: 8 analyzed, 0 generated file(s) excluded.
++Rule population incomplete — callable: 107 judged, 33 not judged; declaration: 170 judged, 42 not judged; invocation: 0 judged, 3 not judged; namespace: 57 judged, 20 not judged; project: 7 judged, 0 not judged.

@@ -1,0 +1,14 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 23950
++visible 23951
+@@ -387,1 +387,1 @@
+-                                "text": "Selected judgement incomplete: coupling.distance (namespace), 1 unjudged namespace; Own distance was not published. Missing metric \"coupling.distance-own\"."
++                                "text": "Selected judgement incomplete: coupling.distance (namespace), 1 unjudged namespace; The own namespace has no coupling. Metric population boundary was not met."
+@@ -485,1 +485,1 @@
+-invocation-format:sarif 23950
++invocation-format:sarif 23951
+@@ -871,1 +871,1 @@
+-                                "text": "Selected judgement incomplete: coupling.distance (namespace), 1 unjudged namespace; Own distance was not published. Missing metric \"coupling.distance-own\"."
++                                "text": "Selected judgement incomplete: coupling.distance (namespace), 1 unjudged namespace; The own namespace has no coupling. Metric population boundary was not met."

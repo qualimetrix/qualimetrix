@@ -1,0 +1,26 @@
+--- candidate
++++ reference (mapped)
+@@ -217,2 +217,0 @@
+-                "coupling.distance-own.avg": 0.5,
+-                "coupling.distance-own.count": 2,
+@@ -278,1 +276,3 @@
+-                "coupling.class-rank-share.count": 3
++                "coupling.class-rank-share.count": 3,
++                "coupling.distance-own.avg": 0.5,
++                "coupling.distance-own.count": 2
+@@ -651,0 +651,1 @@
++                
+@@ -872,0 +873,1 @@
++                
+@@ -1097,0 +1099,1 @@
++                
+@@ -1245,3 +1248,1 @@
+-                
+-                "cohesion.lcom": 2,
+-                
++                "cohesion.lcom": 2,
+@@ -1392,3 +1393,1 @@
+-                
+-                "cohesion.lcom": 2,
+-                
++                "cohesion.lcom": 2,

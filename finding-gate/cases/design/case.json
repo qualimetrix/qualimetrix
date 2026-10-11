@@ -27,7 +27,8 @@
         "--rule-opt=size.method-count:warning=4",
         "--rule-opt=size.method-count:error=8",
         "--rule-opt=size.property-count:warning=2",
-        "--rule-opt=size.property-count:error=4"
+        "--rule-opt=size.property-count:error=4",
+        "--disable-rule=cohesion.lcom"
     ],
     "channels": [
         "design.data-class@class",

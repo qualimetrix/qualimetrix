@@ -1,0 +1,168 @@
+--- candidate
++++ reference (mapped)
+@@ -13,6 +13,6 @@
+-        "violationCount": 90,
+-        "errorCount": 74,
+-        "warningCount": 16,
+-        "infoCount": 0,
+-        "techDebtMinutes": 1350,
+-        "debtPer1kLoc": 4383.1
++        "violationCount": 91,
++        "errorCount": 75,
++        "warningCount": 16,
++        "infoCount": 0,
++        "techDebtMinutes": 1365,
++        "debtPer1kLoc": 4431.8
+@@ -98,7 +98,7 @@
+-            "count": 6,
+-            "examples": [
+-                "declaration:class:CorpusHttp\\Client@lib/http/Client.php",
+-                "declaration:class:CorpusStore\\FileStore@lib/store/FileStore.php",
+-                "declaration:class:Corpus\\Health\\Engine\\Dispatcher@src/Engine/Dispatcher.php",
+-                "declaration:class:Corpus\\Health\\Engine\\Stage\\Normalizer@src/Engine/Stage/Normalizer.php",
+-                "declaration:class:Corpus\\Health\\Support\\Formatter@src/Support/Formatter.php"
++            "count": 5,
++            "examples": [
++                "declaration:class:CorpusHttp\\Client@lib/http/Client.php",
++                "declaration:class:CorpusStore\\FileStore@lib/store/FileStore.php",
++                "declaration:class:Corpus\\Health\\Engine\\Stage\\Normalizer@src/Engine/Stage/Normalizer.php",
++                "declaration:class:Corpus\\Health\\Support\\Formatter@src/Support/Formatter.php",
++                "declaration:class:Corpus\\Health\\Support\\Translator@src/Support/Translator.php"
+@@ -591,1 +591,1 @@
+-            "score": 80.76923076923077,
++            "score": 78.94736842105263,
+@@ -599,3 +599,3 @@
+-                "measured": 4,
+-                "eligible": 5,
+-                "ratio": 0.8,
++                "measured": 5,
++                "eligible": 5,
++                "ratio": 1,
+@@ -610,6 +610,6 @@
+-                    "value": 0.7142857142857143,
+-                    "coverage": {
+-                        "state": "measured",
+-                        "measured": 4,
+-                        "eligible": 5,
+-                        "ratio": 0.8,
++                    "value": 0.8,
++                    "coverage": {
++                        "state": "measured",
++                        "measured": 5,
++                        "eligible": 5,
++                        "ratio": 1,
+@@ -624,3 +624,3 @@
+-                    "metric": "coupling.ce-packages.avg",
+-                    "humanName": "Ce pkg (avg)",
+-                    "value": 0.5,
++                    "metric": "coupling.cbo.avg",
++                    "humanName": "CBO (avg)",
++                    "value": 2.5,
+@@ -633,10 +633,10 @@
+-                        "basis": "coupling.ce-packages.count",
+-                        "reason": null
+-                    },
+-                    "good": "joint breadth at most 4 (3 * Ce pkg avg + 0.5 * sqrt(Ce avg))",
+-                    "direction": "lower_is_better"
+-                },
+-                {
+-                    "metric": "coupling.ce.avg",
+-                    "humanName": "Ce (avg)",
+-                    "value": 1.25,
++                        "basis": "coupling.cbo.count",
++                        "reason": null
++                    },
++                    "good": "below 8",
++                    "direction": "lower_is_better"
++                },
++                {
++                    "metric": "coupling.cbo.p95",
++                    "humanName": "CBO (p95)",
++                    "value": 5.6499999999999995,
+@@ -649,10 +649,10 @@
+-                        "basis": "coupling.ce.count",
+-                        "reason": null
+-                    },
+-                    "good": "joint breadth at most 4 (3 * Ce pkg avg + 0.5 * sqrt(Ce avg))",
+-                    "direction": "lower_is_better"
+-                },
+-                {
+-                    "metric": "coupling.ce.max",
+-                    "humanName": "Ce (max)",
+-                    "value": 5,
++                        "basis": "coupling.cbo.count",
++                        "reason": null
++                    },
++                    "good": "below 15",
++                    "direction": "lower_is_better"
++                },
++                {
++                    "metric": "coupling.cbo.max",
++                    "humanName": "CBO (max)",
++                    "value": 6,
+@@ -665,1 +665,1 @@
+-                        "basis": "coupling.ce.count",
++                        "basis": "coupling.cbo.count",
+@@ -933,1 +933,1 @@
+-            "score": 75.34597635194717,
++            "score": 74.98160388231155,
+@@ -958,2 +958,2 @@
+-            "violationCount": 30,
+-            "violationDensity": 19.9,
++            "violationCount": 31,
++            "violationDensity": 20.5,
+@@ -986,0 +986,16 @@
++            "symbolPath": "Corpus\\Health\\Engine\\Stage",
++            "healthOverall": 77.90118388113741,
++            "label": "Critical",
++            "reason": "low type safety, hard to maintain",
++            "violationCount": 11,
++            "violationDensity": 39.3,
++            "size.class-count.sum": 1,
++            "healthScores": {
++                "complexity": 93.5,
++                "cohesion": 100,
++                "coupling": 75,
++                "typing": 0,
++                "maintainability": 74.25591940568707
++            }
++        },
++        {
+@@ -999,16 +1015,0 @@
+-            }
+-        },
+-        {
+-            "symbolPath": "Corpus\\Health\\Engine\\Stage",
+-            "healthOverall": 82.90118388113741,
+-            "label": "Critical",
+-            "reason": "low type safety, hard to maintain",
+-            "violationCount": 10,
+-            "violationDensity": 35.7,
+-            "size.class-count.sum": 1,
+-            "healthScores": {
+-                "complexity": 93.5,
+-                "cohesion": 100,
+-                "coupling": 100,
+-                "typing": 0,
+-                "maintainability": 74.25591940568707
+@@ -2192,0 +2192,1 @@
++        
+@@ -2230,1 +2231,1 @@
+-            "recommendation": "Coupling health: 78.9 (threshold: 100.0) — Reduce coupling by applying dependency inversion, introducing interfaces, and limiting the number of direct dependencies.",
++            "recommendation": "Coupling health: 78.9 (threshold: 100.0) \u2014 Reduce coupling by applying dependency inversion, introducing interfaces, and limiting the number of direct dependencies.",
+@@ -2948,1 +2949,1 @@
+-            "recommendation": "Overall health: 77.9 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.",
++            "recommendation": "Overall health: 77.9 (threshold: 100.0) \u2014 Review the metric value and refactor the affected code to bring it within acceptable thresholds.",
+@@ -2994,1 +2995,1 @@
+-            "recommendation": "Overall health: 75.0 (threshold: 100.0) — Review the metric value and refactor the affected code to bring it within acceptable thresholds.",
++            "recommendation": "Overall health: 75.0 (threshold: 100.0) \u2014 Review the metric value and refactor the affected code to bring it within acceptable thresholds.",
+@@ -3386,2 +3387,2 @@
+-        "total": 90,
+-        "shown": 90,
++        "total": 91,
++        "shown": 91,
+@@ -3396,2 +3397,2 @@
+-            "health.cohesion": 7,
+-            "health.coupling": 7
++            "health.coupling": 8,
++            "health.cohesion": 7

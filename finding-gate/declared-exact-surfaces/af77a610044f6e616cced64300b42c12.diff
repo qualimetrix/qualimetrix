@@ -1,0 +1,8 @@
+--- candidate
++++ reference (mapped)
+@@ -68,1 +68,1 @@
+-Rule population incomplete — authored-type-occurrence: 4 judged, 0 not judged; callable: 63 judged, 21 not judged; declaration: 116 judged, 117 not judged; declared-exclude-clause: 3 judged, 0 not judged; dependency-edge: 4 judged, 5 not judged; invocation: 1 judged, 0 not judged; logical-class: 13 judged, 0 not judged; namespace: 11 judged, 29 not judged; precedence-pair: 1 judged, 0 not judged.
++Rule population incomplete — authored-type-occurrence: 4 judged, 0 not judged; callable: 63 judged, 21 not judged; declaration: 117 judged, 116 not judged; declared-exclude-clause: 3 judged, 0 not judged; dependency-edge: 4 judged, 5 not judged; invocation: 1 judged, 0 not judged; logical-class: 13 judged, 0 not judged; namespace: 11 judged, 29 not judged; precedence-pair: 1 judged, 0 not judged.
+@@ -138,1 +138,1 @@
+-Rule population incomplete — authored-type-occurrence: 4 judged, 0 not judged; callable: 63 judged, 21 not judged; declaration: 116 judged, 117 not judged; declared-exclude-clause: 3 judged, 0 not judged; dependency-edge: 4 judged, 5 not judged; invocation: 1 judged, 0 not judged; logical-class: 13 judged, 0 not judged; namespace: 11 judged, 29 not judged; precedence-pair: 1 judged, 0 not judged.
++Rule population incomplete — authored-type-occurrence: 4 judged, 0 not judged; callable: 63 judged, 21 not judged; declaration: 117 judged, 116 not judged; declared-exclude-clause: 3 judged, 0 not judged; dependency-edge: 4 judged, 5 not judged; invocation: 1 judged, 0 not judged; logical-class: 13 judged, 0 not judged; namespace: 11 judged, 29 not judged; precedence-pair: 1 judged, 0 not judged.
