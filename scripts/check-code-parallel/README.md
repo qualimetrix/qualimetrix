@@ -11,6 +11,11 @@ selection, deadlines and failure rules. Once both start, the coordinator waits f
 one exits nonzero; a launch refusal cancels any started peer. The first failing
 command in the fixed order determines the nonzero exit code.
 
+The full-validation CI job also uses this coordinator for its independent
+Composer, documentation and report-template dependency installations, after
+setting up their runtimes. It waits for all three and fails if any installation
+fails. The default CLI still runs the two validation commands above.
+
 Each child's stdout and stderr go to separate temporary regular files. Once
 both finish, the coordinator publishes the complete streams in PHPStan then
 remaining-check order, with section labels and each exit code. Regular files
