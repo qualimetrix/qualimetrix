@@ -165,12 +165,10 @@ unknown exception status when duplicate parent declarations disagree.
 - `DataClassRule` gates on a **low** WOC: the share of the public interface
   that carries behaviour rather than data access. Its finding channel is
   therefore `WorseDirection::Lower`, and both `@qmx-threshold` axes are upper
-  bounds. What counts as data access is decided by method name in
-  `Size\MethodCountVisitor` — `get*`/`is*`/`has*`/`set*` — and by public
-  property declarations; **a method body is never read**. A public method that
-  merely forwards to a collaborator is behaviour for this rule, and an
-  `is*`/`has*` predicate that computes its answer is data access: WOC measures
-  the shape of the interface, not the weight of the bodies behind it. The
+  bounds. What counts as data access is decided by both the accessor name and its
+  simple property-read or property-write body in `Size\MethodCountVisitor`,
+  and by public property declarations. A public forwarding method or computed
+  `is*`/`has*` predicate is behaviour, even when its name has an accessor prefix. The
   constructor counts on neither side of the ratio. Classes with no public
   members at all score 100 and are never flagged, and the size floor
   (`minMembers`) counts declared methods plus declared properties so a struct

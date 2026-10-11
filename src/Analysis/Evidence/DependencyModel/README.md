@@ -35,6 +35,7 @@ DependencyModel/
 │   └── Handler/                  # position/site-aware extraction family
 ├── CanonicalGraphInput.php       # canonical logical projections plus spelling evidence
 ├── DependencyIdentityCanonicalizer.php # PHP class identity folding for graph inputs
+├── ClassCouplings.php        # class boundary-crossing occurrences and distinct degrees
 ├── DependencyGraph.php
 ├── DependencyGraphBuilder.php
 ├── NamespaceCouplingBuilder.php  # own and subtree namespace coupling construction
@@ -87,6 +88,12 @@ position (`type_hint`, `property_type`, or `constant_type`) and carry a separate
 `TypeShape` (`single`, `nullable`, `union`, `intersection`, or `dnf`). Attribute
 edges carry an `AttributeSite`; member, promoted-parameter, hook, nested-callable
 and nested-class sites remain distinguishable without inventing relation kinds.
+
+`ClassCouplings` carries each class's outgoing occurrences, incoming occurrences,
+Ce and Ca in one canonical-key row. The graph builds that row from the supplied
+views without changing occurrence order, duplicates or precomputed degrees.
+`NamespaceCouplings` remains the sole holder of namespace coupling scopes;
+ordered graph and declaration streams stay with `DependencyGraph`.
 
 ### The coupling view and the declaration view
 

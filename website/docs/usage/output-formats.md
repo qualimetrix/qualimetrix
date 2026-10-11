@@ -191,7 +191,7 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
 
 **When to use:** Custom scripts, dashboards, programmatic processing.
 
-**Top-level keys:** `meta`, `summary`, `outOfScope`, `coverage`, `projectScope` (see [Project scope in every format](#project-scope-in-every-format)), `configurationDiagnostics`, `computedMetricOutcomes`, `abstentions`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, plus `violationGroups` when `--group-by` is passed — without it, the key is absent entirely, not an empty object.
+**Top-level keys:** `meta`, `summary`, `outOfScope`, `coverage`, `projectScope` (see [Project scope in every format](#project-scope-in-every-format)), `configurationDiagnostics`, `computedMetricOutcomes`, `abstentions`, `inheritanceDepthOutcomes`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, plus `violationGroups` when `--group-by` is passed — without it, the key is absent entirely, not an empty object.
 
 `configurationDiagnostics` lists the warnings about the configuration the run accepted — the same ones `check` prints on stderr — and is `[]` when there are none. Each entry is `{"message": "…", "source": [{"kind": "preset", "name": "…", "imported_by": null}, …]}`: `source` names every layer the warning is about, lowest precedence first, in the form a configuration error's `source` uses. For example, `only_rules: []` in `qmx.yaml` over a preset that filters the rules is lawful, and draws one entry naming both.
 
@@ -243,6 +243,7 @@ targets and other formats retain their existing output behavior.
     "configurationDiagnostics": [],
     "computedMetricOutcomes": [],
     "abstentions": [],
+    "inheritanceDepthOutcomes": [],
     "health": {
         "complexity": {
             "score": 78.0,
@@ -1229,6 +1230,34 @@ separate from `computedMetricOutcomes`, analysis-file coverage and health-score
 coverage. Metrics, Checkstyle, GitLab, suppressed reports and baselines receive
 no synthetic abstention findings. Silent successful stdout remains empty;
 writing a report file still preserves its format's population information.
+
+## Incomplete inheritance depth
+
+Collected DIT can be a numeric lower bound when an ancestor cannot be read, or
+have no finite depth when ancestry reaches a cycle. This is measurement
+completeness, separate from selected-rule `abstentions`, authored
+`computedMetricOutcomes`, findings and analysis-file coverage. Disabling
+`design.dit` or narrowing the finding display does not remove collected outcomes.
+
+JSON and HTML payloads always contain `inheritanceDepthOutcomes`, including
+`[]`. Each nonempty group has `status` (`lower-bound` for unresolved numeric DIT,
+`absent-depth` for unresolved declarations without numeric DIT), `count` and
+`examples`. Counts cover distinct canonical exact declaration subjects;
+examples retain file and declaration identity and contain at most five sorted
+unique subjects per group. Declarations without collected unresolved evidence
+are excluded; an empty list does not prove that uncollected ancestry is complete.
+
+| Format                      | Publication                                                                                                         |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `json`                      | Top-level `inheritanceDepthOutcomes`, including normal and quiet output                                             |
+| `html`                      | The same payload and a visible banner                                                                               |
+| `sarif`                     | Invocation `note` with descriptor `QMX-INHERITANCE-DEPTH-INCOMPLETE` and the same groups in notification properties |
+| `text`, `summary`, `health` | Bounded explanation, including reports without findings or health scores                                            |
+| `checkstyle`, `gitlab`      | Ordinary findings only; no synthetic measurement finding                                                            |
+| `metrics`                   | Existing `design.dit` and `design.dit-unresolved` evidence                                                          |
+
+These outcomes do not change severity, technical debt or the exit verdict.
+A lower bound remains numeric; an absent depth must not be treated as zero.
 
 ## Analysis coverage in every format
 

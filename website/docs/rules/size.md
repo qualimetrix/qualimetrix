@@ -17,7 +17,7 @@ configuration remain unchanged.
 <!-- llms:skip-begin -->
 ### What it measures
 
-Counts the number of methods in a class. A class with too many methods is likely doing too much and should be split into smaller, more focused classes.
+Counts behavioral methods in a class. A `get`/`is`/`has` method is a getter only when its sole statement returns an instance property without parameters; a `set` method is a setter only when it assigns its sole parameter to an instance property, optionally returning `$this`. A matching name with a computed or forwarding body still counts as a method. `size.method-count.total` counts all declared methods. A class with too many methods is likely doing too much and should be split into smaller, more focused classes.
 
 **How to read the value:**
 

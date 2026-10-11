@@ -93,6 +93,7 @@ src/Reporting/GroupBy.php	Qualimetrix\Reporting\GroupBy	"output projection"	Repo
 src/Reporting/Health/HealthHintProjector.php	Qualimetrix\Reporting\Health\HealthHintProjector	"output projection"	Reporting
 src/Reporting/Health/HealthScoreResolver.php	Qualimetrix\Reporting\Health\HealthScoreResolver	"output projection"	Reporting
 src/Reporting/Health/SummaryEnricher.php	Qualimetrix\Reporting\Health\SummaryEnricher	"run orchestration"	Reporting
+src/Reporting/InheritanceDepthCompleteness.php	Qualimetrix\Reporting\InheritanceDepthCompleteness	"output projection"	Reporting
 src/Reporting/Report.php	Qualimetrix\Reporting\Report	"output projection"	Reporting
 src/Reporting/ReportBuilder.php	Qualimetrix\Reporting\ReportBuilder	"output projection"	Reporting
 src/Reporting/ReportCoverage.php	Qualimetrix\Reporting\ReportCoverage	"output projection"	Reporting

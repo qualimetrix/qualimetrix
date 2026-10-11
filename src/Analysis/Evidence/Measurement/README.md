@@ -300,6 +300,13 @@ for every key in `provides()`, including facts without aggregation definitions.
 Executing after file collection does not itself imply Run reach: local evidence
 can be calculated in that phase with Members reach. Graph-dependent producers
 declare Run explicitly.
+The semantic Cohesion composition producer declares Run for all seven outputs:
+trait bodies may lie outside the selected class file. Raw declaration facts
+remain Members. The uniform producer contract deliberately requires full-run
+baseline coverage even for a class whose own traits happen to be co-selected;
+Measurement does not classify individual class or metric names. A narrow run
+can publish current values, but cannot apply a whole-run ceiling to those Run
+outputs. This follows the declared evidence dependency, not the execution phase.
 Baseline owns RunCoverage and the comparability decision over AnalysisCoverage;
 this does not introduce a general invocation context or Run phase port. A
 nonfinite member makes the entire magnitude group unavailable for comparison

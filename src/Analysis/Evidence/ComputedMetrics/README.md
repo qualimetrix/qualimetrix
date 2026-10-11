@@ -33,8 +33,9 @@ flat list; once it had to answer per level, the product's own god-class rule
 said the class held two subjects.
 
 A decomposition answers per symbol level, because the formulas do: the project
-coupling score is computed from CBO aggregates where the namespace one is
-computed from Ce aggregates, and a single list described the wrong score at two
+coupling score uses outgoing-only Form B with project Ce aggregates and
+eligible-type-weighted own distance, while the namespace score has its own
+outgoing formula, and a single list described the wrong score at two
 levels out of three. `HealthDecompositionCatalog::inputsFor()` resolves the project
 level from the namespace one exactly where `ComputedMetricDefinition`
 inherits the namespace formula, and the metadata projection ships every level
@@ -58,7 +59,9 @@ Class finding counts and LOC density use that declaration's own findings and
 Every input line also declares what it covers: the `.count` its aggregate
 already publishes and the population that count is a share of. A score reports
 the *narrowest* participating input ratio. An absent TCC half dropped by the
-formula does not limit measured LCOM coverage. Selected effective formulas
+formula does not limit measured LCOM coverage. The class TCC purity term uses
+`cohesion.tcc-method-count` as its denominator, matching the public-method
+population measured by TCC; `size.method-count` is not that denominator. Selected effective formulas
 determine which inputs participate; an authored constant cannot borrow builtin
 coverage or decomposition by name. Populations are symbol counts
 (`size.symbol-class-count`, `size.symbol-method-count`,
@@ -83,7 +86,9 @@ Measured coverage uses `measured`. Numeric zero remains a measured value.
 Negative, fractional and nonfinite counts or an absent population refuse;
 every run writes all three populations from its own symbol list.
 
-A ratio below 100% is not automatically a defect. `namespaces declaring a type`
+Project `coupling.distance-own.avg` is the eligible-type-weighted mean over
+measured own namespaces; `.count` counts those namespace samples. A namespace
+without applicable distance contributes no sample. A ratio below 100% is not automatically a defect. `namespaces declaring a type`
 carries a permanent gap: a namespace of bare enums declares a type but has no
 abstractness of its own, so it is in the denominator and in no numerator. Two
 such namespaces leave a visible coverage gap. Narrowing the denominator to the
@@ -361,15 +366,16 @@ This README is part of the subject boundary: keep its production code, tests, fi
 
 ## Cohesion score scale
 
-The unadjusted LCOM half uses a span of five at class and namespace levels:
-one connected component has no penalty and six exhaust the contribution.
-Namespace aggregation alone must not change that scale. Class purity adjustment
-and the populations covered by the two levels still differ; this does not
-promise that every namespace score exceeds its lowest member score.
-The built-in project cohesion score inherits the namespace formula and evaluates
-it on project aggregate inputs, rather than averaging namespace health scores.
-The shared-scale correction therefore also changes project cohesion and its
-contribution to project overall; review limits and accepted ranges at both levels.
+The class LCOM contribution uses span five independently of its purity term.
+The namespace LCOM span is selected by calibration; the built-in project
+cohesion score inherits that formula and evaluates project aggregate inputs
+directly. The levels cover different populations and do not promise pairwise
+monotonic scores.
+
+**Awaiting actual calibration receipts:** insert the selected namespace LCOM
+span and project Form B distance/breadth weights, the accepted expression and
+decomposition, and the linked calibration decision. No final values are
+asserted before the declared search and measured before/after capture.
 
 ## Formula reach for baseline comparison
 
