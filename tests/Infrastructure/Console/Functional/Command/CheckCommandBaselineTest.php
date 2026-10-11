@@ -15,6 +15,7 @@ use RuntimeException;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Exception\InvalidOptionException;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Process\Process;
 
 /**
@@ -306,7 +307,8 @@ final class CheckCommandBaselineTest extends TestCase
                 'project:' => [['channel' => 'baseline.unused-entry', 'count' => 1]],
             ],
         ], \JSON_THROW_ON_ERROR));
-        $declarations = (new ContainerFactory())->create()->get(\Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface::class);
+        $container = (new ContainerFactory())->create();
+        $declarations = $container->get(\Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface::class);
         self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface::class, $declarations);
         $baseline = (new \Qualimetrix\Analysis\Policy\Baseline\BaselineLoader(
             new \Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser($declarations),
@@ -321,7 +323,7 @@ final class CheckCommandBaselineTest extends TestCase
         foreach ([...$findingFormats, 'checkstyle', 'gitlab', 'metrics', 'health', 'suppressed'] as $format) {
             $options = ['--baseline' => $this->baselinePath, '--format' => $format, '--report' => 'git:staged'];
             foreach (['warning' => 1, 'error' => 0, 'none' => 0] as $policy => $exit) {
-                $tester = $this->runCheck([...$options, '--fail-on' => $policy], captureErrors: true);
+                $tester = $this->runCheck([...$options, '--fail-on' => $policy], captureErrors: true, container: $container);
                 self::assertStringNotContainsString('is stale', $tester->getErrorOutput());
                 self::assertStringNotContainsString('is inert', $tester->getErrorOutput());
                 self::assertSame($exit, $tester->getStatusCode(), $format . ': ' . $tester->getDisplay());
@@ -337,7 +339,7 @@ final class CheckCommandBaselineTest extends TestCase
                     }
                 }
             }
-            self::assertSame(0, $this->runCheck($options)->getStatusCode(), $format . ' default exit');
+            self::assertSame(0, $this->runCheck($options, container: $container)->getStatusCode(), $format . ' default exit');
         }
     }
 
@@ -461,10 +463,9 @@ final class CheckCommandBaselineTest extends TestCase
     /**
      * @param array<string, mixed> $options
      */
-    private function runCheck(array $options, bool $captureErrors = false): CommandTester
+    private function runCheck(array $options, bool $captureErrors = false, ?ContainerBuilder $container = null): CommandTester
     {
-        $containerFactory = new ContainerFactory();
-        $container = $containerFactory->create();
+        $container ??= (new ContainerFactory())->create();
 
         /** @var CheckCommand $command */
         $command = $container->get(CheckCommand::class);

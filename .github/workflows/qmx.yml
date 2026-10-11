@@ -158,9 +158,6 @@ jobs:
           key: ${{ runner.os }}-composer-${{ matrix.php-version }}-${{ hashFiles('composer.lock') }}
           restore-keys: ${{ runner.os }}-composer-${{ matrix.php-version }}-
 
-      - name: Install dependencies
-        run: composer install --no-progress --prefer-dist --optimize-autoloader
-
       - name: Cache PHP CS Fixer file results
         uses: actions/cache@v5
         with:
@@ -177,9 +174,6 @@ jobs:
           cache: 'pip'
           cache-dependency-path: 'website/requirements.txt'
 
-      - name: Install documentation dependencies
-        run: pip install -r website/requirements.txt
-
       # `composer check` runs the report template's JS tests (vitest) inside
       # check:code, so the JS toolchain has to be present here too — otherwise
       # that step fails on a missing runner instead of on JS problems.
@@ -189,8 +183,20 @@ jobs:
           cache: 'npm'
           cache-dependency-path: 'html-report/package-lock.json'
 
-      - name: Install report template dependencies
-        run: npm ci --prefix html-report
+      - name: Install validation dependencies
+        shell: python
+        run: |
+          import importlib
+          import sys
+
+          sys.path.insert(0, 'scripts/check-code-parallel')
+          runner = importlib.import_module('check-code-parallel')
+          commands = (
+              ('Composer dependencies', ('composer', 'install', '--no-progress', '--prefer-dist', '--optimize-autoloader')),
+              ('Documentation dependencies', ('pip', 'install', '-r', 'website/requirements.txt')),
+              ('Report template dependencies', ('npm', 'ci', '--prefix', 'html-report')),
+          )
+          raise SystemExit(runner.run_checks(commands))
 
       - name: Run full validation
         env:

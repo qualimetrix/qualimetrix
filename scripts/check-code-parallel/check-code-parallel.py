@@ -140,7 +140,7 @@ def run_checks(
     stderr: BinaryIO | None = None,
     shutdown_grace_seconds: float = SHUTDOWN_GRACE_SECONDS,
 ) -> int:
-    """Wait for both checks; a failed check does not cancel the other."""
+    """Wait for every command; a failure does not cancel its peers."""
     if stdout is None:
         stdout = sys.stdout.buffer
     if stderr is None:
