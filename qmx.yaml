@@ -2467,9 +2467,6 @@ rules:
       # Immutable spelling and namespace-prefix projections expose the same bound
       # type vocabulary through separate lookup maps.
       - exact: src/Analysis/Policy/Architecture/Layer/ClassContext/NameSpellingIndex.php
-      # Early input refusal and post-run finding projection are separate phases
-      # of the same Console invocation adapter.
-      - exact: src/Infrastructure/Console/FindingFilterOrchestrator.php
       # ResolvedTarget retains judged membership, path spelling and identity facts;
       # its lookups read independent parts of that immutable target snapshot.
       - exact: src/Core/FileTarget/ResolvedTarget.php
@@ -2490,6 +2487,3 @@ rules:
         # Stateless expansion algorithms and their immutable result do not share
         # fields; cohesion is structurally inapplicable only to this exact root.
         - exact: 'Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion'
-        # The namespace health aggregate combines independent Debt and Impact
-        # subjects whose instance fields belong to separate lifecycles.
-        - exact: 'Qualimetrix\Analysis\Evidence\Prioritization'
