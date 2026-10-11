@@ -369,8 +369,12 @@ This README is part of the subject boundary: keep its production code, tests, fi
 The class LCOM contribution uses span five independently of its purity term.
 The namespace LCOM span is selected by calibration; the built-in project
 cohesion score inherits that formula and evaluates project aggregate inputs
-directly. The levels cover different populations and do not promise pairwise
-monotonic scores.
+directly. Correctly pooled inputs can score above every child even with the
+same formula and contributor population: complementary TCC/LCOM inputs and the
+concave square root give child scores 50/50 and a parent score 60.355339.
+[ADR 0116](../../../../docs/adr/0116-measured-health-score-recalibration.md#why-c1-is-diagnostic)
+records the native counterexample, full diagnostic parent/child comparisons and
+the retained checks for actual input loss.
 
 **Awaiting actual calibration receipts:** insert the selected namespace LCOM
 span and project Form B distance/breadth weights, the accepted expression and

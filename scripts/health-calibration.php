@@ -64,13 +64,13 @@ declare(strict_types=1);
  *   --self-test             reproduce the published aggregates and health.*
  *   --tolerance=0.1         self-test tolerance on a score (default 0.1)
  *   --candidates=FILE       a YAML document with a `computed_metrics:` section
- *   --criteria              judge C1-C5; print descriptive C6 distributions
+ *   --criteria              judge C2-C5; print descriptive C1 and C6 distributions
  *   --c2-max=N              optional diagnostic ceiling for subjects at 100
  *   --c4-tolerance=T        numeric identity precision for C4 (default 1e-6)
  *   --top=N                 rows per movers/violators table (default 10)
  *
  * Exit codes:
- *   0 — ran, binding C1-C5 passed
+ *   0 — ran, binding C2-C5 passed
  *   1 — a binding criterion failed or lacked its required witness
  *   2 — usage or infrastructure error (no captures, unreadable document, a
  *       candidate file the product's resolver refuses)
@@ -126,12 +126,12 @@ const USAGE = <<<'TEXT'
       --self-test             reproduce the published aggregates and health.*
       --tolerance=0.1         self-test tolerance on a score
       --candidates=FILE       a YAML document with a `computed_metrics:` section
-      --criteria              judge C1-C5; print descriptive C6 distributions
+      --criteria              judge C2-C5; print descriptive C1 and C6 distributions
       --c2-max=N              optional diagnostic ceiling for subjects at 100
       --c4-tolerance=T        numeric identity precision for C4 (default 1e-6)
       --top=N                 rows per violators/mismatch table (default 10)
 
-    Exit: 0 C1-C5 passed, 1 a binding criterion failed or is unjudged, 2 input error,
+    Exit: 0 C2-C5 passed, 1 a binding criterion failed or is unjudged, 2 input error,
     3 the self-test disagrees with the capture.
     TEXT;
 
@@ -213,8 +213,7 @@ final readonly class Subject
  * One project's capture, indexed by level.
  *
  * Containment, not the product's namespace tree, answers "what are the
- * children of this subject". The tree is what drops `(global)`, and a
- * monotonicity criterion that inherits the defect it tests for is no criterion.
+ * children of this subject", keeping `(global)` in the diagnostic population.
  */
 final readonly class Capture
 {
@@ -318,7 +317,7 @@ final readonly class Capture
     }
 
     /**
-     * The children of a subject for the monotonicity criterion.
+     * The children of a subject for the score distribution diagnostic.
      *
      * Containment of symbols, never the product's namespace tree: the tree is
      * what drops `(global)`, and its leaves do not partition the classes
@@ -1158,11 +1157,19 @@ final class StatedCoverage
             }
             try {
                 $coverage = (new CoverageReader($catalog))->read($dimension, $read, [$input]);
+                $aggregateSources = array_values(array_filter($input['sources'], static fn(string $key): bool => MetricName::base($key) === MetricName::base($input['key'])));
+                if (\count($aggregateSources) !== 1) {
+                    throw new LogicException(\sprintf('Aggregate "%s" has no unique own source in its coverage metadata.', $input['key']));
+                }
+                if (($read($aggregateSources[0]) !== null) !== (($read($spec['count']) ?? 0) > 0)) {
+                    throw new LogicException(\sprintf('Aggregate source "%s" and contributor count "%s" disagree on measured input presence.', $aggregateSources[0], $spec['count']));
+                }
+                $lines = self::lines($evaluation, $subject, $input, $coverage->measured, $coverage->eligible);
                 $rows[] = [
-                    'basis' => $spec['count'], 'state' => $coverage->state,
+                    'basis' => $spec['count'], 'state' => $lines['reason'] === null ? $coverage->state : 'unjudged',
                     'symbols' => $coverage->applicable ? $coverage->measured . '/' . $coverage->eligible . ' ' . $coverage->unit?->value : '--',
-                    'loc' => self::lines($evaluation, $subject, $input, $coverage->measured, $coverage->eligible),
-                    'reason' => $coverage->reason ?? '',
+                    'loc' => $lines['loc'],
+                    'reason' => $lines['reason'] ?? $coverage->reason ?? '',
                 ];
             } catch (LogicException $error) {
                 $rows[] = ['basis' => $spec['count'], 'state' => 'unjudged', 'symbols' => '--', 'loc' => 'unjudged', 'reason' => $error->getMessage()];
@@ -1226,29 +1233,33 @@ final class StatedCoverage
             $published = $subject->inputs[$key] ?? null;
             $consistent = $published === null ? $carriers === 0 : abs($sum - $published) < 1.0e-6;
             $rows[] = [
-                'basis' => $key, 'state' => !$consistent ? 'unjudged' : ($eligible === 0.0 ? 'not-applicable' : ($carriers === 0 ? 'not-measured' : 'measured')),
+                'basis' => $key, 'state' => !$consistent || !$hasLoc ? 'unjudged' : ($eligible === 0.0 ? 'not-applicable' : ($carriers === 0 ? 'not-measured' : 'measured')),
                 'symbols' => $consistent ? $carriers . '/' . (int) $eligible . ' classes' : '--',
                 'loc' => !$consistent ? 'unjudged: captured sum differs' : ($hasLoc ? $carrierLoc . '/' . $totalLoc . ' lines' : 'unjudged: class LOC unavailable'),
-                'reason' => $consistent ? 'captured class-owned input participation; zero is measured' : 'captured sum differs from subject aggregate',
+                'reason' => !$consistent ? 'captured sum differs from subject aggregate' : (!$hasLoc ? 'class LOC unavailable' : 'captured class-owned input participation; zero is measured'),
             ];
         }
         return $rows === [] ? [['basis' => 'health.typing', 'state' => 'unjudged', 'symbols' => '--', 'loc' => 'unjudged', 'reason' => 'candidate exposes no typing inputs']] : $rows;
     }
 
-    /** @param array{key: string, sources: list<string>, coverage: array{count: string, unit: CoverageUnit}|null} $input */
-    private static function lines(Evaluation $evaluation, Subject $subject, array $input, ?int $measured, ?int $eligible): string
+    /**
+     * @param array{key: string, sources: list<string>, coverage: array{count: string, unit: CoverageUnit}|null} $input
+     *
+     * @return array{loc: string, reason: ?string}
+     */
+    private static function lines(Evaluation $evaluation, Subject $subject, array $input, ?int $measured, ?int $eligible): array
     {
         $capture = $evaluation->capture;
         $unit = $input['coverage']['unit'] ?? null;
         if ($unit === CoverageUnit::Callables) {
-            return 'not-applicable: callable LOC is not measured';
+            return ['loc' => 'not-applicable: callable LOC is not measured', 'reason' => null];
         }
         if ($eligible === null || $measured === null) {
-            return 'not-applicable: empty population';
+            return ['loc' => 'not-applicable: empty population', 'reason' => null];
         }
         $members = $unit === CoverageUnit::Classes ? $capture->classesUnder($subject) : $capture->namespacesHoldingClasses();
         if (\count($members) !== $eligible || $capture->complete !== true) {
-            return 'unjudged: exact population is not complete';
+            return ['loc' => 'unjudged: exact population is not complete', 'reason' => 'exact population is not complete'];
         }
         $base = MetricName::base($input['key']);
         $pooledContributors = null;
@@ -1264,7 +1275,7 @@ final class StatedCoverage
         $carriers = 0;
         foreach ($members as $member) {
             if ($member->identity === null || $member->loc === null) {
-                return 'unjudged: exact identity or LOC is unavailable';
+                return ['loc' => 'unjudged: exact identity or LOC is unavailable', 'reason' => 'exact identity or LOC is unavailable'];
             }
             $total += $member->loc;
             if ($pooledContributors === null ? isset($member->inputs[$base]) : isset($pooledContributors[$member->name])) {
@@ -1273,9 +1284,9 @@ final class StatedCoverage
             }
         }
         if ($carriers !== $measured) {
-            return 'unjudged: captured carriers disagree with aggregate count';
+            return ['loc' => 'unjudged: captured carriers disagree with aggregate count', 'reason' => 'captured carriers disagree with aggregate count'];
         }
-        return $covered . '/' . $total . ' lines';
+        return ['loc' => $covered . '/' . $total . ' lines', 'reason' => null];
     }
 }
 
@@ -1477,18 +1488,10 @@ final readonly class MonotonicityViolation
 final class Criteria
 {
     /**
-     * C1, one-sided: no parent scores ABOVE the maximum of its children, for
-     * any dimension and any parent/child level pair.
-     *
-     * The other direction is not a defect and is not reported here. A parent
-     * formula carries terms the child formula has no equivalent for — a
-     * namespace is scored on its distance from the main sequence and on its own
-     * efferent breadth, neither of which exists for a class — so a parent below
-     * all of its children is usually that, not a lost penalty.
-     * `measurement/07-monotonicity-direction.md` counted the split: coupling
-     * alone shows 604 below and exactly zero above, and the two-sided form
-     * reddens five times out of six for the explainable reason. It is kept as a
-     * printed reference figure ({@see parentsBelowChildren()}), not as a verdict.
+     * C1 diagnostic: parents scoring above every measured child, for every
+     * dimension and containment pair. A nonlinear formula can legitimately
+     * improve on complementary child inputs even with identical populations
+     * and scales; neither direction alone proves lost inputs or poor quality.
      *
      * @param list<Evaluation> $evaluations
      *
@@ -1500,8 +1503,7 @@ final class Criteria
     }
 
     /**
-     * The other direction, counted but never judged: parents scoring below the
-     * minimum of their children.
+     * The lower direction of the same diagnostic distribution.
      *
      * @param list<Evaluation> $evaluations
      *
@@ -2150,32 +2152,38 @@ function printDistribution(array $evaluations, array $levels): void
 /**
  * @param list<Evaluation> $evaluations
  */
-function printMonotonicity(array $evaluations, int $top): bool
+function printMonotonicity(array $evaluations, int $top): void
 {
     $violations = Criteria::monotonicity($evaluations);
     $below = Criteria::parentsBelowChildren($evaluations);
 
-    echo "\n== C1 monotonicity, one-sided (no parent above max(children)) ==\n";
+    echo "\n== C1 diagnostic: parent/child score distributions (no binding verdict) ==\n";
+
+    foreach (['project->namespace', 'namespace->class'] as $pair) {
+        foreach (DIMENSIONS as $dimension) {
+            $matches = static fn(MonotonicityViolation $row): bool => $row->pair === $pair && $row->dimension === $dimension;
+            echo \sprintf("%s %s above=%d below=%d\n", $pair, $dimension, \count(array_filter($violations, $matches)), \count(array_filter($below, $matches)));
+        }
+    }
 
     if ($violations === []) {
-        echo "no violators\n";
+        echo "no parents above max(children)\n";
     } else {
-        echo \sprintf("%d violators; showing up to %d\n", \count($violations), $top);
+        echo \sprintf("%d parents above max(children); showing up to %d\n", \count($violations), $top);
 
         foreach (\array_slice($violations, 0, $top) as $violation) {
             echo $violation->toString() . "\n";
         }
     }
 
-    // Printed, never judged: the below-min direction is mostly the parent
-    // formula carrying terms the child formula has none of, which is why C1 is
-    // one-sided (measurement/07-monotonicity-direction.md).
     echo \sprintf(
-        "reference, not a verdict: %d parents below min(children)\n",
+        "%d parents below min(children); showing up to %d\n",
         \count($below),
+        $top,
     );
-
-    return $violations === [];
+    foreach (\array_slice($below, 0, $top) as $row) {
+        echo $row->toString() . "\n";
+    }
 }
 
 /**
@@ -2447,7 +2455,8 @@ function reportSelfTest(Options $options, array $evaluations): int
  */
 function reportCriteria(Options $options, array $evaluations, array $definitions, array $captures): int
 {
-    $agreed = printMonotonicity($evaluations, $options->top);
+    printMonotonicity($evaluations, $options->top);
+    $agreed = true;
     printPerfectScores($evaluations, $options->c2Max);
     echo "\n== C2: predeclared neutral/adverse source profiles ==\n";
     foreach (EarnedTop::judge($definitions) as $row) {
