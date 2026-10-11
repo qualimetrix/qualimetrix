@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Cohesion;
 use PhpParser\Node;
 use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Stmt\Class_;
+use PhpParser\Node\Stmt\Trait_;
 
 /**
  * Shared scaffolding for structure visitors that track namespace/class context.
@@ -89,14 +90,13 @@ trait ClassVisitorStackTrait
      * Extracts class name from class-like nodes.
      * Returns null for anonymous classes or non-class-like nodes.
      *
-     * Note: Both LCOM and TCC/LCC call this only for Class_ nodes
-     * (interfaces and enums are filtered upstream), so the match
-     * against Class_ is the only effective branch.
+     * Cohesion also records named trait bodies for later composition.
      */
     protected function extractClassLikeName(Node $node): ?string
     {
         return match (true) {
             $node instanceof Class_ && $node->name !== null => $node->name->toString(),
+            $node instanceof Trait_ && $node->name instanceof Node\Identifier => $node->name->toString(),
             default => null,
         };
     }

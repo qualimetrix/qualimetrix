@@ -9,6 +9,7 @@ use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomClassData;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector;
@@ -25,9 +26,12 @@ final class LcomCollectorTest extends TestCase
 {
     private LcomCollector $collector;
 
+    private LcomCollectionConfiguration $configuration;
+
     protected function setUp(): void
     {
         $this->collector = new LcomCollector();
+        $this->configuration = LcomCollectionConfiguration::defaults();
     }
 
     #[Test]
@@ -41,7 +45,7 @@ final class LcomCollectorTest extends TestCase
     {
         $provides = $this->collector->provides();
 
-        self::assertContains('cohesion.lcom', $provides);
+        self::assertSame([LcomCollector::FACTS], $provides);
     }
 
     #[Test]
@@ -290,7 +294,7 @@ PHP;
     }
 
     #[Test]
-    public function itIgnoresTrait(): void
+    public function itCapturesTraitFacts(): void
     {
         $code = <<<'PHP'
 <?php
@@ -313,11 +317,15 @@ trait MyTrait
 }
 PHP;
 
-        $metrics = $this->collectMetrics($code);
+        $this->collectMetrics($code);
 
-        // Traits are intentionally ignored - LCOM is not meaningful for traits
-        // as they are not standalone classes and their cohesion depends on the using class
-        self::assertNull($metrics->get('cohesion.lcom:App\MyTrait'));
+        $visitor = $this->collector->getVisitor();
+        self::assertInstanceOf(LcomVisitor::class, $visitor);
+        $traits = array_values($visitor->getClassData());
+        self::assertCount(1, $traits);
+        self::assertSame('MyTrait', $traits[0]->className);
+        self::assertContains('setData', $traits[0]->getMethods());
+        self::assertContains('getData', $traits[0]->getMethods());
     }
 
     #[Test]
@@ -444,9 +452,10 @@ PHP;
     #[Test]
     public function itGetsMetricDefinitions(): void
     {
-        $definitions = $this->collector->getMetricDefinitions();
+        self::assertSame([], $this->collector->getMetricDefinitions());
+        $definitions = (new CohesionCompositionCollector())->getMetricDefinitions();
 
-        self::assertCount(1, $definitions);
+        self::assertCount(4, $definitions);
 
         $def = $definitions[0];
         self::assertSame('cohesion.lcom', $def->name);
@@ -1422,7 +1431,7 @@ PHP;
     #[Test]
     public function itRespectsExcludeMethodsFromConfig(): void
     {
-        $this->collector->applyLcomCollectionConfiguration(new LcomCollectionConfiguration(['GETNAME']));
+        $this->configuration = new LcomCollectionConfiguration(['GETNAME']);
 
         $code = <<<'PHP'
 <?php
@@ -1586,6 +1595,26 @@ PHP);
         $traverser->addVisitor($this->collector->getVisitor());
         $traverser->traverse($ast);
 
-        return $this->collector->collect(new SplFileInfo(__FILE__), $ast);
+        self::assertSame([], $this->collector->collect(new SplFileInfo(__FILE__), $ast)->all());
+        $visitor = $this->collector->getVisitor();
+        self::assertInstanceOf(LcomVisitor::class, $visitor);
+        $metrics = new MetricBag();
+        foreach ($visitor->getClassData() as $classData) {
+            $wire = (new MetricBag());
+            foreach ($classData->rows() as $row) {
+                $wire = $wire->withEntry(LcomCollector::FACTS, $row);
+            }
+            $wire = unserialize(serialize($wire));
+            self::assertInstanceOf(MetricBag::class, $wire);
+            $data = LcomClassData::fromRows($wire->entries(LcomCollector::FACTS));
+            $lcom = $data->calculateLcom($this->configuration->excludedMethods);
+            if ($lcom > 1 && $data->hasOnlyTrivialMethods()) {
+                $lcom = 1;
+            }
+            $name = $data->namespace !== null && $data->namespace !== '' ? $data->namespace . '\\' . $data->className : $data->className;
+            $metrics = $metrics->with('cohesion.lcom:' . $name, $lcom);
+        }
+
+        return $metrics;
     }
 }

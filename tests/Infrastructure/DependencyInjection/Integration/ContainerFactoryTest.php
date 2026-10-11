@@ -26,7 +26,9 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\SuperglobalsRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateRule;
+use Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurableInterface;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationResolverInterface;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector;
@@ -962,6 +964,16 @@ PHP;
             DitGlobalCollector::class,
             array_map(static fn(object $collector): string => $collector::class, $collectors),
         );
+        $cohesion = array_values(array_filter($collectors, static fn(object $collector): bool => $collector instanceof CohesionCompositionCollector));
+        self::assertCount(1, $cohesion);
+        $runtime = $container->get(RuntimeConfigurator::class);
+        $analysisRuntime = (new ReflectionProperty(RuntimeConfigurator::class, 'analysisRuntimeConfigurator'))->getValue($runtime);
+        $store = (new ReflectionProperty(AnalysisRuntimeConfigurator::class, 'lcomConfigurationStore'))->getValue($analysisRuntime);
+        self::assertInstanceOf(LcomCollectionConfigurationStoreInterface::class, $store);
+        $configuration = new LcomCollectionConfiguration(['metadata']);
+        $store->replace($configuration);
+        self::assertSame($configuration, (new ReflectionProperty(CohesionCompositionCollector::class, 'configuration'))->getValue($cohesion[0]));
+        $store->replace(LcomCollectionConfiguration::defaults());
     }
 
     #[Test]

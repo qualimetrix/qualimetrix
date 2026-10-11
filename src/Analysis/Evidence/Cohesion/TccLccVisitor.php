@@ -12,6 +12,7 @@ use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Enum_;
 use PhpParser\Node\Stmt\Interface_;
 use PhpParser\Node\Stmt\Property;
+use PhpParser\Node\Stmt\Trait_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
 
@@ -31,7 +32,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterfac
  * classes that heavily use delegation patterns.
  *
  * Constructors and destructors are excluded per the B&K specification.
- * Anonymous classes and enums are ignored.
+ * Anonymous classes and enums are ignored. Trait bodies are recorded for later composition.
  */
 final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
 {
@@ -218,6 +219,7 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
     private function isClassLikeNode(Node $node): bool
     {
         return $node instanceof Class_
+            || $node instanceof Trait_
             || $node instanceof Interface_
             || $node instanceof Enum_;
     }
