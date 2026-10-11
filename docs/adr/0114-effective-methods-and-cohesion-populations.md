@@ -1,7 +1,7 @@
 # 0114. Effective methods and cohesion populations
 
 **Date:** 2026-10-11
-**Status:** Proposed — awaiting integration and actual calibration receipts
+**Status:** Accepted
 
 ## Context
 
@@ -18,14 +18,41 @@ PHP method-call matching is case-insensitive. Instance calls through `$this`, `s
 
 The alternative of dropping uncalled stateless methods would hide a real
 independent group. Keeping every such method as a separate vertex instead
-measures protocol metadata as separate responsibilities. A historical fork on
-`main` at `9a88bd2c`, after rule metadata moved to constants, changed LCOM for
-46 classes and introduced eight LCOM errors and twelve cohesion-health findings
-when all stateless merging was disabled. The evidence file is timestamped
-2026-09-25; its run date was not separately established. These are historical
-fork observations, not integrated-candidate verdicts or a calibration target.
-**Awaiting historical evidence receipt:** an archived public citation for this
-fork and its exact comparison must be attached before accepting this ADR.
+measures protocol metadata as separate responsibilities.
+
+**Historical no-merge comparison receipt.** The source was `main` at
+[`9a88bd2c9912699fd38973cb5554dd9d14396e36`](https://github.com/qualimetrix/qualimetrix/commit/9a88bd2c9912699fd38973cb5554dd9d14396e36).
+Both compared variants had the
+called-stateless correction and rule metadata moved to constants. The alternative
+changed only the virtual-node choice: every remaining non-static, non-excluded
+method kept its own vertex. Static/constructor exclusions and the then-existing
+all-trivial clamp remained; this was not an unadapted Hitz–Montazeri run.
+Both used the source tree's configuration and formulas, with no baseline.
+The JSON metrics timestamps are `2026-09-25T15:25:25+00:00` and
+`2026-09-25T15:25:26+00:00`; invocation start dates were not separately recorded.
+Both captures were complete: 1,031 files discovered and analyzed, none failed.
+
+| Historical comparison                           | Stateless merging retained | Stateless merging disabled         |
+| ----------------------------------------------- | -------------------------- | ---------------------------------- |
+| Classes whose LCOM changed between the variants | —                          | 46: 33 increased by one, 13 by two |
+| New `cohesion.lcom` findings                    | —                          | 8 errors                           |
+| New `health.cohesion` findings                  | —                          | 12 warnings: 7 class, 5 namespace  |
+| Existing finding severity changes               | —                          | 3 warnings promoted to errors      |
+| Total findings                                  | 165                        | 185                                |
+| Project `health.cohesion`                       | 84.54526625856893          | 82.84595750280856                  |
+| Metrics / findings command exit codes           | 0 / 0                      | 2 / 2                              |
+
+The exact LCOM transition counts are 2→3: 17, 2→4: 5, 3→4: 14, 3→5: 8 and
+4→5: 2. The new LCOM errors were on `AbstractnessCollector`, `ClassRankCollector`,
+`CouplingCollector`, `DistanceCollector`, `DitGlobalCollector`, `NocCollector`,
+`TypeCoveragePercentCollector` and `MaintainabilityIndexCollector`; all reached
+LCOM 5 with an error boundary of 5. No finding was removed. Counts were checked
+against both raw JSON comparisons and their per-class table.
+Historical command arguments were `php -d memory_limit=2G bin/qmx check src/`
+with `--workers=0 --no-cache --no-progress`, once with `--format=metrics` and
+once with `--format=json --all`. The outputs identify the tool as `dev-main`.
+These are archived fork observations, not current-candidate verdicts, complete
+repository validation, or calibration targets.
 
 An empty eligible LCOM graph publishes no `cohesion.lcom`; `cohesion.lcom-method-count` records vertices after exclusions and merging and gates `min_methods`. TCC/LCC follow instance-method invocation trees to collect reachable property access and share one predicate with the pure-method count. `cohesion.tcc-method-count` records their tracked public population. TCC/LCC remain absent when fewer than two tracked methods or no applicable instance state exists. Unread trait uses are reported as `cohesion.unread-trait-count`, never interpreted as a known empty trait. Class cohesion health divides its purity fraction by the tracked TCC method count.
 
@@ -54,4 +81,4 @@ producer-owned contract and baseline comparison policy themselves are unchanged.
 - Re-evaluate saved LCOM, TCC, LCC, class and aggregate health values. Empty LCOM is now absent; findings can change when trait methods or calls connect the graph.
 - Rule `min_methods` refers to the LCOM graph population. Recheck custom limits and accepted baseline entries against that population.
 - Update affected metric consumers to distinguish absent from numeric zero and to inspect `cohesion.unread-trait-count` when composition evidence is incomplete.
-- **Awaiting actual integration receipts:** effective-trait/call-population tests, partial-file baseline reach witness, and named self-analysis before/after. Acceptance requires their actual results; this draft claims none.
+- Integrated evidence is measured in the complete 17-project capture and [ADR 0116](0116-measured-health-score-recalibration.md). Scoped Cohesion/DependencyModel/Coupling/Size tests passed (958 tests, 3,238 assertions); the later owning quality package, including Cohesion, passed (1,912 tests, 7,439 assertions). The baseline command suite passed (10 tests, 271 assertions), including `itLeavesRunDependentCohesionUncomparedOnOneFile`: a narrow check retains an ordinary finding as `not-compared`/`outside-coverage`, while a complete check can enforce its whole-run ceiling. These scoped receipts do not replace the pending full validation, gate, fresh review and CI.

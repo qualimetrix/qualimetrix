@@ -11,7 +11,6 @@ This index lists only work that is executable on the current tree.
 | [DIT external ancestry](dit-external-ancestry/00-overview.md)                            | Stages 01 (#119), 02 (#135, ADR 0074) and 03 (ADR 0076) landed; campaign complete                                 |
 | [Drill-down ownership](drill-down-ownership/01-ownership.md)                             | Reviewed; landed: the drill-down counter moved to the filter it must agree with                                   |
 | [Duplicate declaration depth](duplicate-declaration-depth/01-declaration-exact-depth.md) | Two plan-review rounds and a code review; landed with a declared gate delta                                       |
-| [Health recalibration](health-recalibration/00-overview.md)                              | In progress; three review rounds; instruments, corpus, model and calibration landed                               |
 | [Phar distribution](phar-distribution/00-overview.md)                                    | Stage 01 P0-P3 landed, pending review and one branch-protection setting; stage 02 written when 01 ships           |
 | [Rules listing](rules-listing/01-one-declaration-two-readers.md)                         | Three review rounds; landed, pending review                                                                       |
 | [Selector language](selector-language/00-overview.md)                                    | Planned and reviewed in three rounds; implementation authorized                                                   |

@@ -367,19 +367,30 @@ This README is part of the subject boundary: keep its production code, tests, fi
 ## Cohesion score scale
 
 The class LCOM contribution uses span five independently of its purity term.
-The namespace LCOM span is selected by calibration; the built-in project
-cohesion score inherits that formula and evaluates project aggregate inputs
-directly. Correctly pooled inputs can score above every child even with the
+The declared 27-candidate search selected namespace LCOM span five, project
+Form B distance weight six and breadth weight four. It retains the earlier
+namespace scale; the class purity denominator is `cohesion.tcc-method-count`.
+The built-in project cohesion score inherits the namespace formula and evaluates
+project aggregate inputs directly. Correctly pooled inputs can score above every child even with the
 same formula and contributor population: complementary TCC/LCOM inputs and the
 concave square root give child scores 50/50 and a parent score 60.355339.
 [ADR 0116](../../../../docs/adr/0116-measured-health-score-recalibration.md#why-c1-is-diagnostic)
 records the native counterexample, full diagnostic parent/child comparisons and
 the retained checks for actual input loss.
 
-**Awaiting actual calibration receipts:** insert the selected namespace LCOM
-span and project Form B distance/breadth weights, the accepted expression and
-decomposition, and the linked calibration decision. No final values are
-asserted before the declared search and measured before/after capture.
+Project Form B uses this exact selected expression:
+
+```text
+clamp(100 * 18 / (18 + (m["coupling.distance-own.avg"] ?? 0) * 6 + max((m["coupling.ce-packages.avg"] ?? 0) * 3.0 + (m["coupling.ce.avg"] ?? 0) ** 0.5 * 0.5 - 4, 0) * 4 + max((m["coupling.ce.max"] ?? 0) - 30, 0) ** 0.5 * 0.8), 0, 100)
+```
+
+Applicability requires at least one finite measured input among
+`coupling.distance-own.avg`, `coupling.ce-packages.avg`, `coupling.ce.avg` and
+`coupling.ce.max`. The decomposition uses those same inputs. An absent distance
+remains absent in metrics and coverage; missing-term expression fallbacks do
+not publish measured zero. [ADR 0116](../../../../docs/adr/0116-measured-health-score-recalibration.md)
+records the selected tuple, all 27 objectives, complete 17-project before/after
+evidence and the separate pending stage acceptance checks.
 
 ## Formula reach for baseline comparison
 
