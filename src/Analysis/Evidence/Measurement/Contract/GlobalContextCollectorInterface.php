@@ -19,6 +19,9 @@ interface GlobalContextCollectorInterface
 {
     public function getName(): string;
 
+    /** Reach of every provided metric, independent of its execution phase. */
+    public function getMetricReach(): MetricReach;
+
     /** @return list<string> */
     public function provides(): array;
 

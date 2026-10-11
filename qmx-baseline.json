@@ -219,7 +219,7 @@
       {"channel":"size.class-count","magnitudes":[35]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Design": [
-      {"channel":"coupling.instability","magnitudes":[0.972603]}
+      {"channel":"coupling.instability","magnitudes":[0.972973]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance": [
       {"channel":"coupling.instability","magnitudes":[0.962264]}

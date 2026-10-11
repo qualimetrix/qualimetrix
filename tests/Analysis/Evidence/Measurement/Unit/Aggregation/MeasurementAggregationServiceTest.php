@@ -98,6 +98,7 @@ final class MeasurementAggregationServiceTest extends TestCase
 
         $collector = self::createStub(GlobalContextCollectorInterface::class);
         $collector->method('getName')->willReturn('global');
+        $collector->method('getMetricReach')->willReturn(MetricReach::Run);
         $collector->method('requires')->willReturn([]);
         $collector->method('provides')->willReturn(['global']);
         $collector->method('getMetricDefinitions')->willReturn([
@@ -247,6 +248,7 @@ final class MeasurementAggregationServiceTest extends TestCase
         $global->method('requires')->willReturn([MetricName::agg(MetricName::COMPLEXITY_CCN, AggregationStrategy::Max)]);
         $global->method('provides')->willReturn([MetricName::COUPLING_INSTABILITY]);
         $global->method('getMetricDefinitions')->willReturn([]);
+        $global->method('getMetricReach')->willReturn(MetricReach::Run);
 
         $catalog = new MeasurementAggregationService([$global], $fileCollector, self::createStub(ProfilerInterface::class));
 
@@ -255,6 +257,36 @@ final class MeasurementAggregationServiceTest extends TestCase
         self::assertSame(MetricReach::Members, $catalog->metricReach(MetricName::MAINTAINABILITY_MI));
         self::assertSame(MetricReach::Run, $catalog->metricReach(MetricName::COUPLING_INSTABILITY));
         self::assertSame(MetricReach::Run, $catalog->metricReach(MetricName::agg(MetricName::COUPLING_INSTABILITY, AggregationStrategy::Average)));
+    }
+
+    #[Test]
+    public function itUsesDeclaredReachForBothMemberAndRunEvidenceInTheGlobalPhase(): void
+    {
+        $local = self::createStub(GlobalContextCollectorInterface::class);
+        $local->method('getName')->willReturn('local');
+        $local->method('requires')->willReturn([]);
+        $local->method('provides')->willReturn([MetricName::COHESION_LCOM]);
+        $local->method('getMetricDefinitions')->willReturn([]);
+        $local->method('getMetricReach')->willReturn(MetricReach::Members);
+        $global = self::createStub(GlobalContextCollectorInterface::class);
+        $global->method('getName')->willReturn('graph');
+        $global->method('requires')->willReturn([]);
+        $global->method('provides')->willReturn([MetricName::COUPLING_CBO]);
+        $global->method('getMetricDefinitions')->willReturn([]);
+        $global->method('getMetricReach')->willReturn(MetricReach::Run);
+
+        $catalog = new MeasurementAggregationService(
+            [$local, $global],
+            new CompositeCollector([], new DeclarationRegistrarFactory()),
+            self::createStub(ProfilerInterface::class),
+        );
+
+        foreach ([MetricName::COHESION_LCOM, MetricName::agg(MetricName::COHESION_LCOM, AggregationStrategy::Max)] as $key) {
+            self::assertSame(MetricReach::Members, $catalog->metricReach($key));
+        }
+        foreach ([MetricName::COUPLING_CBO, MetricName::agg(MetricName::COUPLING_CBO, AggregationStrategy::Average)] as $key) {
+            self::assertSame(MetricReach::Run, $catalog->metricReach($key));
+        }
     }
 
     #[Test]
@@ -294,6 +326,7 @@ final class MeasurementAggregationServiceTest extends TestCase
     {
         $collector = $this->createMock(GlobalContextCollectorInterface::class);
         $collector->method('getName')->willReturn($name);
+        $collector->method('getMetricReach')->willReturn(MetricReach::Run);
         $collector->method('requires')->willReturn($requires);
         $collector->method('provides')->willReturn($provides);
         $collector->method('getMetricDefinitions')->willReturn([]);

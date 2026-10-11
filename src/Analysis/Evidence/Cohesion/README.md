@@ -53,7 +53,9 @@ secondary declaration; the diagnostic helper does not depend back on the rule.
 `LcomCollector` and `TccLccCollector` publish file-local declaration fact
 rows. `CohesionCompositionCollector` reads those rows after collection and
 publishes the same `cohesion.lcom`, `cohesion.tcc`, `cohesion.lcc` and
-`cohesion.pure-method-count` class metrics. This ownership move preserves the
+`cohesion.pure-method-count` class metrics. These values declare Members reach:
+execution after file collection preserves their declaration-local baseline
+comparison, including a check of one file against a whole-project baseline. This ownership move preserves the
 existing LCOM graph and TCC/LCC calculations.
 
 The pipeline retains metric keys and class-level aggregation

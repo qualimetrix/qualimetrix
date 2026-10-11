@@ -2462,6 +2462,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0110-complete-offender-ranking-and-catalog-thresholds.md' => 'Analysis.Evidence.ComputedMetrics.Health',
         'docs/adr/0111-resolved-rfc-targets-and-trait-composition.md' => 'Analysis.Evidence.Coupling',
         'docs/adr/0112-validation-check-scheduling.md' => 'Architecture.Governance',
+        'docs/adr/0113-producer-declared-metric-reach.md' => 'Analysis.Evidence.Measurement',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/ProjectManifest/README.md' => 'Analysis.ProjectManifest',

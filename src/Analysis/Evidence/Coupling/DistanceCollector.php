@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -49,6 +50,11 @@ final class DistanceCollector implements GlobalContextCollectorInterface
             MetricName::COUPLING_INSTABILITY_OWN,
             MetricName::COUPLING_ABSTRACTNESS_OWN,
         ];
+    }
+
+    public function getMetricReach(): MetricReach
+    {
+        return MetricReach::Run;
     }
 
     public function provides(): array

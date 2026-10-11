@@ -232,6 +232,7 @@ Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector	Analysis.Evi
 Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector	Analysis.Evidence.Cohesion	Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector	Analysis.Evidence.Cohesion	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector	Analysis.Evidence.Cohesion	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	contract
+Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector	Analysis.Evidence.Cohesion	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector	Analysis.Evidence.Cohesion	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector	Analysis.Evidence.Cohesion	Qualimetrix\Core\Symbol\ClassType	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector	Analysis.Evidence.Cohesion	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
@@ -660,6 +661,7 @@ Qualimetrix\Analysis\Evidence\Coupling\AbstractnessCollector	Analysis.Evidence.C
 Qualimetrix\Analysis\Evidence\Coupling\AbstractnessCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\AbstractnessCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\AbstractnessCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	contract
+Qualimetrix\Analysis\Evidence\Coupling\AbstractnessCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\AbstractnessCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\AbstractnessCollector	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Coupling\AbstractnessCollector	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
@@ -719,6 +721,7 @@ Qualimetrix\Analysis\Evidence\Coupling\ClassRankCollector	Analysis.Evidence.Coup
 Qualimetrix\Analysis\Evidence\Coupling\ClassRankCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\ClassRankCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\ClassRankCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	contract
+Qualimetrix\Analysis\Evidence\Coupling\ClassRankCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\ClassRankCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\ClassRankCollector	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\LogicalClassPath	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Coupling\ClassRankCollector	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
@@ -776,6 +779,7 @@ Qualimetrix\Analysis\Evidence\Coupling\CouplingCollector	Analysis.Evidence.Coupl
 Qualimetrix\Analysis\Evidence\Coupling\CouplingCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\CouplingCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\CouplingCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	contract
+Qualimetrix\Analysis\Evidence\Coupling\CouplingCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\CouplingCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\CouplingCollector	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\LogicalClassPath	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Coupling\CouplingCollector	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
@@ -786,6 +790,7 @@ Qualimetrix\Analysis\Evidence\Coupling\DistanceCollector	Analysis.Evidence.Coupl
 Qualimetrix\Analysis\Evidence\Coupling\DistanceCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\DistanceCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\DistanceCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	contract
+Qualimetrix\Analysis\Evidence\Coupling\DistanceCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\DistanceCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\DistanceCollector	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Coupling\DistanceCollector	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
@@ -898,6 +903,7 @@ Qualimetrix\Analysis\Evidence\Coupling\RfcGlobalCollector	Analysis.Evidence.Coup
 Qualimetrix\Analysis\Evidence\Coupling\RfcGlobalCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\RfcGlobalCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\RfcGlobalCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	contract
+Qualimetrix\Analysis\Evidence\Coupling\RfcGlobalCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\RfcGlobalCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\RfcGlobalCollector	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Coupling\RfcGlobalCollector	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
@@ -1024,6 +1030,7 @@ Qualimetrix\Analysis\Evidence\Design\Inheritance\DitGlobalCollector	Analysis.Evi
 Qualimetrix\Analysis\Evidence\Design\Inheritance\DitGlobalCollector	Analysis.Evidence.Design	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Design\Inheritance\DitGlobalCollector	Analysis.Evidence.Design	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Design\Inheritance\DitGlobalCollector	Analysis.Evidence.Design	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	contract
+Qualimetrix\Analysis\Evidence\Design\Inheritance\DitGlobalCollector	Analysis.Evidence.Design	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Design\Inheritance\DitGlobalCollector	Analysis.Evidence.Design	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Design\Inheritance\DitGlobalCollector	Analysis.Evidence.Design	Qualimetrix\Core\Symbol\ClassType	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Design\Inheritance\DitGlobalCollector	Analysis.Evidence.Design	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
@@ -1069,6 +1076,7 @@ Qualimetrix\Analysis\Evidence\Design\Inheritance\NocCollector	Analysis.Evidence.
 Qualimetrix\Analysis\Evidence\Design\Inheritance\NocCollector	Analysis.Evidence.Design	Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Design\Inheritance\NocCollector	Analysis.Evidence.Design	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Design\Inheritance\NocCollector	Analysis.Evidence.Design	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	contract
+Qualimetrix\Analysis\Evidence\Design\Inheritance\NocCollector	Analysis.Evidence.Design	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Design\Inheritance\NocCollector	Analysis.Evidence.Design	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Design\Inheritance\NocCollector	Analysis.Evidence.Design	Qualimetrix\Core\Symbol\ClassType	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Design\Inheritance\NocCollector	Analysis.Evidence.Design	Qualimetrix\Core\Symbol\LogicalClassPath	Core.Symbol	contract

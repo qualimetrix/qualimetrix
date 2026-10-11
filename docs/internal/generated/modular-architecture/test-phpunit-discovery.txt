@@ -5389,6 +5389,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MeasurementAggregationServiceTest::itRefusesAnUnknownMeasuredMetricInsteadOfInventingMemberReach
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MeasurementAggregationServiceTest::itRunsCollectorsInTopologicalOrder
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MeasurementAggregationServiceTest::itRunsIndependentCollectorsInAnyOrder
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MeasurementAggregationServiceTest::itUsesDeclaredReachForBothMemberAndRunEvidenceInTheGlobalPhase
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MetricAggregatorTest::itAcceptsIterableCollectors
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MetricAggregatorTest::itAggregatesClassCountMetrics
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MetricAggregatorTest::itAggregatesLocMetrics
@@ -10682,6 +10683,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandAutoloadDevScopeTest::itTakesTestCodeIntoBothHalvesWhenTheFlagIsGiven
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandAutoloadDevScopeTest::itTakesTestCodeIntoBothHalvesWhenTheKeyIsWritten
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itCombinesConfiguredAndCliExclusionsWithoutLosingBaselineAnnotationOrGit
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itComparesLocalCohesionAgainstAWholeProjectBaselineOnOneFile"growth breaches the accepted magnitude"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itComparesLocalCohesionAgainstAWholeProjectBaselineOnOneFile"unchanged remains accepted"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itDoesNotPromoteWhenTheEntryCannotBeApplied
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itKeepsAGroupWithAnIgnoredMemberAcceptedAcrossGenerateAndCheck
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itNamesUnusedCountsWhenTheAuditRuleIsNotSelected

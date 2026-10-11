@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional\Command;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
@@ -377,6 +378,74 @@ final class CheckCommandBaselineTest extends TestCase
             }
             self::assertStringNotContainsString('is stale', $tester->getDisplay());
         }
+    }
+
+    #[Test]
+    #[DataProvider('provideNarrowCohesionBaselineValues')]
+    public function itComparesLocalCohesionAgainstAWholeProjectBaselineOnOneFile(int $groups, int $exit): void
+    {
+        mkdir($this->tempDir . '/src');
+        file_put_contents($this->tempDir . '/composer.json', json_encode([
+            'autoload' => ['psr-4' => ['App\\' => 'src/']],
+        ], \JSON_THROW_ON_ERROR));
+        file_put_contents($this->configPath, <<<'YAML'
+            paths: [src]
+            cache: {enabled: false}
+            parallel: {workers: 0}
+            only_rules: [cohesion.lcom]
+            rules:
+              cohesion.lcom:
+                warning: 2
+                error: 6
+                min_methods: 1
+            YAML);
+        $path = $this->tempDir . '/src/Twin.php';
+        file_put_contents($path, self::cohesionFixture(4));
+        file_put_contents($this->tempDir . '/src/Other.php', '<?php namespace App; final class Other {}');
+        $this->runGenerate(['paths' => ['src']]);
+        /** @var array{entries: array<string, list<array{magnitudes: list<int>}>>} $baseline */
+        $baseline = json_decode((string) file_get_contents($this->baselinePath), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame([4], $baseline['entries']['declaration:class:App\\Twin@src/Twin.php'][0]['magnitudes']);
+
+        file_put_contents($path, self::cohesionFixture($groups));
+        $check = $this->runCheck([
+            'paths' => ['src/Twin.php'],
+            '--baseline' => $this->baselinePath,
+            '--format' => 'json',
+        ], captureErrors: true);
+        self::assertSame($exit, $check->getStatusCode(), $check->getDisplay());
+        /** @var array{summary: array{filesAnalyzed: int, violationCount: int}, projectScope: array{state: string}, violations: list<array{metricValue: int, severity: string, baselineVerdict: string}>} $report */
+        $report = json_decode($check->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(1, $report['summary']['filesAnalyzed']);
+        self::assertSame('narrowed', $report['projectScope']['state']);
+        if ($groups === 4) {
+            self::assertSame(0, $report['summary']['violationCount']);
+            self::assertSame([], $report['violations']);
+        } else {
+            self::assertSame(1, $report['summary']['violationCount']);
+            self::assertCount(1, $report['violations']);
+            self::assertSame(5, $report['violations'][0]['metricValue']);
+            self::assertSame('error', $report['violations'][0]['severity']);
+            self::assertSame('breached', $report['violations'][0]['baselineVerdict']);
+        }
+    }
+
+    /** @return iterable<string, array{int, int}> */
+    public static function provideNarrowCohesionBaselineValues(): iterable
+    {
+        yield 'unchanged remains accepted' => [4, 0];
+        yield 'growth breaches the accepted magnitude' => [5, 2];
+    }
+
+    private static function cohesionFixture(int $groups): string
+    {
+        $members = [];
+        for ($index = 0; $index < $groups; ++$index) {
+            $members[] = 'private int $field' . $index . ' = 0;';
+            $members[] = 'public function part' . $index . '(): void { ++$this->field' . $index . '; }';
+        }
+
+        return '<?php namespace App; final class Twin { ' . implode(' ', $members) . ' }';
     }
 
     private function writeFixture(string $code): void

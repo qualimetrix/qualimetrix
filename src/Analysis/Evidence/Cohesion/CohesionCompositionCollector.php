@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -40,6 +41,11 @@ final class CohesionCompositionCollector implements GlobalContextCollectorInterf
     public function requires(): array
     {
         return [LcomCollector::FACTS, TccLccCollector::FACTS];
+    }
+
+    public function getMetricReach(): MetricReach
+    {
+        return MetricReach::Members;
     }
 
     public function provides(): array
