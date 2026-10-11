@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector;
+use Qualimetrix\Analysis\Evidence\Cohesion\CohesionFactWire;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomClassData;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector;
@@ -34,12 +35,12 @@ final class CohesionCompositionCollectorTest extends TestCase
     {
         $data = new LcomClassData('App', 'Twin', 1, 0);
         $data->addMethod('one');
-        $rows = $data->rows();
+        $rows = CohesionFactWire::lcomRows($data);
         array_pop($rows);
 
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('incomplete');
-        LcomClassData::fromRows($rows);
+        CohesionFactWire::lcomFromRows($rows);
     }
 
     #[Test]
@@ -48,11 +49,11 @@ final class CohesionCompositionCollectorTest extends TestCase
     {
         $data = new LcomClassData('App', 'Twin', 1, 0);
         $data->addMethod('one');
-        $rows = $data->rows();
+        $rows = CohesionFactWire::lcomRows($data);
         $rows[$rowIndex][$key] = $value;
 
         $this->expectException(LogicException::class);
-        LcomClassData::fromRows($rows);
+        CohesionFactWire::lcomFromRows($rows);
     }
 
     /** @return iterable<string, array{int, string, int|string}> */
@@ -141,10 +142,10 @@ final class CohesionCompositionCollectorTest extends TestCase
     private static function wire(LcomClassData $lcom, TccLccClassData $tcc): MetricBag
     {
         $bag = new MetricBag();
-        foreach ($lcom->rows() as $row) {
+        foreach (CohesionFactWire::lcomRows($lcom) as $row) {
             $bag = $bag->withEntry(LcomCollector::FACTS, $row);
         }
-        foreach ($tcc->rows() as $row) {
+        foreach (CohesionFactWire::tccRows($tcc) as $row) {
             $bag = $bag->withEntry(TccLccCollector::FACTS, $row);
         }
         $wire = unserialize(serialize($bag));

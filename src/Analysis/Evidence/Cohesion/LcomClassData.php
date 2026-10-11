@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Cohesion;
 
-use LogicException;
-
 /**
  * Data structure for LCOM calculation.
  *
@@ -145,93 +143,26 @@ final class LcomClassData
         return array_keys($this->propertyAccesses[$methodName] ?? []);
     }
 
-    /** @return list<array<string, scalar>> */
-    public function rows(): array
+    /**
+     * @return array{
+     *     methods: array<string, true>,
+     *     staticMethods: array<string, true>,
+     *     statelessMethods: array<string, true>,
+     *     propertyAccesses: array<string, array<string, true>>,
+     *     methodCalls: array<string, array<string, true>>,
+     *     nonTrivial: bool
+     * }
+     */
+    public function factState(): array
     {
-        $rows = [[
-            'tag' => 'declaration',
-            'namespace' => $this->namespace ?? '',
-            'name' => $this->className,
-            'line' => $this->line,
-            'position' => $this->startFilePos,
+        return [
+            'methods' => $this->methods,
+            'staticMethods' => $this->staticMethods,
+            'statelessMethods' => $this->statelessMethods,
+            'propertyAccesses' => $this->propertyAccesses,
+            'methodCalls' => $this->methodCalls,
             'nonTrivial' => $this->hasNonTrivialMethod,
-        ]];
-        foreach ($this->methods as $method => $_) {
-            $rows[] = [
-                'tag' => 'method',
-                'name' => $method,
-                'static' => isset($this->staticMethods[$method]),
-                'stateless' => isset($this->statelessMethods[$method]),
-            ];
-        }
-        foreach ($this->propertyAccesses as $method => $properties) {
-            foreach ($properties as $property => $_) {
-                $rows[] = ['tag' => 'property', 'method' => $method, 'name' => $property];
-            }
-        }
-        foreach ($this->methodCalls as $caller => $callees) {
-            foreach ($callees as $callee => $_) {
-                $rows[] = ['tag' => 'call', 'caller' => $caller, 'callee' => $callee];
-            }
-        }
-
-        $rows[0]['rowCount'] = \count($rows);
-
-        return $rows;
-    }
-
-    /** @param list<array<string, scalar>> $rows */
-    public static function fromRows(array $rows): self
-    {
-        $declaration = $rows[0] ?? throw new LogicException('LCOM declaration facts are missing');
-        if (($declaration['tag'] ?? null) !== 'declaration') {
-            throw new LogicException('LCOM declaration facts must begin with a declaration row');
-        }
-        if (($declaration['rowCount'] ?? null) !== \count($rows)) {
-            throw new LogicException('LCOM declaration facts are incomplete');
-        }
-        $data = new self(
-            (string) $declaration['namespace'],
-            (string) $declaration['name'],
-            (int) $declaration['line'],
-            (int) $declaration['position'],
-        );
-        $nonTrivial = $declaration['nonTrivial'] ?? null;
-        if (!\is_bool($nonTrivial)) {
-            throw new LogicException('LCOM declaration fact must contain a boolean nonTrivial flag');
-        }
-        if ($nonTrivial) {
-            $data->markNonTrivial();
-        }
-        foreach (\array_slice($rows, 1) as $row) {
-            switch ($row['tag'] ?? null) {
-                case 'method':
-                    $method = (string) $row['name'];
-                    $static = $row['static'] ?? null;
-                    $stateless = $row['stateless'] ?? null;
-                    if (!\is_bool($static) || !\is_bool($stateless)) {
-                        throw new LogicException('LCOM method fact must contain boolean static and stateless flags');
-                    }
-                    $data->addMethod($method);
-                    if ($static) {
-                        $data->markStatic($method);
-                    }
-                    if ($stateless) {
-                        $data->markStatelessConstant($method);
-                    }
-                    break;
-                case 'property':
-                    $data->addPropertyAccess((string) $row['method'], (string) $row['name']);
-                    break;
-                case 'call':
-                    $data->addMethodCall((string) $row['caller'], (string) $row['callee']);
-                    break;
-                default:
-                    throw new LogicException('Unknown LCOM fact row');
-            }
-        }
-
-        return $data;
+        ];
     }
 
     /**

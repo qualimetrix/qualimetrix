@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector;
+use Qualimetrix\Analysis\Evidence\Cohesion\CohesionFactWire;
 use Qualimetrix\Analysis\Evidence\Cohesion\TccLccClassData;
 use Qualimetrix\Analysis\Evidence\Cohesion\TccLccCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\TccLccVisitor;
@@ -646,7 +647,7 @@ PHP;
 
         self::assertSame('App', $class->declarationPath->logical->namespace);
         self::assertSame('TestClass', $class->declarationPath->logical->type);
-        $data = TccLccClassData::fromRows($class->metrics->entries(TccLccCollector::FACTS));
+        $data = CohesionFactWire::tccFromRows($class->metrics->entries(TccLccCollector::FACTS));
         self::assertSame(1.0, $data->calculateTcc());
         self::assertSame(1.0, $data->calculateLcc());
         // Both methods access $prop → 0 pure methods
@@ -1277,12 +1278,12 @@ PHP);
         $metrics = new MetricBag();
         foreach ($visitor->getClassData() as $classData) {
             $wire = new MetricBag();
-            foreach ($classData->rows() as $row) {
+            foreach (CohesionFactWire::tccRows($classData) as $row) {
                 $wire = $wire->withEntry(TccLccCollector::FACTS, $row);
             }
             $wire = unserialize(serialize($wire));
             self::assertInstanceOf(MetricBag::class, $wire);
-            $data = TccLccClassData::fromRows($wire->entries(TccLccCollector::FACTS));
+            $data = CohesionFactWire::tccFromRows($wire->entries(TccLccCollector::FACTS));
             if (\count($data->getMethods()) < 2 || $data->getPropertyCount() === 0) {
                 continue;
             }

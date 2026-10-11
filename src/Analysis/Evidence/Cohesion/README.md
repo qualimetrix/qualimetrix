@@ -7,7 +7,8 @@ collectors, their AST visitors and per-class calculation data, the
 `cohesion.lcom` rule with its options, and the LCOM collection configuration
 needed by its named sequential and parallel consumers.
 `ClassVisitorStackTrait` is private scaffolding shared only by the two Cohesion
-visitors.
+visitors. `CohesionFactWire` owns the exact serializable row format, while
+`CohesionFactProjectionTrait` publishes those rows under declaration subjects.
 
 `Contract/` exposes the exact
 `LcomCollectionConfiguration` value; `Runtime/` owns its scoped store and
@@ -20,6 +21,8 @@ aggregation contracts, while Finding owns rule options and findings.
 Cohesion/
 ├── ClassVisitorStackTrait.php
 ├── CohesionCompositionCollector.php
+├── CohesionFactProjectionTrait.php
+├── CohesionFactWire.php
 ├── Contract/
 │   ├── LcomCollectionConfiguration.php
 │   ├── LcomCollectionConfigurationResolverInterface.php

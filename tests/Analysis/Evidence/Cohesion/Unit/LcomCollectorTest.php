@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector;
+use Qualimetrix\Analysis\Evidence\Cohesion\CohesionFactWire;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomClassData;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector;
@@ -1601,12 +1602,12 @@ PHP);
         $metrics = new MetricBag();
         foreach ($visitor->getClassData() as $classData) {
             $wire = (new MetricBag());
-            foreach ($classData->rows() as $row) {
+            foreach (CohesionFactWire::lcomRows($classData) as $row) {
                 $wire = $wire->withEntry(LcomCollector::FACTS, $row);
             }
             $wire = unserialize(serialize($wire));
             self::assertInstanceOf(MetricBag::class, $wire);
-            $data = LcomClassData::fromRows($wire->entries(LcomCollector::FACTS));
+            $data = CohesionFactWire::lcomFromRows($wire->entries(LcomCollector::FACTS));
             $lcom = $data->calculateLcom($this->configuration->excludedMethods);
             if ($lcom > 1 && $data->hasOnlyTrivialMethods()) {
                 $lcom = 1;

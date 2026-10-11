@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Cohesion;
 
-use LogicException;
 use SplQueue;
 
 /**
@@ -95,62 +94,20 @@ final class TccLccClassData
         return array_keys($this->propertyAccesses[$methodName] ?? []);
     }
 
-    /** @return list<array<string, scalar>> */
-    public function rows(): array
+    /**
+     * @return array{
+     *     methods: array<string, true>,
+     *     propertyAccesses: array<string, array<string, true>>,
+     *     propertyCount: int
+     * }
+     */
+    public function factState(): array
     {
-        $rows = [[
-            'tag' => 'declaration',
-            'namespace' => $this->namespace ?? '',
-            'name' => $this->className,
-            'line' => $this->line,
-            'position' => $this->startFilePos,
+        return [
+            'methods' => $this->methods,
+            'propertyAccesses' => $this->propertyAccesses,
             'propertyCount' => $this->propertyCount,
-        ]];
-        foreach ($this->methods as $method => $_) {
-            $rows[] = ['tag' => 'method', 'name' => $method];
-        }
-        foreach ($this->propertyAccesses as $method => $properties) {
-            foreach ($properties as $property => $_) {
-                $rows[] = ['tag' => 'property', 'method' => $method, 'name' => $property];
-            }
-        }
-
-        $rows[0]['rowCount'] = \count($rows);
-
-        return $rows;
-    }
-
-    /** @param list<array<string, scalar>> $rows */
-    public static function fromRows(array $rows): self
-    {
-        $declaration = $rows[0] ?? throw new LogicException('TCC declaration facts are missing');
-        if (($declaration['tag'] ?? null) !== 'declaration') {
-            throw new LogicException('TCC declaration facts must begin with a declaration row');
-        }
-        if (($declaration['rowCount'] ?? null) !== \count($rows)) {
-            throw new LogicException('TCC declaration facts are incomplete');
-        }
-        $data = new self(
-            (string) $declaration['namespace'],
-            (string) $declaration['name'],
-            (int) $declaration['line'],
-            (int) $declaration['position'],
-        );
-        $data->incrementPropertyCount((int) $declaration['propertyCount']);
-        foreach (\array_slice($rows, 1) as $row) {
-            switch ($row['tag'] ?? null) {
-                case 'method':
-                    $data->addMethod((string) $row['name']);
-                    break;
-                case 'property':
-                    $data->addPropertyAccess((string) $row['method'], (string) $row['name']);
-                    break;
-                default:
-                    throw new LogicException('Unknown TCC fact row');
-            }
-        }
-
-        return $data;
+        ];
     }
 
     /**

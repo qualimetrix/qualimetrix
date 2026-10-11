@@ -14,7 +14,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareTrai
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
 
 /**
@@ -32,6 +31,7 @@ use SplFileInfo;
 final class LcomCollector extends AbstractCollector implements DeclarationIndexAwareInterface, ClassMetricsProviderInterface
 {
     use DeclarationIndexAwareTrait;
+    use CohesionFactProjectionTrait;
 
     public const string FACTS = 'cohesion.lcom-facts';
 
@@ -70,18 +70,7 @@ final class LcomCollector extends AbstractCollector implements DeclarationIndexA
     {
         \assert($this->visitor instanceof LcomVisitor);
 
-        $result = [];
-
-        foreach ($this->visitor->getClassData() as $classData) {
-            $bag = new MetricBag();
-            foreach ($classData->rows() as $row) {
-                $bag = $bag->withEntry(self::FACTS, $row);
-            }
-
-            $result[] = $this->classWithMetrics(SymbolPath::forClass($classData->namespace ?? '', $classData->className), $file, $classData->startFilePos, $classData->line, $bag);
-        }
-
-        return $result;
+        return $this->classesWithCohesionFacts($file, $this->visitor->getClassData(), self::FACTS);
     }
 
     /**

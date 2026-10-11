@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Cohesion;
 use PhpParser\Node;
 use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Stmt\Class_;
+use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Trait_;
 
 /**
@@ -52,6 +53,19 @@ trait ClassVisitorStackTrait
     {
         array_pop($this->classStack);
         array_pop($this->classPositionStack);
+    }
+
+    protected function leaveClassVisitorNode(Node $node): void
+    {
+        if ($node instanceof ClassMethod) {
+            array_pop($this->methodStack);
+        }
+        if ($this->isClassLikeNode($node)) {
+            $this->popClass();
+        }
+        if ($node instanceof Node\Stmt\Namespace_) {
+            $this->handleNamespaceLeave();
+        }
     }
 
     /**

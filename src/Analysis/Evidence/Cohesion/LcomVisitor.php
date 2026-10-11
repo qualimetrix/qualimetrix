@@ -190,20 +190,7 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
 
     public function leaveNode(Node $node): ?int
     {
-        // Exit method scope
-        if ($node instanceof ClassMethod) {
-            array_pop($this->methodStack);
-        }
-
-        // Exit class-like scope
-        if ($this->isClassLikeNode($node)) {
-            $this->popClass();
-        }
-
-        // Exit namespace scope
-        if ($node instanceof Node\Stmt\Namespace_) {
-            $this->handleNamespaceLeave();
-        }
+        $this->leaveClassVisitorNode($node);
 
         return null;
     }

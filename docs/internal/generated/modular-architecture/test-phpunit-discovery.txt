@@ -2907,6 +2907,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateRuleTest::itReturnsNoFindingsWhenNoPrivateMemberIsUnused
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateRuleTest::itSkipsDeclarationLookupAndReturnsNoFindingsWhenDisabled
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateRuleTest::itSkipsTypedNonClassDeclarationsBeforeReadingMetrics
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionCompositionCollectorTest::itKeepsSerializedSameNameDeclarationsSeparate
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionCompositionCollectorTest::itRefusesTruncatedRawFacts
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionCompositionCollectorTest::itRejectsNonBooleanLcomFacts"nonTrivial"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionCompositionCollectorTest::itRejectsNonBooleanLcomFacts"stateless"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionCompositionCollectorTest::itRejectsNonBooleanLcomFacts"static"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionCompositionCollectorTest::itReplacesExcludedMethodsBetweenInvocations
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\Configuration\LcomCollectionConfigurationResolverTest::itProjectsOnlyTheReadyTypedOptionsPreservingAuthoredMethodSpelling
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\Configuration\LcomCollectionConfigurationResolverTest::itRefusesAnOptionsObjectFromAnotherProducer
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\Configuration\LcomCollectionConfigurationResolverTest::itRefusesToGuessFromRawOptionsWhenTheSnapshotIsMissing
@@ -2914,6 +2920,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomClassDataTest::itCalculatesLcomWhenExcludingNonexistentMethod
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomClassDataTest::itCalculatesLcomWithExcludedMethods
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomClassDataTest::itMatchesConfiguredMethodExclusionsWithoutCase
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomClassDataTest::itPreservesExactFactRowsAcrossTheCollectionWire
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectionConfigurationTest::itDefaultsToNoExcludedMethods
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectionConfigurationTest::itRejectsAListContainingNonStrings
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itCalculatesHighLcomForGodClass
@@ -2921,6 +2928,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itCalculatesLcomForMethodsWithNoPropertyAccess
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itCalculatesLcomForMultipleClasses
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itCalculatesThreeLcomForOneStatelessAndTwoDisconnectedStatefulGroups
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itCapturesTraitFacts
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itConnectsAllMethodsViaCallChain
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itConnectsMethodsViaCallWithoutSharedProperties
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itConnectsMethodsViaMethodCalls
@@ -2947,7 +2955,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itIgnoresDynamicPropertyAccess
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itIgnoresEnum
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itIgnoresInterface
- - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itIgnoresTrait
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itKeepsDistinctCohesionGraphsForSameFileDeclarations
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itKeepsStandardLcomCalculationWhenNoStatelessMethods
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itMergesStatelessMethodCallingAnotherStatelessInternally
@@ -3005,6 +3012,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\TccLccClassDataTest::itHandlesMethodAccessingMultipleProperties
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\TccLccClassDataTest::itHandlesRealWorldGodClassExample
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\TccLccClassDataTest::itHandlesRealWorldRectangleExample
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\TccLccClassDataTest::itPreservesExactFactRowsAcrossTheCollectionWire
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\TccLccClassDataTest::itReturnsAllRegisteredMethods
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\TccLccClassDataTest::itReturnsEmptyForNonexistentMethod
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\TccLccClassDataTest::itReturnsPerfectCohesionForSingleMethod
@@ -7097,9 +7105,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleFamilyTest::itReadsTheFamilyOffTheProducerName"two segments"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleFamilyTest::itRefusesANameWithNoFirstSegment"empty name"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleFamilyTest::itRefusesANameWithNoFirstSegment"leading separator"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNameReaderTest::itKeepsInheritedMetadataForAnOverriddenGetter
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNameReaderTest::itReadsTheNameConstantWithoutInstantiation
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNameReaderTest::itRejectsAClassThatCannotBeLoaded
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNameReaderTest::itRejectsANonStringNameConstant
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNameReaderTest::itRejectsAnEmptyNameUsedByTheSharedGetter
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNameReaderTest::itRejectsAnInheritedPlaceholderName
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNameReaderTest::itRejectsRulesWithoutANameConstant
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itClearsAllExclusionsOnReset
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itClearsChannelExclusionsOnReset
@@ -11835,6 +11846,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itRecordsEveryTaggedRuleNameEvenWhenItDeclaresNoChannel
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itRefusesARuleChannelWithBothCatalogJudgesAndExplicitRunEvidence
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itRefusesAValidatorChannelWithBothCatalogJudgesAndExplicitRunEvidence
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itRejectsARuleWithoutItsOwnDescriptionConstant
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itRejectsAnEmptyRuleNameBeforeCollectingItsMetadata
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itSuppliesMandatoryReachPortsThroughTheExistingComposition
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itThrowsOnAChannelDeclaredByTwoDifferentRuleServices
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itThrowsOnATaggedServiceWithNoClass

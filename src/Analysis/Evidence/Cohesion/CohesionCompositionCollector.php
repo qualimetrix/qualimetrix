@@ -86,37 +86,53 @@ final class CohesionCompositionCollector implements GlobalContextCollectorInterf
                 continue;
             }
             $subject = MetricSubject::declaration($declaration->declaration);
-            if (!$repository->hasSubject($subject)) {
-                throw new LogicException('Cohesion requires an exact class declaration subject: ' . $declaration->declaration->toCanonical());
-            }
-            $bag = $repository->getSubject($subject);
-            $lcomRows = $bag->entries(LcomCollector::FACTS);
-            $tccRows = $bag->entries(TccLccCollector::FACTS);
-            if ($lcomRows === [] || $tccRows === []) {
-                throw new LogicException('Cohesion facts are missing for ' . $declaration->declaration->toCanonical());
-            }
-
-            $lcomData = LcomClassData::fromRows($lcomRows);
-            $lcom = $lcomData->calculateLcom($this->configuration->excludedMethods);
-            if ($lcom > 1 && $lcomData->hasOnlyTrivialMethods()) {
-                $lcom = 1;
-            }
-            $repository->addSubjectScalar($subject, MetricName::COHESION_LCOM, $lcom);
-
-            $tccData = TccLccClassData::fromRows($tccRows);
-            if (\count($tccData->getMethods()) < 2 || $tccData->getPropertyCount() === 0) {
-                continue;
-            }
-            $repository->addSubjectScalar($subject, MetricName::COHESION_TCC, round($tccData->calculateTcc(), 3));
-            $repository->addSubjectScalar($subject, MetricName::COHESION_LCC, round($tccData->calculateLcc(), 3));
-
-            $pureCount = 0;
-            foreach ($tccData->getMethods() as $method) {
-                if ($tccData->getPropertiesAccessedBy($method) === []) {
-                    ++$pureCount;
-                }
-            }
-            $repository->addSubjectScalar($subject, MetricName::COHESION_PURE_METHOD_COUNT, $pureCount);
+            $this->calculateClass($subject, $declaration->declaration->toCanonical(), $repository);
         }
+    }
+
+    private function calculateClass(MetricSubject $subject, string $declaration, MetricRepositoryInterface $repository): void
+    {
+        if (!$repository->hasSubject($subject)) {
+            throw new LogicException('Cohesion requires an exact class declaration subject: ' . $declaration);
+        }
+        $bag = $repository->getSubject($subject);
+        $lcomRows = $bag->entries(LcomCollector::FACTS);
+        $tccRows = $bag->entries(TccLccCollector::FACTS);
+        if ($lcomRows === [] || $tccRows === []) {
+            throw new LogicException('Cohesion facts are missing for ' . $declaration);
+        }
+
+        $this->publishLcom($subject, $lcomRows, $repository);
+        $this->publishTccLcc($subject, $tccRows, $repository);
+    }
+
+    /** @param list<array<string, scalar>> $rows */
+    private function publishLcom(MetricSubject $subject, array $rows, MetricRepositoryInterface $repository): void
+    {
+        $data = CohesionFactWire::lcomFromRows($rows);
+        $lcom = $data->calculateLcom($this->configuration->excludedMethods);
+        if ($lcom > 1 && $data->hasOnlyTrivialMethods()) {
+            $lcom = 1;
+        }
+        $repository->addSubjectScalar($subject, MetricName::COHESION_LCOM, $lcom);
+    }
+
+    /** @param list<array<string, scalar>> $rows */
+    private function publishTccLcc(MetricSubject $subject, array $rows, MetricRepositoryInterface $repository): void
+    {
+        $data = CohesionFactWire::tccFromRows($rows);
+        if (\count($data->getMethods()) < 2 || $data->getPropertyCount() === 0) {
+            return;
+        }
+        $repository->addSubjectScalar($subject, MetricName::COHESION_TCC, round($data->calculateTcc(), 3));
+        $repository->addSubjectScalar($subject, MetricName::COHESION_LCC, round($data->calculateLcc(), 3));
+
+        $pureCount = 0;
+        foreach ($data->getMethods() as $method) {
+            if ($data->getPropertiesAccessedBy($method) === []) {
+                ++$pureCount;
+            }
+        }
+        $repository->addSubjectScalar($subject, MetricName::COHESION_PURE_METHOD_COUNT, $pureCount);
     }
 }
