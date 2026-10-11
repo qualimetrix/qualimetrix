@@ -45,12 +45,12 @@ final class CohesionCompositionCollector implements GlobalContextCollectorInterf
 
     public function getMetricReach(): MetricReach
     {
-        return MetricReach::Members;
+        return MetricReach::Run;
     }
 
     public function provides(): array
     {
-        return [MetricName::COHESION_LCOM, MetricName::COHESION_TCC, MetricName::COHESION_LCC, MetricName::COHESION_PURE_METHOD_COUNT];
+        return [MetricName::COHESION_LCOM, MetricName::COHESION_TCC, MetricName::COHESION_LCC, MetricName::COHESION_PURE_METHOD_COUNT, MetricName::COHESION_LCOM_METHOD_COUNT, MetricName::COHESION_TCC_METHOD_COUNT, MetricName::COHESION_UNREAD_TRAIT_COUNT];
     }
 
     /** @return list<MetricDefinition> */
@@ -82,63 +82,112 @@ final class CohesionCompositionCollector implements GlobalContextCollectorInterf
                 ],
             ),
             new MetricDefinition(name: MetricName::COHESION_PURE_METHOD_COUNT, collectedAt: SymbolLevel::Class_, aggregations: []),
+            new MetricDefinition(name: MetricName::COHESION_LCOM_METHOD_COUNT, collectedAt: SymbolLevel::Class_, aggregations: []),
+            new MetricDefinition(name: MetricName::COHESION_TCC_METHOD_COUNT, collectedAt: SymbolLevel::Class_, aggregations: []),
+            new MetricDefinition(name: MetricName::COHESION_UNREAD_TRAIT_COUNT, collectedAt: SymbolLevel::Class_, aggregations: []),
         ];
     }
 
     public function calculate(DependencyGraphInterface $graph, MetricRepositoryInterface $repository): void
     {
+        $classes = [];
+        $traits = [];
         foreach ($graph->getClassLikeDeclarations() as $declaration) {
-            if ($declaration->type !== ClassType::Class_) {
+            if (!\in_array($declaration->type, [ClassType::Class_, ClassType::Trait_], true)) {
                 continue;
             }
             $subject = MetricSubject::declaration($declaration->declaration);
-            $this->calculateClass($subject, $declaration->declaration->toCanonical(), $repository);
+            $canonical = $declaration->declaration->toCanonical();
+            $own = $this->readLcomFacts($subject, $canonical, $repository);
+            if ($declaration->type === ClassType::Trait_) {
+                $traits[CohesionTraitComposition::key($declaration->logical->symbolPath->toString())][] = $own;
+                continue;
+            }
+            $classes[] = [$subject, $own, $this->readTccFacts($subject, $canonical, $repository)];
+        }
+
+        foreach ($classes as [$subject, $own, $ownTcc]) {
+            $this->publishClass($subject, CohesionTraitComposition::compose($own, $ownTcc, $traits), $repository);
         }
     }
 
-    private function calculateClass(MetricSubject $subject, string $declaration, MetricRepositoryInterface $repository): void
+    private function readLcomFacts(MetricSubject $subject, string $canonical, MetricRepositoryInterface $repository): LcomClassData
     {
         if (!$repository->hasSubject($subject)) {
-            throw new LogicException('Cohesion requires an exact class declaration subject: ' . $declaration);
+            throw new LogicException('Cohesion requires an exact class declaration subject: ' . $canonical);
         }
-        $bag = $repository->getSubject($subject);
-        $lcomRows = $bag->entries(LcomCollector::FACTS);
-        $tccRows = $bag->entries(TccLccCollector::FACTS);
-        if ($lcomRows === [] || $tccRows === []) {
-            throw new LogicException('Cohesion facts are missing for ' . $declaration);
+        $rows = $repository->getSubject($subject)->entries(LcomCollector::FACTS);
+        if ($rows === []) {
+            throw new LogicException('Cohesion facts are missing for ' . $canonical);
         }
 
-        $this->publishLcom($subject, $lcomRows, $repository);
-        $this->publishTccLcc($subject, $tccRows, $repository);
+        return CohesionFactWire::lcomFromRows($rows);
     }
 
-    /** @param list<array<string, scalar>> $rows */
-    private function publishLcom(MetricSubject $subject, array $rows, MetricRepositoryInterface $repository): void
+    private function readTccFacts(MetricSubject $subject, string $canonical, MetricRepositoryInterface $repository): TccLccClassData
     {
-        $data = CohesionFactWire::lcomFromRows($rows);
-        $lcom = $data->calculateLcom($this->configuration->excludedMethods);
-        if ($lcom > 1 && $data->hasOnlyTrivialMethods()) {
-            $lcom = 1;
+        $rows = $repository->getSubject($subject)->entries(TccLccCollector::FACTS);
+        if ($rows === []) {
+            throw new LogicException('Cohesion facts are missing for ' . $canonical);
         }
-        $repository->addSubjectScalar($subject, MetricName::COHESION_LCOM, $lcom);
+
+        return CohesionFactWire::tccFromRows($rows);
     }
 
-    /** @param list<array<string, scalar>> $rows */
-    private function publishTccLcc(MetricSubject $subject, array $rows, MetricRepositoryInterface $repository): void
+    /** @param array{LcomClassData, TccLccClassData, int} $composed */
+    private function publishClass(MetricSubject $subject, array $composed, MetricRepositoryInterface $repository): void
     {
-        $data = CohesionFactWire::tccFromRows($rows);
-        if (\count($data->getMethods()) < 2 || $data->getPropertyCount() === 0) {
+        [$effective, $tcc, $unreadCount] = $composed;
+        $repository->addSubjectScalar($subject, MetricName::COHESION_UNREAD_TRAIT_COUNT, $unreadCount);
+        $this->publishLcom($subject, $effective, $repository);
+        $this->publishTccLcc($subject, $tcc, $repository);
+    }
+
+    private function publishLcom(MetricSubject $subject, LcomClassData $effective, MetricRepositoryInterface $repository): void
+    {
+        $methodCount = $effective->lcomMethodCount($this->configuration->excludedMethods);
+        $repository->addSubjectScalar($subject, MetricName::COHESION_LCOM_METHOD_COUNT, $methodCount);
+        if ($methodCount > 0) {
+            $repository->addSubjectScalar($subject, MetricName::COHESION_LCOM, $effective->calculateLcom($this->configuration->excludedMethods));
+        }
+    }
+
+    private function publishTccLcc(MetricSubject $subject, TccLccClassData $tcc, MetricRepositoryInterface $repository): void
+    {
+        $methodCount = \count($tcc->getMethods());
+        $repository->addSubjectScalar($subject, MetricName::COHESION_TCC_METHOD_COUNT, $methodCount);
+        if ($methodCount < 2 || !$this->hasInstanceProperties($tcc)) {
             return;
         }
-        $repository->addSubjectScalar($subject, MetricName::COHESION_TCC, round($data->calculateTcc(), 3));
-        $repository->addSubjectScalar($subject, MetricName::COHESION_LCC, round($data->calculateLcc(), 3));
+        $repository->addSubjectScalar($subject, MetricName::COHESION_TCC, round($tcc->calculateTcc(), 3));
+        $repository->addSubjectScalar($subject, MetricName::COHESION_LCC, round($tcc->calculateLcc(), 3));
+        $repository->addSubjectScalar($subject, MetricName::COHESION_PURE_METHOD_COUNT, $this->pureMethodCount($tcc));
+    }
 
-        $pureCount = 0;
-        foreach ($data->getMethods() as $method) {
-            if ($data->getPropertiesAccessedBy($method) === []) {
-                ++$pureCount;
+    private function pureMethodCount(TccLccClassData $tcc): int
+    {
+        $count = 0;
+        foreach ($tcc->getMethods() as $method) {
+            if ($tcc->getPropertiesAccessedBy($method) === []) {
+                ++$count;
             }
         }
-        $repository->addSubjectScalar($subject, MetricName::COHESION_PURE_METHOD_COUNT, $pureCount);
+
+        return $count;
     }
+
+    private function hasInstanceProperties(TccLccClassData $data): bool
+    {
+        if ($data->getPropertyCount() > 0) {
+            return true;
+        }
+        foreach ($data->getMethods() as $method) {
+            if ($data->getPropertiesAccessedBy($method) !== []) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 }

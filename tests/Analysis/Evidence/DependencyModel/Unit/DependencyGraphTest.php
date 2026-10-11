@@ -7,12 +7,14 @@ namespace Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\DependencyModel\ClassCouplings;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraph;
 use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder;
+use Qualimetrix\Analysis\Evidence\DependencyModel\NamespaceCouplings;
 use Qualimetrix\Analysis\Evidence\DependencyModel\UnplacedExternalClassSpelling;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\Path\RelativePath;
@@ -22,6 +24,7 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
+#[CoversClass(ClassCouplings::class)]
 #[CoversClass(DependencyGraph::class)]
 #[CoversClass(DependencyGraphBuilder::class)]
 final class DependencyGraphTest extends TestCase
@@ -585,6 +588,46 @@ final class DependencyGraphTest extends TestCase
 
         self::assertSame(0, $graph->getNamespaceOwnCe(SymbolPath::fromNamespaceFqn('NonExistent')));
         self::assertSame(0, $graph->getNamespaceOwnCa(SymbolPath::fromNamespaceFqn('NonExistent')));
+    }
+
+    #[Test]
+    public function itPreservesIndependentClassViewsWhenCombiningTheirRows(): void
+    {
+        $source = SymbolPath::fromClassFqn('App\\Source');
+        $target = SymbolPath::fromClassFqn('App\\Target');
+        $degreeOnly = SymbolPath::fromClassFqn('App\\DegreeOnly');
+        $unknown = SymbolPath::fromClassFqn('App\\Unknown');
+        $first = $this->dep('App\\Source', 'App\\Target');
+        $second = $this->dep('App\\Source', 'App\\Target', DependencyType::PropertyType);
+        $outgoing = [4 => $second, 1 => $first, 9 => $second];
+        $incoming = [7 => $first, 3 => $second];
+        $graph = new DependencyGraph(
+            [$second, $first],
+            [$source->toCanonical() => $outgoing],
+            [$target->toCanonical() => $incoming],
+            [$target, $source],
+            [],
+            NamespaceCouplings::none(),
+            [$degreeOnly->toCanonical() => 17],
+            [$target->toCanonical() => 23],
+            [$first],
+            [],
+        );
+
+        self::assertSame($outgoing, $graph->getClassDependencies($source));
+        self::assertSame($incoming, $graph->getClassDependents($target));
+        self::assertSame([], $graph->getClassDependencies($target));
+        self::assertSame([], $graph->getClassDependents($source));
+        self::assertSame(0, $graph->getClassCe($source));
+        self::assertSame(17, $graph->getClassCe($degreeOnly));
+        self::assertSame(23, $graph->getClassCa($target));
+        self::assertSame([], $graph->getClassDependencies($unknown));
+        self::assertSame([], $graph->getClassDependents($unknown));
+        self::assertSame(0, $graph->getClassCe($unknown));
+        self::assertSame(0, $graph->getClassCa($unknown));
+        self::assertSame([$target, $source], $graph->getAllClasses());
+        self::assertSame([$second, $first], $graph->getAllDependencies());
+        self::assertSame([$first], $graph->getDeclarationDependencies());
     }
 
     private function dep(string $source, string $target, DependencyType $type = DependencyType::New_): Dependency

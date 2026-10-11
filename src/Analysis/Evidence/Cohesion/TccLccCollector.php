@@ -38,7 +38,7 @@ use SplFileInfo;
  * Anonymous classes are ignored.
  *
  * The global composition publishes no value for a class with fewer than two tracked methods
- * (no pair: the ratio is undefined) or without declared instance properties.
+ * (no pair: the ratio is undefined) or without declared or observed instance properties.
  * The latter deviates from Bieman & Kang, whose formula gives such a class
  * TCC = LCC = 0; a stateless class is treated as outside the metric's
  * domain rather than as maximally incohesive.

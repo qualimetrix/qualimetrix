@@ -21,7 +21,6 @@ final class LcomClassDataTest extends TestCase
         // analyze and validate share $data
         $classData->addMethod('analyze');
         $classData->addPropertyAccess('analyze', 'data');
-        $classData->markNonTrivial();
 
         $classData->addMethod('validate');
         $classData->addPropertyAccess('validate', 'data');
@@ -55,9 +54,12 @@ final class LcomClassDataTest extends TestCase
         $data->addMethodCall('work', 'metadata');
 
         $rows = [
-            ['tag' => 'declaration', 'namespace' => 'App', 'name' => 'Service', 'line' => 7, 'position' => 19, 'nonTrivial' => true, 'rowCount' => 5],
+            ['tag' => 'declaration', 'namespace' => 'App', 'name' => 'Service', 'line' => 7, 'position' => 19, 'nonTrivial' => true, 'rowCount' => 8],
             ['tag' => 'method', 'name' => 'work', 'static' => false, 'stateless' => false],
             ['tag' => 'method', 'name' => 'metadata', 'static' => true, 'stateless' => true],
+            ['tag' => 'declaredMethod', 'name' => 'work', 'visibility' => 'public', 'abstract' => false],
+            ['tag' => 'declaredMethod', 'name' => 'metadata', 'visibility' => 'public', 'abstract' => false],
+            ['tag' => 'instancePropertyCount', 'count' => 0],
             ['tag' => 'property', 'method' => 'work', 'name' => 'state'],
             ['tag' => 'call', 'caller' => 'work', 'callee' => 'metadata'],
         ];
@@ -74,7 +76,6 @@ final class LcomClassDataTest extends TestCase
             $data->addMethod($method);
             $data->addPropertyAccess($method, $method);
         }
-        $data->markNonTrivial();
 
         self::assertSame(3, $data->calculateLcom());
         self::assertSame(1, $data->calculateLcom(['BRIDGE', 'Bridge', 'LABEL']));
@@ -88,7 +89,6 @@ final class LcomClassDataTest extends TestCase
 
         $classData->addMethod('methodA');
         $classData->addPropertyAccess('methodA', 'propA');
-        $classData->markNonTrivial();
 
         $classData->addMethod('methodB');
         $classData->addPropertyAccess('methodB', 'propB');
@@ -107,7 +107,6 @@ final class LcomClassDataTest extends TestCase
 
         $classData->addMethod('methodA');
         $classData->addPropertyAccess('methodA', 'propA');
-        $classData->markNonTrivial();
 
         $classData->addMethod('methodB');
         $classData->addPropertyAccess('methodB', 'propB');

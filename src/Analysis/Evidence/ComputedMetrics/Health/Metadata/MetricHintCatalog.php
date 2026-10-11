@@ -158,9 +158,16 @@ final class MetricHintCatalog
         'coupling.ce.avg' => [
             'label' => 'Ce (avg)',
             'direction' => 'lower_is_better',
-            'goodValue' => 'below 3',
-            'badExplanation' => 'classes depend on too many others outgoing',
-            'goodExplanation' => 'low outgoing coupling',
+            'goodValue' => 'joint breadth at most 4 (3 * Ce pkg avg + 0.5 * sqrt(Ce avg))',
+            'badExplanation' => 'contributes to joint breadth with average package dependencies',
+            'goodExplanation' => 'contributes to joint breadth with average package dependencies',
+        ],
+        'coupling.ce.max' => [
+            'label' => 'Ce (max)',
+            'direction' => 'lower_is_better',
+            'goodValue' => 'below 30',
+            'badExplanation' => 'one class has many outgoing dependencies',
+            'goodExplanation' => 'no class exceeds the outgoing dependency ceiling',
         ],
         'coupling.ce-packages' => [
             'label' => 'Ce packages',
@@ -172,9 +179,9 @@ final class MetricHintCatalog
         'coupling.ce-packages.avg' => [
             'label' => 'Ce pkg (avg)',
             'direction' => 'lower_is_better',
-            'goodValue' => 'below 1',
-            'badExplanation' => 'classes touch many external packages',
-            'goodExplanation' => 'narrow package dependencies',
+            'goodValue' => 'joint breadth at most 4 (3 * Ce pkg avg + 0.5 * sqrt(Ce avg))',
+            'badExplanation' => 'contributes to joint breadth with average outgoing class dependencies',
+            'goodExplanation' => 'contributes to joint breadth with average outgoing class dependencies',
         ],
         MetricName::COUPLING_INSTABILITY => [
             'label' => 'Instability',
@@ -409,6 +416,16 @@ final class MetricHintCatalog
             ['max' => 6, 'text' => 'Even the worst methods stay readable'],
             ['max' => 15, 'text' => 'The worst twentieth are demanding'],
             ['above' => true, 'text' => 'The worst twentieth are hard to follow'],
+        ],
+        'coupling.ce.avg' => [
+            ['above' => true, 'text' => 'Joint breadth target: 3 * Ce pkg avg + 0.5 * sqrt(Ce avg) at most 4; neither component has an independent threshold'],
+        ],
+        'coupling.ce-packages.avg' => [
+            ['above' => true, 'text' => 'Joint breadth target: 3 * Ce pkg avg + 0.5 * sqrt(Ce avg) at most 4; neither component has an independent threshold'],
+        ],
+        'coupling.ce.max' => [
+            ['max' => 30, 'text' => 'No class exceeds the outgoing dependency ceiling'],
+            ['above' => true, 'text' => 'At least one class exceeds the outgoing dependency ceiling'],
         ],
         'coupling.cbo.avg' => [
             ['max' => 8, 'text' => 'Reasonable coupling on average'],

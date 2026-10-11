@@ -17,6 +17,8 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedCo
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricBranchTrace;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricEvaluator;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricOutcome;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricSubjectEvaluation;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
@@ -36,6 +38,84 @@ use Qualimetrix\Core\Symbol\SymbolType;
 #[CoversClass(ComputedMetricBranchTrace::class)]
 final class ComputedMetricEvaluatorTest extends TestCase
 {
+    #[Test]
+    public function itLeavesUnmeasuredClassCohesionAbsentAndRenormalizesOverall(): void
+    {
+        foreach (['Empty' => 0, 'StaticOnly' => 2] as $name => $methodCount) {
+            $repo = $this->repository();
+            $path = SymbolPath::forClass('App', $name);
+            $this->addFixture($repo, $path, MetricBag::fromArray([
+                'size.method-count' => $methodCount,
+                'complexity.ccn.avg' => 5.0,
+                'coupling.ce-packages' => 2.0,
+                'coupling.ce' => 20.0,
+                'design.type-coverage.all' => 80.0,
+            ]), RelativePath::fromString($name . '.php'), 1);
+
+            $summary = $this->evaluate($repo, array_values(ComputedMetricDefaults::getDefaults()));
+            $bag = $this->readFixture($repo, $path);
+
+            self::assertSame([], $summary->absences);
+            self::assertNull($bag->get('health.cohesion'), $name);
+            $complexity = $bag->get('health.complexity');
+            $coupling = $bag->get('health.coupling');
+            $typing = $bag->get('health.typing');
+            self::assertNotNull($complexity);
+            self::assertNotNull($coupling);
+            self::assertNotNull($typing);
+            self::assertEqualsWithDelta(
+                ($complexity * 0.35 + $coupling * 0.25 + $typing * 0.15) / 0.75,
+                $bag->get('health.overall'),
+                0.000001,
+                $name,
+            );
+            self::assertLessThan(100.0, $bag->get('health.overall'), $name);
+        }
+    }
+
+    #[Test]
+    public function itTreatsMeasuredZeroCohesionInputsAsPresent(): void
+    {
+        $definition = ComputedMetricDefaults::getDefaults()['health.cohesion'];
+        $subjectEvaluation = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricSubjectEvaluation();
+
+        self::assertSame(
+            \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricOutcome::NOT_APPLICABLE,
+            $subjectEvaluation->evaluate($definition, SymbolLevel::Class_, [])->kind,
+        );
+        foreach ([
+            ['cohesion.tcc' => 0.0],
+            ['cohesion.lcom' => 0.0],
+            ['cohesion.tcc' => 0.0, 'cohesion.lcom' => 0.0],
+        ] as $measured) {
+            $outcome = $subjectEvaluation->evaluate($definition, SymbolLevel::Class_, $measured);
+            self::assertSame(
+                \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricOutcome::VALUE,
+                $outcome->kind,
+            );
+            self::assertNotNull($outcome->value);
+        }
+    }
+
+    #[Test]
+    public function itUsesTccTrackedMethodCountForThePureMethodAdjustment(): void
+    {
+        $definition = ComputedMetricDefaults::getDefaults()['health.cohesion'];
+        $outcome = (new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricSubjectEvaluation())
+            ->evaluate($definition, SymbolLevel::Class_, [
+                'cohesion.tcc' => 0.25,
+                'cohesion.pure-method-count' => 2,
+                'cohesion.tcc-method-count' => 4,
+                'size.method-count' => 100,
+            ]);
+
+        self::assertSame(
+            \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricOutcome::VALUE,
+            $outcome->kind,
+        );
+        self::assertEqualsWithDelta(sqrt(0.4) * 100, $outcome->value, 0.000001);
+    }
+
     #[Test]
     public function itUsesTheSameUnadjustedLcomScaleForClassAndNamespace(): void
     {
@@ -862,6 +942,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             'cohesion.tcc' => 0.0,
             'cohesion.lcom' => 5.0,
             'size.method-count' => 5,
+            'cohesion.tcc-method-count' => 5,
             'cohesion.pure-method-count' => 4,
             'coupling.ce' => 3.0,
             'design.type-coverage.all' => 100.0,
@@ -1091,6 +1172,75 @@ final class ComputedMetricEvaluatorTest extends TestCase
         // distance*6 = 2.4; all other terms clamp to 0.
         // denom = 18 + 2.4 = 20.4 -> 100*18/20.4 ≈ 88.24
         self::assertEqualsWithDelta(88.24, $this->readFixture($repo, $nsPath)->get('health.coupling'), 0.1);
+    }
+
+    #[Test]
+    public function itKeepsProjectCouplingIndependentOfIncomingOnlyMagnets(): void
+    {
+        $scores = [];
+        foreach ([0.0, 200.0] as $incoming) {
+            $repo = $this->repository();
+            $project = SymbolPath::forProject();
+            $this->addFixture($repo, $project, MetricBag::fromArray([
+                'coupling.distance-own.avg' => 0.25,
+                'coupling.ce-packages.avg' => 2.0,
+                'coupling.ce.avg' => 16.0,
+                'coupling.ce.max' => 46.0,
+                'coupling.cbo.avg' => 32.0,
+                'coupling.cbo.p95' => 46.0 + $incoming,
+                'coupling.cbo.max' => 46.0 + $incoming,
+            ]), null, null);
+
+            $this->evaluate($repo, [ComputedMetricDefaults::getDefaults()['health.coupling']]);
+            $score = $this->readFixture($repo, $project)->get('health.coupling');
+            self::assertNotNull($score);
+            self::assertLessThan(100.0, $score);
+            $scores[] = $score;
+        }
+
+        self::assertEqualsWithDelta($scores[0], $scores[1], 0.000001);
+    }
+
+    #[Test]
+    public function itMeasuresEachProjectCouplingSource(): void
+    {
+        $definition = ComputedMetricDefaults::getDefaults()['health.coupling'];
+        $engine = new ComputedMetricSubjectEvaluation();
+        $neutral = [
+            'coupling.distance-own.avg' => 0.0,
+            'coupling.ce-packages.avg' => 0.0,
+            'coupling.ce.avg' => 0.0,
+            'coupling.ce.max' => 0.0,
+        ];
+        self::assertSame(100.0, $engine->evaluate($definition, SymbolLevel::Project, $neutral)->value);
+
+        foreach ([
+            ['coupling.distance-own.avg', 1.0],
+            ['coupling.ce-packages.avg', 2.0],
+            ['coupling.ce.avg', 100.0],
+            ['coupling.ce.max', 46.0],
+        ] as [$key, $value]) {
+            $outcome = $engine->evaluate($definition, SymbolLevel::Project, array_replace($neutral, [$key => $value]));
+            self::assertSame(ComputedMetricOutcome::VALUE, $outcome->kind, $key);
+            self::assertNotNull($outcome->value, $key);
+            self::assertLessThan(100.0, $outcome->value, $key);
+        }
+    }
+
+    #[Test]
+    public function itLeavesProjectCouplingWithoutItsMeasuredInputsUnmeasured(): void
+    {
+        $definition = ComputedMetricDefaults::getDefaults()['health.coupling'];
+        $engine = new ComputedMetricSubjectEvaluation();
+
+        foreach ([[], ['coupling.cbo.avg' => 200.0, 'coupling.cbo.p95' => 200.0, 'coupling.cbo.max' => 200.0]] as $inputs) {
+            $outcome = $engine->evaluate($definition, SymbolLevel::Project, $inputs);
+            self::assertSame(ComputedMetricOutcome::NOT_APPLICABLE, $outcome->kind);
+            self::assertNull($outcome->value);
+        }
+        $zero = $engine->evaluate($definition, SymbolLevel::Project, ['coupling.ce.avg' => 0.0]);
+        self::assertSame(ComputedMetricOutcome::VALUE, $zero->kind);
+        self::assertSame(100.0, $zero->value);
     }
 
     #[Test]
@@ -1334,6 +1484,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
         'cohesion.pure-method-count',
         'cohesion.tcc',
         'cohesion.tcc.avg',
+        'cohesion.tcc-method-count',
         'complexity.ccn',
         'complexity.ccn.avg',
         'complexity.ccn.sum',
@@ -1347,6 +1498,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
         'coupling.abstractness',
         'coupling.cbo',
         'coupling.ce',
+        'coupling.ce-packages',
         'coupling.ce-packages.avg',
         'coupling.ce.avg',
         'coupling.ce.max',

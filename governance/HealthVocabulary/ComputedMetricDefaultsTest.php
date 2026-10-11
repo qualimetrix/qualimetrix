@@ -188,7 +188,7 @@ final class ComputedMetricDefaultsTest extends TestCase
             ['health.cohesion', 'project', ['cohesion.tcc.avg', 'cohesion.lcom.avg']],
             ['health.coupling', 'class', []],
             ['health.coupling', 'namespace', ['coupling.distance', 'coupling.ce-packages.avg', 'coupling.ce.avg', 'coupling.ce.max', 'coupling.ce']],
-            ['health.coupling', 'project', ['coupling.distance-own.avg', 'coupling.cbo.avg', 'coupling.cbo.p95', 'coupling.cbo.max']],
+            ['health.coupling', 'project', ['coupling.distance-own.avg', 'coupling.ce-packages.avg', 'coupling.ce.avg', 'coupling.ce.max']],
             ['health.typing', 'class', ['design.type-coverage.all']],
             ['health.typing', 'namespace', ['design.type-coverage.param.total.sum', 'design.type-coverage.return.total.sum', 'design.type-coverage.property.total.sum']],
             ['health.typing', 'project', ['design.type-coverage.param.total.sum', 'design.type-coverage.return.total.sum', 'design.type-coverage.property.total.sum']],

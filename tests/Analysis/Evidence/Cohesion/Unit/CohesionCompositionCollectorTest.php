@@ -62,6 +62,18 @@ final class CohesionCompositionCollectorTest extends TestCase
         yield 'nonTrivial' => [0, 'nonTrivial', 'true'];
         yield 'static' => [1, 'static', 1];
         yield 'stateless' => [1, 'stateless', 'false'];
+        yield 'abstract' => [2, 'abstract', 'false'];
+    }
+
+    #[Test]
+    public function itRejectsNonIntegerInstancePropertyCount(): void
+    {
+        $rows = CohesionFactWire::lcomRows(new LcomClassData('App', 'Twin', 1, 0));
+        $rows[1]['count'] = '0';
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('instance property count');
+        CohesionFactWire::lcomFromRows($rows);
     }
 
     #[Test]
@@ -71,10 +83,12 @@ final class CohesionCompositionCollectorTest extends TestCase
         $second = self::declaration('src/Second.php');
         $lcomFirst = new LcomClassData('App', 'Twin', 1, 0);
         $lcomFirst->addMethod('one');
+        $lcomFirst->addMethod('two');
+        $lcomFirst->addPropertyAccess('one', 'a');
+        $lcomFirst->addPropertyAccess('two', 'a');
         $lcomSecond = new LcomClassData('App', 'Twin', 1, 0);
         $lcomSecond->addMethod('one');
         $lcomSecond->addMethod('two');
-        $lcomSecond->markNonTrivial();
         $tccFirst = self::tcc(true);
         $tccSecond = self::tcc(false);
 
@@ -103,7 +117,6 @@ final class CohesionCompositionCollectorTest extends TestCase
         $lcom = new LcomClassData('App', 'Twin', 1, 0);
         $lcom->addMethod('work');
         $lcom->addMethod('metadata');
-        $lcom->markNonTrivial();
         $tcc = self::tcc(true);
         $graph = self::createStub(DependencyGraphInterface::class);
         $graph->method('getClassLikeDeclarations')->willReturn([ClassLikeDeclaration::of($declaration, ClassType::Class_, false, false)]);

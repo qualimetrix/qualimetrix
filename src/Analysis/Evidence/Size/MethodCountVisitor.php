@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Size;
 
 use PhpParser\Node;
+use PhpParser\Node\Expr\Assign;
+use PhpParser\Node\Expr\PropertyFetch;
+use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Param;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\ClassMethod;
+use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\Interface_;
 use PhpParser\Node\Stmt\Property;
+use PhpParser\Node\Stmt\Return_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
 
@@ -23,8 +28,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterfac
  * - methodCountPublic: public methods (excluding getters/setters)
  * - methodCountProtected: protected methods (excluding getters/setters)
  * - methodCountPrivate: private methods (excluding getters/setters)
- * - getterCount: getter methods (get*, is*, has*)
- * - setterCount: setter methods (set*)
+ * - getterCount: simple property readers with get*, is*, has* names
+ * - setterCount: simple property writers with set* names
  * - propertyCount: total number of properties
  * - propertyCountPublic: public properties
  * - propertyCountProtected: protected properties
@@ -170,9 +175,9 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
             }
         }
 
-        // Determine if getter or setter
-        $isGetter = $this->isGetter($methodName);
-        $isSetter = $this->isSetter($methodName);
+        $isAccessor = $this->isAccessor($method);
+        $isGetter = $isAccessor && $this->matchesAccessorPrefix($methodName, ['get', 'is', 'has']);
+        $isSetter = $isAccessor && $this->matchesAccessorPrefix($methodName, ['set']);
 
         // Count getter/setter
         if ($isGetter) {
@@ -202,32 +207,67 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
         }
     }
 
-    /**
-     * Check if method is a getter (get[A-Z], is[A-Z], has[A-Z], or exact match).
-     *
-     * Uses the original (non-lowercased) name to verify the character after the
-     * prefix is uppercase, avoiding false positives like isolate(), getaway(), hasty().
-     */
-    private function isGetter(string $methodName): bool
+    private function isAccessor(ClassMethod $method): bool
     {
-        return $this->matchesAccessorPrefix($methodName, ['get', 'is', 'has']);
+        $name = $method->name->toString();
+
+        if ($this->matchesAccessorPrefix($name, ['get', 'is', 'has'])) {
+            return $this->hasGetterBody($method);
+        }
+
+        return $this->matchesAccessorPrefix($name, ['set']) && $this->hasSetterBody($method);
     }
 
-    /**
-     * Check if method is a setter (set[A-Z] or exact match).
-     *
-     * Uses the original (non-lowercased) name to verify the character after the
-     * prefix is uppercase, avoiding false positives like setup(), settle().
-     */
-    private function isSetter(string $methodName): bool
+    private function hasGetterBody(ClassMethod $method): bool
     {
-        return $this->matchesAccessorPrefix($methodName, ['set']);
+        $statements = $method->stmts ?? [];
+        if (\count($method->params) !== 0 || \count($statements) !== 1) {
+            return false;
+        }
+
+        $statement = $statements[0];
+
+        return $statement instanceof Return_
+            && $statement->expr instanceof PropertyFetch
+            && $statement->expr->var instanceof Variable
+            && $statement->expr->var->name === 'this'
+            && $statement->expr->name instanceof Node\Identifier;
+    }
+
+    private function hasSetterBody(ClassMethod $method): bool
+    {
+        $statements = $method->stmts ?? [];
+        if (\count($method->params) !== 1 || !\in_array(\count($statements), [1, 2], true)) {
+            return false;
+        }
+
+        $parameter = $method->params[0]->var;
+        $assignment = $statements[0] instanceof Expression ? $statements[0]->expr : null;
+        if (!$parameter instanceof Variable || !\is_string($parameter->name)
+            || !$assignment instanceof Assign
+            || !$assignment->var instanceof PropertyFetch
+            || !$assignment->var->var instanceof Variable
+            || $assignment->var->var->name !== 'this'
+            || !$assignment->var->name instanceof Node\Identifier
+            || !$assignment->expr instanceof Variable
+            || $assignment->expr->name !== $parameter->name
+        ) {
+            return false;
+        }
+
+        if (\count($statements) === 1) {
+            return true;
+        }
+
+        return $statements[1] instanceof Return_
+            && $statements[1]->expr instanceof Variable
+            && $statements[1]->expr->name === 'this';
     }
 
     /**
      * Check if method name matches an accessor prefix pattern.
      *
-     * A method is considered an accessor if:
+     * A name matches an accessor prefix if:
      * - Its name exactly equals one of the prefixes (case-insensitive), OR
      * - It starts with a prefix (case-insensitive) followed by an uppercase letter.
      *

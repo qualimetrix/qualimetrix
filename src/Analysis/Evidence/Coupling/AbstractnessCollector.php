@@ -100,9 +100,13 @@ final class AbstractnessCollector implements GlobalContextCollectorInterface
             $totalTypes = $classCount + $traitCount + $interfaceCount + $implementingEnumCount;
             $totalAbstractions = $abstractCount + $interfaceCount;
 
-            $abstractness = $this->computeAbstractness($totalTypes, $totalAbstractions);
-
-            $repository->addScalar($nsPath, MetricName::COUPLING_ABSTRACTNESS, $abstractness);
+            if ($totalTypes > 0) {
+                $repository->addScalar(
+                    $nsPath,
+                    MetricName::COUPLING_ABSTRACTNESS,
+                    $this->computeAbstractness($totalTypes, $totalAbstractions),
+                );
+            }
 
             $this->addOwnAbstractness($repository, $nsPath);
         }
@@ -144,15 +148,10 @@ final class AbstractnessCollector implements GlobalContextCollectorInterface
     /**
      * Computes abstractness: A = abstractions / total types.
      *
-     * Returns 0.0 if total is 0 (empty namespace).
-     * Ensures result is in [0, 1] range.
+     * Called only when the denominator is positive. Ensures [0, 1] range.
      */
     private function computeAbstractness(int $totalTypes, int $abstractions): float
     {
-        if ($totalTypes === 0) {
-            return 0.0;
-        }
-
         $abstractness = $abstractions / $totalTypes;
 
         // Ensure A is in [0, 1] range

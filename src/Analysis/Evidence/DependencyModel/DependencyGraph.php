@@ -17,10 +17,14 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * The public API accepts/returns SymbolPath, but internally uses toCanonical()
  * as hash map keys for performance.
  *
+ * @qmx-threshold cohesion.lcom warning=8 error=8 -- Graph queries compose class coupling, namespace boundaries and ordered declaration evidence; splitting the remaining views transfers their lookup surface.
+ *
  * @qmx-ignore health.cohesion -- Lookup methods expose independent indexes of one dependency graph.
  */
 final class DependencyGraph implements DependencyGraphInterface
 {
+    private readonly ClassCouplings $classCouplings;
+
     /**
      * @param array<Dependency> $dependencies All dependencies
      * @param array<string, array<Dependency>> $bySource Dependencies indexed by source canonical key
@@ -36,16 +40,18 @@ final class DependencyGraph implements DependencyGraphInterface
      */
     public function __construct(
         private readonly array $dependencies,
-        private readonly array $bySource,
-        private readonly array $byTarget,
+        array $bySource,
+        array $byTarget,
         private readonly array $classes,
         private readonly array $namespaces,
         private readonly NamespaceCouplings $namespaceCouplings,
-        private readonly array $classCe,
-        private readonly array $classCa,
+        array $classCe,
+        array $classCa,
         private readonly array $declarationDependencies,
         private readonly array $classLikeDeclarations,
-    ) {}
+    ) {
+        $this->classCouplings = ClassCouplings::fromClassViews($bySource, $byTarget, $classCe, $classCa);
+    }
 
     /**
      * @param array<Dependency> $dependencies
@@ -65,22 +71,22 @@ final class DependencyGraph implements DependencyGraphInterface
 
     public function getClassDependencies(SymbolPath $class): array
     {
-        return $this->bySource[$class->toCanonical()] ?? [];
+        return $this->classCouplings->dependencies($class);
     }
 
     public function getClassDependents(SymbolPath $class): array
     {
-        return $this->byTarget[$class->toCanonical()] ?? [];
+        return $this->classCouplings->dependents($class);
     }
 
     public function getClassCe(SymbolPath $class): int
     {
-        return $this->classCe[$class->toCanonical()] ?? 0;
+        return $this->classCouplings->ce($class);
     }
 
     public function getClassCa(SymbolPath $class): int
     {
-        return $this->classCa[$class->toCanonical()] ?? 0;
+        return $this->classCouplings->ca($class);
     }
 
     public function getNamespaceCe(SymbolPath $namespace): int

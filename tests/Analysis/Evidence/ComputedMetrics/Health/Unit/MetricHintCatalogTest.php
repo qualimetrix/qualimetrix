@@ -88,6 +88,36 @@ final class MetricHintCatalogTest extends TestCase
         self::assertSame('limited response set', $this->provider->getExplanation('coupling.rfc', 10));
     }
 
+    #[Test]
+    public function itDescribesAggregateCeAsOneJointBreadthTerm(): void
+    {
+        $target = 'joint breadth at most 4 (3 * Ce pkg avg + 0.5 * sqrt(Ce avg))';
+        foreach (['coupling.ce.avg', 'coupling.ce-packages.avg'] as $key) {
+            self::assertSame($target, $this->provider->getGoodValue($key));
+            self::assertSame(
+                $this->provider->getExplanation($key, 0.0),
+                $this->provider->getExplanation($key, 100.0),
+                'one component cannot determine whether the joint penalty applies',
+            );
+            self::assertSame([
+                ['above' => true, 'text' => 'Joint breadth target: 3 * Ce pkg avg + 0.5 * sqrt(Ce avg) at most 4; neither component has an independent threshold'],
+            ], $this->provider->metricHints()[$key]['ranges']);
+        }
+    }
+
+    #[Test]
+    public function itKeepsTheMaximumCeCeilingSeparateFromAverageBreadth(): void
+    {
+        self::assertSame('below 30', $this->provider->getGoodValue('coupling.ce.max'));
+        self::assertSame('below 3', $this->provider->getGoodValue('coupling.ce'));
+        self::assertSame('no class exceeds the outgoing dependency ceiling', $this->provider->getExplanation('coupling.ce.max', 30.0));
+        self::assertSame('one class has many outgoing dependencies', $this->provider->getExplanation('coupling.ce.max', 30.1));
+        self::assertSame(
+            ['max' => 30, 'text' => 'No class exceeds the outgoing dependency ceiling'],
+            $this->provider->metricHints()['coupling.ce.max']['ranges'][0] ?? null,
+        );
+    }
+
     // --- getExplanation ---
 
     #[Test]

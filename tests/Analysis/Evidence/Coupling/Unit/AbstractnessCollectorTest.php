@@ -199,9 +199,9 @@ final class AbstractnessCollectorTest extends TestCase
     }
 
     #[Test]
-    public function itReturnsZeroForAnEnumOnlyNamespace(): void
+    public function itDoesNotPublishAbstractnessForAnEnumOnlyNamespace(): void
     {
-        // Bare enums leave totalTypes at 0, which keeps the pre-existing no-type behaviour.
+        // Bare enums leave totalTypes at 0, so abstractness is undefined.
         $repository = $this->repositoryWithNamespaceCounts('App\\Enums', [
             'size.class-count.sum' => 0,
             'size.enum-count.sum' => 5,
@@ -213,7 +213,7 @@ final class AbstractnessCollectorTest extends TestCase
 
         $this->collector->calculate($this->createEmptyGraph(), $repository);
 
-        self::assertSame(0.0, $repository->get(SymbolPath::forNamespace('App\\Enums'))->get('coupling.abstractness'));
+        self::assertNull($repository->get(SymbolPath::forNamespace('App\\Enums'))->get('coupling.abstractness'));
     }
 
     #[Test]
@@ -309,7 +309,7 @@ final class AbstractnessCollectorTest extends TestCase
     }
 
     #[Test]
-    public function itReturnsZeroForANamespaceWithoutAnyType(): void
+    public function itDoesNotPublishAbstractnessForANamespaceWithoutAnyType(): void
     {
         $repository = $this->repositoryWithNamespaceCounts('App\\Empty', [
             'size.class-count.sum' => 0,

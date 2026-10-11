@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Cohesion;
 
+use Qualimetrix\Core\Symbol\ClassNameSpelling;
+use Qualimetrix\Core\Symbol\TraitMethodSource;
+use Qualimetrix\Core\Symbol\TraitUseFacts;
+
 /**
  * Data structure for LCOM calculation.
  *
@@ -51,12 +55,8 @@ final class LcomClassData
      */
     private array $statelessMethods = [];
 
-    /**
-     * Whether any non-trivial method body was found.
-     *
-     * A class where all methods are trivial (empty body, return null/scalar/constant)
-     * gets LCOM=1 to avoid misleading high values for Null Objects and similar patterns.
-     */
+    private CohesionDeclarationData $declaration;
+
     private bool $hasNonTrivialMethod = false;
 
     public function __construct(
@@ -64,11 +64,25 @@ final class LcomClassData
         public readonly string $className = '',
         public readonly int $line = 0,
         public readonly int $startFilePos = 0,
-    ) {}
+    ) {
+        $qualifiedName = ltrim(($namespace === null || $namespace === '' ? '' : $namespace . '\\') . $className, '\\');
+        $this->declaration = new CohesionDeclarationData($qualifiedName);
+    }
 
     public function addMethod(string $methodName): void
     {
         $this->methods[$methodName] = true;
+        $this->declaration->addMethod($methodName);
+    }
+
+    public function __clone(): void
+    {
+        $this->declaration = clone $this->declaration;
+    }
+
+    public function declaration(): CohesionDeclarationData
+    {
+        return $this->declaration;
     }
 
     public function addPropertyAccess(string $methodName, string $propertyName): void
@@ -84,7 +98,7 @@ final class LcomClassData
         if (!isset($this->methodCalls[$callerMethod])) {
             $this->methodCalls[$callerMethod] = [];
         }
-        $this->methodCalls[$callerMethod][$calledMethod] = true;
+        $this->methodCalls[$callerMethod][ClassNameSpelling::fold($calledMethod)] = true;
     }
 
     public function markStatic(string $method): void
@@ -110,18 +124,6 @@ final class LcomClassData
         return isset($this->statelessMethods[$method]);
     }
 
-    /**
-     * Whether all methods in this class have trivial bodies.
-     *
-     * A trivial method is one with an empty body or that simply returns
-     * null, a scalar, or a constant. Classes with only trivial methods
-     * (e.g., Null Objects) should get LCOM=1 instead of N disconnected components.
-     */
-    public function hasOnlyTrivialMethods(): bool
-    {
-        return !$this->hasNonTrivialMethod && $this->getMethodCount() > 0;
-    }
-
     public function getMethodCount(): int
     {
         return \count($this->methods);
@@ -143,11 +145,57 @@ final class LcomClassData
         return array_keys($this->propertyAccesses[$methodName] ?? []);
     }
 
+    /** @return list<string> */
+    public function callsFrom(string $methodName): array
+    {
+        return array_keys($this->methodCalls[$methodName] ?? []);
+    }
+
+    public function hasGraphMethod(string $methodName): bool
+    {
+        return isset($this->methods[$methodName]);
+    }
+
+    public function isStaticMethod(string $methodName): bool
+    {
+        return isset($this->staticMethods[$methodName]);
+    }
+
+    /** @param 'public'|'protected'|'private' $visibility */
+    public function importMethod(string $effectiveName, self $source, string $originalName, string $visibility): void
+    {
+        $definition = $source->declaration->methodSource($originalName);
+        if ($definition === null) {
+            return;
+        }
+        $original = $definition->originalMethod;
+        $this->declaration->declareMethod($effectiveName, $visibility, $definition->isAbstract);
+        if (!$source->hasGraphMethod($original)) {
+            return;
+        }
+        $this->addMethod($effectiveName);
+        if (isset($source->staticMethods[$original])) {
+            $this->markStatic($effectiveName);
+        }
+        if (isset($source->statelessMethods[$original])) {
+            $this->markStatelessConstant($effectiveName);
+        }
+        foreach ($source->getPropertiesAccessedBy($original) as $property) {
+            $this->addPropertyAccess($effectiveName, $property);
+        }
+        foreach ($source->callsFrom($original) as $callee) {
+            $this->addMethodCall($effectiveName, $callee);
+        }
+    }
+
     /**
      * @return array{
      *     methods: array<string, true>,
      *     staticMethods: array<string, true>,
      *     statelessMethods: array<string, true>,
+     *     declaredMethods: array<string, TraitMethodSource>,
+     *     traitUses: list<TraitUseFacts>,
+     *     instancePropertyCount: int,
      *     propertyAccesses: array<string, array<string, true>>,
      *     methodCalls: array<string, array<string, true>>,
      *     nonTrivial: bool
@@ -159,6 +207,9 @@ final class LcomClassData
             'methods' => $this->methods,
             'staticMethods' => $this->staticMethods,
             'statelessMethods' => $this->statelessMethods,
+            'declaredMethods' => $this->declaration->methods(),
+            'traitUses' => $this->declaration->traitUses(),
+            'instancePropertyCount' => $this->declaration->instancePropertyCount(),
             'propertyAccesses' => $this->propertyAccesses,
             'methodCalls' => $this->methodCalls,
             'nonTrivial' => $this->hasNonTrivialMethod,
@@ -186,12 +237,8 @@ final class LcomClassData
      */
     public function calculateLcom(array $excludeMethods = []): int
     {
-        // Exclude static methods and explicitly excluded methods from the graph
-        $excludeSet = array_fill_keys(array_map(strtolower(...), $excludeMethods), true);
-        $methods = array_values(array_filter(
-            $this->getMethods(),
-            fn(string $m): bool => !isset($this->staticMethods[$m]) && !isset($excludeSet[strtolower($m)]),
-        ));
+        $population = new LcomMethodPopulation($this->factState());
+        $methods = $population->graphMethods($excludeMethods);
         $count = \count($methods);
 
         if ($count === 0) {
@@ -206,9 +253,21 @@ final class LcomClassData
         // AND no instance method calls are merged into a virtual node.
         // Note: only methods already marked by the visitor AND confirmed to have no
         // property access / method calls in the collected data are treated as stateless.
-        [$statefulMethods, $statelessInGraph] = $this->partitionByStatelessness($methods);
+        [$statefulMethods, $statelessInGraph] = $population->partitionByStatelessness($methods);
 
-        $graph = new LcomGraphCalculator($this->propertyAccesses, $this->methodCalls);
+        $properties = $calls = [];
+        foreach ($this->propertyAccesses as $method => $accesses) {
+            $key = ClassNameSpelling::fold($method);
+            $properties[$key] = ($properties[$key] ?? []) + $accesses;
+        }
+        foreach ($this->methodCalls as $method => $callees) {
+            $key = ClassNameSpelling::fold($method);
+            $calls[$key] = ($calls[$key] ?? []) + $callees;
+        }
+        $graph = new LcomGraphCalculator($properties, $calls);
+        $methods = array_map(ClassNameSpelling::fold(...), $methods);
+        $statefulMethods = array_map(ClassNameSpelling::fold(...), $statefulMethods);
+        $statelessInGraph = array_fill_keys(array_map(ClassNameSpelling::fold(...), array_keys($statelessInGraph)), true);
 
         // If no stateless methods, proceed with standard algorithm
         if ($statelessInGraph === []) {
@@ -218,52 +277,10 @@ final class LcomClassData
         return $graph->countComponentsWithStatelessMerge($statefulMethods, $statelessInGraph);
     }
 
-    /**
-     * Split filtered methods into the stateful ones and the set merged as stateless.
-     *
-     * @param list<string> $methods
-     *
-     * @return array{0: list<string>, 1: array<string, true>}
-     */
-    private function partitionByStatelessness(array $methods): array
+    /** @param list<string> $excludeMethods */
+    public function lcomMethodCount(array $excludeMethods = []): int
     {
-        $statelessInGraph = [];
-        $statefulMethods = [];
-
-        foreach ($methods as $method) {
-            if ($this->isEffectivelyStateless($method)) {
-                $statelessInGraph[$method] = true;
-            } else {
-                $statefulMethods[] = $method;
-            }
-        }
-
-        return [$statefulMethods, $statelessInGraph];
+        return (new LcomMethodPopulation($this->factState()))->count($excludeMethods);
     }
 
-    /**
-     * Whether a method is effectively stateless in the LCOM graph.
-     *
-     * A method is effectively stateless if it was marked as a stateless constant
-     * during AST traversal (trivial body returning a constant) AND has no property
-     * access and no instance method calls in the collected data.
-     */
-    private function isEffectivelyStateless(string $method): bool
-    {
-        if (!isset($this->statelessMethods[$method])) {
-            return false;
-        }
-
-        // Double-check: no property access collected
-        if (isset($this->propertyAccesses[$method]) && $this->propertyAccesses[$method] !== []) {
-            return false;
-        }
-
-        // Double-check: no instance method calls collected
-        if (isset($this->methodCalls[$method]) && $this->methodCalls[$method] !== []) {
-            return false;
-        }
-
-        return true;
-    }
 }

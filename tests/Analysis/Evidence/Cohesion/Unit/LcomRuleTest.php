@@ -135,7 +135,7 @@ final class LcomRuleTest extends TestCase
         // LCOM of 4 is above warning threshold (3) but below error (5)
         $metricBag = (new MetricBag())
             ->with('cohesion.lcom', 4)
-            ->with('size.method-count', 5)
+            ->with('cohesion.lcom-method-count', 5)
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
@@ -167,7 +167,7 @@ final class LcomRuleTest extends TestCase
         // LCOM of 5 is above error threshold (4)
         $metricBag = (new MetricBag())
             ->with('cohesion.lcom', 5)
-            ->with('size.method-count', 10)
+            ->with('cohesion.lcom-method-count', 10)
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
@@ -246,13 +246,13 @@ final class LcomRuleTest extends TestCase
         $rule = new LcomRule(new LcomOptions(warning: 3, error: 5, excludeReadonly: true, minMethods: 3));
 
         self::assertSame([], $rule->analyze($contextFor(
-            (new MetricBag())->with('cohesion.lcom', 4)->with('size.method-count', 3)->with('design.is-readonly', 1),
+            (new MetricBag())->with('cohesion.lcom', 4)->with('cohesion.lcom-method-count', 3)->with('design.is-readonly', 1),
         )));
         self::assertSame([], $rule->analyze($contextFor(
-            (new MetricBag())->with('cohesion.lcom', 4)->with('size.method-count', 2)->with('design.is-readonly', 0),
+            (new MetricBag())->with('cohesion.lcom', 4)->with('cohesion.lcom-method-count', 2)->with('design.is-readonly', 0),
         )));
 
-        $eligible = (new MetricBag())->with('cohesion.lcom', 3)->with('size.method-count', 3)->with('design.is-readonly', 0);
+        $eligible = (new MetricBag())->with('cohesion.lcom', 3)->with('cohesion.lcom-method-count', 3)->with('size.method-count', 1)->with('design.is-readonly', 0);
         $findings = $rule->analyze($contextFor($eligible));
         self::assertCount(1, $findings);
         self::assertSame(Severity::Warning, $findings[0]->severity);
@@ -316,7 +316,7 @@ final class LcomRuleTest extends TestCase
 
         $metricBag = (new MetricBag())
             ->with('cohesion.lcom', $lcom)
-            ->with('size.method-count', 5)
+            ->with('cohesion.lcom-method-count', 5)
             ->with('design.is-readonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
@@ -434,7 +434,7 @@ final class LcomRuleTest extends TestCase
             self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
         ]);
         $repository->method('getSubject')->willReturn(
-            (new MetricBag())->with('cohesion.lcom', 4)->with('size.method-count', 5)->with('design.is-readonly', 0),
+            (new MetricBag())->with('cohesion.lcom', 4)->with('cohesion.lcom-method-count', 5)->with('design.is-readonly', 0),
         );
 
         $findings = (new LcomRule(new LcomOptions()))

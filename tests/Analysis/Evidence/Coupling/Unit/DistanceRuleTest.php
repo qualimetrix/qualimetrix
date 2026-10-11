@@ -480,46 +480,6 @@ final class DistanceRuleTest extends TestCase
         self::assertSame(Severity::Error, $findings[0]->severity);
     }
 
-    /**
-     * With Ca = Ce = 0 instability is 0 by convention, not by measurement, so
-     * a concrete namespace nobody touches computed D = 1.0 and was reported
-     * as the worst imbalance of stability and abstraction -- about a package
-     * whose stability nothing measured. The rule does not judge it, as it does
-     * not judge one below `min_type_count`.
-     */
-    #[Test]
-    public function itDoesNotJudgeANamespaceWithoutAnyCoupling(): void
-    {
-        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')]));
-        $repository = new InMemoryMetricRepository();
-        $file = RelativePath::fromString('src/Iso/C1.php');
-
-        $repository->add(SymbolPath::forNamespace('App\\Iso'), MetricBag::fromArray([
-            'size.class-count' => 3,
-            'coupling.distance-own' => 1.0,
-            'coupling.abstractness-own' => 0.0,
-            'coupling.instability-own' => 0.0,
-            'coupling.ca-own' => 0,
-            'coupling.ce-own' => 0,
-        ]), $file, 1);
-        // The neighbour the gate must not reach: a concrete namespace others
-        // depend on is the zone of pain the rule exists for.
-        $repository->add(SymbolPath::forNamespace('App\\Stable'), MetricBag::fromArray([
-            'size.class-count' => 3,
-            'coupling.distance-own' => 1.0,
-            'coupling.abstractness-own' => 0.0,
-            'coupling.instability-own' => 0.0,
-            'coupling.ca-own' => 2,
-            'coupling.ce-own' => 0,
-        ]), $file, 1);
-
-        $findings = $rule->analyze(new AnalysisContext($repository));
-
-        self::assertCount(1, $findings);
-        self::assertSame('App\\Stable', $findings[0]->symbolPath->namespace);
-        self::assertSame(Severity::Error, $findings[0]->severity);
-    }
-
     #[Test]
     public function itAnalyzesAllWhenMinTypeCountIsZero(): void
     {

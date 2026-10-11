@@ -74,8 +74,10 @@ final class HealthScoreCoverageTest extends TestCase
                 'health.coupling' => 44.2,
                 'coupling.distance-own.avg' => 0.49,
                 'coupling.distance-own.count' => 14,
-                'coupling.cbo.avg' => 9.9,
-                'coupling.cbo.count' => 268,
+                'coupling.ce-packages.avg' => 2.0,
+                'coupling.ce-packages.count' => 268,
+                'coupling.ce.avg' => 9.9,
+                'coupling.ce.count' => 268,
                 'size.symbol-class-count' => 268,
                 'size.symbol-declaring-namespace-count' => 20,
             ],
@@ -105,8 +107,10 @@ final class HealthScoreCoverageTest extends TestCase
                 'coupling.distance-own.avg' => 0.49,
                 // What a fold that lost a namespace saw: three of the four.
                 'coupling.distance-own.count' => 3,
-                'coupling.cbo.avg' => 9.9,
-                'coupling.cbo.count' => 268,
+                'coupling.ce-packages.avg' => 2.0,
+                'coupling.ce-packages.count' => 268,
+                'coupling.ce.avg' => 9.9,
+                'coupling.ce.count' => 268,
                 'size.symbol-class-count' => 268,
                 // What the run measured: the three leaves plus the leaf-and-parent.
                 'size.symbol-declaring-namespace-count' => 4,
@@ -135,8 +139,10 @@ final class HealthScoreCoverageTest extends TestCase
         $coupling = $this->build(
             [
                 'health.coupling' => 100.0,
-                'coupling.cbo.avg' => 1.69,
-                'coupling.cbo.count' => 140,
+                'coupling.ce-packages.avg' => 1.0,
+                'coupling.ce-packages.count' => 140,
+                'coupling.ce.avg' => 1.69,
+                'coupling.ce.count' => 140,
                 'size.symbol-class-count' => 140,
                 'size.symbol-declaring-namespace-count' => 1,
             ],
@@ -306,7 +312,9 @@ final class HealthScoreCoverageTest extends TestCase
     public function itKeepsExpectedMissingDistanceAsNullWithAnExplicitZeroOfN(): void
     {
         $score = $this->build([
-            'health.coupling' => 50.0, 'coupling.cbo.avg' => 0, 'coupling.cbo.count' => 2,
+            'health.coupling' => 50.0,
+            'coupling.ce-packages.avg' => 0, 'coupling.ce-packages.count' => 2,
+            'coupling.ce.avg' => 0, 'coupling.ce.count' => 2,
             'size.symbol-class-count' => 2, 'size.symbol-declaring-namespace-count' => 4,
         ])['coupling'];
         self::assertNull($score->decomposition[0]->value);
