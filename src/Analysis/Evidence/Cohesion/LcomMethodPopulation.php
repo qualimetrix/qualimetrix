@@ -6,7 +6,7 @@ namespace Qualimetrix\Analysis\Evidence\Cohesion;
 
 use Qualimetrix\Core\Symbol\ClassNameSpelling;
 
-/** Selects the LCOM graph population after static, configured, and stateless handling. */
+/** Selects the LCOM graph population after lifecycle, static, configured, and stateless handling. */
 final class LcomMethodPopulation
 {
     /** @var array<string, true> */
@@ -42,6 +42,11 @@ final class LcomMethodPopulation
         $this->methodCalls = $state['methodCalls'];
     }
 
+    public static function isLifecycle(string $method): bool
+    {
+        return \in_array(ClassNameSpelling::fold($method), ['__construct', '__destruct'], true);
+    }
+
     /**
      * @param list<string> $excludeMethods
      *
@@ -54,7 +59,7 @@ final class LcomMethodPopulation
         $seen = [];
         foreach (array_keys($this->methods) as $method) {
             $key = ClassNameSpelling::fold($method);
-            if (isset($this->staticMethods[$method]) || isset($excludeSet[$key]) || isset($seen[$key])) {
+            if (self::isLifecycle($method) || isset($this->staticMethods[$method]) || isset($excludeSet[$key]) || isset($seen[$key])) {
                 continue;
             }
             $seen[$key] = true;

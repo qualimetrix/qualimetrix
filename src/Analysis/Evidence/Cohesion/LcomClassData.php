@@ -18,7 +18,7 @@ use Qualimetrix\Core\Symbol\TraitUseFacts;
 final class LcomClassData
 {
     /**
-     * Set of method names in the class.
+     * Concrete method-body names before effective-name graph exclusions.
      *
      * @var array<string, true>
      */
@@ -155,7 +155,7 @@ final class LcomClassData
 
     public function hasGraphMethod(string $methodName): bool
     {
-        return isset($this->methods[$methodName]);
+        return isset($this->methods[$methodName]) && !LcomMethodPopulation::isLifecycle($methodName);
     }
 
     public function isStaticMethod(string $methodName): bool
@@ -172,7 +172,7 @@ final class LcomClassData
         }
         $original = $definition->originalMethod;
         $this->declaration->declareMethod($effectiveName, $visibility, $definition->isAbstract);
-        if (!$source->hasGraphMethod($original)) {
+        if (!isset($source->methods[$original])) {
             return;
         }
         $this->addMethod($effectiveName);
@@ -225,7 +225,7 @@ final class LcomClassData
      * - Vertices = methods
      * - Edges = (m1, m2) if m1 and m2 share a property OR one calls the other via $this->
      * - Static, constructor and destructor methods are excluded from the graph
-     *   (see {@see LcomVisitor::enterNode()} for why constructors/destructors are excluded)
+     *   after trait composition resolves effective method names
      * - Stateless constant methods are merged into a single virtual node to reduce
      *   false positives from interface-mandated metadata methods (e.g., getName())
      *

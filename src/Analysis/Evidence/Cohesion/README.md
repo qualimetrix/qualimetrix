@@ -92,8 +92,9 @@ value. `cohesion.tcc-method-count` counts tracked public methods, the
 denominator for the pure-method fraction. TCC and LCC remain absent when fewer
 than two public methods qualify or when no instance property is declared or
 read. Builtin health cohesion uses only available measured contributions.
-`LcomMethodPopulation` owns static/configured exclusion and the virtual
-stateless vertex decision shared by LCOM and its graph-method count.
+`LcomMethodPopulation` owns effective-name lifecycle and static/configured
+exclusion and the virtual stateless vertex decision shared by LCOM and its
+graph-method count.
 
 `cohesion.lcom` is the stable rule ID — its `cohesion` family, and so the
 heading `qmx rules` lists it under, is now read off that name rather than
@@ -111,8 +112,10 @@ point.
 LCOM4 counts connected groups of instance methods through shared property
 access or calls to instance methods through `$this`, `self`, or `static`.
 Method names follow PHP's case-insensitive matching. Constructors and destructors are excluded
-from the graph entirely (see the scope-adaptation note below). Uncalled stateless constant methods are merged into a virtual
-node to avoid false positives from protocol metadata; a called stateless method
+from the graph by their effective names after trait composition (see the
+scope-adaptation note below). Raw lifecycle bodies and method flags remain
+available when a trait adaptation exposes an ordinary alias. Uncalled stateless
+constant methods are merged into a virtual node to avoid false positives from protocol metadata; a called stateless method
 stays in the graph. TCC and LCC measure direct and transitive property-sharing
 connections among public methods, including reads through own-method calls.
 

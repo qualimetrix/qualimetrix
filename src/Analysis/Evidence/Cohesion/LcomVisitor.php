@@ -30,8 +30,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterfac
  * - For each method: set of methods called via $this->method()
  * - Static method markers (excluded from LCOM graph)
  *
- * Constructors and destructors are excluded from the graph entirely — see the
- * `__construct`/`__destruct` guard in {@see enterNode()} for why.
+ * Lifecycle bodies remain available to trait aliases; the effective method
+ * population excludes constructor and destructor names.
  *
  * Anonymous classes are ignored.
  */
@@ -145,9 +145,8 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
         $position = $this->getCurrentClassPosition();
         CohesionAstFacts::captureMethod($node, $position === null ? null : ($this->classData[$position] ?? null));
 
-        // Abstract and lifecycle methods have no LCOM vertex, but their declarations
-        // remain available to trait composition.
-        if ($node->isAbstract() || \in_array(strtolower($methodName), ['__construct', '__destruct'], true)) {
+        // Lifecycle bodies can become ordinary methods through trait aliases.
+        if ($node->isAbstract()) {
             return;
         }
         if ($currentClass === null || !isset($this->classData[$position])) {

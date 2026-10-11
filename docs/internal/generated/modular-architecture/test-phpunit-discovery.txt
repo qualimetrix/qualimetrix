@@ -2946,6 +2946,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itPreservesOwnFactsAndRetainsUnusedTraitPropertiesForTcc
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itReachesInstancePropertiesThroughMixedCaseCyclesWithoutFollowingOtherCalls
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRetainsCalledStatelessMethodsAsVertices
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itSelectsEffectiveLifecycleNamesAfterTraitComposition"abstract constructor alias remains excluded"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itSelectsEffectiveLifecycleNamesAfterTraitComposition"authored equivalent"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itSelectsEffectiveLifecycleNamesAfterTraitComposition"constructor alias retains calls through private helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itSelectsEffectiveLifecycleNamesAfterTraitComposition"constructor aliased to ordinary method"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itSelectsEffectiveLifecycleNamesAfterTraitComposition"destructor aliased to ordinary method without case"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itSelectsEffectiveLifecycleNamesAfterTraitComposition"nested lifecycle alias reexposed as ordinary method"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itSelectsEffectiveLifecycleNamesAfterTraitComposition"ordinary method aliased to constructor"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itSelectsEffectiveLifecycleNamesAfterTraitComposition"ordinary method aliased to destructor without case"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itSelectsEffectiveLifecycleNamesAfterTraitComposition"stateless constructor alias merges with metadata"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itSelectsEffectiveLifecycleNamesAfterTraitComposition"static ordinary alias remains excluded"
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\Configuration\LcomCollectionConfigurationResolverTest::itProjectsOnlyTheReadyTypedOptionsPreservingAuthoredMethodSpelling
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\Configuration\LcomCollectionConfigurationResolverTest::itRefusesAnOptionsObjectFromAnotherProducer
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\Configuration\LcomCollectionConfigurationResolverTest::itRefusesToGuessFromRawOptionsWhenTheSnapshotIsMissing

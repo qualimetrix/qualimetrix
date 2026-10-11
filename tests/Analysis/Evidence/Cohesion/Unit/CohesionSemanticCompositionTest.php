@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector;
@@ -18,6 +19,7 @@ use Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomVisitor;
 use Qualimetrix\Analysis\Evidence\Cohesion\TccLccClassData;
 use Qualimetrix\Analysis\Evidence\Cohesion\TccLccCollector;
+use Qualimetrix\Analysis\Evidence\Cohesion\TccLccVisitor;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MeasurementAggregationService;
@@ -294,6 +296,83 @@ PHP;
         self::assertSame(1, $metrics['Ambiguous']->get('cohesion.unread-trait-count'));
         self::assertSame(1, $metrics['Ambiguous']->get('cohesion.lcom-method-count'));
         self::assertSame(1, $metrics['Ambiguous']->get('cohesion.tcc-method-count'));
+    }
+
+    #[Test]
+    #[DataProvider('lifecycleAdaptations')]
+    public function itSelectsEffectiveLifecycleNamesAfterTraitComposition(string $members, int $lcomCount, int $lcomValue, int $tccCount, ?float $tccValue, ?int $pureCount): void
+    {
+        $ast = (new ParserFactory())->createForHostVersion()->parse('<?php namespace App; ' . $members) ?? [];
+        NameResolution::resolve($ast);
+        $lcomVisitor = new LcomVisitor();
+        $tccVisitor = new TccLccVisitor();
+        $traverser = new NodeTraverser($lcomVisitor, $tccVisitor);
+        $traverser->traverse($ast);
+        $lcom = $lcomVisitor->getClassData();
+        $tcc = $tccVisitor->getClassData();
+        $classes = $traits = [];
+        foreach ($lcom as $position => $data) {
+            if ($data->className === 'Candidate') {
+                $classes['Candidate'] = [$data, $tcc[$position]];
+            } else {
+                $traits[$data->className] = $data;
+            }
+        }
+        $metrics = self::calculate($classes, $traits)['Candidate'];
+
+        self::assertSame($lcomCount, $metrics->get('cohesion.lcom-method-count'));
+        self::assertSame($lcomValue, $metrics->get('cohesion.lcom'));
+        self::assertSame($tccCount, $metrics->get('cohesion.tcc-method-count'));
+        self::assertSame($tccValue, $metrics->get('cohesion.tcc'));
+        self::assertSame($tccValue, $metrics->get('cohesion.lcc'));
+        self::assertSame($pureCount, $metrics->get('cohesion.pure-method-count'));
+        self::assertSame(0, $metrics->get('cohesion.unread-trait-count'));
+    }
+
+    /** @return iterable<string, array{string, int, int, int, ?float, ?int}> */
+    public static function lifecycleAdaptations(): iterable
+    {
+        $read = 'private int $x = 0; public function read(): int { return $this->x; }';
+        yield 'ordinary method aliased to constructor' => [
+            'trait Initializer { public function init(): void { $this->x = 1; } } class Candidate { use Initializer { init as __construct; } ' . $read . ' }',
+            2, 1, 2, 1.0, 0,
+        ];
+        yield 'constructor aliased to ordinary method' => [
+            'trait Initializer { public function __construct() { $this->x = 1; } } class Candidate { use Initializer { __construct as init; } private int $x = 0; private int $y = 0; public function read(): int { return $this->y; } }',
+            2, 2, 2, 0.0, 0,
+        ];
+        yield 'ordinary method aliased to destructor without case' => [
+            'trait Initializer { public function init(): void { $this->x = 1; } } class Candidate { use Initializer { INIT as __DESTRUCT; } ' . $read . ' }',
+            2, 1, 2, 1.0, 0,
+        ];
+        yield 'destructor aliased to ordinary method without case' => [
+            'trait Initializer { public function __DeStRuCt() { $this->x = 1; } } class Candidate { use Initializer { __DESTRUCT as init; } ' . $read . ' }',
+            2, 1, 2, 1.0, 0,
+        ];
+        yield 'nested lifecycle alias reexposed as ordinary method' => [
+            'trait Inner { public function init(): void { $this->x = 1; } } trait Outer { use Inner { init as __construct; } } class Candidate { use Outer { __construct as resume; } ' . $read . ' }',
+            3, 1, 3, 1.0, 0,
+        ];
+        yield 'constructor alias retains calls through private helper' => [
+            'trait Initializer { public function __construct() { $this->helper(); } private function helper(): void { $this->x = 1; } } class Candidate { use Initializer { __construct as init; } ' . $read . ' }',
+            3, 1, 2, 1.0, 0,
+        ];
+        yield 'stateless constructor alias merges with metadata' => [
+            'trait Initializer { public function __construct() {} } class Candidate { use Initializer { __construct as init; } public function label(): string { return "label"; } ' . $read . ' }',
+            2, 2, 3, 0.0, 2,
+        ];
+        yield 'static ordinary alias remains excluded' => [
+            'trait Initializer { public static function init(): int { return 1; } } class Candidate { use Initializer { init as resume; } ' . $read . ' }',
+            1, 1, 1, null, null,
+        ];
+        yield 'abstract constructor alias remains excluded' => [
+            'trait Initializer { abstract public function __construct(); } abstract class Candidate { use Initializer { __construct as init; } ' . $read . ' }',
+            1, 1, 1, null, null,
+        ];
+        yield 'authored equivalent' => [
+            'class Candidate { public function __construct() { $this->x = 1; } public function init(): void { $this->x = 1; } ' . $read . ' }',
+            2, 1, 2, 1.0, 0,
+        ];
     }
 
     /** @param array<string, array{LcomClassData, TccLccClassData}> $classes
