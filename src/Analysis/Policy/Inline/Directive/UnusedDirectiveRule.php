@@ -34,6 +34,8 @@ use Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsagePopulation;
 final class UnusedDirectiveRule extends AbstractRule
 {
     public const string NAME = InlineDirectivePolicy::PRODUCER_RULE_NAME;
+
+    public const string DESCRIPTION = 'Reports inline @qmx directives that address nothing, cannot apply, or no longer do anything.';
     public const string DOCS_PAGE = 'rules/annotation.md';
 
     public const int REMEDIATION_MINUTES = 15;
@@ -45,16 +47,6 @@ final class UnusedDirectiveRule extends AbstractRule
         private readonly InlineDirectivePolicy $policy,
     ) {
         parent::__construct($options);
-    }
-
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Reports inline @qmx directives that address nothing, cannot apply, or no longer do anything.';
     }
 
     /**

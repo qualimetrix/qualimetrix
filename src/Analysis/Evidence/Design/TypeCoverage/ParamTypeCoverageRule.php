@@ -22,10 +22,7 @@ final class ParamTypeCoverageRule extends AbstractTypeCoverageRule
 {
     public const string NAME = 'design.type-coverage.param';
 
-    public static function getDescription(): string
-    {
-        return 'Checks type coverage of parameters per class';
-    }
+    public const string DESCRIPTION = 'Checks type coverage of parameters per class';
 
     /**
      * @return class-string<TypeCoverageOptions>

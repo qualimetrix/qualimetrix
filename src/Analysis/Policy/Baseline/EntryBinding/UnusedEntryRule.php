@@ -15,20 +15,12 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final class UnusedEntryRule extends AbstractRule
 {
     public const string NAME = BaselineAuditChannels::UNUSED_ENTRY;
+
+    public const string DESCRIPTION = 'Reports baseline entries that no longer bind a measured finding or cannot be applied.';
     public const string DOCS_PAGE = 'rules/baseline.md';
     public const int REMEDIATION_MINUTES = 5;
     public const ChannelShape SHAPE = ChannelShape::Occurrence;
     public const bool SUPPORTS_THRESHOLD_OVERRIDE = false;
-
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Reports baseline entries that no longer bind a measured finding or cannot be applied.';
-    }
 
     /** @return class-string<UnusedEntryOptions> */
     public static function getOptionsClass(): string

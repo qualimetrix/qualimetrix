@@ -51,11 +51,6 @@ final class ComputedMetricRule extends AbstractRule
         parent::__construct($options);
     }
 
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
     public static function getDescription(): string
     {
         return ComputedMetricChannelFamily::descriptionOf(self::NAME);

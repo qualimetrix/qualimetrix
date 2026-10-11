@@ -2376,6 +2376,27 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionCompositionCollector": {
+      "path": "src/Analysis/Evidence/Cohesion/CohesionCompositionCollector.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Cohesion",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionFactProjectionTrait": {
+      "path": "src/Analysis/Evidence/Cohesion/CohesionFactProjectionTrait.php",
+      "kind": "trait",
+      "owner": "Analysis.Evidence.Cohesion",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionFactWire": {
+      "path": "src/Analysis/Evidence/Cohesion/CohesionFactWire.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Cohesion",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomClassData": {
       "path": "src/Analysis/Evidence/Cohesion/LcomClassData.php",
       "kind": "class",
@@ -3614,6 +3635,10 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionCompositionCollector"
         }
       ]
     },
@@ -4403,14 +4428,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeCollector"
         },
         {
-          "owner": "Analysis.Evidence.Cohesion",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomCollector"
-        },
-        {
-          "owner": "Analysis.Evidence.Cohesion",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\TccLccCollector"
-        },
-        {
           "owner": "Analysis.Evidence.Complexity",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityCollector"
         },
@@ -4505,6 +4522,10 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionCompositionCollector"
         }
       ]
     },
@@ -4897,6 +4918,10 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionCompositionCollector"
         }
       ]
     },
@@ -5141,6 +5166,10 @@
         {
           "owner": "Analysis.Evidence.Complexity",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityVisitor"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionFactProjectionTrait"
         }
       ]
     },
@@ -5169,14 +5198,6 @@
         {
           "owner": "Analysis.Evidence.CodeSmell",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeCollector"
-        },
-        {
-          "owner": "Analysis.Evidence.Cohesion",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomCollector"
-        },
-        {
-          "owner": "Analysis.Evidence.Cohesion",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\TccLccCollector"
         },
         {
           "owner": "Analysis.Evidence.Complexity",
@@ -5257,6 +5278,10 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionCompositionCollector"
         }
       ]
     },
@@ -5300,15 +5325,7 @@
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomCollector"
-        },
-        {
-          "owner": "Analysis.Evidence.Cohesion",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Cohesion",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\TccLccCollector"
         },
         {
           "owner": "Analysis.Evidence.Complexity",
@@ -5537,6 +5554,10 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionCompositionCollector"
         }
       ]
     },
@@ -5713,6 +5734,10 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionCompositionCollector"
         }
       ]
     },
@@ -10227,6 +10252,18 @@
       "owner": "Analysis.Finding",
       "visibility": "internal",
       "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleDescriptionReader": {
+      "path": "src/Analysis/Finding/Contract/Rule/RuleDescriptionReader.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ChannelDeclarationCompilerPass"
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleNameReader": {
       "path": "src/Analysis/Finding/Contract/Rule/RuleNameReader.php",
@@ -17120,6 +17157,10 @@
         {
           "owner": "Analysis.Evidence.Complexity",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityVisitor"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionFactProjectionTrait"
         }
       ]
     },
@@ -17838,6 +17879,10 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Population\\KindIn"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionCompositionCollector"
         }
       ]
     },
@@ -18366,6 +18411,10 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionCompositionCollector"
         }
       ]
     },
@@ -18645,15 +18694,7 @@
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomCollector"
-        },
-        {
-          "owner": "Analysis.Evidence.Cohesion",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Cohesion",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\TccLccCollector"
         },
         {
           "owner": "Analysis.Evidence.Complexity",
@@ -19266,6 +19307,10 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionCompositionCollector"
         }
       ]
     },
@@ -19326,14 +19371,6 @@
         {
           "owner": "Analysis.Evidence.CodeSmell",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateCollector"
-        },
-        {
-          "owner": "Analysis.Evidence.Cohesion",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomCollector"
-        },
-        {
-          "owner": "Analysis.Evidence.Cohesion",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\TccLccCollector"
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
@@ -19670,6 +19707,10 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionFactProjectionTrait"
         }
       ]
     },
@@ -24096,6 +24137,38 @@
         {
           "owner": "Infrastructure.Rule",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionCompositionCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CouplingCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\AbstractnessCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector"
         }
       ]
     },

@@ -48,8 +48,8 @@ final class ClassProducerCensusTest extends TestCase
      */
     private const array PRODUCERS = [
         UnusedPrivateCollector::class => 'src/Analysis/Evidence/CodeSmell/UnusedPrivateCollector.php',
-        LcomCollector::class => 'src/Analysis/Evidence/Cohesion/LcomCollector.php',
-        TccLccCollector::class => 'src/Analysis/Evidence/Cohesion/TccLccCollector.php',
+        LcomCollector::class => 'src/Analysis/Evidence/Cohesion/CohesionFactProjectionTrait.php',
+        TccLccCollector::class => 'src/Analysis/Evidence/Cohesion/CohesionFactProjectionTrait.php',
         CyclomaticComplexityCollector::class => 'src/Analysis/Evidence/Complexity/CyclomaticComplexityCollector.php',
         RfcCollector::class => 'src/Analysis/Evidence/Coupling/RfcCollector.php',
         TypeCoverageCollector::class => 'src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageVisitor.php',
@@ -112,7 +112,7 @@ final class ClassProducerCensusTest extends TestCase
             }
         }
         sort($callSites);
-        $covered = array_values(self::PRODUCERS);
+        $covered = array_values(array_unique(self::PRODUCERS));
         sort($covered);
 
         self::assertSame($covered, $callSites);

@@ -34,6 +34,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final class IdenticalSubExpressionRule extends AbstractRule
 {
     public const string NAME = 'code-smell.identical-subexpression';
+
+    public const string DESCRIPTION = 'Detects identical sub-expressions indicating copy-paste errors or logic bugs';
     public const string DOCS_PAGE = 'rules/code-smell.md';
 
     /**
@@ -59,16 +61,6 @@ final class IdenticalSubExpressionRule extends AbstractRule
         'duplicate_match_arm' => 'Duplicate condition in match expression',
         'duplicate_switch_case' => 'Duplicate case value in switch statement',
     ];
-
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Detects identical sub-expressions indicating copy-paste errors or logic bugs';
-    }
 
     /**
      * @return class-string<IdenticalSubExpressionOptions>

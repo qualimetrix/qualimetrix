@@ -41,20 +41,13 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final class MaintainabilityRule extends AbstractRule
 {
     public const string NAME = 'maintainability.mi';
+
+    public const string DESCRIPTION = 'Checks Maintainability Index (lower values indicate harder to maintain code)';
     public const string DOCS_PAGE = 'rules/maintainability.md';
 
     public const int REMEDIATION_MINUTES = 60;
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Checks Maintainability Index (lower values indicate harder to maintain code)';
-    }
 
     /**
      * @return list<Finding>

@@ -88,6 +88,8 @@ final class UnboundSuppressionRule extends AbstractRule
      */
     public const string NAME = 'suppression.configuration';
 
+    public const string DESCRIPTION = 'Reports a suppress_paths, suppress_namespaces or suppress_namespace_channels value that names nothing the run contains';
+
     public const string DOCS_PAGE = 'rules/suppression.md';
 
     /** Deleting one line of configuration, plus checking what the tree really contains. */
@@ -97,16 +99,6 @@ final class UnboundSuppressionRule extends AbstractRule
 
     /** There is no measured quantity here to retune. */
     public const bool SUPPORTS_THRESHOLD_OVERRIDE = false;
-
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Reports a suppress_paths, suppress_namespaces or suppress_namespace_channels value that names nothing the run contains';
-    }
 
     /**
      * @return class-string<UnboundSuppressionOptions>

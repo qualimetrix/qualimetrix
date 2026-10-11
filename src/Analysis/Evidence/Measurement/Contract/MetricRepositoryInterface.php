@@ -13,8 +13,6 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
  * Mutable Measurement repository promise shared by collection, aggregation, and rules.
- *
- * @qmx-threshold coupling.cbo 57 -- Collection, aggregation and rules share the exact-subject repository promise; splitting its reads transfers their common identity dependencies.
  */
 interface MetricRepositoryInterface
 {

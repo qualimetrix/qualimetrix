@@ -42,20 +42,13 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class LcomRule extends AbstractRule
 {
     public const string NAME = 'cohesion.lcom';
+
+    public const string DESCRIPTION = 'Checks Lack of Cohesion of Methods (high values indicate class should be split)';
     public const string DOCS_PAGE = 'rules/cohesion.md';
 
     public const int REMEDIATION_MINUTES = 45;
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Checks Lack of Cohesion of Methods (high values indicate class should be split)';
-    }
 
     /**
      * @return list<Finding>

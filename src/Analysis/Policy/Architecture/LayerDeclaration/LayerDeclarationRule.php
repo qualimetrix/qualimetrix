@@ -23,6 +23,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final class LayerDeclarationRule extends AbstractRule
 {
     public const string NAME = ArchitectureChannels::LAYER_DECLARATION_PRODUCER_NAME;
+
+    public const string DESCRIPTION = 'Reports declared layer criteria whose observed effects differ from the declaration.';
     public const string DOCS_PAGE = 'rules/architecture.md';
     public const int REMEDIATION_MINUTES = 15;
     public const ChannelShape SHAPE = ChannelShape::Occurrence;
@@ -30,16 +32,6 @@ final class LayerDeclarationRule extends AbstractRule
     public function __construct(RuleOptionsInterface $options, private readonly LayerEvidenceCollector $evidence)
     {
         parent::__construct($options);
-    }
-
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Reports declared layer criteria whose observed effects differ from the declaration.';
     }
 
     /** @return class-string<LayerDeclarationOptions> */

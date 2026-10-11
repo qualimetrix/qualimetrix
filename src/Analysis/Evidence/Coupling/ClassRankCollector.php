@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassKeyScope;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
@@ -45,6 +46,11 @@ final class ClassRankCollector implements GlobalContextCollectorInterface
     public function requires(): array
     {
         return [MetricName::COUPLING_CA, MetricName::COUPLING_CE];
+    }
+
+    public function getMetricReach(): MetricReach
+    {
+        return MetricReach::Run;
     }
 
     public function provides(): array

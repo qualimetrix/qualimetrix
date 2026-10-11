@@ -34,20 +34,13 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class CognitiveComplexityRule extends AbstractRule implements HierarchicalRuleInterface
 {
     public const string NAME = 'complexity.cognitive';
+
+    public const string DESCRIPTION = 'Checks cognitive complexity at method and class levels';
     public const string DOCS_PAGE = 'rules/complexity.md';
 
     public const int REMEDIATION_MINUTES = 30;
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Checks cognitive complexity at method and class levels';
-    }
 
     /**
      * @return list<SymbolLevel>

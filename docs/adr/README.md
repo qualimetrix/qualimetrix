@@ -155,3 +155,5 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0010 — Architecture Vertical-Slice Pilot](0010-architecture-vertical-slice.md) — replaced by subject cohesion and ADR 0022.
 - [0012 — Hybrid Architectural Direction](0012-hybrid-architectural-direction.md) — replaced by ADR 0022; its HTML-viewer placement prescription by ADR 0064.
 - [0056 — Source Composition Loses the Middle Layer's Value](0056-source-composition-is-measured-and-left-alone.md) — corrected by ADR 0058.
+
+- [0113 — Producer-Declared Metric Reach](0113-producer-declared-metric-reach.md) — evidence dependency is declared by the producer independently of execution phase.

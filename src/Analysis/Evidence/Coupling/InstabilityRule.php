@@ -44,20 +44,13 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class InstabilityRule extends AbstractRule implements HierarchicalRuleInterface
 {
     public const string NAME = 'coupling.instability';
+
+    public const string DESCRIPTION = 'Checks instability at class and namespace levels';
     public const string DOCS_PAGE = 'rules/coupling.md';
 
     public const int REMEDIATION_MINUTES = 30;
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Checks instability at class and namespace levels';
-    }
 
     /**
      * @return list<SymbolLevel>

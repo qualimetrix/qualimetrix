@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Cohesion\CohesionFactWire;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomClassData;
 
 #[CoversClass(LcomClassData::class)]
@@ -39,6 +40,30 @@ final class LcomClassDataTest extends TestCase
         // With excludeMethods=['getName', 'getDescription']:
         // only analyze+validate remain, they share $data = LCOM 1
         self::assertSame(1, $classData->calculateLcom(['getName', 'getDescription']));
+    }
+
+    #[Test]
+    public function itPreservesExactFactRowsAcrossTheCollectionWire(): void
+    {
+        $data = new LcomClassData('App', 'Service', 7, 19);
+        $data->addMethod('work');
+        $data->addMethod('metadata');
+        $data->markStatic('metadata');
+        $data->markStatelessConstant('metadata');
+        $data->markNonTrivial();
+        $data->addPropertyAccess('work', 'state');
+        $data->addMethodCall('work', 'metadata');
+
+        $rows = [
+            ['tag' => 'declaration', 'namespace' => 'App', 'name' => 'Service', 'line' => 7, 'position' => 19, 'nonTrivial' => true, 'rowCount' => 5],
+            ['tag' => 'method', 'name' => 'work', 'static' => false, 'stateless' => false],
+            ['tag' => 'method', 'name' => 'metadata', 'static' => true, 'stateless' => true],
+            ['tag' => 'property', 'method' => 'work', 'name' => 'state'],
+            ['tag' => 'call', 'caller' => 'work', 'callee' => 'metadata'],
+        ];
+
+        self::assertSame($rows, CohesionFactWire::lcomRows($data));
+        self::assertSame($rows, CohesionFactWire::lcomRows(CohesionFactWire::lcomFromRows($rows)));
     }
 
     #[Test]

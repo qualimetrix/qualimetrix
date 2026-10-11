@@ -7,7 +7,8 @@ collectors, their AST visitors and per-class calculation data, the
 `cohesion.lcom` rule with its options, and the LCOM collection configuration
 needed by its named sequential and parallel consumers.
 `ClassVisitorStackTrait` is private scaffolding shared only by the two Cohesion
-visitors.
+visitors. `CohesionFactWire` owns the exact serializable row format, while
+`CohesionFactProjectionTrait` publishes those rows under declaration subjects.
 
 `Contract/` exposes the exact
 `LcomCollectionConfiguration` value; `Runtime/` owns its scoped store and
@@ -19,6 +20,9 @@ aggregation contracts, while Finding owns rule options and findings.
 ```text
 Cohesion/
 ├── ClassVisitorStackTrait.php
+├── CohesionCompositionCollector.php
+├── CohesionFactProjectionTrait.php
+├── CohesionFactWire.php
 ├── Contract/
 │   ├── LcomCollectionConfiguration.php
 │   ├── LcomCollectionConfigurationResolverInterface.php
@@ -46,8 +50,15 @@ while retaining the first authored spelling. It does not change the LCOM
 graph or its academic calculation. The rule supplies its producer and full
 secondary declaration; the diagnostic helper does not depend back on the rule.
 
-`LcomCollector` provides `cohesion.lcom`; `TccLccCollector` provides `cohesion.tcc` and `cohesion.lcc`.
-They retain their collector names, metric keys, class-level aggregation
+`LcomCollector` and `TccLccCollector` publish file-local declaration fact
+rows. `CohesionCompositionCollector` reads those rows after collection and
+publishes the same `cohesion.lcom`, `cohesion.tcc`, `cohesion.lcc` and
+`cohesion.pure-method-count` class metrics. These values declare Members reach:
+execution after file collection preserves their declaration-local baseline
+comparison, including a check of one file against a whole-project baseline. This ownership move preserves the
+existing LCOM graph and TCC/LCC calculations.
+
+The pipeline retains metric keys and class-level aggregation
 definitions, visitor reset semantics, and anonymous-class exclusion. Each named
 class declaration retains its own calculation data, even when the same name
 appears twice in one file. The shared stack keeps physical declaration identity

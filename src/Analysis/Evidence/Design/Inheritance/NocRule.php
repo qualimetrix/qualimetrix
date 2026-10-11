@@ -35,20 +35,13 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class NocRule extends AbstractRule
 {
     public const string NAME = 'design.noc';
+
+    public const string DESCRIPTION = 'Checks Number of Children (many direct subclasses indicate wide impact)';
     public const string DOCS_PAGE = 'rules/design.md';
 
     public const int REMEDIATION_MINUTES = 20;
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Checks Number of Children (many direct subclasses indicate wide impact)';
-    }
 
     /**
      * @return list<Finding>

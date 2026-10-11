@@ -18,6 +18,7 @@ use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Nop;
 use PhpParser\Node\Stmt\Return_;
+use PhpParser\Node\Stmt\Trait_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
 
@@ -189,20 +190,7 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
 
     public function leaveNode(Node $node): ?int
     {
-        // Exit method scope
-        if ($node instanceof ClassMethod) {
-            array_pop($this->methodStack);
-        }
-
-        // Exit class-like scope
-        if ($this->isClassLikeNode($node)) {
-            $this->popClass();
-        }
-
-        // Exit namespace scope
-        if ($node instanceof Node\Stmt\Namespace_) {
-            $this->handleNamespaceLeave();
-        }
+        $this->leaveClassVisitorNode($node);
 
         return null;
     }
@@ -220,13 +208,11 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
     }
 
     /**
-     * Checks if node is a class-like type for LCOM calculation (class only).
-     *
-     * Note: Traits, interfaces, and enums are intentionally excluded - LCOM is not meaningful for them.
+     * Class and trait bodies carry facts; only classes receive LCOM in this phase.
      */
     private function isClassLikeNode(Node $node): bool
     {
-        return $node instanceof Class_;
+        return $node instanceof Class_ || $node instanceof Trait_;
     }
 
     /**

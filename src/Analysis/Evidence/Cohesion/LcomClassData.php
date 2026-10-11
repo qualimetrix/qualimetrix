@@ -144,6 +144,28 @@ final class LcomClassData
     }
 
     /**
+     * @return array{
+     *     methods: array<string, true>,
+     *     staticMethods: array<string, true>,
+     *     statelessMethods: array<string, true>,
+     *     propertyAccesses: array<string, array<string, true>>,
+     *     methodCalls: array<string, array<string, true>>,
+     *     nonTrivial: bool
+     * }
+     */
+    public function factState(): array
+    {
+        return [
+            'methods' => $this->methods,
+            'staticMethods' => $this->staticMethods,
+            'statelessMethods' => $this->statelessMethods,
+            'propertyAccesses' => $this->propertyAccesses,
+            'methodCalls' => $this->methodCalls,
+            'nonTrivial' => $this->hasNonTrivialMethod,
+        ];
+    }
+
+    /**
      * Calculate LCOM4 (Lack of Cohesion of Methods).
      *
      * LCOM4 is the number of connected components in the graph where:

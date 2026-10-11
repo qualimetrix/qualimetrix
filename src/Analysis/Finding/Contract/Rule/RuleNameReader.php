@@ -20,7 +20,8 @@ final class RuleNameReader
 {
     /**
      * @throws LogicException when the class cannot be loaded or declares no
-     *                        string `NAME` constant
+     *                        string `NAME` constant; the shared getter requires
+     *                        an own public non-empty declaration
      */
     public static function read(string $ruleClass): string
     {
@@ -34,6 +35,12 @@ final class RuleNameReader
         $reflection = new ReflectionClass($ruleClass);
 
         if ($reflection->hasConstant('NAME')) {
+            if ($reflection->isSubclassOf(AbstractRule::class)
+                && $reflection->getMethod('getName')->getDeclaringClass()->getName() === AbstractRule::class
+            ) {
+                return self::readOwnName($ruleClass);
+            }
+
             $name = $reflection->getConstant('NAME');
 
             if (\is_string($name)) {
@@ -45,5 +52,23 @@ final class RuleNameReader
             'Rule class %s must declare a string NAME constant holding its rule slug (e.g. "complexity.ccn").',
             $ruleClass,
         ));
+    }
+
+    private static function readOwnName(string $ruleClass): string
+    {
+        $constant = RuleOwnConstantReader::read(
+            $ruleClass,
+            'NAME',
+            'a public non-empty string NAME constant holding its rule slug',
+        );
+        $name = $constant->getValue();
+        if (!$constant->isPublic() || !\is_string($name) || $name === '') {
+            throw new LogicException(\sprintf(
+                'Rule class %s must declare a public non-empty string NAME constant holding its rule slug.',
+                $ruleClass,
+            ));
+        }
+
+        return $name;
     }
 }

@@ -142,9 +142,6 @@
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Size\\LocCollector@src/Analysis/Evidence/Size/LocCollector.php": [
       {"channel":"design.god-class","magnitudes":[3]}
     ],
-    "declaration:class:Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\AbstractRule@src/Analysis/Finding/Contract/Rule/AbstractRule.php": [
-      {"channel":"health.cohesion","magnitudes":[40]}
-    ],
     "declaration:class:Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\AnalysisContext@src/Analysis/Finding/Contract/Rule/AnalysisContext.php": [
       {"channel":"health.cohesion","magnitudes":[30]}
     ],
@@ -188,11 +185,9 @@
       {"channel":"design.data-class","magnitudes":[10]}
     ],
     "file:src/Analysis/Evidence/Cohesion/LcomVisitor.php": [
-      {"channel":"duplication.clone","occurrence":"28b4254836c6dbd3","magnitudes":[23]},
       {"channel":"duplication.clone","occurrence":"32b57d5adfade308","magnitudes":[22]}
     ],
     "file:src/Analysis/Evidence/Cohesion/TccLccVisitor.php": [
-      {"channel":"duplication.clone","occurrence":"28b4254836c6dbd3","magnitudes":[23]},
       {"channel":"duplication.clone","occurrence":"32b57d5adfade308","magnitudes":[22]}
     ],
     "file:src/Infrastructure/DependencyInjection/Configurator/CodeSmellConfigurator.php": [
@@ -216,12 +211,15 @@
     "ns:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Finding": [
       {"channel":"health.maintainability","magnitudes":[43.7]}
     ],
+    "ns:Qualimetrix\\Analysis\\Evidence\\Cohesion": [
+      {"channel":"coupling.cbo","magnitudes":[16]}
+    ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Coupling": [
       {"channel":"coupling.cbo","magnitudes":[22]},
       {"channel":"size.class-count","magnitudes":[35]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Design": [
-      {"channel":"coupling.instability","magnitudes":[0.972603]}
+      {"channel":"coupling.instability","magnitudes":[0.972973]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance": [
       {"channel":"coupling.instability","magnitudes":[0.962264]}

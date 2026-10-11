@@ -43,11 +43,6 @@ use Qualimetrix\Core\Symbol\SymbolType;
  */
 abstract class AbstractTypeCoverageRule extends AbstractRule
 {
-    public function getName(): string
-    {
-        return static::channelName();
-    }
-
     /**
      * Coverage is a percentage, and less of it is worse debt — hence a
      * magnitude channel whose worse direction is `Lower`. It reports at class

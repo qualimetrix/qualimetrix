@@ -229,6 +229,7 @@ rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/Dependency
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/Maintainability/HalsteadVisitor.php	Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/Measurement/Contract/MetricBag.php	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/Measurement/Contract/MetricName.php	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	error	1
+rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/Measurement/Contract/MetricRepositoryInterface.php	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/Size/MethodStatementCountVisitor.php	Qualimetrix\Analysis\Evidence\Size\MethodStatementCountVisitor	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Policy/Baseline/Baseline.php	Qualimetrix\Analysis\Policy\Baseline\Baseline	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Policy/Baseline/BaselineEntry.php	Qualimetrix\Analysis\Policy\Baseline\BaselineEntry	warning	1
@@ -339,11 +340,9 @@ rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/
 rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Complexity/NpathComplexityOptions.php	src/Analysis/Evidence/Complexity/NpathComplexityOptions.php	warning	1
 rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Complexity/WmcOptions.php	src/Analysis/Evidence/Complexity/WmcOptions.php	warning	1
 rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Coupling/CboOptions.php	src/Analysis/Evidence/Coupling/CboOptions.php	warning	1
-rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Coupling/CboRule.php	src/Analysis/Evidence/Coupling/CboRule.php	warning	1
 rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Coupling/ClassCboOptions.php	src/Analysis/Evidence/Coupling/ClassCboOptions.php	warning	1
 rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php	src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php	warning	1
 rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Coupling/InstabilityOptions.php	src/Analysis/Evidence/Coupling/InstabilityOptions.php	warning	1
-rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Coupling/InstabilityRule.php	src/Analysis/Evidence/Coupling/InstabilityRule.php	warning	1
 rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Coupling/NamespaceCboOptions.php	src/Analysis/Evidence/Coupling/NamespaceCboOptions.php	warning	2
 rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Coupling/NamespaceInstabilityOptions.php	src/Analysis/Evidence/Coupling/NamespaceInstabilityOptions.php	warning	1
 rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Coupling/UnmatchedFrameworkNamespaceOptions.php	src/Analysis/Evidence/Coupling/UnmatchedFrameworkNamespaceOptions.php	warning	2

@@ -35,20 +35,13 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class ClassRankRule extends AbstractRule
 {
     public const string NAME = 'coupling.class-rank';
+
+    public const string DESCRIPTION = 'Checks ClassRank (PageRank on dependency graph) to identify critical hub classes';
     public const string DOCS_PAGE = 'rules/coupling.md';
 
     public const int REMEDIATION_MINUTES = 30;
 
     public const ChannelShape SHAPE = ChannelShape::Occurrence;
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Checks ClassRank (PageRank on dependency graph) to identify critical hub classes';
-    }
 
     /**
      * @return list<Finding>

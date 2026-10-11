@@ -295,6 +295,11 @@ This README is part of the subject boundary: keep its production code, tests, fi
 ## Measurement reach and baseline comparison
 
 Measurement publishes Members/Run reach through its metric declarations.
+Global producers declare `GlobalContextCollectorInterface::getMetricReach()`
+for every key in `provides()`, including facts without aggregation definitions.
+Executing after file collection does not itself imply Run reach: local evidence
+can be calculated in that phase with Members reach. Graph-dependent producers
+declare Run explicitly.
 Baseline owns RunCoverage and the comparability decision over AnalysisCoverage;
 this does not introduce a general invocation context or Run phase port. A
 nonfinite member makes the entire magnitude group unavailable for comparison

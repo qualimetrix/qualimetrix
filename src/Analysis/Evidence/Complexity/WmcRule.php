@@ -39,20 +39,13 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class WmcRule extends AbstractRule
 {
     public const string NAME = 'complexity.wmc';
+
+    public const string DESCRIPTION = 'Checks Weighted Methods per Class (sum of method complexities)';
     public const string DOCS_PAGE = 'rules/complexity.md';
 
     public const int REMEDIATION_MINUTES = 30;
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Checks Weighted Methods per Class (sum of method complexities)';
-    }
 
     /**
      * @return list<Finding>

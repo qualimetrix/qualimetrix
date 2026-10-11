@@ -38,6 +38,7 @@ Finding/
 │   ├── Filter/           # Ordered finding-filter stages and results
 │   │   └── FindingNamespace.php # declared namespace of a finding, excluding project subjects
 │   ├── Rule/             # Rule authoring contracts
+│   │   ├── RuleDescriptionReader.php # validates each rule's own declared description
 │   │   ├── RuleOptionShape.php # immutable recursive option declaration
 │   │   ├── RuleOptionSurface.php # accepted addresses and declaration lookup
 │   │   ├── RuleOptionDocumentFormsInterface.php # named CLI and Inline document forms
@@ -184,6 +185,10 @@ Channel/level selection, option activity and declared diagnostic roles therefore
 do not drift between execution and those readers.
 
 `RuleExecutionInterface` exposes immutable `RuleMetadata`, not concrete instances.
+`AbstractRule` reads each concrete rule's `NAME` and `DESCRIPTION` constants;
+`RuleNameReader` and `RuleDescriptionReader` refuse inherited placeholders
+when a rule uses those shared methods. A rule with its own description method
+may compute that text, as the computed-metric family does.
 `RuleConfigurationInterface::replace(FindingConfiguration)` publishes resolved
 options, final enablement and the invocation channel snapshot. No raw options,
 `RuleSelection` DTO or live catalogue is an alternate committed configuration.

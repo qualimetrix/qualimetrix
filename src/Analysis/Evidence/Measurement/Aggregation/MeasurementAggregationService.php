@@ -69,7 +69,7 @@ final class MeasurementAggregationService implements MeasurementAggregationInter
         }
         foreach ($this->sortedCollectors as $collector) {
             foreach ($collector->provides() as $key) {
-                $reachByMetric[$key] = MetricReach::Run;
+                $reachByMetric[$key] = $collector->getMetricReach();
             }
         }
         $this->reachByMetric = $reachByMetric;

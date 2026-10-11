@@ -46,20 +46,13 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class DataClassRule extends AbstractRule
 {
     public const string NAME = 'design.data-class';
+
+    public const string DESCRIPTION = 'Detects classes whose public interface is mostly data access rather than behavior (Data Classes)';
     public const string DOCS_PAGE = 'rules/design.md';
 
     public const int REMEDIATION_MINUTES = 30;
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Detects classes whose public interface is mostly data access rather than behavior (Data Classes)';
-    }
 
     /**
      * @return list<Finding>

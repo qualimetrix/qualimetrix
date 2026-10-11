@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- `GlobalContextCollectorInterface` implementations must now implement `getMetricReach(): MetricReach`. Return `Members` when each provided value depends only on its subject members, or `Run` when it depends on the measured run. Global-phase execution no longer implicitly assigns `Run`; existing graph collectors must return `Run` explicitly.
+
 - `coupling.rfc`, `coupling.rfc-own` and `coupling.rfc-external` now use resolved response targets on exact declarations. Inherited and `parent` calls, effective trait methods and aliases, abstract methods and property hooks contribute; class/method spelling variants share one response. Re-evaluate saved RFC expectations and consumers of the old file-collector values; final definitions now belong to `RfcGlobalCollector`. See ADR 0111.
 - `WorstOffender` and `WorstOffender::fromEvidence()` take six arguments: exact `MetricSubject`, overall score, label, reason, evidence and overall thresholds. Remove independent symbol/file arguments; both values derive from the required subject, including null files for namespace aggregates. See ADR 0110.
 - Worst-offender ranking now accepts `rank-by=score|density`, defaulting to `score`; `count` refuses with exit 3. JSON and summary select from the complete captured population before ranking and limiting it. Replace `worstNamespaces[].size.class-count` with `size.class-count.sum`, and read the composite only from `healthOverall`, not `healthScores.overall`. Namespace eligibility includes own interfaces, traits and enums. Reasons and console colors follow resolved catalog thresholds; remaining-count advice names the actual total. See ADR 0110.

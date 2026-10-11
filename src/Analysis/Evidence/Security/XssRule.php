@@ -16,7 +16,7 @@ final class XssRule extends AbstractSecurityPatternRule
     public const string DOCS_PAGE = 'rules/security.md';
     public const int REMEDIATION_MINUTES = 45;
 
-    protected const string DESCRIPTION = 'Detects potential XSS vulnerabilities';
+    public const string DESCRIPTION = 'Detects potential XSS vulnerabilities';
     protected const string PATTERN_TYPE = 'xss';
     protected const string MESSAGE_TEMPLATE = 'Potential XSS — use htmlspecialchars() or equivalent before outputting user input';
     protected const ?string RECOMMENDATION = 'Escape output with htmlspecialchars() or use a template engine with auto-escaping.';

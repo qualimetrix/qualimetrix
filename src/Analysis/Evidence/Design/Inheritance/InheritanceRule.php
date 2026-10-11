@@ -34,6 +34,8 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class InheritanceRule extends AbstractRule
 {
     public const string NAME = 'design.dit';
+
+    public const string DESCRIPTION = 'Checks Depth of Inheritance Tree (deep hierarchies increase complexity)';
     public const string DOCS_PAGE = 'rules/design.md';
 
     public const int REMEDIATION_MINUTES = 30;
@@ -42,16 +44,6 @@ final class InheritanceRule extends AbstractRule
     public function __construct(RuleOptionsInterface $options, private readonly ?LoggerInterface $logger = null)
     {
         parent::__construct($options);
-    }
-
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Checks Depth of Inheritance Tree (deep hierarchies increase complexity)';
     }
 
     /**

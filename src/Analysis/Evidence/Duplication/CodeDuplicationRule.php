@@ -36,6 +36,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class CodeDuplicationRule extends AbstractRule
 {
     public const string NAME = 'duplication.clone';
+
+    public const string DESCRIPTION = 'Detects duplicated code blocks';
     public const string DOCS_PAGE = 'rules/duplication.md';
 
     /**
@@ -64,16 +66,6 @@ final class CodeDuplicationRule extends AbstractRule
         private readonly DuplicationResultProvider $resultProvider,
     ) {
         parent::__construct($options);
-    }
-
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Detects duplicated code blocks';
     }
 
     public function analyze(AnalysisContext $context): array

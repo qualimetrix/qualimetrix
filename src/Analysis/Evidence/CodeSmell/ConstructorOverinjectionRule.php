@@ -32,20 +32,13 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final class ConstructorOverinjectionRule extends AbstractRule
 {
     public const string NAME = 'code-smell.constructor-overinjection';
+
+    public const string DESCRIPTION = 'Checks number of constructor parameters (dependencies)';
     public const string DOCS_PAGE = 'rules/code-smell.md';
 
     public const int REMEDIATION_MINUTES = 60;
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Checks number of constructor parameters (dependencies)';
-    }
 
     /**
      * @return class-string<ConstructorOverinjectionOptions>

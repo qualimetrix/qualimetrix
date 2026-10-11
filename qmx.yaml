@@ -195,6 +195,9 @@ architecture:
     - name: analysis-evidence-cohesion
       patterns:
         - 'Qualimetrix\Analysis\Evidence\Cohesion\ClassVisitorStackTrait'
+        - 'Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector'
+        - 'Qualimetrix\Analysis\Evidence\Cohesion\CohesionFactProjectionTrait'
+        - 'Qualimetrix\Analysis\Evidence\Cohesion\CohesionFactWire'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\Configuration\LcomCollectionConfigurationResolver'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurableInterface'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration'
@@ -667,6 +670,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleDescriptionReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleDocsPageReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleFamily'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader'
@@ -1571,6 +1575,7 @@ architecture:
       - core-symbol
       - external
     analysis-evidence-cohesion:
+      - analysis-evidence-dependencymodel
       - analysis-evidence-measurement
       - analysis-finding
       - core-neutral
@@ -1959,6 +1964,9 @@ rules:
       - exact: src/Analysis/Evidence/DependencyModel/Contract/DependencyType.php
       # The metric-value contract is read across capability owners.
       - exact: src/Analysis/Evidence/Measurement/Contract/MetricBag.php
+      # Collection, global derivation and finding consumers share this repository
+      # contract; its incoming readership is intentional.
+      - exact: src/Analysis/Evidence/Measurement/Contract/MetricRepositoryInterface.php
       # RunCoverage retains analyzed-source coverage and memoized scope queries for
       # baseline admission; its inbound reach follows that shared evidence contract.
       - exact: src/Analysis/Policy/Baseline/Contract/RunCoverage.php
@@ -2270,12 +2278,6 @@ rules:
       # metadata and resolved factory contract. Token normalization erases their
       # channel literals; extracting only interface-shaped metadata adds no behaviour.
       - regex: 'src/Analysis/Finding/SuppressionBinding/.*Options\.php'
-      # CboRule and InstabilityRule implement the same required name, level and
-      # options metadata. Token normalization erases different channel literals;
-      # their actual coupling judgements remain independent. Both exact rules are
-      # named because each copy receives its own clone finding.
-      - exact: src/Analysis/Evidence/Coupling/CboRule.php
-      - exact: src/Analysis/Evidence/Coupling/InstabilityRule.php
 
   complexity.ccn:
     suppress_paths:
