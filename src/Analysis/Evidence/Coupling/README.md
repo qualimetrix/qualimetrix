@@ -485,9 +485,17 @@ new MetricDefinition(
 new MetricDefinition(
     name: 'coupling.distance-own',
     collectedAt: SymbolLevel::Namespace_,
-    aggregations: [
-        SymbolLevel::Project->value => [Average],
-    ],
+    aggregations: [],
+)
+
+new MetricDefinition(
+    name: 'coupling.distance-own.avg',
+    collectedAt: SymbolLevel::Project,
+)
+
+new MetricDefinition(
+    name: 'coupling.distance-own.count',
+    collectedAt: SymbolLevel::Project,
 )
 ```
 

@@ -16,6 +16,10 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
+use Qualimetrix\Analysis\Evidence\Coupling\DistanceCollector;
+use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MetricAggregator;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
@@ -23,6 +27,7 @@ use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -33,35 +38,19 @@ use RuntimeException;
 use SplFileInfo;
 
 /**
- * Every namespace-collected metric folded to the project must be an own-scope
- * value.
+ * A project read of namespace evidence must count own declarations once.
  *
- * The project fold admits every namespace that carries the key, parent as well
- * as leaf. That is sound for a value describing only what the namespace itself
- * declares, and unsound for a subtree rollup: a class under `P\C` would be
- * inside `P\C`'s value and inside `P`'s, and the project average would weigh it
- * twice. The fold cannot tell the two apart — both are floats on a namespace
- * bag — so nothing but this refuses a rollup that grows a project aggregation.
- * The leaf-only rule the fold replaced was a partial guard against exactly
- * that, and it left 41 of 166 namespaces out of the average to get it.
+ * DistanceCollector owns the eligible-type-weighted project distance, with
+ * direct Project definitions rather than a generic namespace aggregation.
+ * The source-definition sweep still admits every generic namespace-to-project
+ * producer; Distance's direct publication must remain measured when that set
+ * is empty. A separate injected definition exercises the supported generic
+ * path without making production publish an equal-weight distance again.
  *
- * The property is measured, not spelled: the fixture's subtree changes along
- * every axis the folded value is built from while the parent's own
- * declarations do not, and a rollup moves where an own-scope value stays. The
- * key's name is not evidence — `-own` is a convention a new definition can
- * satisfy while carrying a subtree number.
- *
- * The axes are read off the one folded key's inputs: `coupling.distance-own`
- * is built from `coupling.abstractness-own` (the namespace's type counts) and
- * `coupling.instability-own` (its `ce-own` and `ca-own`), so a subtree can gain
- * a type, an outgoing edge or an incoming edge. A folded key built from
- * anything else — a method, a line, a finding — is outside what this fixture
- * perturbs, and passes it without being measured.
- *
- * Two channels, because one would be its own oracle. Which keys are folded is
- * read from the declarations in `src/`; whether each holds is read from runs
- * over a fixture. A declaration this file cannot read is refused rather than skipped: the
- * silent half of a sweep is the half that drops a member.
+ * Subtree type, outgoing-edge and incoming-edge plants must move their subtree
+ * witnesses while leaving the parent's own input unchanged. The independent
+ * project identity reads every emitted own distance and the four own type
+ * counts, not DistanceCollector's arithmetic or a fixed score expectation.
  */
 final class NamespaceFoldCountsEachDeclarationOnceTest extends TestCase
 {
@@ -72,11 +61,29 @@ final class NamespaceFoldCountsEachDeclarationOnceTest extends TestCase
     private static array $runs = [];
 
     #[Test]
-    public function itFindsAtLeastOneFoldedNamespaceMetric(): void
+    public function itRecognizesTheOwnerPublishedProjectDistance(): void
     {
-        // Without a floor the two sweeps below pass over an empty set and
-        // report agreement they never measured.
-        self::assertNotSame([], self::foldedKeys(), 'No namespace-collected metric declares a project aggregation');
+        $collector = new DistanceCollector();
+        $definitions = [];
+        foreach ($collector->getMetricDefinitions() as $definition) {
+            $definitions[$definition->name] = $definition;
+        }
+
+        $own = $definitions[MetricName::COUPLING_DISTANCE_OWN];
+        self::assertSame(SymbolLevel::Namespace_, $own->collectedAt);
+        self::assertFalse($own->hasAggregationsForLevel(SymbolLevel::Project));
+        foreach ([AggregationStrategy::Average, AggregationStrategy::Count] as $strategy) {
+            $key = MetricName::agg(MetricName::COUPLING_DISTANCE_OWN, $strategy);
+            self::assertSame(SymbolLevel::Project, $definitions[$key]->collectedAt);
+            self::assertContains($key, $collector->provides());
+        }
+        foreach (self::ownTypeKeys() as $key) {
+            self::assertContains($key, $collector->requires());
+        }
+
+        self::assertNotNull(self::runOver('plain')->get(SymbolPath::forProject())->get(
+            MetricName::agg(MetricName::COUPLING_DISTANCE_OWN, AggregationStrategy::Average),
+        ));
     }
 
     /**
@@ -105,7 +112,7 @@ final class NamespaceFoldCountsEachDeclarationOnceTest extends TestCase
             \sprintf('The "%s" plant no longer moves the parent\'s subtree "%s"; it measures nothing.', $variant, $subtreeWitness),
         );
 
-        foreach (self::foldedKeys() as $key) {
+        foreach (array_unique([MetricName::COUPLING_DISTANCE_OWN, ...self::foldedKeys()]) as $key) {
             self::assertSame(
                 $before->get($key),
                 $after->get($key),
@@ -120,22 +127,108 @@ final class NamespaceFoldCountsEachDeclarationOnceTest extends TestCase
         }
     }
 
-    /**
-     * The other half of "counted once": the fold's sample size is the number of
-     * namespaces carrying the key, and every fixture namespace declares a type.
-     */
-    #[Test]
-    public function itFoldsEveryNamespaceThatCarriesTheKey(): void
+    /** @return iterable<string, array{string, int}> */
+    public static function measuredVariants(): iterable
     {
-        $project = self::runOver('plain')->get(SymbolPath::forProject());
+        yield 'disconnected own scope stays absent' => ['plain', 2];
+        yield 'all eligible type kinds, excluding a bare enum' => ['type', 2];
+        yield 'outgoing edge admits the formerly disconnected scope' => ['efferent', 3];
+        yield 'incoming edge admits the formerly disconnected scope' => ['afferent', 3];
+    }
+
+    #[Test]
+    #[DataProvider('measuredVariants')]
+    public function itFoldsEveryNamespaceThatCarriesTheKey(string $variant, int $expectedSamples): void
+    {
+        $repository = self::runOver($variant);
+        $sum = 0.0;
+        $types = 0;
+        $samples = 0;
+        $unweighted = 0.0;
+        foreach ($repository->all(SymbolLevel::Namespace_) as $namespace) {
+            $bag = $repository->get($namespace->symbolPath);
+            $distance = $bag->get(MetricName::COUPLING_DISTANCE_OWN);
+            if ($distance === null) {
+                continue;
+            }
+            $weight = 0;
+            foreach (self::ownTypeKeys() as $key) {
+                $count = $bag->get($key);
+                self::assertIsInt($count, $key);
+                $weight += $count;
+            }
+            self::assertGreaterThan(0, $weight);
+            $sum += $distance * $weight;
+            $types += $weight;
+            $unweighted += $distance;
+            $samples++;
+        }
+
+        self::assertSame($expectedSamples, $samples, 'The edge/absence plant must remain discriminating');
+        $project = $repository->get(SymbolPath::forProject());
+        self::assertSame($samples, $project->get(MetricName::agg(MetricName::COUPLING_DISTANCE_OWN, AggregationStrategy::Count)));
+        self::assertEqualsWithDelta($sum / $types, $project->get(MetricName::agg(MetricName::COUPLING_DISTANCE_OWN, AggregationStrategy::Average)), 1e-12);
+        self::assertSame(0.0, $repository->get(SymbolPath::forNamespace('FoldFixture'))->get(MetricName::COUPLING_DISTANCE_OWN), 'A measured zero must contribute');
+
+        if ($variant === 'type') {
+            $child = $repository->get(SymbolPath::forNamespace('FoldFixture\\Child'));
+            self::assertSame(2, $child->get(MetricName::SIZE_ENUM_COUNT), 'The bare enum exclusion plant must be present');
+            foreach (self::ownTypeKeys() as $key) {
+                self::assertSame(1, $child->get($key), $key);
+            }
+        }
+        if ($variant !== 'plain') {
+            self::assertNotEqualsWithDelta($unweighted / $samples, $sum / $types, 1e-12, 'The fixture must distinguish equal namespace weights');
+        }
 
         foreach (self::foldedKeys() as $key) {
-            self::assertSame(
-                3,
-                $project->get($key . '.count'),
-                \sprintf('"%s" is carried by all three fixture namespaces; the fold reached a different number', $key),
-            );
+            $contributors = 0;
+            foreach ($repository->all(SymbolLevel::Namespace_) as $namespace) {
+                if ($repository->get($namespace->symbolPath)->get($key) !== null) {
+                    $contributors++;
+                }
+            }
+            self::assertGreaterThan(0, $contributors, $key);
+            self::assertSame($contributors, $project->get($key . '.count'), $key);
         }
+    }
+
+    #[Test]
+    public function itRetainsTheGenericNamespaceFoldWithoutALiveProductionProducer(): void
+    {
+        $repository = self::runOver('type');
+        $key = 'governance.own-distance-fixture';
+        $values = [];
+        foreach ($repository->all(SymbolLevel::Namespace_) as $namespace) {
+            $distance = $repository->get($namespace->symbolPath)->get(MetricName::COUPLING_DISTANCE_OWN);
+            if ($distance !== null) {
+                $values[] = $distance;
+                $repository->addScalar($namespace->symbolPath, $key, $distance);
+            }
+        }
+        self::assertCount(2, $values, 'The fixture includes a parent with own declarations and its child');
+        $definitions = [new MetricDefinition(
+            name: $key,
+            collectedAt: SymbolLevel::Namespace_,
+            aggregations: [SymbolLevel::Project->value => [AggregationStrategy::Average, AggregationStrategy::Count]],
+        )];
+        (new MetricAggregator($definitions, self::createStub(ProfilerInterface::class)))->aggregate($repository);
+
+        $project = $repository->get(SymbolPath::forProject());
+        self::assertSame(\count($values), $project->get($key . '.count'));
+        self::assertEqualsWithDelta(array_sum($values) / \count($values), $project->get($key . '.avg'), 1e-12);
+        self::assertNotEqualsWithDelta($project->get($key . '.avg'), $project->get(MetricName::agg(MetricName::COUPLING_DISTANCE_OWN, AggregationStrategy::Average)), 1e-12);
+    }
+
+    /** @return list<string> */
+    private static function ownTypeKeys(): array
+    {
+        return [
+            MetricName::SIZE_CLASS_COUNT,
+            MetricName::SIZE_TRAIT_COUNT,
+            MetricName::SIZE_INTERFACE_COUNT,
+            MetricName::SIZE_IMPLEMENTING_ENUM_COUNT,
+        ];
     }
 
     /**
@@ -407,6 +500,24 @@ final class NamespaceFoldCountsEachDeclarationOnceTest extends TestCase
                 interface Unreferenced
                 {
                     public function nothingCallsThis(): void;
+                }
+
+                trait UnusedTrait
+                {
+                }
+
+                enum Implementing implements Unreferenced
+                {
+                    case Value;
+
+                    public function nothingCallsThis(): void
+                    {
+                    }
+                }
+
+                enum Bare
+                {
+                    case Value;
                 }
                 PHP);
         }
