@@ -27,6 +27,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final class LayerViolationRule extends AbstractRule
 {
     public const string NAME = ArchitectureChannels::PRODUCER_RULE_NAME;
+
+    public const string DESCRIPTION = 'Detects dependencies between layers that are not explicitly allowed by the architecture policy.';
     public const string DOCS_PAGE = 'rules/architecture.md';
 
     public const int REMEDIATION_MINUTES = 15;
@@ -43,16 +45,6 @@ final class LayerViolationRule extends AbstractRule
         private readonly LayerEvidenceCollector $evidence,
     ) {
         parent::__construct($options);
-    }
-
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Detects dependencies between layers that are not explicitly allowed by the architecture policy.';
     }
 
     /**

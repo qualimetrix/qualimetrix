@@ -28,6 +28,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final class HardcodedCredentialsRule extends AbstractRule
 {
     public const string NAME = 'security.hardcoded-credentials';
+
+    public const string DESCRIPTION = 'Detects hardcoded credentials in code';
     public const string DOCS_PAGE = 'rules/security.md';
 
     /**
@@ -52,15 +54,6 @@ final class HardcodedCredentialsRule extends AbstractRule
     public const int REMEDIATION_MINUTES = 30;
 
     public const ChannelShape SHAPE = ChannelShape::Occurrence;
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Detects hardcoded credentials in code';
-    }
 
     /**
      * @return class-string<HardcodedCredentialsOptions>

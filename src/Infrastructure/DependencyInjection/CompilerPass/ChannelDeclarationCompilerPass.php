@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ProducerName;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDescriptionReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDocsPageReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleFamily;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
@@ -252,6 +253,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface, Con
 
         foreach ($ruleClasses as $class) {
             $producerRuleName = RuleNameReader::read($class);
+            RuleDescriptionReader::assertDeclared($class);
             $thresholdOverrideSupport[$producerRuleName] = ThresholdOverrideSupportReader::read($class);
             $docsPageByRule[$producerRuleName] = RuleDocsPageReader::read($class);
             $minutesByRule[$producerRuleName] = RuleRemediationMinutesReader::read($class);

@@ -36,6 +36,8 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class UnusedPrivateRule extends AbstractRule
 {
     public const string NAME = 'code-smell.unused-private';
+
+    public const string DESCRIPTION = 'Detects unused private methods, properties, and constants';
     public const string DOCS_PAGE = 'rules/code-smell.md';
 
     public const int REMEDIATION_MINUTES = 15;
@@ -46,16 +48,6 @@ final class UnusedPrivateRule extends AbstractRule
         MetricName::CODE_SMELL_UNUSED_PRIVATE_PROPERTY => 'Unused private property',
         MetricName::CODE_SMELL_UNUSED_PRIVATE_CONSTANT => 'Unused private constant',
     ];
-
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Detects unused private methods, properties, and constants';
-    }
 
     public function analyze(AnalysisContext $context): array
     {

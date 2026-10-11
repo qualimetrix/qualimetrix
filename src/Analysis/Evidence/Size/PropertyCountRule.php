@@ -38,20 +38,13 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class PropertyCountRule extends AbstractRule
 {
     public const string NAME = 'size.property-count';
+
+    public const string DESCRIPTION = 'Checks if classes have too many properties';
     public const string DOCS_PAGE = 'rules/size.md';
 
     public const int REMEDIATION_MINUTES = 15;
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Checks if classes have too many properties';
-    }
 
     /**
      * @return class-string<PropertyCountOptions>

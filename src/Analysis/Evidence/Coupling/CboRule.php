@@ -54,20 +54,13 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class CboRule extends AbstractRule implements HierarchicalRuleInterface
 {
     public const string NAME = 'coupling.cbo';
+
+    public const string DESCRIPTION = 'Checks CBO (Coupling Between Objects) at class and namespace levels';
     public const string DOCS_PAGE = 'rules/coupling.md';
 
     public const int REMEDIATION_MINUTES = 45;
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Checks CBO (Coupling Between Objects) at class and namespace levels';
-    }
 
     /**
      * @return list<SymbolLevel>

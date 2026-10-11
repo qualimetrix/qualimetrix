@@ -61,6 +61,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final class DistanceRule extends AbstractRule
 {
     public const string NAME = 'coupling.distance';
+
+    public const string DESCRIPTION = 'Checks distance from main sequence at namespace level';
     public const string DOCS_PAGE = 'rules/coupling.md';
 
     public const int REMEDIATION_MINUTES = 30;
@@ -80,16 +82,6 @@ final class DistanceRule extends AbstractRule
             && $options->includeNamespaces !== []
                 ? new NamespaceMatcher($options->includeNamespaces)
                 : null;
-    }
-
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Checks distance from main sequence at namespace level';
     }
 
     /**

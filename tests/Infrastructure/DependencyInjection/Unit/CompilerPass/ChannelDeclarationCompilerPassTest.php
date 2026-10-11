@@ -29,6 +29,7 @@ use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
 use Qualimetrix\Analysis\Finding\Contract\Population\KeyThreshold;
 use Qualimetrix\Analysis\Finding\Contract\Population\NameMatches;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleFamily;
@@ -200,6 +201,36 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         (new ChannelDeclarationCompilerPass())->process($container);
 
         self::assertFalse($container->hasDefinition(ChannelUniverse::class));
+    }
+
+    #[Test]
+    public function itRejectsARuleWithoutItsOwnDescriptionConstant(): void
+    {
+        $container = new ContainerBuilder();
+        self::registerUniverse($container);
+        $container->register(FixtureRuleWithInheritedDescription::class)
+            ->setClass(FixtureRuleWithInheritedDescription::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('FixtureRuleWithInheritedDescription must declare its own DESCRIPTION constant');
+
+        (new ChannelDeclarationCompilerPass())->process($container);
+    }
+
+    #[Test]
+    public function itRejectsAnEmptyRuleNameBeforeCollectingItsMetadata(): void
+    {
+        $container = new ContainerBuilder();
+        self::registerUniverse($container);
+        $container->register(FixtureRuleWithEmptyName::class)
+            ->setClass(FixtureRuleWithEmptyName::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('FixtureRuleWithEmptyName must declare a public non-empty string NAME constant');
+
+        (new ChannelDeclarationCompilerPass())->process($container);
     }
 
     /**
@@ -585,6 +616,52 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
                 '$thresholdOverrideSupportByRule' => [],
                 '$computedMetricRuleName' => '',
             ]);
+    }
+}
+
+/** @internal */
+final class FixtureRuleWithInheritedDescription extends AbstractRule
+{
+    public const string NAME = 'fixture.inherited-description';
+
+    public const string DOCS_PAGE = 'rules/code-smell.md';
+
+    public const int REMEDIATION_MINUTES = 15;
+
+    public const ChannelShape SHAPE = ChannelShape::Occurrence;
+
+    public static function getOptionsClass(): string
+    {
+        return RuleOptionsInterface::class;
+    }
+
+    public function analyze(AnalysisContext $context): array
+    {
+        return [];
+    }
+}
+
+/** @internal */
+final class FixtureRuleWithEmptyName extends AbstractRule
+{
+    public const string NAME = '';
+
+    public const string DESCRIPTION = 'A fixture with an empty rule name.';
+
+    public const string DOCS_PAGE = 'rules/code-smell.md';
+
+    public const int REMEDIATION_MINUTES = 15;
+
+    public const ChannelShape SHAPE = ChannelShape::Occurrence;
+
+    public static function getOptionsClass(): string
+    {
+        return RuleOptionsInterface::class;
+    }
+
+    public function analyze(AnalysisContext $context): array
+    {
+        return [];
     }
 }
 

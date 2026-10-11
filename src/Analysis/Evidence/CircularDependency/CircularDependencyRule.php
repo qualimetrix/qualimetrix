@@ -33,6 +33,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class CircularDependencyRule extends AbstractRule
 {
     public const string NAME = CircularDependencyPreparationInterface::PRODUCER_RULE_NAME;
+
+    public const string DESCRIPTION = 'Detects circular dependencies between classes';
     public const string DOCS_PAGE = 'rules/architecture.md';
 
     public const int REMEDIATION_MINUTES = 120;
@@ -43,16 +45,6 @@ final class CircularDependencyRule extends AbstractRule
         private readonly CircularDependencyAnalysis $analysis,
     ) {
         parent::__construct($options);
-    }
-
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Detects circular dependencies between classes';
     }
 
     /**

@@ -32,20 +32,13 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final class ClassCountRule extends AbstractRule
 {
     public const string NAME = 'size.class-count';
+
+    public const string DESCRIPTION = 'Checks number of classes per namespace';
     public const string DOCS_PAGE = 'rules/size.md';
 
     public const int REMEDIATION_MINUTES = 30;
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Checks number of classes per namespace';
-    }
 
     /**
      * @return class-string<ClassCountOptions>

@@ -51,23 +51,13 @@ abstract class AbstractCodeSmellRule extends AbstractRule
      */
     public const int REMEDIATION_MINUTES = 0;
 
-    protected const string DESCRIPTION = '';
+    public const string DESCRIPTION = '';
     protected const string SMELL_TYPE = '';
     protected const Severity SEVERITY = Severity::Warning;
     protected const string MESSAGE_TEMPLATE = '';
     protected const ?string MESSAGE_TEMPLATE_WITH_EXTRA = null;
     protected const ?string RECOMMENDATION = null;
     protected const bool FILE_OCCURRENCES = true;
-
-    public function getName(): string
-    {
-        return static::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return static::DESCRIPTION;
-    }
 
     public static function getOptionsClass(): string
     {

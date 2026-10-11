@@ -57,6 +57,8 @@ final class UnmatchedFrameworkNamespaceRule extends AbstractRule
 {
     public const string NAME = 'coupling.unmatched-framework-namespace';
 
+    public const string DESCRIPTION = 'Reports a coupling.frameworkNamespaces selector that classified nothing';
+
     public const string DOCS_PAGE = 'rules/coupling.md';
 
     /** Editing one line of `qmx.yaml`, plus reading what the code really imports. */
@@ -77,16 +79,6 @@ final class UnmatchedFrameworkNamespaceRule extends AbstractRule
         private readonly CouplingAnalysis $coupling,
     ) {
         parent::__construct($options);
-    }
-
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Reports a coupling.frameworkNamespaces selector that classified nothing';
     }
 
     /**

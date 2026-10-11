@@ -17,7 +17,7 @@ final class CommandInjectionRule extends AbstractSecurityPatternRule
     public const string DOCS_PAGE = 'rules/security.md';
     public const int REMEDIATION_MINUTES = 60;
 
-    protected const string DESCRIPTION = 'Detects potential command injection vulnerabilities';
+    public const string DESCRIPTION = 'Detects potential command injection vulnerabilities';
     protected const string PATTERN_TYPE = 'command_injection';
     protected const string MESSAGE_TEMPLATE = 'Potential command injection — use escapeshellarg() before passing user input to shell commands';
     protected const ?string RECOMMENDATION = 'Use escapeshellarg() for arguments or avoid shell commands entirely.';

@@ -59,6 +59,8 @@ final class UnmatchedExcludeRule extends AbstractRule
 {
     public const string NAME = UnmatchedExcludeOptions::CHANNEL;
 
+    public const string DESCRIPTION = 'Reports exclude selectors matching no project entries or only entries another selector removes; unlistable entries and selectors hidden by another source cannot be judged';
+
     public const string DOCS_PAGE = 'rules/discovery.md';
 
     /** Deleting one line of configuration, plus checking what the tree really contains. */
@@ -68,16 +70,6 @@ final class UnmatchedExcludeRule extends AbstractRule
 
     /** There is no measured quantity here to retune. */
     public const bool SUPPORTS_THRESHOLD_OVERRIDE = false;
-
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Reports exclude selectors matching no project entries or only entries another selector removes; unlistable entries and selectors hidden by another source cannot be judged';
-    }
 
     /**
      * @return class-string<UnmatchedExcludeOptions>

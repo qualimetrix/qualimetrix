@@ -33,20 +33,13 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class UnreachableCodeRule extends AbstractRule
 {
     public const string NAME = 'code-smell.unreachable-code';
+
+    public const string DESCRIPTION = 'Detects unreachable code after terminal statements';
     public const string DOCS_PAGE = 'rules/code-smell.md';
 
     public const int REMEDIATION_MINUTES = 10;
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Detects unreachable code after terminal statements';
-    }
 
     /**
      * @return class-string<UnreachableCodeOptions>

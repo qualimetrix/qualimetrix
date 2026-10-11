@@ -53,19 +53,13 @@ final class AbstractRuleThresholdSeamTest extends TestCase
 
 final class SubjectControlHarness extends AbstractRule
 {
+    public const string NAME = 'test.subject-control';
+
+    public const string DESCRIPTION = 'Test harness';
+
     public static function getOptionsClass(): string
     {
         return SubjectControlOptions::class;
-    }
-
-    public function getName(): string
-    {
-        return 'test.subject-control';
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Test harness';
     }
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;

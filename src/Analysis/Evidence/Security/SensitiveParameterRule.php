@@ -28,6 +28,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final class SensitiveParameterRule extends AbstractRule
 {
     public const string NAME = 'security.sensitive-parameter';
+
+    public const string DESCRIPTION = 'Detects sensitive parameters missing #[\\SensitiveParameter] attribute';
     public const string DOCS_PAGE = 'rules/security.md';
 
     /**
@@ -40,15 +42,6 @@ final class SensitiveParameterRule extends AbstractRule
     public const int REMEDIATION_MINUTES = 10;
 
     public const ChannelShape SHAPE = ChannelShape::Occurrence;
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Detects sensitive parameters missing #[\\SensitiveParameter] attribute';
-    }
 
     /**
      * @return class-string<SensitiveParameterOptions>

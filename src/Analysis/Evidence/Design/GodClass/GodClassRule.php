@@ -43,20 +43,13 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class GodClassRule extends AbstractRule
 {
     public const string NAME = 'design.god-class';
+
+    public const string DESCRIPTION = 'Detects God Classes (overly complex, large, low cohesion)';
     public const string DOCS_PAGE = 'rules/design.md';
 
     public const int REMEDIATION_MINUTES = 120;
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Detects God Classes (overly complex, large, low cohesion)';
-    }
 
     /**
      * @return list<Finding>

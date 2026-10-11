@@ -61,20 +61,10 @@ abstract class AbstractSecurityPatternRule extends AbstractRule
      */
     public const int REMEDIATION_MINUTES = 0;
 
-    protected const string DESCRIPTION = '';
+    public const string DESCRIPTION = '';
     protected const string PATTERN_TYPE = '';
     protected const string MESSAGE_TEMPLATE = '';
     protected const ?string RECOMMENDATION = null;
-
-    public function getName(): string
-    {
-        return static::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return static::DESCRIPTION;
-    }
 
     /**
      * @return class-string<SecurityPatternOptions>

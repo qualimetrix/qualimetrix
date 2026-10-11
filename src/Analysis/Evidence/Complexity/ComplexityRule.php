@@ -38,20 +38,13 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class ComplexityRule extends AbstractRule implements HierarchicalRuleInterface
 {
     public const string NAME = 'complexity.ccn';
+
+    public const string DESCRIPTION = 'Checks cyclomatic complexity at method and class levels';
     public const string DOCS_PAGE = 'rules/complexity.md';
 
     public const int REMEDIATION_MINUTES = 30;
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Checks cyclomatic complexity at method and class levels';
-    }
 
     /**
      * Default cognitive complexity warning threshold.

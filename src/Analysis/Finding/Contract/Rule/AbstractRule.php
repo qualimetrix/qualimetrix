@@ -60,6 +60,11 @@ abstract class AbstractRule implements RuleInterface
      */
     public const ChannelShape SHAPE = ChannelShape::Occurrence;
 
+    /** Placeholder: concrete rules declare their own metadata. */
+    public const string NAME = '';
+
+    public const string DESCRIPTION = '';
+
     /**
      * Shared by every concrete rule, so that "read the declared shape" is
      * written once instead of once per rule class — {@see UnusedPrivateRule},
@@ -87,9 +92,15 @@ abstract class AbstractRule implements RuleInterface
         }
     }
 
-    abstract public function getName(): string;
+    public function getName(): string
+    {
+        return static::NAME;
+    }
 
-    abstract public static function getDescription(): string;
+    public static function getDescription(): string
+    {
+        return static::DESCRIPTION;
+    }
 
     /**
      * Returns options with `@qmx-threshold` overrides applied for a specific symbol.

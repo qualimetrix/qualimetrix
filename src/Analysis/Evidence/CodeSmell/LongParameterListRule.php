@@ -38,20 +38,13 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class LongParameterListRule extends AbstractRule
 {
     public const string NAME = 'code-smell.long-parameter-list';
+
+    public const string DESCRIPTION = 'Checks number of parameters per method';
     public const string DOCS_PAGE = 'rules/code-smell.md';
 
     public const int REMEDIATION_MINUTES = 20;
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Checks number of parameters per method';
-    }
 
     /**
      * @return class-string<LongParameterListOptions>

@@ -45,6 +45,8 @@ final class UnassignedClassRule extends AbstractRule
 {
     public const string NAME = ArchitectureChannels::UNASSIGNED_CLASS_DIAGNOSTIC_NAME;
 
+    public const string DESCRIPTION = 'Counts analysed class-like declarations that no declared layer claims.';
+
     /**
      * How much of the analysed code is unclaimed is a real measured count,
      * unlike the sibling rule's occurrence-shaped forbidden edges.
@@ -61,16 +63,6 @@ final class UnassignedClassRule extends AbstractRule
         private readonly LayerEvidenceCollector $evidence,
     ) {
         parent::__construct($options);
-    }
-
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public static function getDescription(): string
-    {
-        return 'Counts analysed class-like declarations that no declared layer claims.';
     }
 
     /**
