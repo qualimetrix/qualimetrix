@@ -321,11 +321,7 @@ final class AbstractnessCollectorTest extends TestCase
 
         $this->collector->calculate($this->createEmptyGraph(), $repository);
 
-        self::assertEqualsWithDelta(
-            0.0,
-            $repository->get(SymbolPath::forNamespace('App\\Empty'))->get('coupling.abstractness'),
-            0.001,
-        );
+        self::assertNull($repository->get(SymbolPath::forNamespace('App\\Empty'))->get('coupling.abstractness'));
     }
 
     #[Test]
