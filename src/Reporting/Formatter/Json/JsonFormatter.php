@@ -63,6 +63,7 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
             'projectScope' => $report->projectScope?->toArray(),
             'configurationDiagnostics' => $report->configurationDiagnostics,
             'abstentions' => $this->populationDocument($report),
+            'inheritanceDepthOutcomes' => $report->inheritanceDepth->outcomes,
             'computedMetricOutcomes' => array_map(static fn(ComputedMetricValueAbsence $absence): array => [
                 'metric' => $absence->metricName,
                 'level' => $absence->level->value,

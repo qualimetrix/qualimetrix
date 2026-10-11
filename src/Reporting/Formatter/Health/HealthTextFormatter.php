@@ -65,6 +65,7 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
 
         array_push($lines, ...($context->verbose ? RuleAbstentionNarrator::verboseLines($report) : RuleAbstentionNarrator::lines($report)));
         array_push($lines, ...ComputedMetricAbsenceNarrator::lines($report));
+        array_push($lines, ...$report->inheritanceDepth->lines());
 
         $healthScores = $this->healthScoreResolver->resolve($report, $context);
 

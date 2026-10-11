@@ -28,6 +28,7 @@ use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
 final readonly class Report
 {
     public JudgedPopulation $population;
+    public InheritanceDepthCompleteness $inheritanceDepth;
     /**
      * @param list<Finding> $findings
      * @param array<string, HealthScore> $healthScores
@@ -80,6 +81,7 @@ final readonly class Report
         ?JudgedPopulation $population = null,
     ) {
         $this->population = $population ?? JudgedPopulation::empty();
+        $this->inheritanceDepth = InheritanceDepthCompleteness::fromRepository($metrics);
     }
 
     /**

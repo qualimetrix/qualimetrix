@@ -52,6 +52,7 @@ final class SummaryFormatter implements FormatterInterface, FormatOptionKeysInte
 
         array_push($lines, ...($context->verbose ? RuleAbstentionNarrator::verboseLines($report) : RuleAbstentionNarrator::lines($report)));
         array_push($lines, ...ComputedMetricAbsenceNarrator::lines($report));
+        array_push($lines, ...$report->inheritanceDepth->lines());
 
         $this->healthBarRenderer->render($report, $context, $color, $terminalWidth, $lines);
         $this->offenderListRenderer->renderWorstNamespaces($report, $color, $context, $lines);

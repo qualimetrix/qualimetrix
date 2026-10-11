@@ -80,6 +80,10 @@ final class SarifFormatter implements FormatterInterface
             $run = self::withNotification($run, 'note', $notification['message']['text'], 'QMX-RULE-POPULATION-INCOMPLETE');
         }
 
+        if ($report->inheritanceDepth->outcomes !== []) {
+            $run = self::withNotification($run, 'note', implode('; ', $report->inheritanceDepth->lines()), 'QMX-INHERITANCE-DEPTH-INCOMPLETE', ['inheritanceDepthOutcomes' => $report->inheritanceDepth->outcomes]);
+        }
+
         if ($report->outOfScope !== null && $report->outOfScope->total() > 0) {
             $run = self::withNotification($run, 'note', $report->outOfScope->describe(), 'QMX-DRILL-DOWN-OUT-OF-SCOPE', ['identities' => $report->outOfScope->published()['identities']]);
         }
