@@ -18,9 +18,9 @@ namespace GoldenMetrics\App\Service\Auth;
  * Class-level:
  * - ccn.sum = 6 (1+3+2), ccn.max = 3, ccn.avg = 2.0 (6/3 methods)
  * - wmc = 6 (= ccn.sum)
- * - methodCount = 2 (excludes __construct), methodCountTotal = 3
+ * - methodCount = 3 (constructor, validation and expiry behavior), methodCountTotal = 3
  * - propertyCount = 2 ($secretKey, $tokenLifetime)
- * - DIT = 0 (no parent), tcc = 0, lcc = 0, lcom = 2 (__construct excluded from the graph -- see LcomVisitor -- no longer bridges validate()/$secretKey and isExpired()/$tokenLifetime)
+ * - DIT = 0 (no parent), tcc = 0, lcc = 0, lcom = 2 (the constructor is excluded from the graph and does not bridge the two behaviors)
  */
 class TokenValidator
 {
