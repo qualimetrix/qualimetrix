@@ -377,6 +377,33 @@ final class DistanceCollectorTest extends TestCase
         self::assertNull($repository->get(SymbolPath::forProject())->get('coupling.distance-own.avg'));
     }
 
+    #[Test]
+    public function itKeepsMeasuredOwnDistanceOutOfTheProjectWithoutPositiveCompleteTypeCounts(): void
+    {
+        foreach ([
+            'missing' => ['size.class-count' => 1],
+            'zero' => ['size.class-count' => 0, 'size.trait-count' => 0, 'size.interface-count' => 0, 'size.implementing-enum-count' => 0],
+        ] as $case => $counts) {
+            $repository = new InMemoryMetricRepository();
+            $namespace = SymbolPath::forNamespace('App');
+            $repository->add(SymbolPath::forProject(), new MetricBag(), null, null);
+            $repository->add($namespace, MetricBag::fromArray([
+                ...$counts,
+                'coupling.abstractness' => 0.0, 'coupling.instability' => 0.0,
+                'coupling.ca' => 1, 'coupling.ce' => 0,
+                'coupling.abstractness-own' => 0.0, 'coupling.instability-own' => 0.25,
+                'coupling.ca-own' => 0, 'coupling.ce-own' => 1,
+            ]), null, 0);
+
+            $this->collector->calculate($this->createEmptyGraph(), $repository);
+
+            self::assertSame(1.0, $repository->get($namespace)->get('coupling.distance'), $case);
+            self::assertSame(0.75, $repository->get($namespace)->get('coupling.distance-own'), $case);
+            self::assertNull($repository->get(SymbolPath::forProject())->get('coupling.distance-own.avg'), $case);
+            self::assertNull($repository->get(SymbolPath::forProject())->get('coupling.distance-own.count'), $case);
+        }
+    }
+
     private function calculateWithCoupling(DependencyGraphInterface $graph, InMemoryMetricRepository $repository): void
     {
         foreach ($repository->all(SymbolLevel::Namespace_) as $info) {

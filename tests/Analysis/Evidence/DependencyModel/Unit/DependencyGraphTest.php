@@ -12,8 +12,10 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\DeclarationEvidence;
 use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraph;
 use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder;
+use Qualimetrix\Analysis\Evidence\DependencyModel\LogicalGraphInventory;
 use Qualimetrix\Analysis\Evidence\DependencyModel\NamespaceCouplings;
 use Qualimetrix\Analysis\Evidence\DependencyModel\UnplacedExternalClassSpelling;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -24,6 +26,8 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
+#[CoversClass(DeclarationEvidence::class)]
+#[CoversClass(LogicalGraphInventory::class)]
 #[CoversClass(ClassCouplings::class)]
 #[CoversClass(DependencyGraph::class)]
 #[CoversClass(DependencyGraphBuilder::class)]
@@ -628,6 +632,50 @@ final class DependencyGraphTest extends TestCase
         self::assertSame([$target, $source], $graph->getAllClasses());
         self::assertSame([$second, $first], $graph->getAllDependencies());
         self::assertSame([$first], $graph->getDeclarationDependencies());
+    }
+
+    #[Test]
+    public function itPreservesIndependentInventoryAndDeclarationViewsAcrossCopies(): void
+    {
+        $source = SymbolPath::fromClassFqn('App\\Source');
+        $target = SymbolPath::fromClassFqn('Vendor\\Target');
+        $namespace = SymbolPath::fromNamespaceFqn('Independent\\Inventory');
+        $first = $this->dep('App\\Source', 'Vendor\\Target');
+        $second = $this->dep('Other\\Declaration', 'RuntimeException', DependencyType::Extends);
+        $declaration = ClassLikeDeclaration::of($second->source, ClassType::Class_, true, false);
+        $graph = new DependencyGraph(
+            [$first, $first],
+            [$source->toCanonical() => [0 => $first]],
+            [],
+            [4 => $target, 0 => $source, 9 => $target],
+            [3 => $namespace, 0 => $namespace],
+            NamespaceCouplings::none(),
+            [$source->toCanonical() => 0],
+            [$target->toCanonical() => 0],
+            [$second, $second],
+            [$declaration, $declaration],
+        );
+
+        foreach ([$graph, clone $graph, unserialize(serialize($graph))] as $copy) {
+            self::assertInstanceOf(DependencyGraph::class, $copy);
+            self::assertEquals([4 => $target, 0 => $source, 9 => $target], $copy->getAllClasses());
+            self::assertEquals([3 => $namespace, 0 => $namespace], $copy->getAllNamespaces());
+            self::assertEquals([$first, $first], $copy->getAllDependencies());
+            self::assertEquals([$second, $second], $copy->getDeclarationDependencies());
+            self::assertEquals([$declaration, $declaration], $copy->getClassLikeDeclarations());
+            self::assertEquals([0 => $first], $copy->getClassDependencies($source));
+            self::assertSame([], $copy->getClassDependents($target));
+            self::assertSame(0, $copy->getClassCe($source));
+            self::assertSame(0, $copy->getClassCa($target));
+            self::assertSame(0, $copy->getNamespaceOwnCe($namespace));
+            self::assertSame(0, $copy->getNamespaceCa($namespace));
+        }
+
+        self::assertSame([$declaration, $declaration], $graph->getClassLikeDeclarations());
+        self::assertSame([$second, $second], $graph->getDeclarationDependencies());
+        self::assertSame([3 => $namespace, 0 => $namespace], $graph->getAllNamespaces());
+        self::assertSame([4 => $target, 0 => $source, 9 => $target], $graph->getAllClasses());
+        self::assertSame([$second], DependencyGraph::declarationsAmong([3 => $first, 0 => $second]));
     }
 
     private function dep(string $source, string $target, DependencyType $type = DependencyType::New_): Dependency

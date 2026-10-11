@@ -187,7 +187,7 @@ final readonly class SymbolPath
             SymbolType::File => $this->filePath?->value() ?? '',
             SymbolType::Project => '(project)',
             SymbolType::Function_ => $this->buildFunctionString(),
-            SymbolType::Method => $this->buildMethodString(),
+            SymbolType::Method => $this->buildClassString() . '::' . $this->member,
             SymbolType::Class_ => $this->buildClassString(),
             SymbolType::Namespace_ => $this->namespace !== '' ? ($this->namespace ?? '') : '(global)',
         };
@@ -258,11 +258,6 @@ final readonly class SymbolPath
         }
 
         return $this->member ?? '';
-    }
-
-    private function buildMethodString(): string
-    {
-        return $this->buildClassString() . '::' . $this->member;
     }
 
     private function buildClassString(): string

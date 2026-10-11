@@ -111,20 +111,7 @@ final class DistanceCollector implements GlobalContextCollectorInterface
             $nsPath = $symbolInfo->symbolPath;
             $metrics = $repository->get($nsPath);
 
-            $instability = $metrics->get(MetricName::COUPLING_INSTABILITY);
-            $abstractness = $metrics->get(MetricName::COUPLING_ABSTRACTNESS);
-
-            $ca = $metrics->get(MetricName::COUPLING_CA);
-            $ce = $metrics->get(MetricName::COUPLING_CE);
-
-            if ($instability !== null && $abstractness !== null
-                && $ca !== null && $ce !== null && $ca + $ce > 0) {
-                $repository->addScalar(
-                    $nsPath,
-                    MetricName::COUPLING_DISTANCE,
-                    $this->computeDistance((float) $instability, (float) $abstractness),
-                );
-            }
+            $this->addSubtreeDistance($repository, $nsPath);
 
             $ownDistance = $this->addOwnDistance($repository, $nsPath);
             if ($ownDistance !== null) {
@@ -148,6 +135,24 @@ final class DistanceCollector implements GlobalContextCollectorInterface
                 $project,
                 MetricName::agg(MetricName::COUPLING_DISTANCE_OWN, AggregationStrategy::Count),
                 $measuredNamespaces,
+            );
+        }
+    }
+
+    private function addSubtreeDistance(MetricRepositoryInterface $repository, SymbolPath $nsPath): void
+    {
+        $metrics = $repository->get($nsPath);
+        $instability = $metrics->get(MetricName::COUPLING_INSTABILITY);
+        $abstractness = $metrics->get(MetricName::COUPLING_ABSTRACTNESS);
+        $ca = $metrics->get(MetricName::COUPLING_CA);
+        $ce = $metrics->get(MetricName::COUPLING_CE);
+
+        if ($instability !== null && $abstractness !== null
+            && $ca !== null && $ce !== null && $ca + $ce > 0) {
+            $repository->addScalar(
+                $nsPath,
+                MetricName::COUPLING_DISTANCE,
+                $this->computeDistance((float) $instability, (float) $abstractness),
             );
         }
     }

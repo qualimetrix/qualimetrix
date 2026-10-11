@@ -27150,6 +27150,20 @@
       "owner": "Reporting",
       "visibility": "internal",
       "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\LogicalGraphInventory": {
+      "path": "src/Analysis/Evidence/DependencyModel/LogicalGraphInventory.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.DependencyModel",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DeclarationEvidence": {
+      "path": "src/Analysis/Evidence/DependencyModel/DeclarationEvidence.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.DependencyModel",
+      "visibility": "internal",
+      "consumers": []
     }
   },
   "enforcement_seams": {}

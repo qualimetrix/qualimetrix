@@ -28,7 +28,11 @@ final class CohesionDeclarationData
         $this->methods[$key] ??= new TraitMethodSource($this->qualifiedName, $name);
     }
 
-    /** @param 'public'|'protected'|'private' $visibility */
+    /**
+     * @param 'public'|'protected'|'private' $visibility
+     *
+     * @qmx-ignore code-smell.boolean-argument -- Abstractness is an immutable method-declaration fact copied into trait composition, not an execution mode.
+     */
     public function declareMethod(string $name, string $visibility, bool $abstract): void
     {
         $this->methods[ClassNameSpelling::fold($name)] = new TraitMethodSource($this->qualifiedName, $name, $visibility, $abstract);

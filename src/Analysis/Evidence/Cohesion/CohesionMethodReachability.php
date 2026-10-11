@@ -21,17 +21,25 @@ final class CohesionMethodReachability
                 continue;
             }
             $visited[$key] = true;
-            foreach ($data->getPropertiesAccessedBy($current) as $property) {
-                $properties[$property] = true;
-            }
+            $properties += array_fill_keys($data->getPropertiesAccessedBy($current), true);
             foreach ($data->callsFrom($current) as $callee) {
-                $resolved = $data->declaration()->methodSource($callee)?->originalMethod;
-                if ($resolved !== null && $data->hasGraphMethod($resolved) && !$data->isStaticMethod($resolved)) {
+                $resolved = self::instanceCallee($data, $callee);
+                if ($resolved !== null) {
                     $pending[] = $resolved;
                 }
             }
         }
 
         return array_keys($properties);
+    }
+
+    private static function instanceCallee(LcomClassData $data, string $callee): ?string
+    {
+        $resolved = $data->declaration()->methodSource($callee)?->originalMethod;
+        if ($resolved === null || !$data->hasGraphMethod($resolved) || $data->isStaticMethod($resolved)) {
+            return null;
+        }
+
+        return $resolved;
     }
 }

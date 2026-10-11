@@ -12,6 +12,8 @@ use Qualimetrix\Core\Symbol\TraitUseFacts;
  * Data structure for LCOM calculation.
  *
  * Tracks methods, their property accesses and method calls for a single class.
+ *
+ * @qmx-threshold size.method-count warning=21 error=21 -- The graph record exposes declaration, method-access and call facts to composition and calculation; splitting its accessors would duplicate the same class identity and graph state.
  */
 final class LcomClassData
 {

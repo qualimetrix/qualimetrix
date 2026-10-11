@@ -66,6 +66,8 @@ use Qualimetrix\Core\Path\RelativePath;
  *
  * @see HalsteadCollector
  * @see https://en.wikipedia.org/wiki/Halstead_complexity_measures
+ *
+ * @qmx-threshold size.method-count warning=23 error=23 -- Operator and operand node cases share the current callable vocabulary and occurrence counts; extracting their handlers would move the same AST menu and accumulation state to another class.
  */
 final class HalsteadVisitor extends NodeVisitorAbstract implements DeclarationIndexAwareInterface, ResettableVisitorInterface
 {

@@ -1597,6 +1597,7 @@ Available tests:
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itJudgesExactlyTheTwentyFourFrozenPairsIncludingEquality
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itJudgesPublishedProjectDistanceAgainstTheIndependentTypeWeightedPool
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itJudgesTheProjectAgainstEveryNamespaceThatHoldsClasses
+ - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itKeepsLawfulComplementaryPoolingDiagnosticWithoutRejectingBindingCriteria
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itKeepsTheTwoDirectionsApart
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itKeepsTwoDeclarationsWithTheSameLogicalNameSeparate
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itMakesOwnTypesTheCurrentWeightAndExcludesBareEnums
@@ -1605,6 +1606,8 @@ Available tests:
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itPreservesUnchangedApplicableFormulasWithStrictFloatingPointEquality
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itPublishesNoAggregateWhenNoAdmittedNamespaceCarriesTheMetric
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itRefusesCriteriaCoverageWithoutCompleteCaptureAndPrintsSelectedClass
+ - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itRejectsDroppedMeasuredTccCarriersAsMachineCoverageFailure
+ - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itRejectsTypingCoverageWhenClassLinesAreUnavailable
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itReportsAParentScoringAboveEveryChild
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itReportsTheDerivedAggregateDisagreeingWithThePublishedOne
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itReproducesThePublishedAggregateUnderTheCurrentScheme
@@ -2936,6 +2939,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itFollowsPrivateHelpersForTccAndPureMethodCount
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itOmitsLcomWithoutVerticesAndPublishesCompleteness
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itPreservesOwnFactsAndRetainsUnusedTraitPropertiesForTcc
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itReachesInstancePropertiesThroughMixedCaseCyclesWithoutFollowingOtherCalls
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRetainsCalledStatelessMethodsAsVertices
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\Configuration\LcomCollectionConfigurationResolverTest::itProjectsOnlyTheReadyTypedOptionsPreservingAuthoredMethodSpelling
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\Configuration\LcomCollectionConfigurationResolverTest::itRefusesAnOptionsObjectFromAnotherProducer
@@ -4252,6 +4256,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itAveragesTheOwnScopeIntoTheProjectAndLeavesTheSubtreeRollupUnaggregated
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itComputesTheOwnDistanceFromTheOwnScopeInputs
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itDoesNotTreatMissingCouplingAsZero
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itKeepsMeasuredOwnDistanceOutOfTheProjectWithoutPositiveCompleteTypeCounts
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itLeavesProjectDistanceUnmeasuredWhenNoOwnScopeHasEdges
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itNamesItselfDistance
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itOmitsBothDistancesForAnOwnScopeWithoutEdges
@@ -4534,6 +4539,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::itLeavesTheOwnScopeOfANamespaceWithoutChildrenEqualToItsRollup
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::itPreservesAnExtendsDependencyToABuiltinClass
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::itPreservesIndependentClassViewsWhenCombiningTheirRows
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::itPreservesIndependentInventoryAndDeclarationViewsAcrossCopies
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::itPropagatesCeUpEveryAncestorNamespace
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::itReportsZeroCouplingWhenAllDepsAreInternalToTheParent
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::itReportsZeroOwnCouplingForAnUnknownNamespace

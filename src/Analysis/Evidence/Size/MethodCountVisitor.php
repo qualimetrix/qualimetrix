@@ -195,15 +195,16 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
             $metrics->methodCountPublicAll++;
         }
 
-        // Count by visibility (excluding getters/setters)
-        if (!$isGetter && !$isSetter) {
-            if ($method->isPublic()) {
-                $metrics->methodCountPublic++;
-            } elseif ($method->isProtected()) {
-                $metrics->methodCountProtected++;
-            } elseif ($method->isPrivate()) {
-                $metrics->methodCountPrivate++;
-            }
+        if ($isAccessor) {
+            return;
+        }
+
+        if ($method->isPublic()) {
+            $metrics->methodCountPublic++;
+        } elseif ($method->isProtected()) {
+            $metrics->methodCountProtected++;
+        } elseif ($method->isPrivate()) {
+            $metrics->methodCountPrivate++;
         }
     }
 

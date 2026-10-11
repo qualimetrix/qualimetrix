@@ -19,11 +19,10 @@ use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
 /**
  * Value Object representing the analysis report.
  *
- * @qmx-threshold coupling.cbo warning=37 error=37 -- This immutable report carries the same
- *                publication snapshot to every formatter. Its population field and shared
- *                abstention narrator and captured namespace index add intended edges.
- *                Splitting the transport record would distribute these same facts among
- *                objects every formatter still has to read. The exact limit retains one-edge headroom.
+ * @qmx-threshold coupling.cbo warning=38 error=38 -- This immutable report carries the same
+ * publication snapshot to every formatter, including unresolved inheritance depth.
+ * Splitting the transport would distribute facts every formatter still has to read;
+ * the finite ceiling retains visibility of additional publication dependencies.
  */
 final readonly class Report
 {

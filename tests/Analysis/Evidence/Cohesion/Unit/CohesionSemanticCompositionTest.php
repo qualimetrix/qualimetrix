@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\CohesionFactWire;
+use Qualimetrix\Analysis\Evidence\Cohesion\CohesionMethodReachability;
 use Qualimetrix\Analysis\Evidence\Cohesion\CohesionTraitComposition;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomClassData;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector;
@@ -205,6 +206,30 @@ PHP;
         self::assertSame(1.0, $metrics['Delegating']->get('cohesion.tcc'));
         self::assertSame(1.0, $metrics['Delegating']->get('cohesion.lcc'));
         self::assertSame(0, $metrics['Delegating']->get('cohesion.pure-method-count'));
+    }
+
+    #[Test]
+    public function itReachesInstancePropertiesThroughMixedCaseCyclesWithoutFollowingOtherCalls(): void
+    {
+        $class = new LcomClassData('App', 'Recursive');
+        foreach (['entry', 'Helper', 'Tail', 'staticHelper'] as $method) {
+            $class->addMethod($method);
+        }
+        $class->addPropertyAccess('entry', 'root');
+        $class->addPropertyAccess('Tail', 'state');
+        $class->addPropertyAccess('staticHelper', 'staticOnly');
+        $class->markStatic('staticHelper');
+        $class->declaration()->declareMethod('uncollected', 'private', true);
+        $class->addPropertyAccess('uncollected', 'uncollectedOnly');
+        $class->addPropertyAccess('unknown', 'unknownOnly');
+        $class->addMethodCall('entry', 'hELPER');
+        $class->addMethodCall('Helper', 'TAIL');
+        $class->addMethodCall('Tail', 'HELPER');
+        foreach (['staticHelper', 'uncollected', 'unknown'] as $callee) {
+            $class->addMethodCall('Helper', $callee);
+        }
+
+        self::assertSame(['root', 'state'], CohesionMethodReachability::properties($class, 'entry'));
     }
 
     #[Test]
