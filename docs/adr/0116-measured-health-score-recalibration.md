@@ -15,11 +15,13 @@ used different captures and are not candidate verdicts.
 The completed measurement uses 17 projects. The frozen search fits the 16
 external projects; Qualimetrix is evaluated after selection and supplies no
 optimization feedback. BEFORE is the published capture from source
-`436e7e31720faff84c247bce15ff44f6fe1267ec`; AFTER was captured from
-`3ee50597164c0d04ccd57ff2c3f2ff504753bf20`. Evaluation and the corrected
-instrument bind to `63e3c582ade8d29862b0213b6fca660be1550fb9`. Every native
-capture has complete file coverage. Full repository validation, gate, fresh
-review and CI remain separate pending stage checks.
+`436e7e31720faff84c247bce15ff44f6fe1267ec`; the final AFTER capture was
+refreshed from `746f642a5ca51d7c9a4769a2476029a71081797e` after correcting
+effective-name lifecycle aliases. The corrected calibration instrument remains
+the source from `63e3c582ade8d29862b0213b6fca660be1550fb9`. Every native capture
+has complete file coverage. The post-correction full repository check and
+semantic gate completed successfully; refreshed documentation review, exact
+candidate validation and CI remain separate pending stage checks.
 
 ## Decision
 
@@ -89,7 +91,7 @@ php -d memory_limit=1024M scripts/health-calibration.php \
 ```
 
 The selected all-17 criteria check exited 0; stdout SHA-256:
-`35cb2cf18cf52e081d9dbbccfe5a89290ee612993b60de93b740a2e12a862607`. Instrument plus adjacent benchmark
+`82f2e2c9f7b99f4fc592b4b8ec985c4b96bcdcdbffa6d2b4e0323b9fc2f6bcf0`. Instrument plus adjacent benchmark
 tests passed (61 tests, 338 assertions); calibration plus owning computed-metric
 tests passed (556 tests, 2,489 assertions). Five deliberate reversions of the
 C1/coverage checks each produced red exit 1 and restored green exit 0. The
@@ -108,16 +110,19 @@ a claim that the full repository checks have completed.
 
 ### Fresh native self-analysis
 
-After the separate finite ceiling/floor decisions and stale-entry cleanup,
+After the separate finite ceiling/floor decisions, stale-entry cleanup and
+lifecycle-alias correction,
 `php bin/qmx check src/ --baseline=qmx-baseline.json --fail-on=warning
 --memory-limit=512M --workers=0 --format=json --no-progress --no-cache`
-exited 0 on source `0f6fc5e14` with all 1,434 discovered files analyzed,
-no failed or excluded files and zero findings at every severity. Its JSON
-output timestamp is `2026-10-11T04:15:56+00:00`; output SHA-256 is
-`c35d3ef55b448c25e41222351eb5955f5d92f512a4fd1a8aa2861df788bfec7b`.
-Product semantics and the calibration instrument are unchanged from the
-captured and evaluated sources above. This is the native baseline verdict;
-full repository validation and CI are separate checks.
+exited 0 on source `746f642a5ca51d7c9a4769a2476029a71081797e` with all 1,434
+discovered files analyzed, no failed or excluded files and zero findings at
+every severity. Its JSON
+output timestamp is `2026-10-11T05:59:47+00:00`; output SHA-256 is
+`2d0cbcdcae1b7ab56d015d119ac0bf2c59e7ff9fbc32e1901dbde6bafd35bcb4`.
+The lifecycle correction changes source and the Qualimetrix capture; the
+calibration instrument and selected coefficients remain unchanged. This is the
+native baseline verdict; refreshed documentation review, exact candidate
+validation and CI are separate checks.
 
 ### Full C1 distributions
 
@@ -206,8 +211,11 @@ The independent source ranking places CodeIgniter and WordPress below each of
 Flysystem, PHPUnit, Symfony HttpFoundation, HttpKernel, Console, Routing, Monolog,
 Doctrine ORM, DBAL, PHP-Parser, Guzzle and Symfony DependencyInjection. Its 24
 pair terms have weight 1 and margin 0; the objective is their weighted sum and
-ties use ascending declared grid order. The [frozen source ranking](https://github.com/qualimetrix/qualimetrix/blob/420476782939d4113ff949b6cefe72b10d9efc50/docs/internal/plans/health-recalibration/measurement/02-apriori-ranking.md)
-has SHA-256 `dff205c1c4774b0e461264f9e7fef3fa72975a9d964386abf92a896d564ecbf5`.
+ties use ascending declared grid order. The [frozen source ranking](https://github.com/qualimetrix/qualimetrix/blob/420476782939d4113ff949b6cefe72b10d9efc50/docs/internal/plans/health-recalibration/measurement/02-apriori-ranking.md) has SHA-256
+`dff205c1c4774b0e461264f9e7fef3fa72975a9d964386abf92a896d564ecbf5`.
+Its retired plan path was replaced by a byte-identical retained evidence copy;
+only that anchor path changed in the search specification. Parameters, formulas,
+objective terms, aggregation and tie-break remain unchanged.
 Composer, Laravel and Qualimetrix are diagnostics, not extra formal pairs.
 
 The unchanged grid is LCOM span `[5, 4, 2]`, distance weight `[6, 9, 12]`
@@ -264,7 +272,7 @@ applicability/populations and are not a C6 failure threshold.
 | project   | `health.complexity`      | 17       | 70.51  | 54.42  | 85.79  | 17      | 70.51  | 54.42  | 85.79  |
 | project   | `health.cohesion`        | 17       | 73.49  | 70.81  | 79.75  | 17      | 73.08  | 67.25  | 82.16  |
 | project   | `health.coupling`        | 17       | 62.69  | 55.13  | 76.07  | 17      | 76.68  | 66.75  | 89.00  |
-| project   | `health.typing`          | 17       | 98.12  | 90.62  | 99.70  | 17      | 98.12  | 90.62  | 99.70  |
+| project   | `health.typing`          | 17       | 98.13  | 90.62  | 99.70  | 17      | 98.13  | 90.62  | 99.70  |
 | project   | `health.maintainability` | 17       | 69.90  | 55.24  | 84.37  | 17      | 69.90  | 55.24  | 84.37  |
 | project   | `health.overall`         | 17       | 74.74  | 65.02  | 78.12  | 17      | 77.29  | 64.11  | 81.04  |
 | namespace | `health.complexity`      | 838      | 96.73  | 83.21  | 100.00 | 838     | 96.73  | 83.12  | 100.00 |
@@ -298,10 +306,10 @@ between the two captured commits.
 | `monolog`                 | 82.05 → 82.05   | 75.88 → 85.91 | 60.11 → 91.96  | 96.28 → 96.28   | 67.73 → 67.73   | 74.99 → 83.36 |
 | `php-parser`              | 94.88 → 94.88   | 63.03 → 64.06 | 44.49 → 57.96  | 90.62 → 90.62   | 95.54 → 95.54   | 78.14 → 81.04 |
 | `phpunit`                 | 86.72 → 86.72   | 66.21 → 65.70 | 57.69 → 65.29  | 99.94 → 99.94   | 86.67 → 86.67   | 78.12 → 79.54 |
-| `qmx`                     | 85.28 → 85.09   | 84.08 → 86.53 | 46.44 → 65.65  | 99.97 → 99.97   | 75.63 → 75.05   | 76.81 → 80.97 |
+| `qmx`                     | 85.28 → 85.09   | 84.08 → 86.53 | 46.44 → 65.65  | 99.97 → 99.97   | 75.63 → 75.06   | 76.81 → 80.97 |
 | `symfony-console`         | 70.51 → 70.51   | 79.75 → 82.16 | 66.27 → 76.60  | 98.59 → 98.59   | 72.60 → 72.60   | 74.74 → 77.29 |
 | `symfony-di`              | 31.22 → 31.22   | 78.96 → 77.96 | 51.72 → 76.68  | 99.84 → 99.84   | 55.24 → 55.24   | 56.53 → 61.32 |
-| `symfony-http-foundation` | 80.55 → 80.55   | 79.60 → 79.26 | 79.71 → 89.47  | 98.12 → 98.12   | 75.64 → 75.64   | 80.97 → 82.85 |
+| `symfony-http-foundation` | 80.55 → 80.55   | 79.60 → 79.26 | 79.71 → 89.47  | 98.13 → 98.13   | 75.64 → 75.64   | 80.97 → 82.85 |
 | `symfony-http-kernel`     | 63.75 → 63.75   | 84.37 → 85.03 | 84.78 → 89.72  | 99.40 → 99.40   | 69.90 → 69.90   | 76.87 → 78.00 |
 | `symfony-routing`         | 54.42 → 54.42   | 71.84 → 76.84 | 80.92 → 89.00  | 100.00 → 100.00 | 64.27 → 64.27   | 69.73 → 72.35 |
 | `wordpress`               | 14.51 → 14.51   | 73.49 → 68.93 | 69.11 → 83.37  | 9.89 → 9.89     | 33.68 → 33.68   | 40.60 → 42.54 |
@@ -317,7 +325,7 @@ there is no additional target corridor imposed on them.
 
 The native tool reports version **1.0.0** and PHP **8.5.9**. Native JSON output
 timestamps span 2026-10-10T20:48:43+00:00–20:56:03+00:00 for BEFORE and
-2026-10-11T03:42:51+00:00–03:48:32+00:00 for AFTER. These are output timestamps,
+2026-10-11T05:50:34+00:00–05:57:06+00:00 for AFTER. These are output timestamps,
 not separately established invocation-start times. All 17 native commands
 returned 2 with complete parsed coverage and existing findings; those exits
 are not calibration or infrastructure failures.
@@ -329,6 +337,12 @@ configuration `{}` and no baseline. PHP-Parser additionally disabled
 package revisions are fixed; Qualimetrix uses `src/` at the two captured commits.
 Normalized BEFORE coverage metadata was restored from the original complete
 native raw outputs, without a new analysis run or any change to raw/symbol values.
+All 16 external AFTER captures are semantically identical to their prior
+completed captures. The Qualimetrix capture changed on 11 symbols because its
+source changed; the added helper method raises the project cognitive sample
+count from 7,584 to 7,585. The refreshed sum is 11,959, average
+1.5766644693473961, p95 7 and maximum 53. This is source drift, not a
+cognitive-algorithm change.
 
 Corpus identity SHA-256:
 
@@ -336,9 +350,9 @@ Corpus identity SHA-256:
 - `benchmarks/composer.lock`: `7e57f5c73c8e0e116ece6fd31cce29f1898670da19a52b79d7f30c235be356c0`;
 - installed package inventory: `ceba7487523f91325616ad6a84a636fe7d91408c3c037531823b591044b6224f`;
 - selected candidate definition: `6d562f0e4310266695922da73b28338a8616d2d8a672cbe5c302f6e1c0adce69`;
-- frozen search specification: `0b314cc41e60eacfb17c726ebed60945676d7638dbf3f7e6e41f116814e5ab86`;
+- frozen search specification: `b30f3ac0f1c41523b7db14b0c32df599036e6e3bae5e10c8e6285526e1bfc8e7`;
 - full search result: `3575930dcdc1126c6064a91f5a23ee1d5e61ff2d40f0e5d30d4ad4a3ebbf3983`;
-- descriptive report: `01965a70cedbf53bf8c82d2b24e63efdc47dafff1aa2a8072e1c77776f94f4c3`.
+- descriptive report: `cdbea6cdcf10162217f684946fb86e2ee731eb30b6692cd91b8e1ed2affc12cd`.
 
 | Project                   | Installed version       | Source revision                            | Complete files BEFORE → AFTER |
 | ------------------------- | ----------------------- | ------------------------------------------ | ----------------------------- |
@@ -375,7 +389,7 @@ the search, coverage checks and descriptive tables:
 | `monolog`                 | `e2cf917084888dd47be978e22a44ad825e61071fb364c4f11c7b6afbbf0e3faa` | `1448f5b54ee1f52764f7b22e03e177cdf6b11c36128fba8cc9262b7b5a788a14` |
 | `php-parser`              | `a028ea8787cce22da4bfddce4b34d16632b0cf5f49d15fa9f815d6fabfb5d28f` | `f48888b186a3afee259c163253f4392c0e53433aa6e63a65400be037a1f63d92` |
 | `phpunit`                 | `66bd24ae8b752c5de5dbbdad5678dc1222987c189c1ec6886ef89691e9169f0a` | `e3549a753a6ec40acaf2c362247d835fe9957f9130e5cbdd245a167d5812544e` |
-| `qmx`                     | `4d5e9dd13d614e376d8f7791f6757bc36cd32e769743e409a85e7b3f766ef5ab` | `7f0780ef93465b132653265c77011df4ce606c81492aae485f4c4e2c64d4954c` |
+| `qmx`                     | `4d5e9dd13d614e376d8f7791f6757bc36cd32e769743e409a85e7b3f766ef5ab` | `c562304674380e58f67ca59e028120adb56a674f728d2b3310094acd7d1a4b3b` |
 | `symfony-console`         | `d68dbe8e65eebc95445fd010f67b96ea8e523460a3ba8de359c649983e141ee6` | `92b25fa1ce090e010690d75ddb4582a7306ef5fa3dab84a77f6d1f2678972923` |
 | `symfony-di`              | `79185af6fde17a3a7ca3df708fde76803f0e2c0f9ce62c3d3b2a07f043310dd3` | `638534a7975eb038bff578492f42ff631e101fbe926ac3c8c64535b86d188d5c` |
 | `symfony-http-foundation` | `f0b9a768dc393b4402e1545f2280d5878ba076c925b75b0723ca1fd52680ca0c` | `c57200174edd58de37c761ad244e3bdc49fb79e54f7d5e062434f7d4184e5d5e` |
@@ -389,4 +403,4 @@ the search, coverage checks and descriptive tables:
 - Recheck consumer thresholds, presets, CI cases, baselines and benchmark ranges by metric key and level. Preserve the reason for each revised limit. A score change alone does not justify relaxing it, and C6 supplies no numeric pass bands.
 - Preserve measured key presence, eligible counts, sums, means and percentiles in owning regressions; numeric zero and valid absence are distinct. Coverage accounting alone does not prove every aggregate scalar correct.
 - Residual self-analysis ceilings/floors and stale-entry cleanup have separate measured baseline decisions; coefficient selection does not itself justify accepting residual findings. The fresh native ratchet below records their resulting verdict.
-- This calibration decision is accepted on its scoped tests, repeated self-test, frozen search, all-17 check, C6 evidence and fresh native ratchet. Full `composer check`, ordinary gate, fresh review and CI remain separate pending stage checks; accepting this ADR does not claim those checks are complete.
+- This calibration decision is accepted on its scoped tests, repeated self-test, frozen search, all-17 check, descriptive C6 evidence and fresh native ratchet. The post-correction `composer check` and semantic gate passed; refreshed documentation review, exact candidate validation and CI remain separate pending stage checks. Accepting this ADR does not claim those checks are complete.
