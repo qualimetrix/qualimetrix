@@ -1119,8 +1119,8 @@ final class StatedCoverage
     public static function rows(Evaluation $evaluation, Subject $subject, string $dimension): array
     {
         $outcome = $evaluation->outcome($subject, $dimension);
-        if ($outcome === null || $outcome->score === null) {
-            return [['basis' => $dimension, 'state' => $outcome === null ? 'absent' : $outcome->kind, 'symbols' => '--', 'loc' => '--', 'reason' => $outcome === null ? 'score absent' : ($outcome->reason ?? 'score absent')]];
+        if ($outcome === null) {
+            return [['basis' => $dimension, 'state' => 'absent', 'symbols' => '--', 'loc' => '--', 'reason' => 'score absent']];
         }
         $catalog = new HealthDecompositionCatalog(new ComputedMetricExpression());
         $inputs = $catalog->inputsFor($dimension, $subject->level);

@@ -871,7 +871,7 @@ final class HealthCalibrationBenchTest extends TestCase
                 ...($hasTcc ? ['cohesion.tcc' => 0.0] : []), 'cohesion.lcom' => 1.0,
             ], [], 10, 'decl:B');
             $namespace = new Subject('App', SymbolLevel::Namespace_, [
-                ...$aggregate, 'size.symbol-class-count' => 1.0,
+                ...$aggregate, 'size.symbol-class-count' => 1.0, 'size.symbol-method-count' => $hasTcc ? 3.0 : 1.0,
                 'cohesion.lcom.avg' => 1.0, 'cohesion.lcom.count' => 1.0,
             ], [], 10, 'ns:App');
             $evaluation = (new Bench())->run(new Capture('dropped-tcc', [$namespace, $class], true), self::defaultDefinitions(), [SymbolLevel::Namespace_, SymbolLevel::Class_], AggregationScheme::current());
@@ -899,6 +899,55 @@ final class HealthCalibrationBenchTest extends TestCase
             'count dropped' => [['cohesion.tcc.avg' => 0.0], true, 'unjudged', false],
             'zero count with a value' => [['cohesion.tcc.avg' => 0.0, 'cohesion.tcc.count' => 0.0], true, 'unjudged', false],
             'valid absence' => [[], false, 'not-measured', true],
+        ];
+    }
+
+    #[Test]
+    public function itJudgesAggregateCoverageIndependentlyOfAnAbsentScore(): void
+    {
+        $options = Options::parse(['--capture-dir=unused', '--levels=namespace,class']);
+        foreach ([false, true] as $nullable) {
+            $definitions = self::defaultDefinitions();
+            if ($nullable) {
+                $definitions = array_map(static fn(ComputedMetricDefinition $definition): ComputedMetricDefinition => $definition->name !== 'health.cohesion' ? $definition : new ComputedMetricDefinition(
+                    'health.cohesion',
+                    ['class' => $definition->formulas['class'], 'namespace' => '(m["cohesion.tcc.avg"] ?? 0) >= 0 ? null : (m["cohesion.lcom.avg"] ?? 0)'],
+                    'nullable coverage fixture',
+                    $definition->levels,
+                    applicability: ['class' => $definition->applicability['class']],
+                ), $definitions);
+            }
+            foreach (self::absentScoreCoverageCases() as $case => [$aggregate, $carriers, $expectedState, $expectedAgreement]) {
+                if (!$nullable && $aggregate !== []) {
+                    continue;
+                }
+                $namespace = new Subject('App', SymbolLevel::Namespace_, ['size.symbol-class-count' => 1.0, 'size.symbol-method-count' => $carriers === [] ? 0.0 : 3.0, ...$aggregate], [], 10, 'ns:App');
+                $class = new Subject('App\\B', SymbolLevel::Class_, $carriers, [], 10, 'decl:B');
+                $evaluation = (new Bench())->run(new Capture($case, [$namespace, $class], true), $definitions, [SymbolLevel::Namespace_, SymbolLevel::Class_], AggregationScheme::current());
+                self::assertNull($evaluation->scoreOf($namespace, 'health.cohesion'), $case);
+                self::assertSame($nullable ? ComputedMetricOutcome::NO_VALUE : ComputedMetricOutcome::NOT_APPLICABLE, $evaluation->outcome($namespace, 'health.cohesion')?->kind, $case);
+                self::assertSame($expectedState, StatedCoverage::rows($evaluation, $namespace, 'health.cohesion')[0]['state'], $case);
+                ob_start();
+                try {
+                    $agreed = \Qualimetrix\HealthCalibration\printCoverage([$evaluation], $options);
+                } finally {
+                    ob_end_clean();
+                }
+                self::assertSame($expectedAgreement, $agreed, $case);
+            }
+        }
+    }
+
+    /** @return array<string, array{array<string, float>, array<string, float>, string, bool}> */
+    private static function absentScoreCoverageCases(): array
+    {
+        $carriers = ['cohesion.tcc' => 0.0, 'cohesion.lcom' => 1.0];
+        $values = ['cohesion.tcc.avg' => 0.0, 'cohesion.lcom.avg' => 1.0];
+        return [
+            'lost all aggregates' => [[], $carriers, 'unjudged', false],
+            'lawful absence' => [[], [], 'not-measured', true],
+            'lost counts' => [$values, $carriers, 'unjudged', false],
+            'coherent nullable inputs' => [[...$values, 'cohesion.tcc.count' => 1.0, 'cohesion.lcom.count' => 1.0], $carriers, 'measured', true],
         ];
     }
 
@@ -937,7 +986,8 @@ final class HealthCalibrationBenchTest extends TestCase
         self::assertFalse($agreed);
         self::assertStringContainsString('coverage.complete=true', $text);
         self::assertStringContainsString('legacy class decl:empty health.cohesion', $text);
-        self::assertStringContainsString('state=not-applicable', $text);
+        self::assertStringContainsString('state=absent', $text);
+        self::assertSame(ComputedMetricOutcome::NOT_APPLICABLE, $evaluation->outcome($subject, 'health.cohesion')?->kind);
     }
 
     #[Test]
@@ -986,7 +1036,7 @@ final class HealthCalibrationBenchTest extends TestCase
     private static function complementaryCapture(string $id): Capture
     {
         $pooled = [
-            'size.symbol-class-count' => 3.0, 'cohesion.tcc.avg' => 0.5, 'cohesion.tcc.count' => 2.0,
+            'size.symbol-class-count' => 3.0, 'size.symbol-method-count' => 10.0, 'cohesion.tcc.avg' => 0.5, 'cohesion.tcc.count' => 2.0,
             'cohesion.lcom.avg' => 3.5, 'cohesion.lcom.count' => 2.0,
         ];
         return new Capture($id, [
@@ -999,7 +1049,7 @@ final class HealthCalibrationBenchTest extends TestCase
                 'coupling.ca-own' => 0.0, 'coupling.ce-own' => 1.0,
             ], [], 35, 'ns:App'),
             new Subject('App\\Inner', SymbolLevel::Namespace_, [
-                'size.symbol-class-count' => 2.0, 'size.class-count' => 2.0,
+                'size.symbol-class-count' => 2.0, 'size.symbol-method-count' => 3.0, 'size.class-count' => 2.0,
                 'cohesion.tcc.avg' => 0.0, 'cohesion.tcc.count' => 1.0,
                 'cohesion.lcom.avg' => 1.0, 'cohesion.lcom.count' => 1.0,
                 'coupling.distance-own' => 0.6, 'coupling.ca-own' => 0.0, 'coupling.ce-own' => 1.0,
