@@ -152,6 +152,35 @@ PHP);
         self::assertSame($originalBaseline, file_get_contents($baselinePath));
     }
 
+    #[Test]
+    public function itPreservesExactSubjectsAndCompleteReceiptInRawCapture(): void
+    {
+        $fixtureRoot = $this->createFixtureRoot();
+        $this->copyScript('collect-benchmark-data.php', $fixtureRoot);
+        $this->createCollectorProjectDirectories($fixtureRoot);
+        $artifact = json_decode($this->metricsArtifact('complete'), true, flags: \JSON_THROW_ON_ERROR);
+        $artifact['symbols'][] = [
+            'type' => 'class', 'name' => 'App\\Repeated', 'subject' => 'declaration:src/one.php:1:App\\Repeated',
+            'file' => 'src/one.php', 'line' => 1, 'metrics' => ['size.class-loc' => 7, 'cohesion.tcc' => 0],
+        ];
+        $artifact['symbols'][] = [
+            'type' => 'class', 'name' => 'App\\Repeated', 'subject' => 'declaration:src/two.php:1:App\\Repeated',
+            'file' => 'src/two.php', 'line' => 1, 'metrics' => ['size.class-loc' => 11],
+        ];
+        $this->writeFakeQmx($fixtureRoot, json_encode($artifact, \JSON_THROW_ON_ERROR));
+        $captureDir = $fixtureRoot . '/captures';
+        $process = new Process([\PHP_BINARY, 'scripts/collect-benchmark-data.php', $fixtureRoot . '/digest.json', '--capture-dir=' . $captureDir], $fixtureRoot);
+        $process->run();
+        self::assertSame(0, $process->getExitCode(), $process->getErrorOutput());
+        $capture = json_decode((string) file_get_contents($captureDir . '/qmx.json'), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame($artifact['coverage'], $capture['coverage']);
+        self::assertSame($artifact['symbols'][1]['subject'], $capture['symbols'][1]['subject']);
+        self::assertSame($artifact['symbols'][2]['subject'], $capture['symbols'][2]['subject']);
+        self::assertSame(0, $capture['symbols'][1]['metrics']['cohesion.tcc']);
+        self::assertSame('src/one.php', $capture['symbols'][1]['file']);
+        self::assertSame(1, $capture['symbols'][1]['line']);
+    }
+
     private function createFixtureRoot(): string
     {
         $fixtureRoot = sys_get_temp_dir() . '/qmx_benchmark_consumer_' . bin2hex(random_bytes(6));
@@ -253,6 +282,8 @@ PHP;
             'benchmarks/vendor/monolog/monolog/src',
             'benchmarks/vendor/guzzlehttp/guzzle/src',
             'benchmarks/vendor/laravel/framework/src',
+            'benchmarks/vendor/codeigniter/framework/system',
+            'benchmarks/vendor/johnpbloch/wordpress-core/wp-includes',
             'src',
         ];
         foreach ($paths as $path) {
