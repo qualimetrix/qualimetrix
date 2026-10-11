@@ -41,7 +41,7 @@ coupling.class-rank	channel	?		23	105	0	2	1	43	0	401	0	0	0	0
 coupling.distance	channel	?		39	113	2	2	1	49	0	436	0	0	0	0
 coupling.instability	channel	?		74	144	2	4	6	60	0	511	0	0	0	0
 coupling.unmatched-framework-namespace	channel	?		5	11	0	0	0	18	0	2	0	0	0	0
-design.data-class	channel	?		17	23	1	1	3	37	0	143	0	0	0	0
+design.data-class	channel	?		16	23	1	1	3	37	0	143	0	0	0	0
 design.dit	channel	?		17	129	2	2	0	53	0	385	0	0	0	0
 design.god-class	channel	?		19	26	1	2	2	38	0	97	0	0	0	0
 design.noc	channel	?		14	56	2	2	0	32	0	382	0	0	0	0
@@ -188,7 +188,7 @@ coupling.class-rank	producer	?		23	105	0	2	1	43	0	401	0	0	0	0
 coupling.distance	producer	?		39	113	2	2	1	49	0	436	0	0	0	0
 coupling.instability	producer	?		74	144	2	4	6	60	0	511	0	0	0	0
 coupling.unmatched-framework-namespace	producer	?		5	11	0	0	0	18	0	2	0	0	0	0
-design.data-class	producer	?		17	23	1	1	3	37	0	143	0	0	0	0
+design.data-class	producer	?		16	23	1	1	3	37	0	143	0	0	0	0
 design.dit	producer	?		17	129	2	2	0	53	0	385	0	0	0	0
 design.god-class	producer	?		19	26	1	2	2	38	0	97	0	0	0	0
 design.noc	producer	?		14	56	2	2	0	32	0	382	0	0	0	0
