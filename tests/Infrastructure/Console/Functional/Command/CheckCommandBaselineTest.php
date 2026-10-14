@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -31,6 +32,30 @@ use Symfony\Component\Process\Process;
 #[CoversClass(CheckCommand::class)]
 final class CheckCommandBaselineTest extends TestCase
 {
+    private static ?ContainerBuilder $container = null;
+
+    public static function tearDownAfterClass(): void
+    {
+        self::$container = null;
+    }
+
+    private static function container(): ContainerBuilder
+    {
+        $container = self::$container ??= (new ContainerFactory())->create();
+        self::beginInvocation($container);
+
+        return $container;
+    }
+
+    private static function beginInvocation(ContainerBuilder $container): void
+    {
+        $manifest = $container->get(ManifestSnapshotControlInterface::class);
+        if (!$manifest instanceof ManifestSnapshotControlInterface) {
+            throw new RuntimeException('The baseline command fixture has no manifest snapshot lifetime owner.');
+        }
+        $manifest->beginInvocation();
+    }
+
     /**
      * Two findings on one occurrence channel of one file, one of them
      * annotated — the smallest source in which the measured set and the
@@ -476,7 +501,11 @@ final class CheckCommandBaselineTest extends TestCase
      */
     private function runCheck(array $options, bool $captureErrors = false, ?ContainerBuilder $container = null): CommandTester
     {
-        $container ??= (new ContainerFactory())->create();
+        if ($container === null) {
+            $container = self::container();
+        } else {
+            self::beginInvocation($container);
+        }
 
         /** @var CheckCommand $command */
         $command = $container->get(CheckCommand::class);
@@ -504,8 +533,7 @@ final class CheckCommandBaselineTest extends TestCase
      */
     private function runGenerate(array $options = []): CommandTester
     {
-        $containerFactory = new ContainerFactory();
-        $container = $containerFactory->create();
+        $container = self::container();
 
         /** @var BaselineGenerateCommand $command */
         $command = $container->get(BaselineGenerateCommand::class);
