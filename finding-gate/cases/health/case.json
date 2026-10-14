@@ -19,6 +19,8 @@
     "--rule-opt=complexity.cognitive:callable.error=2000",
     "--rule-opt=complexity.ccn:callable.warning=1000",
     "--rule-opt=complexity.ccn:callable.error=2000",
+    "--rule-opt=complexity.npath:callable.warning=1000",
+    "--rule-opt=complexity.npath:callable.error=2000",
     "--rule-opt=coupling.instability:class.max_warning=2",
     "--rule-opt=coupling.instability:class.max_error=2",
     "--rule-opt=design.type-coverage.param:warning=0",
