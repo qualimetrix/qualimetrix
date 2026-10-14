@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Integration;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -17,6 +18,7 @@ use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Console\CliOptionsParser;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
@@ -29,6 +31,7 @@ use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * Every producer of the computed-metric family owns its own configuration —
@@ -60,6 +63,18 @@ use Symfony\Component\Console\Input\InputOption;
 #[CoversClass(RuleInputValidator::class)]
 final class ClasslessProducerOptionOwnerTest extends TestCase
 {
+    private static ?ContainerBuilder $container = null;
+
+    public static function tearDownAfterClass(): void
+    {
+        self::$container = null;
+    }
+
+    private static function container(): ContainerBuilder
+    {
+        return self::$container ??= (new ContainerFactory())->create();
+    }
+
     /**
      * Spelled out rather than read from `ComputedMetricChannelFamily`: this
      * case exists to fail on a tree where these are not producer names, and a
@@ -313,7 +328,7 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
     /** @param array<string, mixed> $rules */
     private static function configuration(array $rules, ResolvedComputedMetricDefinitions $definitions, ?InputInterface $input = null): FindingConfiguration
     {
-        $execution = (new ContainerFactory())->create()->get(RuleExecutionInterface::class);
+        $execution = self::container()->get(RuleExecutionInterface::class);
         \assert($execution instanceof RuleExecutionInterface);
         $metadata = $execution->allRules();
         $writes = $input === null ? null : (new CliOptionsParser(new RuleOptionDocumentForms(), new RuleOptionsParser(
@@ -337,7 +352,12 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
 
     private static function validator(): RuleInputValidator
     {
-        $container = (new ContainerFactory())->create();
+        $container = self::container();
+        $manifest = $container->get(ManifestSnapshotControlInterface::class);
+        if (!$manifest instanceof ManifestSnapshotControlInterface) {
+            throw new LogicException('The option-owner fixture has no manifest snapshot lifetime owner.');
+        }
+        $manifest->beginInvocation();
         $command = $container->get(CheckCommand::class);
         $validator = (new ReflectionProperty(CheckCommand::class, 'ruleInputValidator'))->getValue($command);
         \assert($validator instanceof RuleInputValidator);
@@ -347,7 +367,7 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
 
     private static function universe(): ChannelUniverse
     {
-        $universe = (new ContainerFactory())->create()->get(ChannelUniverse::class);
+        $universe = self::container()->get(ChannelUniverse::class);
         \assert($universe instanceof ChannelUniverse);
 
         return $universe;
