@@ -6,45 +6,20 @@ namespace Qualimetrix\Infrastructure\Cache;
 
 use Composer\InstalledVersions;
 use OutOfBoundsException;
-use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 
 /**
  * Generates cache keys for PHP files based on their content and environment.
  */
 final class CacheKeyGenerator
 {
-    private const string KEY_SCHEMA_VERSION = 'ast-cache-v2';
-
     private const string PARSER_PACKAGE = 'nikic/php-parser';
 
-    private readonly string $cacheVersion;
+    private ?string $cacheVersion = null;
+    private ?string $parserVersion = null;
 
-    public function __construct(LoggerInterface $logger = new NullLogger())
+    public function available(): bool
     {
-        $parserVersion = self::phpParserVersion();
-
-        // An empty version is not a version to key on: it would pin every
-        // php-parser release to one key and hand a warm cache to a parser
-        // whose node classes have changed. Caching is given up instead.
-        $this->cacheVersion = $parserVersion === ''
-            ? ''
-            : \sprintf('php%s-parser%s', \PHP_MAJOR_VERSION . '.' . \PHP_MINOR_VERSION, $parserVersion);
-
-        if ($this->cacheVersion === '') {
-            // Giving caching up is the right call and an invisible one: what
-            // the user sees is a run several times slower and a cache
-            // directory that stays empty. Said once, where the decision is
-            // taken. A parallel run builds one of these in the parent and one
-            // more in each worker (measured), and only the parent's is given a
-            // logger: every process of one install reaches the same verdict,
-            // so a worker repeating it would add copies, not information.
-            $logger->warning(\sprintf(
-                'AST caching is off for this run: the Composer runtime cannot name the installed %s, '
-                . 'and a cache key that does not carry the parser version would serve a stale AST.',
-                self::PARSER_PACKAGE,
-            ));
-        }
+        return $this->getCacheVersion() !== '';
     }
 
     /**
@@ -55,21 +30,24 @@ final class CacheKeyGenerator
      */
     public function generateForContent(string $content): string
     {
-        if ($this->cacheVersion === '') {
+        if (!$this->available()) {
             return '';
         }
+        $context = hash_init('sha256');
+        foreach (['php' . \PHP_MAJOR_VERSION . '.' . \PHP_MINOR_VERSION, $this->parserVersion ?? '', (string) \ini_get('short_open_tag'), (string) \ini_get('zend.multibyte'), (string) \ini_get('zend.script_encoding'), $content] as $field) {
+            hash_update($context, \strlen($field) . ':' . $field);
+        }
 
-        $contentHash = hash('xxh128', $content);
-        $data = \sprintf('%s|%s|%s', self::KEY_SCHEMA_VERSION, $contentHash, $this->cacheVersion);
-
-        return hash('xxh128', $data);
+        return hash_final($context);
     }
 
-    /**
-     * Get the cache version string.
-     */
     public function getCacheVersion(): string
     {
+        if ($this->cacheVersion === null) {
+            $this->parserVersion = self::phpParserVersion();
+            $this->cacheVersion = $this->parserVersion === '' ? '' : \sprintf('php%d.%d-parser%s', \PHP_MAJOR_VERSION, \PHP_MINOR_VERSION, $this->parserVersion);
+        }
+
         return $this->cacheVersion;
     }
 

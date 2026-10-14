@@ -11,7 +11,6 @@ Infrastructure contains external adapters and entry points:
 - **Git**: Git integration for analyzing staged/changed files ([details](Git/README.md))
 - **Logging**: PSR-3 logging ([details](Logging/README.md))
 - **Parallel**: Parallel processing strategies
-- **Serializer**: Serialization abstraction (igbinary/PHP native)
 - **Profiler**: Span-based performance profiler ([details](Profiler/README.md))
 
 ## Internal Dependency Layers
@@ -20,8 +19,8 @@ Infrastructure sub-packages are declared as `infrastructure-*` sub-layers in the
 own `qmx.yaml` to prevent circular dependencies (see
 [ADR 0014](../../docs/adr/0014-deptrac-retirement.md)):
 
-- **Leaf** (no Infrastructure siblings): Serializer, Logging, Profiler, Rule, Git, Composer
-- **Mid** (depends on specific siblings): Cache -> Serializer, Ast -> Cache, Parallel -> Ast + Cache + Serializer
+- **Leaf** (no Infrastructure siblings): Cache, Logging, Profiler, Rule, Git, Composer
+- **Mid** (depends on specific siblings): Ast -> Cache, Parallel -> Ast + Cache
 - **Hub** (wide dependencies): Console -> Git, Rule, Cache, Logging, Profiler; DI -> all
 
 ## Structure
@@ -86,11 +85,6 @@ Infrastructure/
 │       ├── AmphpParallelStrategy.php   # Multi-worker via amphp
 │       ├── StrategySelector.php        # Strategy selection logic
 │       └── WorkerCountDetector.php     # Detects optimal worker count
-├── Serializer/
-│   ├── SerializerInterface.php      # Serializer contract
-│   ├── IgbinarySerializer.php       # igbinary-based serializer
-│   ├── PhpSerializer.php            # PHP native serializer
-│   └── SerializerSelector.php       # Auto-selects best serializer
 ├── Profiler/                         # -> See Profiler/README.md
 │   ├── Profiler.php
 │   └── Export/

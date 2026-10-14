@@ -14,7 +14,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclarati
 final readonly class CacheSection implements DocumentSectionSchemaInterface
 {
     public const string KEY = 'cache';
-    public const string DEFAULT_DIRECTORY = '.qmx-cache';
+    public const string DEFAULT_DIRECTORY = 'the user cache directory';
 
     public function declaration(): SectionDeclaration
     {
@@ -45,11 +45,6 @@ final readonly class CacheSection implements DocumentSectionSchemaInterface
         }
 
         return $candidate;
-    }
-
-    public static function directory(?ResolvedValueInterface $configured): string
-    {
-        return $configured === null ? self::DEFAULT_DIRECTORY : self::acceptedDirectory($configured);
     }
 
     public static function enabled(?ResolvedValueInterface $configured): bool

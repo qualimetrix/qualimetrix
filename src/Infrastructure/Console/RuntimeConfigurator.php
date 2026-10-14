@@ -84,9 +84,7 @@ final class RuntimeConfigurator
         // analysis; committed stores are reset at the next invocation entry.
         $this->runtimeLimitsController->apply($runtimeLimits);
         $logger = $this->runtimeLoggerConfigurator->configure($input, $output);
-        if ($run->cacheConfiguration->disabledBecause !== null) {
-            $logger->warning($run->cacheConfiguration->disabledBecause);
-        }
+        $this->cacheFactory->configureLogger($logger);
         if ($prepared !== null) {
             foreach ($prepared->architecturePolicy->warnings() as $warning) {
                 $logger->warning($warning->message, $warning->context);
@@ -110,10 +108,18 @@ final class RuntimeConfigurator
             return false;
         }
 
-        $outcome = $this->cacheFactory->create()->clear();
+        $outcome = $this->cacheFactory->clear();
+        if ($outcome === null) {
+            return false;
+        }
         self::refuseIncompleteCacheClear($outcome);
 
         return true;
+    }
+
+    public function finishRun(): void
+    {
+        $this->cacheFactory->reportDiscardedEntries();
     }
 
     private static function refuseIncompleteCacheClear(CacheClearOutcome $outcome): void

@@ -4,133 +4,142 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Cache;
 
-use FilesystemIterator;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
-use SplFileInfo;
-use UnexpectedValueException;
+use Qualimetrix\Core\Path\AbsolutePath;
 
 final readonly class CacheDirectoryContents
 {
-    public function __construct(
-        private string $directory,
-        private string $markerPath,
-        private string $entryExtension,
-    ) {}
+    public function __construct(private AbsolutePath $directory) {}
 
     public function clear(): CacheClearOutcome
     {
-        if (!is_dir($this->directory)) {
-            return $this->missingDirectoryOutcome();
+        $remaining = 0;
+        $reason = null;
+        $retained = [];
+        $versions = CacheLayout::versions($this->directory->value());
+        if ($versions === null) {
+            return new CacheClearOutcome(false, 0, $this->directory->value(), 'Cannot inspect cache version directories.');
         }
-
-        $walkFailure = $this->removeNonMarkerEntries();
-        [$remaining, $inspectionFailure] = $this->inspectResidue();
-        if ($remaining > 0 || $inspectionFailure !== null || $walkFailure !== null) {
-            return new CacheClearOutcome(
-                false,
-                $remaining,
-                $this->directory,
-                $inspectionFailure ?? $walkFailure ?? \sprintf('%d cache entries remain after clear.', $remaining),
-            );
-        }
-
-        $markerFailure = $this->removeMarker();
-
-        return new CacheClearOutcome($markerFailure === null, 0, $this->directory, $markerFailure);
-    }
-
-    private function missingDirectoryOutcome(): CacheClearOutcome
-    {
-        return (file_exists($this->directory) || is_link($this->directory))
-            ? new CacheClearOutcome(false, 0, $this->directory, 'Cache directory is not a directory.')
-            : new CacheClearOutcome(true, 0, $this->directory, null);
-    }
-
-    private function removeNonMarkerEntries(): ?string
-    {
-        // CATCH_GET_CHILD can skip a closed subtree; inspectResidue must verify the result.
-        try {
-            $iterator = new RecursiveIteratorIterator(
-                new RecursiveDirectoryIterator($this->directory, FilesystemIterator::SKIP_DOTS),
-                RecursiveIteratorIterator::CHILD_FIRST,
-                RecursiveIteratorIterator::CATCH_GET_CHILD,
-            );
-            foreach ($iterator as $item) {
-                if ($item->getPathname() === $this->markerPath) {
-                    continue;
-                }
-
-                $item->isDir() ? @rmdir($item->getPathname()) : @unlink($item->getPathname());
+        foreach ($versions as $version) {
+            [$count, $failure, $retainedDirectory] = $this->detachAndClear($version);
+            if ($retainedDirectory !== null) {
+                $retained[] = $retainedDirectory;
             }
-        } catch (UnexpectedValueException $failure) {
-            return $failure->getMessage();
+            $remaining += $count;
+            $reason ??= $failure;
         }
 
-        return null;
+        return new CacheClearOutcome($remaining === 0 && $reason === null, $remaining, $this->directory->value(), $reason ?? ($retained === [] ? null : 'Retained detached cache directories: ' . implode(', ', $retained)));
+    }
+
+    /** @return array{int, ?string, ?string} */
+    private function detachAndClear(string $version): array
+    {
+        $detached = $this->directory->value() . '/.clearing-' . bin2hex(random_bytes(8));
+        if (!@rename($version, $detached)) {
+            return [1, 'Cannot detach cache version directory: ' . $version, null];
+        }
+
+        return $this->clearVersion($detached);
+    }
+
+    /** @return array{int, ?string, ?string} */
+    private function clearVersion(string $directory): array
+    {
+        $names = @scandir($directory);
+        if ($names === false) {
+            return [0, 'Cannot inspect detached cache directory: ' . $directory, null];
+        }
+        foreach ($names as $name) {
+            $this->clearItem($directory . '/' . $name, $name);
+        }
+        [$remaining, $failure] = $this->inspectResidue($directory);
+        @rmdir($directory);
+
+        return [$remaining, $failure, is_dir($directory) ? $directory : null];
     }
 
     /** @return array{int, ?string} */
-    private function inspectResidue(): array
+    private function inspectResidue(string $directory): array
     {
+        $names = @scandir($directory);
+        if ($names === false) {
+            return [0, 'Cannot inspect detached cache directory: ' . $directory];
+        }
         $remaining = 0;
-        try {
-            [$linkedShard, $rootFailure] = $this->linkedShard();
-            if ($rootFailure !== null) {
-                return [$remaining, $rootFailure];
-            }
+        $failure = null;
+        foreach ($names as $name) {
+            [$count, $reason] = $this->inspectItem($directory . '/' . $name, $name);
+            $remaining += $count;
+            $failure ??= $reason;
+        }
 
-            $entries = new RecursiveIteratorIterator(
-                new RecursiveDirectoryIterator($this->directory, FilesystemIterator::SKIP_DOTS),
-                RecursiveIteratorIterator::LEAVES_ONLY,
-            );
-            foreach ($entries as $entry) {
-                if ($this->isOwnedEntry($entry->getPathname())) {
+        return [$remaining, $failure];
+    }
+
+    /** @return array{int, ?string} */
+    private function inspectItem(string $path, string $name): array
+    {
+        if (self::metadataName($name)) {
+            return [0, 'Cannot remove cache metadata: ' . $path];
+        }
+        if (preg_match('/^[0-9a-f]{2}$/D', $name) !== 1) {
+            return [0, null];
+        }
+        if (is_link($path)) {
+            return [0, 'Cannot inspect linked cache shard: ' . $path];
+        }
+        if (!is_dir($path)) {
+            return [0, null];
+        }
+        $names = @scandir($path);
+        if ($names === false) {
+            return [0, 'Cannot inspect cache shard: ' . $path];
+        }
+        $remaining = \count(array_filter($names, self::ownedEntryName(...)));
+
+        return [$remaining, $remaining === 0 ? null : 'Cannot remove cache entries in: ' . $path];
+    }
+
+    private static function metadataName(string $name): bool
+    {
+        return $name === 'CACHEDIR.TAG' || $name === '.sweep' || preg_match('/^(?:CACHEDIR\.TAG|\.sweep)\.tmp\.[0-9a-f]+$/D', $name) === 1;
+    }
+
+    private static function ownedEntryName(string $name): bool
+    {
+        return CacheLayout::entryName($name) || preg_match('/^[0-9a-f]{64}\.tmp\.[0-9a-f]+$/D', $name) === 1;
+    }
+
+    /** @return array{int, ?string} */
+    private function clearItem(string $path, string $name): array
+    {
+        if (self::metadataName($name)) {
+            return @unlink($path) ? [0, null] : [0, 'Cannot remove cache metadata: ' . $path];
+        }
+        if (preg_match('/^[0-9a-f]{2}$/D', $name) === 1 && is_dir($path) && !is_link($path)) {
+            return $this->clearShard($path);
+        }
+
+        return [0, null];
+    }
+
+    /** @return array{int, ?string} */
+    private function clearShard(string $directory): array
+    {
+        $names = @scandir($directory);
+        if ($names === false) {
+            return [1, 'Cannot inspect cache shard: ' . $directory];
+        }
+        $remaining = 0;
+        foreach ($names as $name) {
+            if (self::ownedEntryName($name)) {
+                if (!@unlink($directory . '/' . $name)) {
                     ++$remaining;
                 }
             }
-        } catch (UnexpectedValueException $failure) {
-            return [$remaining, 'Cannot inspect all remaining cache entries: ' . $failure->getMessage()];
         }
+        @rmdir($directory);
 
-        return [$remaining, $linkedShard === null ? null : 'Cannot inspect linked cache shard: ' . $linkedShard];
-    }
-
-    /** @return array{?string, ?string} */
-    private function linkedShard(): array
-    {
-        $linkedShard = null;
-        foreach (new FilesystemIterator($this->directory, FilesystemIterator::SKIP_DOTS) as $rootEntry) {
-            if (!$rootEntry instanceof SplFileInfo) {
-                return [null, 'Cannot inspect a cache directory entry.'];
-            }
-            $name = $rootEntry->getFilename();
-            if ($rootEntry->isLink() && \strlen($name) >= 1 && \strlen($name) <= 2) {
-                $linkedShard = $rootEntry->getPathname();
-            }
-        }
-
-        return [$linkedShard, null];
-    }
-
-    private function isOwnedEntry(string $path): bool
-    {
-        $relative = substr($path, \strlen($this->directory) + 1);
-        $parts = explode('/', $relative);
-        if (\count($parts) !== 2) {
-            return false;
-        }
-
-        return \strlen($parts[0]) >= 1 && \strlen($parts[0]) <= 2
-            && str_starts_with($parts[1], $parts[0]) && str_ends_with($parts[1], $this->entryExtension);
-    }
-
-    private function removeMarker(): ?string
-    {
-        if ((file_exists($this->markerPath) || is_link($this->markerPath)) && !@unlink($this->markerPath)) {
-            return 'Cannot remove the serializer marker.';
-        }
-
-        return null;
+        return [$remaining, $remaining === 0 ? null : 'Cannot remove cache entries in: ' . $directory];
     }
 }

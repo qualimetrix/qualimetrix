@@ -16,6 +16,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Ast\CachedFileParser;
 use Qualimetrix\Infrastructure\Ast\PhpFileParser;
 use Qualimetrix\Infrastructure\Cache\CacheConfigurationStore;
+use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\CacheInterface;
 use Qualimetrix\Infrastructure\Cache\CacheKeyGenerator;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
@@ -207,6 +208,22 @@ final class CachedFileParserTest extends TestCase
         self::assertSame($directError->filePath->value(), $cachedError->filePath->value());
         self::assertStringContainsString($directError->filePath->value(), $cachedError->getMessage());
         self::assertStringNotContainsString('qmx-ast-', $cachedError->getMessage());
+    }
+
+    #[Test]
+    public function itResolvesTheNewRunDirectoryInsteadOfRetainingThePreviousCache(): void
+    {
+        $store = new CacheConfigurationStore();
+        $store->replace(new CacheConfiguration(AbsolutePath::fromString($this->cacheDir)));
+        $factory = new CacheFactory($store);
+        $inner = $this->createMock(FileParserInterface::class);
+        $inner->expects(self::exactly(2))->method('parseContent')->willReturn([new Class_('Current')]);
+        $parser = new CachedFileParser($inner, $factory, new CacheKeyGenerator(), $store);
+        $this->parseFile($parser, new SplFileInfo($this->tempFile));
+        $factory->reset();
+        $store->replace(new CacheConfiguration(AbsolutePath::fromString($this->cacheDir . '/second')));
+        $this->parseFile($parser, new SplFileInfo($this->tempFile));
+        self::assertDirectoryExists($this->cacheDir . '/second/ast-v1');
     }
 
     /** @return array<Node> */

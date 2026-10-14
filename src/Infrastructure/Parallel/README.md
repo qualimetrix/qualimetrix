@@ -63,3 +63,7 @@ exist. Skipping it instead made `--workers=N` measure less than `--workers=0`
 with nothing said anywhere a caller looks: the metrics were absent, the rules
 reading them reported nothing, coverage stayed complete and the exit code stayed
 normal.
+
+The selector obtains the accepted cache directory through the Cache-owned
+`CacheOpener`, including sequential selection. Workers use the supplied directory
+directly and do not open or sweep the coordinator cache.

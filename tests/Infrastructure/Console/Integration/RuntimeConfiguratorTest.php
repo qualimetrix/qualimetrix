@@ -60,6 +60,7 @@ use Qualimetrix\Subprocess\ChildProcess;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 use Qualimetrix\Tests\Infrastructure\Console\Support\SplitStreamConsoleOutput;
 use ReflectionClass;
+use ReflectionProperty;
 use RuntimeException;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -211,7 +212,7 @@ final class RuntimeConfiguratorTest extends TestCase
             new BufferedOutput(),
         );
 
-        self::assertSame($this->projectRoot . '/cache', $this->cacheStore->current()->directory->value());
+        self::assertSame($this->projectRoot . '/cache', $this->cacheStore->current()->directory?->value());
         self::assertFalse($this->cacheStore->current()->enabled);
         self::assertSame(3, $this->parallelStore->current()->workers);
         self::assertSame(['getName'], $this->lcomStore->current()->excludedMethods);
@@ -222,18 +223,26 @@ final class RuntimeConfiguratorTest extends TestCase
     #[Test]
     public function itRefusesAnIncompleteCacheClearWithTheDirectoryAndReason(): void
     {
-        $directory = $this->projectRoot . '/cache-file';
-        file_put_contents($directory, 'KEEP');
+        if (\function_exists('posix_geteuid') && posix_geteuid() === 0) {
+            self::markTestSkipped('Directory permissions do not refuse root.');
+        }
+        $directory = $this->projectRoot . '/cache';
         $this->cacheFactory->replaceConfiguration(new CacheConfiguration(AbsolutePath::fromString($directory)));
-
+        $this->cacheFactory->create()->set(str_repeat('a', 64), []);
+        chmod($directory . '/ast-v1/aa', 0500);
         try {
             $this->configurator->clearCacheIfRequested($this->input(['--clear-cache' => true]));
             self::fail('An incomplete cache clear must refuse the run.');
         } catch (EnvironmentRefusal $refusal) {
             self::assertStringContainsString($directory, $refusal->summary());
-            self::assertStringContainsString('Cache directory is not a directory', $refusal->summary());
-            self::assertSame('KEEP', file_get_contents($directory));
+            self::assertStringContainsString('1 cache entries remain', $refusal->summary());
+        } finally {
+            $shards = glob($directory . '/.clearing-*/aa');
+            foreach ($shards === false ? [] : $shards as $shard) {
+                chmod($shard, 0700);
+            }
         }
+
     }
 
     #[Test]
@@ -241,7 +250,7 @@ final class RuntimeConfiguratorTest extends TestCase
     {
         $reason = 'Default cache disabled: cache directory cannot be searched.';
         $logger = self::createMock(LoggerInterface::class);
-        $logger->expects(self::once())->method('warning')->with($reason);
+        $logger->expects(self::once())->method('warning')->with(self::stringContains($reason));
         $factory = self::createStub(LoggerFactoryInterface::class);
         $factory->method('create')->willReturn($logger);
         $configurator = $this->createConfigurator(loggerFactoryOverride: $factory);
@@ -254,6 +263,55 @@ final class RuntimeConfiguratorTest extends TestCase
         );
 
         $configurator->configure($document, $run, $this->findingConfigurationFor($document), $this->input(), new BufferedOutput());
+        $this->cacheFactory->open();
+        $this->cacheFactory->open();
+    }
+
+    #[Test]
+    public function itDoesNotClaimAClearWhenTheDefaultLocationIsUnavailable(): void
+    {
+        $this->cacheFactory->replaceConfiguration(new CacheConfiguration(null, false));
+        self::assertFalse($this->configurator->clearCacheIfRequested($this->input(['--clear-cache' => true])));
+    }
+
+    #[Test]
+    public function itFinishesTheRunWithOneCoordinatorDiscardWarning(): void
+    {
+        $logger = self::createMock(LoggerInterface::class);
+        $logger->expects(self::once())->method('warning')->with(self::stringContains('2 cache entries discarded'));
+        $factory = self::createStub(LoggerFactoryInterface::class);
+        $factory->method('create')->willReturn($logger);
+        $configurator = $this->createConfigurator(loggerFactoryOverride: $factory);
+        $document = $this->customDocument();
+        $root = AbsolutePath::fromString($this->projectRoot);
+        $run = new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, $root), (new ParallelConfigurationResolver())->resolve($document));
+        $configurator->configure($document, $run, $this->findingConfigurationFor($document), $this->input(), new BufferedOutput());
+        $directory = $this->projectRoot . '/cache';
+        $this->cacheFactory->replaceConfiguration(new CacheConfiguration(AbsolutePath::fromString($directory)));
+        foreach (['a', 'b'] as $prefix) {
+            $key = str_repeat($prefix, 64);
+            $this->cacheFactory->create()->set($key, []);
+            file_put_contents($directory . '/ast-v1/' . $prefix . $prefix . '/' . $key, 'invalid');
+            $this->cacheFactory->create()->get($key);
+        }
+        $configurator->finishRun();
+        $configurator->finishRun();
+    }
+
+    #[Test]
+    public function itDropsTheConfiguredCacheLoggerWhenResettingTheRun(): void
+    {
+        $logger = self::createStub(LoggerInterface::class);
+        $factory = self::createStub(LoggerFactoryInterface::class);
+        $factory->method('create')->willReturn($logger);
+        $configurator = $this->createConfigurator(loggerFactoryOverride: $factory);
+        $document = $this->customDocument();
+        $root = AbsolutePath::fromString($this->projectRoot);
+        $run = new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, $root), (new ParallelConfigurationResolver())->resolve($document));
+        $configurator->configure($document, $run, $this->findingConfigurationFor($document), $this->input(), new BufferedOutput());
+        self::assertSame($logger, (new ReflectionProperty($this->cacheFactory, 'logger'))->getValue($this->cacheFactory));
+        $configurator->resetRunState();
+        self::assertInstanceOf(NullLogger::class, (new ReflectionProperty($this->cacheFactory, 'logger'))->getValue($this->cacheFactory));
     }
 
     #[Test]
@@ -345,7 +403,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $secondCache = $this->cacheFactory->create();
 
         self::assertNotSame($firstCache, $secondCache);
-        self::assertSame($this->projectRoot . '/.qmx-cache', $this->cacheStore->current()->directory->value());
+        self::assertSame(\Qualimetrix\Infrastructure\Cache\DefaultCacheDirectory::for(getenv(), \PHP_OS_FAMILY)?->value(), $this->cacheStore->current()->directory?->value());
         self::assertTrue($this->cacheStore->current()->enabled);
         self::assertNull($this->parallelStore->current()->workers);
         $secondSnapshot = $this->rules->resolvedOptions();

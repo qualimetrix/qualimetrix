@@ -1326,7 +1326,7 @@ PHP);
             $parallelStrategy,
             new SequentialStrategy($profiler),
             $parallelConfigurationStore,
-            $cacheConfigurationStore,
+            new \Qualimetrix\Infrastructure\Cache\CacheFactory($cacheConfigurationStore),
             new WorkerCountDetector(),
             $logger,
         );

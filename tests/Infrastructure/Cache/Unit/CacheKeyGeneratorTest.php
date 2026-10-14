@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Cache\CacheKeyGenerator;
+use Symfony\Component\Process\Process;
 
 #[CoversClass(CacheKeyGenerator::class)]
 final class CacheKeyGeneratorTest extends TestCase
@@ -103,6 +104,29 @@ final class CacheKeyGeneratorTest extends TestCase
         self::assertNotSame($key1, $key2);
     }
 
+    #[Test]
+    public function itSeparatesLengthPrefixedFieldsAndParseIni(): void
+    {
+        $parserVersion = InstalledVersions::getVersion('nikic/php-parser');
+        $content = '<?php class Snapshot {}';
+        $fields = ['php' . \PHP_MAJOR_VERSION . '.' . \PHP_MINOR_VERSION, $parserVersion, (string) \ini_get('short_open_tag'), (string) \ini_get('zend.multibyte'), (string) \ini_get('zend.script_encoding'), $content];
+        $encoded = '';
+        foreach ($fields as $field) {
+            self::assertIsString($field);
+            $encoded .= \strlen($field) . ':' . $field;
+        }
+        self::assertSame(hash('sha256', $encoded), $this->generator->generateForContent($content));
+        $script = 'require ' . var_export(\dirname(__DIR__, 4) . '/vendor/autoload.php', true) . '; echo (new \Qualimetrix\Infrastructure\Cache\CacheKeyGenerator())->generateForContent("<? eval(\\$input); ?>");';
+        $keys = [];
+        foreach (['0', '1'] as $shortOpenTag) {
+            $process = new Process([\PHP_BINARY, '-d', 'short_open_tag=' . $shortOpenTag, '-r', $script]);
+            $process->mustRun();
+            $keys[] = $process->getOutput();
+        }
+        self::assertNotSame($keys[0], $keys[1]);
+
+    }
+
     private function key(): string
     {
         $content = file_get_contents($this->tempFile);
@@ -147,7 +171,7 @@ final class CacheKeyGeneratorTest extends TestCase
 
         $key = $this->key();
 
-        // xxh128 produces 32 hex characters
-        self::assertSame(32, \strlen($key));
+        // SHA-256 produces 64 hexadecimal characters
+        self::assertSame(64, \strlen($key));
     }
 }

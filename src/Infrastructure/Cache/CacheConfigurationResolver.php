@@ -14,25 +14,26 @@ final class CacheConfigurationResolver implements CacheConfigurationResolverInte
 {
     public function resolve(ConfigurationDocument $document, AbsolutePath $projectRoot): CacheConfiguration
     {
-        $configuredDirectory = $document->resolved()->get(CacheSection::KEY, 'dir');
-        $directory = CacheSection::directory($configuredDirectory);
+        $configured = $document->resolved()->get(CacheSection::KEY, 'dir');
         $enabled = CacheSection::enabled($document->resolved()->get(CacheSection::KEY, 'enabled'));
-        $path = PathFactory::fromCliArgument($directory, $projectRoot);
-
-        if (!$enabled) {
-            return new CacheConfiguration($path, false);
+        if ($configured === null) {
+            return new CacheConfiguration(DefaultCacheDirectory::for(getenv(), \PHP_OS_FAMILY), $enabled, source: CacheSource::default(), projectRoot: $projectRoot);
+        }
+        $path = PathFactory::fromCliArgument(CacheSection::acceptedDirectory($configured), $projectRoot);
+        $writers = $configured->contributors();
+        $winner = $writers[\count($writers) - 1];
+        $source = CacheSource::explicit($winner);
+        if ($enabled) {
+            $reason = CacheLocationJudgement::reason($path, $projectRoot);
+            if ($reason !== null) {
+                $configured->refuse($reason);
+            }
+            $trust = CacheLocationJudgement::trustReason($path);
+            if ($trust !== null) {
+                throw new CacheRootUntrusted($source->spelling . ': ' . $trust);
+            }
         }
 
-        $summary = CacheDirectoryEligibility::unusableMessage($path);
-        if ($summary === null) {
-            return new CacheConfiguration($path);
-        }
-
-        if ($configuredDirectory !== null) {
-            $configuredDirectory->refuse($summary);
-        }
-
-        return new CacheConfiguration($path, false, $summary);
+        return new CacheConfiguration($path, $enabled, source: $source, projectRoot: $projectRoot);
     }
-
 }

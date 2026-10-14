@@ -4,7 +4,8 @@ AST parsing and cache-backed parser adapters live here. Consumers depend on the
 Core parser contract rather than parser implementations.
 
 `CachedFileParser` is the only implementation the factory builds. Whether it
-caches is asked of the cache configuration store per parse, because the
+caches is asked through the run cache opener per coordinator parse (a worker
+uses its supplied configuration), because the
 container builds this service before a run is configured — a decision taken in
 the factory is a decision taken against the defaults. See
 [Cache README](../Cache/README.md).
