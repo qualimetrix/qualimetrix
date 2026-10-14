@@ -1,8 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -33,1 +33,1 @@
--Rule population incomplete — callable: 35 judged, 14 not judged; declaration: 10 judged, 14 not judged; directive-site: 1 judged, 0 not judged; invocation: 0 judged, 3 not judged; namespace: 1 judged, 7 not judged.
-+Rule population incomplete — callable: 35 judged, 14 not judged; declaration: 11 judged, 13 not judged; directive-site: 1 judged, 0 not judged; invocation: 0 judged, 3 not judged; namespace: 1 judged, 7 not judged.
-@@ -68,1 +68,1 @@
--Rule population incomplete — callable: 35 judged, 14 not judged; declaration: 10 judged, 14 not judged; directive-site: 1 judged, 0 not judged; invocation: 0 judged, 3 not judged; namespace: 1 judged, 7 not judged.
-+Rule population incomplete — callable: 35 judged, 14 not judged; declaration: 11 judged, 13 not judged; directive-site: 1 judged, 0 not judged; invocation: 0 judged, 3 not judged; namespace: 1 judged, 7 not judged.

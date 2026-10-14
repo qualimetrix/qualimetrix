@@ -1,2 +1,1 @@
 change	case	report	view	selector	reason
-withdrawn	health	json	format:json	{"channel":"health.coupling"}	Outgoing project coupling and measured-distance availability change coupling health. Retain only measured residual instances under this selector.

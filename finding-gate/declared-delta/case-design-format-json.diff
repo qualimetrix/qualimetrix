@@ -1,7 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -190,2 +190,2 @@
--            "gate": "own-distance",
--            "reason": "Own distance was not published. Missing metric \"coupling.distance-own\".",
-+            "gate": "own-coupling",
-+            "reason": "The own namespace has no coupling. Metric population boundary was not met.",

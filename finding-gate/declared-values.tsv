@@ -1,36 +1,5 @@
 kind	key	level	reason
-metric	cohesion.lcom	class	Effective class composition, transitive property reachability and LCOM graph eligibility alter evidence and aggregate measured populations; no-graph classes omit LCOM.
-metric	cohesion.lcom.avg	*	Effective class composition, transitive property reachability and LCOM graph eligibility alter evidence and aggregate measured populations; no-graph classes omit LCOM.
-metric	cohesion.lcom.count	*	Effective class composition, transitive property reachability and LCOM graph eligibility alter evidence and aggregate measured populations; no-graph classes omit LCOM.
-metric	cohesion.lcom.max	*	Effective class composition, transitive property reachability and LCOM graph eligibility alter evidence and aggregate measured populations; no-graph classes omit LCOM.
-metric	cohesion.lcom.p95	*	Effective class composition, transitive property reachability and LCOM graph eligibility alter evidence and aggregate measured populations; no-graph classes omit LCOM.
-metric	cohesion.lcom-method-count	class	Publishes the LCOM graph vertex count after exclusions and stateless merging; distinct from counted Size methods.
-metric	cohesion.tcc-method-count	class	Publishes the effective public TCC denominator, including eligible trait composition.
-metric	cohesion.unread-trait-count	class	Publishes unresolved trait composition count for each exact class declaration.
-metric	health.cohesion	*	Class cohesion uses the public TCC denominator and repaired graph evidence; aggregate cohesion populations and dependent overall scores may change. Namespace LCOM span was already 5 at the reference and is not changed by this diff.
-metric	health.overall	*	Class cohesion uses the public TCC denominator and repaired graph evidence; aggregate cohesion populations and dependent overall scores may change. Namespace LCOM span was already 5 at the reference and is not changed by this diff.
-metric	health.coupling	*	Undefined namespace distance is omitted; project coupling reads outgoing Ce/package breadth and type-weighted eligible own distance, retaining the namespace formula.
-metric	size.method-count	class	Only matching-name direct property read/write bodies are accessors; collaborator forwarding and validation bodies count as behavior.
-metric	size.method-count.avg	*	Only matching-name direct property read/write bodies are accessors; collaborator forwarding and validation bodies count as behavior. Aggregates retain the same declaration population.
-metric	size.method-count.sum	*	Only matching-name direct property read/write bodies are accessors; collaborator forwarding and validation bodies count as behavior. Aggregates retain the same declaration population.
-metric	size.method-count.public	class	Only matching-name direct property read/write bodies are accessors; collaborator forwarding and validation bodies count as behavior.
-metric	size.method-count.public.avg	*	Only matching-name direct property read/write bodies are accessors; collaborator forwarding and validation bodies count as behavior. Aggregates retain the same declaration population.
-metric	size.method-count.public.sum	*	Only matching-name direct property read/write bodies are accessors; collaborator forwarding and validation bodies count as behavior. Aggregates retain the same declaration population.
-metric	size.getter-count	class	Only matching-name direct property read/write bodies are accessors; collaborator forwarding and validation bodies count as behavior.
-metric	size.getter-count.avg	*	Only matching-name direct property read/write bodies are accessors; collaborator forwarding and validation bodies count as behavior. Aggregates retain the same declaration population.
-metric	size.getter-count.max	*	Only matching-name direct property read/write bodies are accessors; collaborator forwarding and validation bodies count as behavior. Aggregates retain the same declaration population.
-metric	size.getter-count.p95	*	Only matching-name direct property read/write bodies are accessors; collaborator forwarding and validation bodies count as behavior. Aggregates retain the same declaration population.
-metric	size.getter-count.sum	*	Only matching-name direct property read/write bodies are accessors; collaborator forwarding and validation bodies count as behavior. Aggregates retain the same declaration population.
-metric	design.woc	class	Only matching-name direct property read/write bodies are accessors; collaborator forwarding and validation bodies count as behavior. WOC uses the same accessor classification.
-metric	design.woc.avg	*	Only matching-name direct property read/write bodies are accessors; collaborator forwarding and validation bodies count as behavior. WOC aggregates reflect the changed class values.
-metric	design.woc.min	*	Only matching-name direct property read/write bodies are accessors; collaborator forwarding and validation bodies count as behavior. WOC aggregates reflect the changed class values.
-metric	design.is-data-class	class	Only matching-name direct property read/write bodies are accessors; collaborator forwarding and validation bodies count as behavior. The data-only flag reads the revised getter/setter counts.
-metric	design.is-data-class.sum	*	Only matching-name direct property read/write bodies are accessors; collaborator forwarding and validation bodies count as behavior. The aggregate counts changed data-only flags.
-metric	coupling.abstractness	namespace	No eligible type denominator means abstractness is absent, preserving own/subtree scope separation.
-metric	coupling.distance	namespace	Distance requires measured abstractness/instability and complete positive coupling; zero edges or missing evidence omit the key.
-metric	coupling.distance-own	namespace	Distance requires measured abstractness/instability and complete positive coupling; zero edges or missing evidence omit the key.
-metric	coupling.distance-own.avg	project	Project distance pools measured own namespace distances weighted by complete eligible own type counts; no eligible sample means absence.
-metric	coupling.distance-own.count	project	Project distance pools measured own namespace distances weighted by complete eligible own type counts; no eligible sample means absence.
-field	metricValue	*	Changed cohesion/accessor/distance/computed-health evidence can change an existing finding value, severity, explanation and severity-derived debt; preserve channel and exact subject identities. Retain only observed intentional pairs.
-field	message	*	Changed cohesion/accessor/distance/computed-health evidence can change an existing finding value, severity, explanation and severity-derived debt; preserve channel and exact subject identities. Retain only observed intentional pairs.
-field	recommendation	*	Changed cohesion/accessor/distance/computed-health evidence can change an existing finding value, severity, explanation and severity-derived debt; preserve channel and exact subject identities. Retain only observed intentional pairs.
+metric	complexity.npath	callable	Null coalescing selects an alternative value like a ternary expression; its NPath contribution and the exact measured aggregates increase.
+metric	complexity.npath.avg	*	Null coalescing selects an alternative value like a ternary expression; its NPath contribution and the exact measured aggregates increase.
+metric	complexity.npath.max	*	Null coalescing selects an alternative value like a ternary expression; its NPath contribution and the exact measured aggregates increase.
+metric	complexity.npath.p95	*	Null coalescing selects an alternative value like a ternary expression; its NPath contribution and the exact measured aggregates increase.
