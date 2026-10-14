@@ -11,17 +11,18 @@ use Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode;
 use ReflectionEnum;
 
 /**
- * The public exit-code vocabulary has two cases: a refusal by user input and
- * an internal error. A third enum case would widen that contract.
+ * The public terminal vocabulary distinguishes refusal, incomplete analysis
+ * and internal error.
  */
 #[CoversClass(ConsoleExitCode::class)]
 final class ConsoleExitCodeTest extends TestCase
 {
     #[Test]
-    public function itCarriesExactlyTheTwoPublicExitCodes(): void
+    public function itCarriesThePublicTerminalExitCodes(): void
     {
         self::assertSame(3, ConsoleExitCode::Refusal->value);
+        self::assertSame(4, ConsoleExitCode::AnalysisIncomplete->value);
         self::assertSame(5, ConsoleExitCode::InternalError->value);
-        self::assertCount(2, (new ReflectionEnum(ConsoleExitCode::class))->getCases());
+        self::assertCount(3, (new ReflectionEnum(ConsoleExitCode::class))->getCases());
     }
 }

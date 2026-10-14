@@ -9,6 +9,10 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface;
+use Qualimetrix\Infrastructure\Console\ConsoleDiagnostics;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\CollectorCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationStageCompilerPass;
@@ -74,9 +78,9 @@ final class ContainerFactory
      * The container starts with default owner-local state. RuntimeConfigurator
      * resolves each CLI/configuration run and applies it before pipeline execution.
      */
-    public function create(): ContainerBuilder
+    public function create(?ConsoleDiagnostics $diagnostics = null): ContainerBuilder
     {
-        $container = $this->configure();
+        $container = $this->configure($diagnostics);
         $container->compile();
 
         return $container;
@@ -87,7 +91,7 @@ final class ContainerFactory
      * not yet compiled — the container {@see create()} compiles, exposed so a
      * test can take one definition out of the real build and watch it refuse.
      */
-    public function configure(): ContainerBuilder
+    public function configure(?ConsoleDiagnostics $diagnostics = null): ContainerBuilder
     {
         $container = new ContainerBuilder();
 
@@ -126,6 +130,18 @@ final class ContainerFactory
 
         foreach ($configurators as $configurator) {
             $configurator->configure($container);
+        }
+
+        $diagnostics ??= ConsoleDiagnostics::fresh();
+        foreach ([
+            ErrorStream::class => $diagnostics->errorStream,
+            RefusalPresenter::class => $diagnostics->refusalPresenter,
+            OutOfMemoryHint::class => $diagnostics->outOfMemoryHint,
+        ] as $id => $service) {
+            $definition = $container->getDefinition($id);
+            $container->set($id, $service);
+            // set() removes the definition that autowiring still needs.
+            $container->setDefinition($id, $definition);
         }
 
         // Add compiler passes

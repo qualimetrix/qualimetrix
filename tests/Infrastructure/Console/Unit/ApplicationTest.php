@@ -74,7 +74,7 @@ final class ApplicationTest extends TestCase
         mkdir($root);
         $reader = new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader();
         $error = new ErrorStream();
-        $app = new Application($error, new RefusalPresenter($error), $reader);
+        $app = new Application($error, new RefusalPresenter($error), static fn() => $reader);
         $app->setAutoExit(false);
         $app->addCommand(new class ($reader) extends Command {
             public function __construct(private readonly \Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface $reader)
@@ -119,6 +119,20 @@ final class ApplicationTest extends TestCase
         );
 
         self::assertSame($resolved, getcwd());
+    }
+
+    #[Test]
+    public function itRefusesAnAuthoredEmptyWorkingDirectory(): void
+    {
+        $app = self::application();
+        $app->setAutoExit(false);
+        $output = new SplitStreamConsoleOutput(stderrDecorated: false);
+        $code = $app->doRun(new ArrayInput(['command' => 'list', '--working-dir' => '', '--format' => 'json']), $output);
+
+        self::assertSame(3, $code);
+        self::assertSame($this->originalCwd, getcwd());
+        $document = json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertStringContainsString('--working-dir', $document['error']);
     }
 
     #[Test]
@@ -483,7 +497,7 @@ final class ApplicationTest extends TestCase
         // `ErrorStream`s would let the
         // presenter clear a progress frame Application never drew on, or
         // vice versa.
-        return new Application($errorStream, new RefusalPresenter($errorStream), new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
+        return new Application($errorStream, new RefusalPresenter($errorStream), static fn() => new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
     }
 
     private static function commandThatThrows(Throwable $failure): Command

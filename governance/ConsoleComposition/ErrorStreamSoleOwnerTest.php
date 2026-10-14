@@ -26,7 +26,7 @@ use RecursiveIteratorIterator;
  *
  * A second *instance* is the same defect with everything spelled correctly —
  * two `ErrorStream` objects each keeping a private section list, redrawing
- * around nothing. Only the composition root may construct one, so `new
+ * around nothing. Only ConsoleDiagnostics may construct one, so `new
  * ErrorStream` anywhere in the shipped code is that defect, and the constructors
  * take the owner as a required argument so it cannot be reintroduced by
  * omission.
@@ -45,6 +45,8 @@ final class ErrorStreamSoleOwnerTest extends TestCase
      *                            is not the owner's business
      */
     private const array ALLOWED = [
+        'src/Infrastructure/Console/ConsoleDiagnostics.php'
+            => 'the single constructor shared by the application and its product container',
         'src/Infrastructure/Console/Refusal/OutOfMemoryHint.php'
             => 'fatal memory shutdown after the normal composition is unavailable; writes one bounded emergency diagnostic',
         'src/Infrastructure/Console/ErrorStream.php'

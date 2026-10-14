@@ -67,6 +67,7 @@ use Qualimetrix\Infrastructure\Console\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\ProfileSummaryRenderer;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
 use Qualimetrix\Infrastructure\Console\ProjectSourceConfigurator;
+use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
@@ -313,18 +314,12 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         // ErrorStream is the single owner of the run's error stream: the
         // progress section and every diagnostic writer come from this one
         // shared instance, which is what makes them redraw around each other.
-        $container->register(ErrorStream::class)->setPublic(true);
+        $container->register(ErrorStream::class)->setSynthetic(true)->setPublic(true);
 
-        // RefusalPresenter: the single writer for a configuration refusal or
-        // an internal error, shared by every command whose exit-code ladder
-        // catches ConfigurationRefusal — `check`, the five `baseline:*`, and
-        // `directives` here; `debug:layer-assignment` gets its own reference
-        // in ArchitectureConfigurator. Public, like ErrorStream above: `bin/qmx`
-        // fetches this exact instance to hand `Application`; a second,
-        // container-invisible instance would create a second diagnostic dialect.
         $container->register(RefusalPresenter::class)
-            ->setAutowired(true)
+            ->setSynthetic(true)
             ->setPublic(true);
+        $container->register(OutOfMemoryHint::class)->setSynthetic(true)->setPublic(true);
 
         $container->register(RunTargetSession::class)
             ->setArguments([

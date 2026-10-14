@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
+use Closure;
 use InvalidArgumentException;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
@@ -12,14 +13,17 @@ use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterfa
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Version;
 use Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode;
+use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Symfony\Component\Console\Application as BaseApplication;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Exception\ExceptionInterface as ConsoleExceptionInterface;
 use Symfony\Component\Console\Exception\LogicException as ConsoleLogicException;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Throwable;
 
 /**
@@ -43,14 +47,33 @@ final class Application extends BaseApplication
 {
     public const string NAME = 'Qualimetrix';
 
+    private ?OutOfMemoryHint $memoryHint = null;
+    private ?ProductCommandLoader $productLoader = null;
+    private ?string $invocationFormat = null;
+
+    /** @param Closure(): ManifestSnapshotControlInterface $manifestSnapshot */
     public function __construct(
         private readonly ErrorStream $errorStream,
         private readonly RefusalPresenter $refusalPresenter,
-        private readonly ManifestSnapshotControlInterface $manifestSnapshot,
+        private readonly Closure $manifestSnapshot,
     ) {
         parent::__construct(self::NAME, Version::get());
 
         self::appendPointerToListCommandHelp($this);
+    }
+
+    /** @param Closure(ConsoleDiagnostics): ContainerInterface $containerFor */
+    public static function forProduct(Closure $containerFor, OutOfMemoryHint $hint): self
+    {
+        $diagnostics = ConsoleDiagnostics::around($hint);
+        $loader = new ProductCommandLoader(static fn(): ContainerInterface => $containerFor($diagnostics));
+        $application = new self($diagnostics->errorStream, $diagnostics->refusalPresenter, $loader->manifestSnapshot(...));
+        $application->memoryHint = $hint;
+        $application->productLoader = $loader;
+        $application->setCatchErrors(true);
+        $application->setCommandLoader($loader);
+
+        return $application;
     }
 
     /**
@@ -165,24 +188,81 @@ final class Application extends BaseApplication
     public function doRun(InputInterface $input, OutputInterface $output): int
     {
         $format = self::requestedFormat($input);
+        $this->invocationFormat = $format;
 
         try {
             $this->errorStream->useGlyphMode(OutputEncoding::fromEnvironment(getenv('QMX_ASCII')));
+            $this->memoryHint?->answerThrough($this->refusalPresenter, $output, $format);
             self::applyWorkingDirOption($input);
-            $this->manifestSnapshot->beginInvocation();
 
-            return parent::doRun($input, $output);
+            try {
+                return parent::doRun($input, $output);
+            } finally {
+                $this->productLoader?->finishInvocation();
+            }
         } catch (RefusalInterface $refusal) {
-            return $this->refusalPresenter->refusal($output, $format, $refusal);
+            return $this->refusalPresenter->refusal($output, $this->invocationFormat, $refusal);
         } catch (ConsoleLogicException $e) {
-            return $this->refusalPresenter->unhandled($output, $format, $e);
+            return $this->refusalPresenter->unhandled($output, $this->invocationFormat, $e);
         } catch (ConsoleExceptionInterface $e) {
-            return $this->refusalPresenter->fallbackRefusal($output, $format, $e);
+            return $this->refusalPresenter->fallbackRefusal($output, $this->invocationFormat, $e);
         } catch (InvalidArgumentException $e) {
-            return $this->refusalPresenter->fallbackRefusal($output, $format, $e);
+            return $this->refusalPresenter->fallbackRefusal($output, $this->invocationFormat, $e);
         } catch (Throwable $e) {
-            return $this->refusalPresenter->unhandled($output, $format, $e);
+            return $this->refusalPresenter->unhandled($output, $this->invocationFormat, $e);
+        } finally {
+            $this->memoryHint?->unbind();
         }
+    }
+
+    protected function doRunCommand(Command $command, InputInterface $input, OutputInterface $output): int
+    {
+        $definition = $command->getDefinition();
+        if ($definition->hasOption('format')) {
+            $option = $definition->getOption('format');
+            $names = ['--format'];
+            foreach (explode('|', $option->getShortcut() ?? '') as $shortcut) {
+                if ($shortcut !== '') {
+                    $names[] = '-' . $shortcut;
+                }
+            }
+            $format = $input->getParameterOption($names, null);
+            $this->invocationFormat = \is_string($format) ? $format : null;
+        }
+        $this->memoryHint?->answerThrough($this->refusalPresenter, $output, $this->invocationFormat);
+        if ($this->productLoader === null || $this->productLoader->has($command->getName() ?? '')) {
+            ($this->manifestSnapshot)()->beginInvocation();
+        }
+
+        return parent::doRunCommand($command, $input, $output);
+    }
+
+    protected function getCommandName(InputInterface $input): ?string
+    {
+        $name = parent::getCommandName($input);
+        if ($name === null || $this->has($name)) {
+            return $name;
+        }
+
+        $names = $this->productLoader?->getNames() ?? [];
+        foreach ($this->getDefaultCommands() as $command) {
+            if (!$command->isHidden() && $command->getName() !== null) {
+                $names[] = $command->getName();
+            }
+        }
+        $names = array_values(array_unique($names));
+        $suggestions = array_values(array_filter($names, static fn(string $candidate): bool =>
+            strcasecmp($candidate, $name) === 0
+            || str_starts_with($candidate, $name)
+            || levenshtein($name, $candidate) <= \strlen($name) / 3));
+        usort($suggestions, static function (string $a, string $b) use ($name): int {
+            $distance = levenshtein($name, $a) <=> levenshtein($name, $b);
+
+            return $distance === 0 ? $a <=> $b : $distance;
+        });
+        $advice = $suggestions === [] ? '' : ' Did you mean: ' . implode(', ', \array_slice($suggestions, 0, 5)) . '?';
+
+        throw ConfigurationRefusal::aboutCommandLineInput('command', \sprintf('Unknown command "%s".%s', $name, $advice));
     }
 
     /**
@@ -211,8 +291,11 @@ final class Application extends BaseApplication
     {
         $workingDir = $input->getParameterOption(['--working-dir', '-d']);
 
-        if (!\is_string($workingDir) || $workingDir === '') {
+        if (!\is_string($workingDir)) {
             return;
+        }
+        if ($workingDir === '') {
+            throw ConfigurationRefusal::aboutCommandLineInput('--working-dir', 'The --working-dir value must not be empty.');
         }
 
         $resolved = realpath($workingDir);

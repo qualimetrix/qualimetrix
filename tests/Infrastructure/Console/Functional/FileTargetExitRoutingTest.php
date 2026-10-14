@@ -445,7 +445,7 @@ final class FileTargetExitRoutingTest extends TestCase
             $app = new \Qualimetrix\Infrastructure\Console\Application(
                 $errorStream,
                 $container->get(\Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter::class),
-                new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(),
+                static fn() => new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(),
             );
             $app->addCommand($command);
             exit($app->run(
@@ -550,7 +550,7 @@ final class FileTargetExitRoutingTest extends TestCase
             $app = new \Qualimetrix\Infrastructure\Console\Application(
                 $errorStream,
                 $presenter,
-                new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(),
+                static fn() => new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(),
             );
             $app->addCommand($command);
             exit($app->run(

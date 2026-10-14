@@ -15,6 +15,9 @@ CLI application based on Symfony Console with support for:
 ```
 Console/
 ├── Application.php
+├── ConsoleDiagnostics.php       # immutable process/container diagnostic identity
+├── ProductCommandLoader.php     # product name map and lazy container boundary
+├── ContainerBuildFailure.php    # internal composition failure, never an input refusal
 ├── CliSelectorDecoder.php       # explicit kind:value scalar → Core path/namespace pattern
 ├── CliOptionsParser.php
 ├── AuthoredRuleOptionWrites.php    # preserves authored occurrences across input adapters
@@ -685,11 +688,23 @@ to classify configuration refusals, environment refusals and raw Core environmen
 failures. Refusals exit with code 3; unrelated exceptions remain internal errors
 with code 5. Configuration source metadata, including import chains, survives
 the shared `RefusalInterface`. A failure after report publication is written to
-stderr so stdout retains one report document. If the Duplication detector
-exhausts PHP memory, its shutdown hint writes a short diagnostic to stderr with
-the failure site, current `memory_limit`, and `--memory-limit`/`qmx.yaml`
-remediation, then uses environment exit 4. Fatal OOM can interrupt a streamed
-report, so the adapter does not promise valid or complete JSON in that case.
+stderr so stdout retains one report document. `Application::forProduct()` shares
+one `ConsoleDiagnostics` with the container and places its lazy construction
+inside the exit ladder. `--version` and a rejected top-level command name never
+build the container. Vendor lists, help and completion retain their resolution
+and can build it. Top-level names require exact spelling and case; suggestions
+never execute another command. The snapshot resolver obtains the same container's
+`ManifestSnapshotControlInterface` at product execution, after working-directory
+selection; a later invocation begins a fresh snapshot.
+
+After the memory hint is registered and bound, coordinator exhaustion uses exit
+4 and the requested JSON envelope or a text diagnostic on stderr. It names the
+failure site, current `memory_limit`, authored limit source (otherwise `php.ini`)
+and remediation. Exhaustion before registration, or a foreign shutdown callback
+that overwrites PHP's last error before this callback runs, can retain PHP's exit
+255. The hint captures its decision before its own target-release callbacks;
+their warnings and exceptions cannot replace the outcome. Fatal OOM can interrupt
+a streamed report, so already published bytes may precede the envelope.
 
 For a stream output, the JSON refusal writer verifies every write and the final
 flush. If stdout cannot accept the envelope, the same terminal diagnostic is

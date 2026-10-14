@@ -12,60 +12,22 @@ declare(strict_types=1);
 
 namespace Qualimetrix\InputDoors;
 
-use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Infrastructure\Console\Application;
-use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineRenameChannelsCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
-use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
-use Qualimetrix\Infrastructure\Console\Command\DirectivesCommand;
-use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
-use Qualimetrix\Infrastructure\Console\Command\HookInstallCommand;
-use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
-use Qualimetrix\Infrastructure\Console\Command\HookUninstallCommand;
-use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
-use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\Console\ConsoleDiagnostics;
+use Qualimetrix\Infrastructure\Console\ProductCommandLoader;
+use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
-use RuntimeException;
-use Symfony\Component\Console\CommandLoader\ContainerCommandLoader;
 
 /** @return array<string, class-string> */
 function commandMap(): array
 {
-    return [
-        'check' => CheckCommand::class,
-        'baseline:generate' => BaselineGenerateCommand::class,
-        'baseline:update' => BaselineUpdateCommand::class,
-        'baseline:cleanup' => BaselineCleanupCommand::class,
-        'baseline:explain' => BaselineExplainCommand::class,
-        'baseline:rename-channels' => BaselineRenameChannelsCommand::class,
-        'debug:layer-assignment' => LayerAssignmentCommand::class,
-        'directives' => DirectivesCommand::class,
-        'graph:export' => GraphExportCommand::class,
-        'hook:install' => HookInstallCommand::class,
-        'hook:uninstall' => HookUninstallCommand::class,
-        'hook:status' => HookStatusCommand::class,
-        'rules' => RulesCommand::class,
-    ];
+    return ProductCommandLoader::NAMES;
 }
 
 function application(): Application
 {
-    $container = (new ContainerFactory())->create();
-    $errorStream = $container->get(ErrorStream::class);
-    $refusalPresenter = $container->get(RefusalPresenter::class);
-    $snapshot = $container->get(ManifestSnapshotControlInterface::class);
-
-    if (!$errorStream instanceof ErrorStream || !$refusalPresenter instanceof RefusalPresenter || !$snapshot instanceof ManifestSnapshotControlInterface) {
-        throw new RuntimeException('the container did not yield the console collaborators bin/qmx wires');
-    }
-
-    $application = new Application($errorStream, $refusalPresenter, $snapshot);
-    $application->setCommandLoader(new ContainerCommandLoader($container, commandMap()));
-
-    return $application;
+    return Application::forProduct(
+        static fn(ConsoleDiagnostics $diagnostics) => (new ContainerFactory())->create($diagnostics),
+        OutOfMemoryHint::register(),
+    );
 }

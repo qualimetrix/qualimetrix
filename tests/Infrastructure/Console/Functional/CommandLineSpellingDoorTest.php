@@ -196,7 +196,9 @@ final class CommandLineSpellingDoorTest extends TestCase
         $errorStream = $container->get(ErrorStream::class);
         /** @var RefusalPresenter $refusalPresenter */
         $refusalPresenter = $container->get(RefusalPresenter::class);
-        $application = new Application($errorStream, $refusalPresenter, new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
+        $manifest = $container->get(ManifestSnapshotControlInterface::class);
+        self::assertInstanceOf(ManifestSnapshotControlInterface::class, $manifest);
+        $application = new Application($errorStream, $refusalPresenter, static fn(): ManifestSnapshotControlInterface => $manifest);
         $application->setAutoExit(false);
         $application->setCommandLoader(new ContainerCommandLoader($container, [
             'check' => CheckCommand::class,

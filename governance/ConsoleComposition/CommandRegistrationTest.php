@@ -35,7 +35,7 @@ final class CommandRegistrationTest extends TestCase
 {
     private const string COMMAND_DIRECTORY = __DIR__ . '/../../src/Infrastructure/Console/Command';
 
-    private const string BINARY = __DIR__ . '/../../bin/qmx';
+    private const string BINARY = __DIR__ . '/../../src/Infrastructure/Console/ProductCommandLoader.php';
 
     /** @param class-string<Command> $class */
     #[Test]

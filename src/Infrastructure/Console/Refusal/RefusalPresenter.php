@@ -97,6 +97,13 @@ final class RefusalPresenter
         return $this->unhandled($output, null, $failure);
     }
 
+    public function resourceExhausted(OutputInterface $output, ?string $format, string $message): int
+    {
+        $this->present($output, $format, $message, ConsoleExitCode::AnalysisIncomplete, null, null);
+
+        return ConsoleExitCode::AnalysisIncomplete->value;
+    }
+
     private static function refusalSentence(RefusalInterface $refusal): string
     {
         return \sprintf('%s error: %s', $refusal instanceof EnvironmentRefusal ? 'Environment' : 'Configuration', $refusal->summary());

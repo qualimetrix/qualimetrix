@@ -28,8 +28,9 @@ bindings; configuration and Health consume those same expression services.
 ## Invocation source bindings
 
 `ComposerManifestReaderInterface` and `ManifestSnapshotControlInterface` alias
-one Infrastructure Composer reader. `Application` begins its snapshot after
-working-directory selection and before the first read; each root caches success,
+one Infrastructure Composer reader. `Application` resolves its snapshot from
+the lazy product container at product execution, after working-directory
+selection and before the first read; each root caches success,
 absence and failure for that invocation. The next invocation clears them.
 Measurement's namespace resolver is likewise composed under both its read port
 and `ProjectNamespaceSourceControlInterface`. Console's
