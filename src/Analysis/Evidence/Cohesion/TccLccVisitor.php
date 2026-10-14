@@ -24,12 +24,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterfac
  * - List of public methods
  * - For each method: set of properties accessed via $this->property
  *
- * Simplified variant of Bieman & Kang (1995): measures cohesion through direct
- * property access in public methods only. Does NOT follow invocation trees
- * (a public method delegating to a private helper that accesses a property
- * is NOT counted as using that property). This is consistent with most
- * industry tools (PHPMD, PHPMetrics) but may underestimate cohesion for
- * classes that heavily use delegation patterns.
+ * These are file-local facts. Global composition adds effective trait methods
+ * and follows calls through instance helpers before calculating TCC/LCC.
  *
  * Constructors and destructors are excluded per the B&K specification.
  * Anonymous classes and enums are ignored. Trait bodies are recorded for later composition.

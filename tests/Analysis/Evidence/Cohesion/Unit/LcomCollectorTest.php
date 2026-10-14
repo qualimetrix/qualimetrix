@@ -50,7 +50,7 @@ final class LcomCollectorTest extends TestCase
     }
 
     #[Test]
-    public function itReturnsZeroLcomForEmptyClass(): void
+    public function itOmitsLcomForEmptyClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -64,8 +64,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // Empty class has LCOM = 0 (no methods)
-        self::assertSame(0, $metrics->get('cohesion.lcom:App\EmptyClass'));
+        // An empty graph has no LCOM value.
+        self::assertNull($metrics->get('cohesion.lcom:App\EmptyClass'));
     }
 
     #[Test]
@@ -456,7 +456,7 @@ PHP;
         self::assertSame([], $this->collector->getMetricDefinitions());
         $definitions = (new CohesionCompositionCollector())->getMetricDefinitions();
 
-        self::assertCount(4, $definitions);
+        self::assertCount(7, $definitions);
 
         $def = $definitions[0];
         self::assertSame('cohesion.lcom', $def->name);
@@ -685,7 +685,32 @@ PHP;
     }
 
     #[Test]
-    public function itReturnsZeroLcomWhenOnlyStaticMethods(): void
+    public function itConnectsAsciiFoldedInstanceCallsThroughThisSelfAndStatic(): void
+    {
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+namespace App;
+class ViaThis
+{
+    public function first(): void { $this->SeCoNd(); }
+    private function second(): int { return $this->value; }
+}
+class ViaStaticSyntax
+{
+    private $a;
+    private $b;
+    public function first(): void { $this->a = 1; self::HELPER(); }
+    public function second(): void { $this->b = 1; static::helper(); }
+    private function helper(): int { return 42; }
+}
+PHP);
+
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\ViaThis'));
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\ViaStaticSyntax'));
+    }
+
+    #[Test]
+    public function itOmitsLcomWhenOnlyStaticMethods(): void
     {
         $code = <<<'PHP'
 <?php
@@ -701,8 +726,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // All methods are static => 0 instance methods => LCOM 0
-        self::assertSame(0, $metrics->get('cohesion.lcom:App\AllStatic'));
+        // All methods are static, so the LCOM graph has no vertices.
+        self::assertNull($metrics->get('cohesion.lcom:App\AllStatic'));
     }
 
     #[Test]
@@ -1197,12 +1222,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // getName, getDescription: stateless => merged into virtual node
-        // process: calls $this->getName() => edge to virtual node; accesses $data
-        // read: accesses $data => connected to process via shared $data
-        // process -> virtual (via method call), process -> read (via $data)
-        // All in one component => LCOM 1
-        self::assertSame(1, $metrics->get('cohesion.lcom:App\WithStatelessCall'));
+        // Called getName keeps its own vertex; uncalled getDescription is the virtual vertex.
+        self::assertSame(2, $metrics->get('cohesion.lcom:App\WithStatelessCall'));
     }
 
     #[Test]
@@ -1374,7 +1395,7 @@ PHP;
     }
 
     #[Test]
-    public function itStillAppliesTotalTrivialClassExemption(): void
+    public function itGroupsUncalledStatelessMethodsWithoutTrivialExemption(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1391,8 +1412,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // All methods are trivial AND all are stateless => LCOM 1
-        // (both the trivial exemption and stateless grouping would produce LCOM 1)
+        // The graph has one virtual vertex for uncalled stateless methods.
         self::assertSame(1, $metrics->get('cohesion.lcom:App\AllTrivial'));
     }
 
@@ -1608,12 +1628,10 @@ PHP);
             $wire = unserialize(serialize($wire));
             self::assertInstanceOf(MetricBag::class, $wire);
             $data = CohesionFactWire::lcomFromRows($wire->entries(LcomCollector::FACTS));
-            $lcom = $data->calculateLcom($this->configuration->excludedMethods);
-            if ($lcom > 1 && $data->hasOnlyTrivialMethods()) {
-                $lcom = 1;
-            }
             $name = $data->namespace !== null && $data->namespace !== '' ? $data->namespace . '\\' . $data->className : $data->className;
-            $metrics = $metrics->with('cohesion.lcom:' . $name, $lcom);
+            if ($data->lcomMethodCount($this->configuration->excludedMethods) > 0) {
+                $metrics = $metrics->with('cohesion.lcom:' . $name, $data->calculateLcom($this->configuration->excludedMethods));
+            }
         }
 
         return $metrics;

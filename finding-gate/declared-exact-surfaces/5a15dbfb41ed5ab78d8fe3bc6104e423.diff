@@ -1,0 +1,8 @@
+--- candidate
++++ reference (mapped)
+@@ -16,1 +16,1 @@
+-        "description": "Data Class detected: only 50% of the public interface is behavior (WOC, threshold 50%) and complexity is low (WMC=3, threshold 10). Consider encapsulating behavior or using a DTO pattern",
++        "description": "Data Class detected: only 25% of the public interface is behavior (WOC, threshold 50%) and complexity is low (WMC=3, threshold 10). Consider encapsulating behavior or using a DTO pattern",
+@@ -55,1 +55,1 @@
+-        "description": "Data Class detected: only 50% of the public interface is behavior (WOC, threshold 50%) and complexity is low (WMC=3, threshold 10). Consider encapsulating behavior or using a DTO pattern",
++        "description": "Data Class detected: only 25% of the public interface is behavior (WOC, threshold 50%) and complexity is low (WMC=3, threshold 10). Consider encapsulating behavior or using a DTO pattern",

@@ -30,6 +30,9 @@ final class CohesionFactWire
                 'stateless' => isset($state['statelessMethods'][$method]),
             ];
         }
+        foreach (CohesionMemberWire::rows($state['declaredMethods'], $state['traitUses'], $state['instancePropertyCount']) as $row) {
+            $rows[] = $row;
+        }
         foreach (self::propertyRows($state['propertyAccesses']) as $row) {
             $rows[] = $row;
         }
@@ -109,8 +112,16 @@ final class CohesionFactWire
         if ($nonTrivial) {
             $data->markNonTrivial();
         }
+        $traitRows = [];
         foreach (\array_slice($rows, 1) as $row) {
+            if (\in_array($row['tag'] ?? null, ['trait', 'alias', 'precedence'], true)) {
+                $traitRows[] = $row;
+                continue;
+            }
             self::addLcomRow($data, $row);
+        }
+        foreach (CohesionTraitUses::fromRows($traitRows) as $use) {
+            $data->declaration()->addTraitUse($use);
         }
 
         return $data;
@@ -166,7 +177,7 @@ final class CohesionFactWire
                 $data->addMethodCall((string) $row['caller'], (string) $row['callee']);
                 break;
             default:
-                throw new LogicException('Unknown LCOM fact row');
+                CohesionMemberWire::addRow($data, $row);
         }
     }
 
@@ -202,4 +213,5 @@ final class CohesionFactWire
                 throw new LogicException('Unknown TCC fact row');
         }
     }
+
 }

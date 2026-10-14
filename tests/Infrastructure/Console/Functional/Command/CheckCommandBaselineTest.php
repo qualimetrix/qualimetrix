@@ -384,7 +384,7 @@ final class CheckCommandBaselineTest extends TestCase
 
     #[Test]
     #[DataProvider('provideNarrowCohesionBaselineValues')]
-    public function itComparesLocalCohesionAgainstAWholeProjectBaselineOnOneFile(int $groups, int $exit): void
+    public function itLeavesRunDependentCohesionUncomparedOnOneFile(int $groups): void
     {
         mkdir($this->tempDir . '/src');
         file_put_contents($this->tempDir . '/composer.json', json_encode([
@@ -415,28 +415,39 @@ final class CheckCommandBaselineTest extends TestCase
             '--baseline' => $this->baselinePath,
             '--format' => 'json',
         ], captureErrors: true);
-        self::assertSame($exit, $check->getStatusCode(), $check->getDisplay());
-        /** @var array{summary: array{filesAnalyzed: int, violationCount: int}, projectScope: array{state: string}, violations: list<array{metricValue: int, severity: string, baselineVerdict: string}>} $report */
+        self::assertSame(0, $check->getStatusCode(), $check->getDisplay());
+        /** @var array{summary: array{filesAnalyzed: int, violationCount: int}, projectScope: array{state: string}, violations: list<array{metricValue: int, severity: string, baselineVerdict: string, baselineReason: string}>} $report */
         $report = json_decode($check->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertSame(1, $report['summary']['filesAnalyzed']);
         self::assertSame('narrowed', $report['projectScope']['state']);
+        self::assertSame(1, $report['summary']['violationCount']);
+        self::assertCount(1, $report['violations']);
+        self::assertSame($groups, $report['violations'][0]['metricValue']);
+        self::assertSame('warning', $report['violations'][0]['severity']);
+        self::assertSame('not-compared', $report['violations'][0]['baselineVerdict']);
+        self::assertSame('outside-coverage', $report['violations'][0]['baselineReason']);
+
+        $whole = $this->runCheck([
+            'paths' => ['src'],
+            '--baseline' => $this->baselinePath,
+            '--format' => 'json',
+        ], captureErrors: true);
+        self::assertSame($groups === 4 ? 0 : 2, $whole->getStatusCode(), $whole->getDisplay());
+        /** @var array{violations: list<array{severity: string, baselineVerdict: string}>} $wholeReport */
+        $wholeReport = json_decode($whole->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
         if ($groups === 4) {
-            self::assertSame(0, $report['summary']['violationCount']);
-            self::assertSame([], $report['violations']);
+            self::assertSame([], $wholeReport['violations']);
         } else {
-            self::assertSame(1, $report['summary']['violationCount']);
-            self::assertCount(1, $report['violations']);
-            self::assertSame(5, $report['violations'][0]['metricValue']);
-            self::assertSame('error', $report['violations'][0]['severity']);
-            self::assertSame('breached', $report['violations'][0]['baselineVerdict']);
+            self::assertSame('error', $wholeReport['violations'][0]['severity']);
+            self::assertSame('breached', $wholeReport['violations'][0]['baselineVerdict']);
         }
     }
 
-    /** @return iterable<string, array{int, int}> */
+    /** @return iterable<string, array{int}> */
     public static function provideNarrowCohesionBaselineValues(): iterable
     {
-        yield 'unchanged remains accepted' => [4, 0];
-        yield 'growth breaches the accepted magnitude' => [5, 2];
+        yield 'unchanged remains unjudged' => [4];
+        yield 'growth remains unjudged' => [5];
     }
 
     private static function cohesionFixture(int $groups): string

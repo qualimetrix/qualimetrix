@@ -143,10 +143,15 @@ namespace App;
 
 class WithGetters
 {
-    public function getName(): string { return ''; }
-    public function getId(): int { return 0; }
-    public function isActive(): bool { return true; }
-    public function hasPermission(): bool { return false; }
+    private string $name = '';
+    private int $id = 0;
+    private bool $active = true;
+    private bool $permission = false;
+
+    public function getName(): string { return $this->name; }
+    public function getId(): int { return $this->id; }
+    public function isActive(): bool { return $this->active; }
+    public function hasPermission(): bool { return $this->permission; }
 }
 PHP;
 
@@ -168,9 +173,13 @@ namespace App;
 
 class WithSetters
 {
-    public function setName(string $name): void {}
-    public function setId(int $id): void {}
-    public function setValue(mixed $value): void {}
+    private string $name = '';
+    private int $id = 0;
+    private mixed $value = null;
+
+    public function setName(string $name): void { $this->name = $name; }
+    public function setId(int $id): void { $this->id = $id; }
+    public function setValue(mixed $value): void { $this->value = $value; }
 }
 PHP;
 
@@ -192,12 +201,16 @@ namespace App;
 
 class Entity
 {
-    public function getId(): int { return 0; }
-    public function setId(int $id): void {}
-    public function getName(): string { return ''; }
-    public function setName(string $name): void {}
-    public function isActive(): bool { return true; }
-    public function setActive(bool $active): void {}
+    private int $id = 0;
+    private string $name = '';
+    private bool $active = true;
+
+    public function getId(): int { return $this->id; }
+    public function setId(int $id): void { $this->id = $id; }
+    public function getName(): string { return $this->name; }
+    public function setName(string $name): void { $this->name = $name; }
+    public function isActive(): bool { return $this->active; }
+    public function setActive(bool $active): void { $this->active = $active; }
 
     public function save(): void {}
     public function validate(): bool { return true; }
@@ -230,10 +243,10 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('size.method-count:App\MyInterface'));
+        self::assertSame(3, $metrics->get('size.method-count:App\MyInterface'));
         self::assertSame(3, $metrics->get('size.method-count.total:App\MyInterface'));
-        self::assertSame(1, $metrics->get('size.getter-count:App\MyInterface'));
-        self::assertSame(1, $metrics->get('size.setter-count:App\MyInterface'));
+        self::assertSame(0, $metrics->get('size.getter-count:App\MyInterface'));
+        self::assertSame(0, $metrics->get('size.setter-count:App\MyInterface'));
     }
 
     #[Test]
@@ -246,9 +259,11 @@ namespace App;
 
 trait MyTrait
 {
+    private string $name = '';
+
     public function traitMethod(): void {}
     protected function protectedTrait(): void {}
-    public function getName(): string { return ''; }
+    public function getName(): string { return $this->name; }
 }
 PHP;
 
@@ -290,9 +305,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('size.method-count:App\Status'));
+        self::assertSame(2, $metrics->get('size.method-count:App\Status'));
         self::assertSame(2, $metrics->get('size.method-count.total:App\Status'));
-        self::assertSame(2, $metrics->get('size.getter-count:App\Status')); // getLabel, isActive
+        self::assertSame(0, $metrics->get('size.getter-count:App\Status')); // Neither reads an instance property
     }
 
     #[Test]
@@ -361,8 +376,10 @@ PHP;
 
 class GlobalClass
 {
+    private string $name = '';
+
     public function method(): void {}
-    public function getName(): string { return ''; }
+    public function getName(): string { return $this->name; }
 }
 PHP;
 
@@ -467,11 +484,15 @@ namespace App;
 
 class CaseTest
 {
-    public function GetValue(): int { return 0; }
-    public function GETNAME(): string { return ''; }
-    public function SetValue(int $v): void {}
-    public function SETNAME(string $n): void {}
-    public function IsActive(): bool { return true; }
+    private int $value = 0;
+    private string $name = '';
+    private bool $active = true;
+
+    public function GetValue(): int { return $this->value; }
+    public function GETNAME(): string { return $this->name; }
+    public function SetValue(int $v): void { $this->value = $v; }
+    public function SETNAME(string $n): void { $this->name = $n; }
+    public function IsActive(): bool { return $this->active; }
     public function HAS_permission(): bool { return false; }
 }
 PHP;
@@ -517,10 +538,14 @@ namespace App;
 
 class ExactPrefixes
 {
-    public function get(): void {} // Exact "get" - getter
-    public function is(): void {}  // Exact "is" - getter
-    public function has(): void {} // Exact "has" - getter
-    public function set(): void {} // Exact "set" - setter
+    private int $value = 0;
+    private bool $active = false;
+    private bool $permission = false;
+
+    public function get(): int { return $this->value; }
+    public function is(): bool { return $this->active; }
+    public function has(): bool { return $this->permission; }
+    public function set(int $value): void { $this->value = $value; }
 }
 PHP;
 
@@ -809,11 +834,15 @@ namespace App;
 
 class EntityWithAccessors
 {
-    public function getName(): string { return ''; }
-    public function getId(): int { return 0; }
-    public function isActive(): bool { return true; }
-    public function setName(string $name): void {}
-    public function setId(int $id): void {}
+    private string $name = '';
+    private int $id = 0;
+    private bool $active = true;
+
+    public function getName(): string { return $this->name; }
+    public function getId(): int { return $this->id; }
+    public function isActive(): bool { return $this->active; }
+    public function setName(string $name): void { $this->name = $name; }
+    public function setId(int $id): void { $this->id = $id; }
     public function publish(): void {}
     private function validate(): void {}
 }
@@ -822,6 +851,63 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         self::assertSame(17, $metrics->get('design.woc:App\EntityWithAccessors'));
+    }
+
+    #[Test]
+    public function itUsesTheSameBodyShapeForMethodCountsAndWoc(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+class AccountFacade
+{
+    private int $value = 0;
+
+    public function getValue(): int { return $this->value; }
+    public function setValue(int $value): self { $this->value = $value; return $this; }
+    public function getRemote(): int { return $this->remote->fetch(); }
+    public function setRemote(int $value): void { $this->remote->save($value); }
+    public function isReady(): bool { return $this->value > 0; }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(1, $metrics->get('size.getter-count:App\AccountFacade'));
+        self::assertSame(1, $metrics->get('size.setter-count:App\AccountFacade'));
+        self::assertSame(3, $metrics->get('size.method-count:App\AccountFacade'));
+        self::assertSame(5, $metrics->get('size.method-count.total:App\AccountFacade'));
+        self::assertSame(60, $metrics->get('design.woc:App\AccountFacade'));
+    }
+
+    #[Test]
+    public function itRejectsComputedAndMultiStepAccessorBodies(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+class NotAccessors
+{
+    private int $value = 0;
+    private static int $shared = 0;
+
+    public function getComputed(): int { return $this->value + 1; }
+    public function getStatic(): int { return self::$shared; }
+    public function getParameterized(int $other): int { return $this->value; }
+    public function setComputed(int $value): void { $this->value = $value + 1; }
+    public function setTwice(int $value): void { $this->value = $value; $this->value = $value; }
+    public function setExtra(int $value, int $other): void { $this->value = $value; }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(0, $metrics->get('size.getter-count:App\NotAccessors'));
+        self::assertSame(0, $metrics->get('size.setter-count:App\NotAccessors'));
+        self::assertSame(6, $metrics->get('size.method-count:App\NotAccessors'));
+        self::assertSame(100, $metrics->get('design.woc:App\NotAccessors'));
     }
 
     #[Test]
@@ -834,10 +920,13 @@ namespace App;
 
 class PureDto
 {
-    public function getName(): string { return ''; }
-    public function setName(string $name): void {}
-    public function getId(): int { return 0; }
-    public function setId(int $id): void {}
+    private string $name = '';
+    private int $id = 0;
+
+    public function getName(): string { return $this->name; }
+    public function setName(string $name): void { $this->name = $name; }
+    public function getId(): int { return $this->id; }
+    public function setId(int $id): void { $this->id = $id; }
 }
 PHP;
 
@@ -954,9 +1043,11 @@ class EmptyClass {}
 
 class ConstructorAccessors
 {
+    private string $name = '';
+
     public function __construct() {}
-    public function getName(): string { return ''; }
-    public function setName(string $name): void {}
+    public function getName(): string { return $this->name; }
+    public function setName(string $name): void { $this->name = $name; }
 }
 
 class MixedPromoted

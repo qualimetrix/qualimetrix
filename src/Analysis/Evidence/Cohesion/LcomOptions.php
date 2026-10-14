@@ -32,6 +32,7 @@ final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAware
     use StandardOverrideValidatorTrait;
 
     /**
+     * @param int $minMethods Minimum number of LCOM graph vertices after exclusions and stateless merging
      * @param list<string>|null $excludeMethods Method names to exclude from LCOM graph (e.g., lifecycle hooks)
      */
     public function __construct(

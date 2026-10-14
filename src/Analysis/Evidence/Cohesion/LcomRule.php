@@ -31,7 +31,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * - LCOM > 1: class could potentially be split into multiple classes
  *
  * Besides the published `cohesion.lcom` value, also reads
- * `size.method-count` (skip trivial classes) and `design.is-readonly` (skip
+ * `cohesion.lcom-method-count` (graph population) and `design.is-readonly` (skip
  * readonly classes when configured).
  */
 #[CliAlias('lcom-warning', 'warning')]
@@ -144,7 +144,7 @@ final class LcomRule extends AbstractRule
             )->withGates(
                 self::populationGate('class-coordinate', self::NAME, SymbolLevel::Class_, 'declaration', self::kindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
                 self::populationGate('exclude-readonly', self::NAME, SymbolLevel::Class_, 'declaration', self::flagExcludes('exclude-readonly', MetricName::DESIGN_IS_READONLY, 1, true), 'The configured class exclusion applies.'),
-                self::populationGate('minimum-methods', self::NAME, SymbolLevel::Class_, 'declaration', self::keyThreshold('minimum-methods', [MetricName::SIZE_METHOD_COUNT], '>=', 'minimum-methods', 'zero', true), 'Methods are below the configured minimum.'),
+                self::populationGate('minimum-methods', self::NAME, SymbolLevel::Class_, 'declaration', self::keyThreshold('minimum-methods', [MetricName::COHESION_LCOM_METHOD_COUNT], '>=', 'minimum-methods', 'zero', true), 'Methods are below the configured minimum.'),
                 self::populationGate('class-value', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('class-value', [MetricName::COHESION_LCOM]), 'The class metric was not published.'),
             ),
             'cohesion.unmatched-exclude-method' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project)

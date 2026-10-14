@@ -65,6 +65,7 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
 
         array_push($lines, ...($context->verbose ? RuleAbstentionNarrator::verboseLines($report) : RuleAbstentionNarrator::lines($report)));
         array_push($lines, ...ComputedMetricAbsenceNarrator::lines($report));
+        array_push($lines, ...$report->inheritanceDepth->lines());
 
         $healthScores = $this->healthScoreResolver->resolve($report, $context);
 
@@ -255,15 +256,16 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
             return \sprintf(
                 '  %s  %s   %s  %s',
                 $name,
-                $this->ansiRightPad($color->dim('N/A'), 7),
+                $this->ansiPad($color->dim('N/A'), 7, \STR_PAD_LEFT),
                 $this->ansiPad($color->dim($hs->label), 12),
                 $color->dim($coverage),
             );
         }
 
-        $scoreStr = $this->ansiRightPad(
+        $scoreStr = $this->ansiPad(
             $this->colorizeScore(\sprintf('%5.1f%%', $hs->score), $hs, $color),
             7,
+            \STR_PAD_LEFT,
         );
         $statusIcon = $hs->score > $hs->warningThreshold ? "\u{25B2}" : "\u{25BC}";
         $statusStr = $this->colorizeScore($statusIcon . ' ' . $hs->label, $hs, $color);
@@ -321,7 +323,7 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
 
         $value = $this->formatValue($item->value);
         $boldValue = $color->bold($value);
-        $paddedValue = $this->ansiRightPad($boldValue, 8);
+        $paddedValue = $this->ansiPad($boldValue, 8, \STR_PAD_LEFT);
         $explanation = $item->explanation !== '' ? ' — ' . $item->explanation : '';
 
         return \sprintf(
@@ -401,26 +403,12 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
         return $color->red($text);
     }
 
-    /**
-     * Left-pads a string to the given width, accounting for invisible ANSI escape sequences.
-     */
-    private function ansiPad(string $text, int $width): string
+    private function ansiPad(string $text, int $width, int $direction = \STR_PAD_RIGHT): string
     {
         $visibleLength = mb_strlen((string) preg_replace('/\e\[[0-9;]*m/', '', $text));
-        $padding = max(0, $width - $visibleLength);
+        $padding = str_repeat(' ', max(0, $width - $visibleLength));
 
-        return $text . str_repeat(' ', $padding);
-    }
-
-    /**
-     * Right-aligns a string to the given width, accounting for invisible ANSI escape sequences.
-     */
-    private function ansiRightPad(string $text, int $width): string
-    {
-        $visibleLength = mb_strlen((string) preg_replace('/\e\[[0-9;]*m/', '', $text));
-        $padding = max(0, $width - $visibleLength);
-
-        return str_repeat(' ', $padding) . $text;
+        return $direction === \STR_PAD_LEFT ? $padding . $text : $text . $padding;
     }
 
     private function formatValue(float $value): string

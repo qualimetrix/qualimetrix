@@ -157,10 +157,12 @@
             "size.symbol-method-count": 6,
             "size.symbol-class-count": 7,
             "size.symbol-declaring-namespace-count": 3,
-            "cohesion.lcom.avg": 0.6666666666666666,
+            "coupling.distance-own.avg": 0.2,
+            "coupling.distance-own.count": 2,
+            "cohesion.lcom.avg": 1.5,
             "cohesion.lcom.max": 2,
-            "cohesion.lcom.p95": 1.7999999999999998,
-            "cohesion.lcom.count": 3,
+            "cohesion.lcom.p95": 1.95,
+            "cohesion.lcom.count": 2,
             "cohesion.tcc.avg": 0,
             "cohesion.tcc.min": 0,
             "cohesion.tcc.count": 1,
@@ -223,14 +225,12 @@
             "coupling.class-rank-share.avg": 1.0000000000000002,
             "coupling.class-rank-share.p95": 1.3859192648034746,
             "coupling.class-rank-share.count": 7,
-            "coupling.distance-own.avg": 0.4166666666666667,
-            "coupling.distance-own.count": 3,
             "health.complexity": 98,
-            "health.cohesion": 50,
-            "health.coupling": 87.8048780487805,
+            "health.cohesion": 45,
+            "health.coupling": 93.75,
             "health.typing": 100,
             "health.maintainability": 100,
-            "health.overall": 86.9609756097561
+            "health.overall": 87.15
         },
         "violations": [],
         "violationCountTotal": 4,
@@ -364,12 +364,6 @@
                     "coupling.ce-own": 0,
                     "coupling.instability-own": 0,
                     "coupling.cbo-own": 0,
-                    "coupling.distance": 1,
-                    "coupling.distance-own": 1,
-                    "cohesion.lcom.avg": 0,
-                    "cohesion.lcom.max": 0,
-                    "cohesion.lcom.p95": 0,
-                    "cohesion.lcom.count": 1,
                     "coupling.ca.sum": 0,
                     "coupling.ce.sum": 0,
                     "coupling.ce.avg": 0,
@@ -429,9 +423,8 @@
                     "coupling.class-rank-share.avg": 0.804597840605836,
                     "coupling.class-rank-share.p95": 0.804597840605836,
                     "coupling.class-rank-share.count": 1,
-                    "health.cohesion": 100,
-                    "health.coupling": 75,
-                    "health.overall": 87.5
+                    "health.coupling": 100,
+                    "health.overall": 100
                 },
                 "violations": [],
                 "violationCountTotal": 0,
@@ -480,14 +473,15 @@
                             "design.is-abstract": 0,
                             "design.is-interface": 0,
                             "design.woc": 100,
-                            "cohesion.lcom": 0,
+                            "cohesion.unread-trait-count": 0,
+                            "cohesion.lcom-method-count": 0,
+                            "cohesion.tcc-method-count": 0,
                             "coupling.rfc": 0,
                             "coupling.rfc-own": 0,
                             "coupling.rfc-external": 0,
                             "design.dit": 0,
                             "design.dit-unresolved": 0,
                             "design.is-exception": 0,
-                            "health.cohesion": 100,
                             "health.coupling": 100,
                             "health.overall": 100
                         },
@@ -656,10 +650,9 @@
                     "coupling.ca-own": 0,
                     "coupling.ce-own": 0,
                     "coupling.instability-own": 0,
-                    "coupling.distance": 0.6,
-                    "cohesion.lcom.avg": 1,
+                    "cohesion.lcom.avg": 1.5,
                     "cohesion.lcom.max": 2,
-                    "cohesion.lcom.p95": 1.9,
+                    "cohesion.lcom.p95": 1.95,
                     "cohesion.lcom.count": 2,
                     "cohesion.tcc.avg": 0,
                     "cohesion.tcc.min": 0,
@@ -727,11 +720,11 @@
                     "coupling.class-rank-share.p95": 1.4030169537504642,
                     "coupling.class-rank-share.count": 6,
                     "health.complexity": 98,
-                    "health.cohesion": 50,
-                    "health.coupling": 83.33333333333333,
+                    "health.cohesion": 45,
+                    "health.coupling": 100,
                     "health.typing": 100,
                     "health.maintainability": 100,
-                    "health.overall": 86.06666666666666
+                    "health.overall": 88.4
                 },
                 "violations": [],
                 "violationCountTotal": 4,
@@ -910,9 +903,9 @@
                             "coupling.cbo-own": 1,
                             "coupling.distance": 0.25,
                             "coupling.distance-own": 0.25,
-                            "cohesion.lcom.avg": 1,
+                            "cohesion.lcom.avg": 1.5,
                             "cohesion.lcom.max": 2,
-                            "cohesion.lcom.p95": 1.9,
+                            "cohesion.lcom.p95": 1.95,
                             "cohesion.lcom.count": 2,
                             "cohesion.tcc.avg": 0,
                             "cohesion.tcc.min": 0,
@@ -980,11 +973,11 @@
                             "coupling.class-rank-share.p95": 1.1465516195456233,
                             "coupling.class-rank-share.count": 5,
                             "health.complexity": 95.8,
-                            "health.cohesion": 50,
+                            "health.cohesion": 45,
                             "health.coupling": 92.3076923076923,
                             "health.typing": 100,
                             "health.maintainability": 100,
-                            "health.overall": 87.20153846153846
+                            "health.overall": 86.20153846153846
                         },
                         "violations": [
                             {
@@ -1102,7 +1095,10 @@
                                     "maintainability.mi.min": 67.35614714822512,
                                     "maintainability.mi.count": 3,
                                     "size.symbol-method-count": 3,
+                                    "cohesion.unread-trait-count": 0,
+                                    "cohesion.lcom-method-count": 2,
                                     "cohesion.lcom": 2,
+                                    "cohesion.tcc-method-count": 2,
                                     "cohesion.tcc": 0,
                                     "cohesion.lcc": 0,
                                     "cohesion.pure-method-count": 1,
@@ -1113,11 +1109,11 @@
                                     "design.dit-unresolved": 0,
                                     "design.is-exception": 0,
                                     "health.complexity": 94,
-                                    "health.cohesion": 65.25741858350554,
+                                    "health.cohesion": 69.36067977499789,
                                     "health.coupling": 100,
                                     "health.typing": 100,
                                     "health.maintainability": 100,
-                                    "health.overall": 89.21435464587638
+                                    "health.overall": 90.24016994374946
                                 },
                                 "violations": [
                                     {
@@ -1295,7 +1291,10 @@
                                     "design.is-abstract": 0,
                                     "design.is-interface": 0,
                                     "design.woc": 100,
-                                    "cohesion.lcom": 0,
+                                    "cohesion.unread-trait-count": 0,
+                                    "cohesion.lcom-method-count": 1,
+                                    "cohesion.lcom": 1,
+                                    "cohesion.tcc-method-count": 1,
                                     "coupling.rfc": 1,
                                     "coupling.rfc-own": 1,
                                     "coupling.rfc-external": 0,
@@ -1837,11 +1836,11 @@
         "totalDebtMinutes": 105,
         "healthScores": {
             "health.complexity": 98,
-            "health.cohesion": 50,
-            "health.coupling": 87.8048780487805,
+            "health.cohesion": 45,
+            "health.coupling": 93.75,
             "health.typing": 100,
             "health.maintainability": 100,
-            "health.overall": 86.9609756097561
+            "health.overall": 87.15
         },
         "healthDecomposition": {
             "health.complexity": [
@@ -1946,14 +1945,14 @@
                 {
                     "metric": "cohesion.lcom.avg",
                     "humanName": "LCOM4 (avg)",
-                    "value": 0.6666666666666666,
+                    "value": 1.5,
                     "good": "1 or less",
                     "direction": "lower_is_better",
                     "coverage": {
                         "state": "measured",
-                        "measured": 3,
+                        "measured": 2,
                         "eligible": 7,
-                        "ratio": 0.42857142857142855,
+                        "ratio": 0.2857142857142857,
                         "unit": "classes",
                         "basis": "cohesion.lcom.count",
                         "reason": null
@@ -1964,24 +1963,24 @@
                 {
                     "metric": "coupling.distance-own.avg",
                     "humanName": "Distance (own)",
-                    "value": 0.4166666666666667,
+                    "value": 0.2,
                     "good": "below 0.3",
                     "direction": "lower_is_better",
                     "coverage": {
                         "state": "measured",
-                        "measured": 3,
+                        "measured": 2,
                         "eligible": 3,
-                        "ratio": 1,
+                        "ratio": 0.6666666666666666,
                         "unit": "namespaces declaring a type",
                         "basis": "coupling.distance-own.count",
                         "reason": null
                     }
                 },
                 {
-                    "metric": "coupling.cbo.avg",
-                    "humanName": "CBO (avg)",
-                    "value": 0.8571428571428571,
-                    "good": "below 8",
+                    "metric": "coupling.ce-packages.avg",
+                    "humanName": "Ce pkg (avg)",
+                    "value": 0,
+                    "good": "joint breadth at most 4 (3 * Ce pkg avg + 0.5 * sqrt(Ce avg))",
                     "direction": "lower_is_better",
                     "coverage": {
                         "state": "measured",
@@ -1989,15 +1988,15 @@
                         "eligible": 7,
                         "ratio": 1,
                         "unit": "classes",
-                        "basis": "coupling.cbo.count",
+                        "basis": "coupling.ce-packages.count",
                         "reason": null
                     }
                 },
                 {
-                    "metric": "coupling.cbo.p95",
-                    "humanName": "CBO (p95)",
-                    "value": 1.6999999999999993,
-                    "good": "below 15",
+                    "metric": "coupling.ce.avg",
+                    "humanName": "Ce (avg)",
+                    "value": 0.42857142857142855,
+                    "good": "joint breadth at most 4 (3 * Ce pkg avg + 0.5 * sqrt(Ce avg))",
                     "direction": "lower_is_better",
                     "coverage": {
                         "state": "measured",
@@ -2005,13 +2004,13 @@
                         "eligible": 7,
                         "ratio": 1,
                         "unit": "classes",
-                        "basis": "coupling.cbo.count",
+                        "basis": "coupling.ce.count",
                         "reason": null
                     }
                 },
                 {
-                    "metric": "coupling.cbo.max",
-                    "humanName": "CBO (max)",
+                    "metric": "coupling.ce.max",
+                    "humanName": "Ce (max)",
                     "value": 2,
                     "good": "below 30",
                     "direction": "lower_is_better",
@@ -2021,7 +2020,7 @@
                         "eligible": 7,
                         "ratio": 1,
                         "unit": "classes",
-                        "basis": "coupling.cbo.count",
+                        "basis": "coupling.ce.count",
                         "reason": null
                     }
                 }
@@ -2149,9 +2148,9 @@
             },
             "health.coupling": {
                 "state": "measured",
-                "measured": 3,
+                "measured": 2,
                 "eligible": 3,
-                "ratio": 1,
+                "ratio": 0.6666666666666666,
                 "unit": "namespaces declaring a type",
                 "basis": "coupling.distance-own.count",
                 "reason": null
@@ -2313,6 +2312,40 @@
                     {
                         "above": true,
                         "text": "The worst twentieth are hard to follow"
+                    }
+                ],
+                "formatTemplate": null
+            },
+            "coupling.ce.avg": {
+                "label": "Ce (avg)",
+                "ranges": [
+                    {
+                        "above": true,
+                        "text": "Joint breadth target: 3 * Ce pkg avg + 0.5 * sqrt(Ce avg) at most 4; neither component has an independent threshold"
+                    }
+                ],
+                "formatTemplate": null
+            },
+            "coupling.ce-packages.avg": {
+                "label": "Ce pkg (avg)",
+                "ranges": [
+                    {
+                        "above": true,
+                        "text": "Joint breadth target: 3 * Ce pkg avg + 0.5 * sqrt(Ce avg) at most 4; neither component has an independent threshold"
+                    }
+                ],
+                "formatTemplate": null
+            },
+            "coupling.ce.max": {
+                "label": "Ce (max)",
+                "ranges": [
+                    {
+                        "max": 30,
+                        "text": "No class exceeds the outgoing dependency ceiling"
+                    },
+                    {
+                        "above": true,
+                        "text": "At least one class exceeds the outgoing dependency ceiling"
                     }
                 ],
                 "formatTemplate": null
@@ -3187,18 +3220,18 @@
                             "direction": "lower"
                         },
                         {
-                            "key": "coupling.cbo.avg",
-                            "label": "CBO (avg)",
+                            "key": "coupling.ce-packages.avg",
+                            "label": "Ce pkg (avg)",
                             "direction": "lower"
                         },
                         {
-                            "key": "coupling.cbo.p95",
-                            "label": "CBO p95",
+                            "key": "coupling.ce.avg",
+                            "label": "Ce (avg)",
                             "direction": "lower"
                         },
                         {
-                            "key": "coupling.cbo.max",
-                            "label": "CBO max",
+                            "key": "coupling.ce.max",
+                            "label": "Ce max",
                             "direction": "lower"
                         }
                     ]
@@ -3285,6 +3318,7 @@
         "excluded": 0,
         "failures": []
     },
+    "inheritanceDepthOutcomes": [],
     "abstentions": [
         {
             "producer": "size.class-count",

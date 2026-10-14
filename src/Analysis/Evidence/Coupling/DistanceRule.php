@@ -144,7 +144,6 @@ final class DistanceRule extends AbstractRule
                 \assert($this->options instanceof DistanceOptions);
                 yield GateInput::metrics('own-types', $metrics, $this->options->minTypeCount);
                 yield GateInput::metrics('own-distance', $metrics);
-                yield GateInput::metrics('own-coupling', $metrics);
             })(),
         );
         return ['present' => $present, 'projectMatched' => $matched, 'finding' => $admitted ? $this->matchedNamespaceFinding($namespaceInfo, $context) : null];
@@ -246,7 +245,6 @@ final class DistanceRule extends AbstractRule
                 self::populationGate('namespace-selected', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', self::nameMatches('namespace-selected'), 'The namespace is outside the configured project selection.'),
                 self::populationGate('own-types', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', self::keyThreshold('own-types', [MetricName::SIZE_CLASS_COUNT, MetricName::SIZE_TRAIT_COUNT, MetricName::SIZE_INTERFACE_COUNT, MetricName::SIZE_IMPLEMENTING_ENUM_COUNT], '>=', 'own-types', 'zero', true), 'The own type population is below its minimum.'),
                 self::populationGate('own-distance', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', self::keyPresent('own-distance', [MetricName::COUPLING_DISTANCE_OWN]), 'Own distance was not published.'),
-                self::populationGate('own-coupling', new FindingChannel(self::NAME), SymbolLevel::Namespace_, 'namespace', self::keyThreshold('own-coupling', [MetricName::COUPLING_CA_OWN, MetricName::COUPLING_CE_OWN], '>', 0, 'refuse', true), 'The own namespace has no coupling.'),
             ),
         ];
     }

@@ -62,6 +62,7 @@ rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contra
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Path/AbsolutePath.php	Qualimetrix\Core\Path\AbsolutePath	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Path/PathFactory.php	Qualimetrix\Core\Path\PathFactory	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Path/RelativePath.php	Qualimetrix\Core\Path\RelativePath	error	1
+rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Symbol/ClassNameSpelling.php	Qualimetrix\Core\Symbol\ClassNameSpelling	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Symbol/DeclarationPath.php	Qualimetrix\Core\Symbol\DeclarationPath	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Symbol/MetricSubject.php	Qualimetrix\Core\Symbol\MetricSubject	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Symbol/SymbolInfo.php	Qualimetrix\Core\Symbol\SymbolInfo	error	1
@@ -113,7 +114,6 @@ rule-namespace-suppression	coupling.instability	coupling.instability	(no file)	Q
 rule-namespace-suppression	coupling.instability	coupling.instability	(no file)	Qualimetrix\Infrastructure\Console	warning	1
 rule-namespace-suppression	coupling.instability	coupling.instability	(no file)	Qualimetrix\Infrastructure\DependencyInjection\CompilerPass	warning	1
 rule-namespace-suppression	coupling.instability	coupling.instability	(no file)	Qualimetrix\Infrastructure\DependencyInjection\Configurator	warning	1
-rule-namespace-suppression	health.cohesion	health.cohesion	(no file)	Qualimetrix\Analysis\Evidence\Prioritization	warning	1
 rule-namespace-suppression	health.cohesion	health.cohesion	(no file)	Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion	warning	1
 rule-namespace-suppression	size.class-count	size.class-count	(no file)	Qualimetrix\Analysis\Evidence\CodeSmell	error	1
 rule-namespace-suppression	size.class-count	size.class-count	(no file)	Qualimetrix\Analysis\Finding\Contract\Rule	error	1
@@ -168,7 +168,7 @@ rule-path-suppression	code-smell.long-parameter-list	code-smell.long-parameter-l
 rule-path-suppression	complexity.ccn	complexity.ccn	src/Analysis/Evidence/CodeSmell/UnreachableCodeVisitor.php	Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeVisitor::nestedStatementLists	warning	1
 rule-path-suppression	complexity.ccn	complexity.ccn	src/Analysis/Evidence/CodeSmell/UnusedPrivateVisitor.php	Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateVisitor::enterClassLike	warning	1
 rule-path-suppression	complexity.ccn	complexity.ccn	src/Analysis/Evidence/CodeSmell/UnusedPrivateVisitor.php	Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateVisitor::enterNode	error	1
-rule-path-suppression	complexity.ccn	complexity.ccn	src/Analysis/Evidence/Cohesion/LcomVisitor.php	Qualimetrix\Analysis\Evidence\Cohesion\LcomVisitor::enterNode	error	1
+rule-path-suppression	complexity.ccn	complexity.ccn	src/Analysis/Evidence/Cohesion/LcomVisitor.php	Qualimetrix\Analysis\Evidence\Cohesion\LcomVisitor::enterNode	warning	1
 rule-path-suppression	complexity.ccn	complexity.ccn	src/Analysis/Evidence/Cohesion/LcomVisitor.php	Qualimetrix\Analysis\Evidence\Cohesion\LcomVisitor::isConstantExpression	warning	1
 rule-path-suppression	complexity.ccn	complexity.ccn	src/Analysis/Evidence/Cohesion/TccLccVisitor.php	Qualimetrix\Analysis\Evidence\Cohesion\TccLccVisitor	warning	1
 rule-path-suppression	complexity.ccn	complexity.ccn	src/Analysis/Evidence/Cohesion/TccLccVisitor.php	Qualimetrix\Analysis\Evidence\Cohesion\TccLccVisitor::enterNode	error	1
@@ -188,10 +188,10 @@ rule-path-suppression	complexity.ccn	complexity.ccn	src/Analysis/Evidence/Mainta
 rule-path-suppression	complexity.ccn	complexity.ccn	src/Analysis/Evidence/Maintainability/HalsteadVisitor.php	Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor::getUnaryOpName	warning	1
 rule-path-suppression	complexity.ccn	complexity.ccn	src/Analysis/Evidence/Size/ClassCountVisitor.php	Qualimetrix\Analysis\Evidence\Size\ClassCountVisitor::enterNode	warning	1
 rule-path-suppression	complexity.ccn	complexity.ccn	src/Analysis/Evidence/Size/MethodCountVisitor.php	Qualimetrix\Analysis\Evidence\Size\MethodCountVisitor::countMethod	warning	1
+rule-path-suppression	complexity.ccn	complexity.ccn	src/Analysis/Evidence/Size/MethodCountVisitor.php	Qualimetrix\Analysis\Evidence\Size\MethodCountVisitor::hasSetterBody	warning	1
 rule-path-suppression	complexity.ccn	complexity.ccn	src/Analysis/Evidence/Size/MethodStatementCountVisitor.php	Qualimetrix\Analysis\Evidence\Size\MethodStatementCountVisitor::isCountedStatement	error	1
 rule-path-suppression	complexity.cognitive	complexity.cognitive	src/Analysis/Evidence/CodeSmell/UnusedPrivateVisitor.php	Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateVisitor::enterNode	warning	1
-rule-path-suppression	complexity.cognitive	complexity.cognitive	src/Analysis/Evidence/Cohesion/LcomVisitor.php	Qualimetrix\Analysis\Evidence\Cohesion\LcomVisitor	warning	1
-rule-path-suppression	complexity.cognitive	complexity.cognitive	src/Analysis/Evidence/Cohesion/LcomVisitor.php	Qualimetrix\Analysis\Evidence\Cohesion\LcomVisitor::enterNode	error	1
+rule-path-suppression	complexity.cognitive	complexity.cognitive	src/Analysis/Evidence/Cohesion/LcomVisitor.php	Qualimetrix\Analysis\Evidence\Cohesion\LcomVisitor::enterNode	warning	1
 rule-path-suppression	complexity.cognitive	complexity.cognitive	src/Analysis/Evidence/Cohesion/LcomVisitor.php	Qualimetrix\Analysis\Evidence\Cohesion\LcomVisitor::isConstantExpression	warning	1
 rule-path-suppression	complexity.cognitive	complexity.cognitive	src/Analysis/Evidence/Cohesion/TccLccVisitor.php	Qualimetrix\Analysis\Evidence\Cohesion\TccLccVisitor	error	1
 rule-path-suppression	complexity.cognitive	complexity.cognitive	src/Analysis/Evidence/Cohesion/TccLccVisitor.php	Qualimetrix\Analysis\Evidence\Cohesion\TccLccVisitor::enterNode	error	1
@@ -205,13 +205,14 @@ rule-path-suppression	complexity.npath	complexity.npath	src/Analysis/Evidence/Co
 rule-path-suppression	complexity.npath	complexity.npath	src/Analysis/Evidence/Maintainability/HalsteadVisitor.php	Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor::getOperandName	error	1
 rule-path-suppression	complexity.npath	complexity.npath	src/Analysis/Evidence/Size/ClassCountVisitor.php	Qualimetrix\Analysis\Evidence\Size\ClassCountVisitor::enterNode	warning	1
 rule-path-suppression	complexity.npath	complexity.npath	src/Analysis/Evidence/Size/MethodCountVisitor.php	Qualimetrix\Analysis\Evidence\Size\MethodCountVisitor::countMethod	warning	1
+rule-path-suppression	complexity.npath	complexity.npath	src/Analysis/Evidence/Size/MethodCountVisitor.php	Qualimetrix\Analysis\Evidence\Size\MethodCountVisitor::hasSetterBody	warning	1
 rule-path-suppression	complexity.wmc	complexity.wmc	src/Analysis/Evidence/CodeSmell/UnreachableCodeVisitor.php	Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeVisitor	warning	1
 rule-path-suppression	complexity.wmc	complexity.wmc	src/Analysis/Evidence/CodeSmell/UnusedPrivateVisitor.php	Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateVisitor	warning	1
 rule-path-suppression	complexity.wmc	complexity.wmc	src/Analysis/Evidence/Cohesion/LcomVisitor.php	Qualimetrix\Analysis\Evidence\Cohesion\LcomVisitor	warning	1
 rule-path-suppression	complexity.wmc	complexity.wmc	src/Analysis/Evidence/Complexity/CognitiveComplexityVisitor.php	Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityVisitor	error	1
 rule-path-suppression	complexity.wmc	complexity.wmc	src/Analysis/Evidence/Complexity/NpathComplexityVisitor.php	Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityVisitor	error	1
 rule-path-suppression	complexity.wmc	complexity.wmc	src/Analysis/Evidence/Maintainability/HalsteadVisitor.php	Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor	error	1
-rule-path-suppression	complexity.wmc	complexity.wmc	src/Analysis/Evidence/Size/MethodCountVisitor.php	Qualimetrix\Analysis\Evidence\Size\MethodCountVisitor	warning	1
+rule-path-suppression	complexity.wmc	complexity.wmc	src/Analysis/Evidence/Size/MethodCountVisitor.php	Qualimetrix\Analysis\Evidence\Size\MethodCountVisitor	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/ConfigurationDocument.php	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Document/Provenance.php	Qualimetrix\Analysis\Configuration\Contract\Document\Provenance	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Document/ResolvedValueInterface.php	Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface	error	1
@@ -368,7 +369,6 @@ rule-path-suppression	health.cohesion	health.cohesion	src/Analysis/Finding/Contr
 rule-path-suppression	health.cohesion	health.cohesion	src/Analysis/Policy/Architecture/Layer/ClassContext/NameSpellingIndex.php	Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\NameSpellingIndex	warning	1
 rule-path-suppression	health.cohesion	health.cohesion	src/Analysis/Policy/Baseline/Contract/CeilingOutcome.php	Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome	warning	1
 rule-path-suppression	health.cohesion	health.cohesion	src/Core/FileTarget/ResolvedTarget.php	Qualimetrix\Core\FileTarget\ResolvedTarget	warning	1
-rule-path-suppression	health.cohesion	health.cohesion	src/Infrastructure/Console/FindingFilterOrchestrator.php	Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator	warning	1
 rule-path-suppression	health.cohesion	health.cohesion	src/Infrastructure/Serializer/IgbinarySerializer.php	Qualimetrix\Infrastructure\Serializer\IgbinarySerializer	warning	1
 rule-path-suppression	size.property-count	size.property-count	src/Analysis/Evidence/Size/MethodCountMetrics.php	Qualimetrix\Analysis\Evidence\Size\MethodCountMetrics	error	1
 suppression	src/Analysis/Configuration/Document/AuthoredNode.php	code-smell.boolean-argument	src/Analysis/Configuration/Document/AuthoredNode.php	Qualimetrix\Analysis\Configuration\Document\AuthoredNode::scalar	warning	1
@@ -376,11 +376,11 @@ suppression	src/Analysis/Configuration/Document/ScalarConstraints.php	code-smell
 suppression	src/Analysis/Configuration/Document/ScalarConstraints.php	code-smell.boolean-argument	src/Analysis/Configuration/Document/ScalarConstraints.php	Qualimetrix\Analysis\Configuration\Document\ScalarConstraints::minimum	warning	1
 suppression	src/Analysis/Configuration/Document/ScalarConstraints.php	code-smell.boolean-argument	src/Analysis/Configuration/Document/ScalarConstraints.php	Qualimetrix\Analysis\Configuration\Document\ScalarConstraints::nonBlank	warning	1
 suppression	src/Analysis/Configuration/Document/ScalarConstraints.php	code-smell.boolean-argument	src/Analysis/Configuration/Document/ScalarConstraints.php	Qualimetrix\Analysis\Configuration\Document\ScalarConstraints::vocabulary	warning	1
+suppression	src/Analysis/Evidence/Cohesion/CohesionDeclarationData.php	code-smell.boolean-argument	src/Analysis/Evidence/Cohesion/CohesionDeclarationData.php	Qualimetrix\Analysis\Evidence\Cohesion\CohesionDeclarationData::declareMethod	warning	1
 suppression	src/Analysis/Evidence/ComputedMetrics/Contract/Finding/ComputedMetricChannelFamily.php	code-smell.boolean-argument	src/Analysis/Evidence/ComputedMetrics/Contract/Finding/ComputedMetricChannelFamily.php	Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily::declarationFor	warning	1
 suppression	src/Analysis/Evidence/DependencyModel/Contract/ClassLikeDeclaration.php	code-smell.boolean-argument	src/Analysis/Evidence/DependencyModel/Contract/ClassLikeDeclaration.php	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration::of	warning	2
 suppression	src/Analysis/Evidence/DependencyModel/Contract/Dependency.php	code-smell.boolean-argument	src/Analysis/Evidence/DependencyModel/Contract/Dependency.php	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency::ofAttribute	warning	1
 suppression	src/Analysis/Evidence/DependencyModel/Contract/Dependency.php	code-smell.boolean-argument	src/Analysis/Evidence/DependencyModel/Contract/Dependency.php	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency::ofClassLike	warning	2
-suppression	src/Analysis/Evidence/DependencyModel/DependencyGraph.php	health.cohesion	src/Analysis/Evidence/DependencyModel/DependencyGraph.php	Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraph	error	1
 suppression	src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	health.cohesion	src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorMethodContext	warning	1
 suppression	src/Analysis/Evidence/Prioritization/Impact/ClassRankIndex.php	health.cohesion	src/Analysis/Evidence/Prioritization/Impact/ClassRankIndex.php	Qualimetrix\Analysis\Evidence\Prioritization\Impact\ClassRankIndex	warning	1
 suppression	src/Analysis/Finding/Contract/Population/FlagExcludes.php	code-smell.boolean-argument	src/Analysis/Finding/Contract/Population/FlagExcludes.php	Qualimetrix\Analysis\Finding\Contract\Population\FlagExcludes::excludes	warning	1
@@ -403,7 +403,6 @@ suppression	src/Analysis/Policy/Architecture/ArchitecturePolicy.php	code-smell.b
 suppression	src/Analysis/Policy/Architecture/Configuration/LayerCriterionNormalizer.php	health.cohesion	src/Analysis/Policy/Architecture/Configuration/LayerCriterionNormalizer.php	Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerCriterionNormalizer	warning	1
 suppression	src/Analysis/Policy/Architecture/Contract/LayerAssignmentInspectorInterface.php	code-smell.boolean-argument	src/Analysis/Policy/Architecture/Contract/LayerAssignmentInspectorInterface.php	Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorInterface::inspect	warning	1
 suppression	src/Analysis/Policy/Architecture/Layer/ClassContext/ClassContext.php	code-smell.boolean-argument	src/Analysis/Policy/Architecture/Layer/ClassContext/ClassContext.php	Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContext::__construct	warning	1
-suppression	src/Analysis/Policy/Inline/Directive/Audit/AuthoredDirectiveGroup.php	health.cohesion	src/Analysis/Policy/Inline/Directive/Audit/AuthoredDirectiveGroup.php	Qualimetrix\Analysis\Policy\Inline\Directive\Audit\AuthoredDirectiveGroup	warning	1
 suppression	src/Analysis/Run/Discovery/EntryInspector.php	code-smell.error-suppression	src/Analysis/Run/Discovery/EntryInspector.php	Qualimetrix\Analysis\Run\Discovery\EntryInspector::canList	warning	1
 suppression	src/Analysis/Run/Discovery/EntryInspector.php	code-smell.error-suppression	src/Analysis/Run/Discovery/EntryInspector.php	Qualimetrix\Analysis\Run\Discovery\EntryInspector::inspect	warning	1
 suppression	src/Analysis/Run/Discovery/EntryInspector.php	code-smell.error-suppression	src/Analysis/Run/Discovery/EntryInspector.php	Qualimetrix\Analysis\Run\Discovery\EntryInspector::inspectLink	warning	1

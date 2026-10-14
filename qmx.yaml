@@ -195,9 +195,15 @@ architecture:
     - name: analysis-evidence-cohesion
       patterns:
         - 'Qualimetrix\Analysis\Evidence\Cohesion\ClassVisitorStackTrait'
+        - 'Qualimetrix\Analysis\Evidence\Cohesion\CohesionAstFacts'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector'
+        - 'Qualimetrix\Analysis\Evidence\Cohesion\CohesionDeclarationData'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\CohesionFactProjectionTrait'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\CohesionFactWire'
+        - 'Qualimetrix\Analysis\Evidence\Cohesion\CohesionMemberWire'
+        - 'Qualimetrix\Analysis\Evidence\Cohesion\CohesionMethodReachability'
+        - 'Qualimetrix\Analysis\Evidence\Cohesion\CohesionTraitComposition'
+        - 'Qualimetrix\Analysis\Evidence\Cohesion\CohesionTraitUses'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\Configuration\LcomCollectionConfigurationResolver'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurableInterface'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration'
@@ -207,6 +213,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\LcomExcludedMethods'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\LcomGraphCalculator'
+        - 'Qualimetrix\Analysis\Evidence\Cohesion\LcomMethodPopulation'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\LcomOptions'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\LcomRule'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\LcomVisitor'
@@ -354,6 +361,7 @@ architecture:
     - name: analysis-evidence-dependencymodel
       patterns:
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\CanonicalGraphInput'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\ClassCouplings'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\AttributeSite'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency'
@@ -365,6 +373,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ExternalClassSpellingInterface'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\TypeShape'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\DeclarationEvidence'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraph'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\DependencyIdentityCanonicalizer'
@@ -384,6 +393,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\StaticAccessHandler'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\TraitUseHandler'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\TypeDependencyHelper'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\LogicalGraphInventory'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\NamespaceCouplingBuilder'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\NamespaceCouplings'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\StringSet'
@@ -1534,6 +1544,7 @@ architecture:
         - 'Qualimetrix\Reporting\Health\HealthHintProjector'
         - 'Qualimetrix\Reporting\Health\HealthScoreResolver'
         - 'Qualimetrix\Reporting\Health\SummaryEnricher'
+        - 'Qualimetrix\Reporting\InheritanceDepthCompleteness'
         - 'Qualimetrix\Reporting\Report'
         - 'Qualimetrix\Reporting\ReportBuilder'
         - 'Qualimetrix\Reporting\ReportCoverage'
@@ -2456,9 +2467,6 @@ rules:
       # Immutable spelling and namespace-prefix projections expose the same bound
       # type vocabulary through separate lookup maps.
       - exact: src/Analysis/Policy/Architecture/Layer/ClassContext/NameSpellingIndex.php
-      # Early input refusal and post-run finding projection are separate phases
-      # of the same Console invocation adapter.
-      - exact: src/Infrastructure/Console/FindingFilterOrchestrator.php
       # ResolvedTarget retains judged membership, path spelling and identity facts;
       # its lookups read independent parts of that immutable target snapshot.
       - exact: src/Core/FileTarget/ResolvedTarget.php
@@ -2479,6 +2487,3 @@ rules:
         # Stateless expansion algorithms and their immutable result do not share
         # fields; cohesion is structurally inapplicable only to this exact root.
         - exact: 'Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion'
-        # The namespace health aggregate combines independent Debt and Impact
-        # subjects whose instance fields belong to separate lifecycles.
-        - exact: 'Qualimetrix\Analysis\Evidence\Prioritization'

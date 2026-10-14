@@ -5170,6 +5170,10 @@
         {
           "owner": "Analysis.Evidence.Cohesion",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionFactProjectionTrait"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceCollector"
         }
       ]
     },
@@ -5558,6 +5562,10 @@
         {
           "owner": "Analysis.Evidence.Cohesion",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionCompositionCollector"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\InheritanceDepthCompleteness"
         }
       ]
     },
@@ -5738,6 +5746,10 @@
         {
           "owner": "Analysis.Evidence.Cohesion",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionCompositionCollector"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\InheritanceDepthCompleteness"
         }
       ]
     },
@@ -16225,6 +16237,10 @@
         {
           "owner": "Analysis.Evidence.Complexity",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityVisitor"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionTraitUses"
         }
       ]
     },
@@ -19711,6 +19727,10 @@
         {
           "owner": "Analysis.Evidence.Cohesion",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionFactProjectionTrait"
+        },
+        {
+          "owner": "Analysis.Evidence.DependencyModel",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\ClassCouplings"
         }
       ]
     },
@@ -25615,6 +25635,26 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcResponseResolver"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionDeclarationData"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionMethodReachability"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionTraitComposition"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomClassData"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomMethodPopulation"
         }
       ]
     },
@@ -26881,6 +26921,10 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcEffectiveMembers"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionTraitComposition"
         }
       ]
     },
@@ -26897,6 +26941,14 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationFacts"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionDeclarationData"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionTraitComposition"
         }
       ]
     },
@@ -26909,6 +26961,14 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationFacts"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionDeclarationData"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionTraitComposition"
         }
       ]
     },
@@ -26921,6 +26981,14 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationFacts"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionDeclarationData"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionTraitUses"
         }
       ]
     },
@@ -27017,6 +27085,83 @@
       "path": "src/Analysis/Evidence/Coupling/RfcPropertyTypes.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Coupling",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionAstFacts": {
+      "path": "src/Analysis/Evidence/Cohesion/CohesionAstFacts.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Cohesion",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionDeclarationData": {
+      "path": "src/Analysis/Evidence/Cohesion/CohesionDeclarationData.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Cohesion",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionMemberWire": {
+      "path": "src/Analysis/Evidence/Cohesion/CohesionMemberWire.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Cohesion",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionMethodReachability": {
+      "path": "src/Analysis/Evidence/Cohesion/CohesionMethodReachability.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Cohesion",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionTraitComposition": {
+      "path": "src/Analysis/Evidence/Cohesion/CohesionTraitComposition.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Cohesion",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionTraitUses": {
+      "path": "src/Analysis/Evidence/Cohesion/CohesionTraitUses.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Cohesion",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomMethodPopulation": {
+      "path": "src/Analysis/Evidence/Cohesion/LcomMethodPopulation.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Cohesion",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\ClassCouplings": {
+      "path": "src/Analysis/Evidence/DependencyModel/ClassCouplings.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.DependencyModel",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Reporting\\InheritanceDepthCompleteness": {
+      "path": "src/Reporting/InheritanceDepthCompleteness.php",
+      "kind": "class",
+      "owner": "Reporting",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\LogicalGraphInventory": {
+      "path": "src/Analysis/Evidence/DependencyModel/LogicalGraphInventory.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.DependencyModel",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DeclarationEvidence": {
+      "path": "src/Analysis/Evidence/DependencyModel/DeclarationEvidence.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.DependencyModel",
       "visibility": "internal",
       "consumers": []
     }

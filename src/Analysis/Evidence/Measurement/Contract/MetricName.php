@@ -54,6 +54,9 @@ final class MetricName
     public const string COHESION_LCC = 'cohesion.lcc';
     public const string COHESION_PURE_METHOD_COUNT = 'cohesion.pure-method-count';
     public const string COHESION_LCOM = 'cohesion.lcom';
+    public const string COHESION_LCOM_METHOD_COUNT = 'cohesion.lcom-method-count';
+    public const string COHESION_TCC_METHOD_COUNT = 'cohesion.tcc-method-count';
+    public const string COHESION_UNREAD_TRAIT_COUNT = 'cohesion.unread-trait-count';
 
     // -- Design ----------------------------------------------------------------
 

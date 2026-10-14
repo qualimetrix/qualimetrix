@@ -27,10 +27,9 @@ final class HealthDecompositionCatalog
     /**
      * What a health score at a given level was computed from.
      *
-     * One list per level, because the formulas differ per level: the project
-     * coupling formula reads CBO aggregates while the namespace one reads Ce
-     * aggregates, and the single list that stood here printed the namespace's
-     * inputs under a project score. `project` is resolved from `namespace`
+     * One list per level: namespace coupling reads its own distance and Ce
+     * alongside class Ce aggregates; project coupling reads pooled own-scope
+     * distance and class Ce aggregates. `project` is resolved from `namespace`
      * when absent, mirroring
      * {@see \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition::getFormulaForLevel()}.
      *
@@ -83,7 +82,7 @@ final class HealthDecompositionCatalog
         ],
         'health.cohesion' => [
             SymbolLevel::Class_->value => [
-                ['key' => 'cohesion.tcc', 'sources' => ['cohesion.tcc', MetricName::SIZE_METHOD_COUNT, 'cohesion.pure-method-count'], 'label' => 'TCC', 'direction' => 'higher', 'coverage' => null],
+                ['key' => 'cohesion.tcc', 'sources' => ['cohesion.tcc', 'cohesion.tcc-method-count', 'cohesion.pure-method-count'], 'label' => 'TCC', 'direction' => 'higher', 'coverage' => null],
                 ['key' => MetricName::COHESION_LCOM, 'sources' => [MetricName::COHESION_LCOM, 'cohesion.pure-method-count'], 'label' => 'LCOM', 'direction' => 'lower', 'coverage' => null],
             ],
             SymbolLevel::Namespace_->value => [
@@ -105,9 +104,9 @@ final class HealthDecompositionCatalog
             ],
             SymbolLevel::Project->value => [
                 ['key' => 'coupling.distance-own.avg', 'sources' => ['coupling.distance-own.avg'], 'label' => 'Distance', 'direction' => 'lower', 'coverage' => CoverageUnit::DeclaringNamespaces],
-                ['key' => 'coupling.cbo.avg', 'sources' => ['coupling.cbo.avg'], 'label' => 'CBO (avg)', 'direction' => 'lower', 'coverage' => CoverageUnit::Classes],
-                ['key' => 'coupling.cbo.p95', 'sources' => ['coupling.cbo.p95'], 'label' => 'CBO p95', 'direction' => 'lower', 'coverage' => CoverageUnit::Classes],
-                ['key' => 'coupling.cbo.max', 'sources' => ['coupling.cbo.max'], 'label' => 'CBO max', 'direction' => 'lower', 'coverage' => CoverageUnit::Classes],
+                ['key' => 'coupling.ce-packages.avg', 'sources' => ['coupling.ce-packages.avg', 'coupling.ce.avg'], 'label' => 'Ce pkg (avg)', 'direction' => 'lower', 'coverage' => CoverageUnit::Classes],
+                ['key' => 'coupling.ce.avg', 'sources' => ['coupling.ce-packages.avg', 'coupling.ce.avg'], 'label' => 'Ce (avg)', 'direction' => 'lower', 'coverage' => CoverageUnit::Classes],
+                ['key' => 'coupling.ce.max', 'sources' => ['coupling.ce.max'], 'label' => 'Ce max', 'direction' => 'lower', 'coverage' => CoverageUnit::Classes],
             ],
         ],
         'health.typing' => [

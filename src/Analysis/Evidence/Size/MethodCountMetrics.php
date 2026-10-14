@@ -64,10 +64,9 @@ final class MethodCountMetrics
      * leaving the constructor in would floor the ratio at 1/N for exactly the
      * small classes the rule targets.
      *
-     * A method is an accessor by name only ({@see MethodCountVisitor}), so a
-     * public method whose body merely forwards to a collaborator counts as
-     * behaviour: WOC measures the shape of the interface, not the weight of
-     * the bodies behind it. Only members declared by this class are counted;
+     * Accessors have both a matching name and a direct property read/write body
+     * ({@see MethodCountVisitor}), so a public method that forwards to a
+     * collaborator counts as behaviour. Only members declared by this class are counted;
      * inherited and trait-imported ones are invisible here.
      *
      * A class with no public members has no data surface to expose, so the

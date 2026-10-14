@@ -54,7 +54,7 @@ final class ComputedMetricDefaults
                     // Pure methods (no property access, e.g. interface contract getters) inflate
                     // TCC denominator and LCOM. Adjust both: boost TCC proportionally, reduce LCOM.
                     // D_tcc=0.4, D_lcom=0.7. Classes with no pure methods: formula unchanged.
-                    SymbolLevel::Class_->value => 'clamp(weighted_mean((m["cohesion.tcc"] ?? null) === null ? null : (m["cohesion.tcc"] + (1 - m["cohesion.tcc"]) * ((m["cohesion.pure-method-count"] ?? 0) / max(m["size.method-count"] ?? 1, 1)) * 0.4) ** 0.5 * 100, 0.5, (m["cohesion.lcom"] ?? null) === null ? null : (1 - clamp((max(m["cohesion.lcom"] - (m["cohesion.pure-method-count"] ?? 0) * 0.7, 1) - 1) / 5, 0, 1)) * 100, 0.5), 0, 100)',
+                    SymbolLevel::Class_->value => 'clamp(weighted_mean((m["cohesion.tcc"] ?? null) === null ? null : (m["cohesion.tcc"] + (1 - m["cohesion.tcc"]) * ((m["cohesion.pure-method-count"] ?? 0) / max(m["cohesion.tcc-method-count"] ?? 1, 1)) * 0.4) ** 0.5 * 100, 0.5, (m["cohesion.lcom"] ?? null) === null ? null : (1 - clamp((max(m["cohesion.lcom"] - (m["cohesion.pure-method-count"] ?? 0) * 0.7, 1) - 1) / 5, 0, 1)) * 100, 0.5), 0, 100)',
                     // The unadjusted LCOM contribution uses the class scale: identical
                     // evidence must not be penalized more merely because it is aggregated.
                     SymbolLevel::Namespace_->value => 'clamp(weighted_mean((m["cohesion.tcc.avg"] ?? null) === null ? null : m["cohesion.tcc.avg"] ** 0.5 * 100, 0.5, (m["cohesion.lcom.avg"] ?? null) === null ? null : (1 - clamp((m["cohesion.lcom.avg"] - 1) / 5, 0, 1)) * 100, 0.5), 0, 100)',
@@ -91,16 +91,14 @@ final class ComputedMetricDefaults
                     // worst-case class outlier (ce.max), and namespace-level breadth (ce) with a
                     // high threshold (50) so umbrella namespaces aren't disproportionately penalized.
                     SymbolLevel::Namespace_->value => 'clamp(100 * 18 / (18 + (m["coupling.distance"] ?? 0) * 6 + max((m["coupling.ce-packages.avg"] ?? 0) * 3.0 + (m["coupling.ce.avg"] ?? 0) ** 0.5 * 0.5 - 4, 0) * 4 + max((m["coupling.ce.max"] ?? 0) - 30, 0) ** 0.5 * 0.8 + max((m["coupling.ce"] ?? 0) - 50, 0) ** 0.5 * 0.6), 0, 100)',
-                    // Project formula keeps bidirectional CBO aggregates: at project level Σ Ca = Σ Ce
-                    // (every internal edge contributes to both), so cbo.avg is symmetric and
-                    // proportional to ce.avg. Calibrated against 11 benchmark projects
-                    // (Guzzle→92, Sf Console→64, Qualimetrix→53, Laravel→53, Composer→32).
-                    SymbolLevel::Project->value => 'clamp(100 * 18 / (18 + (m["coupling.distance-own.avg"] ?? 0) * 6 + max((m["coupling.cbo.avg"] ?? 0) - 8, 0) * 3 + max((m["coupling.cbo.p95"] ?? 0) - 15, 0) * 0.4 + max((m["coupling.cbo.max"] ?? 0) - 30, 0) ** 0.5 * 0.8), 0, 100)',
+                    // Project uses class Ce aggregates and pooled own-scope distance,
+                    // without the namespace-wide Ce term.
+                    SymbolLevel::Project->value => 'clamp(100 * 18 / (18 + (m["coupling.distance-own.avg"] ?? 0) * 6 + max((m["coupling.ce-packages.avg"] ?? 0) * 3.0 + (m["coupling.ce.avg"] ?? 0) ** 0.5 * 0.5 - 4, 0) * 4 + max((m["coupling.ce.max"] ?? 0) - 30, 0) ** 0.5 * 0.8), 0, 100)',
                 ],
                 applicability: [
                     'class' => ComputedMetricApplicability::always(),
                     'namespace' => ComputedMetricApplicability::anyPresent([MetricName::COUPLING_DISTANCE, 'coupling.ce-packages.avg', 'coupling.ce.avg', 'coupling.ce.max', 'coupling.ce']),
-                    'project' => ComputedMetricApplicability::anyPresent(['coupling.distance-own.avg', 'coupling.cbo.avg', 'coupling.cbo.p95', 'coupling.cbo.max']),
+                    'project' => ComputedMetricApplicability::anyPresent(['coupling.distance-own.avg', 'coupling.ce-packages.avg', 'coupling.ce.avg', 'coupling.ce.max']),
                 ],
                 description: 'Coupling health score (0-100, higher is better)',
                 levels: [SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project],

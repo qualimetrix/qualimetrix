@@ -161,7 +161,7 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertSame(3, $m->get('complexity.ccn.max'), 'TokenValidator ccn.max');
         self::assertEqualsWithDelta(2.0, $m->get('complexity.ccn.avg'), 0.01, 'TokenValidator ccn.avg');
         self::assertSame(6, $m->get('complexity.wmc'), 'TokenValidator wmc');
-        self::assertSame(2, $m->get('size.method-count'), 'TokenValidator methodCount');
+        self::assertSame(3, $m->get('size.method-count'), 'TokenValidator methodCount');
         self::assertSame(2, $m->get('size.property-count'), 'TokenValidator propertyCount');
 
         // SessionManager
@@ -179,7 +179,7 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertSame(5, $m->get('complexity.ccn.max'), 'UserService ccn.max');
         self::assertEqualsWithDelta(3.0, $m->get('complexity.ccn.avg'), 0.01, 'UserService ccn.avg');
         self::assertSame(12, $m->get('complexity.wmc'), 'UserService wmc');
-        self::assertSame(3, $m->get('size.method-count'), 'UserService methodCount');
+        self::assertSame(4, $m->get('size.method-count'), 'UserService methodCount');
         self::assertSame(2, $m->get('size.property-count'), 'UserService propertyCount');
 
         // OrderService
@@ -283,9 +283,9 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertEqualsWithDelta(0.0, $m->get('cohesion.lcc'), 0.01, 'OrderService lcc');
         self::assertSame(2, $m->get('cohesion.lcom'), 'OrderService lcom');
 
-        // EmptyMarker: lcom=0
+        // EmptyMarker has no eligible graph.
         $m = self::metricsFor(SymbolPath::forClass('GoldenMetrics\App\ValueObject', 'EmptyMarker'));
-        self::assertSame(0, $m->get('cohesion.lcom'), 'EmptyMarker lcom');
+        self::assertNull($m->get('cohesion.lcom'), 'EmptyMarker has no LCOM');
     }
 
     // ──────────────────────────────────────────────────────────────────

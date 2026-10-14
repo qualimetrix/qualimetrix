@@ -237,11 +237,23 @@ Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector	Analysis.Evi
 Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector	Analysis.Evidence.Cohesion	Qualimetrix\Core\Symbol\ClassType	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector	Analysis.Evidence.Cohesion	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector	Analysis.Evidence.Cohesion	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
+Qualimetrix\Analysis\Evidence\Cohesion\CohesionDeclarationData	Analysis.Evidence.Cohesion	Qualimetrix\Core\Symbol\ClassNameSpelling	Core.Symbol	contract
+Qualimetrix\Analysis\Evidence\Cohesion\CohesionDeclarationData	Analysis.Evidence.Cohesion	Qualimetrix\Core\Symbol\TraitDefinitionFacts	Core.Symbol	contract
+Qualimetrix\Analysis\Evidence\Cohesion\CohesionDeclarationData	Analysis.Evidence.Cohesion	Qualimetrix\Core\Symbol\TraitMethodSource	Core.Symbol	contract
+Qualimetrix\Analysis\Evidence\Cohesion\CohesionDeclarationData	Analysis.Evidence.Cohesion	Qualimetrix\Core\Symbol\TraitUseFacts	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Cohesion\CohesionFactProjectionTrait	Analysis.Evidence.Cohesion	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Cohesion\CohesionFactProjectionTrait	Analysis.Evidence.Cohesion	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
 Qualimetrix\Analysis\Evidence\Cohesion\CohesionFactProjectionTrait	Analysis.Evidence.Cohesion	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
+Qualimetrix\Analysis\Evidence\Cohesion\CohesionMethodReachability	Analysis.Evidence.Cohesion	Qualimetrix\Core\Symbol\ClassNameSpelling	Core.Symbol	contract
+Qualimetrix\Analysis\Evidence\Cohesion\CohesionTraitComposition	Analysis.Evidence.Cohesion	Qualimetrix\Core\Symbol\ClassNameSpelling	Core.Symbol	contract
+Qualimetrix\Analysis\Evidence\Cohesion\CohesionTraitComposition	Analysis.Evidence.Cohesion	Qualimetrix\Core\Symbol\TraitComposition	Core.Symbol	contract
+Qualimetrix\Analysis\Evidence\Cohesion\CohesionTraitComposition	Analysis.Evidence.Cohesion	Qualimetrix\Core\Symbol\TraitDefinitionFacts	Core.Symbol	contract
+Qualimetrix\Analysis\Evidence\Cohesion\CohesionTraitComposition	Analysis.Evidence.Cohesion	Qualimetrix\Core\Symbol\TraitMethodSource	Core.Symbol	contract
+Qualimetrix\Analysis\Evidence\Cohesion\CohesionTraitUses	Analysis.Evidence.Cohesion	Qualimetrix\Core\Ast\ResolvedName	Core.Neutral	contract
+Qualimetrix\Analysis\Evidence\Cohesion\CohesionTraitUses	Analysis.Evidence.Cohesion	Qualimetrix\Core\Symbol\TraitUseFacts	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Cohesion\Configuration\LcomCollectionConfigurationResolver	Analysis.Evidence.Cohesion	Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationResolverInterface	Analysis.Evidence.Cohesion	Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration	Analysis.Finding	contract
+Qualimetrix\Analysis\Evidence\Cohesion\LcomClassData	Analysis.Evidence.Cohesion	Qualimetrix\Core\Symbol\ClassNameSpelling	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector	Analysis.Evidence.Cohesion	Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector	Analysis.Evidence.Cohesion	Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector	Analysis.Evidence.Cohesion	Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface	Analysis.Evidence.Measurement	contract
@@ -263,6 +275,7 @@ Qualimetrix\Analysis\Evidence\Cohesion\LcomExcludedMethods	Analysis.Evidence.Coh
 Qualimetrix\Analysis\Evidence\Cohesion\LcomExcludedMethods	Analysis.Evidence.Cohesion	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Cohesion\LcomExcludedMethods	Analysis.Evidence.Cohesion	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Cohesion\LcomExcludedMethods	Analysis.Evidence.Cohesion	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
+Qualimetrix\Analysis\Evidence\Cohesion\LcomMethodPopulation	Analysis.Evidence.Cohesion	Qualimetrix\Core\Symbol\ClassNameSpelling	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Cohesion\LcomOptions	Analysis.Evidence.Cohesion	Qualimetrix\Analysis\Finding\Contract\Rule\BandDirection	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Cohesion\LcomOptions	Analysis.Evidence.Cohesion	Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Cohesion\LcomOptions	Analysis.Evidence.Cohesion	Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues	Analysis.Finding	contract
@@ -788,6 +801,7 @@ Qualimetrix\Analysis\Evidence\Coupling\CouplingCollector	Analysis.Evidence.Coupl
 Qualimetrix\Analysis\Evidence\Coupling\DistanceCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	contract
 Qualimetrix\Analysis\Evidence\Coupling\DistanceCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\DistanceCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface	Analysis.Evidence.Measurement	contract
+Qualimetrix\Analysis\Evidence\Coupling\DistanceCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\DistanceCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\DistanceCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\DistanceCollector	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach	Analysis.Evidence.Measurement	contract
@@ -933,6 +947,7 @@ Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule	Analysis.
 Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
+Qualimetrix\Analysis\Evidence\DependencyModel\ClassCouplings	Analysis.Evidence.DependencyModel	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration	Analysis.Evidence.DependencyModel	Qualimetrix\Core\Symbol\ClassType	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration	Analysis.Evidence.DependencyModel	Qualimetrix\Core\Symbol\DeclarationPath	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration	Analysis.Evidence.DependencyModel	Qualimetrix\Core\Symbol\LogicalClassPath	Core.Symbol	contract
@@ -3606,6 +3621,8 @@ Qualimetrix\Reporting\Health\SummaryEnricher	Reporting	Qualimetrix\Analysis\Evid
 Qualimetrix\Reporting\Health\SummaryEnricher	Reporting	Qualimetrix\Analysis\Evidence\Prioritization\Impact\ImpactCalculator	Analysis.Evidence.Prioritization	contract
 Qualimetrix\Reporting\Health\SummaryEnricher	Reporting	Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation	Analysis.Finding	contract
 Qualimetrix\Reporting\Health\SummaryEnricher	Reporting	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
+Qualimetrix\Reporting\InheritanceDepthCompleteness	Reporting	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	contract
+Qualimetrix\Reporting\InheritanceDepthCompleteness	Reporting	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	Analysis.Evidence.Measurement	contract
 Qualimetrix\Reporting\Report	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary	Analysis.Evidence.ComputedMetrics	contract
 Qualimetrix\Reporting\Report	Reporting	Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex	Analysis.Evidence.Measurement	contract
 Qualimetrix\Reporting\Report	Reporting	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	Analysis.Evidence.Measurement	contract

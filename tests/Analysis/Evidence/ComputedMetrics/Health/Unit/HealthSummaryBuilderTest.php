@@ -197,7 +197,9 @@ final class HealthSummaryBuilderTest extends TestCase
     {
         $bag = MetricBag::fromArray([
             'health.cohesion' => 80.0, 'cohesion.lcom.avg' => 0, 'cohesion.lcom.count' => 2,
-            'health.coupling' => 60.0, 'coupling.cbo.avg' => 0, 'coupling.cbo.count' => 2,
+            'health.coupling' => 60.0,
+            'coupling.ce-packages.avg' => 0, 'coupling.ce-packages.count' => 2,
+            'coupling.ce.avg' => 0, 'coupling.ce.count' => 2,
             'size.symbol-class-count' => 2, 'size.symbol-declaring-namespace-count' => 4, 'size.symbol-method-count' => 0,
         ]);
         $repository = new InMemoryMetricRepository();

@@ -1,0 +1,70 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 2594
++visible 2425
+@@ -8,5 +8,4 @@
+-DIT measurement incomplete: lower-bound for 1 class declaration(s); examples: declaration:class:Corpus\StderrWarning\Child@src/Child.php
+-  Dimension          Score   Status        Coverage  Thresholds
+-  ─────────────────────────────────────────────────────────────────
+-  Complexity           N/A   Not measured       n/a
+-  Cohesion             N/A   Not measured  not measured 0/1
++  Dimension          Score   Status        Coverage  Thresholds
++  ─────────────────────────────────────────────────────────────────
++  Complexity           N/A   Not measured       n/a
++  Cohesion          100.0%   ▲ Excellent       100%  warn < 50  err < 25
+@@ -27,9 +26,11 @@
+-    Computed over: not measured 0/1 classes
+-    TCC: not measured 0/1
+-    LCOM4 (avg): not measured 0/1
+-  Coupling decomposition:
+-    Computed over 1 of 1 namespaces declaring a type (100%), from coupling.distance-own.count
+-    Distance (own)                  0   (target: below 0.3) — well-balanced design of its own classes
+-    Ce pkg (avg)                    0   (target: joint breadth at most 4 (3 * Ce pkg avg + 0.5 * sqrt(Ce avg))) — contributes to joint breadth with average outgoing class dependencies
+-    Ce (avg)                        1   (target: joint breadth at most 4 (3 * Ce pkg avg + 0.5 * sqrt(Ce avg))) — contributes to joint breadth with average package dependencies
+-    Ce (max)                        1   (target: below 30) — no class exceeds the outgoing dependency ceiling
++    Computed over 1 of 1 classes (100%), from cohesion.lcom.count
++    TCC: not measured 0/1
++    LCOM4 (avg)                     0   (target: 1 or less) — classes are cohesive
++    Worst contributors:
++      Child                          LCOM=0
++  Coupling decomposition:
++    Computed over 1 of 1 namespaces declaring a type (100%), from coupling.distance-own.count
++    Distance (own)                  0   (target: below 0.3) — well-balanced design of its own classes
++    CBO (avg)                       1   (target: below 8) — reasonable coupling
++    CBO (p95)                       1   (target: below 15) — even the most coupled classes stay contained
++    CBO (max)                       1   (target: below 30) — no single class dominates the graph
+@@ -46,1 +47,1 @@
+-invocation-format:health 2594
++invocation-format:health 2425
+@@ -53,5 +54,4 @@
+-DIT measurement incomplete: lower-bound for 1 class declaration(s); examples: declaration:class:Corpus\StderrWarning\Child@src/Child.php
+-  Dimension          Score   Status        Coverage  Thresholds
+-  ─────────────────────────────────────────────────────────────────
+-  Complexity           N/A   Not measured       n/a
+-  Cohesion             N/A   Not measured  not measured 0/1
++  Dimension          Score   Status        Coverage  Thresholds
++  ─────────────────────────────────────────────────────────────────
++  Complexity           N/A   Not measured       n/a
++  Cohesion          100.0%   ▲ Excellent       100%  warn < 50  err < 25
+@@ -72,9 +72,11 @@
+-    Computed over: not measured 0/1 classes
+-    TCC: not measured 0/1
+-    LCOM4 (avg): not measured 0/1
+-  Coupling decomposition:
+-    Computed over 1 of 1 namespaces declaring a type (100%), from coupling.distance-own.count
+-    Distance (own)                  0   (target: below 0.3) — well-balanced design of its own classes
+-    Ce pkg (avg)                    0   (target: joint breadth at most 4 (3 * Ce pkg avg + 0.5 * sqrt(Ce avg))) — contributes to joint breadth with average outgoing class dependencies
+-    Ce (avg)                        1   (target: joint breadth at most 4 (3 * Ce pkg avg + 0.5 * sqrt(Ce avg))) — contributes to joint breadth with average package dependencies
+-    Ce (max)                        1   (target: below 30) — no class exceeds the outgoing dependency ceiling
++    Computed over 1 of 1 classes (100%), from cohesion.lcom.count
++    TCC: not measured 0/1
++    LCOM4 (avg)                     0   (target: 1 or less) — classes are cohesive
++    Worst contributors:
++      Child                          LCOM=0
++  Coupling decomposition:
++    Computed over 1 of 1 namespaces declaring a type (100%), from coupling.distance-own.count
++    Distance (own)                  0   (target: below 0.3) — well-balanced design of its own classes
++    CBO (avg)                       1   (target: below 8) — reasonable coupling
++    CBO (p95)                       1   (target: below 15) — even the most coupled classes stay contained
++    CBO (max)                       1   (target: below 30) — no single class dominates the graph

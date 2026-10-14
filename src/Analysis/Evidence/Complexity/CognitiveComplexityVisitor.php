@@ -86,6 +86,8 @@ use SplObjectStorage;
  *   callable, is not detected.
  *
  * @see https://www.sonarsource.com/docs/CognitiveComplexity.pdf
+ *
+ * @qmx-threshold size.method-count warning=28 error=28 -- Callable lifecycle, nesting, logical sequences and recursion are handlers over one traversal state; extracting their node handlers would move the same callback menu and state coordination to another class.
  */
 final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements DeclarationIndexAwareInterface, ResettableVisitorInterface
 {

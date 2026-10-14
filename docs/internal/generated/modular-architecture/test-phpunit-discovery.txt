@@ -611,6 +611,7 @@ Available tests:
  - Qualimetrix\Benchmark\Tests\BenchmarkCoverageRefusalTest::itDoesNotUpdateBaselinesFromANonAuthoritativeArtifact#1
  - Qualimetrix\Benchmark\Tests\BenchmarkCoverageRefusalTest::itDoesNotUpdateBaselinesFromANonAuthoritativeArtifact#2
  - Qualimetrix\Benchmark\Tests\BenchmarkCoverageRefusalTest::itDoesNotWriteCollectedDataWhenAnyProjectIsIncomplete
+ - Qualimetrix\Benchmark\Tests\BenchmarkCoverageRefusalTest::itPreservesExactSubjectsAndCompleteReceiptInRawCapture
  - Qualimetrix\Benchmark\Tests\BenchmarkCoverageRefusalTest::itRunsTheRealCliInsideTheMeasuredProjectWithNeutralConfiguration
  - Qualimetrix\Benchmark\Tests\BenchmarkRegressionClassificationTest::itDistinguishesAnalysisFailureFromAScoreRegression#0
  - Qualimetrix\Benchmark\Tests\BenchmarkRegressionClassificationTest::itDistinguishesAnalysisFailureFromAScoreRegression#1
@@ -1056,11 +1057,15 @@ Available tests:
  - Qualimetrix\Governance\MeasurementIdentity\ClassProducerCensusTest::itFindsTheHelperCallSiteOfEveryCoveredProducer
  - Qualimetrix\Governance\MeasurementIdentity\GlobalCollectorDeclaresWhatItWritesTest::itFindsEveryGlobalCollectorDeclaringTheMetricsItWrites
  - Qualimetrix\Governance\MeasurementIdentity\GlobalCollectorDeclaresWhatItWritesTest::itGivesEveryMetricASingleDeclaringCollector
- - Qualimetrix\Governance\MeasurementIdentity\NamespaceFoldCountsEachDeclarationOnceTest::itFindsAtLeastOneFoldedNamespaceMetric
- - Qualimetrix\Governance\MeasurementIdentity\NamespaceFoldCountsEachDeclarationOnceTest::itFoldsEveryNamespaceThatCarriesTheKey
+ - Qualimetrix\Governance\MeasurementIdentity\NamespaceFoldCountsEachDeclarationOnceTest::itFoldsEveryNamespaceThatCarriesTheKey"all eligible type kinds, excluding a bare enum"
+ - Qualimetrix\Governance\MeasurementIdentity\NamespaceFoldCountsEachDeclarationOnceTest::itFoldsEveryNamespaceThatCarriesTheKey"disconnected own scope stays absent"
+ - Qualimetrix\Governance\MeasurementIdentity\NamespaceFoldCountsEachDeclarationOnceTest::itFoldsEveryNamespaceThatCarriesTheKey"incoming edge admits the formerly disconnected scope"
+ - Qualimetrix\Governance\MeasurementIdentity\NamespaceFoldCountsEachDeclarationOnceTest::itFoldsEveryNamespaceThatCarriesTheKey"outgoing edge admits the formerly disconnected scope"
  - Qualimetrix\Governance\MeasurementIdentity\NamespaceFoldCountsEachDeclarationOnceTest::itLeavesAParentsFoldedValueStillWhenOnlyItsSubtreeChanges"a child gains an edge from outside the subtree"
  - Qualimetrix\Governance\MeasurementIdentity\NamespaceFoldCountsEachDeclarationOnceTest::itLeavesAParentsFoldedValueStillWhenOnlyItsSubtreeChanges"a child gains an edge out of the subtree"
  - Qualimetrix\Governance\MeasurementIdentity\NamespaceFoldCountsEachDeclarationOnceTest::itLeavesAParentsFoldedValueStillWhenOnlyItsSubtreeChanges"a child gains an unreferenced type"
+ - Qualimetrix\Governance\MeasurementIdentity\NamespaceFoldCountsEachDeclarationOnceTest::itRecognizesTheOwnerPublishedProjectDistance
+ - Qualimetrix\Governance\MeasurementIdentity\NamespaceFoldCountsEachDeclarationOnceTest::itRetainsTheGenericNamespaceFoldWithoutALiveProductionProducer
  - Qualimetrix\Governance\MeasurementIdentity\PublishedKeysAreDeclaredTest::itPublishesOnlyKeysDeclaredAtTheirExportedLevel
  - Qualimetrix\Governance\MeasurementIdentity\TraversalCompletenessTest::itRejectsUnexpectedLiteralTraversalControlNamesInProduction
  - Qualimetrix\Governance\MeasurementIdentity\TraversalCompletenessTest::itUsesForbiddenNamesTakenFromTheVisitorContractAndFindsSourceFilesToScan
@@ -1583,28 +1588,43 @@ Available tests:
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itAcceptsAParentInsideTheRangeItsChildrenSpan
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itAdmitsTheGlobalNamespaceIntoTheAggregateWhenTheSchemeDoes
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itAdmitsTheGlobalNamespaceOnlyWhenTheSchemeSaysSo
- - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itCountsAClassUnderACarryingParentAsCoveredOnlyUnderTheCurrentScheme
- - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itCountsAClassUnderAnExcludedNamespaceAsUncovered
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itCountsOnlyNamespacesWithoutDescendantsAsLeaves
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itCountsPerfectScoresAndMarksTheOnesAnAbsentInputBought
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itDerivesTheProjectAggregateInsteadOfReadingTheCapturedOne
+ - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itDoesNotAcceptAWeightingVerdictFromAnEqualWeightPool
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itDoesNotCallAParentBelowEveryChildAViolation
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itDoesNotFeedAPublishedDimensionIntoADependentFormula
- - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itExpressesCoverageByLinesAsWellAsBySymbols
+ - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itExcludesZeroEdgeNamespacesFromProjectDistanceEvenIfCaptureCarriesOne
+ - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itFindsRealPerfectScoresMatchingFrozenAdverseProfiles
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itInterpolatesTheQuartilesItReports
+ - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itJudgesAggregateCoverageIndependentlyOfAnAbsentScore
+ - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itJudgesAllPredeclaredSourceGroupsAndRejectsConstantHundred
+ - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itJudgesExactlyTheTwentyFourFrozenPairsIncludingEquality
+ - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itJudgesPublishedProjectDistanceAgainstTheIndependentTypeWeightedPool
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itJudgesTheProjectAgainstEveryNamespaceThatHoldsClasses
+ - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itKeepsLawfulComplementaryPoolingDiagnosticWithoutRejectingBindingCriteria
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itKeepsTheTwoDirectionsApart
+ - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itKeepsTwoDeclarationsWithTheSameLogicalNameSeparate
+ - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itMakesOwnTypesTheCurrentWeightAndExcludesBareEnums
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itNeverPutsAPublishedDimensionIntoTheVariableMap
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itPoolsAParentThatCarriesTheKeyAndTheLeafRuleDrops
- - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itPreservesAllApplicableScoresWithStrictFloatingPointEquality
+ - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itPreservesUnchangedApplicableFormulasWithStrictFloatingPointEquality
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itPublishesNoAggregateWhenNoAdmittedNamespaceCarriesTheMetric
- - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itRefusesToJudgeCoverageWithoutADeclaredFraction
- - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itReportsADimensionAsNotApplicableBelowTheDeclaredFraction
+ - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itRefusesCriteriaCoverageWithoutCompleteCaptureAndPrintsSelectedClass
+ - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itRejectsDroppedMeasuredTccCarriersAsMachineCoverageFailure
+ - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itRejectsTypingCoverageWhenClassLinesAreUnavailable
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itReportsAParentScoringAboveEveryChild
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itReportsTheDerivedAggregateDisagreeingWithThePublishedOne
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itReproducesThePublishedAggregateUnderTheCurrentScheme
+ - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itRetainsMissingAndFailedProductOutcomes
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itSaysNotPooledWhereNoDerivedAggregateReachesTheFormula
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itScoresTheProjectFromTheDerivedAggregateAndNotTheCapturedOne
+ - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itSeparatesAbsentCohesionFromMeasuredZero
+ - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itStatesClassLinesOnlyWithCompleteExactCarriers
+ - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itStatesMissingEmptyAndZeroCountWithoutAnApplicabilityCutoff
+ - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itStatesOneOfTenCallablesAndDoesNotBorrowClassLines
+ - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itStatesTypingInputCoverageFromExactClassesIncludingMeasuredZero
+ - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itUsesTheProductOutcomeForApplicabilityAndRefusal
  - Qualimetrix\HealthCalibration\Tests\HealthCalibrationBenchTest::itWeightsTheAggregateByTheSizeOfEachNamespace
  - Qualimetrix\ModularArchitecture\Tests\ModularArchitectureGeneratorRefusalTest::itFailsWhenACurrentSuiteLiteralHasNoDeclaredDirectory
  - Qualimetrix\ModularArchitecture\Tests\ModularArchitectureGeneratorRefusalTest::itFailsWhenANonRootExclusionNoLongerExcusesAnything
@@ -2909,10 +2929,33 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateRuleTest::itSkipsTypedNonClassDeclarationsBeforeReadingMetrics
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionCompositionCollectorTest::itKeepsSerializedSameNameDeclarationsSeparate
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionCompositionCollectorTest::itRefusesTruncatedRawFacts
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionCompositionCollectorTest::itRejectsNonBooleanLcomFacts"abstract"
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionCompositionCollectorTest::itRejectsNonBooleanLcomFacts"nonTrivial"
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionCompositionCollectorTest::itRejectsNonBooleanLcomFacts"stateless"
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionCompositionCollectorTest::itRejectsNonBooleanLcomFacts"static"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionCompositionCollectorTest::itRejectsNonIntegerInstancePropertyCount
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionCompositionCollectorTest::itReplacesExcludedMethodsBetweenInvocations
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itCarriesResolvedTraitAdaptationsAcrossRawRows
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itChangesClassEvidenceWhenTheTraitFileIsNotSelected
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itComposesAdaptedMethodsAndTracksUnreadTraits
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itComposesNestedTraits
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itCountsAmbiguousDuplicateTraitNamesAsUnread
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itDeclaresRunReachForEveryComposedMetric
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itFollowsPrivateHelpersForTccAndPureMethodCount
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itOmitsLcomWithoutVerticesAndPublishesCompleteness
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itPreservesOwnFactsAndRetainsUnusedTraitPropertiesForTcc
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itReachesInstancePropertiesThroughMixedCaseCyclesWithoutFollowingOtherCalls
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRetainsCalledStatelessMethodsAsVertices
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itSelectsEffectiveLifecycleNamesAfterTraitComposition"abstract constructor alias remains excluded"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itSelectsEffectiveLifecycleNamesAfterTraitComposition"authored equivalent"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itSelectsEffectiveLifecycleNamesAfterTraitComposition"constructor alias retains calls through private helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itSelectsEffectiveLifecycleNamesAfterTraitComposition"constructor aliased to ordinary method"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itSelectsEffectiveLifecycleNamesAfterTraitComposition"destructor aliased to ordinary method without case"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itSelectsEffectiveLifecycleNamesAfterTraitComposition"nested lifecycle alias reexposed as ordinary method"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itSelectsEffectiveLifecycleNamesAfterTraitComposition"ordinary method aliased to constructor"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itSelectsEffectiveLifecycleNamesAfterTraitComposition"ordinary method aliased to destructor without case"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itSelectsEffectiveLifecycleNamesAfterTraitComposition"stateless constructor alias merges with metadata"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itSelectsEffectiveLifecycleNamesAfterTraitComposition"static ordinary alias remains excluded"
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\Configuration\LcomCollectionConfigurationResolverTest::itProjectsOnlyTheReadyTypedOptionsPreservingAuthoredMethodSpelling
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\Configuration\LcomCollectionConfigurationResolverTest::itRefusesAnOptionsObjectFromAnotherProducer
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\Configuration\LcomCollectionConfigurationResolverTest::itRefusesToGuessFromRawOptionsWhenTheSnapshotIsMissing
@@ -2930,6 +2973,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itCalculatesThreeLcomForOneStatelessAndTwoDisconnectedStatefulGroups
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itCapturesTraitFacts
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itConnectsAllMethodsViaCallChain
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itConnectsAsciiFoldedInstanceCallsThroughThisSelfAndStatic
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itConnectsMethodsViaCallWithoutSharedProperties
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itConnectsMethodsViaMethodCalls
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itConnectsStatefulMethodCallingStatelessToVirtualNode
@@ -2950,6 +2994,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itExcludesStaticMethodsFromLcom
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itGetsMetricDefinitions
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itGetsName
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itGroupsUncalledStatelessMethodsWithoutTrivialExemption
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itHandlesClassWithoutNamespace
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itIgnoresAnonymousClass
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itIgnoresDynamicPropertyAccess
@@ -2958,6 +3003,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itKeepsDistinctCohesionGraphsForSameFileDeclarations
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itKeepsStandardLcomCalculationWhenNoStatelessMethods
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itMergesStatelessMethodCallingAnotherStatelessInternally
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itOmitsLcomForEmptyClass
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itOmitsLcomWhenOnlyStaticMethods
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itProvides
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itReducesLcomByGroupingStatelessMethods
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itResetsState
@@ -2970,9 +3017,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itReturnsOneLcomForTrivialReturnMethods
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itReturnsOneLcomWhenAllMethodsAreStateless
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itReturnsTwoLcomForTwoDisconnectedGroups
- - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itReturnsZeroLcomForEmptyClass
- - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itReturnsZeroLcomWhenOnlyStaticMethods
- - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itStillAppliesTotalTrivialClassExemption
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itTreatsNonEmptyArrayOfConstantsReturnAsTrivialAndStateless
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itTreatsReturnArrayOfConstantsAsStateless
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itTreatsReturnForeignClassConstantAsStateless
@@ -3523,6 +3567,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDecompositionCatalogTest::itGetDecompositionUnknownDimension
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDecompositionCatalogTest::itInheritsTheNamespaceListAtProjectLevelWhenThereIsNoProjectFormula
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDecompositionCatalogTest::itMakesEveryInputAnswerWhatItCovers
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDecompositionCatalogTest::itNamesProjectCouplingSourcesAndTheirCoverage
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDecompositionCatalogTest::itNamesTheTccMethodPopulationUsedByTheClassFormula
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDecompositionCatalogTest::itRanksContributorsByClassLevelKeys
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDecompositionCatalogTest::itSelectsContributorMetrics
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthDecompositionCatalogTest::itShipsEveryLevelResolved
@@ -3605,6 +3651,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthSummaryBuilderTest::itRanksANamespaceOnlyWhenItDeclaresClassesOfItsOwn
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthSummaryBuilderTest::itRefusesAnIncompleteHealthDefinitionInsteadOfInventingThresholds
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthSummaryBuilderTest::itUsesOwnTypeEligibilityAndSubtreeCountsForAParent
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\MetricHintCatalogTest::itDescribesAggregateCeAsOneJointBreadthTerm
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\MetricHintCatalogTest::itDescribesRfcAsAResponseSetRatherThanAnInterface
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\MetricHintCatalogTest::itDescribesTheInclusiveClassRankHotspotHintBoundaryTruthfully
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\MetricHintCatalogTest::itDescribesTheOwnScopeCboLikeItsSiblings
@@ -3632,6 +3679,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\MetricHintCatalogTest::itGetLabelForUnknownKey
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\MetricHintCatalogTest::itGetLabelPreferExactMatch
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\MetricHintCatalogTest::itGetLabelWithSuffixResolution
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\MetricHintCatalogTest::itKeepsTheMaximumCeCeilingSeparateFromAverageBreadth
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\ViolationDensityTest::itClassDensityComputedCorrectly
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\ViolationDensityTest::itDensityNullWhenLocMissing
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\ViolationDensityTest::itDensityNullWhenLocZero
@@ -3717,9 +3765,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itJudgesTheRightSideOfAndByWhetherTheEvaluationReachedIt
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itKeepsCopiedBuiltinNullAsAuthoredAbsenceWhileTheBuiltinIsQuiet
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itKeepsCustomMissingAndNullAbsenceSeparateFromAuthoredHealthConstant
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itKeepsProjectCouplingIndependentOfIncomingOnlyMagnets
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itLeavesProjectCouplingWithoutItsMeasuredInputsUnmeasured
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itLeavesTheRepositoryUntouchedWhenGivenNoDefinitions
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itLeavesUnmeasuredClassCohesionAbsentAndRenormalizesOverall
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itLetsAnEnclosingFallbackCatchTheNullOfTheTakenBranch
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itListsAllUnknownMetricsReferencedByAFormula
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itMeasuresEachProjectCouplingSource
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itNamesTheKeyANestedTernaryReadsOnEveryPath
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itNeverRunsTheBranchItEntersWithAnAbsentKey
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itOmitsTypingHealthAtProjectLevelWhenThereIsNoTypeSurface
@@ -3742,6 +3794,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itSkipsASymbolCarryingNeitherSideOfAFallbackBetweenMetrics
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itSummarizesAbsencesWithBoundedExactSamplesForTheMetricAndLevel
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itTreatsAParenthesisedFallbackChainAsGuardedToItsLastLink
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itTreatsMeasuredZeroCohesionInputsAsPresent
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itUsesTccTrackedMethodCountForThePureMethodAdjustment
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itUsesTheNullCoalescingFallbackForAMissingMetric
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricEvaluatorTest::itUsesTheSameUnadjustedLcomScaleForClassAndNamespace
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricExpressionTest::itAcceptsALiteralIndexHoweverItIsSpaced
@@ -4015,6 +4069,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itComputesTheOwnScopeFromTheUnsuffixedCountsRatherThanTheSubtreeSums
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itCountsEnumsImplementingAnInterfaceAsConcrete
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itCountsInterfacesInBothNumeratorAndDenominator
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itDoesNotPublishAbstractnessForANamespaceWithoutAnyType
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itDoesNotPublishAbstractnessForAnEnumOnlyNamespace
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itDoesNotReportOneForAnInterfaceImplementedByEnumsOnly
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itIsNamedAbstractness
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itKeepsBareEnumsOutOfTheDenominator
@@ -4025,8 +4081,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itReturnsOneForANamespaceOfAbstractClassesAndInterfaces
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itReturnsOneForAnInterfaceOnlyNamespace
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itReturnsZeroForAFullyConcreteNamespace
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itReturnsZeroForANamespaceWithoutAnyType
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itReturnsZeroForAnEnumOnlyNamespace
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itAdvertisesTheThresholdShorthandKey
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itAppliesTheFlatThresholdShorthandUniformlyToBothLevels
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itDisablesBothLevelsWhenEnabledIsFalse
@@ -4216,8 +4270,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingSectionTest::itRefusesShadowedSelectorCardinalityInItsWrittenLayer"two kinds"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itAveragesTheOwnScopeIntoTheProjectAndLeavesTheSubtreeRollupUnaggregated
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itComputesTheOwnDistanceFromTheOwnScopeInputs
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itDoesNotTreatMissingCouplingAsZero
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itKeepsMeasuredOwnDistanceOutOfTheProjectWithoutPositiveCompleteTypeCounts
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itLeavesProjectDistanceUnmeasuredWhenNoOwnScopeHasEdges
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itNamesItselfDistance
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itOmitsBothDistancesForAnOwnScopeWithoutEdges
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itProvidesTheDistanceMetricInBothScopes
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itPublishesATypeWeightedProjectDistanceFromMeasuredOwnScopes
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itPublishesNoDistanceForANamespaceWithoutInstability
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itPublishesNoDistanceWithoutAbstractness
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itPublishesNoOwnDistanceWithoutAnOwnAbstractness
@@ -4227,7 +4286,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itScoresMaximumDistanceForAnAbstractUnstableZoneOfUselessness
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itScoresTheAbsoluteDeviationFromTheMainSequence
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itScoresZeroDistanceOnTheMainSequence
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceCollectorTest::itTreatsAnOwnScopeWithoutEdgesAsFullyStable
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceOptionsTest::itDecodesAYamlSelectorList
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceOptionsTest::itDecodesAnAuthoredSelectorIntoTheTypedNamespacePattern
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceOptionsTest::itLeavesIncludeNamespacesNullWhenAbsent
@@ -4237,7 +4295,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceRuleTest::itCountsEveryMatchedNamespaceWhenSmallMissingOrBelowThreshold
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceRuleTest::itDeclaresCorrectCliAliases
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceRuleTest::itDefaultsMinTypeCountToThree
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceRuleTest::itDoesNotJudgeANamespaceWithoutAnyCoupling
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceRuleTest::itDoesNotLogWarningWhenNoNamespacesAtAll
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceRuleTest::itDoesNotLogWarningWhenProjectNamespacesExist
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceRuleTest::itDoesNotLoseOneClassAtTheMinimumAfterNamespaceAggregation
@@ -4496,6 +4553,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::itKeepsLeafNamespaceCeAndCaUnaffectedByParentNamespaces
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::itLeavesTheOwnScopeOfANamespaceWithoutChildrenEqualToItsRollup
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::itPreservesAnExtendsDependencyToABuiltinClass
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::itPreservesIndependentClassViewsWhenCombiningTheirRows
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::itPreservesIndependentInventoryAndDeclarationViewsAcrossCopies
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::itPropagatesCeUpEveryAncestorNamespace
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::itReportsZeroCouplingWhenAllDepsAreInternalToTheParent
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::itReportsZeroOwnCouplingForAnUnknownNamespace
@@ -4636,6 +4695,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"behaviour methods"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"delegating methods"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"no public members"
+ - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"prefixed behavior"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"public fields plus accessors"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itFlagsDataAccessInterfacesAndSparesBehaviourOnes"struct without methods"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Integration\DataClass\DataClassDetectionTest::itJudgesAnUnreadParentOnlyWhenExceptionExclusionIsDisabled
@@ -5273,9 +5333,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Maintainability\Unit\MaintainabilityRuleTest::itSkipsTestFilesWhenExcluded
  - Qualimetrix\Tests\Analysis\Evidence\Maintainability\Unit\MaintainabilityRuleTest::itThrowsExceptionForWrongOptionsType
  - Qualimetrix\Tests\Analysis\Evidence\Maintainability\Unit\MaintainabilityRuleTest::itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\GlobalNamespaceProjectAggregateTest::itCountsTheGlobalNamespaceInTheCoveragePopulation
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\GlobalNamespaceProjectAggregateTest::itDoesNotScoreTheWholeAboveItsOnlyPart
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\GlobalNamespaceProjectAggregateTest::itPublishesAStructuralProjectAggregateForGlobalNamespaceCode
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\GlobalNamespaceProjectAggregateTest::itEvaluatesEachLevelsOwnOutgoingHealthInputs"applicable measured zero"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\GlobalNamespaceProjectAggregateTest::itEvaluatesEachLevelsOwnOutgoingHealthInputs"no applicable distance"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\GlobalNamespaceProjectAggregateTest::itKeepsGlobalDeclarationsWithoutInventingAnEdgeFreeDistance
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\GlobalNamespaceProjectAggregateTest::itRetainsAMeasuredZeroAndItsGlobalNamespaceSample
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\GoldenFileAggregationTest::itConfirmsHealthScoresExist
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\GoldenFileAggregationTest::itExportsTheFileAndLineOfAClassWithoutMethods
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\GoldenFileAggregationTest::itHandlesGlobalNamespace
@@ -6488,11 +6549,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itLeavesExceptionClassificationToGlobalInheritanceEvidence
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itProjectsTheSameClassMetricsAsTheFileBagIncludingDegenerateWoc
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itProvides
+ - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itRejectsComputedAndMultiStepAccessorBodies
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itResetsState
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itReturns100WocForAClassWithoutPublicMembers
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itReturnsZeroCountsForEmptyClass
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itReturnsZeroWhenNoProperties
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itReturnsZeroWocWhenAllPublicMembersAreAccessors
+ - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itUsesTheSameBodyShapeForMethodCountsAndWoc
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountRuleTest::itCountsMeasuredZeroBeforeSeverityAndDistinguishesMissingPublication
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountRuleTest::itGeneratesError
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountRuleTest::itGeneratesWarning
@@ -10683,10 +10746,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandAutoloadDevScopeTest::itTakesTestCodeIntoBothHalvesWhenTheFlagIsGiven
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandAutoloadDevScopeTest::itTakesTestCodeIntoBothHalvesWhenTheKeyIsWritten
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itCombinesConfiguredAndCliExclusionsWithoutLosingBaselineAnnotationOrGit
- - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itComparesLocalCohesionAgainstAWholeProjectBaselineOnOneFile"growth breaches the accepted magnitude"
- - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itComparesLocalCohesionAgainstAWholeProjectBaselineOnOneFile"unchanged remains accepted"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itDoesNotPromoteWhenTheEntryCannotBeApplied
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itKeepsAGroupWithAnIgnoredMemberAcceptedAcrossGenerateAndCheck
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itLeavesRunDependentCohesionUncomparedOnOneFile"growth remains unjudged"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itLeavesRunDependentCohesionUncomparedOnOneFile"unchanged remains unjudged"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itNamesUnusedCountsWhenTheAuditRuleIsNotSelected
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itPreservesTheIncompleteRunExitForEveryFormat
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itPromotesAMeasuredBreachToErrorAndFailsTheRun
@@ -12555,6 +12618,15 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Integration\Formatter\Sarif\SarifRuleCollectorTest::itReturnsDescriptionsForKnownChannelsFromTheRealPresentation
  - Qualimetrix\Tests\Reporting\Integration\Formatter\Sarif\SarifRuleCollectorTest::itReturnsHelpUriForKnownChannelsFromTheRealPresentation
  - Qualimetrix\Tests\Reporting\Integration\Formatter\Sarif\SarifRuleDescriptorCoverageTest::itKeepsTheHumanisedFallbackAndTheRepositoryUrlForAnUnknownCode
+ - Qualimetrix\Tests\Reporting\Integration\InheritanceDepthPublicationTest::itPublishesQuietCollectedOutcomesWithoutChangingFindingsOrScope
+ - Qualimetrix\Tests\Reporting\Integration\InheritanceDepthPublicationTest::itRetainsCollectedOutcomesWhenTheRuleIsDisabled
+ - Qualimetrix\Tests\Reporting\Integration\InheritanceDepthPublicationTest::itUsesMetadataSeamsAndLeavesFindingOnlyFormatsAlone"checkstyle"
+ - Qualimetrix\Tests\Reporting\Integration\InheritanceDepthPublicationTest::itUsesMetadataSeamsAndLeavesFindingOnlyFormatsAlone"gitlab"
+ - Qualimetrix\Tests\Reporting\Integration\InheritanceDepthPublicationTest::itUsesMetadataSeamsAndLeavesFindingOnlyFormatsAlone"health"
+ - Qualimetrix\Tests\Reporting\Integration\InheritanceDepthPublicationTest::itUsesMetadataSeamsAndLeavesFindingOnlyFormatsAlone"html"
+ - Qualimetrix\Tests\Reporting\Integration\InheritanceDepthPublicationTest::itUsesMetadataSeamsAndLeavesFindingOnlyFormatsAlone"sarif"
+ - Qualimetrix\Tests\Reporting\Integration\InheritanceDepthPublicationTest::itUsesMetadataSeamsAndLeavesFindingOnlyFormatsAlone"summary"
+ - Qualimetrix\Tests\Reporting\Integration\InheritanceDepthPublicationTest::itUsesMetadataSeamsAndLeavesFindingOnlyFormatsAlone"text"
  - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8ProsePublicationTest::itPublishesTheRealFormatterBodyWithoutTransliteratingOtherLetters"github"
  - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8ProsePublicationTest::itPublishesTheRealFormatterBodyWithoutTransliteratingOtherLetters"health"
  - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8ProsePublicationTest::itPublishesTheRealFormatterBodyWithoutTransliteratingOtherLetters"summary"
@@ -13306,6 +13378,9 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Health\SummaryEnricherTest::itTypingNotAddedWhenNoDimensions
  - Qualimetrix\Tests\Reporting\Unit\Health\SummaryEnricherTest::itWorstClasses
  - Qualimetrix\Tests\Reporting\Unit\Health\SummaryEnricherTest::itWorstNamespaces
+ - Qualimetrix\Tests\Reporting\Unit\InheritanceDepthCompletenessTest::itCapturesTheReportSnapshotWithoutCreatingFindings
+ - Qualimetrix\Tests\Reporting\Unit\InheritanceDepthCompletenessTest::itCountsExactDeclarationsAndBoundsSortedSamples
+ - Qualimetrix\Tests\Reporting\Unit\InheritanceDepthCompletenessTest::itOmitsCompleteAndUncollectedDepths
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itNamesTheOfferedFormattersWhenItRefusesAnUnknownOne
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAMalformedLowerFormatEvenWhenTheCommandLineWins"boolean"
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAMalformedLowerFormatEvenWhenTheCommandLineWins"float"

@@ -56,6 +56,8 @@ use Qualimetrix\Core\Path\RelativePath;
  *
  * Statement NPath uses max(1, exprNpath) to ensure simple statements
  * contribute at least 1 path in multiplicative sequences.
+ *
+ * @qmx-threshold size.method-count warning=23 error=23 -- Statement and expression cases implement one NPath recurrence over the current callable; extracting the node cases would move the same recursion menu and factor state to another class.
  */
 final class NpathComplexityVisitor extends NodeVisitorAbstract implements DeclarationIndexAwareInterface, ResettableVisitorInterface
 {

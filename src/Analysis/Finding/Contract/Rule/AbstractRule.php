@@ -40,6 +40,8 @@ use Qualimetrix\Core\Symbol\SymbolType;
  *
  * Provides common functionality and protected access to options.
  * Validates that the options instance matches the expected class from getOptionsClass().
+ *
+ * @qmx-threshold size.method-count warning=22 error=22 -- Subclasses use this common declaration and admission vocabulary with their rule options; splitting the protected entrypoints would retain the same menu as forwarding methods.
  */
 abstract class AbstractRule implements RuleInterface
 {

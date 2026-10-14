@@ -236,35 +236,38 @@ class User
 
 ### Metrics
 
-| Metric                        | Description                                   |
-| ----------------------------- | --------------------------------------------- |
-| `size.method-count`           | Methods excluding getters/setters             |
-| `size.method-count.total`     | All methods                                   |
-| `size.method-count.public`    | Public methods (excluding getters/setters)    |
-| `size.method-count.protected` | Protected methods (excluding getters/setters) |
-| `size.method-count.private`   | Private methods (excluding getters/setters)   |
-| `size.getter-count`           | Getters (`get*`, `is*`, `has*`)               |
-| `size.setter-count`           | Setters (`set*`)                              |
+| Metric                        | Description                                                        |
+| ----------------------------- | ------------------------------------------------------------------ |
+| `size.method-count`           | Methods excluding getters/setters                                  |
+| `size.method-count.total`     | All methods                                                        |
+| `size.method-count.public`    | Public methods (excluding getters/setters)                         |
+| `size.method-count.protected` | Protected methods (excluding getters/setters)                      |
+| `size.method-count.private`   | Private methods (excluding getters/setters)                        |
+| `size.getter-count`           | Simple property-return getters with `get*`, `is*`, or `has*` names |
+| `size.setter-count`           | Simple property-assignment setters with `set*` names               |
 
 ### Getter/Setter Detection
 
-**Getters** (case-insensitive):
-- `get*` — `getName()`, `getValue()`
-- `is*` — `isActive()`, `isValid()`
-- `has*` — `hasChildren()`, `hasErrors()`
+**Getters** use a case-insensitive `get`, `is`, or `has` prefix (including
+the bare name), zero parameters, and exactly one statement returning an
+instance property (`return $this->property;`).
 
-**Setters** (case-insensitive):
-- `set*` — `setName()`, `setValue()`
+**Setters** use a case-insensitive `set` prefix (including the bare name),
+exactly one parameter, and an assignment from that parameter to an instance
+property. An optional `return $this;` may follow. A matching name alone does
+not make a method an accessor: complex predicates, computed getters, and
+forwarding methods count as behavioral methods. `size.method-count.total`
+still includes every declared method.
 
 ### Example
 
 ```php
 class User
 {
-    public function getName(): string { }      // size.getter-count +1
-    public function setName(string $name): void { }  // size.setter-count +1
-    public function isActive(): bool { }       // size.getter-count +1
-    public function hasPermission(): bool { }  // size.getter-count +1
+    public function getName(): string { return $this->name; } // getter +1
+    public function setName(string $name): void { $this->name = $name; } // setter +1
+    public function isActive(): bool { return $this->active; } // getter +1
+    public function hasPermission(): bool { return $this->permission; } // getter +1
 
     public function save(): void { }           // size.method-count.public +1
     protected function validate(): bool { }    // size.method-count.protected +1
@@ -345,9 +348,10 @@ property and WOC measurement remain independent of that classification.
 
 `design.woc` follows Lanza & Marinescu: functional public methods — neither accessor
 nor constructor — over all other public members, which are public methods
-(accessors included) plus public properties. Accessor-ness is decided by method
-name in `MethodCountVisitor`, so a public method whose body only forwards to a
-collaborator counts as functional. Only members declared by the class itself
+(accessors included) plus public properties. Accessor-ness requires both a matching
+name and the simple property-read or property-write body recognized by
+`MethodCountVisitor`. A forwarding or computed `get*` method therefore counts
+as functional. Only members declared by the class itself
 are counted. A class with no public members scores 100 rather than being left
 undefined. `size.method-count.total` moved to `MetricName::SIZE_METHOD_COUNT_TOTAL`
 so Design can require it without importing a Size constant.

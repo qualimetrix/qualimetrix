@@ -149,11 +149,17 @@ What follows from the decision: trade-offs, constraints, and implications.
 
 - [0112 — Validation Check Scheduling](0112-validation-check-scheduling.md) — verified code tests finish before PHPStan overlaps the remaining validation groups.
 
+- [0113 — Producer-Declared Metric Reach](0113-producer-declared-metric-reach.md) — evidence dependency is declared by the producer independently of execution phase.
+
+- [0114 — Effective methods and cohesion populations](0114-effective-methods-and-cohesion-populations.md) — effective trait methods, graph populations and conservative Run baseline comparison.
+- [0115 — Defined distance and type-weighted project fold](0115-defined-distance-and-type-weighted-project-fold.md) — defined abstractness/distance and eligible-type-weighted own scopes.
+- [0116 — Measured health-score recalibration](0116-measured-health-score-recalibration.md) — declared search and measured before/after; awaiting actual calibration receipts.
+
+- [0117 — Inheritance depth completeness publication](0117-inheritance-depth-completeness-publication.md) — bounded collected-measurement outcomes survive rule activation and finding selection.
+
 ## Superseded history
 
 - [0008 — ArchitectureProcessor Service](0008-architecture-processor-service.md) — replaced by the capability-oriented topology in ADR 0022.
 - [0010 — Architecture Vertical-Slice Pilot](0010-architecture-vertical-slice.md) — replaced by subject cohesion and ADR 0022.
 - [0012 — Hybrid Architectural Direction](0012-hybrid-architectural-direction.md) — replaced by ADR 0022; its HTML-viewer placement prescription by ADR 0064.
 - [0056 — Source Composition Loses the Middle Layer's Value](0056-source-composition-is-measured-and-left-alone.md) — corrected by ADR 0058.
-
-- [0113 — Producer-Declared Metric Reach](0113-producer-declared-metric-reach.md) — evidence dependency is declared by the producer independently of execution phase.

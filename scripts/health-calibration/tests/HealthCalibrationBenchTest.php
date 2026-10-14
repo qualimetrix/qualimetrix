@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricsSection;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ExcludeHealthSection;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricApplicability;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricOutcome;
@@ -23,11 +24,15 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\HealthCalibration\AggregationScheme;
 use Qualimetrix\HealthCalibration\Bench;
 use Qualimetrix\HealthCalibration\Capture;
-use Qualimetrix\HealthCalibration\CoverageCalculator;
+use Qualimetrix\HealthCalibration\CaptureReader;
 use Qualimetrix\HealthCalibration\Criteria;
 use Qualimetrix\HealthCalibration\DimensionOutcome;
+use Qualimetrix\HealthCalibration\EarnedTop;
 use Qualimetrix\HealthCalibration\Evaluation;
+use Qualimetrix\HealthCalibration\FormalRanking;
+use Qualimetrix\HealthCalibration\Options;
 use Qualimetrix\HealthCalibration\SelfTest;
+use Qualimetrix\HealthCalibration\StatedCoverage;
 use Qualimetrix\HealthCalibration\Subject;
 
 /**
@@ -46,6 +51,108 @@ final class HealthCalibrationBenchTest extends TestCase
     protected function setUp(): void
     {
         require_once \dirname(__DIR__, 3) . '/scripts/health-calibration.php';
+    }
+
+    #[Test]
+    public function itMakesOwnTypesTheCurrentWeightAndExcludesBareEnums(): void
+    {
+        self::assertSame('declaring:types', AggregationScheme::parse('current')->toString());
+        self::assertTrue(AggregationScheme::current()->isCurrent());
+        $namespace = self::namespaceSubject('App', [
+            'size.class-count' => 2.0,
+            'size.trait-count' => 1.0,
+            'size.interface-count' => 3.0,
+            'size.implementing-enum-count' => 2.0,
+            'size.enum-count' => 12.0,
+            'size.class-count.sum' => 100.0,
+        ]);
+        self::assertSame(8.0, AggregationScheme::current()->weightOf($namespace));
+    }
+
+    #[Test]
+    public function itExcludesZeroEdgeNamespacesFromProjectDistanceEvenIfCaptureCarriesOne(): void
+    {
+        $capture = new Capture('zero-edge', [
+            new Subject('', SymbolLevel::Project, ['coupling.distance-own.avg' => 0.3], [], null),
+            self::namespaceSubject('App\Isolated', [
+                'coupling.distance-own' => 1.0, 'size.class-count' => 10.0,
+                'coupling.ca-own' => 0.0, 'coupling.ce-own' => 0.0,
+            ]),
+            self::namespaceSubject('App\Connected', [
+                'coupling.distance-own' => 0.3, 'size.class-count' => 1.0,
+                'coupling.ca-own' => 0.0, 'coupling.ce-own' => 1.0,
+            ]),
+        ]);
+        $evaluation = (new Bench())->run($capture, self::defaultDefinitions(), [SymbolLevel::Project], AggregationScheme::current());
+        self::assertSame(['App\Connected'], $evaluation->derived[0]->contributors);
+        self::assertSame(0.3, $evaluation->derived[0]->values['coupling.distance-own.avg']);
+    }
+
+    #[Test]
+    public function itUsesTheProductOutcomeForApplicabilityAndRefusal(): void
+    {
+        $subject = new Subject('App\Empty', SymbolLevel::Class_, [], ['computed.probe' => 100.0], null);
+        $definition = new ComputedMetricDefinition(
+            name: 'computed.probe',
+            formulas: [SymbolLevel::Class_->value => 'm["cohesion.tcc"] ?? 100'],
+            description: 'applicability probe',
+            levels: [SymbolLevel::Class_],
+            applicability: [SymbolLevel::Class_->value => ComputedMetricApplicability::anyPresent(['cohesion.tcc'])],
+        );
+        $evaluation = (new Bench())->run(new Capture('probe', [$subject]), [$definition], [SymbolLevel::Class_], AggregationScheme::current());
+        self::assertSame(ComputedMetricOutcome::NOT_APPLICABLE, $evaluation->outcome($subject, 'computed.probe')?->kind);
+        self::assertNull($evaluation->scoreOf($subject, 'computed.probe'));
+        self::assertCount(1, SelfTest::run([$evaluation], 0.1));
+    }
+
+    #[Test]
+    public function itRetainsMissingAndFailedProductOutcomes(): void
+    {
+        $subject = self::classSubject('App\Probe');
+        $definitions = [
+            new ComputedMetricDefinition(
+                name: 'computed.missing',
+                formulas: [SymbolLevel::Class_->value => 'm["unknown.metric"]'],
+                description: 'missing-key probe',
+                levels: [SymbolLevel::Class_],
+            ),
+            new ComputedMetricDefinition(
+                name: 'computed.failure',
+                formulas: [SymbolLevel::Class_->value => '1 / 0'],
+                description: 'failure probe',
+                levels: [SymbolLevel::Class_],
+            ),
+        ];
+        $evaluation = (new Bench())->run(new Capture('probe', [$subject]), $definitions, [SymbolLevel::Class_], AggregationScheme::current());
+        self::assertSame(ComputedMetricOutcome::MISSING_KEYS, $evaluation->outcome($subject, 'computed.missing')?->kind);
+        self::assertSame(ComputedMetricOutcome::FAILURE, $evaluation->outcome($subject, 'computed.failure')?->kind);
+        self::assertNull($evaluation->scoreOf($subject, 'computed.failure'));
+    }
+
+    #[Test]
+    public function itKeepsTwoDeclarationsWithTheSameLogicalNameSeparate(): void
+    {
+        $path = tempnam(sys_get_temp_dir(), 'qmx-capture-');
+        self::assertNotFalse($path);
+        try {
+            file_put_contents($path, json_encode(['symbols' => [
+                ['type' => 'class', 'name' => 'App\Dup', 'subject' => 'declaration:class:App\\Dup@src/One.php', 'metrics' => ['size.method-count' => 1]],
+                ['type' => 'class', 'name' => 'App\Dup', 'subject' => 'declaration:class:App\\Dup@src/Two.php', 'metrics' => ['size.method-count' => 2]],
+            ]], \JSON_THROW_ON_ERROR));
+            $capture = CaptureReader::read($path);
+            $definition = new ComputedMetricDefinition(
+                name: 'computed.probe',
+                formulas: [SymbolLevel::Class_->value => 'm["size.method-count"]'],
+                description: 'identity probe',
+                levels: [SymbolLevel::Class_],
+            );
+            $evaluation = (new Bench())->run($capture, [$definition], [SymbolLevel::Class_], AggregationScheme::current());
+            self::assertCount(2, $evaluation->outcomes);
+            self::assertSame(1.0, $evaluation->scoreOf($capture->symbols[0], 'computed.probe'));
+            self::assertSame(2.0, $evaluation->scoreOf($capture->symbols[1], 'computed.probe'));
+        } finally {
+            unlink($path);
+        }
     }
 
     #[Test]
@@ -96,10 +203,8 @@ final class HealthCalibrationBenchTest extends TestCase
         $derived = $evaluation->derived[0];
 
         self::assertSame('coupling.distance-own', $derived->base);
-        // (0.2 + 0.6 + 1.0) / 3 over all three leaves — the global namespace is
-        // a leaf like any other under the current scheme; the captured 0.999
-        // is discarded.
-        self::assertEqualsWithDelta(0.6, $derived->values['coupling.distance-own.avg'], 1.0e-12);
+        // Own type counts 1, 9, 5; the published 0.999 is discarded.
+        self::assertEqualsWithDelta(10.6 / 15.0, $derived->values['coupling.distance-own.avg'], 1.0e-12);
         self::assertSame(3.0, $derived->values['coupling.distance-own.count']);
         self::assertSame(['App\A', 'App\B', '(global)'], $derived->contributors);
         self::assertSame(['coupling.distance-own.avg' => 0.999], $derived->publishedBefore);
@@ -116,8 +221,8 @@ final class HealthCalibrationBenchTest extends TestCase
     {
         $capture = new Capture('parent-and-leaf', [
             new Subject('', SymbolLevel::Project, [], [], null),
-            self::namespaceSubject('App', ['coupling.distance-own' => 0.2], 100),
-            self::namespaceSubject('App\Sub', ['coupling.distance-own' => 1.0], 100),
+            self::namespaceSubject('App', ['coupling.distance-own' => 0.2, 'size.class-count' => 2.0], 100),
+            self::namespaceSubject('App\Sub', ['coupling.distance-own' => 1.0, 'size.class-count' => 8.0], 100),
         ]);
 
         $current = (new Bench())->run(
@@ -130,11 +235,11 @@ final class HealthCalibrationBenchTest extends TestCase
             $capture,
             self::defaultDefinitions(),
             [SymbolLevel::Project],
-            new AggregationScheme(AggregationScheme::MEMBERS_LEAVES, AggregationScheme::WEIGHT_NONE),
+            new AggregationScheme(AggregationScheme::MEMBERS_LEAVES, AggregationScheme::WEIGHT_TYPES),
         );
 
         self::assertSame(['App', 'App\Sub'], $current->derived[0]->contributors);
-        self::assertEqualsWithDelta(0.6, $current->derived[0]->values['coupling.distance-own.avg'], 1.0e-12);
+        self::assertEqualsWithDelta(0.84, $current->derived[0]->values['coupling.distance-own.avg'], 1.0e-12);
         self::assertSame(2.0, $current->derived[0]->values['coupling.distance-own.count']);
 
         self::assertSame(['App\Sub'], $leafOnly->derived[0]->contributors);
@@ -161,7 +266,7 @@ final class HealthCalibrationBenchTest extends TestCase
     public function itReproducesThePublishedAggregateUnderTheCurrentScheme(): void
     {
         $evaluation = (new Bench())->run(
-            self::distanceCapture(publishedAggregate: 0.6),
+            self::distanceCapture(publishedAggregate: 10.6 / 15.0),
             self::defaultDefinitions(),
             [SymbolLevel::Project],
             AggregationScheme::current(),
@@ -190,13 +295,7 @@ final class HealthCalibrationBenchTest extends TestCase
         self::assertSame(3.0, $evaluation->derived[0]->values['coupling.distance-own.count']);
     }
 
-    /**
-     * C4 compares two aggregation schemes, and only `coupling.distance-own` is
-     * re-derived between them — every other project input is read from the
-     * capture verbatim, so its drift is zero by construction. A zero printed
-     * for those would be read as "this dimension is insensitive to the
-     * aggregation rule", which is a claim the run never tested.
-     */
+    /** C4 names dimensions that cannot read the independently pooled D. */
     #[Test]
     public function itSaysNotPooledWhereNoDerivedAggregateReachesTheFormula(): void
     {
@@ -207,8 +306,9 @@ final class HealthCalibrationBenchTest extends TestCase
         $capture = new Capture($capture->id, [
             new Subject($project->name, $project->level, $project->inputs + [
                 'size.symbol-method-count' => 1.0,
+                'complexity.ccn.sum' => 1.0,
                 'cohesion.tcc.avg' => 0.5,
-                'cohesion.lcom4.avg' => 1.0,
+                'cohesion.lcom.avg' => 1.0,
                 'design.type-coverage.param.total.sum' => 1.0,
                 'design.type-coverage.param.typed.sum' => 1.0,
                 'maintainability.mi.avg' => 85.0,
@@ -217,12 +317,12 @@ final class HealthCalibrationBenchTest extends TestCase
         ]);
 
         $bench = new Bench();
-        $current = $bench->run($capture, $definitions, [SymbolLevel::Project], AggregationScheme::current());
+        $current = $bench->run($capture, $definitions, [SymbolLevel::Project], AggregationScheme::current(), keepPublishedProjectInputs: true);
         $weighted = $bench->run(
             $capture,
             $definitions,
             [SymbolLevel::Project],
-            new AggregationScheme(AggregationScheme::MEMBERS_LEAVES, AggregationScheme::WEIGHT_LOC),
+            new AggregationScheme(AggregationScheme::MEMBERS_DECLARING, AggregationScheme::WEIGHT_TYPES),
         );
 
         $drift = Criteria::aggregateDrift($current, $weighted);
@@ -238,6 +338,54 @@ final class HealthCalibrationBenchTest extends TestCase
                 $drift[$dimension],
                 \sprintf('%s is reported as measured drift, but nothing pooled reaches its formula', $dimension),
             );
+        }
+    }
+
+    #[Test]
+    public function itJudgesPublishedProjectDistanceAgainstTheIndependentTypeWeightedPool(): void
+    {
+        $definitions = self::defaultDefinitions();
+        $bench = new Bench();
+        $correct = self::distanceCapture(publishedAggregate: 10.6 / 15.0);
+        $unweighted = self::distanceCapture(publishedAggregate: 0.6);
+
+        self::assertTrue(Criteria::hasDiscriminatingPool($correct));
+        $weighted = $bench->run($correct, $definitions, [SymbolLevel::Project], AggregationScheme::current());
+        $publishedCorrect = $bench->run($correct, $definitions, [SymbolLevel::Project], AggregationScheme::current(), keepPublishedProjectInputs: true);
+        $publishedUnweighted = $bench->run($unweighted, $definitions, [SymbolLevel::Project], AggregationScheme::current(), keepPublishedProjectInputs: true);
+
+        self::assertEqualsWithDelta(10.6 / 15.0, $weighted->derived[0]->values['coupling.distance-own.avg'], 1.0e-12);
+        self::assertEqualsWithDelta(0.0, Criteria::aggregateDrift($publishedCorrect, $weighted)['health.coupling'], 1.0e-12);
+        self::assertGreaterThan(1.0e-6, Criteria::aggregateDrift($publishedUnweighted, $weighted)['health.coupling']);
+
+        ob_start();
+        try {
+            self::assertTrue(\Qualimetrix\HealthCalibration\printAggregateDrift([$publishedCorrect], [$weighted], 1.0e-6));
+            self::assertFalse(\Qualimetrix\HealthCalibration\printAggregateDrift([$publishedUnweighted], [$weighted], 1.0e-6));
+        } finally {
+            ob_end_clean();
+        }
+    }
+
+    #[Test]
+    public function itDoesNotAcceptAWeightingVerdictFromAnEqualWeightPool(): void
+    {
+        $capture = new Capture('equal-weights', [
+            new Subject('', SymbolLevel::Project, ['coupling.distance-own.avg' => 0.4, 'coupling.cbo.avg' => 4.0], [], null),
+            self::namespaceSubject('App\A', ['coupling.distance-own' => 0.2, 'size.class-count' => 1.0, 'coupling.ca-own' => 0.0, 'coupling.ce-own' => 1.0]),
+            self::namespaceSubject('App\B', ['coupling.distance-own' => 0.6, 'size.class-count' => 1.0, 'coupling.ca-own' => 0.0, 'coupling.ce-own' => 1.0]),
+        ]);
+        self::assertFalse(Criteria::hasDiscriminatingPool($capture));
+
+        $bench = new Bench();
+        $definitions = self::defaultDefinitions();
+        $published = $bench->run($capture, $definitions, [SymbolLevel::Project], AggregationScheme::current(), keepPublishedProjectInputs: true);
+        $weighted = $bench->run($capture, $definitions, [SymbolLevel::Project], AggregationScheme::current());
+        ob_start();
+        try {
+            self::assertFalse(\Qualimetrix\HealthCalibration\printAggregateDrift([$published], [$weighted], 1.0e-6));
+        } finally {
+            ob_end_clean();
         }
     }
 
@@ -269,10 +417,10 @@ final class HealthCalibrationBenchTest extends TestCase
     /**
      * Deriving the aggregate is worth nothing if the SCORE still reads the
      * captured one, so the score is asserted, not only the derivation: under
-     * the current scheme `coupling.distance-own.avg` is 0.6 (all three leaves,
-     * global included) and the project formula gives 18/(18+3.6); the captured
-     * 0.999 would give 18/(18+5.994), and the `leaves-no-global` scheme, which
-     * derives 0.4 from the two non-global leaves, gives 18/(18+2.4) — proof
+     * the current scheme `coupling.distance-own.avg` is 10.6/15 (all three
+     * namespaces, global included) and the project formula uses that value;
+     * the captured 0.999 would give a different result, and the
+     * `leaves-no-global` unweighted scheme derives 0.4 — proof
      * that the scheme, not the capture, is what moves the score.
      */
     #[Test]
@@ -295,7 +443,7 @@ final class HealthCalibrationBenchTest extends TestCase
 
         $project = $capture->symbols[0];
 
-        self::assertEqualsWithDelta(83.3333, $current->scoreOf($project, 'health.coupling') ?? -1.0, 0.001);
+        self::assertEqualsWithDelta(100.0 * 18.0 / (18.0 + (10.6 / 15.0) * 6.0), $current->scoreOf($project, 'health.coupling') ?? -1.0, 0.001);
         // The aggregation scheme has to move the score, or no candidate for it
         // could ever be judged by this bench.
         self::assertEqualsWithDelta(88.2353, $withoutGlobal->scoreOf($project, 'health.coupling') ?? -1.0, 0.001);
@@ -447,13 +595,7 @@ final class HealthCalibrationBenchTest extends TestCase
         self::assertSame([], $violations);
     }
 
-    /**
-     * C1 is one-sided. A parent below every child is the parent formula
-     * carrying terms the child formula has no equivalent for — coupling alone
-     * shows 604 of these and zero of the other kind across the corpus
-     * (measurement/07-monotonicity-direction.md) — so it is counted as a
-     * reference figure and never returned as a violation.
-     */
+    /** The upper and lower diagnostic populations are counted separately. */
     #[Test]
     public function itDoesNotCallAParentBelowEveryChildAViolation(): void
     {
@@ -479,10 +621,6 @@ final class HealthCalibrationBenchTest extends TestCase
         self::assertSame(2, $below[0]->children);
     }
 
-    /**
-     * The upward direction is the one the criterion judges, and it is not in
-     * the reference count.
-     */
     #[Test]
     public function itKeepsTheTwoDirectionsApart(): void
     {
@@ -517,6 +655,37 @@ final class HealthCalibrationBenchTest extends TestCase
     }
 
     #[Test]
+    public function itKeepsLawfulComplementaryPoolingDiagnosticWithoutRejectingBindingCriteria(): void
+    {
+        $definitions = self::defaultDefinitions();
+        $captures = array_map(self::complementaryCapture(...), [...FormalRanking::LOWER, ...FormalRanking::HIGHER]);
+        $evaluations = array_map(static fn(Capture $capture): Evaluation => (new Bench())->run(
+            $capture,
+            $definitions,
+            [SymbolLevel::Project, SymbolLevel::Namespace_, SymbolLevel::Class_],
+            AggregationScheme::current(),
+        ), $captures);
+        $capture = $captures[0];
+        $evaluation = $evaluations[0];
+        $children = $capture->classesUnder($capture->symbols[1]);
+        self::assertSame(50.0, $evaluation->scoreOf($children[0], 'health.cohesion'));
+        self::assertSame(50.0, $evaluation->scoreOf($children[1], 'health.cohesion'));
+        self::assertEqualsWithDelta(60.35533905932738, $evaluation->scoreOf($capture->symbols[1], 'health.cohesion') ?? -1.0, 1.0e-12);
+        self::assertNotEmpty(Criteria::monotonicity([$evaluation]));
+        $options = Options::parse(['--capture-dir=unused', '--levels=project,namespace,class']);
+        ob_start();
+        try {
+            $exit = \Qualimetrix\HealthCalibration\reportCriteria($options, $evaluations, $definitions, $captures);
+            $text = (string) ob_get_contents();
+        } finally {
+            ob_end_clean();
+        }
+        self::assertSame(0, $exit);
+        self::assertStringContainsString('C1 diagnostic', $text);
+        self::assertStringContainsString('60.36', $text);
+    }
+
+    #[Test]
     public function itCountsPerfectScoresAndMarksTheOnesAnAbsentInputBought(): void
     {
         $earned = self::classSubject('App\Earned');
@@ -544,138 +713,303 @@ final class HealthCalibrationBenchTest extends TestCase
         );
     }
 
-    /**
-     * The plan's own test case: an aggregate carrying 1 of 500 is not a better
-     * or worse score, it is not a score.
-     */
     #[Test]
-    public function itReportsADimensionAsNotApplicableBelowTheDeclaredFraction(): void
+    public function itJudgesAllPredeclaredSourceGroupsAndRejectsConstantHundred(): void
     {
-        $capture = self::sparseCapture(classes: 500, carriers: 1);
-        $project = $capture->symbols[0];
-
-        $coverage = CoverageCalculator::forDimension(
-            $capture,
-            $project,
-            ['cohesion.tcc.avg'],
-            'symbols',
-            AggregationScheme::current(),
-        );
-
-        self::assertNotNull($coverage);
-        self::assertSame(1, $coverage->carriers);
-        self::assertSame(500, $coverage->total);
-        self::assertSame('not-applicable', Criteria::applicability($coverage, 'symbols', 0.05));
+        self::assertSame([10.0, 10.0], EarnedTop::values('cohesion.tcc-method-count', SymbolLevel::Class_));
+        $defaults = self::defaultDefinitions();
+        $rows = EarnedTop::judge($defaults);
+        self::assertNotEmpty($rows);
+        self::assertSame(['pass'], array_values(array_unique(array_column($rows, 'verdict'))));
+        self::assertCount(18, array_unique(array_map(static fn(array $row): string => $row['level'] . ' ' . $row['dimension'], $rows)));
+        $constant = array_map(static fn(ComputedMetricDefinition $definition): ComputedMetricDefinition => new ComputedMetricDefinition(
+            name: $definition->name,
+            formulas: array_fill_keys(array_keys($definition->formulas), '100'),
+            description: 'constant mutation candidate',
+            levels: $definition->levels,
+            applicability: $definition->applicability,
+        ), $defaults);
+        $fakeRows = EarnedTop::judge($constant);
+        self::assertCount(\count($rows), $fakeRows);
+        self::assertSame(['fail'], array_values(array_unique(array_column($fakeRows, 'verdict'))));
     }
 
     #[Test]
-    public function itRefusesToJudgeCoverageWithoutADeclaredFraction(): void
+    public function itFindsRealPerfectScoresMatchingFrozenAdverseProfiles(): void
     {
-        $capture = self::sparseCapture(classes: 500, carriers: 1);
+        $bad = new Subject('App\\Bad', SymbolLevel::Class_, ['complexity.ccn.max' => 11.0], [], 20, 'decl:bad');
+        $empty = new Subject('App\\Empty', SymbolLevel::Class_, [], [], 1, 'decl:empty');
+        $definition = new ComputedMetricDefinition('health.complexity', ['class' => '100'], 'constant candidate', [SymbolLevel::Class_]);
+        $evaluation = (new Bench())->run(new Capture('fixture', [$bad, $empty], true), [$definition], [SymbolLevel::Class_], AggregationScheme::current());
+        self::assertSame(['fixture class decl:bad health.complexity [complexity.ccn.max]'], EarnedTop::unearned([$evaluation]));
 
-        $coverage = CoverageCalculator::forDimension(
-            $capture,
-            $capture->symbols[0],
-            ['cohesion.tcc.avg'],
-            'symbols',
-            AggregationScheme::current(),
-        );
+        $quotientDefinition = new ComputedMetricDefinition('health.complexity', ['project' => '100'], 'constant candidate', [SymbolLevel::Project]);
+        $quotients = [];
+        foreach (['legitimate' => 10000000.0, 'adverse' => 1000.0] as $id => $population) {
+            $project = new Subject('', SymbolLevel::Project, ['complexity.ccn.sum' => 3000.0, 'size.symbol-method-count' => $population], [], null);
+            $quotients[] = (new Bench())->run(new Capture($id, [$project], true), [$quotientDefinition], [SymbolLevel::Project], AggregationScheme::current());
+        }
+        self::assertSame(['adverse project  health.complexity [complexity.ccn.sum size.symbol-method-count]'], EarnedTop::unearned($quotients));
 
-        self::assertSame('no-declared-fraction', Criteria::applicability($coverage, 'symbols', null));
+        $adjusted = new Subject('App\\Pure', SymbolLevel::Class_, ['cohesion.tcc' => 1.0, 'cohesion.lcom' => 6.0, 'cohesion.pure-method-count' => 10.0, 'size.method-count' => 10.0, 'cohesion.tcc-method-count' => 10.0], [], 20, 'decl:pure');
+        $legitimate = (new Bench())->run(new Capture('pure', [$adjusted], true), self::defaultDefinitions(), [SymbolLevel::Class_], AggregationScheme::current());
+        self::assertSame(100.0, $legitimate->scoreOf($adjusted, 'health.cohesion'));
+        self::assertSame([], EarnedTop::unearned([$legitimate]));
+
     }
 
     #[Test]
-    public function itExpressesCoverageByLinesAsWellAsBySymbols(): void
+    public function itSeparatesAbsentCohesionFromMeasuredZero(): void
     {
-        // Two classes of ten lines carry the metric; one of 980 does not.
-        $capture = new Capture('fixture', [
-            new Subject('', SymbolLevel::Project, [], [], null),
-            new Subject('App\Small', SymbolLevel::Class_, ['cohesion.tcc' => 0.5], [], 10),
-            new Subject('App\AlsoSmall', SymbolLevel::Class_, ['cohesion.tcc' => 0.5], [], 10),
-            new Subject('App\Huge', SymbolLevel::Class_, [], [], 980),
-        ]);
-
-        $coverage = CoverageCalculator::forKey(
-            $capture,
-            $capture->symbols[0],
-            'cohesion.tcc.avg',
-            AggregationScheme::current(),
-        );
-
-        self::assertEqualsWithDelta(2 / 3, $coverage->bySymbols() ?? -1.0, 1.0e-12);
-        self::assertEqualsWithDelta(0.02, $coverage->byLoc() ?? -1.0, 1.0e-12);
+        $empty = new Subject('App\\Empty', SymbolLevel::Class_, [], [], 1, 'decl:empty');
+        $zero = new Subject('App\\Zero', SymbolLevel::Class_, ['cohesion.tcc' => 0.0, 'cohesion.lcom' => 6.0], [], 1, 'decl:zero');
+        $evaluation = (new Bench())->run(new Capture('fixture', [$empty, $zero], true), self::defaultDefinitions(), [SymbolLevel::Class_], AggregationScheme::current());
+        self::assertSame(ComputedMetricOutcome::NOT_APPLICABLE, $evaluation->outcome($empty, 'health.cohesion')?->kind);
+        self::assertNull($evaluation->scoreOf($empty, 'health.cohesion'));
+        self::assertSame(0.0, $evaluation->scoreOf($zero, 'health.cohesion'));
+        self::assertSame('measured', StatedCoverage::rows($evaluation, $zero, 'health.cohesion')[0]['state']);
     }
 
-    /**
-     * A class whose namespace the aggregation scheme excluded is uncovered,
-     * not merely unmeasured. The current scheme admits `(global)` as a leaf
-     * like any other, so exercising the exclusion needs the
-     * `leaves-no-global` scheme explicitly — it is what the CodeIgniter case
-     * used to mean before the tree guard defect was fixed, and it stays a
-     * legitimate candidate scheme even though it is no longer the default.
-     */
     #[Test]
-    public function itCountsAClassUnderAnExcludedNamespaceAsUncovered(): void
+    public function itStatesOneOfTenCallablesAndDoesNotBorrowClassLines(): void
     {
-        $capture = new Capture('fixture', [
-            new Subject('', SymbolLevel::Project, [], [], null),
-            self::namespaceSubject('(global)', ['coupling.distance' => 0.94]),
-            new Subject('Legacy', SymbolLevel::Class_, [], [], 100),
-        ]);
-
-        $excluded = CoverageCalculator::forKey(
-            $capture,
-            $capture->symbols[0],
-            'coupling.distance.avg',
-            new AggregationScheme(AggregationScheme::MEMBERS_LEAVES_NO_GLOBAL, AggregationScheme::WEIGHT_NONE),
-        );
-        $admitted = CoverageCalculator::forKey(
-            $capture,
-            $capture->symbols[0],
-            'coupling.distance.avg',
-            AggregationScheme::current(),
-        );
-
-        self::assertSame(0, $excluded->carriers);
-        self::assertSame(1, $admitted->carriers);
-        self::assertSame('ns=0/1', $excluded->note);
+        $project = new Subject('', SymbolLevel::Project, [
+            'size.symbol-method-count' => 10.0, 'size.symbol-class-count' => 1.0,
+            'complexity.ccn.count' => 1.0, 'complexity.ccn.sum' => 1.0,
+            'complexity.cognitive.count' => 1.0, 'complexity.cognitive.sum' => 0.0,
+        ], [], 1000);
+        $capture = new Capture('fixture', [$project,
+            new Subject('App\\One', SymbolLevel::Class_, ['complexity.ccn.avg' => 1.0], [], 1000, 'decl:one'),
+        ], true);
+        $evaluation = (new Bench())->run($capture, self::defaultDefinitions(), [SymbolLevel::Project], AggregationScheme::current());
+        $rows = StatedCoverage::rows($evaluation, $project, 'health.complexity');
+        self::assertSame('1/10 callables', $rows[0]['symbols']);
+        self::assertSame('not-applicable: callable LOC is not measured', $rows[0]['loc']);
+        self::assertSame('measured', $rows[0]['state']);
     }
 
-    /**
-     * The coverage of a namespace-collected key asks the same scheme the
-     * aggregate does. A parent carrying the key is a contributor under the
-     * current rule and not under the leaf rule, so the two answer differently
-     * about the classes that sit in it — without this the calculator's own
-     * membership call could stay on the superseded rule unnoticed.
-     */
     #[Test]
-    public function itCountsAClassUnderACarryingParentAsCoveredOnlyUnderTheCurrentScheme(): void
+    public function itStatesMissingEmptyAndZeroCountWithoutAnApplicabilityCutoff(): void
     {
-        $capture = new Capture('parent-and-leaf-coverage', [
-            new Subject('', SymbolLevel::Project, [], [], null),
-            self::namespaceSubject('App', ['coupling.distance-own' => 0.2]),
-            self::namespaceSubject('App\\Sub', ['coupling.distance-own' => 0.4]),
-            new Subject('App\\InParent', SymbolLevel::Class_, [], [], 10),
-            new Subject('App\\Sub\\InLeaf', SymbolLevel::Class_, [], [], 10),
-        ]);
+        $definition = new ComputedMetricDefinition('health.complexity', ['project' => 'm["complexity.ccn.sum"] ?? 0'], 'fixture', [SymbolLevel::Project]);
+        foreach ([[10.0, 'not-measured'], [0.0, 'not-applicable']] as [$population, $expected]) {
+            $project = new Subject('', SymbolLevel::Project, ['size.symbol-method-count' => $population], [], null);
+            $evaluation = (new Bench())->run(new Capture('fixture', [$project], true), [$definition], [SymbolLevel::Project], AggregationScheme::current());
+            self::assertSame($expected, StatedCoverage::rows($evaluation, $project, 'health.complexity')[0]['state']);
+        }
+        $project = new Subject('', SymbolLevel::Project, [], [], null);
+        $evaluation = (new Bench())->run(new Capture('fixture', [$project], true), [$definition], [SymbolLevel::Project], AggregationScheme::current());
+        self::assertSame('unjudged', StatedCoverage::rows($evaluation, $project, 'health.complexity')[0]['state']);
+    }
 
-        $current = CoverageCalculator::forKey(
-            $capture,
-            $capture->symbols[0],
-            'coupling.distance-own.avg',
-            AggregationScheme::current(),
-        );
-        $leafOnly = CoverageCalculator::forKey(
-            $capture,
-            $capture->symbols[0],
-            'coupling.distance-own.avg',
-            new AggregationScheme(AggregationScheme::MEMBERS_LEAVES, AggregationScheme::WEIGHT_NONE),
-        );
+    #[Test]
+    public function itStatesClassLinesOnlyWithCompleteExactCarriers(): void
+    {
+        $project = new Subject('', SymbolLevel::Project, ['size.symbol-class-count' => 3.0, 'cohesion.tcc.count' => 2.0, 'cohesion.tcc.avg' => 0.5], [], null);
+        $classes = [
+            new Subject('App\\Small', SymbolLevel::Class_, ['cohesion.tcc' => 0.5], [], 10, 'decl:a'),
+            new Subject('App\\AlsoSmall', SymbolLevel::Class_, ['cohesion.tcc' => 0.5], [], 10, 'decl:b'),
+            new Subject('App\\Huge', SymbolLevel::Class_, [], [], 980, 'decl:c'),
+        ];
+        $capture = new Capture('fixture', [$project, ...$classes], true);
+        $evaluation = (new Bench())->run($capture, self::defaultDefinitions(), [SymbolLevel::Project], AggregationScheme::current());
+        $row = StatedCoverage::rows($evaluation, $project, 'health.cohesion')[0];
+        self::assertSame('2/3 classes', $row['symbols']);
+        self::assertSame('20/1000 lines', $row['loc']);
+        $classes[2] = new Subject('App\\Huge', SymbolLevel::Class_, [], [], null, 'decl:c');
+        $incomplete = (new Bench())->run(new Capture('fixture', [$project, ...$classes], true), self::defaultDefinitions(), [SymbolLevel::Project], AggregationScheme::current());
+        self::assertStringStartsWith('unjudged:', StatedCoverage::rows($incomplete, $project, 'health.cohesion')[0]['loc']);
+        self::assertSame('unjudged', StatedCoverage::rows($incomplete, $project, 'health.cohesion')[0]['state']);
 
-        self::assertSame(2, $current->carriers);
-        self::assertSame('ns=2/2', $current->note);
-        self::assertSame(1, $leafOnly->carriers);
-        self::assertSame('ns=1/2', $leafOnly->note);
+        $namespaceProject = new Subject('', SymbolLevel::Project, ['size.symbol-declaring-namespace-count' => 2.0], [], null);
+        $namespaceCapture = new Capture('namespace-lines', [$namespaceProject,
+            new Subject('App', SymbolLevel::Namespace_, ['coupling.distance-own' => 0.2, 'size.class-count' => 1.0], [], 20, 'ns:App'),
+            new Subject('(global)', SymbolLevel::Namespace_, ['coupling.distance-own' => 1.0, 'size.class-count' => 1.0], [], 80, 'ns:global'),
+            new Subject('App\\A', SymbolLevel::Class_, [], [], 20, 'decl:a'),
+            new Subject('Legacy', SymbolLevel::Class_, [], [], 80, 'decl:legacy'),
+        ], true);
+        $namespaceEvaluation = (new Bench())->run($namespaceCapture, self::defaultDefinitions(), [SymbolLevel::Project], AggregationScheme::parse('leaves-no-global:none'));
+        $namespaceRow = StatedCoverage::rows($namespaceEvaluation, $namespaceProject, 'health.coupling')[0];
+        self::assertSame('1/2 namespaces declaring a type', $namespaceRow['symbols']);
+        self::assertSame('20/100 lines', $namespaceRow['loc']);
+
+    }
+
+    #[Test]
+    public function itStatesTypingInputCoverageFromExactClassesIncludingMeasuredZero(): void
+    {
+        $projectInputs = ['size.symbol-class-count' => 2.0];
+        $classInputs = [];
+        foreach (['param', 'return', 'property'] as $part) {
+            $classInputs['design.type-coverage.' . $part . '.total'] = 1.0;
+            $classInputs['design.type-coverage.' . $part . '.typed'] = 0.0;
+            $projectInputs['design.type-coverage.' . $part . '.total.sum'] = 1.0;
+            $projectInputs['design.type-coverage.' . $part . '.typed.sum'] = 0.0;
+        }
+        $project = new Subject('', SymbolLevel::Project, $projectInputs, [], null);
+        $capture = new Capture('fixture', [$project,
+            new Subject('App\\Measured', SymbolLevel::Class_, $classInputs, [], 10, 'decl:measured'),
+            new Subject('App\\Missing', SymbolLevel::Class_, [], [], 90, 'decl:missing'),
+        ], true);
+        $evaluation = (new Bench())->run($capture, self::defaultDefinitions(), [SymbolLevel::Project], AggregationScheme::current());
+        self::assertSame(0.0, $evaluation->scoreOf($project, 'health.typing'));
+        $rows = StatedCoverage::rows($evaluation, $project, 'health.typing');
+        self::assertCount(6, $rows);
+        foreach ($rows as $row) {
+            self::assertSame('1/2 classes', $row['symbols']);
+            self::assertSame('10/100 lines', $row['loc']);
+            self::assertSame('measured', $row['state']);
+        }
+    }
+
+    #[Test]
+    public function itRejectsDroppedMeasuredTccCarriersAsMachineCoverageFailure(): void
+    {
+        $options = Options::parse(['--capture-dir=unused', '--levels=namespace,class']);
+        foreach (self::tccAggregateCases() as $case => [$aggregate, $hasTcc, $state, $expected]) {
+            $class = new Subject('App\\B', SymbolLevel::Class_, [
+                ...($hasTcc ? ['cohesion.tcc' => 0.0] : []), 'cohesion.lcom' => 1.0,
+            ], [], 10, 'decl:B');
+            $namespace = new Subject('App', SymbolLevel::Namespace_, [
+                ...$aggregate, 'size.symbol-class-count' => 1.0, 'size.symbol-method-count' => $hasTcc ? 3.0 : 1.0,
+                'cohesion.lcom.avg' => 1.0, 'cohesion.lcom.count' => 1.0,
+            ], [], 10, 'ns:App');
+            $evaluation = (new Bench())->run(new Capture('dropped-tcc', [$namespace, $class], true), self::defaultDefinitions(), [SymbolLevel::Namespace_, SymbolLevel::Class_], AggregationScheme::current());
+            self::assertSame(isset($aggregate['cohesion.tcc.avg']) ? 50.0 : 100.0, $evaluation->scoreOf($namespace, 'health.cohesion'), $case);
+            self::assertSame([], EarnedTop::unearned([$evaluation]), $case);
+            $rows = StatedCoverage::rows($evaluation, $namespace, 'health.cohesion');
+            self::assertSame($state, $rows[0]['state'], $case);
+            ob_start();
+            try {
+                $agreed = \Qualimetrix\HealthCalibration\printCoverage([$evaluation], $options);
+            } finally {
+                ob_end_clean();
+            }
+            self::assertSame($expected, $agreed, $case);
+        }
+    }
+
+    /** @return array<string, array{array<string, float>, bool, string, bool}> */
+    private static function tccAggregateCases(): array
+    {
+        return [
+            'measured zero' => [['cohesion.tcc.avg' => 0.0, 'cohesion.tcc.count' => 1.0], true, 'measured', true],
+            'value dropped' => [['cohesion.tcc.count' => 1.0], true, 'unjudged', false],
+            'value and count dropped' => [[], true, 'unjudged', false],
+            'count dropped' => [['cohesion.tcc.avg' => 0.0], true, 'unjudged', false],
+            'zero count with a value' => [['cohesion.tcc.avg' => 0.0, 'cohesion.tcc.count' => 0.0], true, 'unjudged', false],
+            'valid absence' => [[], false, 'not-measured', true],
+        ];
+    }
+
+    #[Test]
+    public function itJudgesAggregateCoverageIndependentlyOfAnAbsentScore(): void
+    {
+        $options = Options::parse(['--capture-dir=unused', '--levels=namespace,class']);
+        foreach ([false, true] as $nullable) {
+            $definitions = self::defaultDefinitions();
+            if ($nullable) {
+                $definitions = array_map(static fn(ComputedMetricDefinition $definition): ComputedMetricDefinition => $definition->name !== 'health.cohesion' ? $definition : new ComputedMetricDefinition(
+                    'health.cohesion',
+                    ['class' => $definition->formulas['class'], 'namespace' => '(m["cohesion.tcc.avg"] ?? 0) >= 0 ? null : (m["cohesion.lcom.avg"] ?? 0)'],
+                    'nullable coverage fixture',
+                    $definition->levels,
+                    applicability: ['class' => $definition->applicability['class']],
+                ), $definitions);
+            }
+            foreach (self::absentScoreCoverageCases() as $case => [$aggregate, $carriers, $expectedState, $expectedAgreement]) {
+                if (!$nullable && $aggregate !== []) {
+                    continue;
+                }
+                $namespace = new Subject('App', SymbolLevel::Namespace_, ['size.symbol-class-count' => 1.0, 'size.symbol-method-count' => $carriers === [] ? 0.0 : 3.0, ...$aggregate], [], 10, 'ns:App');
+                $class = new Subject('App\\B', SymbolLevel::Class_, $carriers, [], 10, 'decl:B');
+                $evaluation = (new Bench())->run(new Capture($case, [$namespace, $class], true), $definitions, [SymbolLevel::Namespace_, SymbolLevel::Class_], AggregationScheme::current());
+                self::assertNull($evaluation->scoreOf($namespace, 'health.cohesion'), $case);
+                self::assertSame($nullable ? ComputedMetricOutcome::NO_VALUE : ComputedMetricOutcome::NOT_APPLICABLE, $evaluation->outcome($namespace, 'health.cohesion')?->kind, $case);
+                self::assertSame($expectedState, StatedCoverage::rows($evaluation, $namespace, 'health.cohesion')[0]['state'], $case);
+                ob_start();
+                try {
+                    $agreed = \Qualimetrix\HealthCalibration\printCoverage([$evaluation], $options);
+                } finally {
+                    ob_end_clean();
+                }
+                self::assertSame($expectedAgreement, $agreed, $case);
+            }
+        }
+    }
+
+    /** @return array<string, array{array<string, float>, array<string, float>, string, bool}> */
+    private static function absentScoreCoverageCases(): array
+    {
+        $carriers = ['cohesion.tcc' => 0.0, 'cohesion.lcom' => 1.0];
+        $values = ['cohesion.tcc.avg' => 0.0, 'cohesion.lcom.avg' => 1.0];
+        return [
+            'lost all aggregates' => [[], $carriers, 'unjudged', false],
+            'lawful absence' => [[], [], 'not-measured', true],
+            'lost counts' => [$values, $carriers, 'unjudged', false],
+            'coherent nullable inputs' => [[...$values, 'cohesion.tcc.count' => 1.0, 'cohesion.lcom.count' => 1.0], $carriers, 'measured', true],
+        ];
+    }
+
+    #[Test]
+    public function itRejectsTypingCoverageWhenClassLinesAreUnavailable(): void
+    {
+        $namespace = new Subject('App', SymbolLevel::Namespace_, [
+            'size.symbol-class-count' => 1.0, 'design.type-coverage.param.total.sum' => 1.0,
+            'design.type-coverage.param.typed.sum' => 1.0,
+        ], [], null, 'ns:App');
+        $class = new Subject('App\\A', SymbolLevel::Class_, [
+            'design.type-coverage.param.total' => 1.0, 'design.type-coverage.param.typed' => 1.0,
+        ], [], null, 'decl:A');
+        $evaluation = (new Bench())->run(new Capture('missing-lines', [$namespace, $class], true), self::defaultDefinitions(), [SymbolLevel::Namespace_], AggregationScheme::current());
+        $rows = StatedCoverage::rows($evaluation, $namespace, 'health.typing');
+        self::assertSame('unjudged', $rows[0]['state']);
+        $options = Options::parse(['--capture-dir=unused', '--levels=namespace']);
+        ob_start();
+        try {
+            $agreed = \Qualimetrix\HealthCalibration\printCoverage([$evaluation], $options);
+        } finally {
+            ob_end_clean();
+        }
+        self::assertFalse($agreed);
+    }
+
+    #[Test]
+    public function itRefusesCriteriaCoverageWithoutCompleteCaptureAndPrintsSelectedClass(): void
+    {
+        $subject = new Subject('App\\Empty', SymbolLevel::Class_, [], [], 7, 'decl:empty');
+        $evaluation = (new Bench())->run(new Capture('legacy', [$subject]), self::defaultDefinitions(), [SymbolLevel::Class_], AggregationScheme::current());
+        $options = Options::parse(['--capture-dir=unused', '--levels=class']);
+        ob_start();
+        $agreed = \Qualimetrix\HealthCalibration\printCoverage([$evaluation], $options);
+        $text = (string) ob_get_clean();
+        self::assertFalse($agreed);
+        self::assertStringContainsString('coverage.complete=true', $text);
+        self::assertStringContainsString('legacy class decl:empty health.cohesion', $text);
+        self::assertStringContainsString('state=absent', $text);
+        self::assertSame(ComputedMetricOutcome::NOT_APPLICABLE, $evaluation->outcome($subject, 'health.cohesion')?->kind);
+    }
+
+    #[Test]
+    public function itJudgesExactlyTheTwentyFourFrozenPairsIncludingEquality(): void
+    {
+        $evaluations = [];
+        foreach ([...FormalRanking::LOWER, ...FormalRanking::HIGHER, 'composer', 'laravel-framework', 'qmx'] as $id) {
+            $project = new Subject('', SymbolLevel::Project, [], [], null);
+            $evaluation = new Evaluation(new Capture($id, [$project], true), AggregationScheme::current(), [
+                Evaluation::key($project) => ['health.overall' => new DimensionOutcome('health.overall', \in_array($id, ['composer', 'laravel-framework', 'qmx'], true) ? 0.0 : 50.0, [], [], [])],
+            ], []);
+            $evaluations[$id] = $evaluation;
+        }
+        $rows = FormalRanking::judge(array_values($evaluations));
+        self::assertCount(24, $rows);
+        self::assertSame(['pass'], array_values(array_unique(array_column($rows, 'verdict'))));
+        unset($evaluations['flysystem']);
+        self::assertCount(2, array_filter(FormalRanking::judge(array_values($evaluations)), static fn(array $row): bool => $row['verdict'] === 'unjudged'));
+        $project = $evaluations['wordpress']->capture->project();
+        self::assertNotNull($project);
+        $evaluations['wordpress'] = new Evaluation($evaluations['wordpress']->capture, AggregationScheme::current(), [Evaluation::key($project) => ['health.overall' => new DimensionOutcome('health.overall', 51.0, [], [], [])]], []);
+        self::assertCount(11, array_filter(FormalRanking::judge(array_values($evaluations)), static fn(array $row): bool => $row['verdict'] === 'fail'));
     }
 
     #[Test]
@@ -699,6 +1033,37 @@ final class HealthCalibrationBenchTest extends TestCase
         ))->resolve(DocumentComposer::compose(new DocumentSchema([new ComputedMetricsSection(), new ExcludeHealthSection()]), []));
     }
 
+    private static function complementaryCapture(string $id): Capture
+    {
+        $pooled = [
+            'size.symbol-class-count' => 3.0, 'size.symbol-method-count' => 10.0, 'cohesion.tcc.avg' => 0.5, 'cohesion.tcc.count' => 2.0,
+            'cohesion.lcom.avg' => 3.5, 'cohesion.lcom.count' => 2.0,
+        ];
+        return new Capture($id, [
+            new Subject('', SymbolLevel::Project, [
+                ...$pooled, 'size.symbol-declaring-namespace-count' => 2.0,
+                'coupling.distance-own.avg' => 1.4 / 3.0, 'coupling.distance-own.count' => 2.0,
+            ], [], 35, 'project:'),
+            new Subject('App', SymbolLevel::Namespace_, [
+                ...$pooled, 'size.class-count' => 1.0, 'coupling.distance-own' => 0.2,
+                'coupling.ca-own' => 0.0, 'coupling.ce-own' => 1.0,
+            ], [], 35, 'ns:App'),
+            new Subject('App\\Inner', SymbolLevel::Namespace_, [
+                'size.symbol-class-count' => 2.0, 'size.symbol-method-count' => 3.0, 'size.class-count' => 2.0,
+                'cohesion.tcc.avg' => 0.0, 'cohesion.tcc.count' => 1.0,
+                'cohesion.lcom.avg' => 1.0, 'cohesion.lcom.count' => 1.0,
+                'coupling.distance-own' => 0.6, 'coupling.ca-own' => 0.0, 'coupling.ce-own' => 1.0,
+            ], [], 25, 'ns:App\\Inner'),
+            new Subject('App\\A', SymbolLevel::Class_, [
+                'cohesion.tcc' => 1.0, 'cohesion.lcom' => 6.0, 'cohesion.pure-method-count' => 0.0,
+            ], [], 10, 'decl:A'),
+            new Subject('App\\Inner\\B', SymbolLevel::Class_, [
+                'cohesion.tcc' => 0.0, 'cohesion.lcom' => 1.0, 'cohesion.pure-method-count' => 0.0,
+            ], [], 20, 'decl:B'),
+            new Subject('App\\Inner\\Empty', SymbolLevel::Class_, [], [], 5, 'decl:Empty'),
+        ], true);
+    }
+
     /**
      * A project with three leaf namespaces — one of them global — carrying
      * distances 0.2, 0.6 and 1.0, sizes 100/300/500 lines and 1/9/5 classes.
@@ -713,27 +1078,10 @@ final class HealthCalibrationBenchTest extends TestCase
                 [],
                 null,
             ),
-            self::namespaceSubject('App\A', ['coupling.distance-own' => 0.2, 'size.class-count.sum' => 1.0], 100),
-            self::namespaceSubject('App\B', ['coupling.distance-own' => 0.6, 'size.class-count.sum' => 9.0], 300),
-            self::namespaceSubject('(global)', ['coupling.distance-own' => 1.0, 'size.class-count.sum' => 5.0], 500),
+            self::namespaceSubject('App\A', ['coupling.distance-own' => 0.2, 'size.class-count' => 1.0, 'size.class-count.sum' => 1.0, 'coupling.ca-own' => 0.0, 'coupling.ce-own' => 1.0], 100),
+            self::namespaceSubject('App\B', ['coupling.distance-own' => 0.6, 'size.class-count' => 9.0, 'size.class-count.sum' => 9.0, 'coupling.ca-own' => 0.0, 'coupling.ce-own' => 1.0], 300),
+            self::namespaceSubject('(global)', ['coupling.distance-own' => 1.0, 'size.class-count' => 5.0, 'size.class-count.sum' => 5.0, 'coupling.ca-own' => 0.0, 'coupling.ce-own' => 1.0], 500),
         ]);
-    }
-
-    private static function sparseCapture(int $classes, int $carriers): Capture
-    {
-        $symbols = [new Subject('', SymbolLevel::Project, ['cohesion.tcc.count' => (float) $carriers], [], null)];
-
-        for ($index = 0; $index < $classes; $index++) {
-            $symbols[] = new Subject(
-                'App\C' . $index,
-                SymbolLevel::Class_,
-                $index < $carriers ? ['cohesion.tcc' => 0.5] : [],
-                [],
-                1,
-            );
-        }
-
-        return new Capture('fixture', $symbols);
     }
 
     /**
@@ -774,41 +1122,25 @@ final class HealthCalibrationBenchTest extends TestCase
     {
         return array_map(static fn(Subject $subject): string => $subject->name, $subjects);
     }
-    /** The accepted formulas and shared LCOM scale over fully measured subjects. */
     #[Test]
-    public function itPreservesAllApplicableScoresWithStrictFloatingPointEquality(): void
+    public function itPreservesUnchangedApplicableFormulasWithStrictFloatingPointEquality(): void
     {
         $before = json_decode(<<<'JSON'
 {
     "health.complexity": {
         "class": "clamp(100 - max((m[\"complexity.ccn.avg\"] ?? 1) - 2, 0) * 2.0 - max((m[\"complexity.cognitive.avg\"] ?? 0) - 1, 0) * 2.0 - max((m[\"complexity.ccn.max\"] ?? 0) - 10, 0) ** 0.5 * 2.0 - max((m[\"complexity.cognitive.max\"] ?? 0) - 15, 0) ** 0.5 * 2.0, 0, 100)",
-        "namespace": "clamp(100 - max((m[\"complexity.ccn.sum\"] ?? 0) \/ max(m[\"size.symbol-method-count\"], 1) - 2, 0) * 5.0 - max((m[\"complexity.cognitive.sum\"] ?? 0) \/ max(m[\"size.symbol-method-count\"], 1) - 1, 0) * 4.0 - max((m[\"complexity.ccn.p95\"] ?? 0) - 5, 0) ** 0.5 * 3.0 - max((m[\"complexity.cognitive.p95\"] ?? 0) - 6, 0) ** 0.5 * 3.0 - max((m[\"complexity.ccn.max\"] ?? 0) - 20, 0) ** 0.5 * 0.8, 0, 100)",
-        "project": "clamp(100 - max((m[\"complexity.ccn.sum\"] ?? 0) \/ max(m[\"size.symbol-method-count\"], 1) - 2, 0) * 5.0 - max((m[\"complexity.cognitive.sum\"] ?? 0) \/ max(m[\"size.symbol-method-count\"], 1) - 1, 0) * 4.0 - max((m[\"complexity.ccn.p95\"] ?? 0) - 5, 0) ** 0.5 * 3.0 - max((m[\"complexity.cognitive.p95\"] ?? 0) - 6, 0) ** 0.5 * 3.0 - max((m[\"complexity.ccn.max\"] ?? 0) - 20, 0) ** 0.5 * 0.8, 0, 100)"
-    },
-    "health.cohesion": {
-        "class": "clamp((((m[\"size.method-count\"] ?? 0) < 6 ? (m[\"cohesion.tcc\"] ?? 0.5) : (m[\"cohesion.tcc\"] ?? 0)) + (1 - ((m[\"size.method-count\"] ?? 0) < 6 ? (m[\"cohesion.tcc\"] ?? 0.5) : (m[\"cohesion.tcc\"] ?? 0))) * ((m[\"cohesion.pure-method-count\"] ?? 0) \/ max(m[\"size.method-count\"] ?? 1, 1)) * 0.4) ** 0.5 * 50 + (1 - clamp((max((m[\"cohesion.lcom\"] ?? 0) - (m[\"cohesion.pure-method-count\"] ?? 0) * 0.7, 1) - 1) \/ 5, 0, 1)) * 50, 0, 100)",
-        "namespace": "clamp((m[\"cohesion.tcc.avg\"] ?? 0.5) ** 0.5 * 50 + (1 - clamp(((m[\"cohesion.lcom.avg\"] ?? 0) - 1) \/ 5, 0, 1)) * 50, 0, 100)",
-        "project": "clamp((m[\"cohesion.tcc.avg\"] ?? 0.5) ** 0.5 * 50 + (1 - clamp(((m[\"cohesion.lcom.avg\"] ?? 0) - 1) \/ 5, 0, 1)) * 50, 0, 100)"
-    },
-    "health.coupling": {
-        "class": "clamp(100 * 15 \/ (15 + max((m[\"coupling.ce-packages\"] ?? 0) * 3.0 + (m[\"coupling.ce\"] ?? 0) ** 0.5 * 0.5 - 5, 0)), 0, 100)",
-        "namespace": "clamp(100 * 18 \/ (18 + (m[\"coupling.distance\"] ?? 0) * 6 + max((m[\"coupling.ce-packages.avg\"] ?? 0) * 3.0 + (m[\"coupling.ce.avg\"] ?? 0) ** 0.5 * 0.5 - 4, 0) * 4 + max((m[\"coupling.ce.max\"] ?? 0) - 30, 0) ** 0.5 * 0.8 + max((m[\"coupling.ce\"] ?? 0) - 50, 0) ** 0.5 * 0.6), 0, 100)",
-        "project": "clamp(100 * 18 \/ (18 + (m[\"coupling.distance-own.avg\"] ?? 0) * 6 + max((m[\"coupling.cbo.avg\"] ?? 0) - 8, 0) * 3 + max((m[\"coupling.cbo.p95\"] ?? 0) - 15, 0) * 0.4 + max((m[\"coupling.cbo.max\"] ?? 0) - 30, 0) ** 0.5 * 0.8), 0, 100)"
+        "namespace": "clamp(100 - max((m[\"complexity.ccn.sum\"] ?? 0) / max(m[\"size.symbol-method-count\"], 1) - 2, 0) * 5.0 - max((m[\"complexity.cognitive.sum\"] ?? 0) / max(m[\"size.symbol-method-count\"], 1) - 1, 0) * 4.0 - max((m[\"complexity.ccn.p95\"] ?? 0) - 5, 0) ** 0.5 * 3.0 - max((m[\"complexity.cognitive.p95\"] ?? 0) - 6, 0) ** 0.5 * 3.0 - max((m[\"complexity.ccn.max\"] ?? 0) - 20, 0) ** 0.5 * 0.8, 0, 100)",
+        "project": "clamp(100 - max((m[\"complexity.ccn.sum\"] ?? 0) / max(m[\"size.symbol-method-count\"], 1) - 2, 0) * 5.0 - max((m[\"complexity.cognitive.sum\"] ?? 0) / max(m[\"size.symbol-method-count\"], 1) - 1, 0) * 4.0 - max((m[\"complexity.ccn.p95\"] ?? 0) - 5, 0) ** 0.5 * 3.0 - max((m[\"complexity.cognitive.p95\"] ?? 0) - 6, 0) ** 0.5 * 3.0 - max((m[\"complexity.ccn.max\"] ?? 0) - 20, 0) ** 0.5 * 0.8, 0, 100)"
     },
     "health.typing": {
         "class": "clamp(m[\"design.type-coverage.all\"] ?? 0, 0, 100)",
-        "namespace": "(((m[\"design.type-coverage.param.total.sum\"] ?? 0) + (m[\"design.type-coverage.return.total.sum\"] ?? 0) + (m[\"design.type-coverage.property.total.sum\"] ?? 0)) == 0) ? 100 : clamp(((m[\"design.type-coverage.param.typed.sum\"] ?? 0) + (m[\"design.type-coverage.return.typed.sum\"] ?? 0) + (m[\"design.type-coverage.property.typed.sum\"] ?? 0)) \/ ((m[\"design.type-coverage.param.total.sum\"] ?? 0) + (m[\"design.type-coverage.return.total.sum\"] ?? 0) + (m[\"design.type-coverage.property.total.sum\"] ?? 0)) * 100, 0, 100)",
-        "project": "(((m[\"design.type-coverage.param.total.sum\"] ?? 0) + (m[\"design.type-coverage.return.total.sum\"] ?? 0) + (m[\"design.type-coverage.property.total.sum\"] ?? 0)) == 0) ? 100 : clamp(((m[\"design.type-coverage.param.typed.sum\"] ?? 0) + (m[\"design.type-coverage.return.typed.sum\"] ?? 0) + (m[\"design.type-coverage.property.typed.sum\"] ?? 0)) \/ ((m[\"design.type-coverage.param.total.sum\"] ?? 0) + (m[\"design.type-coverage.return.total.sum\"] ?? 0) + (m[\"design.type-coverage.property.total.sum\"] ?? 0)) * 100, 0, 100)"
+        "namespace": "(((m[\"design.type-coverage.param.total.sum\"] ?? 0) + (m[\"design.type-coverage.return.total.sum\"] ?? 0) + (m[\"design.type-coverage.property.total.sum\"] ?? 0)) == 0) ? 100 : clamp(((m[\"design.type-coverage.param.typed.sum\"] ?? 0) + (m[\"design.type-coverage.return.typed.sum\"] ?? 0) + (m[\"design.type-coverage.property.typed.sum\"] ?? 0)) / ((m[\"design.type-coverage.param.total.sum\"] ?? 0) + (m[\"design.type-coverage.return.total.sum\"] ?? 0) + (m[\"design.type-coverage.property.total.sum\"] ?? 0)) * 100, 0, 100)",
+        "project": "(((m[\"design.type-coverage.param.total.sum\"] ?? 0) + (m[\"design.type-coverage.return.total.sum\"] ?? 0) + (m[\"design.type-coverage.property.total.sum\"] ?? 0)) == 0) ? 100 : clamp(((m[\"design.type-coverage.param.typed.sum\"] ?? 0) + (m[\"design.type-coverage.return.typed.sum\"] ?? 0) + (m[\"design.type-coverage.property.typed.sum\"] ?? 0)) / ((m[\"design.type-coverage.param.total.sum\"] ?? 0) + (m[\"design.type-coverage.return.total.sum\"] ?? 0) + (m[\"design.type-coverage.property.total.sum\"] ?? 0)) * 100, 0, 100)"
     },
     "health.maintainability": {
         "class": "clamp(100 - max(85 - (m[\"maintainability.mi.avg\"] ?? 75), 0) * 1.5 - max(65 - (m[\"maintainability.mi.min\"] ?? 65), 0) ** 0.5 * 3.0, 0, 100)",
         "namespace": "clamp(100 - max(85 - (m[\"maintainability.mi.avg\"] ?? 75), 0) * 2.5 - max(65 - (m[\"maintainability.mi.p5\"] ?? 65), 0) ** 0.5 * 4.5 - max(5 - (m[\"maintainability.mi.min\"] ?? 5), 0) ** 0.4 * 1.5, 0, 100)",
         "project": "clamp(100 - max(85 - (m[\"maintainability.mi.avg\"] ?? 75), 0) * 2.5 - max(65 - (m[\"maintainability.mi.p5\"] ?? 65), 0) ** 0.5 * 4.5 - max(5 - (m[\"maintainability.mi.min\"] ?? 5), 0) ** 0.4 * 1.5, 0, 100)"
-    },
-    "health.overall": {
-        "class": "clamp((m[\"health.complexity\"] ?? 75) * 0.35 + (m[\"health.cohesion\"] ?? 75) * 0.25 + (m[\"health.coupling\"] ?? 75) * 0.25 + (m[\"health.typing\"] ?? 75) * 0.15, 0, 100)",
-        "namespace": "clamp((m[\"health.complexity\"] ?? 75) * 0.30 + (m[\"health.cohesion\"] ?? 75) * 0.20 + (m[\"health.coupling\"] ?? 75) * 0.20 + (m[\"health.typing\"] ?? 75) * 0.10 + (m[\"health.maintainability\"] ?? 75) * 0.20, 0, 100)",
-        "project": "clamp((m[\"health.complexity\"] ?? 75) * 0.30 + (m[\"health.cohesion\"] ?? 75) * 0.20 + (m[\"health.coupling\"] ?? 75) * 0.20 + (m[\"health.typing\"] ?? 75) * 0.10 + (m[\"health.maintainability\"] ?? 75) * 0.20, 0, 100)"
     }
 }
 JSON, true, flags: \JSON_THROW_ON_ERROR);

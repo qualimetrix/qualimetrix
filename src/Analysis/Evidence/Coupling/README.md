@@ -321,10 +321,9 @@ unsuffixed count at all and gets **no key**, not a zero: how far a package sits
 from the main sequence is undefined where there is no package, and that silence
 is what keeps a pure container out of the project average.
 
-A namespace whose only declarations are bare enums therefore has `totalTypes = 0` and
-keeps the pre-existing no-type result `A = 0.0`. Downstream namespace rules already
-skip it through the Distance rule's own-type minimum, exactly as they skip a namespace with no declarations
-at all.
+A namespace whose only declarations are bare enums has `totalTypes = 0`,
+so its abstractness is absent. Distance is absent in that scope as well: a
+missing denominator is not a measured concrete value.
 
 The count inputs are exact discrete namespace sums. They are not fractionally distributed
 over source contributors, so a namespace with one abstract class or interface and five
@@ -345,7 +344,7 @@ concrete types still computes as `1 / 6` rather than losing the abstraction in a
 **Collector:** `DistanceCollector`
 **Type:** `GlobalContextCollectorInterface`
 **Requires:** `coupling.instability`, `coupling.abstractness`, `coupling.instability-own`, `coupling.abstractness-own`
-**Provides:** `coupling.distance`, `coupling.distance-own`
+**Provides:** `coupling.distance`, `coupling.distance-own`, project `coupling.distance-own.avg` and `.count`
 **Level:** Namespace
 
 ### Formula
@@ -366,20 +365,20 @@ traits, interfaces and explicitly implementing enums; bare enums do not count.
 The retired `min-class-count` spellings are refused. CBO and Instability keep
 their existing `min-class-count` options.
 
-`DistanceRule` does not judge a namespace with own `Ca = Ce = 0`: its instability
-is 0 by convention, not by measurement, and a concrete namespace nothing
-touches would otherwise read as the worst zone of pain. The value itself is
-still published, and still enters `health.coupling` and the project average.
+When `Ca = Ce = 0`, distance is absent in that scope: instability is a
+convention rather than measured edge evidence. `DistanceRule` consequently has
+no distance to judge there. No project sample or health input is fabricated
+from that scope.
 
 `coupling.distance` stays the subtree value and carries **no project
-aggregation**. The project average is taken over `coupling.distance-own`, whose
-population is every namespace declaring at least one type. That population is a
-partition: a parent and its children each answer for their own declarations, so
-no declaration is weighed twice and none is left unrepresented. Averaging the
-published values instead would count the classes of a namespace that is both
-leaf and parent in two entries at once — which is why the earlier rule folded
-leaf namespaces only, and why the classes declared directly in a namespace that
-also has sub-namespaces reached no project number at all.
+aggregation**. The project publisher folds measured `coupling.distance-own`
+values, weighting each own namespace by its eligible declaration count:
+classes + traits + interfaces + explicitly implementing enums. Bare enums do
+not enter this denominator. Each declaration belongs to one own namespace, so
+parents with own types and their children are represented without double
+counting. A namespace without measured own distance contributes neither a
+zero nor a weight. `.count` reports measured namespace samples; if there are
+none, the project average and count are absent.
 
 The optional `rules.coupling.distance.include-namespaces` override uses the
 same explicit namespace selectors. YAML takes a list of one-entry mappings;
@@ -486,9 +485,17 @@ new MetricDefinition(
 new MetricDefinition(
     name: 'coupling.distance-own',
     collectedAt: SymbolLevel::Namespace_,
-    aggregations: [
-        SymbolLevel::Project->value => [Average],
-    ],
+    aggregations: [],
+)
+
+new MetricDefinition(
+    name: 'coupling.distance-own.avg',
+    collectedAt: SymbolLevel::Project,
+)
+
+new MetricDefinition(
+    name: 'coupling.distance-own.count',
+    collectedAt: SymbolLevel::Project,
 )
 ```
 

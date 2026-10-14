@@ -622,8 +622,8 @@ There are two bad zones:
     `BackedEnum` interfaces that every enum satisfies implicitly do not. The shape
     of the formula is unchanged -- this is a scope adaptation for PHP, not a
     different metric. A namespace whose only declarations are bare enums has an
-    empty denominator and keeps the existing no-type result `A = 0.0`; such
-    namespaces are already skipped by `minTypeCount`.
+    empty denominator and publishes no abstractness or distance. An absent
+    value is not a measured concrete `A = 0.0`.
 
 <!-- llms:skip-end -->
 
@@ -640,15 +640,20 @@ has two coupling scopes, and both are published:
 `coupling.cbo` and `coupling.cbo-own` split the same way, and there the rule
 also judges the own scope: see [CBO](#cbo----coupling-between-objects).
 
-For a namespace with no sub-namespaces the two coincide. A namespace that
+When the measured populations and required inputs coincide, both scopes
+have the same value. The absence of sub-namespaces alone does not establish
+that their inputs are applicable. A namespace that
 declares no type of its own carries no own-scope abstractness at all and gets no
 `-own` key for abstractness or distance: how far a package sits from the main
 sequence is undefined where there is no package, and silence says that where
 `0.0` would not.
 
 **The project number is folded over own scopes.** `coupling.distance-own.avg` is
-the unweighted mean of `coupling.distance-own` across every namespace that
-publishes one — the project-level key is `coupling.distance-own.avg`, and
+the eligible-type-weighted mean of measured `coupling.distance-own` across
+own namespaces. Each weight counts its own classes, traits, interfaces and
+explicitly implementing enums; bare enums are excluded. A namespace without
+measured own distance contributes no sample, and `.count` records the number
+of measured namespaces — the project-level key is `coupling.distance-own.avg`, and
 `coupling.distance.avg` does not exist. Folding the subtree rollups instead
 would count a parent's declarations once for the parent and again for each
 child. The older fold avoided that double count by taking leaf namespaces only,
@@ -671,7 +676,7 @@ The rule judges `coupling.distance-own`; its message uses own abstractness, inst
 
 Only namespaces with at least 3 own types are analyzed (configurable via `minTypeCount`): classes, traits, interfaces and enums with an explicit `implements` clause. Bare enums do not count.
 
-A namespace with no dependency in either direction (Ca-own = Ce-own = 0) is not judged either. Its instability is 0 by convention, not by measurement, so a concrete namespace that nothing uses and that uses nothing would read D = 1.0 and be reported as a zone of pain -- which needs many dependents it does not have. The value is still published and still enters `health.coupling`.
+A namespace with no dependency in either direction (Ca-own = Ce-own = 0) is not judged either. Its instability is 0 by convention, not by measurement, so a concrete namespace that nothing uses and that uses nothing would read D = 1.0 and be reported as a zone of pain -- which needs many dependents it does not have. The distance is absent and does not enter project or health aggregation.
 
 A namespace that lacks an input publishes no distance at all rather than one computed from 0. A namespace that declares only functions is not in the class dependency graph, so it has no instability and gets no `coupling.distance`.
 <!-- llms:skip-end -->
@@ -731,7 +736,7 @@ bin/qmx check src/ --rule-opt="coupling.distance:min_type_count=5"
 **`min_type_count`** counts classes, traits, interfaces and explicitly implementing
 enums declared directly in the namespace. Default `3` admits equality; `0`
 disables this floor. Missing count inputs contribute zero. The rule still
-requires published own distance and positive own coupling. Selected population
+requires published own distance; scopes without coupling publish none. Selected population
 accounting distinguishes these exclusions from healthy judgements.
 `min_class_count`, `min-class-count` and `minClassCount` are refused for Distance;
 CBO and Instability retain their existing class-count options.

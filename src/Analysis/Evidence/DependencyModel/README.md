@@ -35,8 +35,11 @@ DependencyModel/
 │   └── Handler/                  # position/site-aware extraction family
 ├── CanonicalGraphInput.php       # canonical logical projections plus spelling evidence
 ├── DependencyIdentityCanonicalizer.php # PHP class identity folding for graph inputs
+├── ClassCouplings.php        # class boundary-crossing occurrences and distinct degrees
+├── DeclarationEvidence.php       # exact facts and ordered declaration occurrences
 ├── DependencyGraph.php
 ├── DependencyGraphBuilder.php
+├── LogicalGraphInventory.php     # logical class universe and namespace regions
 ├── NamespaceCouplingBuilder.php  # own and subtree namespace coupling construction
 ├── NamespaceCouplings.php        # both coupling scopes of every namespace
 ├── StringSet.php                 # unique-dependency counting for coupling
@@ -48,6 +51,7 @@ DependencyModel/
 The model's graph/value contracts and
 `DependencyTraversalParticipantInterface` are the declared public surface.
 `DependencyGraph`, `DependencyGraphBuilder`, `NamespaceCouplings`,
+`ClassCouplings`, `LogicalGraphInventory`, `DeclarationEvidence`,
 `StringSet`, and every type under `Extraction/` are internal implementation
 details.
 `DependencyLocationInterface` exposes a structured relative file and line so
@@ -87,6 +91,17 @@ position (`type_hint`, `property_type`, or `constant_type`) and carry a separate
 `TypeShape` (`single`, `nullable`, `union`, `intersection`, or `dnf`). Attribute
 edges carry an `AttributeSite`; member, promoted-parameter, hook, nested-callable
 and nested-class sites remain distinguishable without inventing relation kinds.
+
+`ClassCouplings` carries each class's outgoing occurrences, incoming occurrences,
+Ce and Ca in one canonical-key row. The graph builds that row from the supplied
+views without changing occurrence order, duplicates or precomputed degrees.
+`NamespaceCouplings` remains the sole holder of namespace coupling scopes;
+the ordered ordinary stream stays with `DependencyGraph`.
+`LogicalGraphInventory` carries the independently supplied logical class universe
+and namespace regions. `DeclarationEvidence` carries exact named declaration
+facts and ordered declaration occurrences. Each view preserves its supplied
+keys, duplicates and encounter order, including through cloning and serialization;
+none derives inventory membership from coupling degrees.
 
 ### The coupling view and the declaration view
 

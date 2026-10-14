@@ -1,0 +1,84 @@
+--- candidate
++++ reference (mapped)
+@@ -346,2 +346,2 @@
+-            "score": 100,
+-            "label": "Excellent",
++            "score": 75,
++            "label": "Good",
+@@ -353,4 +353,4 @@
+-                "state": "not-measured",
+-                "measured": 0,
+-                "eligible": 1,
+-                "ratio": 0,
++                "state": "measured",
++                "measured": 1,
++                "eligible": 1,
++                "ratio": 1,
+@@ -365,6 +365,6 @@
+-                    "value": null,
+-                    "coverage": {
+-                        "state": "not-measured",
+-                        "measured": 0,
+-                        "eligible": 1,
+-                        "ratio": 0,
++                    "value": 1,
++                    "coverage": {
++                        "state": "measured",
++                        "measured": 1,
++                        "eligible": 1,
++                        "ratio": 1,
+@@ -379,2 +379,2 @@
+-                    "metric": "coupling.ce-packages.avg",
+-                    "humanName": "Ce pkg (avg)",
++                    "metric": "coupling.cbo.avg",
++                    "humanName": "CBO (avg)",
+@@ -388,9 +388,9 @@
+-                        "basis": "coupling.ce-packages.count",
+-                        "reason": null
+-                    },
+-                    "good": "joint breadth at most 4 (3 * Ce pkg avg + 0.5 * sqrt(Ce avg))",
+-                    "direction": "lower_is_better"
+-                },
+-                {
+-                    "metric": "coupling.ce.avg",
+-                    "humanName": "Ce (avg)",
++                        "basis": "coupling.cbo.count",
++                        "reason": null
++                    },
++                    "good": "below 8",
++                    "direction": "lower_is_better"
++                },
++                {
++                    "metric": "coupling.cbo.p95",
++                    "humanName": "CBO (p95)",
+@@ -404,9 +404,9 @@
+-                        "basis": "coupling.ce.count",
+-                        "reason": null
+-                    },
+-                    "good": "joint breadth at most 4 (3 * Ce pkg avg + 0.5 * sqrt(Ce avg))",
+-                    "direction": "lower_is_better"
+-                },
+-                {
+-                    "metric": "coupling.ce.max",
+-                    "humanName": "Ce (max)",
++                        "basis": "coupling.cbo.count",
++                        "reason": null
++                    },
++                    "good": "below 15",
++                    "direction": "lower_is_better"
++                },
++                {
++                    "metric": "coupling.cbo.max",
++                    "humanName": "CBO (max)",
+@@ -420,1 +420,1 @@
+-                        "basis": "coupling.ce.count",
++                        "basis": "coupling.cbo.count",
+@@ -702,1 +702,1 @@
+-            "score": 90.2603249466698,
++            "score": 85.2603249466698,
+@@ -724,1 +724,1 @@
+-            "healthOverall": 90.2603249466698,
++            "healthOverall": 85.2603249466698,
+@@ -733,1 +733,1 @@
+-                "coupling": 100,
++                "coupling": 75,

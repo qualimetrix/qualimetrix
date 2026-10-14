@@ -1,0 +1,31 @@
+--- candidate
++++ reference (mapped)
+@@ -112,21 +112,7 @@
+-            "count": 9,
+-            "examples": [
+-                "declaration:class:Corpus\\Coupling\\Kernel\\Clock@src/Kernel/Clock.php",
+-                "declaration:class:Corpus\\Coupling\\Kernel\\Logger@src/Kernel/Logger.php",
+-                "declaration:class:Corpus\\Coupling\\Kernel\\Uuid@src/Kernel/Uuid.php",
+-                "declaration:class:Corpus\\Coupling\\Service\\CacheService@src/Service/CacheService.php",
+-                "declaration:class:Corpus\\Coupling\\Service\\ReportService@src/Service/ReportService.php"
+-            ]
+-        },
+-        {
+-            "producer": "cohesion.lcom",
+-            "channel": "cohesion.lcom",
+-            "level": "class",
+-            "gate": "minimum-methods",
+-            "reason": "Methods are below the configured minimum. Missing metric \"cohesion.lcom-method-count\".",
+-            "unit": "declaration",
+-            "count": 3,
+-            "examples": [
+-                "declaration:class:Corpus\\Coupling\\Contract\\CacheInterface@src/Contract/CacheInterface.php",
+-                "declaration:class:Corpus\\Coupling\\Contract\\MailerInterface@src/Contract/MailerInterface.php",
+-                "declaration:class:Corpus\\Coupling\\Contract\\RepositoryInterface@src/Contract/RepositoryInterface.php"
++            "count": 12,
++            "examples": [
++                "declaration:class:Corpus\\Coupling\\Contract\\CacheInterface@src/Contract/CacheInterface.php",
++                "declaration:class:Corpus\\Coupling\\Contract\\MailerInterface@src/Contract/MailerInterface.php",
++                "declaration:class:Corpus\\Coupling\\Contract\\RepositoryInterface@src/Contract/RepositoryInterface.php",
++                "declaration:class:Corpus\\Coupling\\Kernel\\Clock@src/Kernel/Clock.php",
++                "declaration:class:Corpus\\Coupling\\Kernel\\Logger@src/Kernel/Logger.php"

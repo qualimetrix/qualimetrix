@@ -130,8 +130,17 @@
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Coupling\\CouplingCollector@src/Analysis/Evidence/Coupling/CouplingCollector.php": [
       {"channel":"design.god-class","magnitudes":[3]}
     ],
-    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Duplication\\Index\\SaturatingCandidateFilter@src/Analysis/Evidence/Duplication/Index/SaturatingCandidateFilter.php": [
-      {"channel":"design.data-class","magnitudes":[33]}
+    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceCollector@src/Analysis/Evidence/Coupling/DistanceCollector.php": [
+      {"channel":"health.cohesion","magnitudes":[40]}
+    ],
+    "declaration:class:Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DeclarationEvidence@src/Analysis/Evidence/DependencyModel/DeclarationEvidence.php": [
+      {"channel":"health.cohesion","magnitudes":[40]}
+    ],
+    "declaration:class:Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DependencyGraph@src/Analysis/Evidence/DependencyModel/DependencyGraph.php": [
+      {"channel":"health.cohesion","magnitudes":[31.2]}
+    ],
+    "declaration:class:Qualimetrix\\Analysis\\Evidence\\DependencyModel\\LogicalGraphInventory@src/Analysis/Evidence/DependencyModel/LogicalGraphInventory.php": [
+      {"channel":"health.cohesion","magnitudes":[40]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Duplication\\Normalization\\DataDeclarationTagger@src/Analysis/Evidence/Duplication/Normalization/DataDeclarationTagger.php": [
       {"channel":"complexity.wmc","magnitudes":[57]}
@@ -169,9 +178,6 @@
     "declaration:class:Qualimetrix\\Core\\Symbol\\SymbolPath@src/Core/Symbol/SymbolPath.php": [
       {"channel":"complexity.wmc","magnitudes":[62]}
     ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\FilteredInputDefinition@src/Infrastructure/Console/FilteredInputDefinition.php": [
-      {"channel":"design.data-class","magnitudes":[0]}
-    ],
     "declaration:class:Qualimetrix\\Infrastructure\\Git\\ChangedFile@src/Infrastructure/Git/ChangedFile.php": [
       {"channel":"health.cohesion","magnitudes":[40]}
     ],
@@ -205,14 +211,16 @@
     "ns:Qualimetrix\\Analysis\\Evidence\\CodeSmell": [
       {"channel":"coupling.cbo","magnitudes":[18]}
     ],
+    "ns:Qualimetrix\\Analysis\\Evidence\\Cohesion": [
+      {"channel":"coupling.cbo","magnitudes":[18]},
+      {"channel":"coupling.instability","magnitudes":[0.9069767441860465]},
+      {"channel":"size.class-count","magnitudes":[19]}
+    ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Complexity": [
       {"channel":"size.class-count","magnitudes":[21]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Finding": [
       {"channel":"health.maintainability","magnitudes":[43.7]}
-    ],
-    "ns:Qualimetrix\\Analysis\\Evidence\\Cohesion": [
-      {"channel":"coupling.cbo","magnitudes":[16]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Coupling": [
       {"channel":"coupling.cbo","magnitudes":[22]},
@@ -231,7 +239,7 @@
       {"channel":"coupling.instability","magnitudes":[0.925926]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Prioritization\\Impact": [
-      {"channel":"health.cohesion","magnitudes":[43.8]}
+      {"channel":"health.cohesion","magnitudes":[43.3]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Security": [
       {"channel":"size.class-count","magnitudes":[21]}
@@ -248,11 +256,17 @@
     "ns:Qualimetrix\\Analysis\\Policy\\Architecture\\Layer": [
       {"channel":"size.class-count","magnitudes":[23]}
     ],
+    "ns:Qualimetrix\\Analysis\\Policy\\Architecture\\LayerDeclaration": [
+      {"channel":"health.cohesion","magnitudes":[46.7]}
+    ],
+    "ns:Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding": [
+      {"channel":"health.cohesion","magnitudes":[46.7]}
+    ],
     "ns:Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit": [
       {"channel":"coupling.instability","magnitudes":[0.95122]}
     ],
     "ns:Qualimetrix\\Core\\Ast": [
-      {"channel":"coupling.cbo","magnitudes":[18]}
+      {"channel":"coupling.cbo","magnitudes":[19]}
     ],
     "ns:Qualimetrix\\Core\\FileTarget": [
       {"channel":"size.class-count","magnitudes":[24]}
@@ -278,6 +292,9 @@
     "ns:Qualimetrix\\Reporting\\FindingProjection": [
       {"channel":"coupling.cbo","magnitudes":[19]}
     ],
+    "ns:Qualimetrix\\Reporting\\Formatter\\Health": [
+      {"channel":"health.cohesion","magnitudes":[40]}
+    ],
     "ns:Qualimetrix\\Reporting\\Formatter\\Html": [
       {"channel":"health.cohesion","magnitudes":[41.7]}
     ],
@@ -285,8 +302,7 @@
       {"channel":"coupling.cbo","magnitudes":[18]}
     ],
     "project:": [
-      {"channel":"architecture.circular-dependency","occurrence":"366eed4cdda70adf","magnitudes":[3]},
-      {"channel":"health.coupling","magnitudes":[45.9]}
+      {"channel":"architecture.circular-dependency","occurrence":"366eed4cdda70adf","magnitudes":[3]}
     ]
   }
 }

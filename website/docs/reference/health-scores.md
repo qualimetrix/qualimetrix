@@ -22,14 +22,14 @@ its own rule ID:
 
 ## Dimensions
 
-| Dimension                | What it measures                            | Key input metrics                                                                     | Default thresholds (warning / error) |
-| ------------------------ | ------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------ |
-| `health.complexity`      | Method and class complexity                 | CCN (avg, max, p95), Cognitive Complexity (avg, max, p95)                             | 50 / 25                              |
-| `health.cohesion`        | How well class methods relate to each other | TCC, LCOM4, method count                                                              | 50 / 25                              |
-| `health.coupling`        | Dependencies between classes and namespaces | Efferent coupling (Ce, Ce packages), Distance from Main Sequence, CBO (project level) | 50 / 25                              |
-| `health.typing`          | Type declaration coverage                   | Parameter, return, and property type coverage                                         | 80 / 50                              |
-| `health.maintainability` | Ease of safe modification                   | Maintainability Index (avg, p5, min)                                                  | 50 / 25                              |
-| `health.overall`         | Weighted average of all dimensions          | All of the above                                                                      | 50 / 30                              |
+| Dimension                | What it measures                            | Key input metrics                                                           | Default thresholds (warning / error) |
+| ------------------------ | ------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------ |
+| `health.complexity`      | Method and class complexity                 | CCN (avg, max, p95), Cognitive Complexity (avg, max, p95)                   | 50 / 25                              |
+| `health.cohesion`        | How well class methods relate to each other | TCC, LCOM4, method count                                                    | 50 / 25                              |
+| `health.coupling`        | Dependencies between classes and namespaces | Outgoing coupling (Ce, Ce packages), applicable Distance from Main Sequence | 50 / 25                              |
+| `health.typing`          | Type declaration coverage                   | Parameter, return, and property type coverage                               | 80 / 50                              |
+| `health.maintainability` | Ease of safe modification                   | Maintainability Index (avg, p5, min)                                        | 50 / 25                              |
+| `health.overall`         | Weighted average of all dimensions          | All of the above                                                            | 50 / 30                              |
 
 ---
 
@@ -74,11 +74,22 @@ Penalizes high average CCN and cognitive complexity, plus square-root-scaled pen
 
 ### Cohesion
 
-Combines available TCC (Tight Class Cohesion) and LCOM4 contributions and divides by their participating weight sum. An absent half contributes no default, including for classes with fewer than six methods. TCC retains its square-root scaling and the existing purity adjustment remains unchanged; measured LCOM can still contribute for stateless classes.
+Combines available TCC (Tight Class Cohesion) and LCOM4 contributions and divides by their participating weight sum. An absent half contributes no default, including for classes with fewer than six methods. TCC retains its square-root scaling; its purity adjustment divides by `cohesion.tcc-method-count`, not `size.method-count`. Classes with neither measured TCC nor LCOM have no cohesion score.
 
-The unadjusted LCOM contribution uses the same span of five at class and namespace levels: one component receives no penalty, and six exhaust the contribution. The class purity adjustment remains separate; matching this scale does not guarantee monotonicity between every namespace and its member classes.
+The class and namespace LCOM contributions use span five. The declared
+27-candidate search retained the earlier namespace scale. Project cohesion
+inherits that namespace formula and evaluates project aggregate inputs directly;
+it does not average namespace health scores. Correctly pooled complementary
+TCC/LCOM inputs can score above every child even with the same formula and
+contributor population. [ADR 0116](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0116-measured-health-score-recalibration.md#why-c1-is-diagnostic)
+records the native example (50/50 → 60.355339) and the retained checks for actual
+input loss. Parent/child comparisons remain diagnostic.
 
-The built-in project cohesion score inherits the namespace formula and uses project aggregate inputs directly; it does not average namespace health scores. The change from span two to five therefore also changes project cohesion and its contribution to overall. Review namespace/project health limits and accepted benchmark ranges.
+!!! info "Measured calibration"
+    The selected tuple uses LCOM span five, project distance weight six and
+    breadth weight four. [ADR 0116](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0116-measured-health-score-recalibration.md)
+    records all 27 candidates and the complete 17-project before/after tables.
+    Review dependent limits against the changed measured populations.
 
 ### Coupling
 
@@ -86,9 +97,26 @@ Uses hyperbolic decay (`K / (K + penalty)`) for smooth scoring.
 
 - **Class level** blends package-level (`coupling.ce-packages`) and dampened raw efferent coupling (`coupling.ce`).
 - **Namespace level** also relies on **efferent-only** signals: per-class average outgoing coupling (`coupling.ce.avg`, `coupling.ce-packages.avg`), worst-case class outlier (`coupling.ce.max`), and namespace-level outgoing breadth (`coupling.ce`), plus Distance from Main Sequence. Bidirectional CBO is intentionally avoided here because it conflates afferent (Ca) with efferent (Ce) and would unfairly penalize stable contracts namespaces (high Ca, low Ce by design).
-- **Project level** keeps bidirectional CBO aggregates (`coupling.cbo.avg`, `coupling.cbo.p95`, `coupling.cbo.max`): at project level Σ Ca = Σ Ce because every internal edge contributes to both sides, so CBO is symmetric and proportional to Ce. Its Distance term reads `coupling.distance-own.avg`, not `coupling.distance.avg` — see [Distance from Main Sequence](../rules/coupling.md#distance-from-main-sequence) for why the project fold is taken over own scopes.
+- **Project level** uses outgoing-only Form B: mean outgoing package breadth
+  (`coupling.ce-packages.avg`), square-root-scaled `coupling.ce.avg`, outgoing
+  outliers (`coupling.ce.max`), and applicable `coupling.distance-own.avg`.
+  The distance is weighted by eligible types in measured own scopes. Incoming
+  popularity is not a project penalty; bidirectional CBO is not an input.
 
-Class coupling remains applicable at measured 0. Namespace coupling requires at least one finite measured input among `coupling.distance`, `coupling.ce-packages.avg`, `coupling.ce.avg`, `coupling.ce.max` and `coupling.ce`. A function-only namespace with all five absent has no built-in coupling score. Graph-covered Ce=0 and distance=1 retain the formula result 75.
+Project Form B uses distance weight six and breadth weight four:
+
+```text
+clamp(100 * 18 / (18 + (m["coupling.distance-own.avg"] ?? 0) * 6 + max((m["coupling.ce-packages.avg"] ?? 0) * 3.0 + (m["coupling.ce.avg"] ?? 0) ** 0.5 * 0.5 - 4, 0) * 4 + max((m["coupling.ce.max"] ?? 0) - 30, 0) ** 0.5 * 0.8), 0, 100)
+```
+
+Applicability requires at least one finite measured input among
+`coupling.distance-own.avg`, `coupling.ce-packages.avg`, `coupling.ce.avg` and
+`coupling.ce.max`. Its decomposition uses those same four inputs. An absent
+distance remains absent in metrics and coverage; the expression's missing-term
+fallback does not publish a measured zero.
+
+
+Class coupling remains applicable at measured 0. Namespace coupling requires at least one finite measured input among `coupling.distance`, `coupling.ce-packages.avg`, `coupling.ce.avg`, `coupling.ce.max` and `coupling.ce`. A function-only namespace with all five absent has no built-in coupling score. When no applicable distance is published, the formula uses only its remaining measured inputs; an edge-free namespace is not assigned distance 1.
 
 ### Typing
 
@@ -316,6 +344,9 @@ Formulas read every metric through a single `m` array, indexed by the metric's r
 | `cohesion.tcc`                            | class                     |
 | `cohesion.tcc.avg`                        | namespace, project        |
 | `cohesion.lcom`                           | class                     |
+| `cohesion.lcom-method-count`              | class                     |
+| `cohesion.tcc-method-count`               | class                     |
+| `cohesion.unread-trait-count`             | class                     |
 | `cohesion.lcom.avg`                       | namespace, project        |
 | `coupling.cbo.avg`                        | namespace, project        |
 | `coupling.cbo.max`                        | namespace, project        |
@@ -333,6 +364,7 @@ Formulas read every metric through a single `m` array, indexed by the metric's r
 | `coupling.abstractness-own`               | namespace                 |
 | `coupling.distance-own`                   | namespace                 |
 | `coupling.distance-own.avg`               | project                   |
+| `coupling.distance-own.count`             | project                   |
 | `size.symbol-declaring-namespace-count`   | project                   |
 | `maintainability.mi.avg`                  | class, namespace, project |
 | `maintainability.mi.min`                  | class, namespace, project |

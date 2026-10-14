@@ -102,6 +102,15 @@ final class HealthCoverageAgreesWithCountsTest extends TestCase
             $coverage = $score['coverage'];
             self::assertArrayHasKey('state', $coverage, "$dimension publishes no coverage state");
 
+            if ($coverage['state'] === 'not-measured') {
+                self::assertSame(0, $coverage['measured'], "$dimension invents aggregate contributors");
+                self::assertGreaterThan(0, $coverage['eligible'], "$dimension omits its eligible population");
+                self::assertSame(0, $coverage['ratio'], "$dimension invents an aggregate coverage ratio");
+                self::assertIsString($coverage['basis'], "$dimension omits the unmeasured aggregate basis");
+                self::assertIsString($coverage['unit'], "$dimension omits the eligible population unit");
+                continue;
+            }
+
             if ($coverage['state'] !== 'measured') {
                 self::assertNull($coverage['measured'], "$dimension reports a number it calls inapplicable");
                 self::assertNotNull($coverage['reason'], "$dimension is silent about why it has no coverage");
@@ -111,13 +120,8 @@ final class HealthCoverageAgreesWithCountsTest extends TestCase
             $measuredDimensions++;
             $basis = $coverage['basis'];
 
-            // Unconditional, although an absent key is a legitimate measured
-            // zero elsewhere: every namespace of this fixture declares a class
-            // and every class carries every aggregate, so there is no
-            // contributor for the run to lack. Excusing a zero here excused a
-            // basis naming a key the product had renamed away, and the line
-            // reported "0 of 168 (0%)" with no sign that it was the reader who
-            // failed rather than the code.
+            // Measured coverage must name an actual carrier. Edge-free
+            // namespaces have no distance and are handled as not-measured.
             self::assertArrayHasKey($basis, $projectMetrics, "$dimension names a basis the run does not publish");
 
             self::assertSame(

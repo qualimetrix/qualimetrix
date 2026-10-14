@@ -222,6 +222,9 @@ foreach ($projects as $project) {
             $captureSymbols[] = [
                 'name' => $symbol['name'],
                 'type' => $symbol['type'],
+                'subject' => $symbol['subject'] ?? null,
+                'file' => $symbol['file'] ?? null,
+                'line' => $symbol['line'] ?? null,
                 'metrics' => $symbol['metrics'] ?? [],
                 'size.loc' => $symbol['metrics']['size.loc'] ?? null,
             ];
@@ -231,7 +234,7 @@ foreach ($projects as $project) {
         // a multi-megabyte payload roughly doubles its peak memory for no benefit.
         $captureFile = $captureDir . '/' . $id . '.json';
         $encodedCapture = json_encode(
-            ['id' => $id, 'symbols' => $captureSymbols],
+            ['id' => $id, 'coverage' => $data['coverage'], 'symbols' => $captureSymbols],
             JSON_UNESCAPED_UNICODE,
         );
         if ($encodedCapture === false || file_put_contents($captureFile, $encodedCapture) === false) {

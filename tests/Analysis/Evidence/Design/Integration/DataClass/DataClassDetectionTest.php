@@ -84,6 +84,19 @@ final class DataClassDetectionTest extends TestCase
         }
         PHP;
 
+    private const string PREFIXED_BEHAVIOUR = <<<'PHP'
+        <?php
+        namespace App;
+        class QueryFacade
+        {
+            private object $client;
+
+            public function getFirst(): int { return $this->client->fetchFirst(); }
+            public function getSecond(): int { return $this->client->fetchSecond(); }
+            public function setFilter(string $filter): void { $this->client->filter($filter); }
+        }
+        PHP;
+
     private const string STRUCT = <<<'PHP'
         <?php
         namespace App;
@@ -173,6 +186,7 @@ final class DataClassDetectionTest extends TestCase
         yield 'accessors only' => [self::ACCESSOR_ONLY, 'App\UserProfile', true];
         yield 'public fields plus accessors' => [self::PUBLIC_FIELDS, 'App\Row', true];
         yield 'delegating methods' => [self::DELEGATING, 'App\RegistrarVisitor', false];
+        yield 'prefixed behavior' => [self::PREFIXED_BEHAVIOUR, 'App\QueryFacade', false];
         yield 'behaviour methods' => [self::BEHAVIOUR, 'App\Collection', false];
         yield 'struct without methods' => [self::STRUCT, 'App\Struct', true];
         yield 'accessor trait' => [self::ACCESSOR_TRAIT, 'App\AccessorTrait', true];

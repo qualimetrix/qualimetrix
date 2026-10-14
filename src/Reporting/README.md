@@ -29,6 +29,7 @@ Reporting is responsible for formatting analysis results for user output. It sup
 Reporting/
 ├── Report.php                              # Report aggregate (with health scores, worst offenders, tech debt)
 ├── ReportBuilder.php                       # Builder for creating reports
+├── InheritanceDepthCompleteness.php        # Bounded exact-declaration DIT measurement outcomes
 ├── ReportCoverage.php                      # Reporting-safe coverage projection
 ├── ReportProjectScope.php                  # Covered / narrowed / unknown / unmeasured scope, unjudged values and typed source reasons
 ├── Configuration/                          # OutputFormatSection, OutputFormatVocabulary and OutputFormatResolver
@@ -343,6 +344,8 @@ Today's union: `contributors` (health), `limit`, `rank-by`, `top`, `violations`
 ```php
 final readonly class Report
 {
+    public InheritanceDepthCompleteness $inheritanceDepth; // captured once from metrics
+
     public function __construct(
         public FileNamespaceIndex $fileNamespaces,
         public array $findings,
@@ -527,6 +530,30 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 | Health     | `health`     | Text table of health dimensions with scores and decomposition | CLI                        |
 | Html       | `html`       | Interactive treemap report with D3.js                         | Browser, CI artifacts      |
 | Suppressed | `suppressed` | Machine-readable composition of what was suppressed and why   | Auditing, CI               |
+
+## Incomplete inheritance-depth measurements
+
+`Report::$inheritanceDepth` captures `InheritanceDepthCompleteness` once from
+exact class declaration metric bags. An unresolved measured depth is a
+`lower-bound`; an unresolved declaration without numeric depth is
+`absent-depth`. Exact depths and declarations without collected unresolved
+facts contribute neither group. Counts cover distinct canonical exact subjects;
+each nonempty group carries up to five sorted unique examples, retaining
+physical files and declaration ordinals. The projection describes collected
+measurements across the run, independently of rule activation, finding
+selection, thresholds, severity, debt and project scope. It is not a rule
+abstention or an authored computed-value outcome.
+
+JSON and the HTML payload publish `inheritanceDepthOutcomes` as a list of
+`{status, count, examples}` groups, empty when no incomplete DIT was collected.
+HTML also shows a visible status banner. SARIF publishes a note under
+`QMX-INHERITANCE-DEPTH-INCOMPLETE`, with the same groups in notification
+properties, without adding a result or failing execution. Text, summary and
+health render the shared bounded explanation, including empty finding and
+health reports. Quiet structured output retains the metadata without relying
+on logger diagnostics. Checkstyle and GitLab have no metadata seam for this
+projection and retain only their ordinary finding entries. Raw metrics retain
+the existing `design.dit` and `design.dit-unresolved` evidence.
 
 ## JsonFormatter
 
@@ -897,6 +924,7 @@ $report->coverage         // ?ReportCoverage — discovered/analyzed/generated/f
 $report->projectScope     // ?ReportProjectScope — covered/narrowed/unknown/unmeasured with source reasons
 $report->configurationDiagnostics // list<{message, source}> — warnings about the accepted configuration
 $report->computedMetricEvaluation // ComputedMetricEvaluationSummary — bounded authored absence groups
+$report->inheritanceDepth // InheritanceDepthCompleteness — collected incomplete DIT groups
 ```
 
 ADR 0062 publishes a health score's coverage alongside the score, and every

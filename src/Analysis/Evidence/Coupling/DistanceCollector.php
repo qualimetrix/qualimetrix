@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Coupling;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach;
@@ -29,11 +30,10 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  *
  * Packages should ideally be close to the main sequence (A + I ≈ 1).
  *
- * A namespace missing either input gets no distance, in either scope: the
- * inputs are declared required, and a missing one read as 0 made a namespace
- * that declares only functions -- present in the repository, absent from the
- * class graph, so never given an instability -- publish |0 + 0 - 1| = 1.0,
- * the worst value there is, for a namespace the metric does not describe.
+ * A namespace needs measured abstraction, instability, and at least one
+ * incoming or outgoing graph edge in the same scope. Missing inputs and the
+ * conventional I = 0 for Ca = Ce = 0 do not describe a distance. The project
+ * value weights each measured own namespace by its eligible type count.
  */
 final class DistanceCollector implements GlobalContextCollectorInterface
 {
@@ -49,6 +49,14 @@ final class DistanceCollector implements GlobalContextCollectorInterface
             MetricName::COUPLING_ABSTRACTNESS,
             MetricName::COUPLING_INSTABILITY_OWN,
             MetricName::COUPLING_ABSTRACTNESS_OWN,
+            MetricName::COUPLING_CA,
+            MetricName::COUPLING_CE,
+            MetricName::COUPLING_CA_OWN,
+            MetricName::COUPLING_CE_OWN,
+            MetricName::SIZE_CLASS_COUNT,
+            MetricName::SIZE_TRAIT_COUNT,
+            MetricName::SIZE_INTERFACE_COUNT,
+            MetricName::SIZE_IMPLEMENTING_ENUM_COUNT,
         ];
     }
 
@@ -59,7 +67,12 @@ final class DistanceCollector implements GlobalContextCollectorInterface
 
     public function provides(): array
     {
-        return [MetricName::COUPLING_DISTANCE, MetricName::COUPLING_DISTANCE_OWN];
+        return [
+            MetricName::COUPLING_DISTANCE,
+            MetricName::COUPLING_DISTANCE_OWN,
+            MetricName::agg(MetricName::COUPLING_DISTANCE_OWN, AggregationStrategy::Average),
+            MetricName::agg(MetricName::COUPLING_DISTANCE_OWN, AggregationStrategy::Count),
+        ];
     }
 
     public function getMetricDefinitions(): array
@@ -73,9 +86,15 @@ final class DistanceCollector implements GlobalContextCollectorInterface
             new MetricDefinition(
                 name: MetricName::COUPLING_DISTANCE_OWN,
                 collectedAt: SymbolLevel::Namespace_,
-                aggregations: [
-                    SymbolLevel::Project->value => [AggregationStrategy::Average],
-                ],
+                aggregations: [],
+            ),
+            new MetricDefinition(
+                name: MetricName::agg(MetricName::COUPLING_DISTANCE_OWN, AggregationStrategy::Average),
+                collectedAt: SymbolLevel::Project,
+            ),
+            new MetricDefinition(
+                name: MetricName::agg(MetricName::COUPLING_DISTANCE_OWN, AggregationStrategy::Count),
+                collectedAt: SymbolLevel::Project,
             ),
         ];
     }
@@ -84,51 +103,106 @@ final class DistanceCollector implements GlobalContextCollectorInterface
         DependencyGraphInterface $graph,
         MetricRepositoryInterface $repository,
     ): void {
-        // Iterate over all namespaces and compute distance
+        $weightedDistance = 0.0;
+        $measuredTypes = 0;
+        $measuredNamespaces = 0;
+
         foreach ($repository->all(SymbolLevel::Namespace_) as $symbolInfo) {
             $nsPath = $symbolInfo->symbolPath;
             $metrics = $repository->get($nsPath);
 
-            $instability = $metrics->get(MetricName::COUPLING_INSTABILITY);
-            $abstractness = $metrics->get(MetricName::COUPLING_ABSTRACTNESS);
+            $this->addSubtreeDistance($repository, $nsPath);
 
-            if ($instability !== null && $abstractness !== null) {
-                $repository->addScalar(
-                    $nsPath,
-                    MetricName::COUPLING_DISTANCE,
-                    $this->computeDistance((float) $instability, (float) $abstractness),
-                );
+            $ownDistance = $this->addOwnDistance($repository, $nsPath);
+            if ($ownDistance !== null) {
+                $ownTypes = $this->ownTypeCount($metrics);
+                if ($ownTypes !== null && $ownTypes > 0) {
+                    $weightedDistance += $ownDistance * $ownTypes;
+                    $measuredTypes += $ownTypes;
+                    $measuredNamespaces++;
+                }
             }
+        }
 
-            $this->addOwnDistance($repository, $nsPath);
+        if ($measuredTypes > 0) {
+            $project = SymbolPath::forProject();
+            $repository->addScalar(
+                $project,
+                MetricName::agg(MetricName::COUPLING_DISTANCE_OWN, AggregationStrategy::Average),
+                $weightedDistance / $measuredTypes,
+            );
+            $repository->addScalar(
+                $project,
+                MetricName::agg(MetricName::COUPLING_DISTANCE_OWN, AggregationStrategy::Count),
+                $measuredNamespaces,
+            );
+        }
+    }
+
+    private function addSubtreeDistance(MetricRepositoryInterface $repository, SymbolPath $nsPath): void
+    {
+        $metrics = $repository->get($nsPath);
+        $instability = $metrics->get(MetricName::COUPLING_INSTABILITY);
+        $abstractness = $metrics->get(MetricName::COUPLING_ABSTRACTNESS);
+        $ca = $metrics->get(MetricName::COUPLING_CA);
+        $ce = $metrics->get(MetricName::COUPLING_CE);
+
+        if ($instability !== null && $abstractness !== null
+            && $ca !== null && $ce !== null && $ca + $ce > 0) {
+            $repository->addScalar(
+                $nsPath,
+                MetricName::COUPLING_DISTANCE,
+                $this->computeDistance((float) $instability, (float) $abstractness),
+            );
         }
     }
 
     /**
      * Publishes distance over the namespace's own scope, which is what the
-     * project average is taken over: a parent namespace and its children each
-     * contribute their own declarations, so every declaration is weighed once.
+     * project mean is taken over: a parent namespace and its children each
+     * contribute their own declarations, so every eligible type is weighed once.
      *
      * A namespace that declares no type of its own has no own abstractness and
      * gets no key, which is what keeps such a container out of that average
      * instead of entering it at the worst possible D = 1.0.
      */
-    private function addOwnDistance(MetricRepositoryInterface $repository, SymbolPath $nsPath): void
+    private function addOwnDistance(MetricRepositoryInterface $repository, SymbolPath $nsPath): ?float
     {
         $metrics = $repository->get($nsPath);
 
         $ownAbstractness = $metrics->get(MetricName::COUPLING_ABSTRACTNESS_OWN);
         $ownInstability = $metrics->get(MetricName::COUPLING_INSTABILITY_OWN);
 
-        if ($ownAbstractness === null || $ownInstability === null) {
-            return;
+        $ownCa = $metrics->get(MetricName::COUPLING_CA_OWN);
+        $ownCe = $metrics->get(MetricName::COUPLING_CE_OWN);
+        if ($ownAbstractness === null || $ownInstability === null
+            || $ownCa === null || $ownCe === null || $ownCa + $ownCe === 0) {
+            return null;
         }
 
-        $repository->addScalar(
-            $nsPath,
-            MetricName::COUPLING_DISTANCE_OWN,
-            $this->computeDistance((float) $ownInstability, (float) $ownAbstractness),
-        );
+        $distance = $this->computeDistance((float) $ownInstability, (float) $ownAbstractness);
+        $repository->addScalar($nsPath, MetricName::COUPLING_DISTANCE_OWN, $distance);
+
+        return $distance;
+    }
+
+    private function ownTypeCount(MetricBag $metrics): ?int
+    {
+        $types = 0;
+        foreach ([
+            MetricName::SIZE_CLASS_COUNT,
+            MetricName::SIZE_TRAIT_COUNT,
+            MetricName::SIZE_INTERFACE_COUNT,
+            MetricName::SIZE_IMPLEMENTING_ENUM_COUNT,
+        ] as $key) {
+            $count = $metrics->get($key);
+            if ($count === null) {
+                return null;
+            }
+            $types += (int) $count;
+        }
+
+        return $types;
     }
 
     /**

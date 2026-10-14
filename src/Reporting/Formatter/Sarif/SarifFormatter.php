@@ -62,32 +62,7 @@ final class SarifFormatter implements FormatterInterface
             'results' => $this->formatResults($report->findings, $context, $ruleIndexMap, $repairs),
         ];
 
-        if ($report->coverage !== null) {
-            $run['invocations'] = [[
-                'executionSuccessful' => $report->coverage->isComplete(),
-                'toolExecutionNotifications' => array_map(
-                    static fn($failure): array => [
-                        'level' => 'error',
-                        'message' => ['text' => \sprintf('%s: %s', $failure->path, $failure->message)],
-                        'descriptor' => ['id' => 'QMX-ANALYSIS-' . strtoupper($failure->kind)],
-                    ],
-                    $report->coverage->failures,
-                ),
-            ]];
-        }
-
-        foreach ($this->populationNotifications($report->population) as $notification) {
-            $run = self::withNotification($run, 'note', $notification['message']['text'], 'QMX-RULE-POPULATION-INCOMPLETE');
-        }
-
-        if ($report->outOfScope !== null && $report->outOfScope->total() > 0) {
-            $run = self::withNotification($run, 'note', $report->outOfScope->describe(), 'QMX-DRILL-DOWN-OUT-OF-SCOPE', ['identities' => $report->outOfScope->published()['identities']]);
-        }
-
-        $projectScope = $report->projectScope?->describe();
-        if ($projectScope !== null) {
-            $run = self::withNotification($run, 'note', $projectScope, 'QMX-RUN-PROJECT-SCOPE');
-        }
+        $run = $this->withReportNotifications($run, $report);
 
         // Add originalUriBaseIds when basePath is provided
         if ($context->basePath !== '') {
@@ -122,6 +97,47 @@ final class SarifFormatter implements FormatterInterface
         );
 
         return new FormattedReport($body, $repairs);
+    }
+
+    /**
+     * @param array<string, mixed> $run
+     *
+     * @return array<string, mixed>
+     */
+    private function withReportNotifications(array $run, Report $report): array
+    {
+        if ($report->coverage !== null) {
+            $run['invocations'] = [[
+                'executionSuccessful' => $report->coverage->isComplete(),
+                'toolExecutionNotifications' => array_map(
+                    static fn($failure): array => [
+                        'level' => 'error',
+                        'message' => ['text' => \sprintf('%s: %s', $failure->path, $failure->message)],
+                        'descriptor' => ['id' => 'QMX-ANALYSIS-' . strtoupper($failure->kind)],
+                    ],
+                    $report->coverage->failures,
+                ),
+            ]];
+        }
+
+        foreach ($this->populationNotifications($report->population) as $notification) {
+            $run = self::withNotification($run, 'note', $notification['message']['text'], 'QMX-RULE-POPULATION-INCOMPLETE');
+        }
+
+        if ($report->inheritanceDepth->outcomes !== []) {
+            $run = self::withNotification($run, 'note', implode('; ', $report->inheritanceDepth->lines()), 'QMX-INHERITANCE-DEPTH-INCOMPLETE', ['inheritanceDepthOutcomes' => $report->inheritanceDepth->outcomes]);
+        }
+
+        if ($report->outOfScope !== null && $report->outOfScope->total() > 0) {
+            $run = self::withNotification($run, 'note', $report->outOfScope->describe(), 'QMX-DRILL-DOWN-OUT-OF-SCOPE', ['identities' => $report->outOfScope->published()['identities']]);
+        }
+
+        $projectScope = $report->projectScope?->describe();
+        if ($projectScope !== null) {
+            $run = self::withNotification($run, 'note', $projectScope, 'QMX-RUN-PROJECT-SCOPE');
+        }
+
+        return $run;
     }
 
     /** @return list<array{message: array{text: string}}> */

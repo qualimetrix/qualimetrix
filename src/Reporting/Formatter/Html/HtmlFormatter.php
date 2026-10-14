@@ -35,6 +35,7 @@ final class HtmlFormatter implements FormatterInterface, FormatOptionKeysInterfa
         $data = $this->treeBuilder->build($report, $context, $context->scopedReporting);
         $data['hints'] = $this->hintProjector->project();
         $data['coverage'] = $report->coverage?->toArray();
+        $data['inheritanceDepthOutcomes'] = $report->inheritanceDepth->outcomes;
         $data['abstentions'] = array_map(static fn($absence): array => [
             'producer' => $absence->producer, 'channel' => $absence->channel->code,
             'level' => $absence->level->value, 'gate' => $absence->gate, 'reason' => $absence->reason,
@@ -47,6 +48,7 @@ final class HtmlFormatter implements FormatterInterface, FormatOptionKeysInterfa
             $projectScope = PublishedUtf8::repair($projectScope, $repairs);
         }
         $populationBanner = $this->populationBanner($report->population, $repairs);
+        $inheritanceDepth = PublishedUtf8::repair(implode("; ", $report->inheritanceDepth->lines()), $repairs);
         $json = PublishedUtf8::encodeJson(
             $data,
             \JSON_HEX_TAG | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES,
@@ -77,6 +79,9 @@ final class HtmlFormatter implements FormatterInterface, FormatOptionKeysInterfa
 
         $rendered = $this->withRunBanners($rendered, $report);
         $rendered = str_replace('<body>', '<body>' . $populationBanner, $rendered);
+        if ($inheritanceDepth !== '') {
+            $rendered = str_replace('<body>', '<body>' . '<div role="status" data-qmx-inheritance-depth="incomplete" style="padding:12px;background:#78350f;color:#fff">' . htmlspecialchars($inheritanceDepth, \ENT_QUOTES) . '</div>', $rendered);
+        }
 
         if ($projectScope !== null) {
             $rendered = str_replace('<body>', '<body>' . \sprintf(

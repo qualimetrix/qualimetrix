@@ -481,7 +481,7 @@ PHP;
         self::assertSame([], $this->collector->getMetricDefinitions());
         $definitions = (new CohesionCompositionCollector())->getMetricDefinitions();
 
-        self::assertCount(4, $definitions);
+        self::assertCount(7, $definitions);
 
         // Check TCC definition
         $tccDef = $definitions[1];
