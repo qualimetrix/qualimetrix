@@ -516,7 +516,8 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
             // exist here before the inventory script can reach its own refusal.
             $this->copyDirectory($sourceRoot . '/governance', $projectRoot . '/governance');
             $this->copyDirectory($sourceRoot . '/tools', $projectRoot . '/tools');
-            $this->copyDirectory($sourceRoot . '/src', $projectRoot . '/src');
+            // These probes mutate test/configuration inputs, never production sources.
+            self::assertTrue(symlink($sourceRoot . '/src', $projectRoot . '/src'));
             // A root-level, non-PSR-4 npm project, registered as three keys in
             // TOOLING_TEST_ROOT_OWNERS (html-report/tests/, package.json,
             // vite.config.js). assertToolingTestRootRegistrationIsComplete()
