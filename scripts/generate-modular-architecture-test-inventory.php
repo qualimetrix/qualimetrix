@@ -470,6 +470,10 @@ const RETIRED_PATH_ASSERTIONS = [
  * @var array<string, array{rows: int, reason: string}>
  */
 const NON_MANIFEST_TEST_OWNERS = [
+    'TestSupport/WorkingDirectory' => [
+        'rows' => 4,
+        'reason' => 'The PHPUnit execution-window lifecycle and its repository-root opt-in share one support owner.',
+    ],
     'TestSupport/Logging' => [
         'rows' => 1,
         'reason' => 'the shared PSR-3 recording helper, published as its own support owner in'
@@ -949,6 +953,9 @@ function classifyOwner(string $path): string
 
         return $declaredOwner;
     }
+    if ($path === 'tests/bootstrap.php' || str_starts_with($path, 'tests/TestSupport/WorkingDirectory/')) {
+        return 'TestSupport/WorkingDirectory';
+    }
     if (str_starts_with($path, 'tests/TestSupport/Logging/')) {
         return 'TestSupport/Logging';
     }
@@ -1143,6 +1150,9 @@ function classifyKind(string $path, array $discoveredClasses): string
     }
     if (str_contains($path, '/Fixtures/') || str_contains($path, '/Fixture/') || str_contains($path, '/data/') || str_contains($path, '/fixtures/') || preg_match('/Fixture(s)?\.php$/', $path) === 1) {
         return 'fixture';
+    }
+    if ($path === 'tests/TestSupport/WorkingDirectory/declared-residue.tsv') {
+        return 'support';
     }
     if (str_contains($path, '/Support/') || (str_ends_with($path, '.php') && !str_ends_with($path, 'Test.php'))) {
         return 'support';
@@ -1726,6 +1736,9 @@ function orphanCandidateReason(string $path): ?string
 
 function targetPath(string $path, string $kind, string $owner, string $targetSuite): string
 {
+    if ($path === 'tests/bootstrap.php' || str_starts_with($path, 'tests/TestSupport/WorkingDirectory/')) {
+        return $path;
+    }
     if (isRegisteredToolingRoot($path)) {
         return $path;
     }
@@ -2031,6 +2044,10 @@ function orphanDispositionContents(): string
 function systemSupportContents(string $root): string
 {
     $rows = [
+        ['TestSupport/WorkingDirectory', 'tests/bootstrap.php', 'Parent-owned PHPUnit process-root bootstrap and cleanup.', 'support'],
+        ['TestSupport/WorkingDirectory', 'tests/TestSupport/WorkingDirectory/SuiteWorkingDirectoryExtension.php', 'PHPUnit execution window and cwd residue judgement.', 'support'],
+        ['TestSupport/WorkingDirectory', 'tests/TestSupport/WorkingDirectory/RunsFromRepositoryRoot.php', 'Explicit repository-root opt-in for configuration-dependent tests.', 'support'],
+        ['TestSupport/WorkingDirectory', 'tests/TestSupport/WorkingDirectory/declared-residue.tsv', 'Reasoned execution-window residue declarations.', 'support'],
         ['TestSupport/Logging', 'tests/TestSupport/Logging/Support/RecordingLogger.php', 'Shared PSR-3 recording helper for named Finding and Coupling tests.', 'support'],
     ];
     foreach ($rows as $row) {

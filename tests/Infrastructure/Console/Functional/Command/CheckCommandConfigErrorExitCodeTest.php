@@ -13,6 +13,7 @@ use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\TestSupport\WorkingDirectory\RunsFromRepositoryRoot;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
@@ -27,6 +28,8 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  */
 final class CheckCommandConfigErrorExitCodeTest extends TestCase
 {
+    use RunsFromRepositoryRoot;
+
     private static ?ContainerBuilder $container = null;
 
     public static function tearDownAfterClass(): void

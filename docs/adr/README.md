@@ -156,6 +156,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0116 — Measured health-score recalibration](0116-measured-health-score-recalibration.md) — declared search, measured calibration and before/after receipts.
 
 - [0117 — Inheritance depth completeness publication](0117-inheritance-depth-completeness-publication.md) — bounded collected-measurement outcomes survive rule activation and finding selection.
+- [0118 — PHPUnit execution working directory](0118-phpunit-execution-working-directory.md) — parent-owned execution windows, reasoned residue and native Git fixtures.
 
 ## Superseded history
 

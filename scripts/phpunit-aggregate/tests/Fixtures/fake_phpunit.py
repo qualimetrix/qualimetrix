@@ -43,6 +43,13 @@ if "--list-tests" in arguments:
     raise SystemExit(0)
 
 behavior = configuration.get("run", {}).get(suite, {})
+residue_report = os.environ.get("QMX_SUITE_RESIDUE_REPORT")
+if residue_report is not None and not behavior.get("missing_residue_report"):
+    Path(residue_report).write_text(
+        "".join(entry + "\n" for entry in behavior.get("residue", [".qmx-cache"])), encoding="utf-8",
+    )
+for entry in behavior.get("cwd_entries", []):
+    Path(entry).mkdir()
 junit_path = next((argument.split("=", 1)[1] for argument in arguments if argument.startswith("--log-junit=")), None)
 if junit_path is not None and behavior.get("junit") != "missing":
     path = Path(junit_path)
@@ -66,7 +73,7 @@ if record_directory is not None:
         if argument.startswith("--cache-directory=")
     )
     Path(record_directory, f"{suite}.json").write_text(
-        json.dumps({"suite": suite, "cache_directory": cache_directory, "arguments": arguments, "pid": os.getpid()}),
+        json.dumps({"suite": suite, "cache_directory": cache_directory, "arguments": arguments, "pid": os.getpid(), "cwd": os.getcwd()}),
         encoding="utf-8",
     )
 if behavior.get("spawn_term_ignoring_child"):

@@ -16,13 +16,18 @@ use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\TestSupport\WorkingDirectory\RunsFromRepositoryRoot;
 use Symfony\Component\Console\Input\StringInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Process\Process;
 
 final class CheckCommandInputValidationTest extends TestCase
 {
+    use RunsFromRepositoryRoot;
+
     private static ?ContainerBuilder $container = null;
 
     public static function tearDownAfterClass(): void
@@ -310,15 +315,27 @@ final class CheckCommandInputValidationTest extends TestCase
     #[Test]
     public function itClassifiesMissingGitReferenceAsInputErrorBeforePayload(): void
     {
-        $tester = $this->tester();
-        $tester->execute(
-            ['paths' => ['tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php'], '--format' => 'json', '--report' => 'git:qmx-ref-that-does-not-exist..HEAD'],
-            ['capture_stderr_separately' => true],
-        );
+        $root = sys_get_temp_dir() . '/qmx-git-input-' . bin2hex(random_bytes(8));
+        mkdir($root);
+        try {
+            (new Process(['git', 'init'], $root))->mustRun();
+            file_put_contents($root . '/fixture.php', '<?php');
+            (new Process(['git', 'add', 'fixture.php'], $root))->mustRun();
+            (new Process(['git', '-c', 'user.name=Test', '-c', 'user.email=test@example.invalid', 'commit', '-m', 'Initial fixture'], $root))->mustRun();
+            chdir($root);
+            $tester = $this->tester();
+            $tester->execute(
+                ['paths' => [$root . '/fixture.php'], '--format' => 'json', '--report' => 'git:qmx-ref-that-does-not-exist..HEAD'],
+                ['capture_stderr_separately' => true],
+            );
 
-        self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString('does not resolve to a commit', self::envelopeError($tester));
-        self::assertStringNotContainsString('Analyzed paths do not cover', $tester->getErrorOutput());
+            self::assertSame(3, $tester->getStatusCode());
+            self::assertStringContainsString('does not resolve to a commit', self::envelopeError($tester));
+            self::assertStringNotContainsString('Analyzed paths do not cover', $tester->getErrorOutput());
+        } finally {
+            chdir(\dirname(__DIR__, 5));
+            (new Filesystem())->remove($root);
+        }
     }
 
     #[Test]

@@ -2467,6 +2467,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0115-defined-distance-and-type-weighted-project-fold.md' => 'Analysis.Evidence.Coupling',
         'docs/adr/0116-measured-health-score-recalibration.md' => 'Analysis.Evidence.ComputedMetrics',
         'docs/adr/0117-inheritance-depth-completeness-publication.md' => 'Reporting',
+        'docs/adr/0118-phpunit-execution-working-directory.md' => 'Architecture.Governance',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/ProjectManifest/README.md' => 'Analysis.ProjectManifest',

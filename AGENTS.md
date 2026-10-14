@@ -684,6 +684,40 @@ bin/qmx check --help
 - **Gate mutation controls**: `composer gate:controls -- --reference=HEAD --jobs=8` is locally required only when changing those same paths. Its separate CI workflow runs daily on `main` and supports manual dispatch. Scheduled controls are evidence about their measured revision, not a required pull-request context.
 - **Documentation**: Update `README.md` in the affected `src/` directory (add new files, fix outdated info). Update website documentation (see [Website Documentation](#website-documentation) section below)
 
+### Test working directories
+
+`tests/bootstrap.php` loads the autoloader and creates one
+`QMX_TEST_PROCESS_ROOT` per PHPUnit parent. It does not change cwd: PHPUnit
+resolves relative test arguments and data providers before execution starts.
+The extension enters `<root>/cwd` on execution start and restores the launch
+directory on execution finish, before relative JUnit and coverage reports are
+written. A focused `vendor/bin/phpunit tests/.../ExampleTest.php` and its
+`--list-tests` form keep resolving from the launch directory.
+
+A test requiring the repository's configuration uses
+`RunsFromRepositoryRoot`; PHPUnit restores its cwd after the test. A test
+about relative paths selects a known fixture directory itself. Class hooks
+must restore cwd: the extension refuses a leaked class directory by class name.
+An undeclared entry left in the execution window refuses the run, including
+with `--do-not-fail-on-phpunit-warning`. The parent-only shutdown guard also
+refuses `--no-extensions` and a configuration-free run using this bootstrap.
+Isolated children share the parent root and never remove it.
+
+`declared-residue.tsv` temporarily permits the product's default
+`.qmx-cache` in the execution window. The aggregate judges its freshness
+against the union of all six successful suites: remove a declaration when no
+suite leaves it. Each shard launches from a separate empty directory, where
+even declared window residue is refused; providers must not write there.
+Runs without this bootstrap have neither the window nor its shutdown guard
+and are not aggregate validation evidence. Product Git tests create their own
+repositories; governance still refuses a checkout whose Git population cannot
+be read.
+
+The bootstrap owns cleanup of the whole process root. Future process concerns
+add separate subdirectories; an XDG cache block must use `<root>/xdg-cache`
+with mode `0700`, publish `XDG_CACHE_HOME` through `putenv()`, `$_ENV`
+and `$_SERVER`, and use the same cleanup. The window judges only `<root>/cwd`.
+
 ### Efficient validation order
 
 For multi-package changes, fail fast before paying for the full test suite:

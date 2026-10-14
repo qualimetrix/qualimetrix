@@ -26,7 +26,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(CheckCommand::class)]
 final class CheckCommandEmptyOptionValueTest extends TestCase
 {
-    private const string FIXTURE = 'tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php';
+    private const string FIXTURE = __DIR__ . '/../../Fixtures/parses_with_no_findings.php';
 
     /** @return iterable<string, array{string, string|list<string>}> */
     public static function provideDoors(): iterable
@@ -103,6 +103,7 @@ final class CheckCommandEmptyOptionValueTest extends TestCase
     #[Test]
     public function itStillRunsWhenNoneOfTheDoorsIsWritten(): void
     {
+        chdir(\dirname(self::FIXTURE));
         $tester = $this->tester();
         $tester->execute(
             ['paths' => [self::FIXTURE], '--format' => 'json'],

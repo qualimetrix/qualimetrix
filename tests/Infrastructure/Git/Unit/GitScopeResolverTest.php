@@ -14,6 +14,8 @@ use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Infrastructure\Git\GitScopeResolver;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Process\Process;
 
 #[CoversClass(GitScopeResolver::class)]
 final class GitScopeResolverTest extends TestCase
@@ -21,28 +23,32 @@ final class GitScopeResolverTest extends TestCase
     #[Test]
     public function itUsesProjectRootForGitClient(): void
     {
-        $projectRoot = AbsolutePath::fromString(\dirname(__DIR__, 4)); // repo root
+        $root = sys_get_temp_dir() . '/qmx-git-scope-' . bin2hex(random_bytes(8));
+        mkdir($root);
+        try {
+            (new Process(['git', 'init'], $root))->mustRun();
+            file_put_contents($root . '/fixture.php', '<?php');
+            (new Process(['git', 'add', 'fixture.php'], $root))->mustRun();
+            (new Process(['git', '-c', 'user.name=Test', '-c', 'user.email=test@example.invalid', 'commit', '-m', 'Initial fixture'], $root))->mustRun();
+            $projectRoot = AbsolutePath::fromString($root);
 
-        $resolved = new RunConfiguration(
-            pathExcludes: self::patterns('vendor', 'node_modules', '.git'),
-            projectRoot: $projectRoot,
-            generatedFilePolicy: GeneratedFilePolicy::Exclude,
-            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $projectRoot, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [AbsolutePath::fromString($projectRoot->value() . '/src')], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
-            authoredPathExcludes: [],
-            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
-        );
+            $resolved = new RunConfiguration(
+                pathExcludes: self::patterns('vendor', 'node_modules', '.git'),
+                projectRoot: $projectRoot,
+                generatedFilePolicy: GeneratedFilePolicy::Exclude,
+                projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $projectRoot, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [AbsolutePath::fromString($projectRoot->value() . '/src')], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
+                authoredPathExcludes: [],
+                autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
+            );
 
-        // HEAD is a branch-independent scope: this wiring test must also pass
-        // in detached CI checkouts where no local main branch exists.
-        $resolver = new GitScopeResolver();
-        $result = $resolver->resolve('git:HEAD', $resolved);
+            $resolver = new GitScopeResolver();
+            $result = $resolver->resolve('git:HEAD', $resolved);
 
-        self::assertNotNull($result->gitClient);
-
-        // The explicit projectRoot on the resolution carries the same value
-        // we configured (Phase 5 collapsed the GitClient::getProjectRoot
-        // accessor — the resolution VO is the canonical source).
-        self::assertTrue($result->projectRoot->equals($projectRoot));
+            self::assertNotNull($result->gitClient);
+            self::assertTrue($result->projectRoot->equals($projectRoot));
+        } finally {
+            (new Filesystem())->remove($root);
+        }
     }
 
     #[Test]

@@ -31,7 +31,7 @@ final class GoldenFileAggregationTest extends TestCase
     {
         $fixturesPath = \dirname(__DIR__, 2) . '/Fixtures/GoldenMetrics';
         $fixtureRoot = AbsolutePath::fromString($fixturesPath);
-        $root = AbsolutePath::fromString((string) getcwd());
+        $root = AbsolutePath::fromString(\dirname(__DIR__, 6));
         $fixture = PreparedAnalysis::start($root, [$fixtureRoot], ['include_generated' => true]);
         try {
             $pipeline = $fixture->container()->get(AnalysisPipelineInterface::class);
@@ -210,7 +210,7 @@ final class GoldenFileAggregationTest extends TestCase
     public function itPreservesMetricsForBothDeclarationsOfOneClassInAFile(): void
     {
         $fixtureFile = AbsolutePath::fromString(\dirname(__DIR__, 2) . '/Fixtures/AggregationExport/duplicate.php');
-        $root = AbsolutePath::fromString((string) getcwd());
+        $root = AbsolutePath::fromString(\dirname(__DIR__, 6));
         $fixture = PreparedAnalysis::start($root, [$fixtureFile], ['include_generated' => true]);
 
         try {

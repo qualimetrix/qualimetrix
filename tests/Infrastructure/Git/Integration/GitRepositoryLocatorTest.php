@@ -45,17 +45,22 @@ final class GitRepositoryLocatorTest extends TestCase
     }
 
     #[Test]
-    public function itFindsTheGitDirInTheCurrentRepository(): void
+    public function itFindsTheGitDirInAnInitializedRepository(): void
     {
-        $result = $this->locator->findGitDir(AbsolutePath::fromString(\dirname(__DIR__, 4)));
+        $root = $this->makeTempDir('locator-repository-');
+        $this->initGitRepo($root);
+        $result = $this->locator->findGitDir(AbsolutePath::fromString($root));
 
-        self::assertNotNull($result, 'Expected to find .git directory (tests run inside a git repo)');
+        self::assertNotNull($result);
+        self::assertSame($root . '/.git', $result->value());
     }
 
     #[Test]
     public function itReturnsAnAbsolutePath(): void
     {
-        $result = $this->locator->findGitDir(AbsolutePath::fromString(\dirname(__DIR__, 4)));
+        $root = $this->makeTempDir('locator-repository-');
+        $this->initGitRepo($root);
+        $result = $this->locator->findGitDir(AbsolutePath::fromString($root));
 
         self::assertNotNull($result);
         self::assertStringStartsWith('/', $result->value(), 'Path should be absolute');
@@ -64,7 +69,9 @@ final class GitRepositoryLocatorTest extends TestCase
     #[Test]
     public function itReturnsAPathContainingAGitReference(): void
     {
-        $result = $this->locator->findGitDir(AbsolutePath::fromString(\dirname(__DIR__, 4)));
+        $root = $this->makeTempDir('locator-repository-');
+        $this->initGitRepo($root);
+        $result = $this->locator->findGitDir(AbsolutePath::fromString($root));
 
         self::assertNotNull($result);
         // Regular repos end with .git; worktrees may have .git in the path
@@ -74,8 +81,9 @@ final class GitRepositoryLocatorTest extends TestCase
     #[Test]
     public function itAcceptsAnExplicitWorkingDirectory(): void
     {
-        // Use the project root as explicit working directory
-        $projectRoot = AbsolutePath::fromString(\dirname(__DIR__, 4));
+        $root = $this->makeTempDir('locator-explicit-');
+        $this->initGitRepo($root);
+        $projectRoot = AbsolutePath::fromString($root);
         $result = $this->locator->findGitDir($projectRoot);
 
         self::assertNotNull($result, 'Expected to find .git directory from project root');
@@ -253,7 +261,10 @@ final class GitRepositoryLocatorTest extends TestCase
 
     private function initGitRepo(string $dir): void
     {
-        (Process::fromShellCommandline('git init', $dir))->mustRun();
+        (new Process(['git', 'init'], $dir))->mustRun();
+        file_put_contents($dir . '/fixture.php', '<?php');
+        (new Process(['git', 'add', 'fixture.php'], $dir))->mustRun();
+        (new Process(['git', '-c', 'user.name=Test', '-c', 'user.email=test@example.invalid', 'commit', '-m', 'Initial fixture'], $dir))->mustRun();
     }
 
     private function removeRecursive(string $dir): void

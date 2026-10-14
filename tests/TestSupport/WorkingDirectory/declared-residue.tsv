@@ -1,0 +1,2 @@
+entry	reason
+.qmx-cache	The product's default cache directory is relative to cwd; command tests with caching enabled create it in the execution window.

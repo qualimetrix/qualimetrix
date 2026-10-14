@@ -51,6 +51,7 @@ SUITES = ("Unit", "Integration", "Functional", "Infrastructure", "Tooling", "Gov
 # ahead of phpunit.xml.dist: that file is git-ignored, so a developer's tree
 # would run a different configuration than CI while both reported success.
 CONFIGURATION = ROOT / "phpunit.xml.dist"
+DECLARED_RESIDUE = ROOT / "tests/TestSupport/WorkingDirectory/declared-residue.tsv"
 COMMON_ARGUMENTS = (
     f"--configuration={CONFIGURATION}",
     "--no-coverage",
@@ -91,6 +92,61 @@ class Shard:
     exit_code: int | None = None
     started_at: float | None = None
     elapsed: float | None = None
+    working_directory: Path | None = None
+    residue_report: Path | None = None
+
+
+def declared_residue(path: Path = DECLARED_RESIDUE) -> set[str]:
+    try:
+        with path.open(encoding="utf-8", newline="") as handle:
+            reader = (line.rstrip("\r\n").split("\t") for line in handle)
+            if next(reader, None) != ["entry", "reason"]:
+                raise RunnerRefusal("invalid declared suite residue header")
+            entries: set[str] = set()
+            for row in reader:
+                if (
+                    len(row) != 2 or not row[1].strip() or not row[0]
+                    or "/" in row[0] or "\\" in row[0] or row[0] in (".", "..")
+                    or row[0] in entries
+                ):
+                    raise RunnerRefusal(f"invalid declared suite residue: {row!r}")
+                entries.add(row[0])
+            return entries
+    except OSError as error:
+        raise RunnerRefusal(f"cannot read declared suite residue: {error}") from error
+
+
+def judge_shard_working_directory(shard: Shard) -> None:
+    if shard.working_directory is None:
+        return
+    entries = sorted(path.name for path in shard.working_directory.iterdir())
+    if entries:
+        shard.exit_code = REFUSAL_EXIT
+        with shard.stderr_path.open("a", encoding="utf-8") as handle:
+            handle.write("shard cwd not empty: " + ", ".join(entries) + "\n")
+
+
+def judge_declared_residue(shards: Sequence[Shard], declared: set[str]) -> None:
+    if not all(shard.exit_code == 0 for shard in shards):
+        return
+    observed: set[str] = set()
+    for shard in shards:
+        if shard.residue_report is None:
+            raise RunnerRefusal(f"{shard.suite}: no suite residue report")
+        try:
+            entries = set(shard.residue_report.read_text(encoding="utf-8").splitlines())
+        except OSError as error:
+            raise RunnerRefusal(f"{shard.suite}: cannot read suite residue report: {error}") from error
+        if entries - declared:
+            raise RunnerRefusal(f"{shard.suite}: undeclared suite residue report: {sorted(entries - declared)}")
+        observed |= entries
+        print(f"[phpunit-aggregate] {shard.suite} declared residue: {', '.join(sorted(entries)) or '(none)'}")
+    stale = declared - observed
+    if stale:
+        raise RunnerRefusal(
+            "stale declared residue " + ", ".join(sorted(stale))
+            + ": nothing leaves it any more — delete the row"
+        )
 
 
 def parse_positive_int(value: str) -> int:
@@ -306,6 +362,11 @@ def remaining_seconds(deadline: float) -> float:
 def start_shard(phpunit: Path, shard: Shard, cache_root: Path, profile: bool = False) -> None:
     cache_directory = cache_root / shard.suite
     cache_directory.mkdir()
+    shard.working_directory = cache_root / (shard.suite + ".cwd")
+    shard.working_directory.mkdir()
+    shard.residue_report = cache_root / (shard.suite + ".residue")
+    environment = os.environ.copy()
+    environment["QMX_SUITE_RESIDUE_REPORT"] = str(shard.residue_report)
     command = (
         shard_command(phpunit, shard.suite, cache_directory, True)
         if profile else shard_command(phpunit, shard.suite, cache_directory)
@@ -315,7 +376,8 @@ def start_shard(phpunit: Path, shard: Shard, cache_root: Path, profile: bool = F
     try:
         shard.process = subprocess.Popen(
             command,
-            cwd=ROOT,
+            cwd=shard.working_directory,
+            env=environment,
             stdout=shard.stdout_handle,
             stderr=shard.stderr_handle,
             start_new_session=True,
@@ -391,6 +453,7 @@ def run_shards(
     phpunit: Path, jobs: int, deadline: float, heartbeat: float,
     profile: bool = False, requested: list[int] | None = None,
 ) -> list[Shard]:
+    declared = declared_residue()
     cache_root = Path(tempfile.mkdtemp(prefix="qmx-phpunit-aggregate-"))
     shards = [
         Shard(suite, cache_root / f"{suite}.stdout", cache_root / f"{suite}.stderr") for suite in SUITES
@@ -435,6 +498,7 @@ def run_shards(
                     if shard.started_at is not None:
                         shard.elapsed = time.monotonic() - shard.started_at
                     close_shard_handles(shard)
+                    judge_shard_working_directory(shard)
                     running.remove(shard)
 
                 now = time.monotonic()
@@ -448,6 +512,7 @@ def run_shards(
             terminate_shards(running)
 
         publish_shards(shards)
+        judge_declared_residue(shards, declared)
         if profile:
             publish_profile(shards, cache_root)
         raise_if_cancelled(requested)

@@ -14,6 +14,7 @@ use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Subprocess\ChildProcess;
+use Qualimetrix\Tests\TestSupport\WorkingDirectory\RunsFromRepositoryRoot;
 use Symfony\Component\Console\Tester\CommandTester;
 
 require_once \dirname(__DIR__, 5) . '/scripts/subprocess/ChildProcess.php';
@@ -29,6 +30,8 @@ require_once \dirname(__DIR__, 5) . '/scripts/subprocess/ChildProcess.php';
 #[CoversClass(CheckCommand::class)]
 final class CheckCommandProfileExportTest extends TestCase
 {
+    use RunsFromRepositoryRoot;
+
     private const string FIXTURE = 'tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php';
 
     private string $directory;

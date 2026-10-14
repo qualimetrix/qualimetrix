@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\TestSupport\WorkingDirectory\RunsFromRepositoryRoot;
 use ReflectionClass;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Filesystem\Filesystem;
@@ -32,6 +33,8 @@ use Symfony\Component\Filesystem\Filesystem;
 #[CoversClass(CheckCommand::class)]
 final class CheckCommandProjectionOptionsBeforeAnalysisTest extends TestCase
 {
+    use RunsFromRepositoryRoot;
+
     private const string FIXTURE = 'tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php';
 
     /** @return iterable<string, array{string, mixed, string}> */
