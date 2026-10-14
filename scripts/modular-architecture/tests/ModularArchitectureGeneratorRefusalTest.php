@@ -17,6 +17,22 @@ require_once \dirname(__DIR__, 2) . '/subprocess/ChildProcess.php';
 
 final class ModularArchitectureGeneratorRefusalTest extends TestCase
 {
+    private static ?string $projectTemplate = null;
+
+    public static function setUpBeforeClass(): void
+    {
+        parent::setUpBeforeClass();
+        self::$projectTemplate = self::createProjectTemplate();
+    }
+
+    public static function tearDownAfterClass(): void
+    {
+        if (self::$projectTemplate !== null) {
+            self::removeDirectory(self::$projectTemplate);
+        }
+        parent::tearDownAfterClass();
+    }
+
     #[Test]
     public function itRejectsCompositionBindingsWhenOnlyIdentityEvidenceRemains(): void
     {
@@ -384,7 +400,7 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
         try {
             $test($projectRoot);
         } finally {
-            $this->removeDirectory($projectRoot);
+            self::removeDirectory($projectRoot);
             self::assertDirectoryDoesNotExist($projectRoot, 'The isolated project fixture must be removed after every negative control.');
         }
     }
@@ -506,16 +522,37 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
     private function createIsolatedProject(): string
     {
         $projectRoot = sys_get_temp_dir() . '/qmx-modular-architecture-' . bin2hex(random_bytes(16));
+
+        $copyMode = \PHP_OS_FAMILY === 'Darwin' ? '-cR' : '-R';
+        $template = self::$projectTemplate;
+        self::assertNotNull($template);
+        $result = ChildProcess::run(['cp', $copyMode, $template, $projectRoot], sys_get_temp_dir());
+        if ($result['exitCode'] !== 0 && \PHP_OS_FAMILY === 'Darwin') {
+            self::removeDirectory($projectRoot);
+            $result = ChildProcess::run(['cp', '-R', $template, $projectRoot], sys_get_temp_dir());
+        }
+        if ($result['exitCode'] !== 0) {
+            self::removeDirectory($projectRoot);
+        }
+        self::assertSame(0, $result['exitCode'], $result['stdout'] . $result['stderr']);
+
+        return $projectRoot;
+    }
+
+    private static function createProjectTemplate(): string
+    {
+        $sourceRoot = realpath(\dirname(__DIR__, 3));
+        self::assertIsString($sourceRoot);
+        $projectRoot = sys_get_temp_dir() . '/qmx-modular-architecture-template-' . bin2hex(random_bytes(16));
         self::assertTrue(mkdir($projectRoot, 0700));
 
         try {
-            $sourceRoot = $this->root();
-            $this->copyDirectory($sourceRoot . '/tests', $projectRoot . '/tests');
+            self::copyDirectory($sourceRoot . '/tests', $projectRoot . '/tests');
             // PHPUnit exits 2 when a <testsuite> names a directory that is not
             // there, so every root the tracked configuration declares has to
             // exist here before the inventory script can reach its own refusal.
-            $this->copyDirectory($sourceRoot . '/governance', $projectRoot . '/governance');
-            $this->copyDirectory($sourceRoot . '/tools', $projectRoot . '/tools');
+            self::copyDirectory($sourceRoot . '/governance', $projectRoot . '/governance');
+            self::copyDirectory($sourceRoot . '/tools', $projectRoot . '/tools');
             // These probes mutate test/configuration inputs, never production sources.
             self::assertTrue(symlink($sourceRoot . '/src', $projectRoot . '/src'));
             // A root-level, non-PSR-4 npm project, registered as three keys in
@@ -532,7 +569,7 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
             // is added below, and a stale number beside a growing list reads
             // as a measurement.
             // Only the scanned slice is copied, not node_modules/dist/src.
-            $this->copyDirectory($sourceRoot . '/html-report/tests', $projectRoot . '/html-report/tests');
+            self::copyDirectory($sourceRoot . '/html-report/tests', $projectRoot . '/html-report/tests');
             self::assertTrue(copy(
                 $sourceRoot . '/html-report/package.json',
                 $projectRoot . '/html-report/package.json',
@@ -541,7 +578,7 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 $sourceRoot . '/html-report/vite.config.js',
                 $projectRoot . '/html-report/vite.config.js',
             ));
-            $this->copyDirectory(
+            self::copyDirectory(
                 $sourceRoot . '/docs/internal/generated/modular-architecture',
                 $projectRoot . '/docs/internal/generated/modular-architecture',
             );
@@ -565,59 +602,59 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 $sourceRoot . '/scripts/subprocess/ChildProcess.php',
                 $projectRoot . '/scripts/subprocess/ChildProcess.php',
             ));
-            $this->copyDirectory(
+            self::copyDirectory(
                 $sourceRoot . '/scripts/subprocess/tests',
                 $projectRoot . '/scripts/subprocess/tests',
             );
-            $this->copyDirectory(
+            self::copyDirectory(
                 $sourceRoot . '/scripts/promise-effect/tests',
                 $projectRoot . '/scripts/promise-effect/tests',
             );
-            $this->copyDirectory(
+            self::copyDirectory(
                 $sourceRoot . '/scripts/directive-audit/tests',
                 $projectRoot . '/scripts/directive-audit/tests',
             );
-            $this->copyDirectory(
+            self::copyDirectory(
                 $sourceRoot . '/scripts/directive-audit-controls/tests',
                 $projectRoot . '/scripts/directive-audit-controls/tests',
             );
-            $this->copyDirectory(
+            self::copyDirectory(
                 $sourceRoot . '/scripts/tautology-controls/tests',
                 $projectRoot . '/scripts/tautology-controls/tests',
             );
-            $this->copyDirectory(
+            self::copyDirectory(
                 $sourceRoot . '/scripts/finding-gate',
                 $projectRoot . '/scripts/finding-gate',
             );
-            $this->copyDirectory(
+            self::copyDirectory(
                 $sourceRoot . '/scripts/suppression-snapshot/tests',
                 $projectRoot . '/scripts/suppression-snapshot/tests',
             );
-            $this->copyDirectory(
+            self::copyDirectory(
                 $sourceRoot . '/scripts/rename-enumeration/tests',
                 $projectRoot . '/scripts/rename-enumeration/tests',
             );
-            $this->copyDirectory(
+            self::copyDirectory(
                 $sourceRoot . '/scripts/health-calibration/tests',
                 $projectRoot . '/scripts/health-calibration/tests',
             );
-            $this->copyDirectory(
+            self::copyDirectory(
                 $sourceRoot . '/scripts/benchmark/tests',
                 $projectRoot . '/scripts/benchmark/tests',
             );
-            $this->copyDirectory(
+            self::copyDirectory(
                 $sourceRoot . '/scripts/modular-architecture/tests',
                 $projectRoot . '/scripts/modular-architecture/tests',
             );
-            $this->copyDirectory(
+            self::copyDirectory(
                 $sourceRoot . '/scripts/cross-tool-comparison/tests',
                 $projectRoot . '/scripts/cross-tool-comparison/tests',
             );
-            $this->copyDirectory(
+            self::copyDirectory(
                 $sourceRoot . '/scripts/phpunit-aggregate/tests',
                 $projectRoot . '/scripts/phpunit-aggregate/tests',
             );
-            $this->copyDirectory(
+            self::copyDirectory(
                 $sourceRoot . '/scripts/check-code-parallel/tests',
                 $projectRoot . '/scripts/check-code-parallel/tests',
             );
@@ -631,7 +668,7 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
             // refusal preempts every planting case whose own refusal is raised
             // after assertEveryTestDirectoryIsScanned() runs — stated as a
             // mechanism for the reason given beside the html-report copy.
-            $this->copyDirectory(
+            self::copyDirectory(
                 $sourceRoot . '/input-doors/fixtures/main/tests',
                 $projectRoot . '/input-doors/fixtures/main/tests',
             );
@@ -639,9 +676,9 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
             self::assertTrue(copy($sourceRoot . '/phpunit.xml.dist', $projectRoot . '/phpunit.xml.dist'));
             self::assertTrue(symlink($sourceRoot . '/vendor', $projectRoot . '/vendor'));
 
-            [$exitCode, $output] = $this->runProcess(['git', 'init', '--quiet'], $projectRoot);
-            self::assertSame(0, $exitCode, $output);
-            [$exitCode, $output] = $this->runProcess([
+            $result = ChildProcess::run(['git', 'init', '--quiet'], $projectRoot);
+            self::assertSame(0, $result['exitCode'], $result['stdout'] . $result['stderr']);
+            $result = ChildProcess::run([
                 'git',
                 'add',
                 '--',
@@ -653,17 +690,17 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 'html-report',
                 'input-doors',
             ], $projectRoot);
-            self::assertSame(0, $exitCode, $output);
+            self::assertSame(0, $result['exitCode'], $result['stdout'] . $result['stderr']);
 
             return $projectRoot;
         } catch (Throwable $exception) {
-            $this->removeDirectory($projectRoot);
+            self::removeDirectory($projectRoot);
 
             throw $exception;
         }
     }
 
-    private function copyDirectory(string $source, string $destination): void
+    private static function copyDirectory(string $source, string $destination): void
     {
         self::assertTrue(is_dir($source), 'Fixture source directory is missing: ' . $source);
         self::assertTrue(mkdir($destination, 0700, true));
@@ -673,7 +710,7 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
             self::assertInstanceOf(SplFileInfo::class, $entry);
             $target = $destination . '/' . $entry->getFilename();
             if ($entry->isDir()) {
-                $this->copyDirectory($entry->getPathname(), $target);
+                self::copyDirectory($entry->getPathname(), $target);
 
                 continue;
             }
@@ -682,7 +719,7 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
         }
     }
 
-    private function removeDirectory(string $path): void
+    private static function removeDirectory(string $path): void
     {
         if (!file_exists($path) && !is_link($path)) {
             return;
