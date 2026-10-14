@@ -87,8 +87,9 @@ final class FileCacheTest extends TestCase
         if (!\function_exists('posix_geteuid') || !\function_exists('posix_getegid')) {
             self::markTestSkipped('POSIX group facts are unavailable');
         }
-        mkdir($this->cacheDir, 0775);
-        chmod($this->cacheDir, 0775);
+        self::assertTrue(mkdir($this->cacheDir, 0775));
+        self::assertTrue(chgrp($this->cacheDir, posix_getegid()));
+        self::assertTrue(chmod($this->cacheDir, 0775));
         $root = \dirname(__DIR__, 4);
         $script = <<<'PHP'
             require $argv[1];
