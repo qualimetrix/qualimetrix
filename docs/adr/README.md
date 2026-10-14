@@ -153,7 +153,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 
 - [0114 — Effective methods and cohesion populations](0114-effective-methods-and-cohesion-populations.md) — effective trait methods, graph populations and conservative Run baseline comparison.
 - [0115 — Defined distance and type-weighted project fold](0115-defined-distance-and-type-weighted-project-fold.md) — defined abstractness/distance and eligible-type-weighted own scopes.
-- [0116 — Measured health-score recalibration](0116-measured-health-score-recalibration.md) — declared search and measured before/after; awaiting actual calibration receipts.
+- [0116 — Measured health-score recalibration](0116-measured-health-score-recalibration.md) — declared search, measured calibration and before/after receipts.
 
 - [0117 — Inheritance depth completeness publication](0117-inheritance-depth-completeness-publication.md) — bounded collected-measurement outcomes survive rule activation and finding selection.
 

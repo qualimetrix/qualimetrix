@@ -4,19 +4,40 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ArchitectureConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 #[CoversClass(ArchitectureConfigurator::class)]
 #[CoversClass(CheckCommand::class)]
 final class LayerDeclarationSelectionDoorsTest extends TestCase
 {
+    private static ?ContainerBuilder $container = null;
+
+    public static function tearDownAfterClass(): void
+    {
+        self::$container = null;
+    }
+
+    private static function container(): ContainerBuilder
+    {
+        $container = self::$container ??= (new ContainerFactory())->create();
+        $manifest = $container->get(ManifestSnapshotControlInterface::class);
+        if (!$manifest instanceof ManifestSnapshotControlInterface) {
+            throw new LogicException('The command fixture has no manifest snapshot lifetime owner.');
+        }
+        $manifest->beginInvocation();
+
+        return $container;
+    }
     private string $directory;
 
     protected function setUp(): void
@@ -110,7 +131,7 @@ final class LayerDeclarationSelectionDoorsTest extends TestCase
         self::assertNotFalse($before);
         try {
             chdir($this->directory);
-            $command = (new ContainerFactory())->create()->get(CheckCommand::class);
+            $command = self::container()->get(CheckCommand::class);
             self::assertInstanceOf(CheckCommand::class, $command);
             $tester = new CommandTester($command);
             $exit = $tester->execute([

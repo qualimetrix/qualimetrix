@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional\Command;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
@@ -14,10 +16,29 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use RuntimeException;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 #[CoversClass(CheckCommand::class)]
 final class CheckCommandTest extends TestCase
 {
+    private static ?ContainerBuilder $container = null;
+
+    public static function tearDownAfterClass(): void
+    {
+        self::$container = null;
+    }
+
+    private static function container(): ContainerBuilder
+    {
+        $container = self::$container ??= (new ContainerFactory())->create();
+        $manifest = $container->get(ManifestSnapshotControlInterface::class);
+        if (!$manifest instanceof ManifestSnapshotControlInterface) {
+            throw new LogicException('The command fixture has no manifest snapshot lifetime owner.');
+        }
+        $manifest->beginInvocation();
+
+        return $container;
+    }
     private string $tempDir;
     private string $originalWorkingDirectory;
 
@@ -77,7 +98,7 @@ final class CheckCommandTest extends TestCase
     #[Test]
     public function itAdvertisesTheDocsAddressInItsHelp(): void
     {
-        $container = (new ContainerFactory())->create();
+        $container = self::container();
         $command = $container->get(CheckCommand::class);
         self::assertInstanceOf(CheckCommand::class, $command);
 
@@ -546,8 +567,7 @@ YAML);
      */
     private function createCommandTester(): CommandTester
     {
-        $containerFactory = new ContainerFactory();
-        $container = $containerFactory->create();
+        $container = self::container();
 
         /** @var CheckCommand $command */
         $command = $container->get(CheckCommand::class);
@@ -560,8 +580,7 @@ YAML);
 
     private function createBaselineGenerateTester(): CommandTester
     {
-        $containerFactory = new ContainerFactory();
-        $container = $containerFactory->create();
+        $container = self::container();
 
         /** @var BaselineGenerateCommand $command */
         $command = $container->get(BaselineGenerateCommand::class);

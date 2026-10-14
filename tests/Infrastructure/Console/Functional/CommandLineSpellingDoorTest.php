@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
@@ -25,6 +27,7 @@ use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\CommandLoader\ContainerCommandLoader;
 use Symfony\Component\Console\Tester\ApplicationTester;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * Every door that reads a valued option or argument, fed by an embedder's
@@ -39,6 +42,24 @@ use Symfony\Component\Console\Tester\ApplicationTester;
 #[CoversClass(CommandLineSpelling::class)]
 final class CommandLineSpellingDoorTest extends TestCase
 {
+    private static ?ContainerBuilder $container = null;
+
+    public static function tearDownAfterClass(): void
+    {
+        self::$container = null;
+    }
+
+    private static function container(): ContainerBuilder
+    {
+        $container = self::$container ??= (new ContainerFactory())->create();
+        $manifest = $container->get(ManifestSnapshotControlInterface::class);
+        if (!$manifest instanceof ManifestSnapshotControlInterface) {
+            throw new LogicException('The command fixture has no manifest snapshot lifetime owner.');
+        }
+        $manifest->beginInvocation();
+
+        return $container;
+    }
     private string $fixture = '';
 
     private string $workingDirectory = '';
@@ -170,7 +191,7 @@ final class CommandLineSpellingDoorTest extends TestCase
 
     private function application(): ApplicationTester
     {
-        $container = (new ContainerFactory())->create();
+        $container = self::container();
         /** @var ErrorStream $errorStream */
         $errorStream = $container->get(ErrorStream::class);
         /** @var RefusalPresenter $refusalPresenter */

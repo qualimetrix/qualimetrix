@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflightProfile;
@@ -27,6 +28,7 @@ use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * Functional tests for {@see LayerAssignmentCommand}.
@@ -52,6 +54,24 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(LayerAssignmentResolver::class)]
 final class LayerAssignmentCommandTest extends TestCase
 {
+    private static ?ContainerBuilder $container = null;
+
+    public static function tearDownAfterClass(): void
+    {
+        self::$container = null;
+    }
+
+    private static function container(): ContainerBuilder
+    {
+        $container = self::$container ??= (new ContainerFactory())->create();
+        $manifest = $container->get(ManifestSnapshotControlInterface::class);
+        if (!$manifest instanceof ManifestSnapshotControlInterface) {
+            throw new LogicException('The command fixture has no manifest snapshot lifetime owner.');
+        }
+        $manifest->beginInvocation();
+
+        return $container;
+    }
     private string $tempDir;
 
     private string $originalMemoryLimit = '';
@@ -1643,7 +1663,7 @@ final class LayerAssignmentCommandTest extends TestCase
     {
         $factory = new ContainerFactory();
         if ($profile === null) {
-            $container = $factory->create();
+            $container = self::container();
         } else {
             $container = $factory->configure();
             $container->getDefinition(AnalysisPreflightProfile::class)->setSynthetic(true)->setPublic(true);

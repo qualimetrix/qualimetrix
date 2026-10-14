@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 
 use JsonException;
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
@@ -16,6 +18,7 @@ use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * Pins representative configuration refusals to exit code 3 and checks that
@@ -26,6 +29,24 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversNothing]
 final class TranslatedRefusalVocabularyTest extends TestCase
 {
+    private static ?ContainerBuilder $container = null;
+
+    public static function tearDownAfterClass(): void
+    {
+        self::$container = null;
+    }
+
+    private static function container(): ContainerBuilder
+    {
+        $container = self::$container ??= (new ContainerFactory())->create();
+        $manifest = $container->get(ManifestSnapshotControlInterface::class);
+        if (!$manifest instanceof ManifestSnapshotControlInterface) {
+            throw new LogicException('The command fixture has no manifest snapshot lifetime owner.');
+        }
+        $manifest->beginInvocation();
+
+        return $container;
+    }
     private const string ANALYSED_PATH = 'tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php';
 
     private const string CCN = 'complexity.ccn';
@@ -347,7 +368,7 @@ final class TranslatedRefusalVocabularyTest extends TestCase
 
     private function tester(): CommandTester
     {
-        $container = (new ContainerFactory())->create();
+        $container = self::container();
         $command = $container->get(CheckCommand::class);
         self::assertInstanceOf(CheckCommand::class, $command);
         $refusalPresenter = $container->get(RefusalPresenter::class);
