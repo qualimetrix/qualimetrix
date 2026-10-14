@@ -95,10 +95,10 @@ final class NpathExpressionCalculatorTest extends TestCase
         yield 'ordinary call wrapper' => ['consume($service?->find())', 0, 1, 1];
         yield 'assignment wrapper' => ['$value = $service?->find()', 0, 1, 1];
         yield 'ordinary property wrapper' => ['$service?->find()->name', 0, 1, 1];
-        yield 'coalesce wrapper' => ['$service?->find() ?? $fallback', 1, 1, 2];
+        yield 'coalesce wrapper' => ['$service?->find() ?? $fallback', 2, 1, 3];
         yield 'ternary wrapper' => ['$flag ? $service?->find() : $fallback', 2, 1, 3];
         yield 'root nullsafe with ternary argument' => ['$service?->find($flag ? 1 : 0)', 2, 1, 3];
-        yield 'root nullsafe with coalesce argument' => ['$service?->find($fallback ?? "default")', 1, 1, 2];
+        yield 'root nullsafe with coalesce argument' => ['$service?->find($fallback ?? "default")', 2, 1, 3];
         yield 'nested arrow is opaque' => ['consume(fn () => $service?->find())', 0, 0, 0];
         yield 'anonymous class body is opaque' => [
             'new class { public function run(): mixed { return $service?->find(); } }',
