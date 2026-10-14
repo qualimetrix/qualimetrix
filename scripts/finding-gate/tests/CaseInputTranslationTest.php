@@ -30,6 +30,7 @@ use QmxFindingGateControls\Controls;
 use QmxFindingGateControls\RenameControls;
 use QmxFindingGateControls\Scratch;
 use QmxFindingGateControls\Shell;
+use RuntimeException;
 
 final class CaseInputTranslationTest extends TestCase
 {
@@ -199,7 +200,7 @@ final class CaseInputTranslationTest extends TestCase
     {
         require_once \dirname(__DIR__, 2) . '/finding-gate-controls/classes.php';
 
-        $repository = \dirname(__DIR__, 3);
+        $repository = $this->nativeRepositoryFixture(\dirname(__DIR__, 3));
         $scratch = Scratch::contentOf($repository);
         $program = <<<'PHP'
             require getcwd() . '/vendor/autoload.php';
@@ -215,10 +216,14 @@ final class CaseInputTranslationTest extends TestCase
             ], AbsolutePath::fromString(getcwd()));
             $patterns = (new ConfiguredFindingExclusionsResolver())->resolve($document)->suppressNamespaces;
             $loadedFromClone = true;
-            foreach ([ConfigSchema::class, ConfigurationRoot::class] as $class) {
+            foreach ([
+                ConfigSchema::class => 'src/Analysis/Configuration/ConfigSchema.php',
+                ConfigurationRoot::class => 'src/Analysis/Configuration/ConfigurationRoot.php',
+                ConfiguredFindingExclusionsResolver::class => 'src/Reporting/FindingProjection/Configuration/ConfiguredFindingExclusionsResolver.php',
+            ] as $class => $path) {
                 $file = (new ReflectionClass($class))->getFileName();
                 $loadedFromClone = $loadedFromClone
-                    && realpath($file) === realpath(getcwd() . '/src/Analysis/Configuration/' . basename($file));
+                    && realpath($file) === realpath(getcwd() . '/' . $path);
             }
             echo json_encode([
                 'root' => ConfigurationRoot::SuppressNamespaces->declaration()->key,
@@ -232,16 +237,38 @@ final class CaseInputTranslationTest extends TestCase
             RenameControls::rootKeyRenamed()->mutation->apply($scratch, $repository);
             $result = Shell::run([\PHP_BINARY, '-r', $program], $scratch->tree);
             self::assertSame(0, $result['exit'], $result['stderr']);
-            self::assertSame([
-                'root' => 'suppress_ns',
-                'patterns' => 1,
-                'matches' => true,
-                'loadedFromClone' => true,
-            ], json_decode($result['stdout'], true, 512, \JSON_THROW_ON_ERROR));
+            $actual = json_decode($result['stdout'], true, 512, \JSON_THROW_ON_ERROR);
+            self::assertSame('suppress_ns', $actual['root']);
+            self::assertSame(1, $actual['patterns']);
+            self::assertTrue($actual['matches']);
+            self::assertTrue($actual['loadedFromClone']);
         } finally {
             $scratch->remove();
         }
 
+    }
+
+    private function nativeRepositoryFixture(string $source): string
+    {
+        $repository = $this->root . '/native-repository';
+        if (!mkdir($repository)) {
+            throw new RuntimeException('Cannot create the native repository fixture');
+        }
+        Shell::mustRun(['cp', '-R', $source . '/src', $repository . '/src'], $repository);
+        Shell::mustRun(['cp', '-Rl', $source . '/vendor', $repository . '/vendor'], $repository);
+        foreach ([
+            'composer.json',
+            'tests/Analysis/Configuration/Support/LayeredDocument.php',
+            'finding-gate/cases/suppression/qmx.yaml',
+            'finding-gate/maps/inputs.tsv',
+        ] as $path) {
+            Fs::write($repository . '/' . $path, Fs::read($source . '/' . $path));
+        }
+        Fs::write($repository . '/.gitignore', "/vendor/\n");
+        Shell::mustRun(['git', 'init', '--quiet'], $repository);
+        Shell::mustRun(['git', 'add', '.gitignore', 'composer.json', 'src', 'tests', 'finding-gate'], $repository);
+
+        return $repository;
     }
 
     #[Test]

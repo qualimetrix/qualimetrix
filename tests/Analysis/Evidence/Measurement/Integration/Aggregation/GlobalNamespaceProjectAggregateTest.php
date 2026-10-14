@@ -135,7 +135,7 @@ final class GlobalNamespaceProjectAggregateTest extends TestCase
 
     private static function analyze(AbsolutePath $path, ?AbsolutePath $workingDirectory = null): MetricRepositoryInterface
     {
-        $fixture = PreparedAnalysis::start($workingDirectory ?? AbsolutePath::fromString((string) getcwd()), [$path], ['include_generated' => true]);
+        $fixture = PreparedAnalysis::start($workingDirectory ?? AbsolutePath::fromString(\dirname(__DIR__, 6)), [$path], ['include_generated' => true]);
         try {
             $pipeline = $fixture->container()->get(AnalysisPipelineInterface::class);
             \assert($pipeline instanceof AnalysisPipelineInterface);

@@ -1,5 +1,1 @@
 kind	key	level	reason
-metric	complexity.npath	callable	Null coalescing selects an alternative value like a ternary expression; its NPath contribution and the exact measured aggregates increase.
-metric	complexity.npath.avg	*	Null coalescing selects an alternative value like a ternary expression; its NPath contribution and the exact measured aggregates increase.
-metric	complexity.npath.max	*	Null coalescing selects an alternative value like a ternary expression; its NPath contribution and the exact measured aggregates increase.
-metric	complexity.npath.p95	*	Null coalescing selects an alternative value like a ternary expression; its NPath contribution and the exact measured aggregates increase.

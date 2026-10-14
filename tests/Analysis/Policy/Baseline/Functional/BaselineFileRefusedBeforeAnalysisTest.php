@@ -37,6 +37,7 @@ use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubBaselineRun;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory;
+use Qualimetrix\Tests\TestSupport\WorkingDirectory\RunsFromRepositoryRoot;
 use ReflectionClass;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -57,6 +58,8 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(BaselineLoader::class)]
 final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
 {
+    use RunsFromRepositoryRoot;
+
     private const string FIXTURE = 'tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php';
 
     private string $tempDir;

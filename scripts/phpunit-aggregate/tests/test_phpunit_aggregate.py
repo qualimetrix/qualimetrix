@@ -44,6 +44,78 @@ def complete_configuration() -> dict[str, object]:
 
 
 class PhpunitAggregateTest(unittest.TestCase):
+    def test_executes_each_shard_in_an_empty_directory_outside_the_repository(self):
+        with tempfile.TemporaryDirectory(prefix="qmx-phpunit-cwd-record-") as directory:
+            records_path = Path(directory)
+            completed = self.run_runner(complete_configuration(), record_directory=records_path)
+            records = [json.loads((records_path / f"{suite}.json").read_text()) for suite in SUITES]
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        working_directories = [Path(record["cwd"]) for record in records]
+        self.assertEqual(len(SUITES), len(set(working_directories)))
+        self.assertTrue(all(not path.is_relative_to(PROJECT_ROOT) for path in working_directories))
+        self.assertTrue(all(not path.exists() for path in working_directories))
+
+    def test_refuses_residue_in_the_shard_directory_even_when_declared_for_the_execution_window(self):
+        configuration = complete_configuration()
+        configuration["run"] = {"Unit": {"cwd_entries": [".qmx-cache"]}}
+        completed = self.run_runner(configuration)
+        self.assertNotEqual(0, completed.returncode)
+        self.assertIn("shard cwd not empty: .qmx-cache", completed.stdout)
+
+    def test_judges_declared_residue_freshness_from_the_union_of_every_suite(self):
+        configuration = complete_configuration()
+        configuration["run"] = {suite: {"residue": []} for suite in SUITES}
+        configuration["run"]["Governance"] = {"residue": [".qmx-cache"]}
+        completed = self.run_runner(configuration)
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertIn("Governance declared residue: .qmx-cache", completed.stdout)
+
+        configuration["run"]["Governance"] = {"residue": []}
+        stale = self.run_runner(configuration)
+        self.assertEqual(2, stale.returncode)
+        self.assertIn("stale declared residue .qmx-cache", stale.stderr)
+
+    def test_refuses_missing_residue_observations_after_success(self):
+        configuration = complete_configuration()
+        configuration["run"] = {"Functional": {"missing_residue_report": True}}
+        completed = self.run_runner(configuration)
+        self.assertEqual(2, completed.returncode)
+        self.assertIn("Functional: cannot read suite residue report", completed.stderr)
+
+    def test_refuses_an_undeclared_residue_observation(self):
+        configuration = complete_configuration()
+        configuration["run"] = {"Unit": {"residue": ["unexpected"]}}
+        completed = self.run_runner(configuration)
+        self.assertEqual(2, completed.returncode)
+        self.assertIn("Unit: undeclared suite residue report", completed.stderr)
+
+    def test_does_not_judge_freshness_from_an_incomplete_failed_run(self):
+        configuration = complete_configuration()
+        configuration["run"] = {suite: {"residue": []} for suite in SUITES}
+        configuration["run"]["Unit"]["exit"] = 1
+        completed = self.run_runner(configuration)
+        self.assertEqual(1, completed.returncode)
+        self.assertNotIn("stale declared residue", completed.stderr)
+
+    def test_refuses_malformed_residue_declarations_and_accepts_an_empty_population(self):
+        runner = load_runner_module()
+        with tempfile.TemporaryDirectory(prefix="qmx-residue-declaration-") as directory:
+            path = Path(directory) / "declared.tsv"
+            for body in ("entry\treason\ncache/entry\tmechanism\n", "entry\treason\ncache\t \n"):
+                path.write_text(body)
+                with self.assertRaises(runner.RunnerRefusal):
+                    runner.declared_residue(path)
+            path.write_text("entry\treason\n")
+            self.assertEqual(set(), runner.declared_residue(path))
+
+    def test_shard_command_always_uses_the_configuration_and_never_disables_the_window(self):
+        runner = load_runner_module()
+        for suite in SUITES:
+            command = runner.shard_command(FAKE_PHPUNIT, suite, Path("/tmp") / suite)
+            self.assertIn(f"--configuration={PROJECT_ROOT / 'phpunit.xml.dist'}", command)
+            bypasses = {"--no-extensions", "--no-configuration", "--bootstrap", "--do-not-fail-on-phpunit-warning"}
+            self.assertFalse(any(argument.split("=", 1)[0] in bypasses for argument in command))
+
     def run_runner(
         self,
         configuration: dict[str, object],

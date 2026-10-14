@@ -55,8 +55,8 @@ final class PathLexicalConstructionTest extends TestCase
     #[Test]
     public function itConstructsARelativePathWithoutResolvingItThroughTheFilesystem(): void
     {
-        // Relative to the working directory PHPUnit runs in, i.e. the project root.
-        $existing = 'tests/Core/Path/Unit/./' . basename(__FILE__);
+        chdir(__DIR__);
+        $existing = './' . basename(__FILE__);
 
         self::assertFileExists($existing);
 

@@ -34,6 +34,7 @@ use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
+use Qualimetrix\Tests\TestSupport\WorkingDirectory\RunsFromRepositoryRoot;
 use ReflectionProperty;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\NullOutput;
@@ -42,6 +43,8 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 #[CoversClass(RuleOptionsCompilerPass::class)]
 final class SharedRuleOptionsContainerTest extends TestCase
 {
+    use RunsFromRepositoryRoot;
+
     /**
      * @var array<class-string<RuleDefinitionInterface>, class-string<RuleOptionsInterface>>
      */

@@ -110,6 +110,7 @@ docs/adr/0114-effective-methods-and-cohesion-populations.md	Analysis.Evidence.Co
 docs/adr/0115-defined-distance-and-type-weighted-project-fold.md	Analysis.Evidence.Coupling	"Move or update atomically with the named subject owner."
 docs/adr/0116-measured-health-score-recalibration.md	Analysis.Evidence.ComputedMetrics	"Move or update atomically with the named subject owner."
 docs/adr/0117-inheritance-depth-completeness-publication.md	Reporting	"Move or update atomically with the named subject owner."
+docs/adr/0118-phpunit-execution-working-directory.md	Architecture.Governance	"Move or update atomically with the named subject owner."
 docs/adr/README.md	Architecture.Governance	"Repository-wide governance documentation; review with the manifest and generated topology."
 docs/internal/CLI_CONVENTIONS.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/COMPETITOR_COMPARISON.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."

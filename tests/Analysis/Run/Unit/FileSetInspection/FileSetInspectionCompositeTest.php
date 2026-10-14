@@ -323,7 +323,7 @@ final class FileSetInspectionCompositeTest extends TestCase
 
     private function root(): AbsolutePath
     {
-        return AbsolutePath::fromString((string) getcwd());
+        return AbsolutePath::fromString(__DIR__);
     }
 }
 
