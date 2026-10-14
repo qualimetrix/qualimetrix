@@ -130,6 +130,7 @@ use ReflectionProperty;
 use SplFileInfo;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
+use WeakReference;
 
 /**
  * Regression guard for three wiring defects AnalysisPipeline once carried, run
@@ -156,6 +157,78 @@ final class AnalysisPipelineIntegrationTest extends TestCase
     }
 
     #[Test]
+    #[TestWith(['analyze'])]
+    #[TestWith(['audit'])]
+    public function itReleasesCollectionOutputBeforeMeasurementAggregation(string $entryPoint): void
+    {
+        $state = new class {
+            /** @var WeakReference<CollectionPhaseOutput>|null */
+            public ?WeakReference $collected = null;
+        };
+        $root = AbsolutePath::fromString(sys_get_temp_dir());
+        $path = RelativePath::fromString('dummy.php');
+        $source = DeclarationPath::of(SymbolPath::forClass('Example', 'A'), $path, DeclarationOrdinal::fromRank(0));
+        $discovery = self::createStub(ProjectFilesInterface::class);
+        $discovery->method('discover')->willReturn(new DiscoveredProjectFiles(
+            [new SplFileInfo($root->joinRelative($path)->value())],
+            [],
+            [],
+            [],
+            [],
+            new ScopeFacts([], [], [], false),
+            1,
+        ));
+        $orchestrator = self::createStub(CollectionOrchestratorInterface::class);
+        $orchestrator->method('collect')->willReturnCallback(static function () use ($state, $path, $source): CollectionPhaseOutput {
+            $result = new CollectionPhaseOutput([$path], [], [], dependencies: [Dependency::ofKind(
+                $source,
+                new LogicalClassPath(SymbolPath::forClass('Example', 'B')),
+                DependencyType::New_,
+                new Location($path, 1),
+            )]);
+            $state->collected = WeakReference::create($result);
+
+            return $result;
+        });
+        $aggregation = self::createStub(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface::class);
+        $aggregation->method('aggregate')->willReturnCallback(static function ($repository, $graph) use ($state) {
+            self::assertNotNull($state->collected, 'the collection phase must have run');
+            self::assertNull($state->collected->get(), 'raw collection must not survive into aggregation');
+            self::assertCount(1, $graph->getAllDependencies(), 'the graph still owns the measured dependency');
+
+            return new \Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree([]);
+        });
+        $factory = self::createStub(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface::class);
+        $factory->method('create')->willReturn(new InMemoryMetricRepository());
+        $execution = self::createStub(RuleExecutionInterface::class);
+        $execution->method('allRules')->willReturn([]);
+        $execution->method('execute')->willReturn(new RuleExecutionResult([], [], new RuleExclusionStats(), LevelActivity::empty()));
+        $execution->method('publication')->willReturn(new ChannelPublication(new RuleEnablement([], null)));
+        $execution->method('publishable')->willReturn([]);
+        $computed = self::createStub(ComputedMetricEvaluator::class);
+        $computed->method('evaluate')->willReturn(new ComputedMetricEvaluationSummary());
+        $configuration = new RuleOptionsRegistry();
+        $configuration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), []));
+        $pipeline = TestPipelineBuilder::create()
+            ->withProjectFiles($discovery)
+            ->withCollectionOrchestrator($orchestrator)
+            ->withMeasurementAggregation($aggregation)
+            ->withRepositoryFactory($factory)
+            ->withRuleExecution($execution)
+            ->withComputedMetricEvaluation($computed)
+            ->withCircularDependencyPreparation(new CircularDependencyAnalysis(new CircularDependencyDetector()))
+            ->withFileSetInspection($this->emptyFileSetInspection($configuration))
+            ->withProfiler($this->profiler)
+            ->build();
+        $run = self::runConfiguration($root);
+        if ($entryPoint === 'analyze') {
+            self::assertSame(1, $pipeline->analyze($run)->measured->coverage->analyzedFilesCount());
+        } else {
+            self::assertSame(1, $pipeline->auditDirectives($run)->coverage->analyzedFilesCount());
+        }
+    }
+
+    #[Test]
     public function itMapsEveryCollectionFailureKindToItsCoverageFailureKind(): void
     {
         $paths = [
@@ -173,7 +246,8 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             null,
             $paths,
             [],
-            new CollectionPhaseOutput([], $failures, classLikeDeclarations: []),
+            [],
+            $failures,
             [],
             [],
             [],
@@ -203,11 +277,8 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             null,
             [$collectedFailure, $lateFailure, $survivor],
             [],
-            new CollectionPhaseOutput(
-                [$lateFailure, $survivor],
-                [FileProcessingResult::failure($collectedFailure, 'collection parse', FileProcessingFailureKind::Parse)],
-                [],
-            ),
+            [$lateFailure, $survivor],
+            [FileProcessingResult::failure($collectedFailure, 'collection parse', FileProcessingFailureKind::Parse)],
             [],
             [],
             [
