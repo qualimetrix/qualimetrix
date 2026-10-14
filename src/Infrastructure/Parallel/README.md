@@ -13,14 +13,20 @@ its constructor rejects a negative programmatic count with
 `InvalidArgumentException`. The schema keeps authored provenance when
 refusing the same count through a pure `IntegerJudgement` declaration.
 
-**Worker count.** `WorkerCountDetector` caps the host's processor count by the
-CPU quota of the control group the process runs in (cgroup v2 `cpu.max`, cgroup
-v1 `cpu.cfs_quota_us`/`cpu.cfs_period_us`). Absence of those files means "no
-limit", never an error. The cap matters because the product's documented main
-setting is a container in CI, where the host count can be an order of magnitude
-above what the process may use, and each worker is a process with its own parser
-and its own cache. The constructor takes a filesystem root so a test can plant a
-control group rather than describe one.
+**Worker count.** `WorkerCountDetector` reads `NUMBER_OF_PROCESSORS` only on
+Windows, accepting a positive decimal integer within PHP's integer range and
+refusing another authored value. On Linux it takes the smaller of the CPU
+stanza count and `Cpus_allowed_list`. It then caps that count by the smallest
+cgroup quota from the process's own group to its mount root, for both v2
+`cpu.max` and v1 `cpu.cfs_quota_us`/`cpu.cfs_period_us`. A readable v2 file is
+authoritative, including an unlimited or malformed value; it never falls back
+to v1 behind that answer. An unavailable namespace path uses the mount root.
+`CgroupLocation` owns the mounted group ancestry, and `CgroupCpuQuota` owns the
+inherited whole-CPU limit; both are private Parallel implementation types.
+No quota means no cap. The detector accepts a filesystem root, OS family and
+environment values so tests do not mutate process-global environment. Native
+shell probes run only without a planted root; unavailable `shell_exec` skips
+them, leaving the documented fallback of four processors when no probe answers.
 
 **The worker's parser.** `WorkerBootstrap` asks
 [`WorkerParserFactory`](../Ast/WorkerParserFactory.php) for it rather than
