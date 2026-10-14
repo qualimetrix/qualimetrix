@@ -37,7 +37,10 @@ final class SignalWorkerCollector implements MetricCollectorInterface, ParallelS
     /** @param Node[] $ast */
     public function collect(SplFileInfo $file, array $ast): MetricBag
     {
-        file_put_contents($file->getPath() . '/' . $file->getBasename() . '.ready', (string) getmypid());
+        $ready = $file->getPath() . '/' . $file->getBasename() . '.ready';
+        $pending = $ready . '.pending';
+        file_put_contents($pending, (string) getmypid());
+        rename($pending, $ready);
         $release = $file->getPath() . '/release-workers';
         $deadline = microtime(true) + 8;
         while (!is_file($release) && microtime(true) < $deadline) {
