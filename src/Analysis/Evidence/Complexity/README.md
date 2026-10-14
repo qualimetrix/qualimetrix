@@ -122,6 +122,11 @@ CCN = 1 + number of branching points
 Implements the SonarSource whitepaper (version 1.7, Appendix B) with the
 deviations listed in the visitor docblock and on the website rule page.
 
+> **Note:** Cognitive complexity differs from the whitepaper by measuring
+> closures and arrow functions separately while continuing their nesting level;
+> nested named functions and anonymous-class methods restart at level zero.
+> Recursion counts direct self-calls only, not indirect cycles or dynamic calls.
+
 **Base increments (+1):**
 - `if`, `elseif` (also `else if` in two words), `else`, `switch`, `match`, ternary `?:`
 - `for`, `foreach`, `while`, `do-while`
@@ -214,6 +219,13 @@ NPath = NPath(cond) + NPath(body)
 ```
 NPath = sum of NPath(case_i)
 ```
+
+> **Note:** Nejmeh (1988) predates PHP's `??`, `??=` and `?->`. Coalescing
+> operators use the ternary value-selection contribution (+2 ordinary paths);
+> nullsafe accesses add one separate path per hop. At statement boundaries,
+> `max(1, ordinary) + nullsafe` preserves the statement base. Two chained
+> coalesces have NPath 4, like a nested ternary with three distinct outcomes;
+> this retains the existing recurrence rather than counting runtime outcomes.
 
 ### Examples
 

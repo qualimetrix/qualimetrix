@@ -36,4 +36,12 @@ class Scattered
     {
         return date('Y');
     }
+
+    public function coalesceChoices(array $choices): int
+    {
+        return ($choices['first'] ?? 0)
+            + ($choices['second'] ?? 0)
+            + ($choices['third'] ?? 0)
+            + ($choices['fourth'] ?? 0);
+    }
 }

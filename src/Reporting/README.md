@@ -1059,7 +1059,7 @@ bin/qmx check src/ --format=html > report.html
 ### Architecture
 
 - `HtmlFormatter` — implements `FormatterInterface`, orchestrates assembly
-- `Html/HtmlTreeBuilder` — builds namespace hierarchy from `MetricRepositoryInterface`
+- `Html/HtmlTreeBuilder` — builds namespace hierarchy from `MetricRepositoryInterface`; namespace and class node construction stay in private methods on the same builder, preserving repository order and exact declaration subjects.
 - `Html/HtmlTreeNode` — mutable VO for tree construction
 - `Html/HtmlFindingPartitioner` — puts every finding on exactly one node: a
   callable or class finding on its class, a global function or namespace

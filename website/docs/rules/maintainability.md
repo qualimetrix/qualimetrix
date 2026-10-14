@@ -166,8 +166,20 @@ The raw MI value (0-171 scale) is normalized to a **0-100 scale**: `max(0, MI x 
 
 **Health score mapping:** The `health.maintainability` dimension uses a penalty-based formula that considers MI average (base quality), MI 5th percentile (main differentiator for outlier methods), and MI minimum (extreme outliers). This multi-term approach produces good discrimination across projects — from well-maintained libraries (score ~95) to complex frameworks (score ~48). See [Health Scores](../reference/health-scores.md) for details and customization options.
 
+!!! info "Deviation from original spec"
+    MI uses the [Visual Studio variant](https://learn.microsoft.com/en-us/visualstudio/code-quality/code-metrics-maintainability-index-range-and-meaning) of the Oman-Hagemeister index:
+    the three-term formula without a comment-density term, normalized from
+    raw 0-171 to 0-100 with `max(0, min(100, raw MI x 100 / 171))`. Compare
+    thresholds on the same scale; raw-scale thresholds are not interchangeable.
+
 !!! info "Deviation from original spec: statement-count input"
     Qualimetrix uses the dedicated `size.method-statement-count` metric for the formula's size term. It counts semantic executable/control-flow statements, not physical lines or the old Halstead-owned `methodLoc`. This keeps MI stable across formatting changes but changes existing MI values, aggregates, health scores, and baselines.
+
+!!! info "Deviation from original spec: Halstead bug estimate"
+    `maintainability.halstead.bugs` uses the later volume-based variant
+    `B = V / 3000`, documented in [NIST SP 500-209](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication500-209.pdf), rather than
+    Halstead's original effort-based `B = E^(2/3) / 3000`. This estimates bugs;
+    it does not count observed defects. Other Halstead outputs keep their formulas.
 
 !!! info "Halstead Volume: semantic approach"
     Halstead Volume (the V in the formula) uses a **semantic interpretation** of Halstead's methodology (1977). Qualimetrix counts only elements that carry semantic meaning (arithmetic, logical, comparison operators; variables, literals, constants) and excludes syntactic delimiters (`;`, `()`, `{}`, `,`). The original Halstead paper counted all tokens, but was designed for languages (Fortran, PL/I) with minimal syntactic noise. Tools that count all tokens (e.g., pdepend) report significantly higher Volume/Difficulty/Effort values. This does not affect relative comparisons between methods within the same project.

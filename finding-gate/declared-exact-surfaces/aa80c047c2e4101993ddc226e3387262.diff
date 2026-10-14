@@ -1,8 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -8,1 +8,1 @@
--    <error line="29" severity="warning" message="Data Class detected: only 50% of the public interface is behavior (WOC, threshold 50%) and complexity is low (WMC=3, threshold 10). Consider encapsulating behavior or using a DTO pattern" source="qmx.design.data-class"/>
-+    <error line="29" severity="warning" message="Data Class detected: only 25% of the public interface is behavior (WOC, threshold 50%) and complexity is low (WMC=3, threshold 10). Consider encapsulating behavior or using a DTO pattern" source="qmx.design.data-class"/>
-@@ -20,1 +20,1 @@
--    <error line="29" severity="warning" message="Data Class detected: only 50% of the public interface is behavior (WOC, threshold 50%) and complexity is low (WMC=3, threshold 10). Consider encapsulating behavior or using a DTO pattern" source="qmx.design.data-class"/>
-+    <error line="29" severity="warning" message="Data Class detected: only 25% of the public interface is behavior (WOC, threshold 50%) and complexity is low (WMC=3, threshold 10). Consider encapsulating behavior or using a DTO pattern" source="qmx.design.data-class"/>

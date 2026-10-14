@@ -46,12 +46,14 @@ use Qualimetrix\Core\Path\RelativePath;
  * - try-catch: NPath(try) + Σ NPath(catch_i) + 1
  * - ternary: NPath(cond) + NPath(true) + NPath(false) + 2
  * - &&/||: NPath(left) + NPath(right) + 1
- * - ??: NPath(left) + NPath(right) + 1
+ * - ??/??=: NPath(left) + NPath(right) + 2 (PHP extension using ternary value selection)
  * - match: NPath(subject) + Σ(NPath(arm conditions) + max(1, NPath(arm body)))
  *
  * Expression NPath uses 0-based semantics per Nejmeh:
  * - Leaf expression: 0 (no additional paths from boolean short-circuit)
- * - Each &&/||/?? operator: +1 (one additional short-circuit path)
+ * - Each &&/|| operator: +1 (one additional short-circuit path)
+ * - Each ??/??= operator: +2 (the same value-selection contribution as ternary)
+ * - Each ?-> access: +1, kept separate from ordinary paths at statement boundaries
  * - Ternary: +2 (two base branch paths)
  *
  * Statement NPath uses max(1, exprNpath) to ensure simple statements

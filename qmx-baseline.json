@@ -112,9 +112,6 @@
     "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder::build@src/Reporting/Formatter/Html/HtmlTreeBuilder.php": [
       {"channel":"code-smell.boolean-argument","occurrence":"c7fac59b0cebc45a","count":1}
     ],
-    "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder::buildTree@src/Reporting/Formatter/Html/HtmlTreeBuilder.php": [
-      {"channel":"complexity.ccn","magnitudes":[15]}
-    ],
     "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Json\\JsonOffenderSection::formatWorstOffenders@src/Reporting/Formatter/Json/JsonOffenderSection.php": [
       {"channel":"code-smell.boolean-argument","occurrence":"79aecf1e084dd904","count":1}
     ],

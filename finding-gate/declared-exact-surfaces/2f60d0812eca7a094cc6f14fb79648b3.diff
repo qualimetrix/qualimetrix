@@ -1,8 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -8,1 +8,1 @@
--Rule population incomplete — callable: 592 judged, 234 not judged; declaration: 619 judged, 791 not judged; invocation: 0 judged, 3 not judged; namespace: 27 judged, 73 not judged; occurrence: 82 judged, 0 not judged.
-+Rule population incomplete — callable: 592 judged, 234 not judged; declaration: 638 judged, 772 not judged; invocation: 0 judged, 3 not judged; namespace: 27 judged, 73 not judged; occurrence: 82 judged, 0 not judged.
-@@ -21,1 +21,1 @@
--Rule population incomplete — callable: 592 judged, 234 not judged; declaration: 619 judged, 791 not judged; invocation: 0 judged, 3 not judged; namespace: 27 judged, 73 not judged; occurrence: 82 judged, 0 not judged.
-+Rule population incomplete — callable: 592 judged, 234 not judged; declaration: 638 judged, 772 not judged; invocation: 0 judged, 3 not judged; namespace: 27 judged, 73 not judged; occurrence: 82 judged, 0 not judged.

@@ -59,16 +59,15 @@ final class NpathExpressionCalculator
             $expr instanceof BinaryOp\BooleanAnd,
             $expr instanceof BinaryOp\LogicalAnd,
             $expr instanceof BinaryOp\BooleanOr,
-            $expr instanceof BinaryOp\LogicalOr,
-            $expr instanceof BinaryOp\Coalesce => $this->addContributions(
+            $expr instanceof BinaryOp\LogicalOr => $this->addContributions(
                 $this->ordinaryContribution(1),
                 $this->calculateContributions($expr->left),
                 $this->calculateContributions($expr->right),
             ),
+            $expr instanceof BinaryOp\Coalesce,
             $expr instanceof AssignOp\Coalesce => $this->addContributions(
-                $this->ordinaryContribution(1),
-                $this->calculateContributions($expr->var),
-                $this->calculateContributions($expr->expr),
+                $this->ordinaryContribution(2),
+                $this->calculateTransparentChildrenContributions($expr),
             ),
             $expr instanceof Match_ => $this->calculateMatchContributions($expr),
             $expr instanceof NullsafeMethodCall,

@@ -1,6 +1,1 @@
 change	report	view	field	reason
-added	json-document	format:json	inheritanceDepthOutcomes	Publishes bounded incomplete collected DIT outcomes independently of active rules and finding selection; exact values must be measured for this publication.
-added	json-document	check:output:file	inheritanceDepthOutcomes	Publishes bounded incomplete collected DIT outcomes independently of active rules and finding selection; exact values must be measured for this publication.
-added	json-document	check:parallel	inheritanceDepthOutcomes	Publishes bounded incomplete collected DIT outcomes independently of active rules and finding selection; exact values must be measured for this publication.
-added	json-document	check:baseline	inheritanceDepthOutcomes	Publishes bounded incomplete collected DIT outcomes independently of active rules and finding selection; exact values must be measured for this publication.
-added	json-document	check:baseline-source	inheritanceDepthOutcomes	Publishes bounded incomplete collected DIT outcomes independently of active rules and finding selection; exact values must be measured for this publication.

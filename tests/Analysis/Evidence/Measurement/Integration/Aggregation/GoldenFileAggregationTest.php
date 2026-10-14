@@ -62,8 +62,8 @@ final class GoldenFileAggregationTest extends TestCase
             ['GoldenMetrics\App\Service', 'UserService', '__construct', 1, 0, 1],
             ['GoldenMetrics\App\Service', 'UserService', 'getUser', 2, 1, 2],
             ['GoldenMetrics\App\Service', 'UserService', 'createUser', 4, 4, 8],
-            // foreach wrapper: body if=4 (|| + ?? + assignment + skip), plus loop exit path = 5.
-            ['GoldenMetrics\App\Service', 'UserService', 'listUsers', 5, 4, 5],
+            // foreach wrapper: body if=5 (|| + ?? + assignment + skip), plus loop exit path = 6.
+            ['GoldenMetrics\App\Service', 'UserService', 'listUsers', 5, 4, 6],
             ['GoldenMetrics\App\Service', 'OrderService', '__construct', 1, 0, 1],
             ['GoldenMetrics\App\Service', 'OrderService', 'placeOrder', 3, 2, 4],
             ['GoldenMetrics\App\Service', 'OrderService', 'cancelOrder', 2, 1, 2],

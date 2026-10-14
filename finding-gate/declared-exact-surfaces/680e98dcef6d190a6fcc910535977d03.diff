@@ -1,14 +1,112 @@
 --- candidate
 +++ reference (mapped)
 @@ -1,1 +1,1 @@
--visible 38912
-+visible 38913
-@@ -661,1 +661,1 @@
--                                "text": "Selected judgement incomplete: coupling.distance (namespace), 1 unjudged namespace; Own distance was not published. Missing metric \"coupling.distance-own\"."
-+                                "text": "Selected judgement incomplete: coupling.distance (namespace), 1 unjudged namespace; The own namespace has no coupling. Metric population boundary was not met."
-@@ -777,1 +777,1 @@
--invocation-format:sarif 38912
-+invocation-format:sarif 38913
-@@ -1437,1 +1437,1 @@
--                                "text": "Selected judgement incomplete: coupling.distance (namespace), 1 unjudged namespace; Own distance was not published. Missing metric \"coupling.distance-own\"."
-+                                "text": "Selected judgement incomplete: coupling.distance (namespace), 1 unjudged namespace; The own namespace has no coupling. Metric population boundary was not met."
+-visible 44710
++visible 42358
+@@ -507,25 +507,0 @@
+-                    "level": "warning",
+-                    "message": {
+-                        "text": "NPath complexity (execution paths) is 8 (moderate), reaches threshold of 8. Chain: \u00d78 expr L42. Reduce branching or extract methods"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "complexity.npath:declaration:callable:Corpus\\Complexity\\Scattered::coalesceChoices@src/Scattered.php"
+-                    },
+-                    "locations": [
+-                        {
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/Scattered.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 40,
+-                                    "startColumn": 1
+-                                }
+-                            }
+-                        }
+-                    ]
+-                },
+-                {
+-                    "ruleId": "complexity.npath",
+-                    "ruleIndex": 4,
+@@ -548,25 +523,0 @@
+-                                    "startColumn": 1
+-                                }
+-                            }
+-                        }
+-                    ]
+-                },
+-                {
+-                    "ruleId": "complexity.npath",
+-                    "ruleIndex": 4,
+-                    "level": "warning",
+-                    "message": {
+-                        "text": "Maximum method NPath complexity is 8 (moderate), reaches threshold of 8. Refactor the most complex methods"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "complexity.npath:declaration:class:Corpus\\Complexity\\Scattered@src/Scattered.php"
+-                    },
+-                    "locations": [
+-                        {
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/Scattered.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 14,
+@@ -902,1 +852,1 @@
+-invocation-format:sarif 44710
++invocation-format:sarif 42358
+@@ -1408,25 +1358,0 @@
+-                    "level": "warning",
+-                    "message": {
+-                        "text": "NPath complexity (execution paths) is 8 (moderate), reaches threshold of 8. Chain: \u00d78 expr L42. Reduce branching or extract methods"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "complexity.npath:declaration:callable:Corpus\\Complexity\\Scattered::coalesceChoices@src/Scattered.php"
+-                    },
+-                    "locations": [
+-                        {
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/Scattered.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 40,
+-                                    "startColumn": 1
+-                                }
+-                            }
+-                        }
+-                    ]
+-                },
+-                {
+-                    "ruleId": "complexity.npath",
+-                    "ruleIndex": 4,
+@@ -1449,25 +1374,0 @@
+-                                    "startColumn": 1
+-                                }
+-                            }
+-                        }
+-                    ]
+-                },
+-                {
+-                    "ruleId": "complexity.npath",
+-                    "ruleIndex": 4,
+-                    "level": "warning",
+-                    "message": {
+-                        "text": "Maximum method NPath complexity is 8 (moderate), reaches threshold of 8. Refactor the most complex methods"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "complexity.npath:declaration:class:Corpus\\Complexity\\Scattered@src/Scattered.php"
+-                    },
+-                    "locations": [
+-                        {
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/Scattered.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 14,

@@ -3386,6 +3386,27 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itMultipliesNpathForTwoSequentialIfs
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itMultipliesTryCatchByFinallyForNpathCalculation
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itPassesFactorsViaMethodsWithMetrics
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itPreservesNullOperatorAndControlFormNpath"argument coalesce"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itPreservesNullOperatorAndControlFormNpath"assignment coalesce"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itPreservesNullOperatorAndControlFormNpath"boolean and"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itPreservesNullOperatorAndControlFormNpath"boolean condition"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itPreservesNullOperatorAndControlFormNpath"boolean or"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itPreservesNullOperatorAndControlFormNpath"coalesce assignment"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itPreservesNullOperatorAndControlFormNpath"coalesce chain"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itPreservesNullOperatorAndControlFormNpath"condition coalesce assignment"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itPreservesNullOperatorAndControlFormNpath"condition coalesce"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itPreservesNullOperatorAndControlFormNpath"condition ternary"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itPreservesNullOperatorAndControlFormNpath"echo coalesce"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itPreservesNullOperatorAndControlFormNpath"nested ternary"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itPreservesNullOperatorAndControlFormNpath"nullsafe argument"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itPreservesNullOperatorAndControlFormNpath"nullsafe chain"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itPreservesNullOperatorAndControlFormNpath"nullsafe condition"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itPreservesNullOperatorAndControlFormNpath"nullsafe return"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itPreservesNullOperatorAndControlFormNpath"nullsafe ternary argument"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itPreservesNullOperatorAndControlFormNpath"ordinary return"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itPreservesNullOperatorAndControlFormNpath"return coalesce"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itPreservesNullOperatorAndControlFormNpath"shorthand ternary"
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itPreservesNullOperatorAndControlFormNpath"ternary return"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itProvides
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itProvidesMetricDefinitions
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itRecursesIntoBooleanNotOperandForNpathCalculation

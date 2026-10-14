@@ -30,6 +30,43 @@ final class NpathComplexityCollectorTest extends TestCase
         $this->collector = new NpathComplexityCollector();
     }
 
+    /**
+     * @return iterable<string, array{string, int}>
+     */
+    public static function provideNullOperatorForms(): iterable
+    {
+        yield 'return coalesce' => ['return $x ?? 5;', 2];
+        yield 'assignment coalesce' => ['$value = $x ?? 5;', 2];
+        yield 'argument coalesce' => ['strlen($x ?? "");', 2];
+        yield 'echo coalesce' => ['echo $x ?? 5;', 2];
+        yield 'coalesce assignment' => ['$x ??= [];', 2];
+        yield 'coalesce chain' => ['return $x ?? $y ?? 5;', 4];
+        yield 'condition coalesce' => ['if (($x ?? 0) > 1) {}', 4];
+        yield 'condition coalesce assignment' => ['if ($x ??= $y) {}', 4];
+        yield 'ordinary return' => ['return $x;', 1];
+        yield 'ternary return' => ['return $x ? 1 : 2;', 2];
+        yield 'shorthand ternary' => ['return $x ?: 5;', 2];
+        yield 'nested ternary' => ['return $x ? 1 : ($y ? 2 : 3);', 4];
+        yield 'condition ternary' => ['if (($x ? $y : 0) > 1) {}', 4];
+        yield 'boolean and' => ['return $x && $y;', 1];
+        yield 'boolean or' => ['return $x || $y;', 1];
+        yield 'boolean condition' => ['if ($x && $y) {}', 3];
+        yield 'nullsafe return' => ['return $x?->name;', 2];
+        yield 'nullsafe chain' => ['return $x?->find()?->name;', 3];
+        yield 'nullsafe argument' => ['consume($x?->name);', 2];
+        yield 'nullsafe ternary argument' => ['return $x?->find($y ? 1 : 0);', 3];
+        yield 'nullsafe condition' => ['if ($x?->name) {}', 3];
+    }
+
+    #[Test]
+    #[DataProvider('provideNullOperatorForms')]
+    public function itPreservesNullOperatorAndControlFormNpath(string $body, int $expected): void
+    {
+        $metrics = $this->collectFunctionMetrics('<?php function f($x, $y) { ' . $body . ' }');
+
+        self::assertSame($expected, $metrics->get('complexity.npath:f'));
+    }
+
     #[Test]
     public function itGetsName(): void
     {
@@ -217,10 +254,10 @@ PHP;
         self::assertSame(2, $metrics->get('complexity.npath:App\\Test::assignmentWrapper'));
         self::assertSame(2, $metrics->get('complexity.npath:App\\Test::propertyWrapper'));
         self::assertSame(2, $metrics->get('complexity.npath:App\\Test::echoWrapper'));
-        self::assertSame(2, $metrics->get('complexity.npath:App\\Test::coalesceWrapper'));
+        self::assertSame(3, $metrics->get('complexity.npath:App\\Test::coalesceWrapper'));
         self::assertSame(3, $metrics->get('complexity.npath:App\\Test::ternaryWrapper'));
         self::assertSame(3, $metrics->get('complexity.npath:App\\Test::ternaryArgument'));
-        self::assertSame(2, $metrics->get('complexity.npath:App\\Test::coalesceArgument'));
+        self::assertSame(3, $metrics->get('complexity.npath:App\\Test::coalesceArgument'));
         self::assertSame(2, $metrics->get('complexity.npath:App\\Test::{closure#1}'));
         self::assertSame(2, $metrics->get('complexity.npath:App\\Test::hooked::get'));
     }
@@ -252,7 +289,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         self::assertSame(3, $metrics->get('complexity.npath:App\\Test::ternaryArgument'));
-        self::assertSame(2, $metrics->get('complexity.npath:App\\Test::coalesceArgument'));
+        self::assertSame(3, $metrics->get('complexity.npath:App\\Test::coalesceArgument'));
     }
 
     #[Test]
@@ -586,8 +623,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // Nejmeh: NPath = left(0) + right(0) + 1 = 1; return max(1, 1) = 1
-        self::assertSame(1, $metrics->get('complexity.npath:App\Test::check'));
+        // PHP value selection: NPath = left(0) + right(0) + 2 = 2; return max(1, 2) = 2
+        self::assertSame(2, $metrics->get('complexity.npath:App\Test::check'));
     }
 
     #[Test]
@@ -612,8 +649,8 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // ??= is a path-generating decision point, identical to ??:
-        // NPath(if) = NPath(cond: $a ??= $b = 0+0+1=1) + NPath(then: 1) + NPath(skip: 1) = 3
-        self::assertSame(3, $metrics->get('complexity.npath:App\Test::check'));
+        // NPath(if) = NPath(cond: $a ??= $b = 0+0+2=2) + NPath(then: 1) + NPath(skip: 1) = 4
+        self::assertSame(4, $metrics->get('complexity.npath:App\Test::check'));
     }
 
     #[Test]
@@ -651,7 +688,7 @@ PHP;
         yield 'echo expressions' => ['echo $flag ? 1 : 0;', 2];
         yield 'for init condition and loop expressions' => [
             'for ($i = ($init ? 1 : 0); $left && $right; $i += ($step ?? 1)) {}',
-            6,
+            7,
         ];
         yield 'foreach iterable key and value expressions' => [
             'foreach (($choose ? $first : $second) as ${$key ? "a" : "b"} => ${$value ? "a" : "b"}) {}',
@@ -1059,8 +1096,8 @@ PHP;
         $metrics = $this->collectFunctionMetrics($code);
 
         // $r = $x ?? "b" -> Assign recurses into Coalesce
-        // Coalesce NPath = left(0) + right(0) + 1 = 1; stmt max(1, 1) = 1
-        self::assertSame(1, $metrics->get('complexity.npath:f'));
+        // Coalesce NPath = left(0) + right(0) + 2 = 2; stmt max(1, 2) = 2
+        self::assertSame(2, $metrics->get('complexity.npath:f'));
     }
 
     /**

@@ -17,7 +17,7 @@ namespace Qualimetrix\Analysis\Evidence\Maintainability;
  * - N2: total count of operands
  *
  * Derived metrics are calculated from these base values using
- * established formulas from Maurice Halstead's Science of Software.
+ * Halstead formulas, with the later volume-based bug estimate documented below.
  */
 final readonly class HalsteadMetrics
 {
@@ -107,7 +107,9 @@ final readonly class HalsteadMetrics
      *
      * B = V / 3000
      *
-     * Based on industry studies, approximately one bug per 3000 volume units.
+     * Uses the later volume-based variant documented in NIST SP 500-209,
+     * rather than Halstead's original effort-based B = E^(2/3) / 3000.
+     * This is an estimate, not a measured bug count.
      */
     public function bugs(): float
     {

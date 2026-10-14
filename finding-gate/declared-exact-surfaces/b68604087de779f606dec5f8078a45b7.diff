@@ -1,0 +1,43 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 4517
++visible 4143
+@@ -21,12 +21,10 @@
+-src/Scattered.php: warning[complexity.npath]: Maximum method NPath complexity is 8 (moderate), reaches threshold of 8. Refactor the most complex methods (Scattered)
+-src/Scattered.php: warning[complexity.wmc]: WMC (Weighted Methods per Class) is 9, exceeds threshold of 6. Simplify methods or split the class (Scattered)
+-src/Scattered.php: warning[complexity.ccn]: Cyclomatic complexity is 5, exceeds threshold of 4. Consider extracting methods or simplifying conditions (Scattered::coalesceChoices)
+-src/Scattered.php: warning[complexity.npath]: NPath complexity (execution paths) is 8 (moderate), reaches threshold of 8. Chain: ×8 expr L42. Reduce branching or extract methods (Scattered::coalesceChoices)
+-
+-Qualimetrix dev-main: 13 error(s), 10 warning(s) in 3 file(s)
+-Analysis complete: 3 analyzed, 0 generated file(s) excluded.
+-Technical debt: 1d 6h 55min
+-Rule population incomplete — callable: 57 judged, 20 not judged; configured-method-selector: 1 judged, 0 not judged; declaration: 45 judged, 38 not judged; invocation: 0 judged, 3 not judged; namespace: 2 judged, 6 not judged.
+-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
+-
+-invocation-show-suppressed 4517
++src/Scattered.php: warning[complexity.wmc]: WMC (Weighted Methods per Class) is 9, exceeds threshold of 6. Simplify methods or split the class (Scattered)
++src/Scattered.php: warning[complexity.ccn]: Cyclomatic complexity is 5, exceeds threshold of 4. Consider extracting methods or simplifying conditions (Scattered::coalesceChoices)
++
++Qualimetrix dev-main: 13 error(s), 8 warning(s) in 3 file(s)
++Analysis complete: 3 analyzed, 0 generated file(s) excluded.
++Technical debt: 1d 5h 55min
++Rule population incomplete — callable: 57 judged, 20 not judged; configured-method-selector: 1 judged, 0 not judged; declaration: 45 judged, 38 not judged; invocation: 0 judged, 3 not judged; namespace: 2 judged, 6 not judged.
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-show-suppressed 4143
+@@ -52,8 +50,6 @@
+-src/Scattered.php: warning[complexity.npath]: Maximum method NPath complexity is 8 (moderate), reaches threshold of 8. Refactor the most complex methods (Scattered)
+-src/Scattered.php: warning[complexity.wmc]: WMC (Weighted Methods per Class) is 9, exceeds threshold of 6. Simplify methods or split the class (Scattered)
+-src/Scattered.php: warning[complexity.ccn]: Cyclomatic complexity is 5, exceeds threshold of 4. Consider extracting methods or simplifying conditions (Scattered::coalesceChoices)
+-src/Scattered.php: warning[complexity.npath]: NPath complexity (execution paths) is 8 (moderate), reaches threshold of 8. Chain: ×8 expr L42. Reduce branching or extract methods (Scattered::coalesceChoices)
+-
+-Qualimetrix dev-main: 13 error(s), 10 warning(s) in 3 file(s)
+-Analysis complete: 3 analyzed, 0 generated file(s) excluded.
+-Technical debt: 1d 6h 55min
++src/Scattered.php: warning[complexity.wmc]: WMC (Weighted Methods per Class) is 9, exceeds threshold of 6. Simplify methods or split the class (Scattered)
++src/Scattered.php: warning[complexity.ccn]: Cyclomatic complexity is 5, exceeds threshold of 4. Consider extracting methods or simplifying conditions (Scattered::coalesceChoices)
++
++Qualimetrix dev-main: 13 error(s), 8 warning(s) in 3 file(s)
++Analysis complete: 3 analyzed, 0 generated file(s) excluded.
++Technical debt: 1d 5h 55min
