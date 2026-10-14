@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional\Command;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * Input/configuration errors must surface as exit code 3 ("input/config error"),
@@ -24,6 +27,24 @@ use Symfony\Component\Console\Tester\CommandTester;
  */
 final class CheckCommandConfigErrorExitCodeTest extends TestCase
 {
+    private static ?ContainerBuilder $container = null;
+
+    public static function tearDownAfterClass(): void
+    {
+        self::$container = null;
+    }
+
+    private static function container(): ContainerBuilder
+    {
+        $container = self::$container ??= (new ContainerFactory())->create();
+        $manifest = $container->get(ManifestSnapshotControlInterface::class);
+        if (!$manifest instanceof ManifestSnapshotControlInterface) {
+            throw new LogicException('The command fixture has no manifest snapshot lifetime owner.');
+        }
+        $manifest->beginInvocation();
+
+        return $container;
+    }
     private string $tempDir;
 
     protected function setUp(): void
@@ -186,7 +207,7 @@ final class CheckCommandConfigErrorExitCodeTest extends TestCase
      */
     private function runCheck(array $options): CommandTester
     {
-        $container = (new ContainerFactory())->create();
+        $container = self::container();
         /** @var CheckCommand $command */
         $command = $container->get(CheckCommand::class);
         /** @var RefusalPresenter $refusalPresenter */

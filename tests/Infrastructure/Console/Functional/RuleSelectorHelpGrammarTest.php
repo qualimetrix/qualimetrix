@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
@@ -18,6 +20,7 @@ use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * `--help` and the selector grammar describe the same language.
@@ -31,6 +34,24 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(RuleInputValidator::class)]
 final class RuleSelectorHelpGrammarTest extends TestCase
 {
+    private static ?ContainerBuilder $container = null;
+
+    public static function tearDownAfterClass(): void
+    {
+        self::$container = null;
+    }
+
+    private static function container(): ContainerBuilder
+    {
+        $container = self::$container ??= (new ContainerFactory())->create();
+        $manifest = $container->get(ManifestSnapshotControlInterface::class);
+        if (!$manifest instanceof ManifestSnapshotControlInterface) {
+            throw new LogicException('The command fixture has no manifest snapshot lifetime owner.');
+        }
+        $manifest->beginInvocation();
+
+        return $container;
+    }
     private const string FIXTURE = 'tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php';
 
     /** @return iterable<string, array{class-string<Command>, string}> */
@@ -48,7 +69,7 @@ final class RuleSelectorHelpGrammarTest extends TestCase
     #[DataProvider('provideSelectionOptions')]
     public function itOffersOnlyExamplesTheSelectorGrammarAccepts(string $commandClass, string $option): void
     {
-        $container = (new ContainerFactory())->create();
+        $container = self::container();
         /** @var Command $command */
         $command = $container->get($commandClass);
         $description = $command->getDefinition()->getOption($option)->getDescription();
@@ -153,7 +174,7 @@ final class RuleSelectorHelpGrammarTest extends TestCase
 
     private function checkTester(): CommandTester
     {
-        $container = (new ContainerFactory())->create();
+        $container = self::container();
         /** @var CheckCommand $command */
         $command = $container->get(CheckCommand::class);
         /** @var RefusalPresenter $refusalPresenter */

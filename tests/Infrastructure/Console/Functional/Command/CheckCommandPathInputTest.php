@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional\Command;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * Pins the CLI-input contract introduced in ADR 0015 Phase 2:
@@ -23,6 +26,24 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(CheckCommand::class)]
 final class CheckCommandPathInputTest extends TestCase
 {
+    private static ?ContainerBuilder $container = null;
+
+    public static function tearDownAfterClass(): void
+    {
+        self::$container = null;
+    }
+
+    private static function container(): ContainerBuilder
+    {
+        $container = self::$container ??= (new ContainerFactory())->create();
+        $manifest = $container->get(ManifestSnapshotControlInterface::class);
+        if (!$manifest instanceof ManifestSnapshotControlInterface) {
+            throw new LogicException('The command fixture has no manifest snapshot lifetime owner.');
+        }
+        $manifest->beginInvocation();
+
+        return $container;
+    }
     private string $tempDir;
 
     private string $originalCwd;
@@ -337,7 +358,7 @@ final class CheckCommandPathInputTest extends TestCase
 
     private function createCommandTester(): CommandTester
     {
-        $container = (new ContainerFactory())->create();
+        $container = self::container();
 
         /** @var CheckCommand $command */
         $command = $container->get(CheckCommand::class);

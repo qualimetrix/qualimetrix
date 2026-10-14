@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional\Command;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
@@ -17,9 +19,28 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Input\StringInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 final class CheckCommandInputValidationTest extends TestCase
 {
+    private static ?ContainerBuilder $container = null;
+
+    public static function tearDownAfterClass(): void
+    {
+        self::$container = null;
+    }
+
+    private static function container(): ContainerBuilder
+    {
+        $container = self::$container ??= (new ContainerFactory())->create();
+        $manifest = $container->get(ManifestSnapshotControlInterface::class);
+        if (!$manifest instanceof ManifestSnapshotControlInterface) {
+            throw new LogicException('The command fixture has no manifest snapshot lifetime owner.');
+        }
+        $manifest->beginInvocation();
+
+        return $container;
+    }
     #[Test]
     public function itNamesComposerJsonForAMissingInferredAutoloadTarget(): void
     {
@@ -56,7 +77,7 @@ final class CheckCommandInputValidationTest extends TestCase
         self::assertNotFalse($before);
         try {
             chdir($root);
-            $container = (new ContainerFactory())->create();
+            $container = self::container();
             $command = $container->get($commandClass);
             self::assertInstanceOf(\Symfony\Component\Console\Command\Command::class, $command);
             $presenter = $container->get(RefusalPresenter::class);
@@ -470,7 +491,7 @@ final class CheckCommandInputValidationTest extends TestCase
      */
     private function runThroughApplication(StringInput $input): array
     {
-        $container = (new ContainerFactory())->create();
+        $container = self::container();
         /** @var RefusalPresenter $refusalPresenter */
         $refusalPresenter = $container->get(RefusalPresenter::class);
         $app = new Application(new ErrorStream(), $refusalPresenter, new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
@@ -530,7 +551,7 @@ final class CheckCommandInputValidationTest extends TestCase
 
     private function tester(): CommandTester
     {
-        $container = (new ContainerFactory())->create();
+        $container = self::container();
         /** @var CheckCommand $command */
         $command = $container->get(CheckCommand::class);
         /** @var RefusalPresenter $refusalPresenter */

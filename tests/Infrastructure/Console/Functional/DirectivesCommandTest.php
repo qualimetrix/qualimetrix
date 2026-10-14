@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
@@ -31,6 +32,7 @@ use ReflectionProperty;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * The command over real trees, through the production container.
@@ -44,6 +46,24 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(DirectiveAuditPresenter::class)]
 final class DirectivesCommandTest extends TestCase
 {
+    private static ?ContainerBuilder $container = null;
+
+    public static function tearDownAfterClass(): void
+    {
+        self::$container = null;
+    }
+
+    private static function container(): ContainerBuilder
+    {
+        $container = self::$container ??= (new ContainerFactory())->create();
+        $manifest = $container->get(ManifestSnapshotControlInterface::class);
+        if (!$manifest instanceof ManifestSnapshotControlInterface) {
+            throw new LogicException('The command fixture has no manifest snapshot lifetime owner.');
+        }
+        $manifest->beginInvocation();
+
+        return $container;
+    }
     /**
      * The fixtures below are one class each, and a lone class is the whole
      * graph: `coupling.class-rank` reports every one of them. Narrowing here
@@ -696,7 +716,7 @@ final class DirectivesCommandTest extends TestCase
 
         $baseline = $this->tempDir . '/baseline.json';
         $config = $this->writeConfig(self::WITHOUT_COUPLING);
-        $container = (new ContainerFactory())->create();
+        $container = self::container();
         $generate = $container->get(BaselineGenerateCommand::class);
         self::assertInstanceOf(BaselineGenerateCommand::class, $generate);
 
@@ -1212,7 +1232,7 @@ final class DirectivesCommandTest extends TestCase
      */
     private function commandWithAudit(DirectiveAuditInterface $audit): DirectivesCommand
     {
-        $container = (new ContainerFactory())->create();
+        $container = self::container();
         $composed = $container->get(DirectivesCommand::class);
         self::assertInstanceOf(DirectivesCommand::class, $composed);
 
@@ -1540,7 +1560,7 @@ final class DirectivesCommandTest extends TestCase
         self::assertCount(1, $report['directives']);
         self::assertSame('refused', $report['directives'][0]['effect']);
 
-        $command = (new ContainerFactory())->create()->get(DirectivesCommand::class);
+        $command = self::container()->get(DirectivesCommand::class);
         self::assertInstanceOf(DirectivesCommand::class, $command);
         self::assertStringContainsString('<info>2</info> at least one publishable refusal or observable inert directive', $command->getHelp());
         self::assertStringContainsString('<info>4</info> incomplete run takes precedence', $command->getHelp());
@@ -1570,7 +1590,7 @@ final class DirectivesCommandTest extends TestCase
     {
         $input['--config'] ??= $this->writeConfig("{}\n");
 
-        $container = (new ContainerFactory())->create();
+        $container = self::container();
         $command = $container->get(DirectivesCommand::class);
         self::assertInstanceOf(DirectivesCommand::class, $command);
 
@@ -1606,7 +1626,7 @@ final class DirectivesCommandTest extends TestCase
     {
         $input['--config'] ??= $this->writeConfig("{}\n");
 
-        $container = (new ContainerFactory())->create();
+        $container = self::container();
         $command = $container->get(CheckCommand::class);
         self::assertInstanceOf(CheckCommand::class, $command);
 

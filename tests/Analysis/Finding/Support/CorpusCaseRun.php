@@ -29,14 +29,22 @@ require_once \dirname(__DIR__, 4) . '/scripts/finding-gate/classes.php';
  * observation. What each guard reads out of the report is its own business
  * and stays in its own class; nothing here knows about channels.
  *
- * Sharing the *runner* does not make the two guards one witness: they read
- * different fields of different reports and compare them against different
- * declarations.
+ * The two channel guards share each native JSON capture for the fixed corpus
+ * within their PHPUnit process. Temporary or authored external cases are not
+ * reused. Findings and raw metrics still come from
+ * separate native processes. Every reader repeats the completeness assertions;
+ * the guards compare different fields against independent declarations.
  */
 final class CorpusCaseRun
 {
     /** Exit codes at or above this one mean the analysis did not happen, not that it found something. */
     private const int EXIT_CANNOT_ANALYSE = 3;
+
+    /** @var array<string, array{stdout: string, stderr: string, exitCode: int}> */
+    private static array $captures = [];
+
+    /** @var array<string, true>|null */
+    private static ?array $declaredInputs = null;
 
     /**
      * Every corpus case, keyed by its directory.
@@ -126,7 +134,10 @@ final class CorpusCaseRun
             $case->args,
         );
 
-        $result = ChildProcess::run($command, $directory);
+        $key = serialize([$directory, $command]);
+        $result = self::isDeclaredInput($directory, $case)
+            ? (self::$captures[$key] ??= ChildProcess::run($command, $directory))
+            : ChildProcess::run($command, $directory);
         $exit = $result['exitCode'];
         $stdout = $result['stdout'];
         $stderr = $result['stderr'];
@@ -147,6 +158,23 @@ final class CorpusCaseRun
         self::assertObservationIsComplete($decoded, $directory, $exit, (string) $stderr);
 
         return $decoded;
+    }
+
+    private static function isDeclaredInput(string $directory, CaseDefinition $case): bool
+    {
+        if (self::$declaredInputs === null) {
+            self::$declaredInputs = [];
+            foreach (self::cases(self::repositoryRoot()) as $fixedDirectory => $fixedCase) {
+                self::$declaredInputs[self::inputKey($fixedDirectory, $fixedCase)] = true;
+            }
+        }
+
+        return isset(self::$declaredInputs[self::inputKey($directory, $case)]);
+    }
+
+    private static function inputKey(string $directory, CaseDefinition $case): string
+    {
+        return serialize([$directory, $case->paths, $case->config, $case->args]);
     }
 
     /**
