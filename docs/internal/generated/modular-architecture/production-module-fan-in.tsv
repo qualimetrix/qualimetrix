@@ -379,7 +379,7 @@ Qualimetrix\Core\Symbol\MetricSubjectCodec	Core.Symbol	8	3
 Qualimetrix\Core\Symbol\MixedSpelling	Core.Symbol	3	2
 Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy	Core.Symbol	5	2
 Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	6	3
-Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	31	12
+Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	32	12
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	164	22
 Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	6	4
 Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	91	21

@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\Decompos
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
+use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Formatter\Health\HealthCoverageNarrator;
@@ -105,38 +106,50 @@ final class HtmlTreeBuilder
         $namespaces = $metrics->getNamespaces();
 
         foreach ($namespaces as $namespace) {
-            if ($namespace === '') {
-                $this->getNoNamespaceNode($root, $nodesByPath, $metrics);
-
-                continue;
-            }
-            $this->ensureNamespaceChain($root, $namespace, $nodesByPath, $metrics);
+            $this->namespaceNode($root, $namespace, $nodesByPath, $metrics);
         }
 
         // Add classes
         foreach ($metrics->allClassDeclarations() as $symbolInfo) {
-            $symbolPath = $symbolInfo->symbolPath;
-            $namespace = $symbolPath->namespace ?? '';
-            $className = $symbolPath->type ?? '';
-
-            if ($className === '') {
-                continue;
-            }
-
-            // Determine parent node
-            $parentNode = $namespace !== ''
-                ? ($nodesByPath[$namespace] ?? $this->ensureNamespaceChain($root, $namespace, $nodesByPath, $metrics))
-                : $this->getNoNamespaceNode($root, $nodesByPath, $metrics);
-
-            $subject = $symbolInfo->subject ?? throw new LogicException('HTML classes require exact declaration subjects');
-            $classNode = new HtmlTreeNode($className, $symbolPath->toString(), SymbolLevel::Class_->value, $subject->toCanonical());
-            $classBag = $metrics->getSubject($subject);
-            $classNode->metrics = $this->filterMetrics($classBag->all());
-
-            $parentNode->children[] = $classNode;
+            $this->addClassNode($root, $symbolInfo, $nodesByPath, $metrics);
         }
 
         return $root;
+    }
+
+    /** @param array<string, HtmlTreeNode> $nodesByPath */
+    private function addClassNode(
+        HtmlTreeNode $root,
+        SymbolInfo $symbolInfo,
+        array &$nodesByPath,
+        MetricRepositoryInterface $metrics,
+    ): void {
+        $symbolPath = $symbolInfo->symbolPath;
+        $namespace = $symbolPath->namespace ?? '';
+        $className = $symbolPath->type ?? '';
+
+        if ($className === '') {
+            return;
+        }
+
+        $parentNode = $this->namespaceNode($root, $namespace, $nodesByPath, $metrics);
+        $subject = $symbolInfo->subject ?? throw new LogicException('HTML classes require exact declaration subjects');
+        $classNode = new HtmlTreeNode($className, $symbolPath->toString(), SymbolLevel::Class_->value, $subject->toCanonical());
+        $classBag = $metrics->getSubject($subject);
+        $classNode->metrics = $this->filterMetrics($classBag->all());
+        $parentNode->children[] = $classNode;
+    }
+
+    /** @param array<string, HtmlTreeNode> $nodesByPath */
+    private function namespaceNode(
+        HtmlTreeNode $root,
+        string $namespace,
+        array &$nodesByPath,
+        MetricRepositoryInterface $metrics,
+    ): HtmlTreeNode {
+        return $namespace !== ''
+            ? $this->ensureNamespaceChain($root, $namespace, $nodesByPath, $metrics)
+            : $this->getNoNamespaceNode($root, $nodesByPath, $metrics);
     }
 
     /**

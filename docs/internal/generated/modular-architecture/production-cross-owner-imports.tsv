@@ -3520,6 +3520,7 @@ Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder	Reporting	Qualimetrix\Analy
 Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore	Analysis.Evidence.ComputedMetrics.Health	contract
 Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder	Reporting	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	Analysis.Evidence.Measurement	contract
 Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder	Reporting	Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator	Analysis.Evidence.Prioritization	contract
+Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder	Reporting	Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	contract
 Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder	Reporting	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
 Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder	Reporting	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
 Qualimetrix\Reporting\Formatter\Json\JsonFindingSection	Reporting	Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex	Analysis.Evidence.Measurement	contract
