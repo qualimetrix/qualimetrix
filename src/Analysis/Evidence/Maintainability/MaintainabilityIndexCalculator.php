@@ -9,13 +9,16 @@ namespace Qualimetrix\Analysis\Evidence\Maintainability;
  *
  * MI is a composite metric that estimates how maintainable code is.
  *
- * Formula (original, per Microsoft):
+ * Uses the Visual Studio variant of the Oman-Hagemeister index, without
+ * the comment-density term and normalized from the raw 0-171 scale to 0-100.
+ *
+ * Raw three-term formula:
  * MI = 171 - 5.2×ln(V) - 0.23×CCN - 16.2×ln(LOC)
  *
  * Where:
  * - V = Halstead Volume
  * - CCN = Cyclomatic Complexity
- * - LOC = Lines of Code (logical)
+ * - LOC = semantic executable/control-flow statement count, not physical lines
  *
  * The result is normalized to 0-100 scale where:
  * - MI > 50: Good maintainability

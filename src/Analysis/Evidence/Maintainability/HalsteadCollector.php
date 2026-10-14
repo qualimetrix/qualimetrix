@@ -19,7 +19,9 @@ use SplFileInfo;
 /**
  * Halstead Complexity Metrics Collector
  *
- * Implements complexity metrics based on Maurice Halstead's methodology (1977).
+ * Uses a semantic interpretation of Maurice Halstead's methodology (1977).
+ * Estimated bugs use the later volume-based B = V / 3000 variant documented
+ * in NIST SP 500-209, not Halstead's original B = E^(2/3) / 3000.
  *
  * ## Methodology
  *
