@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
@@ -18,6 +20,7 @@ use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * The same declared vocabulary reached through configuration files and CLI flags.
@@ -30,6 +33,13 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(RuleOptionsBuild::class)]
 final class RuleOptionKeyDoorSymmetryTest extends TestCase
 {
+    private static ?ContainerBuilder $container = null;
+
+    public static function tearDownAfterClass(): void
+    {
+        self::$container = null;
+    }
+
     /** @param 'file'|'alias'|'flag' $door */
     #[Test]
     #[TestWith(['file', '+2'])]
@@ -367,7 +377,12 @@ final class RuleOptionKeyDoorSymmetryTest extends TestCase
 
     private function tester(): CommandTester
     {
-        $container = (new ContainerFactory())->create();
+        $container = self::$container ??= (new ContainerFactory())->create();
+        $manifest = $container->get(ManifestSnapshotControlInterface::class);
+        if (!$manifest instanceof ManifestSnapshotControlInterface) {
+            throw new LogicException('The command fixture has no manifest snapshot lifetime owner.');
+        }
+        $manifest->beginInvocation();
         $command = $container->get(CheckCommand::class);
         self::assertInstanceOf(CheckCommand::class, $command);
         $refusalPresenter = $container->get(RefusalPresenter::class);
