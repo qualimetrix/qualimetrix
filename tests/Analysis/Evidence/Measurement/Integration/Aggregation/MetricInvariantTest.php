@@ -42,7 +42,7 @@ final class MetricInvariantTest extends TestCase
     {
         $fixturesPath = \dirname(__DIR__, 2) . '/Fixtures/GoldenMetrics';
         $fixtureRoot = AbsolutePath::fromString($fixturesPath);
-        $root = AbsolutePath::fromString((string) getcwd());
+        $root = AbsolutePath::fromString(\dirname(__DIR__, 6));
         $fixture = PreparedAnalysis::start($root, [$fixtureRoot], ['include_generated' => true]);
         try {
             $pipeline = $fixture->container()->get(AnalysisPipelineInterface::class);

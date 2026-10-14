@@ -49,6 +49,7 @@ use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverIn
 use Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
+use Qualimetrix\Tests\TestSupport\WorkingDirectory\RunsFromRepositoryRoot;
 use ReflectionClass;
 use ReflectionProperty;
 use stdClass;
@@ -102,6 +103,8 @@ use Throwable;
 #[CoversNothing]
 final class ConfigurationRefusalRoutingTest extends TestCase
 {
+    use RunsFromRepositoryRoot;
+
     private const string REFUSAL_SUMMARY = 'the substituted resolver refused this configuration';
 
     /** @var list<string> */
