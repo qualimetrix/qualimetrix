@@ -492,7 +492,7 @@ bin/qmx check src/ --no-cache
 
 ### `--cache-dir`
 
-Set a cache directory that resolves to a supported POSIX path outside the project. Relative paths are resolved from the project root; for example, `../external-cache` can be used when it resolves outside the project. The default is the user cache directory under `qmx`.
+Set a cache directory that resolves to a supported POSIX path outside the project. Relative paths are resolved from the project root; for example, `../external-cache` can be used when it resolves outside the project. The default is the user cache directory under `qmx`. When the project root is `/` (for example, a cron invocation from `/`), containment is not checked; all other location judgements still apply.
 
 ```bash
 bin/qmx check src/ --cache-dir=/tmp/qmx-cache
