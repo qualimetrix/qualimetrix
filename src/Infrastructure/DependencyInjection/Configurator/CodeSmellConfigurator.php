@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use RuntimeException;
 use Symfony\Component\Config\FileLocator;
+use Symfony\Component\Config\Resource\GlobResource;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
@@ -42,12 +42,9 @@ final class CodeSmellConfigurator implements ContainerConfiguratorInterface
     {
         $resources = [];
         foreach (['' => '*', 'ParameterCount\\' => 'ParameterCount/*', 'UnreachableCode\\' => 'UnreachableCode/*', 'UnusedPrivate\\' => 'UnusedPrivate/*'] as $namespace => $root) {
-            $files = glob($this->srcDir . '/Analysis/Evidence/CodeSmell/' . $root . 'Rule.php');
-            if ($files === false) {
-                throw new RuntimeException('Could not enumerate the configured CodeSmell rule roots.');
-            }
-            foreach ($files as $path) {
-                $name = basename($path);
+            $files = new GlobResource($this->srcDir . '/Analysis/Evidence/CodeSmell', '/' . $root . 'Rule.php', false);
+            foreach ($files as $path => $file) {
+                $name = $file->getBasename();
                 if (str_starts_with($name, 'Abstract')) {
                     continue;
                 }

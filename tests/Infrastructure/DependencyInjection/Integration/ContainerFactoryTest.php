@@ -100,6 +100,7 @@ use Qualimetrix\Analysis\Evidence\Size\MethodCountCollector;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountRule;
 use Qualimetrix\Analysis\Evidence\Size\PropertyCountRule;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
@@ -143,6 +144,7 @@ use Qualimetrix\Infrastructure\Console\MeasuredFindingSet;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RunConfigurationPreparation;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CodeSmellConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\DependencyInjection\Registration\EvidenceRegistration;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
@@ -158,12 +160,16 @@ use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface;
+use Qualimetrix\Subprocess\ChildProcess;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use ReflectionClass;
 use ReflectionProperty;
 use SplFileInfo;
 
+require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
+
 #[CoversClass(ContainerFactory::class)]
+#[CoversClass(CodeSmellConfigurator::class)]
 #[CoversClass(EvidenceRegistration::class)]
 final class ContainerFactoryTest extends TestCase
 {
@@ -1096,6 +1102,55 @@ PHP;
             $registeredClasses,
             'RuleRegistry should contain exactly ' . \count($expectedRuleClasses) . ' rules',
         );
+    }
+
+    #[Test]
+    public function itPreservesRulesAndChannelOrderWhenLoadedFromPhar(): void
+    {
+        $script = <<<'PHP'
+require $argv[1] . '/vendor/autoload.php';
+$archive = new Phar($argv[2]);
+$archive->buildFromDirectory($argv[1] . '/src', '/\.php$/');
+$archive->setStub('<?php __HALT_COMPILER();');
+$prefix = 'phar://' . $argv[2];
+spl_autoload_register(static function (string $class) use ($prefix): void {
+    if (str_starts_with($class, 'Qualimetrix\\')) {
+        require $prefix . '/' . str_replace('\\', '/', substr($class, strlen('Qualimetrix\\'))) . '.php';
+    }
+}, true, true);
+$container = (new Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory())->create();
+$rules = $container->get(Qualimetrix\Infrastructure\Rule\RuleRegistryInterface::class);
+$channels = $container->get(Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface::class);
+echo json_encode([
+    'sources' => [
+        (new ReflectionClass(Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory::class))->getFileName(),
+        (new ReflectionClass(Qualimetrix\Infrastructure\DependencyInjection\Configurator\CodeSmellConfigurator::class))->getFileName(),
+    ],
+    'rules' => $rules->getClasses(),
+    'channels' => array_map(static fn($channel) => $channel->code, $channels->channels()),
+], JSON_THROW_ON_ERROR);
+PHP;
+        $archive = $this->tempDir . '/source.phar';
+        $result = ChildProcess::run([\PHP_BINARY, '-d', 'phar.readonly=0', '-r', $script, \dirname(__DIR__, 4), $archive]);
+        self::assertSame(0, $result['exitCode'], $result['stderr']);
+        self::assertSame('', $result['stderr']);
+        $actual = json_decode($result['stdout'], true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($actual);
+        $archivePath = realpath($archive);
+        self::assertNotFalse($archivePath);
+        self::assertSame([
+            'phar://' . $archivePath . '/Infrastructure/DependencyInjection/ContainerFactory.php',
+            'phar://' . $archivePath . '/Infrastructure/DependencyInjection/Configurator/CodeSmellConfigurator.php',
+        ], $actual['sources']);
+
+        $container = $this->factory->create();
+        $rules = $container->get(RuleRegistryInterface::class);
+        self::assertInstanceOf(RuleRegistryInterface::class, $rules);
+        $channels = $container->get(ChannelUniverseInterface::class);
+        self::assertInstanceOf(ChannelUniverseInterface::class, $channels);
+        self::assertNotEmpty($rules->getClasses());
+        self::assertSame($rules->getClasses(), $actual['rules']);
+        self::assertSame(array_map(static fn($channel) => $channel->code, $channels->channels()), $actual['channels']);
     }
 
     #[Test]

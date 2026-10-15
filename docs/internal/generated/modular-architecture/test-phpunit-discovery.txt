@@ -12539,6 +12539,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\ContainerFactoryTest::itInjectsProjectNamespaceResolverIntoDistanceRule
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\ContainerFactoryTest::itInjectsRulesIntoRuleExecution
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\ContainerFactoryTest::itLetsTheConfigurationPipelineAddressAProducerNoRuleClassDeclares
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\ContainerFactoryTest::itPreservesRulesAndChannelOrderWhenLoadedFromPhar
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\ContainerFactoryTest::itRegistersAllFormatters
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\ContainerFactoryTest::itRegistersAllMetricCollectors
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\ContainerFactoryTest::itRegistersAllRules
