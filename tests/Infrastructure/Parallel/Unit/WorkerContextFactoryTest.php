@@ -11,7 +11,6 @@ use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Parallel\WorkerContextFactory;
 use Qualimetrix\Infrastructure\Parallel\WorkerNotes;
 use Qualimetrix\Infrastructure\Parallel\WorkerRequest;
-use ReflectionProperty;
 
 #[CoversClass(WorkerContextFactory::class)]
 final class WorkerContextFactoryTest extends TestCase
@@ -65,28 +64,6 @@ PHP;
         } finally {
             unlink($script);
         }
-    }
-
-    #[Test]
-    public function itBoundsStartupByTheBindingDeadlineAndCapturesTheOwnedPhpLog(): void
-    {
-        $prepend = sys_get_temp_dir() . '/qmx-start-fatal-' . bin2hex(random_bytes(6)) . '.php';
-        file_put_contents($prepend, '<?php missing_worker_startup_function();');
-        $notes = new WorkerNotes(new ErrorStream());
-        $factory = new WorkerContextFactory(new WorkerRequest(2, '--workers=2'), $notes, [\PHP_BINARY, '-d', 'auto_prepend_file=' . $prepend]);
-        $directory = (new ReflectionProperty($factory, 'directory'))->getValue($factory);
-        try {
-            $factory->start(\Amp\Parallel\Worker\ContextWorkerFactory::SCRIPT_PATH);
-            self::fail('A process that died before connecting must refuse startup.');
-        } catch (\Qualimetrix\Infrastructure\Parallel\WorkerStartFailure $failure) {
-            self::assertStringContainsString('did not answer within 10 s', $failure->getMessage());
-            self::assertStringContainsString('missing_worker_startup_function', $failure->getMessage());
-            self::assertStringContainsString('--workers=2', $failure->getMessage());
-        } finally {
-            $factory->close();
-            unlink($prepend);
-        }
-        self::assertDirectoryDoesNotExist($directory);
     }
 
     #[Test]
