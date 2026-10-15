@@ -294,7 +294,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
             ),
             new CacheFactory($cacheStore),
             $parallelStore,
-            new RuntimeLimitsController(),
+            new RuntimeLimitsController(\Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register()),
             new \Qualimetrix\Infrastructure\Console\ProjectSourceConfigurator(
                 new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(),
                 new \Qualimetrix\Analysis\Evidence\Measurement\Namespace_\ProjectNamespaceResolver(),

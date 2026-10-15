@@ -190,7 +190,7 @@ final class RuntimeConfiguratorTest extends TestCase
             $analysis,
             $this->cacheFactory,
             $this->parallelStore,
-            new RuntimeLimitsController(),
+            new RuntimeLimitsController(\Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register()),
             new \Qualimetrix\Infrastructure\Console\ProjectSourceConfigurator(
                 new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(),
                 new \Qualimetrix\Analysis\Evidence\Measurement\Namespace_\ProjectNamespaceResolver(),
@@ -545,7 +545,7 @@ final class RuntimeConfiguratorTest extends TestCase
 
         try {
             try {
-                (new RuntimeLimitsController())->apply(new RuntimeLimits('1'));
+                (new RuntimeLimitsController(\Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register()))->apply(new RuntimeLimits('1'));
                 self::fail('An unapplicable memory limit must fail.');
             } catch (RuntimeException $exception) {
                 self::assertStringStartsWith('Cannot set requested memory_limit "1": the PHP runtime refused it.', $exception->getMessage());
@@ -610,7 +610,7 @@ namespace {
     ], \Qualimetrix\Core\Path\AbsolutePath::fromString('/project'));
 
     try {
-        (new \Qualimetrix\Infrastructure\Console\RuntimeLimitsController())->apply(
+        (new \Qualimetrix\Infrastructure\Console\RuntimeLimitsController(\Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register()))->apply(
             \Qualimetrix\Infrastructure\Console\RuntimeLimits::fromResolvedValue(
                 $document->resolved()->get('memory_limit'),
             ),

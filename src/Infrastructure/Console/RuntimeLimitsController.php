@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
 use RuntimeException;
 use Throwable;
 
 final readonly class RuntimeLimitsController
 {
     private string $startupLimit;
-    public function __construct()
+    public function __construct(private OutOfMemoryHint $memoryHint)
     {
         $this->startupLimit = (string) \ini_get('memory_limit');
     }
@@ -28,6 +29,7 @@ final readonly class RuntimeLimitsController
             $this->startupLimit,
             static fn(): Throwable => new RuntimeException('Cannot restore process-start memory_limit.'),
         );
+        $this->memoryHint->limitSetBy(null);
     }
 
     /**
@@ -46,6 +48,7 @@ final readonly class RuntimeLimitsController
                     $limits->memoryLimit,
                 )),
             );
+            $this->memoryHint->limitSetBy($limits->authoredSource());
         }
     }
 

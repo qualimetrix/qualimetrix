@@ -135,9 +135,8 @@ final class GitClient
         // Relayed, so the environment is left alone and the text reaches the
         // user in the system's language; nothing reads it, so nothing breaks
         // when it is not English.
-        $process = new Process(
+        $process = $this->process(
             ['git', 'rev-parse', '--verify', $reference . '^{commit}'],
-            $this->projectRoot->value(),
         );
         $process->run();
 
@@ -158,7 +157,7 @@ final class GitClient
      */
     private function assertInsideWorkTree(): void
     {
-        $process = new Process(['git', 'rev-parse', '--is-inside-work-tree'], $this->projectRoot->value());
+        $process = $this->process(['git', 'rev-parse', '--is-inside-work-tree']);
         $process->run();
 
         if ($process->isSuccessful() && trim($process->getOutput()) === 'true') {
@@ -254,10 +253,7 @@ final class GitClient
      */
     private function exec(array $command): string
     {
-        $process = new Process(
-            $command,
-            $this->projectRoot->value(),
-        );
+        $process = $this->process($command);
 
         try {
             $process->mustRun();
@@ -288,7 +284,7 @@ final class GitClient
      */
     private function diff(array $arguments, string $scope): string
     {
-        $process = new Process(['git', 'diff', '--no-relative', ...$arguments], $this->projectRoot->value());
+        $process = $this->process(['git', 'diff', '--no-relative', ...$arguments]);
 
         try {
             $process->mustRun();
@@ -302,5 +298,15 @@ final class GitClient
 
             throw GitScopeRefusedException::commandFailed($scope, $gitReport);
         }
+    }
+
+    /** @param list<string> $command */
+    private function process(array $command): Process
+    {
+        if (!GitProcessAvailability::isAvailable()) {
+            throw new GitUnavailable();
+        }
+
+        return new Process($command, $this->projectRoot->value());
     }
 }

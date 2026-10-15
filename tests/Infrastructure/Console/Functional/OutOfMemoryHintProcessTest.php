@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
@@ -76,6 +77,41 @@ PHP);
         self::assertStringContainsString('--memory-limit', $document['error']);
         self::assertStringContainsString('release warning', $result['stderr']);
         self::assertStringNotContainsString('removed callback', $result['stderr']);
+        self::assertStringNotContainsString('Fatal error', $result['stderr']);
+    }
+
+    /** @return iterable<string, array{string, string, bool}> */
+    public static function appliedLimitSources(): iterable
+    {
+        yield 'command line' => ['cli', 'source=the command line', false];
+        yield 'configuration file' => ['qmx.yaml', 'source=configuration file "qmx.yaml"', false];
+        yield 'next run restores ini source' => ['cli', 'source=php.ini', true];
+    }
+
+    #[Test]
+    #[DataProvider('appliedLimitSources')]
+    public function itCarriesTheAppliedLimitSourceThroughTheControllerAndClearsItOnReset(string $source, string $expected, bool $reset): void
+    {
+        $script = <<<'PHP'
+require $argv[1];
+$hint = \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register();
+$controller = new \Qualimetrix\Infrastructure\Console\RuntimeLimitsController($hint);
+$document = \Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument::of(
+    [['source' => '__SOURCE__', 'values' => ['memory_limit' => '-1']]],
+    \Qualimetrix\Core\Path\AbsolutePath::fromString('/project'),
+);
+$controller->apply(\Qualimetrix\Infrastructure\Console\RuntimeLimits::fromResolvedValue($document->resolved()->get('memory_limit')));
+if (__RESET__) {
+    $controller->reset();
+}
+$limit = (int) ceil((memory_get_usage(true) + 2 * 1024 * 1024) / (1024 * 1024));
+ini_set('memory_limit', $limit . 'M');
+str_repeat('x', 4 * 1024 * 1024);
+PHP;
+        $result = $this->runChild(str_replace(['__SOURCE__', '__RESET__'], [$source, $reset ? 'true' : 'false'], $script));
+        self::assertSame(4, $result['exitCode'], $result['stderr']);
+        self::assertSame('', $result['stdout']);
+        self::assertStringContainsString($expected, $result['stderr']);
         self::assertStringNotContainsString('Fatal error', $result['stderr']);
     }
 

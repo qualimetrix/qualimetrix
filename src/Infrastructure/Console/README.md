@@ -362,8 +362,11 @@ sources in the refusal envelope's `source` form.
 The adapter and runtime resolvers read `fail_on`, `memory_limit` and `format`
 from resolved leaves. When PHP rejects a requested memory limit, the runtime
 wrapper preserves the refusal's sources, position, summary and previous cause
-through `ConfigurationRefusal::acrossLayers()`; there is no origin getter to
-reconstruct.
+through `ConfigurationRefusal::acrossLayers()`. `RuntimeLimits` refuses a
+byte count above `PHP_INT_MAX` before changing ini, without a float conversion.
+The controller sends the successfully applied leaf's `ConfigurationOrigin` to
+the shared `OutOfMemoryHint`; resetting the run restores the startup limit and
+clears that authored source, so an unconfigured run reports `php.ini`.
 
 ### BaselineCleanupCommand
 

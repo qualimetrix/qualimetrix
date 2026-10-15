@@ -67,6 +67,7 @@ use Qualimetrix\Infrastructure\Console\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\ProfileSummaryRenderer;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
 use Qualimetrix\Infrastructure\Console\ProjectSourceConfigurator;
+use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
@@ -318,7 +319,8 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
 
         $container->register(ProgressConfigurator::class)
             ->setAutowired(true);
-        $container->register(RuntimeLimitsController::class);
+        $container->register(RuntimeLimitsController::class)
+            ->setArguments([new Reference(OutOfMemoryHint::class)]);
         $container->register(RuleInputValidator::class)
             ->setAutowired(true);
 

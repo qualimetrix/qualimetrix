@@ -81,7 +81,7 @@ Locates the `.git` directory for the current repository. Used by hook commands
 
 **Strategy:**
 1. Primary: `git rev-parse --git-dir` (handles regular repos, worktrees, bare repos)
-2. Fallback: manual directory traversal (when git is not in PATH)
+2. Fallback: manual directory traversal (when git is not in PATH or `proc_open` is unavailable)
 
 **Methods:**
 - `findGitDir(AbsolutePath $workingDir): ?AbsolutePath` — locate `.git` from an explicit root
@@ -212,6 +212,13 @@ it is all this does. The only refusal without a quote is the empty revision,
 caught before git is asked — and the one branch that then has to suppress the
 `git:` tail is what keeps the colon from dangling, so it carries its own test
 rather than waiting for an input that never arrives.
+
+`GitProcessAvailability` is the single native-process capability check. A
+Git scope has no fallback: `GitClient` throws `GitUnavailable`, a Core
+environment-marker failure, before constructing Symfony Process. Console
+reports exit 3 and advises removing the Git scope or enabling `proc_open`.
+`GitRepositoryLocator` instead keeps its directory traversal for hook
+install/status/uninstall. That fallback cannot observe `core.hooksPath`.
 
 ## What `validateScope()` has to cover
 

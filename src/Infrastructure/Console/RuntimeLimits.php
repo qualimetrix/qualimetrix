@@ -6,7 +6,9 @@ namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 
 final readonly class RuntimeLimits
 {
@@ -19,9 +21,33 @@ final readonly class RuntimeLimits
         // Zero has the shape of a size and PHP refuses it at `ini_set()`, where
         // the refusal no longer knows which value it is about. A leading zero
         // is read as octal by PHP (`010M` is 8 MB), so it is not a size either.
-        if ($memoryLimit !== null && preg_match('/^(?:-1|[1-9][0-9]*[KMG]?)$/i', $memoryLimit) !== 1) {
+        if ($memoryLimit === null || $memoryLimit === '-1') {
+            return;
+        }
+        if (preg_match('/^([1-9][0-9]*)([KMG]?)$/i', $memoryLimit, $matches) !== 1) {
             throw $this->refusal(self::invalidMemoryLimitSummary($memoryLimit));
         }
+        $multiplier = match (strtoupper($matches[2])) {
+            'K' => 1024,
+            'M' => 1024 * 1024,
+            'G' => 1024 * 1024 * 1024,
+            default => 1,
+        };
+        $largest = (string) intdiv(\PHP_INT_MAX, $multiplier);
+        if (\strlen($matches[1]) > \strlen($largest)
+            || (\strlen($matches[1]) === \strlen($largest) && strcmp($matches[1], $largest) > 0)) {
+            throw $this->refusal(\sprintf('memory_limit "%s" is out of range; its byte size exceeds PHP_INT_MAX.', $memoryLimit));
+        }
+    }
+
+    public function authoredSource(): ConfigurationOrigin
+    {
+        if ($this->memoryLimitValue === null) {
+            return ConfigurationOrigin::of(ConfigurationSource::Resolved, self::MEMORY_LIMIT_KEY);
+        }
+        $writers = $this->memoryLimitValue->contributors();
+
+        return $writers[\count($writers) - 1]->origin;
     }
 
     public static function fromResolvedValue(?ResolvedValueInterface $value): self

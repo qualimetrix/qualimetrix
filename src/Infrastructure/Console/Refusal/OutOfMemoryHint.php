@@ -50,7 +50,7 @@ final class OutOfMemoryHint
         $this->format = $format;
     }
 
-    public function limitSetBy(ConfigurationOrigin $source): void
+    public function limitSetBy(?ConfigurationOrigin $source): void
     {
         $this->limitSource = $source;
     }
