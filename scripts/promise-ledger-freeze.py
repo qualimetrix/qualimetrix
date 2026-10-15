@@ -62,9 +62,9 @@ HEADER = """\
 #
 # The following overlap with p1-file-set.tsv is recomputed on every run:
 {overlap}
-# The ranges overlapping that set are contract docblocks outside signatures and
-# bodies. Other ranges live under website/docs/**, and options classes are not
-# carriers because the ledger does not cite them.
+# This overlap is a measurement of the ledger's current citations, not a rule
+# limiting source carriers. A cited src/** range may cover a docblock,
+# declaration, or implementation in any class the ledger uses as evidence.
 #
 # A carrier change is expected when its contract or documentation changes. In
 # that case, re-derive the affected ledger rows and regenerate this file; an
