@@ -43,6 +43,7 @@ require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
 final class FileTargetExitRoutingTest extends TestCase
 {
     private string $directory;
+    private string $cacheDirectory;
     private string $originalCwd;
 
     protected function setUp(): void
@@ -51,7 +52,9 @@ final class FileTargetExitRoutingTest extends TestCase
         self::assertNotFalse($cwd);
         $this->originalCwd = $cwd;
         $this->directory = sys_get_temp_dir() . '/qmx-target-exit-' . bin2hex(random_bytes(6));
-        mkdir($this->directory . '/cache', 0o755, true);
+        $this->cacheDirectory = $this->directory . '-cache';
+        mkdir($this->directory, 0o755, true);
+        mkdir($this->cacheDirectory, 0o755, true);
         file_put_contents($this->directory . '/Source.php', '<?php namespace Demo; final class Source {}');
         chdir($this->directory);
     }
@@ -60,6 +63,7 @@ final class FileTargetExitRoutingTest extends TestCase
     {
         chdir($this->originalCwd);
         self::remove($this->directory);
+        self::remove($this->cacheDirectory);
     }
 
     /** @return iterable<string, array{list<string>, string, string}> */
@@ -159,7 +163,7 @@ final class FileTargetExitRoutingTest extends TestCase
     {
         $output = $this->directory . '/report.json';
         $log = $this->directory . '/run.log';
-        $cacheEntry = $this->directory . '/cache/entry.cache';
+        $cacheEntry = $this->cacheDirectory . '/entry.cache';
         file_put_contents($output, 'KEEP REPORT');
         file_put_contents($cacheEntry, 'KEEP CACHE');
         $command = (new ContainerFactory())->create()->get(CheckCommand::class);
@@ -171,7 +175,7 @@ final class FileTargetExitRoutingTest extends TestCase
             '--workers' => '0',
             '--output' => $output,
             '--log-file' => $log,
-            '--cache-dir' => $this->directory . '/cache',
+            '--cache-dir' => $this->cacheDirectory,
             '--clear-cache' => true,
             '--report' => 'git:staged',
         ], ['capture_stderr_separately' => true]);
@@ -191,19 +195,25 @@ final class FileTargetExitRoutingTest extends TestCase
     {
         mkdir($this->directory . '/cache2');
         $output = $this->directory . '/cache2/report.json';
-        $cacheEntry = $this->directory . '/cache/entry.cache';
+        $cacheEntry = $this->cacheDirectory . '/entry.cache';
         file_put_contents($cacheEntry, 'OLD CACHE');
+        $ownedKey = str_repeat('a', 64);
+        (new \Qualimetrix\Infrastructure\Cache\FileCache(\Qualimetrix\Core\Path\AbsolutePath::fromString($this->cacheDirectory)))->set($ownedKey, []);
+        $ownedEntries = glob($this->cacheDirectory . '/ast-v*/aa/' . $ownedKey);
+        self::assertIsArray($ownedEntries);
+        self::assertCount(1, $ownedEntries);
         $command = (new ContainerFactory())->create()->get(CheckCommand::class);
         self::assertInstanceOf(CheckCommand::class, $command);
         $tester = new CommandTester($command);
         $tester->execute([
             'paths' => [$this->directory . '/Source.php'], '--format' => 'json', '--workers' => '0',
-            '--output' => $output, '--cache-dir' => $this->directory . '/cache', '--clear-cache' => true,
+            '--output' => $output, '--cache-dir' => $this->cacheDirectory, '--clear-cache' => true,
             '--no-cache' => true,
         ], ['capture_stderr_separately' => true]);
         self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
         self::assertStringContainsString('Cache cleared.', $tester->getErrorOutput());
-        self::assertFileDoesNotExist($cacheEntry);
+        self::assertSame('OLD CACHE', file_get_contents($cacheEntry));
+        self::assertSame([], glob($this->cacheDirectory . '/ast-v*/aa/' . $ownedKey));
         self::assertIsArray(json_decode((string) file_get_contents($output), true, flags: \JSON_THROW_ON_ERROR));
     }
 
@@ -218,8 +228,8 @@ final class FileTargetExitRoutingTest extends TestCase
     #[DataProvider('cacheContainmentTargets')]
     public function itRefusesToClearTheCacheContainingTheRequestedReport(bool $existing): void
     {
-        $output = $this->directory . '/cache/report.json';
-        $cacheEntry = $this->directory . '/cache/entry.cache';
+        $output = $this->cacheDirectory . '/report.json';
+        $cacheEntry = $this->cacheDirectory . '/entry.cache';
         if ($existing) {
             file_put_contents($output, 'KEEP REPORT');
         }
@@ -232,7 +242,7 @@ final class FileTargetExitRoutingTest extends TestCase
             '--format' => 'json',
             '--workers' => '0',
             '--output' => $output,
-            '--cache-dir' => $this->directory . '/cache',
+            '--cache-dir' => $this->cacheDirectory,
             '--clear-cache' => true,
         ], ['capture_stderr_separately' => true]);
 
@@ -242,7 +252,7 @@ final class FileTargetExitRoutingTest extends TestCase
             self::assertSame('KEEP REPORT', file_get_contents($output));
         } else {
             self::assertFileDoesNotExist($output);
-            self::assertSame(['entry.cache'], array_values(array_diff((array) scandir($this->directory . '/cache'), ['.', '..'])));
+            self::assertSame(['entry.cache'], array_values(array_diff((array) scandir($this->cacheDirectory), ['.', '..'])));
         }
         self::assertSame('KEEP CACHE', file_get_contents($cacheEntry));
         self::assertStringNotContainsString('Report written', $tester->getErrorOutput());
@@ -251,12 +261,12 @@ final class FileTargetExitRoutingTest extends TestCase
     #[Test]
     public function itRefusesToClearTheCacheContainingTheResolvedReportReferent(): void
     {
-        $referent = $this->directory . '/cache/report.json';
+        $referent = $this->cacheDirectory . '/report.json';
         $link = $this->directory . '/report-link.json';
-        $cacheEntry = $this->directory . '/cache/entry.cache';
+        $cacheEntry = $this->cacheDirectory . '/entry.cache';
         file_put_contents($referent, 'KEEP REPORT');
         file_put_contents($cacheEntry, 'KEEP CACHE');
-        symlink('cache/report.json', $link);
+        symlink($referent, $link);
         $command = (new ContainerFactory())->create()->get(CheckCommand::class);
         self::assertInstanceOf(CheckCommand::class, $command);
         $tester = new CommandTester($command);
@@ -265,7 +275,7 @@ final class FileTargetExitRoutingTest extends TestCase
             '--format' => 'json',
             '--workers' => '0',
             '--output' => $link,
-            '--cache-dir' => $this->directory . '/cache',
+            '--cache-dir' => $this->cacheDirectory,
             '--clear-cache' => true,
         ], ['capture_stderr_separately' => true]);
 
@@ -292,7 +302,7 @@ final class FileTargetExitRoutingTest extends TestCase
         $envelope = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertIsArray($envelope);
         self::assertStringContainsString('--output', $envelope['error']);
-        self::assertSame(['Source.php', 'cache'], array_values(array_diff((array) scandir($this->directory), ['.', '..'])));
+        self::assertSame(['Source.php'], array_values(array_diff((array) scandir($this->directory), ['.', '..'])));
     }
 
     #[Test]
@@ -319,9 +329,10 @@ final class FileTargetExitRoutingTest extends TestCase
     }
 
     #[Test]
-    public function itClassifiesEnvironmentFailureAfterCheckReport(): void
+    public function itClassifiesEnvironmentFailureBeforeCheckReport(): void
     {
         $target = $this->directory . '/profile.json';
+        file_put_contents($target, 'OLD PROFILE');
         $profile = self::createStub(ProfileReportInterface::class);
         $profile->method('isEnabled')->willReturn(true);
         $profile->method('export')->willThrowException(self::fileFailure($target));
@@ -367,15 +378,16 @@ final class FileTargetExitRoutingTest extends TestCase
         self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
         $report = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertIsArray($report);
-        self::assertArrayHasKey('summary', $report);
-        self::assertArrayNotHasKey('error', $report);
-        self::assertStringContainsString('Environment error:', $tester->getErrorOutput());
-        self::assertStringContainsString($target, $tester->getErrorOutput());
-        self::assertFileDoesNotExist($target);
+        self::assertArrayHasKey('error', $report);
+        self::assertArrayNotHasKey('summary', $report);
+        self::assertStringContainsString('Environment error:', $report['error']);
+        self::assertStringContainsString($target, $report['error']);
+        self::assertSame('', $tester->getErrorOutput());
+        self::assertSame('OLD PROFILE', file_get_contents($target));
     }
 
     #[Test]
-    public function itReportsProfileExportAndCleanupFailuresAfterOneJsonReport(): void
+    public function itReportsProfileExportAndCleanupFailuresBeforeJsonReport(): void
     {
         if (\function_exists('posix_geteuid') && posix_geteuid() === 0) {
             self::markTestSkipped('Directory permissions do not bind root.');
@@ -384,6 +396,7 @@ final class FileTargetExitRoutingTest extends TestCase
         $profileDirectory = $this->directory . '/profile';
         mkdir($profileDirectory, 0o755);
         $target = $profileDirectory . '/profile.json';
+        file_put_contents($target, 'OLD PROFILE');
         $sourceRoot = \dirname(__DIR__, 4);
         $script = <<<'PHP'
             require $argv[1];
@@ -468,15 +481,15 @@ final class FileTargetExitRoutingTest extends TestCase
             ], $this->directory);
 
             self::assertSame(3, $run['exitCode'], $run['stdout'] . $run['stderr']);
-            self::assertJson($run['stdout'], 'A second JSON refusal followed the published report.');
+            self::assertJson($run['stdout'], 'The profile failure must publish one JSON refusal.');
             /** @var array<string, mixed> $report */
             $report = json_decode($run['stdout'], true, flags: \JSON_THROW_ON_ERROR);
-            self::assertArrayHasKey('summary', $report);
-            self::assertArrayNotHasKey('error', $report);
+            self::assertArrayHasKey('error', $report);
+            self::assertArrayNotHasKey('summary', $report);
             self::assertStringContainsString('primary profile delivery failure', $run['stderr']);
-            self::assertStringContainsString('cannot remove the temporary file', $run['stderr']);
-            self::assertStringContainsString('unlink(', $run['stderr']);
-            self::assertFileDoesNotExist($target);
+            self::assertStringContainsString('cannot remove the temporary file', $report['error']);
+            self::assertStringContainsString('unlink(', $report['error']);
+            self::assertSame('OLD PROFILE', file_get_contents($target));
             $entries = scandir($profileDirectory);
             self::assertIsArray($entries);
             self::assertCount(1, array_filter($entries, static fn(string $name): bool => str_starts_with($name, '.qmx-')));
@@ -501,7 +514,7 @@ final class FileTargetExitRoutingTest extends TestCase
             $preflight,
             $errorStream,
             new RunTargetSession(
-                new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets(new \Qualimetrix\Infrastructure\Logging\LoggerFactory()),
+                new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets(new \Qualimetrix\Infrastructure\Logging\LoggerFactory(), \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register()),
                 new RefusalPresenter($errorStream),
             ),
         );
@@ -537,7 +550,7 @@ final class FileTargetExitRoutingTest extends TestCase
                 }
             };
             $session = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession(
-                new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets($factory),
+                new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets($factory, \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register()),
                 $presenter,
             );
             $command = new \Qualimetrix\Infrastructure\Console\Command\GraphExportCommand(

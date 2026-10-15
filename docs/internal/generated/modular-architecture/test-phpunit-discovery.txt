@@ -11127,7 +11127,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"default"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ExhaustionReleasesTargetsTest::itReleasesUnpublishedReportAndProfileTargetsWhenTheCoordinatorRunsOutOfMemory
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itClassifiesAnUnsupportedGraphTargetWithoutWritingAReport
- - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itClassifiesEnvironmentFailureAfterCheckReport
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itClassifiesEnvironmentFailureBeforeCheckReport
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itClassifiesRawFileFailureAtDirectivesExit
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itClassifiesRawFileFailureAtGraphExit
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itClassifiesRawFileFailureBeforeCheckReport
@@ -11145,7 +11145,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itReportsEachExposedTargetBeforeAnalysis"check output"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itReportsEachExposedTargetBeforeAnalysis"check profile"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itReportsEachExposedTargetBeforeAnalysis"graph output"
- - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itReportsProfileExportAndCleanupFailuresAfterOneJsonReport
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itReportsProfileExportAndCleanupFailuresBeforeJsonReport
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetRefusalCommandTest::itClassifiesEnvironmentFailureAtApplicationExit
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetRefusalCommandTest::itClassifiesEnvironmentFailureAtLayerAssignmentExit
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FormatOptionKeyRefusalTest::itAcceptsAKeyReadOnlyByAnotherFormatter
