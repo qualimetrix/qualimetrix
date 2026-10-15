@@ -253,8 +253,8 @@ final class CorpusCaseControls
         return self::product(
             'parallel-files',
             'src/Infrastructure/Parallel/Strategy/AmphpParallelStrategy.php',
-            'array_push($results, ...$batchResults);',
-            'array_push($results, ...array_reverse($batchResults));',
+            '$results[] = $item[\'await\']();',
+            'array_unshift($results, $item[\'await\']());',
             [
                 FailureClass::SURFACE_MISMATCH => [
                     'case:parallel-files|check:parallel',
