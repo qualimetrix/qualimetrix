@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Infrastructure\Console\Unit\Command;
+namespace Qualimetrix\Tests\Infrastructure\Console\Unit\RuleListing;
 
 use Closure;
 

@@ -306,7 +306,7 @@ const P6_A_FINDING_TEST_PATHS = [
     'tests/Analysis/Finding/Unit/AbstractRuleThresholdSeamTest.php',
     'tests/Analysis/Finding/Unit/Contract/Channel/AcceptedLevelTest.php',
     'tests/Analysis/Finding/Unit/AnalysisContextTest.php',
-    'tests/Infrastructure/DependencyInjection/Unit/CompilerPass/ChannelDeclarationCompilerPassTest.php',
+    'tests/Infrastructure/DependencyInjection/Unit/RuleCatalog/ChannelDeclarationCompilerPassTest.php',
     'tests/Analysis/Finding/Unit/ChannelDeclarationReaderTest.php',
     'tests/Analysis/Finding/Unit/Contract/Channel/ChannelDeclarationTest.php',
     'tests/Analysis/Finding/Unit/LocationNullFileTest.php',
@@ -381,10 +381,10 @@ const P6_LIVE_ADDED_TEST_IDS = [
 
 /** @var array<string, string> Exact zero-net method-ID replacements. */
 const P6_RENAMED_TEST_IDS = [
-    'Qualimetrix\\Tests\\Unit\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleCompilerPassTest::itCollectsTaggedRulesIntoRuleExecutor' => 'Qualimetrix\\Tests\\Infrastructure\\DependencyInjection\\Unit\\CompilerPass\\RuleCompilerPassTest::itCollectsTaggedRulesIntoRuleExecution',
+    'Qualimetrix\\Tests\\Unit\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleCompilerPassTest::itCollectsTaggedRulesIntoRuleExecutor' => 'Qualimetrix\\Tests\\Infrastructure\\DependencyInjection\\Unit\\RuleCatalog\\RuleCompilerPassTest::itCollectsTaggedRulesIntoRuleExecution',
     'Qualimetrix\\Tests\\Integration\\DependencyInjection\\ContainerFactoryTest::itInjectsRulesIntoRuleExecutor' => 'Qualimetrix\\Tests\\Infrastructure\\DependencyInjection\\Integration\\ContainerFactoryTest::itInjectsRulesIntoRuleExecution',
     'Qualimetrix\\Tests\\Integration\\Infrastructure\\Console\\RuleExclusionStatsWiringTest::itSharesTheSameRuleExecutorInstanceBetweenThePipelineAndTheOrchestrator' => 'Qualimetrix\\Tests\\Infrastructure\\Integration\\RuleExclusionStatsWiringTest::itSharesTheSameRuleExecutionInstanceBetweenThePipelineAndTheOrchestrator',
-    'Qualimetrix\\Tests\\Infrastructure\\Console\\Functional\\Command\\CheckCommandBaselineTest::itDoesNotPromoteAnAnnotatedFindingTheBaselineNeverMeasured' => 'Qualimetrix\\Tests\\Infrastructure\\Console\\Functional\\Command\\CheckCommandBaselineTest::itCombinesConfiguredAndCliExclusionsWithoutLosingBaselineAnnotationOrGit',
+    'Qualimetrix\\Tests\\Infrastructure\\Console\\Functional\\Command\\CheckCommandBaselineTest::itDoesNotPromoteAnAnnotatedFindingTheBaselineNeverMeasured' => 'Qualimetrix\\Tests\\Infrastructure\\Console\\Functional\\Check\\CheckCommandBaselineTest::itCombinesConfiguredAndCliExclusionsWithoutLosingBaselineAnnotationOrGit',
 ];
 
 /** @var array<string, array{string, string, string}> Exact A03 orphan-probe dispositions. */

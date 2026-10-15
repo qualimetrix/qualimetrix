@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass;
+namespace Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\RuleCatalog;
 
 use LogicException;
 

@@ -492,7 +492,7 @@ final class FileLoggerTest extends TestCase
         $path = $this->tempDir . '/partial.log';
         file_put_contents($path, '');
         $script = <<<'PHP'
-            namespace Qualimetrix\Core\FileTarget {
+            namespace Qualimetrix\Core\FileTarget\Publication {
                 function fwrite($stream, string $bytes): int|false
                 {
                     ++$GLOBALS['qmx_native_hits'];

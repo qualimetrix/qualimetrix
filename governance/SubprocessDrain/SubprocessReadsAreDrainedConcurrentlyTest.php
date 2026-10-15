@@ -224,9 +224,9 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
         'tests/Infrastructure/Parallel/Unit/Strategy/AmphpParallelStrategyTest.php:375' => 'The expected unavailable-capability diagnostic, never evaluated as source.',
         'tests/Infrastructure/Parallel/Unit/Strategy/AmphpParallelStrategyTest.php:407' => 'An ini setting disables the process capability in the child; the string is configuration, not executable source.',
 
-        'src/Core/FileTarget/PrivateGroup/NativeNssEnumerator.php:17' => 'A function_exists probe, not a spawn; the actual'
+        'src/Core/FileTarget/PrivateGroup/NativeNssEnumerator.php:19' => 'A function_exists probe, not a spawn; the actual'
             . ' child invocation is declared separately below.',
-        'src/Core/FileTarget/PrivateGroup/NativeNssEnumerator.php:35' => 'Core cannot depend on the development-only'
+        'src/Core/FileTarget/PrivateGroup/NativeNssEnumerator.php:37' => 'Core cannot depend on the development-only'
             . ' ChildProcess module. NSS enumeration opens only stdout as a pipe, sends stdin and stderr to'
             . ' /dev/null, drains stdout non-blockingly, and enforces a deadline and output bound.',
         'tests/Analysis/Policy/Baseline/Functional/BaselineGenerateCommandTest.php:162' => 'The signal'
@@ -281,7 +281,7 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . 'construction instead: `git rev-parse` gets no stdin pipe and its stderr goes to `/dev/null`, so stdout is '
             . 'the only blocking stream.',
 
-        'tests/Infrastructure/Console/Functional/Command/HookInstallCommandTest.php:286' => 'Arranging a git '
+        'tests/Infrastructure/Console/Functional/Hook/HookInstallCommandTest.php:286' => 'Arranging a git '
             . 'repository for the case under test: both streams go to `/dev/null` and no pipe is opened, so only '
             . 'the exit status is read.',
 
