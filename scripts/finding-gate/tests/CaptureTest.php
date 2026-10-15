@@ -58,7 +58,7 @@ final class CaptureTest extends TestCase
     {
         $tree = SyntheticTree::clean();
         $tree['candidateAnswers']['case:alpha|format:text-detail'] = ['env' => true];
-        $root = SyntheticTree::create($tree);
+        $root = SyntheticTree::fixture($tree);
         $temporary = Fs::temporaryDirectory('detailed-text-capture-test-');
         try {
             $corpus = Corpus::load($root);
@@ -77,7 +77,7 @@ final class CaptureTest extends TestCase
     #[Test]
     public function itSharesLiveCaptureRolesAndReleasesTheirRun(): void
     {
-        $root = SyntheticTree::create(SyntheticTree::clean());
+        $root = SyntheticTree::fixture(SyntheticTree::clean());
         try {
             $maps = RenameMaps::fromPairs([]);
             $run = new RunContext(
@@ -633,7 +633,7 @@ final class CaptureTest extends TestCase
     #[Test]
     public function itCapturesEveryPlannedPublicationAndKeepsEmptyStderr(): void
     {
-        $root = SyntheticTree::create(SyntheticTree::captureFixture());
+        $root = SyntheticTree::fixture(SyntheticTree::captureFixture());
         $temporary = Fs::temporaryDirectory('capture-test-');
         try {
             $corpus = Corpus::load($root);
@@ -675,7 +675,7 @@ final class CaptureTest extends TestCase
             'args' => ['--detail=1', '--format-opt=violations=2', '--format-opt=top=7', '--rule-opt=complexity.ccn:threshold=99', '--top=0']];
         $tree['declarations']['cases/alpha/case.json'] = json_encode($definition, \JSON_THROW_ON_ERROR);
         $tree['candidateAnswers']['case:alpha|format:json'] = ['env' => true];
-        $root = SyntheticTree::create($tree);
+        $root = SyntheticTree::fixture($tree);
         $temporary = Fs::temporaryDirectory('complete-capture-test-');
         try {
             $corpus = Corpus::load($root);
@@ -726,7 +726,7 @@ final class CaptureTest extends TestCase
         $tree = SyntheticTree::captureFixture();
         $tree['candidateAnswers']['case:alpha|check:baseline-source'] = ['env' => true];
         $tree['candidateAnswers']['case:alpha|check:baseline'] = ['env' => true];
-        $root = SyntheticTree::create($tree);
+        $root = SyntheticTree::fixture($tree);
         $temporary = Fs::temporaryDirectory('baseline-ranking-capture-');
         try {
             $corpus = Corpus::load($root);
@@ -754,7 +754,7 @@ final class CaptureTest extends TestCase
                 $tree['answers']['case:alpha|check:output'] = $defect === 'missing file'
                     ? ['stdout' => '', 'missingFile' => true]
                     : ['stdout' => '', 'file' => ''];
-                $root = SyntheticTree::create($tree);
+                $root = SyntheticTree::fixture($tree);
                 $temporary = Fs::temporaryDirectory('successful-output-destination-');
                 try {
                     $corpus = Corpus::load($root);
@@ -782,7 +782,7 @@ final class CaptureTest extends TestCase
                 foreach (['baseline:update', 'baseline:cleanup', 'baseline:rename-channels'] as $command) {
                     $tree['answers']['case:alpha|' . $command] = ['stdout' => 'input refused', 'stderr' => 'input refused', 'exit' => 1, 'missingFile' => true];
                 }
-                $root = SyntheticTree::create($tree);
+                $root = SyntheticTree::fixture($tree);
                 $temporary = Fs::temporaryDirectory('whole-ranking-capture-');
                 try {
                     $corpus = Corpus::load($root);
@@ -826,7 +826,7 @@ final class CaptureTest extends TestCase
         foreach ([[-1, false], [\PHP_INT_MAX, false], ['1', false], [1, 0]] as [$total, $truncated]) {
             $tree = SyntheticTree::clean();
             $tree['candidateAnswers']['case:alpha|format:json'] = ['stdout' => json_encode(['violations' => $tree['findings']['alpha'], 'violationsMeta' => ['total' => $total, 'shown' => 1, 'truncated' => $truncated]], \JSON_THROW_ON_ERROR)];
-            $root = SyntheticTree::create($tree);
+            $root = SyntheticTree::fixture($tree);
             $temporary = Fs::temporaryDirectory('ranking-size-refusal-');
             try {
                 $corpus = Corpus::load($root);
@@ -855,7 +855,7 @@ final class CaptureTest extends TestCase
         foreach ($surfaces as $surface) {
             $tree['candidateAnswers']['case:alpha|' . $surface] = ['env' => true];
         }
-        $root = SyntheticTree::create($tree);
+        $root = SyntheticTree::fixture($tree);
         $temporary = Fs::temporaryDirectory('capture-argv-');
         try {
             $corpus = Corpus::load($root);
@@ -904,7 +904,7 @@ final class CaptureTest extends TestCase
     {
         $tree = SyntheticTree::clean();
         $tree['candidateDeclarations'][DeclaredSurfaces::INDEX] = "change\tsurface\tfile\tcases\treason\nintroduced\tformat:health\t-\t*\tnew publication\n";
-        $root = SyntheticTree::create($tree);
+        $root = SyntheticTree::fixture($tree);
         $temporary = Fs::temporaryDirectory('capture-sides-');
         try {
             $corpus = Corpus::load($root);
@@ -928,7 +928,7 @@ final class CaptureTest extends TestCase
     {
         $tree = SyntheticTree::captureFixture();
         $tree['candidateAnswers']['case:alpha|baseline-file'] = ['env' => true, 'cache' => false];
-        $root = SyntheticTree::create($tree);
+        $root = SyntheticTree::fixture($tree);
         $temporary = Fs::temporaryDirectory('capture-failure-test-');
         try {
             $corpus = Corpus::load($root);
@@ -1010,7 +1010,7 @@ final class CaptureTest extends TestCase
     /** @return array{0:string,1:string,2:array<string,string>} */
     private static function stagePublicationFixture(): array
     {
-        $root = SyntheticTree::create(SyntheticTree::captureFixture());
+        $root = SyntheticTree::fixture(SyntheticTree::captureFixture());
         $temporary = Fs::temporaryDirectory('capture-population-test-');
         try {
             $corpus = Corpus::load($root);
