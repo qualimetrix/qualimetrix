@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Functional;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader;
@@ -11,6 +12,8 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentWriter;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLockFailure;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineReadFailure;
 
+#[CoversClass(BaselineDocumentReader::class)]
+#[CoversClass(BaselineDocumentWriter::class)]
 final class BaselineEnvironmentFailureTest extends TestCase
 {
     #[Test]

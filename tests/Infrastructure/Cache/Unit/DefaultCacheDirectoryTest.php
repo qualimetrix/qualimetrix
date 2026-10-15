@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Cache\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -14,6 +15,7 @@ use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
 use Qualimetrix\Infrastructure\Cache\DefaultCacheDirectory;
 use Symfony\Component\Process\Process;
 
+#[CoversClass(DefaultCacheDirectory::class)]
 final class DefaultCacheDirectoryTest extends TestCase
 {
     #[Test]

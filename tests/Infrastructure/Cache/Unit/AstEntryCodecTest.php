@@ -7,12 +7,14 @@ namespace Qualimetrix\Tests\Infrastructure\Cache\Unit;
 use DateTimeImmutable;
 use PhpParser\Node\Scalar\Float_;
 use PhpParser\ParserFactory;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Cache\AstEntryCodec;
 use ReflectionClass;
 use stdClass;
 
+#[CoversClass(AstEntryCodec::class)]
 final class AstEntryCodecTest extends TestCase
 {
     #[Test]

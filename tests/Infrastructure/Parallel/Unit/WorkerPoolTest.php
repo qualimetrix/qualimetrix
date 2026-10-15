@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Parallel\Unit;
 
 use Amp\Parallel\Worker\TaskFailureException;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -16,6 +17,7 @@ use Qualimetrix\Infrastructure\Parallel\WorkerRequest;
 use RuntimeException;
 use Symfony\Component\Process\Process;
 
+#[CoversClass(WorkerPool::class)]
 final class WorkerPoolTest extends TestCase
 {
     #[Test]

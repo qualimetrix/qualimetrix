@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Git\Integration;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Git\GitProcessAvailability;
 use Qualimetrix\Subprocess\ChildProcess;
 
 require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
 
+#[CoversClass(GitProcessAvailability::class)]
 final class GitProcessAvailabilityTest extends TestCase
 {
     #[Test]

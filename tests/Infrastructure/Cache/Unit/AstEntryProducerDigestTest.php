@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Cache\Unit;
 
 use Composer\InstalledVersions;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Ast\PhpFileParser;
 use Qualimetrix\Infrastructure\Cache\AstEntryCodec;
 use SplFileInfo;
 
+#[CoversClass(AstEntryCodec::class)]
 final class AstEntryProducerDigestTest extends TestCase
 {
     private const string SOURCE = '<?php namespace Sample; /** docs */ final class Example { public function value(?float $input): float { return $input ?? 0.12345678901234568; } }';

@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Subprocess\ChildProcess;
 
 require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
 
+#[CoversClass(Application::class)]
 final class ProcessEdgeDiagnosticsTest extends TestCase
 {
     #[Test]

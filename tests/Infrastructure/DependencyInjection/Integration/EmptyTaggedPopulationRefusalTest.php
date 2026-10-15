@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration;
 
 use LogicException;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\TagPopulationFloorCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
+#[CoversClass(TagPopulationFloorCompilerPass::class)]
 final class EmptyTaggedPopulationRefusalTest extends TestCase
 {
     /** @return iterable<string, array{string}> */
