@@ -64,7 +64,7 @@ Run Qualimetrix in a container without installing PHP locally:
 docker run --rm -v $(pwd):/app qmx check src/
 ```
 
-This mounts your current directory into the container and analyzes the `src/` folder.
+This mounts your current directory into the container and analyzes the `src/` folder. The image sets `XDG_CACHE_HOME=/cache`. Without a `/cache` volume, AST entries disappear with the container. Mount a persistent volume per uid; a volume owned by another uid disables the implicit cache with a warning. Keep it outside `/app`. For runs with `--user $(id -u)`, use a separate volume owned by that uid.
 
 You can pass any CLI options after `check`:
 

@@ -203,9 +203,9 @@ are at most three deterministic canonical exact identities. This summary is
 separate from findings and `configurationDiagnostics`.
 
 A successful check whose resolved format is exactly `json` and destination is
-stdout writes the complete raw document at normal and quiet verbosity. SILENT
-emits no bytes. JSON selected in configuration follows the same route; file
-targets and other formats retain their existing output behavior.
+stdout writes the complete raw document at normal and quiet verbosity,
+including `--silent`; answer-producing commands do not suppress that document. JSON selected in configuration follows the same route. Other answer-producing
+formats also publish under quiet and silent; file targets keep their format.
 
 `meta` identifies the tool that wrote the document: `version`, `package`, `timestamp`, and two documentation addresses — `docs`, the documentation site, and `llmsTxt`, the index written for AI agents. Every JSON report with an envelope object carries the same two addresses; see the exceptions in [Documentation addresses in JSON reports](#documentation-addresses).
 
@@ -1228,7 +1228,7 @@ These records do not create violations, change severities or the policy exit
 code, consume baseline ceilings, or increase suppression counts. They remain
 separate from `computedMetricOutcomes`, analysis-file coverage and health-score
 coverage. Metrics, Checkstyle, GitLab, suppressed reports and baselines receive
-no synthetic abstention findings. Silent successful stdout remains empty;
+no synthetic abstention findings. Quiet and silent successful answers remain available on stdout;
 writing a report file still preserves its format's population information.
 
 ## Incomplete inheritance depth
@@ -1387,16 +1387,16 @@ only declaration absence, with the actual `unlistable` evidence retained.
 
 All formats use the same exit codes:
 
-| Exit code | Meaning                                                               |
-| --------- | --------------------------------------------------------------------- |
-| 0         | No violations (or only warnings, under the default `--fail-on=error`) |
-| 1         | At least one warning, under `--fail-on=warning`                       |
-| 2         | At least one error-severity violation                                 |
-| 3         | Configuration or input error                                          |
-| 4         | Analysis incomplete; policy result is not authoritative               |
-| `5`       | Internal tool error                                                   |
+| Exit code | Meaning                                                                    |
+| --------- | -------------------------------------------------------------------------- |
+| 0         | No violations (or only warnings, under the default `--fail-on=error`)      |
+| 1         | At least one warning, under `--fail-on=warning`                            |
+| 2         | At least one error-severity violation                                      |
+| 3         | Configuration, input or environment refusal                                |
+| 4         | Analysis incomplete or coordinator OOM; policy result is not authoritative |
+| `5`       | Internal tool error                                                        |
 
-By default (`--fail-on=error`), warnings no longer cause exit code 1 — only errors trigger a non-zero exit. Use `--fail-on=warning` for the stricter behavior where warnings also fail. Exit 4 takes precedence over warning/error policy codes.
+By default (`--fail-on=error`), warnings no longer cause exit code 1 — only errors trigger a non-zero exit. Use `--fail-on=warning` for the stricter behavior where warnings also fail. Exit 4 takes precedence over warning/error policy codes. Text and summary list up to ten unprocessed files, then say “and N more.” Worker stdout/stderr are captured rather than passed through raw; a worker death reason names its file. A bound coordinator OOM uses a JSON error envelope under JSON formats. `graph:export` with no PHP files writes an empty graph, exits 0 and explains the empty input on stderr.
 
 A run is incomplete when it could not read part of the tree it was pointed at: a file it failed to parse, a directory it may not list, a symbolic link to a directory found inside the tree, or a `*.php` entry that is not a regular file. Such an entry used to be dropped silently, so these runs used to answer 0 or 2.
 

@@ -51,6 +51,8 @@ cache identity, alongside the existing project and collector configuration.
 **Worker startup.** `WorkerRequest` keeps the accepted count and whether it was
 explicitly requested. Before collecting files, `WorkerPool` runs a
 `WorkerProbeTask` through the same serialized configuration as real tasks.
+Only process workers are supported; `ext-parallel` threads and forks are not
+alternative transports.
 `WorkerContextFactory` gives process startup one ten-second deadline and
 returns a `WorkerStartFailure` with the request and native cause when it cannot
 connect. `WorkerPhpFailure` carries a worker's private PHP fatal diagnostic back

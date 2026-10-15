@@ -240,14 +240,14 @@ state that the policy is disabled instead of claiming an active diagnostic.
 
 **Exit codes:**
 
-| Code | Description                                             |
-| ---- | ------------------------------------------------------- |
-| 0    | No findings                                             |
-| 1    | Warnings present (but no errors)                        |
-| 2    | Errors present                                          |
-| 3    | Configuration, input or environment refusal             |
-| 4    | Analysis incomplete; policy result is not authoritative |
-| 5    | Internal error                                          |
+| Code | Description                                 |
+| ---- | ------------------------------------------- |
+| 0    | No findings                                 |
+| 1    | Warnings present (but no errors)            |
+| 2    | Errors present                              |
+| 3    | Configuration, input or environment refusal |
+| 4    | Analysis incomplete or coordinator OOM      |
+| 5    | Internal error                              |
 
 Missing inferred autoload targets are attributed to `composer.json`, with the
 offending target and a single error prefix. Explicit paths retain their own source. Automatic
@@ -470,11 +470,11 @@ not against the working directory `--working-dir` has since changed.
 
 ### Caching
 
-| Option          | Default      | Description                 |
-| --------------- | ------------ | --------------------------- |
-| `--no-cache`    | false        | Disable caching             |
-| `--cache-dir`   | `.qmx-cache` | Cache directory             |
-| `--clear-cache` | false        | Clear cache before analysis |
+| Option          | Default          | Description                                             |
+| --------------- | ---------------- | ------------------------------------------------------- |
+| `--no-cache`    | false            | Disable caching                                         |
+| `--cache-dir`   | user cache `qmx` | Directory resolving outside the project to a POSIX path |
+| `--clear-cache` | false            | Clear cache before analysis                             |
 
 ### Git Integration
 

@@ -104,7 +104,9 @@ before mutation, even with --force. Existing bytes remain untouched.
 Check, update, cleanup, explain and rename-channels preflight present documents
 once before analysis/carry. Invalid grammar refuses early; configured channel
 semantics are resolved later from the same immutable byte snapshot. Storage and
-lock failures are environment exit 3.
+lock failures, a baseline changed during a write, and an unreadable baseline are
+environment exit 3; unrelated runtime defects exit 5. A refusal before analysis
+starts publishes no profile.
 
 Generate, update and writing cleanup prepare a private sibling before analysis.
 The parent must permit creation and replacement even when the final file exists.
@@ -221,7 +223,11 @@ substitutes only named channel values, preserves entries/scope/exclusions/genera
 and refuses newly created identity collisions. Shared closed grammar applies;
 unknown keys are not carried. Entry selectors change when channel identity changes.
 
+`baseline:update` and `baseline:cleanup` refuse with exit 3 and a stderr reason when the run does not cover the baseline's recorded scope and `--force` is absent. A run covering that scope is accepted.
+
 ### Explain a boundary
+
+An empty `--channel=` refuses with exit 3.
 
 ```bash
 bin/qmx baseline:explain 'class:App\OrderService' src/ --baseline=baseline.json

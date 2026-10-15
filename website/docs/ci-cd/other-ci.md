@@ -4,6 +4,8 @@ Qualimetrix works with any CI system that can run PHP. This page shows how to se
 
 ## GitLab CI
 
+GitLab `cache:paths` inside the checkout cannot represent qmx's supported user-cache location. Do not point `cache.dir` into the project. Restore the external user cache only under a trusted runner uid; foreign or obsolete records are misses.
+
 GitLab has a built-in Code Quality widget that shows issues right in merge requests. Qualimetrix supports the GitLab format natively.
 
 ```yaml
@@ -159,16 +161,18 @@ Pick the output format that works best with your CI system:
 
 ### 4. Handle Exit Codes
 
+Process workers require `proc_open` and, outside Windows, `ext-posix`. On an eligible run, explicit `--workers=N>1` refuses with environment exit 3 if the first worker cannot answer within 10 seconds; automatic selection warns and runs sequentially.
+
 Qualimetrix uses standard exit codes:
 
-| Exit Code | Meaning                        |
-| --------- | ------------------------------ |
-| `0`       | No violations                  |
-| `1`       | Warnings found (but no errors) |
-| `2`       | Errors found                   |
-| `3`       | Configuration or input error   |
-| `4`       | Analysis incomplete            |
-| `5`       | Internal tool error            |
+| Exit Code | Meaning                                     |
+| --------- | ------------------------------------------- |
+| `0`       | No violations                               |
+| `1`       | Warnings found (but no errors)              |
+| `2`       | Errors found                                |
+| `3`       | Configuration, input or environment refusal |
+| `4`       | Analysis incomplete or coordinator OOM      |
+| `5`       | Internal tool error                         |
 
 Most CI systems treat a non-zero exit code as a failure. By default, Qualimetrix uses `--fail-on=error`, so warnings are shown but don't cause failure. To also fail on warnings:
 

@@ -559,7 +559,7 @@ memory_limit: 1G    # 1 gigabyte
 # memory_limit: -1  # Unlimited
 ```
 
-Equivalent CLI: `--memory-limit=1G`
+Equivalent CLI: `--memory-limit=1G`. A value above `PHP_INT_MAX` bytes refuses with exit 3.
 
 ### Format
 
@@ -578,12 +578,10 @@ Control AST caching for faster repeated runs:
 ```yaml
 cache:
   enabled: true         # Default: true
-  dir: .qmx-cache       # Default: .qmx-cache
+  dir: /home/user/.cache/qmx  # Optional explicit POSIX path outside this project
 ```
 
-`dir` is a directory path, written as a string. A name made only of digits is a
-directory name like any other, so `dir: "7331"` is the directory `7331`; it has
-to be quoted, because an unquoted `7331` is a number and a number is not a path.
+`dir` is parsed as a string. When caching is enabled or `--clear-cache` uses the location, an absolute path or a path relative to the project root must resolve to a supported POSIX path outside the project; for example, `../external-cache` can qualify. A quoted numeric name is a string, then receives the same runtime path judgement if the location is used. `--no-cache` without clearing does not judge an unused root. The default is the user cache directory under `qmx`, shared across projects; old `.qmx-cache` entries are not read. An explicit root owned by another user or writable by group/others refuses when used; an unusable default disables caching with one warning. Root eligibility does not establish trust for every ancestor. The cache uses a current-format allowlisted AST codec; old formats are misses. `short_open_tag` participates in the key. Entries unread for 30 days are swept incrementally. Each open sweeps 16 of 256 shards; after 16 successful sweep steps, the per-format target is 2 GiB plus entries written since each shard's last sweep and one oversized newest entry per shard, rather than an immediate hard quota.
 
 Equivalent CLI: `--no-cache` to disable, `--cache-dir=DIR` to change directory.
 
@@ -598,7 +596,7 @@ parallel:
   # workers: 1   # Disable parallelism (single-process)
 ```
 
-By default, Qualimetrix auto-detects the optimal worker count based on CPU cores. Equivalent CLI: `--workers=4`
+By default, Qualimetrix auto-detects the worker count based on CPU cores. Equivalent CLI: `--workers=4`. On an eligible run, an explicit count above one uses processes and refuses with environment exit 3 if the first worker cannot start or answer within 10 seconds; automatic selection warns and falls back to sequential. `ext-parallel` threads and forks are not transports.
 
 !!! tip
     Use `workers: 1` for debugging or single-process environments. `workers: 0` disables parallelism (sequential execution); auto-detect is the default when the option is omitted.
@@ -749,7 +747,7 @@ fail_on: error        # default — warnings shown but don't fail the build
 
 cache:
   enabled: true
-  dir: .qmx-cache
+  dir: /home/user/.cache/qmx
 
 parallel:
   workers: 4

@@ -44,12 +44,17 @@ The root is `<base>/qmx`. Core's existing path contract is POSIX: native Windows
 drive and UNC paths cannot be represented, and unsupported defaults are disabled.
 Canonicalisation must also retain a supported path. Native Windows operation is
 not promised by selecting its environment variable.
+The old checkout `.qmx-cache` is not read. The Docker image sets
+`XDG_CACHE_HOME=/cache`; retaining entries across containers requires a mounted
+volume at `/cache`, with a separate volume for each uid.
 
 The resolver captures `getenv()` for a configured run. The store captures cwd
 and environment at its first runtime read after reset, never during container
 construction. `CacheSource` retains the explicit writer or default source.
 
-Explicit directories are judged before analysis. A canonical root equal to or
+Explicit directories are judged before analysis when caching is enabled or
+`--clear-cache` uses the location. `--no-cache` without clearing does not judge
+an unused root. A canonical root equal to or
 below the project root refuses with its source and advice to use a directory
 outside the checkout; project root `/` is exempt. The root must be creatable
 under Core's link/access policy. On POSIX an existing root must belong to the
@@ -133,7 +138,7 @@ invalid default is not cleared.
 
 - Cold, warm and poisoned cache runs produce source-derived findings.
 - Keys reflect source bytes and parsing environment, excluding paths.
-- Explicit invalid roots refuse; default failures disable once.
+- Explicit invalid roots refuse when caching or clearing uses them; default failures disable once. Disabling caching without clearing leaves an unused root unjudged.
 - Codec round trips preserve floats/comments and reject foreign objects.
 - Open/sweep/warnings occur once per run on both coordinator entry paths.
 - Sweep covers shards/versions with age and quota bounds.
