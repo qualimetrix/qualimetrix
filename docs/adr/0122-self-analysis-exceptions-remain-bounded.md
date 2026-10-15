@@ -99,3 +99,17 @@ durable design cause rather than embedding measurements that will drift.
 Selfcheck still requires the exact architecture manifest check before the qmx
 ratchet. These practices preserve a visible upper bound on accepted quality
 debt while letting measured improvements tighten it.
+
+## Migration
+
+`composer suppression-snapshot` and `composer suppression-snapshot:check` now
+refuse with exit 3 when a configuration suppressor appears in `neverMatched`.
+This covers the reported path, namespace and rule selectors; it does not audit
+inline directives. Those retain the separate `bin/qmx directives` audit, whose
+observable inert result exits 2. The snapshot commands
+previously accepted that debt and could retain `inert.tsv` as an output artifact.
+Remove the unused exception at its named configuration address, then
+rerun the command; do not preserve an inert row as a placeholder. A refusal
+happens before snapshot publication and leaves the existing composition
+artifact intact. Active quality exceptions still require a finite ceiling as
+described above.

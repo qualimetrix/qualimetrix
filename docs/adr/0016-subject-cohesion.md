@@ -143,3 +143,54 @@ is superseded on this point.
   rule enforceable rather than advisory.
 - The rule is portable and is carried in the author's cross-project agent
   instructions; this ADR is its reference statement.
+
+### Subject-local declaration migration
+
+Parsing failures belong to the AST contract that throws them, and conflicting
+CLI aliases belong to rule registration. Their exception role does not justify
+a separate directory. Likewise, parameter counts, private-member usage,
+unreachable statements, RFC response calculation and Halstead measurement each
+form a subject within their existing capability. The following names replace
+the previous names without compatibility aliases. Update imports, catch
+clauses, direct construction and service references using this table; filenames
+follow the same PSR-4 substitution. Rule channel names and configuration keys
+do not change.
+
+| Previous name                                                             | Replacement                                                                              |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionOptions` | `Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ConstructorOverinjectionOptions` |
+| `Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionRule`    | `Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ConstructorOverinjectionRule`    |
+| `Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListOptions`        | `Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\LongParameterListOptions`        |
+| `Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule`           | `Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\LongParameterListRule`           |
+| `Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCountCollector`         | `Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ParameterCountCollector`         |
+| `Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCountVisitor`           | `Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ParameterCountVisitor`           |
+| `Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeCollector`        | `Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCode\UnreachableCodeCollector`       |
+| `Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeOptions`          | `Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCode\UnreachableCodeOptions`         |
+| `Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeRule`             | `Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCode\UnreachableCodeRule`            |
+| `Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeVisitor`          | `Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCode\UnreachableCodeVisitor`         |
+| `Qualimetrix\Analysis\Evidence\CodeSmell\LiteralCallableUse`              | `Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\LiteralCallableUse`               |
+| `Qualimetrix\Analysis\Evidence\CodeSmell\OwnClassReference`               | `Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\OwnClassReference`                |
+| `Qualimetrix\Analysis\Evidence\CodeSmell\TraitUsageResolver`              | `Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\TraitUsageResolver`               |
+| `Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateClassData`          | `Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\UnusedPrivateClassData`           |
+| `Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateCollector`          | `Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\UnusedPrivateCollector`           |
+| `Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateOptions`            | `Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\UnusedPrivateOptions`             |
+| `Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateRule`               | `Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\UnusedPrivateRule`                |
+| `Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateVisitor`            | `Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\UnusedPrivateVisitor`             |
+| `Qualimetrix\Analysis\Evidence\CodeSmell\UsageTrackingTrait`              | `Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\UsageTrackingTrait`               |
+| `Qualimetrix\Analysis\Evidence\Coupling\RfcBodyResponses`                 | `Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcBodyResponses`                            |
+| `Qualimetrix\Analysis\Evidence\Coupling\RfcClassFacts`                    | `Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcClassFacts`                               |
+| `Qualimetrix\Analysis\Evidence\Coupling\RfcCollector`                     | `Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcCollector`                                |
+| `Qualimetrix\Analysis\Evidence\Coupling\RfcDeclarationFacts`              | `Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcDeclarationFacts`                         |
+| `Qualimetrix\Analysis\Evidence\Coupling\RfcDeclarationIndex`              | `Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcDeclarationIndex`                         |
+| `Qualimetrix\Analysis\Evidence\Coupling\RfcEffectiveMembers`              | `Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcEffectiveMembers`                         |
+| `Qualimetrix\Analysis\Evidence\Coupling\RfcGlobalCollector`               | `Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcGlobalCollector`                          |
+| `Qualimetrix\Analysis\Evidence\Coupling\RfcLocalFlow`                     | `Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcLocalFlow`                                |
+| `Qualimetrix\Analysis\Evidence\Coupling\RfcPropertyTypes`                 | `Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcPropertyTypes`                            |
+| `Qualimetrix\Analysis\Evidence\Coupling\RfcReceiverTypes`                 | `Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcReceiverTypes`                            |
+| `Qualimetrix\Analysis\Evidence\Coupling\RfcResponseResolver`              | `Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcResponseResolver`                         |
+| `Qualimetrix\Analysis\Evidence\Coupling\RfcVisitor`                       | `Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcVisitor`                                  |
+| `Qualimetrix\Analysis\Evidence\Maintainability\HalsteadCollector`         | `Qualimetrix\Analysis\Evidence\Maintainability\Halstead\HalsteadCollector`               |
+| `Qualimetrix\Analysis\Evidence\Maintainability\HalsteadMetrics`           | `Qualimetrix\Analysis\Evidence\Maintainability\Halstead\HalsteadMetrics`                 |
+| `Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor`           | `Qualimetrix\Analysis\Evidence\Maintainability\Halstead\HalsteadVisitor`                 |
+| `Qualimetrix\Core\Exception\ParseException`                               | `Qualimetrix\Core\Ast\ParseException`                                                    |
+| `Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException`  | `Qualimetrix\Infrastructure\Rule\ConflictingCliAliasException`                           |
