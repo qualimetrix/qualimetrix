@@ -114,23 +114,26 @@ src/Core/FileTarget/TemporarySibling.php	Qualimetrix\Core\FileTarget\TemporarySi
 src/Core/Symbol/FileDeclarationIndex.php	Qualimetrix\Core\Symbol\FileDeclarationIndex	Core.Symbol	"request scratch or mutable internal value"	-	positions	register
 src/Core/Symbol/PhpBuiltinClassRegistry.php	Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	"process-wide static"	byFoldedName	-	-
 src/Core/Symbol/TraitCompositionScope.php	Qualimetrix\Core\Symbol\TraitCompositionScope	Core.Symbol	"request scratch or mutable internal value"	-	active,cyclic,read,unread	-
-src/Infrastructure/Ast/CachedFileParser.php	Qualimetrix\Infrastructure\Ast\CachedFileParser	Infrastructure.Ast	"adapter session or cache"	-	resolvedCache	-
+src/Infrastructure/Cache/AstEntryCodec.php	Qualimetrix\Infrastructure\Cache\AstEntryCodec	Infrastructure.Cache	"process-wide static"	classes	-	-
 src/Infrastructure/Cache/CacheConfigurationStore.php	Qualimetrix\Infrastructure\Cache\CacheConfigurationStore	Infrastructure.Cache	"adapter session or cache"	-	configuration	reset
-src/Infrastructure/Cache/CacheFactory.php	Qualimetrix\Infrastructure\Cache\CacheFactory	Infrastructure.Cache	"adapter session or cache"	-	cache	reset,resetConfiguration
-src/Infrastructure/Cache/FileCache.php	Qualimetrix\Infrastructure\Cache\FileCache	Infrastructure.Cache	"adapter session or cache"	-	serializerVerified	clear,set
+src/Infrastructure/Cache/CacheFactory.php	Qualimetrix\Infrastructure\Cache\CacheFactory	Infrastructure.Cache	"adapter session or cache"	-	cache,directory,discardedReported,location,locationJudged,logger,opened	clear,configureLogger,reset,resetConfiguration
+src/Infrastructure/Cache/CacheKeyGenerator.php	Qualimetrix\Infrastructure\Cache\CacheKeyGenerator	Infrastructure.Cache	"adapter session or cache"	-	cacheVersion,parserVersion	-
+src/Infrastructure/Cache/FileCache.php	Qualimetrix\Infrastructure\Cache\FileCache	Infrastructure.Cache	"adapter session or cache"	-	discardedEntries	clear,set
 src/Infrastructure/Composer/ComposerAutoloadMap.php	Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap	Infrastructure.Composer	"adapter session or cache"	-	classmap,loaded,omissions,psr4	addPsr4
 src/Infrastructure/Composer/ComposerClassPathLookup.php	Qualimetrix\Infrastructure\Composer\ComposerClassPathLookup	Infrastructure.Composer	"adapter session or cache"	-	directoryEntries,roots	-
 src/Infrastructure/Composer/ComposerManifestReader.php	Qualimetrix\Infrastructure\Composer\ComposerManifestReader	Infrastructure.Composer	"invocation snapshot cache"	-	snapshots	beginInvocation
 src/Infrastructure/Composer/DeclaredParentReader.php	Qualimetrix\Infrastructure\Composer\DeclaredParentReader	Infrastructure.Composer	"adapter session or cache"	-	answers	-
+src/Infrastructure/Console/Application.php	Qualimetrix\Infrastructure\Console\Application	Infrastructure.Console	"adapter session or cache"	-	invocationFormat,memoryHint,productLoader	configureIO
 src/Infrastructure/Console/Command/BaselineCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	"adapter session or cache"	-	refusalPresenter	execute,setRefusalPresenter
 src/Infrastructure/Console/Command/CheckCommand.php	Qualimetrix\Infrastructure\Console\Command\CheckCommand	Infrastructure.Console	"adapter session or cache"	-	hiddenOptionNames	configure,execute
 src/Infrastructure/Console/ErrorStream.php	Qualimetrix\Infrastructure\Console\ErrorStream	Infrastructure.Console	"adapter session or cache"	-	boundTo,diagnostics,mode,progress,sectionable,sections	bind,reset
 src/Infrastructure/Console/FilteredInputDefinition.php	Qualimetrix\Infrastructure\Console\FilteredInputDefinition	Infrastructure.Console	"adapter session or cache"	-	hiddenOptionNames	setHiddenOptionNames
 src/Infrastructure/Console/Hook/HookEntryAccess.php	Qualimetrix\Infrastructure\Console\Hook\HookEntryAccess	Infrastructure.Console	"adapter session or cache"	-	reportedExposure	-
+src/Infrastructure/Console/ProductCommandLoader.php	Qualimetrix\Infrastructure\Console\ProductCommandLoader	Infrastructure.Console	"adapter session or cache"	-	container	-
 src/Infrastructure/Console/Progress/ConsoleProgressBar.php	Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar	Infrastructure.Console	"adapter session or cache"	-	progressBar	setMessage
 src/Infrastructure/Console/Progress/SwitchableProgressReporter.php	Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter	Infrastructure.Console	"adapter session or cache"	-	delegate	reset,setMessage
-src/Infrastructure/Console/Refusal/OutOfMemoryHint.php	Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint	Infrastructure.Console	"process-wide static"	registered,reserve	-	register
-src/Infrastructure/Console/RunTarget/RunTargetClaimLifecycle.php	Qualimetrix\Infrastructure\Console\RunTarget\RunTargetClaimLifecycle	Infrastructure.Console	"adapter session or cache"	-	held,lastSignal,prepared,signals	settle
+src/Infrastructure/Console/Refusal/OutOfMemoryHint.php	Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint	Infrastructure.Console	"process-wide static"	registered	format,limitSource,nextRelease,output,presenter,releases,reserve	register
+src/Infrastructure/Console/RunTarget/RunTargetClaimLifecycle.php	Qualimetrix\Infrastructure\Console\RunTarget\RunTargetClaimLifecycle	Infrastructure.Console	"adapter session or cache"	-	held,lastSignal,prepared,removeExhaustion,signals,unwritten	settle
 src/Infrastructure/Console/RunTarget/RunTargetSession.php	Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession	Infrastructure.Console	"adapter session or cache"	-	outputPublished	-
 src/Infrastructure/Console/RunTarget/RunTargets.php	Qualimetrix\Infrastructure\Console\RunTarget\RunTargets	Infrastructure.Console	"adapter session or cache"	-	judged,reportOnStandardOutput	settle
 src/Infrastructure/Console/RunTarget/StagedSignalGuard.php	Qualimetrix\Infrastructure\Console\RunTarget\StagedSignalGuard	Infrastructure.Console	"adapter session or cache"	-	closing,interrupted,previousAsync,previousHandlers	register
@@ -140,8 +143,12 @@ src/Infrastructure/Logging/FileLogger.php	Qualimetrix\Infrastructure\Logging\Fil
 src/Infrastructure/Logging/LoggerFactory.php	Qualimetrix\Infrastructure\Logging\LoggerFactory	Infrastructure.Logging	"adapter session or cache"	-	fileLogger	reset,settle
 src/Infrastructure/Logging/LoggerHolder.php	Qualimetrix\Infrastructure\Logging\LoggerHolder	Infrastructure.Logging	"runtime holder"	-	logger	reset,setLogger
 src/Infrastructure/Parallel/Runtime/ParallelConfigurationStore.php	Qualimetrix\Infrastructure\Parallel\Runtime\ParallelConfigurationStore	Infrastructure.Parallel	"adapter session or cache"	-	configuration	reset
-src/Infrastructure/Parallel/Strategy/AmphpParallelStrategy.php	Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy	Infrastructure.Parallel	"adapter session or cache"	-	cacheDir,minFilesForParallel,projectRoot,workerCount	execute,executeParallel,executeSequential,setCacheDir,setMinFilesForParallel,setProjectRoot,setWorkerCount
+src/Infrastructure/Parallel/Strategy/AmphpParallelStrategy.php	Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy	Infrastructure.Parallel	"adapter session or cache"	-	cacheDir,minFilesForParallel,projectRoot,request	execute,executeParallel,executeSequential,setCacheDir,setMinFilesForParallel,setProjectRoot,setWorkerCount,setWorkerRequest
 src/Infrastructure/Parallel/WorkerBootstrap.php	Qualimetrix\Infrastructure\Parallel\WorkerBootstrap	Infrastructure.Parallel	"worker-process static"	cacheKey,processor	-	buildCacheKey,reset
+src/Infrastructure/Parallel/WorkerContextFactory.php	Qualimetrix\Infrastructure\Parallel\WorkerContextFactory	Infrastructure.Parallel	"adapter session or cache"	-	failure,startupFiles	-
+src/Infrastructure/Parallel/WorkerFatalNotes.php	Qualimetrix\Infrastructure\Parallel\WorkerFatalNotes	Infrastructure.Parallel	"process-wide static"	registered	file,reserve	-
+src/Infrastructure/Parallel/WorkerNotes.php	Qualimetrix\Infrastructure\Parallel\WorkerNotes	Infrastructure.Parallel	"adapter session or cache"	-	awaitingDeaths,deaths,readers	-
+src/Infrastructure/Parallel/WorkerPool.php	Qualimetrix\Infrastructure\Parallel\WorkerPool	Infrastructure.Parallel	"adapter session or cache"	-	closed	-
 src/Infrastructure/Profiler/ProfileSession.php	Qualimetrix\Infrastructure\Profiler\ProfileSession	Infrastructure.Profiler	"adapter session or cache"	-	enabled,profiler	-
 src/Infrastructure/Profiler/Profiler.php	Qualimetrix\Infrastructure\Profiler\Profiler	Infrastructure.Profiler	"adapter session or cache"	-	exporters,rootSpans,stack	clear,collectStats
 src/Infrastructure/Profiler/Span.php	Qualimetrix\Infrastructure\Profiler\Span	Infrastructure.Profiler	"adapter session or cache"	-	children,endMemory,endTime,parent,stopped	-

@@ -155,7 +155,6 @@ src/Infrastructure/Parallel/README.md	Infrastructure.Parallel	"Move or update at
 src/Infrastructure/Profiler/README.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."
 src/Infrastructure/README.md	Architecture.Governance	"Move or update atomically with the named subject owner."
 src/Infrastructure/Rule/README.md	Infrastructure.Rule	"Move or update atomically with the named subject owner."
-src/Infrastructure/Serializer/README.md	Infrastructure.Serializer	"Move or update atomically with the named subject owner."
 src/Reporting/GraphProjection/README.md	Reporting.GraphProjection	"Move or update atomically with the named subject owner."
 src/Reporting/README.md	Architecture.Governance	"Move or update atomically with the named subject owner."
 website/docs/changelog.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."

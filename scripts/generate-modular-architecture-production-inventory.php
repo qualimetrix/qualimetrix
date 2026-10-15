@@ -2498,7 +2498,6 @@ function documentationDisposition(string $path): array
         'src/Infrastructure/DependencyInjection/README.md' => 'Infrastructure.DependencyInjection',
         'src/Infrastructure/Parallel/README.md' => 'Infrastructure.Parallel',
         'src/Infrastructure/Rule/README.md' => 'Infrastructure.Rule',
-        'src/Infrastructure/Serializer/README.md' => 'Infrastructure.Serializer',
         'src/Infrastructure/Console/README.md' => 'Architecture.Governance',
         'src/Infrastructure/README.md' => 'Architecture.Governance',
         'src/Reporting/GraphProjection/README.md' => 'Reporting.GraphProjection',

@@ -19,11 +19,15 @@ require_once __DIR__ . '/subprocess/ChildProcess.php';
 
 const OUTPUT_DIRECTORY = 'docs/internal/generated/modular-architecture';
 const TEST_LEVELS = ['Unit', 'Integration', 'Functional'];
-// 81 paths: the accepted finite Baseline artifact set plus comparison,
-// group-measurement, subject-region, update-mode, unused-entry, file-lookup and layer-migration regressions.
+const CACHE_UNIT_LOCAL_FIXTURES = [
+    'tests/Infrastructure/Cache/Unit/ast-entry-classes.txt',
+    'tests/Infrastructure/Cache/Unit/ast-entry-producer.json',
+];
+// 82 paths: the accepted finite Baseline artifact set plus comparison,
+// group-measurement, subject-region, update-mode, unused-entry, file-lookup, layer-migration and environment-failure regressions.
 // Re-hash only against a diff of the path list; refreshing the digest without
 // checking that delta asserts nothing.
-const P6_C_BASELINE_PATHS_SHA256 = '40fe4c6e1aecc08b787014bd1f4f10efd6393437ed9f5f2eca10d4251fc33319';
+const P6_C_BASELINE_PATHS_SHA256 = '5250923fd479f570c3d10fd949b5c7e428b964eecde980892bbae9d56d8f5e27';
 
 $arguments = $_SERVER['argv'] ?? [];
 $check = in_array('--check', $arguments, true);
@@ -1124,7 +1128,7 @@ function classifyOwner(string $path): string
     // is not an owner either. An Infrastructure subject missing from this list
     // now reaches the unclassified refusal at the end of the ladder, which is an
     // ownership decision asked for rather than answered wrongly.
-    if (preg_match('#^tests/Infrastructure/(Ast|Cache|Console|DependencyInjection|Logging|Parallel|Profiler|Rule|Serializer)/#', $path, $matches) === 1) {
+    if (preg_match('#^tests/Infrastructure/(Ast|Cache|Console|DependencyInjection|Logging|Parallel|Profiler|Rule)/#', $path, $matches) === 1) {
         return 'Infrastructure/' . $matches[1];
     }
     if (str_starts_with($path, 'tests/Reporting/')) {
@@ -1149,6 +1153,9 @@ function classifyKind(string $path, array $discoveredClasses): string
         return 'phpunit-test-class';
     }
     if (str_contains($path, '/Fixtures/') || str_contains($path, '/Fixture/') || str_contains($path, '/data/') || str_contains($path, '/fixtures/') || preg_match('/Fixture(s)?\.php$/', $path) === 1) {
+        return 'fixture';
+    }
+    if (in_array($path, CACHE_UNIT_LOCAL_FIXTURES, true)) {
         return 'fixture';
     }
     if ($path === 'tests/TestSupport/WorkingDirectory/declared-residue.tsv') {
@@ -1736,7 +1743,10 @@ function orphanCandidateReason(string $path): ?string
 
 function targetPath(string $path, string $kind, string $owner, string $targetSuite): string
 {
-    if ($path === 'tests/bootstrap.php' || str_starts_with($path, 'tests/TestSupport/WorkingDirectory/')) {
+    if ($path === 'tests/bootstrap.php'
+        || in_array($path, CACHE_UNIT_LOCAL_FIXTURES, true)
+        || str_starts_with($path, 'tests/TestSupport/WorkingDirectory/')
+    ) {
         return $path;
     }
     if (isRegisteredToolingRoot($path)) {

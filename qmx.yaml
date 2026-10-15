@@ -899,6 +899,8 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineLoader'
+        - 'Qualimetrix\Analysis\Policy\Baseline\BaselineLockFailure'
+        - 'Qualimetrix\Analysis\Policy\Baseline\BaselineReadFailure'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateDisposition'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateRefusalReason'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateResult'
@@ -1205,6 +1207,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Ast\WorkerParserFactory'
     - name: infrastructure-cache
       patterns:
+        - 'Qualimetrix\Infrastructure\Cache\AstEntryCodec'
         - 'Qualimetrix\Infrastructure\Cache\CacheClearOutcome'
         - 'Qualimetrix\Infrastructure\Cache\CacheConfigurationResolver'
         - 'Qualimetrix\Infrastructure\Cache\CacheConfigurationStore'
@@ -1213,12 +1216,21 @@ architecture:
         - 'Qualimetrix\Infrastructure\Cache\CacheFactory'
         - 'Qualimetrix\Infrastructure\Cache\CacheInterface'
         - 'Qualimetrix\Infrastructure\Cache\CacheKeyGenerator'
+        - 'Qualimetrix\Infrastructure\Cache\CacheLayout'
+        - 'Qualimetrix\Infrastructure\Cache\CacheLocationJudgement'
+        - 'Qualimetrix\Infrastructure\Cache\CacheRootUntrusted'
         - 'Qualimetrix\Infrastructure\Cache\CacheSection'
+        - 'Qualimetrix\Infrastructure\Cache\CacheSource'
+        - 'Qualimetrix\Infrastructure\Cache\CacheSweep'
         - 'Qualimetrix\Infrastructure\Cache\CacheWriteException'
         - 'Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration'
         - 'Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface'
         - 'Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationStoreInterface'
+        - 'Qualimetrix\Infrastructure\Cache\Contract\CacheOpener'
+        - 'Qualimetrix\Infrastructure\Cache\DefaultCacheDirectory'
         - 'Qualimetrix\Infrastructure\Cache\FileCache'
+        - 'Qualimetrix\Infrastructure\Cache\SweepPolicy'
+        - 'Qualimetrix\Infrastructure\Cache\SweepStepOutcome'
     - name: infrastructure-composer
       patterns:
         - 'Qualimetrix\Infrastructure\Composer\ClassmapPath'
@@ -1282,6 +1294,8 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\Command\RulesCommand'
         - 'Qualimetrix\Infrastructure\Console\ConfigurationDiagnosticsPublisher'
         - 'Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter'
+        - 'Qualimetrix\Infrastructure\Console\ConsoleDiagnostics'
+        - 'Qualimetrix\Infrastructure\Console\ContainerBuildFailure'
         - 'Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter'
         - 'Qualimetrix\Infrastructure\Console\DirectiveAuditTextPresenter'
         - 'Qualimetrix\Infrastructure\Console\DirectiveVerdictTally'
@@ -1308,6 +1322,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\OutputHelper'
         - 'Qualimetrix\Infrastructure\Console\PreparedAnalysisInput'
         - 'Qualimetrix\Infrastructure\Console\PreparedAnalysisRuntimeConfiguration'
+        - 'Qualimetrix\Infrastructure\Console\ProductCommandLoader'
         - 'Qualimetrix\Infrastructure\Console\ProfilePresenter'
         - 'Qualimetrix\Infrastructure\Console\ProfileSummaryRenderer'
         - 'Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar'
@@ -1320,6 +1335,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\Refusal\MachineReadableFormats'
         - 'Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint'
         - 'Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter'
+        - 'Qualimetrix\Infrastructure\Console\RenderedCheckReport'
         - 'Qualimetrix\Infrastructure\Console\ReportCoverageProjection'
         - 'Qualimetrix\Infrastructure\Console\ResolvedCheckScope'
         - 'Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration'
@@ -1358,6 +1374,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass'
+        - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\TagPopulationFloorCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ThresholdValidatorMapCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\AnalysisConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\ArchitectureConfigurator'
@@ -1393,6 +1410,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Git\ChangeStatus'
         - 'Qualimetrix\Infrastructure\Git\ChangedFile'
         - 'Qualimetrix\Infrastructure\Git\GitClient'
+        - 'Qualimetrix\Infrastructure\Git\GitProcessAvailability'
         - 'Qualimetrix\Infrastructure\Git\GitRepositoryLocator'
         - 'Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface'
         - 'Qualimetrix\Infrastructure\Git\GitScope'
@@ -1400,6 +1418,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Git\GitScopeRefusedException'
         - 'Qualimetrix\Infrastructure\Git\GitScopeResolution'
         - 'Qualimetrix\Infrastructure\Git\GitScopeResolver'
+        - 'Qualimetrix\Infrastructure\Git\GitUnavailable'
         - 'Qualimetrix\Infrastructure\Git\NameStatusListing'
         - 'Qualimetrix\Infrastructure\Git\NameStatusRecord'
         - 'Qualimetrix\Infrastructure\Git\NotAGitRepositoryException'
@@ -1421,16 +1440,27 @@ architecture:
         - 'Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfiguration'
         - 'Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface'
         - 'Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationStoreInterface'
+        - 'Qualimetrix\Infrastructure\Parallel\Contract\WorkerDiagnosticsInterface'
         - 'Qualimetrix\Infrastructure\Parallel\FileProcessingTask'
         - 'Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory'
         - 'Qualimetrix\Infrastructure\Parallel\Runtime\ParallelConfigurationStore'
         - 'Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy'
+        - 'Qualimetrix\Infrastructure\Parallel\Strategy\CgroupCpuQuota'
+        - 'Qualimetrix\Infrastructure\Parallel\Strategy\CgroupLocation'
         - 'Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy'
         - 'Qualimetrix\Infrastructure\Parallel\Strategy\StrategySelector'
         - 'Qualimetrix\Infrastructure\Parallel\Strategy\WorkerCountDetector'
         - 'Qualimetrix\Infrastructure\Parallel\WorkerBootstrap'
         - 'Qualimetrix\Infrastructure\Parallel\WorkerComposition'
+        - 'Qualimetrix\Infrastructure\Parallel\WorkerContext'
+        - 'Qualimetrix\Infrastructure\Parallel\WorkerContextFactory'
+        - 'Qualimetrix\Infrastructure\Parallel\WorkerFatalNotes'
+        - 'Qualimetrix\Infrastructure\Parallel\WorkerNotes'
+        - 'Qualimetrix\Infrastructure\Parallel\WorkerPhpFailure'
         - 'Qualimetrix\Infrastructure\Parallel\WorkerPool'
+        - 'Qualimetrix\Infrastructure\Parallel\WorkerProbeTask'
+        - 'Qualimetrix\Infrastructure\Parallel\WorkerRequest'
+        - 'Qualimetrix\Infrastructure\Parallel\WorkerStartFailure'
     - name: infrastructure-profiler
       patterns:
         - 'Qualimetrix\Infrastructure\Profiler\Contract\ProfileFormat'
@@ -1452,12 +1482,6 @@ architecture:
         - 'Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException'
         - 'Qualimetrix\Infrastructure\Rule\RuleRegistry'
         - 'Qualimetrix\Infrastructure\Rule\RuleRegistryInterface'
-    - name: infrastructure-serializer
-      patterns:
-        - 'Qualimetrix\Infrastructure\Serializer\IgbinarySerializer'
-        - 'Qualimetrix\Infrastructure\Serializer\PhpSerializer'
-        - 'Qualimetrix\Infrastructure\Serializer\SerializerInterface'
-        - 'Qualimetrix\Infrastructure\Serializer\SerializerSelector'
     - name: reporting
       patterns:
         - 'Qualimetrix\Reporting\Configuration\OutputFormatResolver'
@@ -1700,6 +1724,7 @@ architecture:
       - analysis-evidence-measurement
       - analysis-finding
       - analysis-run
+      - core-environment
       - core-filetarget
       - core-neutral
       - core-path
@@ -1755,9 +1780,9 @@ architecture:
       - external
     infrastructure-cache:
       - analysis-configuration
+      - core-environment
       - core-filetarget
       - core-path
-      - infrastructure-serializer
       - external
     infrastructure-composer:
       - analysis-evidence-dependencymodel
@@ -1829,6 +1854,8 @@ architecture:
       - external
     infrastructure-git:
       - analysis-run
+      - core-environment
+      - core-filetarget
       - core-path
       - reporting
       - external
@@ -1844,6 +1871,8 @@ architecture:
       - analysis-finding
       - analysis-policy-inline
       - analysis-run
+      - core-environment
+      - core-filetarget
       - core-path
       - core-profiler
       - infrastructure-ast
@@ -1857,8 +1886,6 @@ architecture:
       - analysis-evidence-measurement
       - analysis-finding
       - core-symbol
-      - external
-    infrastructure-serializer:
       - external
     reporting:
       - analysis-configuration
