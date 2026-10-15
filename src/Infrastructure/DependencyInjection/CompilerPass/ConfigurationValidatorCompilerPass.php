@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 
 use LogicException;
+use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
 use Qualimetrix\Analysis\Finding\RuleMaterialization;
 use Qualimetrix\Infrastructure\Rule\ConfigurationValidatorRegistry;
 use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
@@ -25,8 +26,6 @@ final class ConfigurationValidatorCompilerPass implements CompilerPassInterface,
 {
     public const string TAG = 'qmx.configuration_validator';
 
-    private const string VALIDATOR_INTERFACE = 'Qualimetrix\\Analysis\\Finding\\Contract\\ConfigurationValidatorInterface';
-
     public static function consumerServiceIds(): array
     {
         return [ConfigurationValidatorRegistry::class, RuleMaterialization::class];
@@ -34,43 +33,7 @@ final class ConfigurationValidatorCompilerPass implements CompilerPassInterface,
 
     public function process(ContainerBuilder $container): void
     {
-        $validators = [];
-        $validatorClasses = [];
-
-        foreach ($container->findTaggedServiceIds(self::TAG) as $id => $tags) {
-            $class = $container->getDefinition($id)->getClass();
-
-            // Refused, not skipped. A validator dropped here runs never and
-            // declares nothing, and no second reader would notice the loss:
-            // ChannelDeclarationCompilerPass reads the same tag and would be
-            // missing the same member, so the two-witness check would agree
-            // about a universe both are short of.
-            if ($class === null) {
-                throw new LogicException(\sprintf(
-                    'Service "%s" is tagged "%s" but its definition names no class. A validator is read by'
-                    . ' reflection off its class; without one it would silently neither run nor declare anything.',
-                    $id,
-                    self::TAG,
-                ));
-            }
-
-            if (!is_a($class, self::VALIDATOR_INTERFACE, true)) {
-                throw new LogicException(\sprintf(
-                    'Service "%s" is tagged "%s" but its class %s does not implement %s.',
-                    $id,
-                    self::TAG,
-                    $class,
-                    self::VALIDATOR_INTERFACE,
-                ));
-            }
-
-            $container->getDefinition($id)->setShared(false);
-            $validators[] = [
-                'producer' => $class::producerRuleName(),
-                'create' => new ServiceClosureArgument(new Reference($id)),
-            ];
-            $validatorClasses[] = $class;
-        }
+        [$validators, $validatorClasses] = $this->collectValidators($container);
 
         if ($container->hasDefinition(ConfigurationValidatorRegistry::class)) {
             $container->getDefinition(ConfigurationValidatorRegistry::class)
@@ -83,5 +46,57 @@ final class ConfigurationValidatorCompilerPass implements CompilerPassInterface,
 
         $container->getDefinition(RuleMaterialization::class)
             ->setArgument('$validators', $validators);
+    }
+
+    /** @return array{list<array{producer: string, create: ServiceClosureArgument}>, list<class-string>} */
+    private function collectValidators(ContainerBuilder $container): array
+    {
+        $validators = [];
+        $validatorClasses = [];
+
+        foreach ($container->findTaggedServiceIds(self::TAG) as $id => $_tags) {
+            $class = $this->validatedClass($container, $id);
+
+            $container->getDefinition($id)->setShared(false);
+            $validators[] = [
+                'producer' => $class::producerRuleName(),
+                'create' => new ServiceClosureArgument(new Reference($id)),
+            ];
+            $validatorClasses[] = $class;
+        }
+
+        return [$validators, $validatorClasses];
+    }
+
+    /** @return class-string<ConfigurationValidatorInterface> */
+    private function validatedClass(ContainerBuilder $container, string $id): string
+    {
+        $class = $container->getDefinition($id)->getClass();
+
+        // Refused, not skipped. A validator dropped here runs never and
+        // declares nothing, and no second reader would notice the loss:
+        // ChannelDeclarationCompilerPass reads the same tag and would be
+        // missing the same member, so the two-witness check would agree
+        // about a universe both are short of.
+        if ($class === null) {
+            throw new LogicException(\sprintf(
+                'Service "%s" is tagged "%s" but its definition names no class. A validator is read by'
+                . ' reflection off its class; without one it would silently neither run nor declare anything.',
+                $id,
+                self::TAG,
+            ));
+        }
+
+        if (!is_a($class, ConfigurationValidatorInterface::class, true)) {
+            throw new LogicException(\sprintf(
+                'Service "%s" is tagged "%s" but its class %s does not implement %s.',
+                $id,
+                self::TAG,
+                $class,
+                ConfigurationValidatorInterface::class,
+            ));
+        }
+
+        return $class;
     }
 }
