@@ -568,6 +568,7 @@ Available tests:
  - QmxFindingGate\Tests\SurfaceComparisonTest::itLeavesAnExactIntentionStaleWhenAMetricChangeIsSemanticallyExplained
  - QmxFindingGate\Tests\SurfaceComparisonTest::itLooksUpAnIntentionWithoutCreditingItAsPerformed
  - QmxFindingGate\Tests\SurfaceComparisonTest::itMeasuresAndChecksOneExactCaseSurface
+ - QmxFindingGate\Tests\SurfaceComparisonTest::itMeasuresTheNeutralTreeGraphAndRefusesUnmeasuredInvocationChanges
  - QmxFindingGate\Tests\SurfaceComparisonTest::itRefusesADirectDeltaComparisonWithoutAnExplicitIntention
  - QmxFindingGate\Tests\SurfaceComparisonTest::itRefusesAFirstOnlyOrSecondOnlySurfaceInEitherDirection
  - QmxFindingGate\Tests\SurfaceComparisonTest::itRefusesAStageBeforeAStepThatDoesNotExist
