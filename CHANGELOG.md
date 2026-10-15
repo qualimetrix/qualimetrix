@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Breaking
 
 - `Dependency::isCrossNamespace()` is removed. Compare `sourceLogical()->namespace` and `targetLogical()->namespace` when that distinction is needed; the graph's coupling views remain the source for measured cross-namespace coupling.
+- The Run execution strategy port now exposes only `execute(files, processor)`. Replace `execute(files, processor, canParallelize)` calls with the two-argument form, remove `isParallelAvailable()` preflight queries and references to `ParallelCapableInterface`, and configure the worker request through the existing selector or parallel strategy. Process capability is checked by the parallel strategy and actual worker startup is probed by its pool during execution.
 - Unknown, partial, namespace-only and differently cased command names now refuse with exit 3 and a suggestion. Use an exact command name; `list`, `help` and completion retain their own behavior.
 - An empty `--working-dir`/`-d` or `baseline:explain --channel=` now refuses with exit 3. Supply a nonempty value or omit the option.
 - Coordinator memory exhaustion now exits 4 with a limit/source hint and a JSON error envelope for JSON formats instead of exiting 255. The shutdown path does not create a new profile or leave newly claimed report/profile targets empty; an already published profile is not rolled back.

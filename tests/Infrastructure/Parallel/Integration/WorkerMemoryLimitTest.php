@@ -132,7 +132,7 @@ final class WorkerMemoryLimitTest extends TestCase
             DependencyVisitor::class,
             [LocCollector::class, CyclomaticComplexityCollector::class],
         ), new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()), new \Qualimetrix\Infrastructure\Profiler\ProfileSession(), new \Qualimetrix\Infrastructure\Console\ErrorStream());
-        if (!$strategy->isParallelAvailable()) {
+        if (WorkerPool::unavailableCapability() !== null) {
             self::markTestSkipped('Requires process workers.');
         }
         $strategy->setWorkerCount(2);

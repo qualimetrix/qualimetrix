@@ -187,6 +187,9 @@ duration negative.
 - `AnalysisPipelineInterface` is the public run entry point for adapters.
 - `ProjectFilesInterface`, `CollectionOrchestratorInterface`, and
   `FileProcessorInterface` describe Run-owned mechanics.
+- `ExecutionStrategyInterface` runs the selected file processor. The strategy
+  selector chooses sequential or parallel execution; the parallel adapter
+  checks process capability and probes worker startup during execution.
 - `SuccessfulFileProcessing` is the public worker payload used by
   Infrastructure Parallel. `FileProcessingResult` accepts exactly one complete
   success or failure terminal state and delegates successful getters to it.

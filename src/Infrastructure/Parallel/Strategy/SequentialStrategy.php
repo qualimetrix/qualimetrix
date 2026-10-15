@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Parallel\Strategy;
 
+use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ExecutionStrategyInterface;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use SplFileInfo;
@@ -17,11 +18,6 @@ use SplFileInfo;
 final class SequentialStrategy implements ExecutionStrategyInterface
 {
     public function __construct(private readonly ProfilerInterface $profiler) {}
-    public function isParallelAvailable(): bool
-    {
-        return false;
-    }
-
     public function isAvailable(): bool
     {
         return true;
@@ -31,11 +27,11 @@ final class SequentialStrategy implements ExecutionStrategyInterface
      * Execute processing for files sequentially.
      *
      * @param list<SplFileInfo> $files
-     * @param callable(SplFileInfo): mixed $processor
+     * @param callable(SplFileInfo): FileProcessingResult $processor
      *
-     * @return list<mixed>
+     * @return list<FileProcessingResult>
      */
-    public function execute(array $files, callable $processor, bool $canParallelize = true): array // @phpstan-ignore method.childReturnType
+    public function execute(array $files, callable $processor): array
     {
         $results = [];
         $profiler = $this->profiler;

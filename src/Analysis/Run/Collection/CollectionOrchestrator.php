@@ -69,7 +69,6 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
         $results = $this->strategySelector->select($projectRoot)->execute(
             $files,
             fn(SplFileInfo $file): FileProcessingResult => $this->processSafely($file, $projectRoot),
-            true, // Allow parallelization
         );
         $profiler->stop('collection.execute_strategy');
 

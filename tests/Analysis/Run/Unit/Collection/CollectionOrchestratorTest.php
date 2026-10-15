@@ -696,17 +696,20 @@ final class CollectionOrchestratorTest extends TestCase
             ->with(
                 self::identicalTo($files),
                 self::isCallable(),
-                self::isTrue(), // allow parallelization
             )
-            ->willReturn([
-                FileProcessingResult::success(
-                    filePath: RelativePath::fromString('tmp/test.php'),
-                    payload: new SuccessfulFileProcessing(
-                        fileBag: new MetricBag(),
-                        classLikeDeclarations: [],
+            ->willReturnCallback(static function (...$arguments): array {
+                self::assertCount(2, $arguments);
+
+                return [
+                    FileProcessingResult::success(
+                        filePath: RelativePath::fromString('tmp/test.php'),
+                        payload: new SuccessfulFileProcessing(
+                            fileBag: new MetricBag(),
+                            classLikeDeclarations: [],
+                        ),
                     ),
-                ),
-            ]);
+                ];
+            });
 
         $orchestrator = $this->createOrchestratorWith(strategySelector: $strategySelector);
         $repository = $this->repository();
