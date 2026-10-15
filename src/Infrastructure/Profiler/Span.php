@@ -19,6 +19,7 @@ final class Span
      */
     private bool $stopped;
 
+    /** @param array<string, scalar> $attributes */
     public function __construct(
         public readonly string $name,
         public readonly ?string $category,
@@ -27,6 +28,7 @@ final class Span
         public ?float $endTime = null,
         public ?int $endMemory = null,
         public ?Span $parent = null,
+        public readonly array $attributes = [],
     ) {
         $this->stopped = $endTime !== null;
     }

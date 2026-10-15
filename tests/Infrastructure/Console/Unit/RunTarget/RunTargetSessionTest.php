@@ -110,8 +110,8 @@ PHP;
     #[DataProvider('workerSignals')]
     public function itDoesNotPublishAfterARealAmpWorkerWasInterrupted(int $signal): void
     {
-        if (!\function_exists('pcntl_fork')) {
-            self::markTestSkipped('Fork workers are unavailable on this host.');
+        if (!\function_exists('proc_open') || !\extension_loaded('posix')) {
+            self::markTestSkipped('Process workers are unavailable on this host.');
         }
         $directory = sys_get_temp_dir() . '/qmx-session-worker-' . bin2hex(random_bytes(6));
         mkdir($directory);
@@ -130,7 +130,7 @@ $factory = new \Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory(
     \Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor::class,
     [\Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\SignalWorkerCollector::class],
 );
-$strategy = new \Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy($factory);
+$strategy = new \Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy($factory, new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()), new \Qualimetrix\Infrastructure\Profiler\ProfileSession(), new \Qualimetrix\Infrastructure\Console\ErrorStream());
 $strategy->setMinFilesForParallel(1);
 $strategy->setWorkerCount(2);
 $strategy->setProjectRoot(\Qualimetrix\Core\Path\AbsolutePath::fromString($argv[3]));

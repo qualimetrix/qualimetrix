@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use Qualimetrix\Infrastructure\Parallel\Configuration\ParallelConfigurationResolver;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
@@ -50,6 +51,9 @@ final class CollectorConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 '$fileProcessingTaskFactory' => new Reference(FileProcessingTaskFactory::class),
                 '$logger' => new Reference(DelegatingLogger::class),
+                '$sequentialStrategy' => new Reference(SequentialStrategy::class),
+                '$profiler' => new Reference(ProfilerInterface::class),
+                '$errorStream' => new Reference(ErrorStream::class),
             ]);
 
         // SequentialStrategy as fallback

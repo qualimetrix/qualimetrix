@@ -170,7 +170,7 @@ PHP
                 new RuleOptionDocumentForms(),
                 DependencyVisitor::class,
                 [LocCollector::class, ClassCountCollector::class],
-            ));
+            ), new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()), new \Qualimetrix\Infrastructure\Profiler\ProfileSession(), new \Qualimetrix\Infrastructure\Console\ErrorStream());
             self::assertTrue($strategy->isParallelAvailable(), 'The IPC integration requires amphp workers');
             $strategy->setWorkerCount(2);
             $canonicalFixtureDir = realpath($fixtureDir);

@@ -12,13 +12,14 @@ use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterf
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheOpener;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationStoreInterface;
+use Qualimetrix\Infrastructure\Parallel\WorkerRequest;
 use RuntimeException;
 
 /**
  * Selects and configures the best available execution strategy.
  *
  * Priority order:
- * 1. AmphpParallelStrategy - if amphp/parallel available and workers > 1
+ * 1. AmphpParallelStrategy - when requested workers exceed one
  * 2. SequentialStrategy - always available (fallback)
  *
  * Parallel owns the worker setting; Cache's run opener supplies the accepted
@@ -65,16 +66,6 @@ final class StrategySelector implements StrategySelectorInterface
             return $this->sequentialStrategy;
         }
 
-        // Check if parallel is available
-        if (!$this->amphpStrategy->isAvailable()) {
-            $this->logger->info(
-                'StrategySelector: parallel not available, using sequential',
-                ['reason' => 'amphp/parallel or pcntl extension not available'],
-            );
-
-            return $this->sequentialStrategy;
-        }
-
         // Auto-detect or use requested worker count
         $workerCount = $requestedWorkers === null
             ? $this->workerCountDetector->detect()
@@ -88,7 +79,7 @@ final class StrategySelector implements StrategySelectorInterface
         }
 
         // Configure parallel strategy
-        $this->amphpStrategy->setWorkerCount($workerCount);
+        $this->amphpStrategy->setWorkerRequest(new WorkerRequest($workerCount, $this->configurationStore->current()->workerSource));
 
         // Canonicalize the project identity passed to worker processes.
         // canonicalize() throws RuntimeException when the path does not exist —

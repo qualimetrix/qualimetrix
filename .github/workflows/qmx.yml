@@ -271,6 +271,31 @@ jobs:
           print(f'analysed {files} files inside the image')
           PY
 
+      - name: Image runs process workers on a mounted tree
+        run: |
+          set -o pipefail
+          docker run --rm -v "$PWD/src:/code:ro" qmx \
+            check /code --working-dir=/code --workers=0 --no-cache \
+            --no-progress --format=json --fail-on=none \
+            > /tmp/docker-qmx-sequential.json 2> /tmp/docker-qmx-sequential.log
+          docker run --rm -v "$PWD/src:/code:ro" qmx \
+            check /code --working-dir=/code --workers=4 --no-cache -v \
+            --no-progress --format=json --fail-on=none \
+            > /tmp/docker-qmx-parallel.json 2> /tmp/docker-qmx-parallel.log
+          grep -q 'starting parallel processing' /tmp/docker-qmx-parallel.log
+          python3 - <<'PY'
+          import json
+          with open('/tmp/docker-qmx-sequential.json') as handle:
+              sequential = json.load(handle)
+          with open('/tmp/docker-qmx-parallel.json') as handle:
+              parallel = json.load(handle)
+          for report in (sequential, parallel):
+              report['meta'].pop('timestamp', None)
+              report['summary'].pop('duration', None)
+          assert sequential['summary']['filesAnalyzed'] >= 100
+          assert sequential == parallel, 'process workers changed the report'
+          PY
+
   phar:
     name: Phar (built, and equal to the tree it came from)
     runs-on: ubuntu-latest

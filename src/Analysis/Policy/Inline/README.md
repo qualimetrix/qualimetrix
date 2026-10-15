@@ -270,7 +270,7 @@ When changing an inline annotation or its wire value:
 ## Definition of Done
 
 - Run imports only Inline contracts and stores no policy state.
-- Source controls survive PHP and igbinary worker round trips unchanged.
+- Source controls survive native PHP worker round trips unchanged.
 - Two sequential runs cannot retain a previous suppression or threshold set.
 - Inline has no dependency on Baseline or Reporting.
 

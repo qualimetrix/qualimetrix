@@ -16,314 +16,232 @@ use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ParallelCapableInterfa
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
+use Qualimetrix\Infrastructure\Parallel\WorkerContextFactory;
+use Qualimetrix\Infrastructure\Parallel\WorkerNotes;
 use Qualimetrix\Infrastructure\Parallel\WorkerPool;
+use Qualimetrix\Infrastructure\Parallel\WorkerRequest;
+use Qualimetrix\Infrastructure\Parallel\WorkerStartFailure;
 use SplFileInfo;
 use Throwable;
 
 /**
- * Parallel execution strategy using amphp/parallel.
- *
- * Uses amphp/parallel's worker pool for true parallel processing.
- * Automatically selects best transport (ext-parallel threads or pcntl fork).
- *
- * Key features:
- * - Worker pool with configurable worker count
- * - Automatic fallback to sequential for small file sets
- * - Configurable minimum files threshold for parallelization
- * - AST caching support in workers
- * - Collector classes synchronized with DI container
- *
- * @see https://github.com/amphp/parallel
+ * Executes process workers after a bounded bootstrap probe, with in-process
+ * fallback below the threshold and for an unavailable automatic request.
  *
  * @qmx-threshold coupling.instability warning=0.857143 -- This execution adapter binds worker, cancellation and collection contracts with few strategy consumers; splitting it transfers the same transport dependencies.
  */
 final class AmphpParallelStrategy implements ExecutionStrategyInterface, ParallelCapableInterface
 {
-    /**
-     * Default minimum number of files to enable parallelization.
-     * For smaller file sets, sequential processing is more efficient.
-     *
-     * Based on benchmarks:
-     * - <100 files: parallel is slower due to worker spawn overhead
-     * - ~150 files: roughly equal performance
-     * - >200 files: parallel provides significant speedup
-     */
     private const int DEFAULT_MIN_FILES_FOR_PARALLEL = 100;
-
-    /**
-     * Batch size for processing files in chunks.
-     * Files are processed in batches to limit memory usage.
-     * Each batch submits all tasks at once (efficient) while keeping total
-     * memory bounded.
-     */
     private const int BATCH_SIZE = 500;
-
-    private int $workerCount = 4;
+    private WorkerRequest $request;
     private int $minFilesForParallel = self::DEFAULT_MIN_FILES_FOR_PARALLEL;
     private ?AbsolutePath $projectRoot = null;
     private ?AbsolutePath $cacheDir = null;
 
-    public function __construct(
-        private readonly FileProcessingTaskFactory $fileProcessingTaskFactory,
-        private readonly LoggerInterface $logger = new NullLogger(),
-    ) {}
-
-    public function isAvailable(): bool
+    public function __construct(private readonly FileProcessingTaskFactory $fileProcessingTaskFactory, private readonly SequentialStrategy $sequentialStrategy, private readonly ProfilerInterface $profiler, private readonly ErrorStream $errorStream, private readonly LoggerInterface $logger = new NullLogger())
     {
-        return WorkerPool::isAvailable();
+        $this->request = new WorkerRequest(4);
     }
 
     public function isParallelAvailable(): bool
     {
-        return $this->isAvailable();
+        return true;
+    }
+
+    public function setWorkerRequest(WorkerRequest $request): void
+    {
+        $this->request = $request;
     }
 
     public function setWorkerCount(int $count): void
     {
-        $this->workerCount = max(1, $count);
+        $count = max(1, $count);
+        $this->request = new WorkerRequest($count, 'parallel.workers=' . $count . ' (programmatic configuration)');
     }
 
     public function getWorkerCount(): int
     {
-        return $this->workerCount;
+        return $this->request->count;
     }
 
-    /**
-     * Sets the minimum number of files required to enable parallelization.
-     *
-     * @param int $minFiles Minimum file count
-     *                      ({@see self::DEFAULT_MIN_FILES_FOR_PARALLEL})
-     */
     public function setMinFilesForParallel(int $minFiles): void
     {
         $this->minFilesForParallel = max(1, $minFiles);
     }
 
-    /**
-     * Sets the project root directory (required for worker bootstrap).
-     */
     public function setProjectRoot(AbsolutePath $projectRoot): void
     {
         $this->projectRoot = $projectRoot;
     }
 
-    /**
-     * Sets the cache directory for AST caching in workers (null disables caching).
-     */
     public function setCacheDir(?AbsolutePath $cacheDir): void
     {
         $this->cacheDir = $cacheDir;
     }
 
     /**
-     * Execute processing for files.
-     *
-     * NOTE: In parallel mode, the $processor callable is NOT used. Instead, files are
-     * processed by FileProcessingTask in worker processes using WorkerBootstrap.
-     * The $processor is only used for sequential fallback scenarios (small file count,
-     * missing project root, parallel not available, etc.).
-     *
-     * This design choice is intentional: closures cannot be serialized to worker processes,
-     * and we need a consistent, pre-configured collector pipeline in each worker.
-     *
      * @param list<SplFileInfo> $files
-     * @param callable(SplFileInfo): mixed $processor Processor function (used only in sequential mode)
-     * @param bool $canParallelize Whether parallel execution is allowed (default: true)
+     * @param callable(SplFileInfo): mixed $processor Used only for in-process collection.
      *
      * @return list<mixed>
      */
     public function execute(array $files, callable $processor, bool $canParallelize = true): array // @phpstan-ignore method.childReturnType
     {
-        // Fallback to sequential if parallelization is not possible
         if (!$canParallelize || $files === []) {
             return $this->executeSequential($files, $processor);
         }
-
-        // Check minimum files threshold
         if (\count($files) < $this->minFilesForParallel) {
-            $this->logger->debug(
-                'AmphpParallelStrategy: file count below threshold, using sequential',
-                ['files_count' => \count($files), 'threshold' => $this->minFilesForParallel],
-            );
-
+            $this->logger->debug('AmphpParallelStrategy: file count below threshold, using sequential', ['files_count' => \count($files), 'threshold' => $this->minFilesForParallel]);
             return $this->executeSequential($files, $processor);
         }
-
-        // Check if project root is set
         if ($this->projectRoot === null) {
-            $this->logger->warning(
-                'AmphpParallelStrategy: project root not set, using sequential fallback',
-            );
-
+            $this->logger->warning('AmphpParallelStrategy: project root not set, using sequential fallback');
             return $this->executeSequential($files, $processor);
         }
-
-        // Check if collector classes are configured
         if (!$this->fileProcessingTaskFactory->hasCollectors()) {
-            $this->logger->warning(
-                'AmphpParallelStrategy: collector classes not configured, using sequential fallback',
-            );
-
+            $this->logger->warning('AmphpParallelStrategy: collector classes not configured, using sequential fallback');
             return $this->executeSequential($files, $processor);
         }
-
-        // Check if parallel processing is available
-        if (!$this->isAvailable()) {
-            $this->logger->info(
-                'AmphpParallelStrategy: parallel not available, using sequential fallback',
-            );
-
-            return $this->executeSequential($files, $processor);
+        $this->fileProcessingTaskFactory->assertWorkerComposition();
+        $capability = WorkerPool::unavailableCapability();
+        if ($capability !== null) {
+            return $this->startupFallback($files, $processor, WorkerStartFailure::capabilityMissing($capability, $this->request));
         }
-
-        return $this->executeParallel($files);
+        return $this->executeParallel($files, $processor);
     }
 
     /**
-     * Executes files in parallel using amphp/parallel worker pool.
-     *
-     * Uses batch processing to balance efficiency and memory usage:
-     * - Files are split into batches of BATCH_SIZE
-     * - Each batch is processed fully (all tasks submitted, all results awaited)
-     * - This prevents OOM while minimizing task submission overhead
-     *
-     * Uses graceful error handling: if individual files fail, they are recorded
-     * as FileProcessingResult::failure() rather than failing the entire batch.
-     * This ensures partial results are not lost due to a single file error.
-     *
      * @param list<SplFileInfo> $files
+     * @param callable(SplFileInfo): mixed $processor
      *
-     * @return list<mixed> Returns list of FileProcessingResult (success or failure for each file)
+     * @return list<mixed>
      */
-    private function executeParallel(array $files): array
+    private function startupFallback(array $files, callable $processor, WorkerStartFailure $failure): array
     {
-        // Assertion: projectRoot must be set (checked in execute() before calling this method)
-        \assert($this->projectRoot !== null, 'projectRoot must be set before calling executeParallel');
+        if ($this->request->explicit()) {
+            throw $failure;
+        }
+        $this->logger->warning('Parallel collection is unavailable; using sequential processing: ' . $failure->getMessage());
+        return $this->executeSequential($files, $processor);
+    }
 
-        $totalFiles = \count($files);
-        $batchCount = (int) ceil($totalFiles / self::BATCH_SIZE);
-
-        $this->logger->info(
-            'AmphpParallelStrategy: starting parallel processing',
-            [
-                'files_count' => $totalFiles,
-                'workers' => $this->workerCount,
-                'batch_size' => self::BATCH_SIZE,
-                'batch_count' => $batchCount,
-            ],
-        );
-
-        $pool = WorkerPool::open($this->workerCount, $this->logger);
-
-        $cancelled = false;
+    /**
+     * @param list<SplFileInfo> $files
+     * @param callable(SplFileInfo): mixed $processor
+     *
+     * @return list<mixed>
+     */
+    private function executeParallel(array $files, callable $processor): array
+    {
+        $root = $this->projectRoot ?? throw new LogicException('Parallel collection requires a configured project root.');
+        $workerCount = min($this->request->count, \count($files));
+        $notes = new WorkerNotes($this->errorStream);
         try {
-            $results = [];
-            $errorCount = 0;
-
-            // Process files in batches
-            $batches = array_chunk($files, self::BATCH_SIZE);
-            foreach ($batches as $batchIndex => $batch) {
-                $batchResults = $this->processBatch($pool, $batch, $batchIndex, $batchCount, $errorCount);
-                array_push($results, ...$batchResults);
-            }
-
-            if ($errorCount > 0) {
-                $this->logger->warning(
-                    'AmphpParallelStrategy: parallel processing completed with errors',
-                    [
-                        'total_files' => $totalFiles,
-                        'failed_files' => $errorCount,
-                    ],
-                );
-            }
-
-            return $results;
-        } catch (CancelledException $e) {
-            $cancelled = true;
-            throw $e;
-        } catch (Throwable $e) {
-            // This catches errors in task submission, not execution
-            $this->logger->error(
-                'AmphpParallelStrategy: parallel processing failed',
-                ['error' => $e->getMessage()],
-            );
-
-            throw $e;
-        } finally {
-            if ($cancelled) {
+            $contexts = new WorkerContextFactory($this->request, $notes, logger: $this->logger);
+        } catch (WorkerStartFailure $failure) {
+            return $this->startupFallback($files, $processor, $failure);
+        }
+        $pool = WorkerPool::open($workerCount, $this->logger, $contexts, $notes);
+        try {
+            try {
+                $pool->probe($this->fileProcessingTaskFactory->probe($root, $this->cacheDir), $this->request);
+            } catch (WorkerStartFailure $failure) {
                 $pool->abort();
-            } else {
-                $pool->close();
+                return $this->startupFallback($files, $processor, $failure);
             }
+            $this->logger->info('AmphpParallelStrategy: starting parallel processing', ['files_count' => \count($files), 'workers' => $workerCount]);
+            $this->profiler->start('collection.workers', 'collection', ['files' => \count($files), 'workers' => $workerCount, 'timing' => 'per-file timing not collected in workers']);
+            try {
+                return $this->processFiles($pool, $files, $processor);
+            } finally {
+                $this->profiler->stop('collection.workers');
+            }
+        } catch (CancelledException $failure) {
+            $pool->abort();
+            throw $failure;
+        } finally {
+            $pool->close();
         }
     }
 
     /**
-     * Processes a single batch of files.
+     * @param list<SplFileInfo> $files
+     * @param callable(SplFileInfo): mixed $processor
      *
-     * @param list<SplFileInfo> $batch
-     * @param int &$errorCount Reference to error counter
-     *
-     * @return list<FileProcessingResult>
+     * @return list<mixed>
      */
-    private function processBatch(
-        WorkerPool $pool,
-        array $batch,
-        int $batchIndex,
-        int $totalBatches,
-        int &$errorCount,
-    ): array {
-        $this->logger->debug(
-            'AmphpParallelStrategy: processing batch',
-            ['batch' => $batchIndex + 1, 'of' => $totalBatches, 'files' => \count($batch)],
-        );
+    private function processFiles(WorkerPool $pool, array $files, callable $processor): array
+    {
+        $results = [];
+        $batches = array_chunk($files, self::BATCH_SIZE);
+        foreach ($batches as $index => $batch) {
+            [$collected, $pending, $failure] = $this->processBatch($pool, $batch);
+            if ($failure !== null) {
+                foreach (\array_slice($batches, $index + 1) as $later) {
+                    array_push($pending, ...$later);
+                }
+                $pool->abort();
+                $this->logger->warning(\sprintf('Parallel worker replacement failed; processing %d remaining files sequentially: %s', \count($pending), $failure->getMessage()));
+                $fallback = $this->executeSequential($pending, $processor);
+                foreach ($fallback as $result) {
+                    $collected[] = $result;
+                }
+                array_push($results, ...$collected);
+                return $results;
+            }
+            array_push($results, ...$collected);
+        }
+        return $results;
+    }
 
-        // Assertion: projectRoot is guaranteed non-null here (checked in executeParallel)
-        \assert($this->projectRoot !== null);
-        // Submit all tasks in batch
+    /**
+     * @param list<SplFileInfo> $batch
+     *
+     * @return array{list<FileProcessingResult>, list<SplFileInfo>, ?WorkerStartFailure}
+     */
+    private function processBatch(WorkerPool $pool, array $batch): array
+    {
+        $root = $this->projectRoot ?? throw new LogicException('Parallel collection requires a configured project root.');
         /** @var list<array{file: SplFileInfo, await: Closure(): FileProcessingResult}> $executions */
         $executions = [];
-        foreach ($batch as $file) {
-            $task = $this->fileProcessingTaskFactory->create(
-                filePath: $this->absolutePath($file),
-                projectRoot: $this->projectRoot,
-                cacheDir: $this->cacheDir,
-            );
-            $executions[] = [
-                'file' => $file,
-                'await' => $pool->submit($task),
-            ];
-        }
-
-        // Await all results
-        $results = [];
-        foreach ($executions as $item) {
-            $file = $item['file'];
+        $pending = [];
+        $failure = null;
+        foreach ($batch as $index => $file) {
             try {
-                $results[] = $item['await']();
-            } catch (CancelledException $e) {
-                throw $e;
-            } catch (Throwable $e) {
-                // Record failure for this specific file, continue processing others
-                $errorCount++;
-                $message = WorkerPool::failureMessage($e);
-                $this->logger->warning(
-                    'AmphpParallelStrategy: file processing failed',
-                    [
-                        'file' => $file->getPathname(),
-                        'error' => $message,
-                    ],
-                );
-                $results[] = FileProcessingResult::failure(
-                    $this->relativePathFor($file),
-                    $message,
-                    FileProcessingFailureKind::Processing,
-                );
+                $task = $this->fileProcessingTaskFactory->create($this->absolutePath($file), $root, $this->cacheDir);
+                $executions[] = ['file' => $file, 'await' => $pool->submit($task)];
+            } catch (Throwable $thrown) {
+                $failure = $pool->startupFailure($thrown);
+                if ($failure === null) {
+                    throw $thrown;
+                }
+                $pending = \array_slice($batch, $index);
+                break;
             }
         }
-
-        return $results;
+        $results = [];
+        foreach ($executions as $item) {
+            try {
+                $results[] = $item['await']();
+            } catch (CancelledException $thrown) {
+                throw $thrown;
+            } catch (Throwable $thrown) {
+                $start = $pool->startupFailure($thrown);
+                if ($start !== null) {
+                    $failure ??= $start;
+                    $pending[] = $item['file'];
+                    continue;
+                }
+                $message = $pool->failureMessage($thrown, $this->absolutePath($item['file'])->value());
+                $this->logger->warning('AmphpParallelStrategy: file processing failed', ['file' => $item['file']->getPathname(), 'error' => $message]);
+                $results[] = FileProcessingResult::failure($this->relativePathFor($item['file']), $message, FileProcessingFailureKind::Processing);
+            }
+        }
+        return [$results, $pending, $failure];
     }
 
     /** Resolves the containing directory while retaining the file's written name. */
@@ -350,8 +268,6 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
     }
 
     /**
-     * Executes files sequentially (fallback).
-     *
      * @param list<SplFileInfo> $files
      * @param callable(SplFileInfo): mixed $processor
      *
@@ -359,12 +275,6 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
      */
     private function executeSequential(array $files, callable $processor): array
     {
-        $results = [];
-
-        foreach ($files as $file) {
-            $results[] = $processor($file);
-        }
-
-        return $results;
+        return $this->sequentialStrategy->execute($files, $processor, false);
     }
 }

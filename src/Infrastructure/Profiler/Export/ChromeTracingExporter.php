@@ -36,7 +36,7 @@ final class ChromeTracingExporter implements ProfileExporterInterface
      * Recursively collect trace events from span tree.
      *
      * @param Span $span Current span
-     * @param list<array{name: string, ph: string, ts: float, pid: int, tid: int, cat?: string, args?: array{stopped: false}}> &$events Events array
+     * @param list<array{name: string, ph: string, ts: float, pid: int, tid: int, cat?: string, args?: array<string, scalar>}> &$events Events array
      */
     private function collectEvents(Span $span, array &$events): void
     {
@@ -53,6 +53,9 @@ final class ChromeTracingExporter implements ProfileExporterInterface
             $beginEvent['cat'] = $span->category;
         }
 
+        if ($span->attributes !== []) {
+            $beginEvent['args'] = $span->attributes;
+        }
         $events[] = $beginEvent;
 
         // Recursively process children

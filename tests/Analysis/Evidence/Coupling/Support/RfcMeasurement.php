@@ -34,7 +34,7 @@ final class RfcMeasurement
         $dependency = new DependencyVisitor();
         $composite = new CompositeCollector([$rfc, $callables], new DeclarationRegistrarFactory(), dependencyTraversalParticipant: $dependency);
         $profiler = new class implements ProfilerInterface {
-            public function start(string $name, ?string $category = null): void {}
+            public function start(string $name, ?string $category = null, array $attributes = []): void {}
             public function stop(string $name): void {}
         };
         $aggregation = new MeasurementAggregationService([$global], $composite, $profiler);

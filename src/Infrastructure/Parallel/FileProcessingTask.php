@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
 use RuntimeException;
 use SplFileInfo;
 
@@ -67,22 +68,28 @@ final class FileProcessingTask implements Task
         // Check for cancellation before starting work
         $cancellation->throwIfRequested();
 
-        $this->applyMemoryLimit();
+        WorkerBootstrap::initializeWorker();
+        OutOfMemoryHint::workingOnFile($this->filePath->value());
+        try {
+            $this->applyMemoryLimit();
 
-        // Get or create FileProcessor via WorkerBootstrap
-        // WorkerBootstrap caches the processor for reuse across tasks in the same worker
-        $processor = WorkerBootstrap::getFileProcessor(
-            projectRoot: $this->projectRoot,
-            composition: $this->composition,
-            cacheDir: $this->cacheDir,
-            lcomConfiguration: $this->lcomConfiguration,
-            documentForms: $this->documentForms,
-        );
+            // Get or create FileProcessor via WorkerBootstrap
+            // WorkerBootstrap caches the processor for reuse across tasks in the same worker
+            $processor = WorkerBootstrap::getFileProcessor(
+                projectRoot: $this->projectRoot,
+                composition: $this->composition,
+                cacheDir: $this->cacheDir,
+                lcomConfiguration: $this->lcomConfiguration,
+                documentForms: $this->documentForms,
+            );
 
-        // Process the file
-        $file = new SplFileInfo($this->filePath->value());
+            // Process the file
+            $file = new SplFileInfo($this->filePath->value());
 
-        return $processor->process($file);
+            return $processor->process($file);
+        } finally {
+            OutOfMemoryHint::workingOnFile(null);
+        }
     }
 
     private function applyMemoryLimit(): void

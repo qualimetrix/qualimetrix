@@ -37,6 +37,9 @@ final class ParallelConfigurationResolver implements ParallelConfigurationResolv
             $value->refuse($refusal);
         }
 
-        return new ParallelConfiguration($workers);
+        $writers = $value->contributors();
+        $writer = $writers[\count($writers) - 1];
+        $path = $writer->displayPath();
+        return new ParallelConfiguration($workers, $writer->origin->describe() . ($path === '' ? '' : ', ' . $path) . ' = ' . $workers);
     }
 }

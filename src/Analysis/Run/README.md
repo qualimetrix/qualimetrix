@@ -169,8 +169,8 @@ read-once promise.
 exactly one terminal state: a `SuccessfulFileProcessing` payload, or a failure
 kind plus error. The success payload carries the file metric bag, callable,
 class, and namespace measurements, dependencies, suppressions, threshold
-overrides, and threshold diagnostics. The same value graph crosses PHP and
-igbinary worker serialization; services and capability-owned state never cross
+overrides, and threshold diagnostics. The same value graph crosses native PHP
+worker serialization; services and capability-owned state never cross
 it. DependencyModel receives
 collected dependency occurrences through its public builder contract.
 Measurement owns repository creation and aggregation. ComputedMetrics owns

@@ -1372,11 +1372,12 @@ PHP);
         ));
 
         $workerStarted = false;
+        $expectedWorkerCount = min($workers, \count($files));
         $logger = self::createStub(\Psr\Log\LoggerInterface::class);
         $logger->method('info')->willReturnCallback(
-            static function (string $message, array $context = []) use (&$workerStarted): void {
+            static function (string $message, array $context = []) use (&$workerStarted, $expectedWorkerCount): void {
                 if ($message === 'AmphpParallelStrategy: starting parallel processing'
-                    && ($context['workers'] ?? null) === 2
+                    && ($context['workers'] ?? null) === $expectedWorkerCount
                 ) {
                     $workerStarted = true;
                 }
@@ -1391,7 +1392,7 @@ PHP);
             [],
             [ComplexityRule::class],
         );
-        $parallelStrategy = new AmphpParallelStrategy($fileProcessingTaskFactory, $logger);
+        $parallelStrategy = new AmphpParallelStrategy($fileProcessingTaskFactory, new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()), new \Qualimetrix\Infrastructure\Profiler\ProfileSession(), new \Qualimetrix\Infrastructure\Console\ErrorStream(), $logger);
         $parallelStrategy->setMinFilesForParallel(1);
         $selector = new StrategySelector(
             $parallelStrategy,

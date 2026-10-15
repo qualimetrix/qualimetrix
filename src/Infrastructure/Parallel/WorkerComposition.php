@@ -30,4 +30,13 @@ final readonly class WorkerComposition
         public array $derivedCollectorClasses = [],
         public array $ruleClasses = [],
     ) {}
+
+    public function assertInstantiable(): void
+    {
+        WorkerBootstrap::validateDependencyTraversalParticipantClass($this->dependencyTraversalParticipantClass);
+        foreach ([...$this->collectorClasses, ...$this->derivedCollectorClasses] as $class) {
+            WorkerBootstrap::assertInstantiable($class);
+        }
+    }
+
 }

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Parallel\Unit;
 
+use LogicException;
 use PhpParser\NodeVisitorAbstract;
-
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -572,6 +572,20 @@ final class WorkerBootstrapTest extends TestCase
         }
 
         @rmdir($dir);
+    }
+    #[Test]
+    public function itRefusesAnUnmarkedCompositionOnceInTheCoordinator(): void
+    {
+        $collector = self::createStub(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface::class);
+        $factory = new \Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory(
+            new \Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore(),
+            new \Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms(),
+            \Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor::class,
+            [$collector::class],
+        );
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage($collector::class);
+        $factory->assertWorkerComposition();
     }
 }
 

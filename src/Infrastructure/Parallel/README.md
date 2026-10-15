@@ -48,16 +48,36 @@ its metadata argument, rather than separate collector, derived-collector,
 traversal and rule class arguments. Processor reuse includes its serialized class and state in the
 cache identity, alongside the existing project and collector configuration.
 
+**Worker startup.** `WorkerRequest` keeps the accepted count and whether it was
+explicitly requested. Before collecting files, `WorkerPool` runs a
+`WorkerProbeTask` through the same serialized configuration as real tasks.
+`WorkerContextFactory` gives process startup one ten-second deadline and
+returns a `WorkerStartFailure` with the request and native cause when it cannot
+connect. `WorkerPhpFailure` carries a worker's private PHP fatal diagnostic back
+through IPC so the failed file retains its actual cause.
+
 **Memory limit.** A worker is a separate process that starts under `php.ini`,
 and the coordinator's `ini_set()` does not cross the process boundary.
 `FileProcessingTaskFactory` puts the coordinator's `memory_limit` on every
-task and `FileProcessingTask` applies it before processing. A worker that dies
-with a file in hand reaches the coordinator only as a context that stopped
-responding — its PHP fatal error goes to stderr past this code — so
-`WorkerPool`, which `AmphpParallelStrategy` runs collection on, names the
-workers' limit in the failed file's message, re-submits a task the dead worker
-refused before starting it, and routes the pool's own crash notices to the log
-instead of stdout.
+task and `FileProcessingTask` applies it before processing. `WorkerContextFactory`
+starts only PHP processes, keeps a private PHP error log per process, and
+captures stdout and stderr through `WorkerNotes`. `WorkerContext` reads that
+log when IPC fails: PHP records a fatal before its shutdown callback runs, and
+on Linux that callback may never run before the context is closed. The failed
+file retains the PHP diagnostic and worker limit; a missing diagnostic falls
+back to the bounded shutdown-note drain and then a generic cause. `WorkerPool`
+re-submits a task the dead worker refused before starting it and routes pool
+crash notices to the log instead of stdout. The private log is removed when
+the pool closes.
+`WorkerNotes` writes child diagnostics through Console's run-bound
+`ErrorStream`; worker bootstrap and file tasks use Console's `OutOfMemoryHint`
+to name the active file in fatal notes. Both are exact cross-owner contracts
+for these worker consumers.
+
+An unavailable local IPC socket or startup-log directory is a worker startup
+failure. An explicit worker count is refused with its native cause; automatic
+selection warns once and collects in-process. A partially opened IPC hub is
+closed when its startup-log directory cannot be created.
 
 **Interruption.** `Amp\CancelledException` bypasses per-file error recovery.
 The pool kills pending workers on cancellation instead of awaiting graceful

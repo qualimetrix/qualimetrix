@@ -188,7 +188,7 @@ final class ResolvedOptionsFixture
             $lookups[] = ['metadata' => $producer, 'create' => static fn(): RuleInterface => throw new LogicException('Metadata lookup constructed a rule.')];
         }
         return new RuleExecution($lookups, new class implements ProfilerInterface {
-            public function start(string $name, ?string $category = null): void {}
+            public function start(string $name, ?string $category = null, array $attributes = []): void {}
             public function stop(string $name): void {}
         }, new RuleOptionsRegistry());
     }

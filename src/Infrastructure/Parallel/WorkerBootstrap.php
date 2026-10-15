@@ -20,6 +20,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Ast\WorkerParserFactory;
+use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
 use RuntimeException;
 
 /**
@@ -71,6 +72,7 @@ final class WorkerBootstrap
         ?AbsolutePath $cacheDir = null,
         LcomCollectionConfiguration $lcomConfiguration = new LcomCollectionConfiguration(),
     ): FileProcessorInterface {
+        self::initializeWorker();
         self::validateDependencyTraversalParticipantClass(
             $composition->dependencyTraversalParticipantClass,
         );
@@ -98,6 +100,14 @@ final class WorkerBootstrap
         self::$cacheKey = $newCacheKey;
 
         return self::$processor;
+    }
+
+    public static function initializeWorker(): void
+    {
+        $nonce = getenv('QMX_WORKER_NOTE_NONCE');
+        if (\defined('AMP_WORKER') && \is_string($nonce) && $nonce !== '') {
+            OutOfMemoryHint::forWorker($nonce);
+        }
     }
 
     /**
@@ -214,9 +224,8 @@ final class WorkerBootstrap
     /**
      * Instantiates collectors from class names.
      *
-     * Validates that each class exists and has no required constructor parameters.
-     * Collectors with required dependencies are skipped with a warning to stderr,
-     * since workers cannot perform dependency injection.
+     * Validates existence and the parallel-safe marker. Constructor arity is
+     * not checked; the marker promises construction without container injection.
      *
      * @param list<class-string<MetricCollectorInterface>> $classNames
      *
@@ -243,9 +252,8 @@ final class WorkerBootstrap
     /**
      * Instantiates derived collectors from class names.
      *
-     * Validates that each class exists and has no required constructor parameters.
-     * Collectors with required dependencies are skipped with a warning to stderr,
-     * since workers cannot perform dependency injection.
+     * Validates existence and the parallel-safe marker. Constructor arity is
+     * not checked; the marker promises construction without container injection.
      *
      * @param list<class-string<DerivedCollectorInterface>> $classNames
      *
@@ -283,7 +291,7 @@ final class WorkerBootstrap
      *
      * @param class-string $className
      */
-    private static function assertInstantiable(string $className): void
+    public static function assertInstantiable(string $className): void
     {
         if (!class_exists($className)) {
             throw new RuntimeException(\sprintf(
@@ -312,7 +320,7 @@ final class WorkerBootstrap
     }
 
     /** @return class-string<DependencyTraversalParticipantInterface> */
-    private static function validateDependencyTraversalParticipantClass(string $className): string
+    public static function validateDependencyTraversalParticipantClass(string $className): string
     {
         if ($className === '') {
             throw new RuntimeException('WorkerBootstrap: dependency traversal participant class must not be empty.');
