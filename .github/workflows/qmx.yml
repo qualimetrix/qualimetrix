@@ -276,11 +276,11 @@ jobs:
           set -o pipefail
           docker run --rm -v "$PWD/src:/code:ro" qmx \
             check /code --working-dir=/code --workers=0 --no-cache \
-            --no-progress --format=json --fail-on=none \
+            --no-progress --format=json --fail-on=none --memory-limit=512M \
             > /tmp/docker-qmx-sequential.json 2> /tmp/docker-qmx-sequential.log
           docker run --rm -v "$PWD/src:/code:ro" qmx \
             check /code --working-dir=/code --workers=4 --no-cache -v \
-            --no-progress --format=json --fail-on=none \
+            --no-progress --format=json --fail-on=none --memory-limit=512M \
             > /tmp/docker-qmx-parallel.json 2> /tmp/docker-qmx-parallel.log
           grep -q 'starting parallel processing' /tmp/docker-qmx-parallel.log
           python3 - <<'PY'
