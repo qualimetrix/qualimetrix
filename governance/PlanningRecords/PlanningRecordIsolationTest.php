@@ -15,43 +15,78 @@ use SplFileInfo;
 require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
 
 /**
- * The plan index (`docs/internal/plans/README.md`) must list every active
- * plan directory exactly once, and sources must reach no planning record: a
- * plan path, a plan-local filename, or a package-chronology marker inside a
- * comment.
+ * Tracked prose must name a tracked non-plan document; every section sign and
+ * declared record-id spelling outside the plan tree must have an exact reason.
+ * Product regressions cannot reach a new planning dependency in another source.
  *
- * The population is what `git ls-files` reports, less documentation (`docs/`,
- * `website/`, where the plans themselves live) and vendored trees. It is
- * derived rather than listed because the list this control used to carry went
- * stale in two directions at once, and both were silent. Five roots were named
- * -- `bin governance scripts src tests` -- so `finding-gate/`,
- * `promise-effect/`, `input-doors/`, `tools/`, `directive-audit/`, `.github/`,
- * `benchmarks/`, `.claude/` and every file at the repository root went unread:
- * 274 files, of which 251 carried one of the nine extensions the filter also
- * accepted. That filter made one of the five named roots inert on its own --
- * `bin` matched nothing at all, because `bin/qmx` carries no extension -- and
- * it is why widening the root list alone would have fixed nothing: `.githooks/`
- * would have stayed unreadable for the same reason.
+ * The population is the Git index minus plans, vendored directory segments,
+ * symbolic links, this control and the exact deferred verification-tool files
+ * below. Those files still await their subject's migration; this census does
+ * not yet promise to judge their references. Documentation is included; ADRs
+ * are historical for paths and section signs, but not external record ids.
+ * Path tokens are prose-only: Markdown, native PHP comments, the existing
+ * shell/Python/JavaScript comment extraction and leading hash lines elsewhere.
+ * Chronology is confined to known comment syntax. Other ids and section signs
+ * are judged in the whole content, including code and data.
  *
- * **Comments are read for a minority of the population, by design.** Syntax
- * comes from the extension, and failing that from the shebang; the roughly
- * 230 files that offer neither -- `json`, `md`, `tsv`, `yaml`, `Dockerfile`,
- * `LICENSE` -- are still read for plan paths, and only their comments go
- * unexamined. YAML is the consequential one: `qmx.yaml` carries 16 chronology
- * markers and `finding-gate/cases/health/qmx.yaml` one more, and reading
- * `#` comments there would make all seventeen violations. Leaving them is the
- * owner's decision about that file's content, recorded here so the next reader
- * sees a decision rather than one more silent gap.
+ * Paths resolve from their file, the repository or the configured site root;
+ * relative paths and link targets use every tracked publication location.
+ * Basename and suffix searches are not resolution. The site root is read with
+ * the docs environment's native YAML loader; missing dependencies refuse.
  *
- * `git ls-files` is read here rather than shared with
- * `RegisteredDirectoriesReachTrackedFilesTest`, whose copy is private to its
- * own class: governance groups are flat and do not import one another.
+ * Limits: prose without a path, section sign or declared id form; split path
+ * tokens, HTML hrefs, inline hash comments in data and id forms not declared
+ * here. The shell/JavaScript extraction is lexical, not their full grammars.
+ * Legitimate lookalike ids and section signs cost one exact, expiring exception.
  */
 final class PlanningRecordIsolationTest extends TestCase
 {
-    private const PLAN_LOCAL_REFERENCE_PATTERN = '~(?<![A-Za-z0-9_.-])(?:PLAN\.md|03-cure\.md|01-freeze-kind\.md|followups/c2\.md)\b~';
+    /** @var list<array{name: string, pattern: string, scope: 'comments'|'content', reason: string}> */
+    private const array RECORD_ID_FORMS = [
+        ['name' => 'chronology', 'pattern' => '~(?<![A-Za-z0-9_,])[XP\x{0420}\x{0425}\x{0428}]\d+[A-Za-z\x{0410}-\x{044F}0-9.-]*(?![A-Za-z0-9_])~u', 'scope' => 'comments', 'reason' => 'Package chronology is not a source contract.'],
+        ['name' => 'registry-letter', 'pattern' => '~(?<![\w-])[XMRHYGO]-\d{2,3}[a-z]?(?![\w-])~', 'scope' => 'content', 'reason' => 'External campaign registry rows.'],
+        ['name' => 'registry-e', 'pattern' => '~(?<![\w-])(?:RM-)?E-?\d{3}(?![\w-])~', 'scope' => 'content', 'reason' => 'External campaign registry rows.'],
+        ['name' => 'registry-orch', 'pattern' => '~(?<![\w-])(?:ORCH-\d{2}|N-S\d{2}[a-z]?-\d+)(?![\w-])~', 'scope' => 'content', 'reason' => 'External orchestration records.'],
+        ['name' => 'reviewer', 'pattern' => '~(?<![\w-])(?:(?:S-)?(?:claude|codex|cand|rv)(?:-[a-z][a-z0-9]*)*-\d{2}[a-z]?|refute-\d{2})(?![\w-])~', 'scope' => 'content', 'reason' => 'External review records.'],
+        ['name' => 'stage', 'pattern' => '~(?<![\w-])S\d{2}[a-z]?(?:[-/]P\d+)?(?!\w)~', 'scope' => 'content', 'reason' => 'Campaign stage names are not source contracts.'],
+        ['name' => 'legacy-plan', 'pattern' => '~(?<![\w-])RFC-0\d\d(?![\w-])~', 'scope' => 'content', 'reason' => 'Removed internal planning records.'],
+    ];
 
-    private const PACKAGE_CHRONOLOGY_PATTERN = '~(?<![A-Za-z0-9_,])[XP\x{0420}\x{0425}\x{0428}]\d+[A-Za-z\x{0410}-\x{044F}0-9.-]*(?![A-Za-z0-9_])~u';
+    private const string MD_PATTERN = '~(?<![A-Za-z0-9_.\-/])((?:\.{1,2}/)*/?[A-Za-z0-9_.\-/]*[A-Za-z0-9_\-]\.md)(?![A-Za-z0-9_])~';
+
+    /** @var list<string> Exact deferred files, never directory prefixes. */
+    private const array DEFERRED_VERIFICATION_FILES = [
+        'promise-effect/floor.tsv',
+        'promise-effect/pair-kind-scope.tsv',
+        'promise-effect/promise-ledger.tsv',
+        'promise-effect/run-declaration.tsv',
+        'promise-effect/witness-envelopes.tsv',
+        'scripts/input-doors-bootstrap.php',
+        'scripts/input-doors/Declarations.php',
+        'scripts/promise-effect-controls.php',
+        'scripts/promise-effect-controls/Cases.php',
+        'scripts/promise-effect-grid.php',
+        'scripts/promise-effect.php',
+        'scripts/promise-effect/Classifier.php',
+        'scripts/promise-effect/CrossCheck.php',
+        'scripts/promise-effect/FifthSet.php',
+        'scripts/promise-effect/Floor.php',
+        'scripts/promise-effect/Population.php',
+        'scripts/promise-effect/ProcessProbe.php',
+        'scripts/promise-effect/RunDeclaration.php',
+        'scripts/promise-effect/Stamp.php',
+        'scripts/promise-effect/Stand.php',
+    ];
+
+    /** @var list<array{rule: string, file: string, line: string, token: string, reason: string}> */
+    private const array REFERENCE_EXCEPTIONS = [
+        ['rule' => 'md', 'file' => 'scripts/check-review-disposition.sh', 'line' => '#   scripts/check-review-disposition.sh <plan.md> <findings-dir>...', 'token' => 'plan.md', 'reason' => 'Usage-line metavariable.'],
+        ['rule' => 'md', 'file' => 'website/CONTRIBUTING_DOCS.md', 'line' => '- English: `page.md`', 'token' => 'page.md', 'reason' => 'Page-name metavariable.'],
+        ['rule' => 'md', 'file' => 'website/CONTRIBUTING_DOCS.md', 'line' => '- Russian: `page.ru.md`', 'token' => 'page.ru.md', 'reason' => 'Page-name metavariable.'],
+        ['rule' => 'md', 'file' => 'website/CONTRIBUTING_DOCS.md', 'line' => 'Compact list for agents. See [Default Thresholds](../reference/default-thresholds.md) for values.', 'token' => '../reference/default-thresholds.md', 'reason' => 'The example is written from a rule page, not this contributor guide.'],
+        ['rule' => 'section', 'file' => 'CHANGELOG.md', 'line' => '- `@qmx-threshold` refuses a `channel:level` pair instead of retuning the whole rule. A threshold addresses the producing rule and does not distinguish levels (ADR 0024 §2); the pair is captured by the directive grammar so that it can be named and refused, where before the pattern stopped at the `:` and quietly applied the left half to every level. Set a per-level boundary with the nested configuration key or `--rule-opt RULE:level.option=value`. The same widening applies to the three `@qmx-ignore` forms, where a pair used to be truncated to the bare channel — a suppression silently broader than the one that was written.', 'token' => '§2', 'reason' => 'A released changelog entry preserves its historical citation.'],
+        ['rule' => 'record-id', 'file' => 'tests/Core/Unit/SourceText/SourceBytesTest.php', 'line' => 'yield \'three-byte boundaries\' => ["\\u{800}\\u{D7FF}\\u{E000}\\u{FFFF}"];', 'token' => 'E000', 'reason' => 'The Unicode escape names a valid code-point boundary in source-byte test data.'],
+    ];
 
     private static string $projectRoot;
 
@@ -88,61 +123,29 @@ final class PlanningRecordIsolationTest extends TestCase
     #[Test]
     public function itKeepsExecutableSourcesIndependentFromPlanningRecords(): void
     {
-        $dependencies = [];
-        $unexaminable = [];
-        $patterns = [
-            'concrete plan path' => '~docs/internal/plans/(?!README\.md\b)[A-Za-z0-9._/-]+~',
-            'plan-local filename' => self::PLAN_LOCAL_REFERENCE_PATTERN,
-        ];
-
-        foreach (self::judgedFiles() as $relativePath) {
-            $content = file_get_contents(self::$projectRoot . '/' . $relativePath);
-            \assert($content !== false);
-
-            foreach ($patterns as $kind => $pattern) {
-                preg_match_all($pattern, $content, $matches, \PREG_OFFSET_CAPTURE);
-
-                foreach ($matches[0] as [$match, $offset]) {
-                    $line = substr_count(substr($content, 0, $offset), "\n") + 1;
-                    $dependencies[] = "{$relativePath}:{$line}: {$kind}: {$match}";
+        $rows = self::referenceRows();
+        $covered = [];
+        $problems = [];
+        foreach (self::REFERENCE_EXCEPTIONS as $exception) {
+            $matches = [];
+            foreach ($rows as $i => $row) {
+                if ($row['rule'] === $exception['rule'] && $row['file'] === $exception['file']
+                    && $row['line_text'] === $exception['line'] && $row['token'] === $exception['token']) {
+                    $matches[] = $i;
                 }
             }
-
-            $syntax = self::commentSyntax($relativePath, $content);
-            if ($syntax === null) {
-                continue;
-            }
-
-            // The chronology pattern carries `u`, so invalid UTF-8 makes
-            // preg_match_all return false with an empty match set and no
-            // warning -- a file that was never examined, counted as clean.
-            // Collected rather than asserted here: asserting inside the loop
-            // would abandon the dependency list this control exists to print.
-            if (preg_match_all(self::PACKAGE_CHRONOLOGY_PATTERN, self::commentContent($syntax, $content), $matches) === false) {
-                $unexaminable[] = "{$relativePath}: " . preg_last_error_msg();
-
-                continue;
-            }
-
-            foreach ($matches[0] as $match) {
-                $dependencies[] = "{$relativePath}: package chronology in comment: {$match}";
+            if (\count($matches) !== 1) {
+                $problems[] = $exception['file'] . ': stale or ambiguous exception: ' . $exception['reason'];
+            } else {
+                $covered[$matches[0]] = true;
             }
         }
-
-        // Both lists are reported by one assertion. Asserted separately, the
-        // first failure hides the second, and a file that could not be read
-        // would cost the run the list of violations it did find.
-        $report = [];
-        if ($dependencies !== []) {
-            $report[] = "Executable sources depend on planning records or package chronology:\n"
-                . implode("\n", array_values(array_unique($dependencies)));
+        foreach ($rows as $i => $row) {
+            if (!isset($covered[$i])) {
+                $problems[] = \sprintf('%s %s:%d %s #%d: %s', $row['rule'], $row['file'], $row['line'], $row['token'], $row['occurrence'], $row['line_text']);
+            }
         }
-        if ($unexaminable !== []) {
-            $report[] = "Comments could not be examined at all, so these files were judged against nothing:\n"
-                . implode("\n", $unexaminable);
-        }
-
-        self::assertSame([], $report, implode("\n\n", $report));
+        self::assertSame([], $problems, implode("\n", $problems));
     }
 
     #[Test]
@@ -151,18 +154,18 @@ final class PlanningRecordIsolationTest extends TestCase
         self::assertSame('', self::commentContent('slash', 'const X12 = 1;'));
         self::assertSame('', self::commentContent('slash', 'const marker = "// P5 is data";'));
         self::assertMatchesRegularExpression(
-            self::PACKAGE_CHRONOLOGY_PATTERN,
+            self::RECORD_ID_FORMS[0]['pattern'],
             self::commentContent('slash', '// P5 was the implementation package.'),
         );
         self::assertMatchesRegularExpression(
-            self::PACKAGE_CHRONOLOGY_PATTERN,
+            self::RECORD_ID_FORMS[0]['pattern'],
             self::commentContent('hash', "# \u{0420}5 was the implementation package."),
         );
         self::assertMatchesRegularExpression(
-            self::PACKAGE_CHRONOLOGY_PATTERN,
+            self::RECORD_ID_FORMS[0]['pattern'],
             self::commentContent('hash', 'value = 1 # P5 was the implementation package.'),
         );
-        self::assertMatchesRegularExpression(self::PLAN_LOCAL_REFERENCE_PATTERN, 'See 01-freeze-kind.md.');
+        self::assertMatchesRegularExpression(self::MD_PATTERN, 'See 01-freeze-kind.md.');
     }
 
     /**
@@ -230,7 +233,7 @@ final class PlanningRecordIsolationTest extends TestCase
             if ($path === $self) {
                 continue;
             }
-            if (str_starts_with($path, 'docs/') || str_starts_with($path, 'website/')) {
+            if (str_starts_with($path, 'docs/internal/plans/') || \in_array($path, self::DEFERRED_VERIFICATION_FILES, true) || is_link(self::$projectRoot . '/' . $path)) {
                 continue;
             }
 
@@ -300,28 +303,12 @@ final class PlanningRecordIsolationTest extends TestCase
 
     private static function commentContent(string $syntax, string $content): string
     {
-        if ($syntax === 'php') {
-            $comments = [];
-
-            foreach (token_get_all($content) as $token) {
-                if (\is_array($token) && \in_array($token[0], [\T_COMMENT, \T_DOC_COMMENT], true)) {
-                    $comments[] = $token[1];
-                }
-            }
-
-            return implode("\n", $comments);
-        }
-
-        return match ($syntax) {
-            'hash' => self::hashCommentsOutsideStrings($content),
-            'slash' => self::javascriptCommentsOutsideStrings($content),
-            default => '',
-        };
+        return implode("\n", array_map(static fn(array $span): string => substr($content, $span[0], $span[1] - $span[0]), self::commentSpans($syntax, $content)));
     }
 
     /**
      * The files this control judges: what a fresh clone receives, less the
-     * documentation trees and the vendored ones.
+     * plans, symbolic links, deferred files and vendored directory segments.
      *
      * Asked of git rather than of this disk, so a file that exists only here
      * is not judged and a tracked file cannot be missed by a walk. Two losses
@@ -372,14 +359,14 @@ final class PlanningRecordIsolationTest extends TestCase
     /**
      * Whether a tracked path is outside this control's subject.
      *
-     * `docs/` and `website/` are the documentation trees, where the plans
-     * themselves live. The three directory names are vendored output, matched
+     * Only the plan tree itself is excluded from documentation. Deferred
+     * verification files are exact paths. The three directory names are vendored output, matched
      * as whole segments: `str_contains('/vendor/')` misses a `vendor/` at the
      * repository root, which is exactly where it would be.
      */
     private static function isExcluded(string $path): bool
     {
-        if (str_starts_with($path, 'docs/') || str_starts_with($path, 'website/')) {
+        if (str_starts_with($path, 'docs/internal/plans/') || \in_array($path, self::DEFERRED_VERIFICATION_FILES, true) || is_link(self::$projectRoot . '/' . $path)) {
             return true;
         }
 
@@ -489,22 +476,257 @@ final class PlanningRecordIsolationTest extends TestCase
         return null;
     }
 
-    private static function hashCommentsOutsideStrings(string $content): string
+    /** @return list<array{rule: string, file: string, line: int, token: string, line_text: string, occurrence: int}> */
+    private static function referenceRows(): array
     {
-        $comments = [];
+        $tracked = array_fill_keys(self::trackedPaths(), true);
+        $published = [];
+        foreach (array_keys($tracked) as $path) {
+            if (is_link(self::$projectRoot . '/' . $path)) {
+                $target = readlink(self::$projectRoot . '/' . $path);
+                if ($target === false) {
+                    throw new LogicException('Cannot read tracked symbolic link: ' . $path);
+                }
+                $resolved = self::normalizePath(\dirname($path) . '/' . $target);
+                if ($resolved !== null) {
+                    $published[$resolved][] = $path;
+                }
+            }
+        }
+        $site = self::siteRoot();
+        $rows = [];
+        $seen = [];
+        foreach (self::judgedFiles() as $file) {
+            $content = file_get_contents(self::$projectRoot . '/' . $file);
+            if ($content === false) {
+                throw new LogicException('Cannot read tracked file: ' . $file);
+            }
+            if (str_contains(substr($content, 0, 8000), "\0")) {
+                continue;
+            }
+            $markdown = str_ends_with($file, '.md');
+            $syntax = $markdown ? null : self::commentSyntax($file, $content);
+            $comments = $syntax === null ? [] : self::commentSpans($syntax, $content);
+            $prose = $markdown ? [[0, \strlen($content)]] : $comments;
+            if (!$markdown && $syntax === null) {
+                preg_match_all('~^[ \t]*#[^\n]*~m', $content, $hashLines, \PREG_OFFSET_CAPTURE);
+                foreach ($hashLines[0] as [$text, $offset]) {
+                    $prose[] = [$offset, $offset + \strlen($text)];
+                }
+            }
+            $add = static function (string $rule, string $token, int $offset) use (&$rows, &$seen, $file, $content): void {
+                $line = self::lineAt($content, $offset);
+                $key = serialize([$rule, $file, $line, $token]);
+                $seen[$key] = ($seen[$key] ?? 0) + 1;
+                $rows[] = ['rule' => $rule, 'file' => $file, 'line' => substr_count(substr($content, 0, $offset), "\n") + 1,
+                    'token' => $token, 'line_text' => $line, 'occurrence' => $seen[$key]];
+            };
+            if (!str_starts_with($file, 'docs/adr/')) {
+                $targets = [];
+                $labels = [];
+                if ($markdown) {
+                    preg_match_all('~\[([^\]\n]*)\]\(\s*<?([^)\s>#]+\.md)(?:#[^)\s]*)?>?\s*(?:"[^"]*")?\)|^\s*\[[^\]]+\]:\s*<?([^\s>#]+\.md)~m', $content, $links, \PREG_OFFSET_CAPTURE);
+                    foreach ($links[1] as [$text, $offset]) {
+                        if ($offset >= 0) {
+                            $labels[] = [$offset, $offset + \strlen($text)];
+                        }
+                    }
+                    foreach ([2, 3] as $group) {
+                        foreach ($links[$group] as [$text, $offset]) {
+                            if ($offset >= 0 && $text !== '') {
+                                $targets[$offset] = true;
+                            }
+                        }
+                    }
+                }
+                preg_match_all('~(?:https?|ftp)://\S+~', $content, $urls, \PREG_OFFSET_CAPTURE);
+                $urlSpans = array_map(static fn(array $hit): array => [$hit[1], $hit[1] + \strlen($hit[0])], $urls[0]);
+                preg_match_all(self::MD_PATTERN, $content, $paths, \PREG_OFFSET_CAPTURE);
+                foreach ($paths[1] as [$token, $offset]) {
+                    if (!self::inSpans($offset, $prose) || self::inSpans($offset, $urlSpans)
+                        || str_starts_with(basename($token), '.')
+                        || ($markdown && !isset($targets[$offset]) && self::inSpans($offset, $labels))) {
+                        continue;
+                    }
+                    if (!self::referenceResolves($file, $token, isset($targets[$offset]), $tracked, $published, $site)) {
+                        $add('md', $token, $offset);
+                    }
+                }
+                preg_match_all('~§~', $content, $sections, \PREG_OFFSET_CAPTURE);
+                foreach ($sections[0] as [, $offset]) {
+                    preg_match('~^§\s?(?:"[^"\n]{1,60}"|[A-Za-z]?\d+(?:\.\d+)*[a-z]?|[A-Z][A-Za-z]+(?:\s[A-Z][A-Za-z]+)*)?~u', mb_scrub(substr($content, $offset, 80), 'UTF-8'), $item);
+                    $add('section', $item[0] ?? '§', $offset);
+                }
+                preg_match_all('~docs/internal/plans/(?!README\.md\b)[A-Za-z0-9._/-]+~', $content, $concrete, \PREG_OFFSET_CAPTURE);
+                foreach ($concrete[0] as [$token, $offset]) {
+                    if (!self::inSpans($offset, $prose)) {
+                        $add('plan-path', $token, $offset);
+                    }
+                }
+            }
+            foreach (self::RECORD_ID_FORMS as $form) {
+                $spans = $form['scope'] === 'comments' ? $comments : [[0, \strlen($content)]];
+                foreach ($spans as [$start, $end]) {
+                    if (preg_match_all($form['pattern'], substr($content, $start, $end - $start), $ids, \PREG_OFFSET_CAPTURE) === false) {
+                        throw new LogicException($file . ': comments cannot be examined: ' . preg_last_error_msg());
+                    }
+                    foreach ($ids[0] as [$token, $offset]) {
+                        $add('record-id', $token, $start + $offset);
+                    }
+                }
+            }
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @param array<string, bool> $tracked
+     * @param array<string, list<string>> $published
+     */
+    private static function referenceResolves(string $file, string $token, bool $linkTarget, array $tracked, array $published, string $site): bool
+    {
+        $candidates = [];
+        if (str_starts_with($token, '/')) {
+            $candidates[] = self::normalizePath($token);
+        } elseif (str_starts_with($token, './') || str_starts_with($token, '../') || $linkTarget) {
+            foreach ([$file, ...($published[$file] ?? [])] as $location) {
+                $candidates[] = self::normalizePath(\dirname($location) . '/' . $token);
+            }
+        } else {
+            $candidates = [self::normalizePath(\dirname($file) . '/' . $token), self::normalizePath($token), self::normalizePath($site . '/' . $token)];
+        }
+        foreach ($candidates as $candidate) {
+            if ($candidate !== null && isset($tracked[$candidate])
+                && (!str_starts_with($candidate, 'docs/internal/plans/') || $candidate === 'docs/internal/plans/README.md')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function normalizePath(string $path): ?string
+    {
+        $segments = [];
+        foreach (explode('/', $path) as $segment) {
+            if ($segment === '' || $segment === '.') {
+                continue;
+            }
+            if ($segment === '..') {
+                if ($segments === []) {
+                    return null;
+                }
+                array_pop($segments);
+            } else {
+                $segments[] = $segment;
+            }
+        }
+
+        return implode('/', $segments);
+    }
+
+    private static function siteRoot(): string
+    {
+        $candidates = [];
+        $configured = getenv('QMX_MKDOCS');
+        if ($configured !== false && str_contains($configured, '/')) {
+            $directory = \dirname($configured);
+            if (!str_starts_with($directory, '/')) {
+                $directory = self::$projectRoot . '/' . $directory;
+            }
+            $candidates = [$directory . '/python', $directory . '/python3'];
+        }
+        $candidates[] = self::$projectRoot . '/website/.venv/bin/python';
+        $candidates[] = self::$projectRoot . '/website/.venv/bin/python3';
+        $searchPath = getenv('PATH');
+        foreach (explode(\PATH_SEPARATOR, $searchPath === false ? '' : $searchPath) as $directory) {
+            $candidates[] = $directory . '/python3';
+        }
+        $python = array_find($candidates, static fn(string $path): bool => is_file($path) && is_executable($path));
+        if ($python === null) {
+            throw new LogicException('Reading the site root requires the docs dependencies: install website/requirements.txt in the docs Python environment.');
+        }
+        $script = <<<'PYTHON'
+import json, signal, sys
+signal.alarm(10)
+try:
+    import yaml
+    with open(sys.argv[1], encoding="utf-8") as stream:
+        document = yaml.compose(stream, Loader=yaml.BaseLoader)
+    if not isinstance(document, yaml.MappingNode):
+        raise ValueError("the site configuration must be a mapping")
+    values = [value for key, value in document.value if key.value == "docs_dir"]
+    if len(values) > 1:
+        raise ValueError("docs_dir must be declared once")
+    if values:
+        value = values[0]
+        if not isinstance(value, yaml.ScalarNode) or value.tag != "tag:yaml.org,2002:str" or not value.value:
+            raise ValueError("only a literal scalar docs_dir is supported")
+        directory = value.value
+    else:
+        directory = "docs"
+    print(json.dumps(directory))
+except Exception as error:
+    sys.exit("Cannot read the site root with the docs dependencies: " + str(error))
+PYTHON;
+        $result = ChildProcess::run([$python, '-c', $script, self::$projectRoot . '/website/mkdocs.yml'], self::$projectRoot);
+        if ($result['exitCode'] !== 0) {
+            throw new LogicException('Cannot read the site root with the docs dependencies: ' . $result['stderr']);
+        }
+        $directory = json_decode($result['stdout'], true, 512, \JSON_THROW_ON_ERROR);
+        if (!\is_string($directory) || $directory === '') {
+            throw new LogicException('The docs loader returned no literal docs_dir.');
+        }
+        $root = self::normalizePath('website/' . $directory);
+        if ($root === null) {
+            throw new LogicException('The site root is outside the repository.');
+        }
+
+        return $root;
+    }
+
+    /** @param list<array{int, int}> $spans */
+    private static function inSpans(int $offset, array $spans): bool
+    {
+        return array_any($spans, static fn(array $span): bool => $offset >= $span[0] && $offset < $span[1]);
+    }
+
+    private static function lineAt(string $content, int $offset): string
+    {
+        $start = strrpos(substr($content, 0, $offset), "\n");
+        $start = $start === false ? 0 : $start + 1;
+        $end = strpos($content, "\n", $offset);
+
+        return trim(substr($content, $start, ($end === false ? \strlen($content) : $end) - $start));
+    }
+
+    /** @return list<array{int, int}> */
+    private static function commentSpans(string $syntax, string $content): array
+    {
+        $spans = [];
+        if ($syntax === 'php') {
+            $offset = 0;
+            foreach (token_get_all($content) as $token) {
+                $text = \is_array($token) ? $token[1] : $token;
+                if (\is_array($token) && \in_array($token[0], [\T_COMMENT, \T_DOC_COMMENT], true)) {
+                    $spans[] = [$offset, $offset + \strlen($text)];
+                }
+                $offset += \strlen($text);
+            }
+
+            return $spans;
+        }
         $length = \strlen($content);
         $quote = null;
         $triple = false;
-
         for ($offset = 0; $offset < $length; ++$offset) {
             $character = $content[$offset];
-
             if ($quote !== null) {
                 if ($character === '\\') {
                     ++$offset;
                     continue;
                 }
-
                 if ($triple && substr($content, $offset, 3) === str_repeat($quote, 3)) {
                     $offset += 2;
                     $quote = null;
@@ -512,71 +734,30 @@ final class PlanningRecordIsolationTest extends TestCase
                 } elseif (!$triple && $character === $quote) {
                     $quote = null;
                 }
-
                 continue;
             }
-
-            if (($character === "'" || $character === '"')) {
+            if ($character === "'" || $character === '"' || ($syntax === 'slash' && $character === '`')) {
                 $quote = $character;
-                $triple = substr($content, $offset, 3) === str_repeat($character, 3);
+                $triple = $syntax === 'hash' && substr($content, $offset, 3) === str_repeat($character, 3);
                 if ($triple) {
                     $offset += 2;
                 }
                 continue;
             }
-
-            if ($character === '#') {
+            if (($syntax === 'hash' && $character === '#') || ($syntax === 'slash' && substr($content, $offset, 2) === '//')) {
                 $end = strpos($content, "\n", $offset);
                 $end = $end === false ? $length : $end;
-                $comments[] = substr($content, $offset, $end - $offset);
+                $spans[] = [$offset, $end];
                 $offset = $end;
-            }
-        }
-
-        return implode("\n", $comments);
-    }
-
-    private static function javascriptCommentsOutsideStrings(string $content): string
-    {
-        $comments = [];
-        $length = \strlen($content);
-        $quote = null;
-
-        for ($offset = 0; $offset < $length; ++$offset) {
-            $character = $content[$offset];
-
-            if ($quote !== null) {
-                if ($character === '\\') {
-                    ++$offset;
-                    continue;
-                }
-
-                if ($character === $quote) {
-                    $quote = null;
-                }
-
-                continue;
-            }
-
-            if ($character === "'" || $character === '"' || $character === '`') {
-                $quote = $character;
-                continue;
-            }
-
-            $pair = substr($content, $offset, 2);
-            if ($pair === '//') {
-                $end = strpos($content, "\n", $offset);
-                $end = $end === false ? $length : $end;
-                $comments[] = substr($content, $offset, $end - $offset);
-                $offset = $end;
-            } elseif ($pair === '/*') {
+            } elseif ($syntax === 'slash' && substr($content, $offset, 2) === '/*') {
                 $end = strpos($content, '*/', $offset + 2);
                 $end = $end === false ? $length - 2 : $end;
-                $comments[] = substr($content, $offset, $end + 2 - $offset);
+                $spans[] = [$offset, $end + 2];
                 $offset = $end + 1;
             }
         }
 
-        return implode("\n", $comments);
+        return $spans;
     }
+
 }

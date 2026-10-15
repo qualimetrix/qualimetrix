@@ -798,7 +798,7 @@ final class BaselineWriterTest extends TestCase
 
     /**
      * **A baseline is a tracked file, so nothing in it may name a developer's
-     * home directory** (CLAUDE.md §10, enforced by
+     * home directory** (CLAUDE.md, section 10, enforced by
      * `scripts/check-private-leaks.sh`). The scope is the one field that used
      * to leak one: a run over the project root has no project-relative form,
      * so it was written verbatim. Here the run is `bin/qmx baseline:generate

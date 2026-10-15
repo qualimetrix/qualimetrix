@@ -31,7 +31,6 @@ final class MethodCountMetrics
     public int $propertyCountPrivate = 0;
     public int $promotedPropertyCount = 0;
 
-    // Class characteristics for false positive reduction (RFC-008)
     public bool $isReadonly = false;
     public bool $isAbstract = false;
     public bool $isInterface = false;

@@ -70,8 +70,8 @@ final class FindingConfigurationResolverTest extends TestCase
     }
 
     /**
-     * §4 of `measurement/observations.md`: an overlay's `threshold: ~` used to
-     * be treated as PRESENT (eviction asked presence, not writtenness) and
+     * An overlay's `threshold: ~` used to be treated as PRESENT: eviction
+     * asked presence, not writtenness, and
      * silenced the lower layer's whole band. `~` selects no mode, so the
      * lower layer's `warning`/`error` must survive untouched.
      */
@@ -93,8 +93,7 @@ final class FindingConfigurationResolverTest extends TestCase
     }
 
     /**
-     * §5 of `measurement/observations.md`, the mirror of the case above: an
-     * overlay's `warning: ~` is a value-slot write of `null`, not a
+     * An overlay's `warning: ~` is a value-slot write of `null`, not a
      * shorthand-key question, so unfolding does not touch it — the merge
      * itself must not let that `null` erase the lower layer's `warning: 2`.
      */

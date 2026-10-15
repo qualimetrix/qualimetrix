@@ -112,7 +112,7 @@ final readonly class ArchitectureConfiguration
      *
      * Used by call sites that need to satisfy the ArchitecturePolicy
      * lifecycle ({@code bind()} is mandatory before {@code prepare()} per
-     * ADR 0008 §3) when the user did not supply an `architecture:` YAML
+     * ADR 0008, section 3) when the user did not supply an `architecture:` YAML
      * section. The rule layer's {@code isEmpty()} short-circuit ensures no
      * downstream work happens.
      */

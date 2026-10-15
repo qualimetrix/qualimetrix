@@ -52,7 +52,7 @@ use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
  *
  * Production wiring (RuntimeConfigurator) configures an
  * {@see ArchitectureConfiguration} on the policy before
- * {@code AnalysisPipeline::analyze()} runs, satisfying the ADR 0008 §3
+ * {@code AnalysisPipeline::analyze()} runs, satisfying the ADR 0008, section 3
  * fail-fast invariant (bind → prepare).
  *
  * Tests that construct an {@code AnalysisPipeline} directly bypass that

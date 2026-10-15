@@ -166,7 +166,6 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
         $metrics = $this->classMetrics[$position];
         $methodName = $method->name->toString();
 
-        // RFC-008: Track constructor presence for isDataClass calculation
         if ($methodName === '__construct') {
             $metrics->hasConstructor = true;
 

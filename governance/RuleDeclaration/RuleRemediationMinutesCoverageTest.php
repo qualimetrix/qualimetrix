@@ -68,7 +68,7 @@ final class RuleRemediationMinutesCoverageTest extends TestCase
      * worse than no page, so every number on it is checked against the rule
      * that declares it, not merely trusted to have been transcribed right.
      *
-     * The Russian translation (`remediation-time.ru.md`) carries the same
+     * The Russian translation (`reference/remediation-time.ru.md`) carries the same
      * table and is swept the same way — a page nobody checks is exactly how
      * the English page could have drifted in the first place.
      */

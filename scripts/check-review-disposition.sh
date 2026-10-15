@@ -8,7 +8,7 @@
 # into it. This script makes the omission machine-detectable.
 #
 # It also enforces the form the check needs: finding ids must be spelled in
-# full. An earlier revision compressed them to "claude-01, -03, -08", which
+# full. An earlier revision compressed them to "claude-NN, -03, -08", which
 # reads fine and defeats any cross-check.
 #
 # The id pattern is deliberately permissive about how many name segments precede
@@ -68,7 +68,7 @@ for dir in "$@"; do
             # An id reused by a later round defeats the cross-check: the plan
             # cites the old finding, the grep below matches, and the new one is
             # reported as disposed of while nobody has read it. Round 7 walked
-            # into exactly this — bare `codex-01`/`claude-01` collided with
+            # into exactly this — bare `codex-NN`/`claude-NN` collided with
             # round 1 — and the checker said "all disposed". Ids must therefore
             # be unique across the whole set of findings directories, which in
             # practice means carrying their round.

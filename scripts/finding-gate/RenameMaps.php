@@ -1166,7 +1166,7 @@ final class RenameMaps
         // (appliesToSurface() passes if ANY source is), and REPORT_VALUES then
         // inherits a spelling and a surface it never declared for itself — a
         // quoted-only, format:suppressed-only value would travel unquoted,
-        // everywhere, exactly as codex-01 measured. Refused at load time
+        // everywhere, exactly as the earlier comparison exposed. Refused at load time
         // instead of letting REPORT_VALUES lose the one restriction that is
         // its whole point.
         foreach ($declared as $declaration) {

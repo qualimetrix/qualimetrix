@@ -46,8 +46,6 @@ final class MethodCountCollector extends AbstractCollector implements Declaratio
 
     private const NAME = 'method-count';
 
-    // RFC-008: Class characteristics for false positive reduction
-
     public function __construct()
     {
         $this->visitor = new MethodCountVisitor();
@@ -76,7 +74,6 @@ final class MethodCountCollector extends AbstractCollector implements Declaratio
             MetricName::SIZE_PROPERTY_COUNT_PROTECTED,
             MetricName::SIZE_PROPERTY_COUNT_PRIVATE,
             MetricName::SIZE_PROMOTED_PROPERTY_COUNT,
-            // RFC-008: Class characteristics for false positive reduction
             MetricName::DESIGN_IS_READONLY,
             MetricName::DESIGN_IS_PROMOTED_PROPERTIES_ONLY,
             MetricName::DESIGN_IS_DATA_CLASS,
@@ -238,7 +235,6 @@ final class MethodCountCollector extends AbstractCollector implements Declaratio
                 collectedAt: SymbolLevel::Class_,
                 aggregations: $aggregations,
             ),
-            // RFC-008: Class characteristics for false positive reduction
             // These are boolean flags (0/1), so Sum gives count of matching classes
             new MetricDefinition(
                 name: MetricName::DESIGN_IS_READONLY,

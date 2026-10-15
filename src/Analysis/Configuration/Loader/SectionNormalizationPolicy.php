@@ -21,7 +21,7 @@ namespace Qualimetrix\Analysis\Configuration\Loader;
  * an explicit policy entry; a missing entry throws {@see \LogicException}
  * (fail-fast wiring guarantee).
  *
- * See [ADR 0009](../../../docs/adr/0009-yaml-loader-normalization-model.md).
+ * See [ADR 0009](docs/adr/0009-yaml-loader-normalization-model.md).
  */
 enum SectionNormalizationPolicy
 {

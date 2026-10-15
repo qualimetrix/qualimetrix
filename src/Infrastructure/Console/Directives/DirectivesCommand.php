@@ -31,7 +31,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * What every `@qmx-ignore` and `@qmx-threshold` in the analysed tree did.
  *
- * Top-level rather than `debug:`, by the criterion in `CLI_CONVENTIONS.md`: it
+ * Top-level rather than `debug:`, by the criterion in `docs/internal/CLI_CONVENTIONS.md`: it
  * takes source code and produces analysis output. It is not diagnostics of the
  * tool's internals — it is maintenance of the project's own annotations, and
  * the answer it gives is meant for CI.

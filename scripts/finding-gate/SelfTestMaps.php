@@ -411,7 +411,7 @@ final class SelfTestMaps extends SelfTestGroup
             'two report-value rows renaming one value stay refused, exactly as for the other maps',
         );
 
-        // codex-01: a report-values row colliding on (old, new) with another
+        // A report-values row colliding on (old, new) with another
         // map's row must not silently merge into one declaration — that would
         // hand REPORT_VALUES the other role's unrestricted surface and bare
         // spelling.
