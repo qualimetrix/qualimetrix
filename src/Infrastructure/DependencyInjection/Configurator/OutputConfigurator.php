@@ -67,7 +67,6 @@ use Qualimetrix\Infrastructure\Console\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\ProfileSummaryRenderer;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
 use Qualimetrix\Infrastructure\Console\ProjectSourceConfigurator;
-use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
@@ -310,16 +309,6 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
 
         // ProfileSummaryRenderer (stateless, no dependencies)
         $container->register(ProfileSummaryRenderer::class);
-
-        // ErrorStream is the single owner of the run's error stream: the
-        // progress section and every diagnostic writer come from this one
-        // shared instance, which is what makes them redraw around each other.
-        $container->register(ErrorStream::class)->setSynthetic(true)->setPublic(true);
-
-        $container->register(RefusalPresenter::class)
-            ->setSynthetic(true)
-            ->setPublic(true);
-        $container->register(OutOfMemoryHint::class)->setSynthetic(true)->setPublic(true);
 
         $container->register(RunTargetSession::class)
             ->setArguments([

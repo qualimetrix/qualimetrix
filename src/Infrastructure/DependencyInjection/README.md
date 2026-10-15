@@ -11,6 +11,9 @@ services compose their named subjects; `CohesionConfigurator` owns the LCOM
 resolver, store and tagged collectors. `OutputConfigurator` keeps ordinary
 services explicitly registered and autowired, with named loggers, the synthetic
 logger holder, lazy Options, factories and tagged collections bound explicitly.
+`ContainerFactory` registers the synthetic Console diagnostic trio and installs
+the instances held by one `ConsoleDiagnostics`; `OutputConfigurator` binds their
+consumers.
 Run preparation and observed scope reasons are services; their immutable result
 records are values constructed by the operation, never container services.
 

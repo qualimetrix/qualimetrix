@@ -145,6 +145,11 @@ final class ContainerFactory
             $configurator->configure($container);
         }
 
+        // One ErrorStream makes progress redraw around every diagnostic writer.
+        $container->register(ErrorStream::class)->setSynthetic(true)->setPublic(true);
+        $container->register(RefusalPresenter::class)->setSynthetic(true)->setPublic(true);
+        $container->register(OutOfMemoryHint::class)->setSynthetic(true)->setPublic(true);
+
         $diagnostics ??= ConsoleDiagnostics::fresh();
         foreach ([
             ErrorStream::class => $diagnostics->errorStream,
