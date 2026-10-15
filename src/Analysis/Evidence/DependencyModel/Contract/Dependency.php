@@ -124,14 +124,6 @@ final readonly class Dependency
     }
 
     /**
-     * Returns true if this is a dependency between different namespaces.
-     */
-    public function isCrossNamespace(): bool
-    {
-        return $this->sourceLogical()->namespace !== $this->targetLogical()->namespace;
-    }
-
-    /**
      * Returns true if this dependency creates strong coupling.
      */
     public function isStrongCoupling(): bool

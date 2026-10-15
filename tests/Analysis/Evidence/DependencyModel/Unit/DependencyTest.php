@@ -40,60 +40,6 @@ final class DependencyTest extends TestCase
         self::assertSame($location, $dependency->location);
     }
 
-    #[DataProvider('crossNamespaceDataProvider')]
-    #[Test]
-    public function itIsCrossNamespace(
-        string $sourceClass,
-        string $targetClass,
-        bool $expectedIsCrossNamespace,
-    ): void {
-        $dependency = $this->dependency($sourceClass, $targetClass, DependencyType::New_, new Location(RelativePath::fromString('test.php')));
-
-        self::assertSame($expectedIsCrossNamespace, $dependency->isCrossNamespace());
-    }
-
-    /**
-     * @return iterable<string, array{string, string, bool}>
-     */
-    public static function crossNamespaceDataProvider(): iterable
-    {
-        yield 'same namespace' => [
-            'App\Service\UserService',
-            'App\Service\OrderService',
-            false,
-        ];
-
-        yield 'different namespace' => [
-            'App\Service\UserService',
-            'App\Repository\UserRepository',
-            true,
-        ];
-
-        yield 'both global namespace' => [
-            'GlobalClass1',
-            'GlobalClass2',
-            false,
-        ];
-
-        yield 'source global, target namespaced' => [
-            'GlobalClass',
-            'App\Service\UserService',
-            true,
-        ];
-
-        yield 'source namespaced, target global' => [
-            'App\Service\UserService',
-            'GlobalClass',
-            true,
-        ];
-
-        yield 'deep same namespace' => [
-            'App\Module\Sub\Service\UserService',
-            'App\Module\Sub\Service\OrderService',
-            false,
-        ];
-    }
-
     #[DataProvider('strongCouplingDataProvider')]
     #[Test]
     public function itIsStrongCoupling(DependencyType $type, bool $expectedIsStrongCoupling): void

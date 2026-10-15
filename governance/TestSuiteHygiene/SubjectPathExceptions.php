@@ -52,9 +52,7 @@ use Throwable;
  * **The hole this keeps, named rather than left to be discovered:** retiring one
  * exception and introducing another in the same list leaves the count where it
  * was, and every row here is keyed on a path, so the derive cannot tell that
- * substitution from a file having moved. {@see NamespacePathAllowList} closes
- * the same hole by budgeting on the *value*, which it can because a namespace
- * survives a move and a path does not. Both refusals in
+ * substitution from a file having moved. Both refusals in
  * {@see TestPathsNameTheirSubjectTest} still fire on the substitution until
  * someone re-derives; what is not closed is the re-derive itself.
  */

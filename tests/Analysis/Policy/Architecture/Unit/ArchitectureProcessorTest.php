@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing;
+namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit;
 
 use Generator;
 use LogicException;
