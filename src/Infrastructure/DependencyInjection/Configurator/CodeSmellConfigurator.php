@@ -19,7 +19,7 @@ final class CodeSmellConfigurator implements ContainerConfiguratorInterface
     public function configure(ContainerBuilder $container): void
     {
         $loader = new PhpFileLoader($container, new FileLocator($this->srcDir));
-        foreach (['' => '*', 'ParameterCount\\' => 'ParameterCount/*', 'UnreachableCode\\' => 'UnreachableCode/*', 'UnusedPrivate\\' => 'UnusedPrivate/*'] as $namespace => $root) {
+        foreach (['' => '*', 'ParameterCount\\' => 'ParameterCount/*', 'RepeatedExpression\\' => 'RepeatedExpression/*', 'UnreachableCode\\' => 'UnreachableCode/*', 'UnusedPrivate\\' => 'UnusedPrivate/*'] as $namespace => $root) {
             $loader->registerClasses(
                 (new Definition())->setAutoconfigured(true)->setAutowired(true),
                 self::NAMESPACE . $namespace,

@@ -24,6 +24,7 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\IdenticalSubExpressionRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ConstructorOverinjectionRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\LongParameterListRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ParameterCountCollector;
+use Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionCollector;
 use Qualimetrix\Analysis\Evidence\CodeSmell\SuperglobalsRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCode\UnreachableCodeCollector;
 use Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCode\UnreachableCodeRule;
@@ -912,6 +913,7 @@ PHP;
             TccLccCollector::class,
             RfcCollector::class,
             ParameterCountCollector::class,
+            IdenticalSubExpressionCollector::class,
             UnreachableCodeCollector::class,
             UnusedPrivateCollector::class,
         ];
