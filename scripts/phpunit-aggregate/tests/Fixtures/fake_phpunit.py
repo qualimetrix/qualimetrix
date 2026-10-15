@@ -46,7 +46,7 @@ behavior = configuration.get("run", {}).get(suite, {})
 residue_report = os.environ.get("QMX_SUITE_RESIDUE_REPORT")
 if residue_report is not None and not behavior.get("missing_residue_report"):
     Path(residue_report).write_text(
-        "".join(entry + "\n" for entry in behavior.get("residue", [".qmx-cache"])), encoding="utf-8",
+        "".join(entry + "\n" for entry in behavior.get("residue", [])), encoding="utf-8",
     )
 for entry in behavior.get("cwd_entries", []):
     Path(entry).mkdir()
