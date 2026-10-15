@@ -27,15 +27,20 @@ final readonly class RuntimeLimits
         if (preg_match('/^([1-9][0-9]*)([KMG]?)$/i', $memoryLimit, $matches) !== 1) {
             throw $this->refusal(self::invalidMemoryLimitSummary($memoryLimit));
         }
-        $multiplier = match (strtoupper($matches[2])) {
+        $this->assertByteSizeFits($memoryLimit, $matches[1], $matches[2]);
+    }
+
+    private function assertByteSizeFits(string $memoryLimit, string $size, string $suffix): void
+    {
+        $multiplier = match (strtoupper($suffix)) {
             'K' => 1024,
             'M' => 1024 * 1024,
             'G' => 1024 * 1024 * 1024,
             default => 1,
         };
         $largest = (string) intdiv(\PHP_INT_MAX, $multiplier);
-        if (\strlen($matches[1]) > \strlen($largest)
-            || (\strlen($matches[1]) === \strlen($largest) && strcmp($matches[1], $largest) > 0)) {
+        if (\strlen($size) > \strlen($largest)
+            || (\strlen($size) === \strlen($largest) && strcmp($size, $largest) > 0)) {
             throw $this->refusal(\sprintf('memory_limit "%s" is out of range; its byte size exceeds PHP_INT_MAX.', $memoryLimit));
         }
     }

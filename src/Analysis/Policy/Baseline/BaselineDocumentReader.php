@@ -48,13 +48,7 @@ final readonly class BaselineDocumentReader
             throw new BaselineReadFailure($path, $warning ?? 'the filesystem refused opening the file');
         }
         try {
-            [$stat, $warning] = NativeCall::attempt(static fn() => fstat($handle));
-            if ($stat === false) {
-                throw new BaselineReadFailure($path, $warning ?? 'the filesystem refused inspecting the held file');
-            }
-            if (!$target->identity->sameAs(FileIdentity::fromStat($stat))) {
-                throw new BaselineConflictException("Baseline file {$path} changed before reading. Re-run the command to pick up the current file.");
-            }
+            $this->assertHeldIdentity($path, $target->identity, $handle);
             [$content, $warning] = NativeCall::attempt(static fn() => stream_get_contents($handle));
         } finally {
             fclose($handle);
@@ -65,6 +59,18 @@ final readonly class BaselineDocumentReader
         }
 
         return $content;
+    }
+
+    /** @param resource $handle */
+    private function assertHeldIdentity(string $path, FileIdentity $identity, mixed $handle): void
+    {
+        [$stat, $warning] = NativeCall::attempt(static fn() => fstat($handle));
+        if ($stat === false) {
+            throw new BaselineReadFailure($path, $warning ?? 'the filesystem refused inspecting the held file');
+        }
+        if (!$identity->sameAs(FileIdentity::fromStat($stat))) {
+            throw new BaselineConflictException("Baseline file {$path} changed before reading. Re-run the command to pick up the current file.");
+        }
     }
 
     /** @throws ConfigurationRefusal if the file is missing or not a regular file */

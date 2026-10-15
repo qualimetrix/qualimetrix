@@ -82,7 +82,7 @@ final class OutOfMemoryHint
     private function onShutdown(): void
     {
         $error = error_get_last();
-        if ($error === null || $error['type'] !== \E_ERROR) {
+        if (!self::isFatalError($error)) {
             return;
         }
         if (!str_starts_with($error['message'], 'Allowed memory size of ')) {
@@ -103,13 +103,7 @@ final class OutOfMemoryHint
         $source = $this->limitSource?->describe() ?? 'php.ini';
         $releases = $this->releases;
         $this->unbind();
-        foreach ($releases as $release) {
-            try {
-                $release();
-            } catch (Throwable) {
-                // A failed target release must not suppress the process outcome.
-            }
-        }
+        self::releaseTargets($releases);
 
         $message = \sprintf(
             'Qualimetrix ran out of memory at %s:%d (memory_limit=%s, source=%s); raise --memory-limit or memory_limit in qmx.yaml.',
@@ -124,5 +118,31 @@ final class OutOfMemoryHint
             fwrite(\STDERR, $message . "\n");
         }
         exit(ConsoleExitCode::AnalysisIncomplete->value);
+    }
+
+    /**
+     * @param array{type: int, message: string, file: string, line: int}|null $error
+     *
+     * @phpstan-assert-if-true !null $error
+     */
+    private static function isFatalError(?array $error): bool
+    {
+        return $error !== null && $error['type'] === \E_ERROR;
+    }
+
+    /**
+     * @param array<int, Closure(): void> $releases
+     *
+     * @qmx-ignore code-smell.empty-catch -- Exhaustion cleanup is best effort; every remaining target must still be released and the resource-exhaustion answer must survive a release failure.
+     */
+    private static function releaseTargets(array $releases): void
+    {
+        foreach ($releases as $release) {
+            try {
+                $release();
+            } catch (Throwable) {
+                // A failed target release must not suppress the process outcome.
+            }
+        }
     }
 }

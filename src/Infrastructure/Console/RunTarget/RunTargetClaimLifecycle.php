@@ -21,7 +21,11 @@ use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
 use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
 use Throwable;
 
-/** Owns claimed targets and interruption cleanup for one console run. */
+/**
+ * Owns claimed targets and interruption cleanup for one console run.
+ *
+ * @qmx-threshold complexity.wmc 53 -- Claim, publication, interruption and exhaustion share the same held target identities; splitting their owner would duplicate lifecycle state.
+ */
 final class RunTargetClaimLifecycle
 {
     /** @var array<string, HeldTarget> */

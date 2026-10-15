@@ -217,6 +217,17 @@ final class Application extends BaseApplication
 
     protected function doRunCommand(Command $command, InputInterface $input, OutputInterface $output): int
     {
+        $this->bindInvocationFormat($command, $input);
+        $this->memoryHint?->answerThrough($this->refusalPresenter, $output, $this->invocationFormat);
+        if ($this->productLoader === null || $this->productLoader->has($command->getName() ?? '')) {
+            ($this->manifestSnapshot)()->beginInvocation();
+        }
+
+        return parent::doRunCommand($command, $input, $output);
+    }
+
+    private function bindInvocationFormat(Command $command, InputInterface $input): void
+    {
         $definition = $command->getDefinition();
         if ($definition->hasOption('format')) {
             $option = $definition->getOption('format');
@@ -229,12 +240,6 @@ final class Application extends BaseApplication
             $format = $input->getParameterOption($names, null);
             $this->invocationFormat = \is_string($format) ? $format : null;
         }
-        $this->memoryHint?->answerThrough($this->refusalPresenter, $output, $this->invocationFormat);
-        if ($this->productLoader === null || $this->productLoader->has($command->getName() ?? '')) {
-            ($this->manifestSnapshot)()->beginInvocation();
-        }
-
-        return parent::doRunCommand($command, $input, $output);
     }
 
     protected function getCommandName(InputInterface $input): ?string

@@ -231,12 +231,10 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         $collectionResult = $this->collectionOrchestrator->collect($files, $repository, $configuration->projectRoot);
         $profiler->stop('collection');
 
-        $collectionTime = (hrtime(true) - $phaseStartTime) / 1e9;
-        $this->logger->info('Collection completed', [
+        $this->logPhaseCompleted('Collection', $phaseStartTime, [
             'processed' => $collectionResult->filesAnalyzed,
             'errors' => $collectionResult->filesSkipped,
             'dependencies' => \count($collectionResult->dependencies),
-            'duration' => \sprintf('%.2fs', $collectionTime),
         ]);
 
         $filesAnalyzed = $collectionResult->filesAnalyzed;
@@ -319,10 +317,8 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         }
         $profiler->stop('rules');
 
-        $analysisTime = (hrtime(true) - $phaseStartTime) / 1e9;
-        $this->logger->info('Analysis completed', [
+        $this->logPhaseCompleted('Analysis', $phaseStartTime, [
             'violations' => \count($ruleExecution->published),
-            'duration' => \sprintf('%.2fs', $analysisTime),
         ]);
 
         $profiler->stop('analysis');
@@ -355,6 +351,15 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             discoveryPopulation: $discoveryPopulation,
             populationPublication: $populationPublication,
         ), $measuredScope];
+    }
+
+    /** @param array<string, int> $counts */
+    private function logPhaseCompleted(string $phase, int $startTime, array $counts): void
+    {
+        $this->logger->info($phase . ' completed', [
+            ...$counts,
+            'duration' => \sprintf('%.2fs', (hrtime(true) - $startTime) / 1e9),
+        ]);
     }
 
     /**

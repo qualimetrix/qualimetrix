@@ -165,24 +165,17 @@ final class CheckCommand extends Command
     {
         $format = self::formatOption($input);
 
-        $analysisStarted = false;
         $profileFinished = false;
         $finishProfile = function (string $outcome) use ($input, $output, &$profileFinished): void {
+            if ($profileFinished) {
+                return;
+            }
             $profileFinished = true;
             $this->resultPresenter->presentProfile($input, $output, $this->runTargetSession->targets(), $outcome);
             $this->runTargetSession->targets()->settle();
         };
 
-        return $this->runTargetSession->run($output, $format, function () use ($input, $output, &$analysisStarted, &$profileFinished, $finishProfile): int {
-            try {
-                return $this->doExecute($input, $output, $analysisStarted, $finishProfile);
-            } catch (Throwable $failure) {
-                if ($analysisStarted && !$profileFinished) {
-                    $finishProfile(self::profileOutcome($failure));
-                }
-                throw $failure;
-            }
-        });
+        return $this->runTargetSession->run($output, $format, fn(): int => $this->doExecute($input, $output, $finishProfile));
     }
 
     /**
@@ -194,7 +187,7 @@ final class CheckCommand extends Command
      *
      * @param Closure(string): void $finishProfile
      */
-    private function doExecute(InputInterface $input, OutputInterface $output, bool &$analysisStarted, Closure $finishProfile): int
+    private function doExecute(InputInterface $input, OutputInterface $output, Closure $finishProfile): int
     {
         $this->runtimeConfigurator->resetRunState();
 
@@ -260,58 +253,67 @@ final class CheckCommand extends Command
         );
         $this->claimRunTargets($input, $output);
 
-        $cacheDirectory = $resolved->run->cacheConfiguration->directory;
-        if ($input->hasOption('clear-cache') && $input->getOption('clear-cache') === true && $cacheDirectory !== null) {
-            $this->runTargetSession->targets()->assertCacheClearSafe($cacheDirectory->value());
-        }
-
-        if ($this->runtimeConfigurator->clearCacheIfRequested($input)) {
-            $this->resultPresenter->writeDiagnostic($output, '<info>Cache cleared.</info>');
-        }
+        $this->clearCacheIfRequested($input, $output, $resolved->run->cacheConfiguration->directory?->value());
 
         // Named, and carrying the coverage answer with the paths it is about:
         // rebuilding this positionally lost every field added to the run
         // configuration after the call site was written, silently and once per
         // field.
         $scopedRunConfiguration = $runConfiguration->withProjectScope($resolvedScope->measurement);
-        $analysisStarted = true;
-        $result = $this->runAnalysis($scopedRunConfiguration);
+        try {
+            $result = $this->runAnalysis($scopedRunConfiguration);
 
-        $filterResult = $this->findingFilterOrchestrator->filterAndReport(
-            $result,
-            $input,
-            $output,
-            $resolvedScope,
-            $projectionOptions,
-            $scopedRunConfiguration,
-        );
-        $filteredFindings = $filterResult->findings;
-        $this->runTargetSession->targets()->settle();
+            $filterResult = $this->findingFilterOrchestrator->filterAndReport(
+                $result,
+                $input,
+                $output,
+                $resolvedScope,
+                $projectionOptions,
+                $scopedRunConfiguration,
+            );
+            $filteredFindings = $filterResult->findings;
+            $this->runTargetSession->targets()->settle();
 
-        // `check` no longer writes baselines — `bin/qmx baseline:generate` does —
-        // so ResultPresenter no longer has a "baseline was just captured, report
-        // success regardless" path to opt into here.
-        $report = $this->resultPresenter->renderResults(
-            $filteredFindings,
-            $result,
-            $input,
-            $output,
-            $projectRoot,
-            outputFormat: $outputFormat,
-            exitPolicy: $exitPolicy,
-            reportScope: $scopeResolution->reportScope,
-            filterResult: $filterResult,
-            projectionOptions: $projectionOptions,
-            namespacePattern: $namespacePattern,
-            projectScope: $this->findingFilterOrchestrator->projectScope($resolvedScope, $result, $projectionOptions),
-            configurationDiagnostics: $this->configurationInputAdapter->publishedDiagnostics($document, $findingConfiguration->diagnostics),
-        );
+            // `check` no longer writes baselines — `bin/qmx baseline:generate` does —
+            // so ResultPresenter no longer has a "baseline was just captured, report
+            // success regardless" path to opt into here.
+            $report = $this->resultPresenter->renderResults(
+                $filteredFindings,
+                $result,
+                $input,
+                $output,
+                $projectRoot,
+                outputFormat: $outputFormat,
+                exitPolicy: $exitPolicy,
+                reportScope: $scopeResolution->reportScope,
+                filterResult: $filterResult,
+                projectionOptions: $projectionOptions,
+                namespacePattern: $namespacePattern,
+                projectScope: $this->findingFilterOrchestrator->projectScope($resolvedScope, $result, $projectionOptions),
+                configurationDiagnostics: $this->configurationInputAdapter->publishedDiagnostics($document, $findingConfiguration->diagnostics),
+            );
 
-        $finishProfile($result->measured->coverage->isComplete() ? 'complete' : 'incomplete');
-        $this->resultPresenter->publishReport($report, $input, $output, $this->runTargetSession->targets());
-        $this->runTargetSession->markOutputPublished();
+            $finishProfile($result->measured->coverage->isComplete() ? 'complete' : 'incomplete');
+            $this->resultPresenter->publishReport($report, $input, $output, $this->runTargetSession->targets());
+            $this->runTargetSession->markOutputPublished();
 
-        return $report->exitCode;
+            return $report->exitCode;
+        } catch (Throwable $failure) {
+            $finishProfile(self::profileOutcome($failure));
+            throw $failure;
+        }
+    }
+
+    private function clearCacheIfRequested(InputInterface $input, OutputInterface $output, ?string $cacheDirectory): void
+    {
+        if ($input->hasOption('clear-cache') && $input->getOption('clear-cache') === true && $cacheDirectory !== null) {
+            $this->runTargetSession->targets()->assertCacheClearSafe($cacheDirectory);
+        }
+
+        if ($this->runtimeConfigurator->clearCacheIfRequested($input)) {
+            $this->resultPresenter->writeDiagnostic($output, '<info>Cache cleared.</info>');
+        }
+
     }
 
     private function claimRunTargets(InputInterface $input, OutputInterface $output): void
