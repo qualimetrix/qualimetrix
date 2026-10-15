@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Selection\StatedEnablement;
 use Qualimetrix\Core\ProductIdentity;
 use Symfony\Component\Console\Formatter\OutputFormatter;
+use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -40,9 +41,11 @@ final readonly class RuleListingPresenter
         ResolvedComputedMetricDefinitions $definitions,
         StatedEnablement $selection,
     ): void {
-        $this->writeRules($output, $rules);
-        $this->writeComputedMetrics($output, $definitions);
-        $this->writeSelection($output, $selection);
+        $buffer = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL, $output->isDecorated(), $output->getFormatter());
+        $this->writeRules($buffer, $rules);
+        $this->writeComputedMetrics($buffer, $definitions);
+        $this->writeSelection($buffer, $selection);
+        OutputHelper::write($output, $buffer->fetch());
     }
 
     /** @param list<RuleRow> $rules */

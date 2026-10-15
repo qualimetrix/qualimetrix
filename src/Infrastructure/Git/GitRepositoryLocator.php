@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Git;
 
 use InvalidArgumentException;
+use Qualimetrix\Core\FileTarget\NativeCall;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use RuntimeException;
@@ -16,7 +17,7 @@ use RuntimeException;
  * regular repositories, git worktrees, and bare repositories.
  *
  * Fallback: manual directory traversal up the filesystem tree (for environments
- * where git is not in PATH).
+ * where git is not in PATH or proc_open is unavailable).
  */
 final class GitRepositoryLocator implements GitRepositoryLocatorInterface
 {
@@ -43,7 +44,7 @@ final class GitRepositoryLocator implements GitRepositoryLocatorInterface
             return $answer;
         }
 
-        // git is not on PATH. The traversal fallback cannot see
+        // Git execution is unavailable. The traversal fallback cannot see
         // `core.hooksPath`, so this is the older, narrower answer, kept
         // because no answer at all would be worse.
         return $this->findGitDir($workingDir)?->joinRelative(RelativePath::fromString('hooks'));
@@ -66,6 +67,9 @@ final class GitRepositoryLocator implements GitRepositoryLocatorInterface
      */
     private function askGit(array $arguments, AbsolutePath $workingDir): ?AbsolutePath
     {
+        if (!GitProcessAvailability::isAvailable() || !is_dir($workingDir->value())) {
+            return null;
+        }
         // Exactly one pipe, and it is read. Nothing here consumes git's
         // diagnostics, so handing them a pipe would be a deadlock waiting for
         // a verbose git: once the unread pipe filled, the child would block on
@@ -77,12 +81,15 @@ final class GitRepositoryLocator implements GitRepositoryLocatorInterface
             2 => ['file', '/dev/null', 'w'],
         ];
 
-        $process = @proc_open(
-            ['git', ...$arguments],
-            $descriptors,
-            $pipes,
-            $workingDir->value(),
-        );
+        $pipes = [];
+        [$process] = NativeCall::attempt(static function () use ($arguments, $descriptors, $workingDir, &$pipes) {
+            return proc_open(
+                ['git', ...$arguments],
+                $descriptors,
+                $pipes,
+                $workingDir->value(),
+            );
+        });
 
         if (!\is_resource($process)) {
             return null;
@@ -116,7 +123,7 @@ final class GitRepositoryLocator implements GitRepositoryLocatorInterface
     /**
      * Walks up the directory tree looking for a .git directory.
      *
-     * Fallback for environments where git is not available in PATH.
+     * Fallback for environments where git execution is unavailable.
      */
     private function findViaDirectoryTraversal(AbsolutePath $startDir): ?AbsolutePath
     {

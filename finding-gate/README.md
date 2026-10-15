@@ -534,7 +534,10 @@ published and readable on that surface. An unused row is `field-move-stale`.
 
 `declared-exact-surfaces.tsv` has `case, surface, file, reason` columns.
 It names one concrete case and surface with a nonempty reason and a measured
-file under `declared-exact-surfaces/`. It cannot overlap an ordinary delta
+file under `declared-exact-surfaces/`. The case value `tree` names the neutral
+tree invocation scope; other values name corpus cases. An intention using
+`tree` is refused if the corpus also contains a case named `tree`, because the
+address would be ambiguous. It cannot overlap an ordinary delta
 intention. Semantic forms run first in an isolated trial. A fully explained
 surface has no exact remainder and its exact intention is stale; derive does
 not write a measurement for it.

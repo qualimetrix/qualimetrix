@@ -83,6 +83,27 @@
     "declaration:callable:Qualimetrix\\Core\\Symbol\\SymbolPath::toString@src/Core/Symbol/SymbolPath.php": [
       {"channel":"complexity.ccn","magnitudes":[11]}
     ],
+    "declaration:callable:Qualimetrix\\Infrastructure\\Cache\\CacheDirectoryContents::clearShard@src/Infrastructure/Cache/CacheDirectoryContents.php": [
+      {"channel":"code-smell.error-suppression","occurrence":"7e96c10c05f986fd","count":1}
+    ],
+    "declaration:callable:Qualimetrix\\Infrastructure\\Cache\\CacheDirectoryContents::clearVersion@src/Infrastructure/Cache/CacheDirectoryContents.php": [
+      {"channel":"code-smell.error-suppression","occurrence":"7e96c10c05f986fd","count":1}
+    ],
+    "declaration:callable:Qualimetrix\\Infrastructure\\Cache\\CacheDirectoryContents::inspectItem@src/Infrastructure/Cache/CacheDirectoryContents.php": [
+      {"channel":"code-smell.error-suppression","occurrence":"7e96c10c05f986fd","count":1}
+    ],
+    "declaration:callable:Qualimetrix\\Infrastructure\\Cache\\CacheDirectoryContents::inspectResidue@src/Infrastructure/Cache/CacheDirectoryContents.php": [
+      {"channel":"code-smell.error-suppression","occurrence":"7e96c10c05f986fd","count":1}
+    ],
+    "declaration:callable:Qualimetrix\\Infrastructure\\Cache\\CacheLayout::versions@src/Infrastructure/Cache/CacheLayout.php": [
+      {"channel":"code-smell.error-suppression","occurrence":"7e96c10c05f986fd","count":1}
+    ],
+    "declaration:callable:Qualimetrix\\Infrastructure\\Cache\\CacheSweep::entriesIn@src/Infrastructure/Cache/CacheSweep.php": [
+      {"channel":"code-smell.error-suppression","occurrence":"7e96c10c05f986fd","count":1}
+    ],
+    "declaration:callable:Qualimetrix\\Infrastructure\\Cache\\FileCache::get@src/Infrastructure/Cache/FileCache.php": [
+      {"channel":"code-smell.error-suppression","occurrence":"0d4a21c464b4bacd","count":1}
+    ],
     "declaration:callable:Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCommand::assertScopeCovers@src/Infrastructure/Console/Command/BaselineCommand.php": [
       {"channel":"code-smell.boolean-argument","occurrence":"02e3476d01dac100","count":1}
     ],
@@ -210,7 +231,6 @@
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Cohesion": [
       {"channel":"coupling.cbo","magnitudes":[18]},
-      {"channel":"coupling.instability","magnitudes":[0.9069767441860465]},
       {"channel":"size.class-count","magnitudes":[19]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Complexity": [
@@ -271,17 +291,33 @@
     "ns:Qualimetrix\\Core\\Symbol": [
       {"channel":"size.class-count","magnitudes":[21]}
     ],
+    "ns:Qualimetrix\\Infrastructure\\Cache": [
+      {"channel":"size.class-count","magnitudes":[19]}
+    ],
     "ns:Qualimetrix\\Infrastructure\\Composer": [
       {"channel":"coupling.cbo","magnitudes":[18]}
     ],
     "ns:Qualimetrix\\Infrastructure\\Console\\Command": [
+      {"channel":"coupling.instability","magnitudes":[0.9851851851851852]},
       {"channel":"size.class-count","magnitudes":[23]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\Console\\Refusal": [
+      {"channel":"coupling.distance","magnitudes":[0.5625]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass": [
+      {"channel":"size.class-count","magnitudes":[15]}
     ],
     "ns:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator": [
       {"channel":"size.class-count","magnitudes":[24]}
     ],
+    "ns:Qualimetrix\\Infrastructure\\Git": [
+      {"channel":"size.class-count","magnitudes":[15]}
+    ],
     "ns:Qualimetrix\\Infrastructure\\Parallel": [
-      {"channel":"coupling.cbo","magnitudes":[16]}
+      {"channel":"coupling.cbo","magnitudes":[22]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\Parallel\\Strategy": [
+      {"channel":"coupling.instability","magnitudes":[0.92]}
     ],
     "ns:Qualimetrix\\Reporting": [
       {"channel":"coupling.distance","magnitudes":[0.7547169811320755]}

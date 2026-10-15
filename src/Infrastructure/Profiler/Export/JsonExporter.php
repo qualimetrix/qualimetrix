@@ -31,6 +31,7 @@ final class JsonExporter implements ProfileExporterInterface
      *     duration_ms: float|null,
      *     memory_delta_bytes: int|null,
      *     stopped: bool,
+     *     attributes: array<string, scalar>,
      *     children: list<array<string, mixed>>
      * }
      */
@@ -39,6 +40,7 @@ final class JsonExporter implements ProfileExporterInterface
         return [
             'name' => $span->name,
             'category' => $span->category,
+            'attributes' => $span->attributes,
             'duration_ms' => $span->getDuration(),
             'memory_delta_bytes' => $span->getMemoryDelta(),
             'stopped' => $span->wasStopped(),

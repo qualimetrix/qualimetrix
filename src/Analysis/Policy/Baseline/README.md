@@ -24,7 +24,9 @@ Baseline/
 ├── BaselineEntryParser.php      # Parses one raw entry into a valid or inert entry
 ├── BaselineEntryValues.php      # Strict count/magnitudes/mode value decoding for one entry
 ├── BaselineEntryRejection.php   # Internal control-flow signal used by the parser
-├── BaselineConflictException.php # The file changed between read and write
+├── BaselineConflictException.php # Environment failure: the file changed between read and write
+├── BaselineLockFailure.php      # Environment failure acquiring the baseline sibling lock, preserving its cause
+├── BaselineReadFailure.php      # Environment failure reading an existing baseline, with path and reason
 ├── BaselineGenerator.php        # Captures a run's findings as entries (injected clock)
 ├── BaselineCapture.php          # VO/factory: baseline plus materialized rejected-group outcomes
 ├── UncapturedGroup.php          # VO: a group that produced no entry, and why
@@ -533,8 +535,13 @@ The sibling lock is held across the identity/content check and publication. Its
 wait is bounded (10 seconds by default) with monotonic `hrtime`, and its named
 entry is retained after release. FileTarget failures preserve the requested path
 and available system cause without printing PHP warnings; Console classifies
-storage and lock contention as environment exit 3. Configuration refusal remains
-the loader's response to an invalid document.
+storage and lock contention as environment exit 3. The Baseline-owned `BaselineLockFailure` wraps only a Core file-target failure
+from acquiring that sibling lock; an unopenable lock is not assumed to be a
+timeout. `BaselineReadFailure` names an existing file that cannot be read, and
+`BaselineConflictException` names an observed identity or content change. All
+three implement Core's environment marker and reach Console as exit 3. Other
+`RuntimeException`s remain internal errors. Missing, non-regular and malformed
+documents retain their input-refusal contract.
 
 **Every entry read is an entry written.** The writer never groups entries under a key two
 of them can share, because resolving such a clash by overwriting would delete a line

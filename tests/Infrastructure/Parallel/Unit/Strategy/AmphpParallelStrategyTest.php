@@ -13,7 +13,6 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
-use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityIndexCollector;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
@@ -45,25 +44,9 @@ final class AmphpParallelStrategyTest extends TestCase
     }
 
     #[Test]
-    public function itReturnsAvailabilityBasedOnAmphpParallelAndExtensions(): void
+    public function itDeclaresProcessParallelCapabilityWithoutGuessingMachineAvailability(): void
     {
-        // amphp/parallel is installed in dev environment
-        // It should be available if ext-parallel or pcntl_fork exists
-        $isAvailable = $this->strategy->isAvailable();
-
-        // At least on Unix systems with PCNTL it should be available
-        if (\function_exists('pcntl_fork') || \extension_loaded('parallel')) {
-            self::assertTrue($isAvailable, 'AmphpParallelStrategy should be available when amphp/parallel is installed and pcntl/parallel available');
-        } else {
-            self::assertFalse($isAvailable, 'AmphpParallelStrategy should not be available without pcntl or parallel extension');
-        }
-    }
-
-    #[Test]
-    public function itDelegatesIsParallelAvailableToIsAvailable(): void
-    {
-        // isParallelAvailable should return same as isAvailable
-        self::assertSame($this->strategy->isAvailable(), $this->strategy->isParallelAvailable());
+        self::assertTrue($this->strategy->isParallelAvailable());
     }
 
     #[Test]
@@ -109,7 +92,7 @@ final class AmphpParallelStrategyTest extends TestCase
     #[Test]
     public function itForwardsTheDependencyTraversalParticipantClassToEverySerializedTask(): void
     {
-        if (!$this->strategy->isAvailable()) {
+        if (\Qualimetrix\Infrastructure\Parallel\WorkerPool::unavailableCapability() !== null) {
             self::markTestSkipped('Parallel worker transport is unavailable.');
         }
 
@@ -132,7 +115,7 @@ final class AmphpParallelStrategyTest extends TestCase
     #[Test]
     public function itPublishesTheNamedLinkInAWorkerForSuccessAndReadFailure(): void
     {
-        if (!$this->strategy->isAvailable()) {
+        if (\Qualimetrix\Infrastructure\Parallel\WorkerPool::unavailableCapability() !== null) {
             self::markTestSkipped('Parallel worker transport is unavailable.');
         }
 
@@ -311,9 +294,7 @@ final class AmphpParallelStrategyTest extends TestCase
         $logger = $this->createMock(LoggerInterface::class);
 
         // Expect warning message about missing project root
-        $logger->expects($this->once())
-            ->method('warning')
-            ->with('AmphpParallelStrategy: project root not set, using sequential fallback');
+        $logger->expects($this->once())->method('warning')->with('AmphpParallelStrategy: project root not set, using sequential fallback');
 
         $strategy = $this->createStrategy(logger: $logger);
         $strategy->setMinFilesForParallel(10);
@@ -379,59 +360,58 @@ final class AmphpParallelStrategyTest extends TestCase
     }
 
     #[Test]
-    public function itFallsBackToSequentialWhenParallelNotAvailableWithAllConditionsMet(): void
+    public function itRefusesAnExplicitRequestWhenProcOpenIsDisabled(): void
     {
-        // Every other condition is met, so the fallback under test is the
-        // availability one, and on a machine where parallel *is* available the
-        // case cannot reach it. Skipping loudly is the point: the claim used
-        // to sit inside this same condition, so it was silently satisfied here
-        // and checked nowhere.
-        if ($this->strategy->isAvailable()) {
-            self::markTestSkipped('Parallel is available, so the unavailable fallback cannot be reached.');
-        }
-
-        $this->strategy = $this->createStrategy([LocCollector::class], derivedCollectorClasses: [MaintainabilityIndexCollector::class]);
-        $this->strategy->setMinFilesForParallel(10);
-        $this->strategy->setProjectRoot(AbsolutePath::fromString($this->tempDir));
-
-        // Create enough files to pass threshold
-        $files = $this->createTestFiles(20);
-
-        $callCount = 0;
-        $processor = function (SplFileInfo $file) use (&$callCount): string {
-            $callCount++;
-            return $file->getPathname();
-        };
-
-        $results = $this->strategy->execute($files, $processor, canParallelize: true);
-
-        self::assertSame(20, $callCount, 'Should fall back to sequential when parallel not available');
-        self::assertCount(20, $results);
+        $run = $this->withoutProcOpen(true);
+        self::assertSame(3, $run['code']);
+        self::assertStringContainsString('proc_open', $run['message']);
+        self::assertStringContainsString('--workers=2', $run['message']);
+        self::assertStringContainsString('--workers=0', $run['message']);
+        self::assertSame([], $run['warnings']);
     }
 
     #[Test]
-    public function itLogsInfoWhenParallelNotAvailable(): void
+    public function itWarnsOnceAndProfilesEachFileForAnUnavailableAutomaticRequest(): void
     {
-        // Only run this test if parallel is actually unavailable
-        if ($this->strategy->isAvailable()) {
-            self::markTestSkipped('Parallel is available, cannot test unavailable case');
-        }
+        $run = $this->withoutProcOpen(false);
+        self::assertSame(0, $run['code']);
+        self::assertSame(20, $run['processed']);
+        self::assertCount(1, $run['warnings']);
+        self::assertStringContainsString('proc_open', $run['warnings'][0]);
+        self::assertSame(20, $run['profile']['collection.file']['count']);
+    }
 
-        $logger = $this->createMock(LoggerInterface::class);
-
-        // Expect info message about parallel not available
-        $logger->expects($this->once())
-            ->method('info')
-            ->with('AmphpParallelStrategy: parallel not available, using sequential fallback');
-
-        $strategy = $this->createStrategy(logger: $logger);
-        $strategy->setMinFilesForParallel(10);
-        $strategy->setProjectRoot(AbsolutePath::fromString($this->tempDir));
-
-        $files = $this->createTestFiles(20);
-        $processor = fn(SplFileInfo $file): string => $file->getPathname();
-
-        $strategy->execute($files, $processor, canParallelize: true);
+    /** @return array{code: int, message: string, processed: int, warnings: list<string>, profile: array<string, array{count: int}>} */
+    private function withoutProcOpen(bool $explicit): array
+    {
+        $script = <<<'PHP'
+require $argv[1];
+$profiler = new \Qualimetrix\Infrastructure\Profiler\ProfileSession();
+$profiler->enable();
+$logger = new class extends \Psr\Log\AbstractLogger {
+    public array $warnings = [];
+    public function log($level, string|\Stringable $message, array $context = []): void {
+        if ($level === 'warning') $this->warnings[] = (string) $message;
+    }
+};
+$factory = new \Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory(new \Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore(),new \Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms(),\Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor::class,[\Qualimetrix\Analysis\Evidence\Size\LocCollector::class]);
+$strategy = new \Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy($factory,new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy($profiler),$profiler,new \Qualimetrix\Infrastructure\Console\ErrorStream(),$logger);
+$strategy->setWorkerRequest(new \Qualimetrix\Infrastructure\Parallel\WorkerRequest(2,$argv[3] === '1' ? '--workers=2' : null));
+$strategy->setProjectRoot(\Qualimetrix\Core\Path\AbsolutePath::fromString($argv[2]));
+$strategy->setMinFilesForParallel(1);
+$files = array_fill(0,20,new \SplFileInfo($argv[2] . '/file.php'));
+$processed = 0;
+try {
+    $strategy->execute($files,static function() use (&$processed): int { return ++$processed; });
+    $code = 0;$message = '';
+} catch (\Qualimetrix\Infrastructure\Parallel\WorkerStartFailure $failure) {
+    $code = 3;$message = $failure->getMessage();
+}
+echo json_encode(['code'=>$code,'message'=>$message,'processed'=>$processed,'warnings'=>$logger->warnings,'profile'=>$profiler->summary()->spans],JSON_THROW_ON_ERROR);
+PHP;
+        $process = new \Symfony\Component\Process\Process([\PHP_BINARY, '-d', 'disable_functions=proc_open', '-r', $script, \dirname(__DIR__, 5) . '/vendor/autoload.php', $this->tempDir, $explicit ? '1' : '0']);
+        $process->mustRun();
+        return json_decode($process->getOutput(), true, flags: \JSON_THROW_ON_ERROR);
     }
 
     #[Test]
@@ -505,6 +485,9 @@ final class AmphpParallelStrategyTest extends TestCase
                 $collectorClasses,
                 $derivedCollectorClasses,
             ),
+            new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()),
+            new \Qualimetrix\Infrastructure\Profiler\ProfileSession(),
+            new \Qualimetrix\Infrastructure\Console\ErrorStream(),
             $logger,
         );
     }

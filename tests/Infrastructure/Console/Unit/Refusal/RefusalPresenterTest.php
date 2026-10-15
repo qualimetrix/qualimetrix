@@ -555,7 +555,7 @@ final class RefusalPresenterTest extends TestCase
         $refused = self::terminalOutput();
         $failed = self::terminalOutput();
 
-        $refusalExit = $this->presenter()->refusalAfterPublishedReport(
+        $refusalExit = $this->presenter()->unhandledAfterPublishedReport(
             $refused,
             ConfigurationRefusal::aboutCommandLineInput('--profile', 'Failed to write the export'),
         );

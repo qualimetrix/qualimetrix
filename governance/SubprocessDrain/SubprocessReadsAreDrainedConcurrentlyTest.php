@@ -208,6 +208,22 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
      * @var array<string, string>
      */
     private const ENTRIES = [
+        'src/Infrastructure/Git/GitProcessAvailability.php:13' => 'Capability-name strings passed to function_exists and compared against disable_functions;'
+            . ' neither spelling executes a child.',
+        'src/Infrastructure/Git/GitUnavailable.php:14' => 'Diagnostic text naming the unavailable process capability; it is never evaluated as PHP'
+            . ' source.',
+        'src/Infrastructure/Parallel/WorkerPool.php:31' => 'Capability-name strings passed to function_exists and compared against disable_functions;'
+            . ' neither spelling executes a child.',
+        'src/Infrastructure/Parallel/WorkerPool.php:32' => 'The unavailable capability name returned for diagnostics, never evaluated as source.',
+        'tests/Infrastructure/Console/Unit/RunTarget/RunTargetSessionTest.php:114' => 'A function_exists capability probe used to skip the real-worker witness when process'
+            . ' execution is unavailable.',
+        'tests/Infrastructure/Git/Integration/GitProcessAvailabilityTest.php:25' => 'An ini setting disables the process capability in the child; the string is configuration,'
+            . ' not executable source.',
+        'tests/Infrastructure/Git/Integration/GitProcessAvailabilityTest.php:31' => 'The expected unavailable-capability diagnostic, never evaluated as source.',
+        'tests/Infrastructure/Parallel/Unit/Strategy/AmphpParallelStrategyTest.php:367' => 'The expected unavailable-capability diagnostic, never evaluated as source.',
+        'tests/Infrastructure/Parallel/Unit/Strategy/AmphpParallelStrategyTest.php:380' => 'The expected unavailable-capability diagnostic, never evaluated as source.',
+        'tests/Infrastructure/Parallel/Unit/Strategy/AmphpParallelStrategyTest.php:412' => 'An ini setting disables the process capability in the child; the string is configuration, not executable source.',
+
         'src/Core/FileTarget/NativeNssEnumerator.php:17' => 'A function_exists probe, not a spawn; the actual'
             . ' child invocation is declared separately below.',
         'src/Core/FileTarget/NativeNssEnumerator.php:35' => 'Core cannot depend on the development-only'
@@ -217,11 +233,11 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . ' regression spawns controlled PHP code that creates a ready file then sleeps until terminated;'
             . ' its normal path emits no stream output. Both pipes are closed after termination, but this is not'
             . ' a general-purpose concurrent drain.',
-        'tests/Infrastructure/Console/Unit/RunTarget/RunTargetSessionTest.php:70' => 'The controlled signal'
+        'tests/Infrastructure/Console/Unit/RunTarget/RunTargetSessionTest.php:71' => 'The controlled signal'
             . ' child writes one READY line to stdout and sleeps until termination; the test reads that line'
             . ' before reaping. Stderr is not drained concurrently, so this entry is limited to that bounded'
             . ' child script, not reusable subprocess capture.',
-        'tests/Infrastructure/Console/Unit/RunTarget/RunTargetSessionTest.php:155' => 'The controlled'
+        'tests/Infrastructure/Console/Unit/RunTarget/RunTargetSessionTest.php:156' => 'The controlled'
             . ' worker-signal child uses files for readiness and waits until termination; the test reads stderr'
             . ' only after exit for an assertion. This is a bounded interruption witness, not a concurrent'
             . ' drain suitable for arbitrary child output.',
@@ -235,11 +251,11 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . 'bounded parallel scheduler. That is supervision layered on the read discipline, a different subject '
             . 'from flat capture, and its behaviour is what `composer gate:controls` measures.',
 
-        'scripts/finding-gate/ProcessHandle.php:82' => 'The finding-gate worker handle: non-blocking reads under a '
+        'scripts/finding-gate/ProcessHandle.php:86' => 'The finding-gate worker handle: non-blocking reads under a '
             . 'bounded scheduler, with process-group isolation and launcher-disappearance detection. Same '
             . 'supervision subject as the line above.',
 
-        'scripts/finding-gate/ProcessHandle.php:215' => '`groupedCommand()`: source text inside a nowdoc handed to '
+        'scripts/finding-gate/ProcessHandle.php:219' => '`groupedCommand()`: source text inside a nowdoc handed to '
             . '`php -r`, so this is a literal here and a real call in the child. The child opens no pipe at all — '
             . 'its descriptors are the STDIN/STDOUT/STDERR constants — so it carries none of this hazard.',
 
@@ -260,9 +276,9 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . 'real function fail in the parent. The generated harness it goes into opens nothing of its own and '
             . 'reaches the module through its ordinary entry point, like any other caller.',
 
-        'src/Infrastructure/Git/GitRepositoryLocator.php:80' => 'Production code, which may not import a '
+        'src/Infrastructure/Git/GitRepositoryLocator.php:86' => 'Production code, which may not import a '
             . 'development namespace, and the module lives outside `src/` deliberately. The deadlock is removed by '
-            . 'construction instead: `git rev-parse` gets no stdin pipe and its stderr goes to a file, so stdout is '
+            . 'construction instead: `git rev-parse` gets no stdin pipe and its stderr goes to `/dev/null`, so stdout is '
             . 'the only blocking stream.',
 
         'tests/Infrastructure/Console/Functional/Command/HookInstallCommandTest.php:286' => 'Arranging a git '
@@ -311,7 +327,7 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . 'can allocate a pseudo-terminal at all, so it must open one. Stdin and stdout go to `/dev/null` and '
             . 'the single pty is read to EOF rather than closed unread.',
 
-        'tests/Infrastructure/Console/Support/PseudoTerminalRun.php:85' => 'A pty master reports EIO where a pipe '
+        'tests/Infrastructure/Console/Support/PseudoTerminalRun.php:86' => 'A pty master reports EIO where a pipe '
             . 'reports EOF, which is a different read discipline rather than a caller of this one. Both streams are '
             . 'drained from one `stream_select` loop.',
 

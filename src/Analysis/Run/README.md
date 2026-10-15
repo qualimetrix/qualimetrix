@@ -110,7 +110,10 @@ outside or unresolvable parents have no best-effort fallback.
 The pipeline combines captured universe and final selection once. Its final
 `ProjectScopeMeasurement` contains Finding's `ProjectScopeJudgement`; the same
 judgement reaches `AnalysisContext`, threshold counterfactual contexts and
-`AnalysisResult`. `PreparedRun` retains context without a duplicate scope field.
+`AnalysisResult`. `PreparedRun` retains context without a duplicate scope field. It carries the
+suppressions and threshold overrides separately; the raw
+collection output and its dependency list are released immediately after graph
+construction, before capability preparation or measurement aggregation.
 Console publishes final measurement rather than the pre-discovery target state.
 The pipeline creates Finding's `SubjectCoverageFacts` once after collection.
 `PreparedRun` and `MeasuredRunResult` share that instance; merging measured
@@ -166,8 +169,8 @@ read-once promise.
 exactly one terminal state: a `SuccessfulFileProcessing` payload, or a failure
 kind plus error. The success payload carries the file metric bag, callable,
 class, and namespace measurements, dependencies, suppressions, threshold
-overrides, and threshold diagnostics. The same value graph crosses PHP and
-igbinary worker serialization; services and capability-owned state never cross
+overrides, and threshold diagnostics. The same value graph crosses native PHP
+worker serialization; services and capability-owned state never cross
 it. DependencyModel receives
 collected dependency occurrences through its public builder contract.
 Measurement owns repository creation and aggregation. ComputedMetrics owns

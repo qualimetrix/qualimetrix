@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameReport;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Infrastructure\Console\OutputHelper;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -72,7 +73,7 @@ final class ChannelRenameReporter
 
     private static function reportAsJson(ChannelRenameReport $report, OutputInterface $output): void
     {
-        $output->writeln(json_encode([
+        OutputHelper::write($output, json_encode([
             'meta' => ProductIdentity::meta(gmdate('c')),
             'written' => $report->written,
             'entries' => $report->totalEntries,
@@ -82,6 +83,6 @@ final class ChannelRenameReporter
             'rows' => (object) $report->rowHits,
             'idle_rows' => $report->idleRows(),
             'unreadable' => (object) $report->unreadable,
-        ], \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES | \JSON_PRETTY_PRINT));
+        ], \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES | \JSON_PRETTY_PRINT) . "\n");
     }
 }

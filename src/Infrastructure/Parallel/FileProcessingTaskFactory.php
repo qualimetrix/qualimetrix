@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Parallel;
 
 use InvalidArgumentException;
+use LogicException;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
@@ -12,6 +13,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
+use RuntimeException;
 
 /** Creates serializable tasks with compile-time metadata and current runtime configuration. */
 final readonly class FileProcessingTaskFactory
@@ -62,6 +64,25 @@ final readonly class FileProcessingTaskFactory
             cacheDir: $cacheDir,
             lcomConfiguration: $this->lcomConfigurationStore->current(),
         );
+    }
+
+    public function composition(): WorkerComposition
+    {
+        return new WorkerComposition($this->collectorClasses, $this->dependencyTraversalParticipantClass, $this->derivedCollectorClasses, $this->ruleClasses);
+    }
+
+    public function assertWorkerComposition(): void
+    {
+        try {
+            $this->composition()->assertInstantiable();
+        } catch (RuntimeException $failure) {
+            throw new LogicException($failure->getMessage(), 0, $failure);
+        }
+    }
+
+    public function probe(AbsolutePath $projectRoot, ?AbsolutePath $cacheDir): WorkerProbeTask
+    {
+        return new WorkerProbeTask($projectRoot, $this->composition(), $this->documentForms, $cacheDir, $this->lcomConfigurationStore->current());
     }
 
     public function hasCollectors(): bool

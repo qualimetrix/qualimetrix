@@ -205,7 +205,7 @@ final class ConfigDataNormalizerTest extends TestCase
             'exclude_health' => [],
             'computed_metrics' => ['health.typing' => ['enabled' => false, 'warning' => 0]],
         ];
-        $this->assertRefusal($written, 'Invalid value for "cache.dir": a directory path cannot be empty. Omit the key to use the default (.qmx-cache).', ['cache', 'dir']);
+        $this->assertRefusal($written, 'Invalid value for "cache.dir": a directory path cannot be empty. Omit the key to use the default (the user cache directory).', ['cache', 'dir']);
         $result = self::document([
             'includeGenerated' => false,
             'cache' => ['enabled' => false],

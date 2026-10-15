@@ -105,6 +105,8 @@ bin/qmx check src/ --report=git:abc1234..HEAD
 
 ## Как работает --report
 
+Выбор Git-отчёта (`--report=git:*`) требует `proc_open`; без неё команда сообщает об отказе среды с кодом 3. Команды хуков сохраняют обход каталогов, когда Git недоступен.
+
 Находка с code file location сохраняется по этому файлу, включая duplication.
 В обычном режиме также сохраняются namespace-находки в namespace изменённого
 PHP и его предках и project-находки без location при непустом наборе changed PHP.

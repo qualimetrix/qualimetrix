@@ -130,7 +130,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
         self::assertInstanceOf(DirectivesCommand::class, $command);
         $presenter = $container->get(RefusalPresenter::class);
         self::assertInstanceOf(RefusalPresenter::class, $presenter);
-        $application = new \Qualimetrix\Infrastructure\Console\Application(new ErrorStream(), $presenter, new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
+        $application = new \Qualimetrix\Infrastructure\Console\Application(new ErrorStream(), $presenter, static fn() => new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $application->addCommand($command);
         $tester = new CommandTester($command);
         $code = $tester->execute([
@@ -258,7 +258,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
             $stream = new ErrorStream();
             $snapshot = $container->get(\Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface::class);
             self::assertInstanceOf(\Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface::class, $snapshot);
-            $application = new \Qualimetrix\Infrastructure\Console\Application($stream, new RefusalPresenter($stream), $snapshot);
+            $application = new \Qualimetrix\Infrastructure\Console\Application($stream, new RefusalPresenter($stream), static fn() => $snapshot);
             $application->setAutoExit(false);
             $application->addCommand($command);
             $tester = new ApplicationTester($application);

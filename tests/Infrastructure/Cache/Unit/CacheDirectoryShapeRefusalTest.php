@@ -60,21 +60,24 @@ final class CacheDirectoryShapeRefusalTest extends TestCase
     #[Test]
     public function itStillDefaultsWhenNobodyNamedADirectory(): void
     {
-        $document = LayeredDocument::of([], AbsolutePath::fromString(sys_get_temp_dir()));
-        $resolved = (new CacheConfigurationResolver())->resolve($document, AbsolutePath::fromString(sys_get_temp_dir()));
+        $document = LayeredDocument::of([], AbsolutePath::fromString(__DIR__));
+        $resolved = (new CacheConfigurationResolver())->resolve($document, AbsolutePath::fromString(__DIR__));
 
-        self::assertStringEndsWith('.qmx-cache', $resolved->directory->value());
-        @rmdir($resolved->directory->value());
+        self::assertNotNull($resolved->directory);
+        self::assertStringEndsWith('/qmx', $resolved->directory->value());
     }
 
     private static function resolve(mixed $value): string
     {
-        $root = AbsolutePath::fromString(sys_get_temp_dir());
+        $root = AbsolutePath::fromString(__DIR__);
         $document = LayeredDocument::of(
             [['source' => 'cli', 'values' => ['cache.dir' => $value]]],
             $root,
         );
 
-        return (new CacheConfigurationResolver())->resolve($document, $root)->directory->value();
+        $directory = (new CacheConfigurationResolver())->resolve($document, $root)->directory;
+        self::assertNotNull($directory);
+
+        return $directory->value();
     }
 }

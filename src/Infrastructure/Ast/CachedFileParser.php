@@ -29,8 +29,6 @@ use SplFileInfo;
  */
 final class CachedFileParser implements FileParserInterface
 {
-    private ?CacheInterface $resolvedCache = null;
-
     public function __construct(
         private readonly FileParserInterface $inner,
         private readonly CacheFactory|CacheInterface $cache,
@@ -76,17 +74,16 @@ final class CachedFileParser implements FileParserInterface
 
     private function cachingEnabled(): bool
     {
-        return $this->configurationStore->current()->enabled;
+        if (!$this->configurationStore->current()->enabled) {
+            return false;
+        }
+        return $this->cache instanceof CacheFactory
+            ? $this->cache->open() !== null
+            : $this->configurationStore->current()->enabled;
     }
 
     private function getCache(): CacheInterface
     {
-        if ($this->resolvedCache === null) {
-            $this->resolvedCache = $this->cache instanceof CacheFactory
-                ? $this->cache->create()
-                : $this->cache;
-        }
-
-        return $this->resolvedCache;
+        return $this->cache instanceof CacheFactory ? $this->cache->create() : $this->cache;
     }
 }

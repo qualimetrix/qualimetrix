@@ -16,6 +16,7 @@ use Qualimetrix\Infrastructure\Cache\CacheKeyGenerator;
 use Qualimetrix\Infrastructure\Cache\CacheSection;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationStoreInterface;
+use Qualimetrix\Infrastructure\Cache\Contract\CacheOpener;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
@@ -41,8 +42,10 @@ final class ParserConfigurator implements ContainerConfiguratorInterface
         $container->register(CacheSection::class)->setAutoconfigured(true);
 
         $container->register(CacheFactory::class)
-            ->setArguments([new Reference(CacheConfigurationStoreInterface::class)])
+            ->setArguments([new Reference(CacheConfigurationStoreInterface::class), new Reference(CacheKeyGenerator::class)])
             ->setPublic(true);
+
+        $container->setAlias(CacheOpener::class, CacheFactory::class);
 
         // CacheInterface is created through factory
         $container->register(CacheInterface::class)
@@ -63,6 +66,7 @@ final class ParserConfigurator implements ContainerConfiguratorInterface
                 new Reference(PhpFileParser::class),
                 new Reference(CacheFactory::class),
                 new Reference(CacheKeyGenerator::class),
+                new Reference(CacheConfigurationStoreInterface::class),
             ]);
 
         $container->register(FileParserFactory::class)

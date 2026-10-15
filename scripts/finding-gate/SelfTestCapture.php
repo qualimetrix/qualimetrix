@@ -68,7 +68,7 @@ final class SelfTestCapture extends SelfTestGroup
             'capture-neutral-outcome',
             CheckWitnesses::WHOLE_RUN,
             static function (array $tree): array {
-                $tree['answers']['tree|graph:export'] = ['stdout' => "No files found to analyze\n", 'exit' => 0];
+                $tree['answers']['tree|graph:export'] = ['stdout' => "No files found to analyze\n", 'exit' => 70];
 
                 return $tree;
             },

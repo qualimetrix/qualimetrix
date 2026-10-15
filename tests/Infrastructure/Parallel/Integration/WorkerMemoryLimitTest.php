@@ -110,10 +110,10 @@ final class WorkerMemoryLimitTest extends TestCase
             static fn(array $failure): string => basename($failure['path']),
             $report['coverage']['failures'],
         ), 'The worker ran the large file under a limit other than the resolved one');
-        self::assertStringContainsString('Workers run with memory_limit "48M"', $report['coverage']['failures'][0]['message']);
-        // The worker's own fatal error is the witness that the limit reached
-        // it: the coordinator's message would name 48M either way.
-        self::assertStringContainsString('Allowed memory size of 50331648 bytes exhausted', $stderr);
+        self::assertStringContainsString('memory_limit="48M"', $report['coverage']['failures'][0]['message']);
+        self::assertStringContainsString('Allowed memory size of 50331648 bytes exhausted', $report['coverage']['failures'][0]['message']);
+        self::assertStringNotContainsString('PHP Fatal error', $stderr);
+        self::assertStringNotContainsString('QMX-WORKER-NOTE', $stderr);
     }
 
     #[Test]
@@ -131,9 +131,9 @@ final class WorkerMemoryLimitTest extends TestCase
             new RuleOptionDocumentForms(),
             DependencyVisitor::class,
             [LocCollector::class, CyclomaticComplexityCollector::class],
-        ));
+        ), new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()), new \Qualimetrix\Infrastructure\Profiler\ProfileSession(), new \Qualimetrix\Infrastructure\Console\ErrorStream());
         if (!$strategy->isParallelAvailable()) {
-            self::markTestSkipped('Requires amphp workers (ext-parallel or pcntl).');
+            self::markTestSkipped('Requires process workers.');
         }
         $strategy->setWorkerCount(2);
         $root = realpath($this->directory);

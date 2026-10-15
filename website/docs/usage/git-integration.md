@@ -104,6 +104,8 @@ bin/qmx check src/ --report=git:abc1234..HEAD
 
 ## How --report works
 
+Git report selection (`--report=git:*`) requires `proc_open`; without it, the command reports an environment refusal with exit 3. Hook commands retain their directory-walk fallback when Git is unavailable.
+
 A code finding with a file location is kept by that file, including duplication.
 Non-strict mode also keeps namespace findings in changed PHP namespaces and their
 ancestors, and location-free project findings when changed PHP files are nonempty.

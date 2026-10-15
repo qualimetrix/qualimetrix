@@ -711,6 +711,47 @@ final class SurfaceComparisonTest extends TestCase
     }
 
     #[Test]
+    public function itMeasuresTheNeutralTreeGraphAndRefusesUnmeasuredInvocationChanges(): void
+    {
+        $tree = SyntheticTree::clean();
+        $tree['candidateAnswers']['tree|graph:export'] = ['stdout' => "digraph dependencies {\n}\n", 'stderr' => "No PHP files found.\n", 'exit' => 0];
+        $tree['candidateDeclarations'][DeclaredExactSurfaces::INDEX] = Tsv::render(DeclaredExactSurfaces::COLUMNS, [
+            ['tree', 'graph:export', 'declared-exact-surfaces/graph.diff', 'The empty directory now publishes a successful empty graph.'],
+        ]);
+        $tree['candidateDeclarations']['declared-exact-surfaces/graph.diff'] = "pending measurement\n";
+        $root = SyntheticTree::fixture($tree);
+        try {
+            [$derived, $written] = RecordedComparison::derive($tree, $root);
+            self::assertContains(DeclaredExactSurfaces::INDEX, $written, $derived->render());
+            $index = Fs::read($root . '/finding-gate/' . DeclaredExactSurfaces::INDEX);
+            $row = Tsv::rows($root . '/finding-gate/' . DeclaredExactSurfaces::INDEX, DeclaredExactSurfaces::COLUMNS)[0];
+            $diff = Fs::read($root . '/finding-gate/' . $row['file']);
+            self::assertSame('tree', $row['case']);
+            self::assertNotSame("pending measurement\n", $diff);
+            $exact = DeclaredExactSurfaces::load($root . '/finding-gate', DeclaredDelta::load($root . '/finding-gate'));
+            self::assertSame(['tree|graph:export'], $exact->keys());
+            self::assertSame([], RecordedComparison::reportAt($tree, $root)->failureClasses());
+            $tree['candidateDeclarations'][DeclaredExactSurfaces::INDEX] = $index;
+            $tree['candidateDeclarations'][$row['file']] = $diff;
+            foreach (['stderr', 'exit'] as $field) {
+                $changed = $tree;
+                if ($field === 'stderr') {
+                    $changed['candidateAnswers']['tree|graph:export']['stderr'] = "No PHP files found.\nUnannounced diagnostic.\n";
+                } else {
+                    $changed['candidateAnswers']['tree|graph:export']['exit'] = 1;
+                }
+                self::assertContains(FailureClass::DELTA_MISMATCH, RecordedComparison::report($changed)->failureClasses(), $field);
+            }
+            Fs::write($root . '/finding-gate/cases/tree/case.json', "{}\n");
+            $this->expectException(GateError::class);
+            $this->expectExceptionMessage('An exact surface intention for tree is ambiguous with the corpus case named tree.');
+            DeclaredExactSurfaces::load($root . '/finding-gate', DeclaredDelta::load($root . '/finding-gate'));
+        } finally {
+            SyntheticTree::remove($root);
+        }
+    }
+
+    #[Test]
     public function itKeepsAnInvalidExactSupplierUnmeasuredWhileDerivingAValidNeighbour(): void
     {
         $tree = SyntheticTree::clean();

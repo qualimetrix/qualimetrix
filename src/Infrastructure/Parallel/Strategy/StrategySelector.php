@@ -10,22 +10,20 @@ use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ExecutionStrategyInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationStoreInterface;
+use Qualimetrix\Infrastructure\Cache\Contract\CacheOpener;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationStoreInterface;
+use Qualimetrix\Infrastructure\Parallel\WorkerRequest;
 use RuntimeException;
 
 /**
  * Selects and configures the best available execution strategy.
  *
  * Priority order:
- * 1. AmphpParallelStrategy - if amphp/parallel available and workers > 1
+ * 1. AmphpParallelStrategy - when requested workers exceed one
  * 2. SequentialStrategy - always available (fallback)
  *
- * Configuration is read from the instance-owned Parallel configuration store:
- * - workers: number of parallel workers (null = auto-detect, 0/1 = sequential)
- * - projectRoot: project root directory (required for parallel)
- * - cacheDir: cache directory for AST caching
- * - cacheEnabled: whether caching is enabled
+ * Parallel owns the worker setting; Cache's run opener supplies the accepted
+ * cache directory before either sequential or parallel selection.
  *
  * Worker task metadata is owned by FileProcessingTaskFactory; this selector
  * configures only execution concerns that vary per analysis run.
@@ -36,7 +34,7 @@ final class StrategySelector implements StrategySelectorInterface
         private readonly AmphpParallelStrategy $amphpStrategy,
         private readonly SequentialStrategy $sequentialStrategy,
         private readonly ParallelConfigurationStoreInterface $configurationStore,
-        private readonly CacheConfigurationStoreInterface $cacheConfigurationStore,
+        private readonly CacheOpener $cacheOpener,
         private readonly WorkerCountDetector $workerCountDetector,
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {}
@@ -52,7 +50,7 @@ final class StrategySelector implements StrategySelectorInterface
     public function select(AbsolutePath $projectRoot): ExecutionStrategyInterface
     {
         $requestedWorkers = $this->configurationStore->current()->workers;
-        $cache = $this->cacheConfigurationStore->current();
+        $cacheDirectory = $this->cacheOpener->open();
 
         $this->logger->debug('StrategySelector: selecting strategy', [
             'requestedWorkers' => $requestedWorkers,
@@ -64,16 +62,6 @@ final class StrategySelector implements StrategySelectorInterface
             $this->logger->debug('StrategySelector: sequential mode requested', [
                 'workers' => $requestedWorkers,
             ]);
-
-            return $this->sequentialStrategy;
-        }
-
-        // Check if parallel is available
-        if (!$this->amphpStrategy->isAvailable()) {
-            $this->logger->info(
-                'StrategySelector: parallel not available, using sequential',
-                ['reason' => 'amphp/parallel or pcntl extension not available'],
-            );
 
             return $this->sequentialStrategy;
         }
@@ -91,11 +79,9 @@ final class StrategySelector implements StrategySelectorInterface
         }
 
         // Configure parallel strategy
-        $this->amphpStrategy->setWorkerCount($workerCount);
+        $this->amphpStrategy->setWorkerRequest(new WorkerRequest($workerCount, $this->configurationStore->current()->workerSource));
 
-        // Project root is already an AbsolutePath after ADR 0015 Phase 5;
-        // canonicalize via realpath() so worker-process cache keys remain
-        // stable across symlinked invocations (e.g., /var/build → /opt/project).
+        // Canonicalize the project identity passed to worker processes.
         // canonicalize() throws RuntimeException when the path does not exist —
         // map that to the sequential fallback the user has expected since v0.x.
         try {
@@ -111,14 +97,14 @@ final class StrategySelector implements StrategySelectorInterface
         $this->amphpStrategy->setProjectRoot($projectRoot);
 
         // Cache directory is already AbsolutePath-resolved against projectRoot by Cache configuration.
-        $this->amphpStrategy->setCacheDir($cache->enabled ? $cache->directory : null);
+        $this->amphpStrategy->setCacheDir($cacheDirectory);
 
         $this->logger->info(
             'StrategySelector: using parallel strategy',
             [
                 'workers' => $workerCount,
                 'projectRoot' => $projectRoot->value(),
-                'cacheEnabled' => $cache->enabled,
+                'cacheEnabled' => $cacheDirectory !== null,
             ],
         );
 

@@ -14,7 +14,8 @@ use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
-use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
+use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 
 /**
@@ -38,6 +39,8 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 final readonly class PreparedRun
 {
     /**
+     * @param array<string, list<Suppression>> $suppressions
+     * @param array<string, list<ThresholdOverride>> $thresholdOverrides
      * @param list<Finding> $unmatchedExcludeFindings What the run's own exclude patterns failed to remove
      *
      * `$unmatchedExcludeFindings` is built beside file discovery, where the
@@ -48,7 +51,8 @@ final readonly class PreparedRun
      */
     public function __construct(
         public NamespaceTree $namespaceTree,
-        public CollectionPhaseOutput $collection,
+        public array $suppressions,
+        public array $thresholdOverrides,
         public AnalysisContext $context,
         public RuleExecutionResult $ruleExecution,
         public AnalysisCoverage $coverage,

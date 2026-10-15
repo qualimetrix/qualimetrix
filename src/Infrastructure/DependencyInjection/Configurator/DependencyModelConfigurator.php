@@ -7,7 +7,7 @@ namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterface;
-use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationStoreInterface;
+use Qualimetrix\Infrastructure\Cache\Contract\CacheOpener;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationStoreInterface;
 use Qualimetrix\Infrastructure\Parallel\Strategy\StrategySelector;
@@ -44,7 +44,7 @@ final class DependencyModelConfigurator implements ContainerConfiguratorInterfac
                 '$amphpStrategy' => new Reference(self::AMPHP_PARALLEL_STRATEGY_SERVICE_ID),
                 '$sequentialStrategy' => new Reference(self::SEQUENTIAL_STRATEGY_SERVICE_ID),
                 '$configurationStore' => new Reference(ParallelConfigurationStoreInterface::class),
-                '$cacheConfigurationStore' => new Reference(CacheConfigurationStoreInterface::class),
+                '$cacheOpener' => new Reference(CacheOpener::class),
                 '$workerCountDetector' => new Reference(self::WORKER_COUNT_DETECTOR_SERVICE_ID),
                 '$logger' => new Reference(DelegatingLogger::class),
             ]);

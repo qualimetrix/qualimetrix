@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Parallel\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
@@ -215,69 +214,4 @@ final class FileProcessingResultWireFormatTest extends TestCase
         self::assertSame(FileProcessingFailureKind::Processing, $restored->failureKind());
     }
 
-    #[Test]
-    #[RequiresPhpExtension('igbinary')]
-    public function itRoundTripsFileProcessingResultViaIgbinary(): void
-    {
-        $path = RelativePath::fromString('src/X.php');
-        $dependency = Dependency::ofClassLike(
-            DeclarationPath::of(SymbolPath::forClass('One', 'Thing'), $path, DeclarationOrdinal::fromRank(0)),
-            new LogicalClassPath(SymbolPath::forClass('Two', 'Port')),
-            DependencyType::TraitUse,
-            new Location($path, 11),
-            true,
-            false,
-        );
-        $subject = MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('One', 'Thing'), $path, DeclarationOrdinal::fromRank(0)));
-        $suppression = new Suppression(
-            rule: 'complexity.ccn',
-            reason: 'fixture',
-            line: 12,
-            type: SuppressionType::Symbol,
-            position: 29,
-            binding: new DeclarationBinding(
-                $subject,
-                ControlScope::Class_,
-                DeclarationReach::lines(11, 15, 'class One\\Thing'),
-            ),
-        );
-        $diagnostic = new ThresholdDiagnostic(14, $subject, 'complexity.ccn', 'invalid threshold', 37);
-        $classLike = ClassLikeDeclaration::of(
-            DeclarationPath::of(SymbolPath::forClass('One', 'Thing'), $path, DeclarationOrdinal::fromRank(0)),
-            ClassType::Class_,
-            true,
-            false,
-        )->withLogicalClass(new LogicalClassPath(SymbolPath::forClass('Canonical', 'Thing')));
-
-        $result = FileProcessingResult::success(
-            filePath: $path,
-            payload: new SuccessfulFileProcessing(
-                fileBag: MetricBag::fromArray(['size.loc' => 42]),
-                classLikeDeclarations: [$classLike],
-                dependencies: [$dependency],
-                suppressions: [$suppression],
-                thresholdDiagnostics: [$diagnostic],
-            ),
-        );
-
-        $payload = igbinary_serialize($result);
-        self::assertNotNull($payload);
-
-        $restored = igbinary_unserialize($payload);
-
-        self::assertInstanceOf(FileProcessingResult::class, $restored);
-        self::assertSame('src/X.php', $restored->filePath->value());
-        self::assertEquals($classLike, $restored->classLikeDeclarations()[0]);
-        self::assertSame(42, $restored->fileBag()->get('size.loc'));
-        self::assertEquals($dependency, $restored->dependencies()[0]);
-        $restoredSuppression = $restored->suppressions()[0];
-        self::assertSame(29, $restoredSuppression->position);
-        self::assertNotNull($restoredSuppression->binding);
-        self::assertSame('lines:11:15', $restoredSuppression->binding->reach->key());
-        self::assertSame('class One\\Thing, lines 11–15', $restoredSuppression->binding->reach->describe());
-        self::assertSame(37, $restored->thresholdDiagnostics()[0]->position);
-        // Same IPC-survival pin as the php-serialize round trip above, for
-        // the other wire format the parallel worker pool can select.
-        self::assertTrue($restored->dependencies()[0]->describesNestedAnonymousClass);
-    }
 }

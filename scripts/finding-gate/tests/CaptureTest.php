@@ -375,9 +375,18 @@ final class CaptureTest extends TestCase
                 self::assertSame('0', $pair->candidate);
                 $candidate = $artifacts;
                 $candidate['tree|exit:graph:export'] = '0';
+                $candidate['tree|graph:export'] = "digraph dependencies {\n}\n";
+                $candidate['tree|stderr:graph:export'] = "No PHP files found.\n";
+                $nativeRun = self::captureContext($root, $temporary);
+                CaptureCheck::create($nativeRun)->checkRun($candidate, $artifacts);
+                self::assertSame([], $nativeRun->report->raised(), $nativeRun->report->render());
+                $nativeRun = self::captureContext($root, $temporary);
+                CaptureCheck::create($nativeRun)->checkRun($artifacts, $candidate);
+                self::assertSame([], $nativeRun->report->raised(), $nativeRun->report->render());
+                $candidate['tree|graph:export'] = '';
                 CaptureCheck::create($run)->checkRun($candidate, $artifacts);
                 self::assertSame([FailureClass::SURFACE_MISMATCH], $run->report->failureClasses());
-                self::assertSame(['candidate / tree|graph:export', 'candidate / tree|graph:export'], array_column($run->report->raised(), 'scope'));
+                self::assertSame(['candidate / tree|graph:export'], array_column($run->report->raised(), 'scope'));
                 self::assertNull($values->referenceExitFor('graph:export', 'tree|graph:export', '0'));
             }
         } finally {
@@ -407,13 +416,14 @@ final class CaptureTest extends TestCase
                     self::assertTrue($values->measure('exit', $command, $invocation, '*', $fault === 'wrong-invocation' ? 0 : 1, (int) $to));
                 }
                 $candidate = $artifacts;
+                $candidate['tree|graph:export'] = '';
                 $candidate['tree|exit:graph:export'] = '0';
                 if ($fault === 'wrong-invocation') {
                     $candidate['case:alpha|exit:graph:export'] = '1';
                 }
                 CaptureCheck::create($run)->checkRun($candidate, $artifacts);
                 self::assertSame([FailureClass::SURFACE_MISMATCH], $run->report->failureClasses(), $fault);
-                $expectedScopes = ['candidate / tree|graph:export', 'candidate / tree|graph:export'];
+                $expectedScopes = ['candidate / tree|graph:export'];
                 if ($fault === 'wrong-invocation') {
                     $expectedScopes[] = 'candidate / case:alpha|graph:export';
                 }
@@ -430,13 +440,18 @@ final class CaptureTest extends TestCase
     {
         [$root, $temporary, $artifacts] = self::stagePublicationFixture();
         try {
-            foreach (['unknown-replay', 'empty-exit', 'missing-exit', 'empty-publication', 'reference-exit', 'reference-unknown', 'reference-missing', 'reference-empty-publication'] as $fault) {
-                $to = $fault === 'unknown-replay' ? '70' : '0';
+            foreach (['unknown-replay', 'invalid-exit', 'empty-exit', 'missing-exit', 'empty-publication', 'reference-exit', 'reference-unknown', 'reference-missing', 'reference-empty-publication'] as $fault) {
+                $to = match ($fault) {
+                    'unknown-replay' => '70',
+                    'invalid-exit' => '256',
+                    default => '0',
+                };
                 self::declareCaptureExits($root, [['exit', 'graph:export', 'tree|graph:export', '1', $to]]);
                 $run = self::captureContext($root, $temporary);
                 $values = ValueCheck::create($run);
                 self::assertTrue($values->measure('exit', 'graph:export', 'tree|graph:export', '*', 1, (int) $to));
                 $candidate = $artifacts;
+                $candidate['tree|graph:export'] = '';
                 $candidate['tree|exit:graph:export'] = $to;
                 $reference = $artifacts;
                 $expectedScope = 'candidate / tree|graph:export';
@@ -451,6 +466,7 @@ final class CaptureTest extends TestCase
                     $reference['case:alpha|graph:export'] = '';
                     $expectedScope = 'reference / case:alpha|graph:export';
                 } elseif (str_starts_with($fault, 'reference-')) {
+                    $reference['tree|graph:export'] = '';
                     $reference['tree|exit:graph:export'] = $fault === 'reference-unknown' ? '70' : '0';
                     if ($fault === 'reference-missing') {
                         unset($reference['tree|exit:graph:export']);
@@ -461,9 +477,9 @@ final class CaptureTest extends TestCase
                 self::assertSame([FailureClass::SURFACE_MISMATCH], $run->report->failureClasses(), $fault);
                 self::assertContains($expectedScope, array_column($run->report->raised(), 'scope'), $fault);
                 $expectedCount = match ($fault) {
-                    'unknown-replay', 'empty-publication', 'reference-empty-publication', 'missing-exit' => 3,
-                    'reference-missing', 'reference-unknown' => 5,
-                    'reference-exit' => 4,
+                    'unknown-replay', 'missing-exit' => 3,
+                    'empty-publication', 'reference-empty-publication' => 2,
+                    'reference-missing', 'reference-unknown' => 4,
                     default => 2,
                 };
                 self::assertCount($expectedCount, $run->report->raised(), $fault);

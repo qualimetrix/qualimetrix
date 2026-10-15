@@ -39,6 +39,11 @@ final class StagedSignalGuard
         return $guard->register() ? $guard : null;
     }
 
+    public static function isInterruptionExitCode(int $exitCode): bool
+    {
+        return self::available() && \in_array($exitCode, [128 + \SIGINT, 128 + \SIGTERM], true);
+    }
+
     private static function available(): bool
     {
         $available = get_defined_functions()['internal'];

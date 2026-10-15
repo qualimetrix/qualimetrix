@@ -12,6 +12,7 @@ use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Infrastructure\Parallel\Contract\WorkerDiagnosticsInterface;
 use ReflectionClass;
 use ReflectionNamedType;
 use ReflectionObject;
@@ -32,6 +33,29 @@ use ReflectionObject;
 #[CoversClass(ErrorStream::class)]
 final class ErrorStreamContainerIdentityTest extends TestCase
 {
+    #[Test]
+    public function itSharesProductApplicationDiagnosticsWithItsContainer(): void
+    {
+        $diagnostics = null;
+        $container = null;
+        $app = \Qualimetrix\Infrastructure\Console\Application::forProduct(
+            static function (\Qualimetrix\Infrastructure\Console\ConsoleDiagnostics $given) use (&$diagnostics, &$container) {
+                $diagnostics = $given;
+
+                return $container = (new ContainerFactory())->create($given);
+            },
+            \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register(),
+        );
+        $app->setAutoExit(false);
+        $app->doRun(new \Symfony\Component\Console\Input\ArrayInput(['command' => 'hook:status']), new \Symfony\Component\Console\Output\BufferedOutput());
+        self::assertInstanceOf(\Qualimetrix\Infrastructure\Console\ConsoleDiagnostics::class, $diagnostics);
+        self::assertInstanceOf(\Symfony\Component\DependencyInjection\ContainerBuilder::class, $container);
+        self::assertSame($diagnostics->errorStream, $container->get(ErrorStream::class));
+        self::assertSame($diagnostics->refusalPresenter, $container->get(\Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter::class));
+        self::assertSame($diagnostics->errorStream, (new ReflectionClass($app))->getProperty('errorStream')->getValue($app));
+        self::assertSame($diagnostics->refusalPresenter, (new ReflectionClass($app))->getProperty('refusalPresenter')->getValue($app));
+    }
+
     /**
      * Every class the composed run gives the owner to.
      *
@@ -50,6 +74,7 @@ final class ErrorStreamContainerIdentityTest extends TestCase
         'Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter',
         'Qualimetrix\\Infrastructure\\Console\\ResultPresenter',
         'Qualimetrix\\Infrastructure\\Console\\RuntimeLoggerConfigurator',
+        'Qualimetrix\\Infrastructure\\Parallel\\Strategy\\AmphpParallelStrategy',
     ];
 
     #[Test]
@@ -101,7 +126,7 @@ final class ErrorStreamContainerIdentityTest extends TestCase
 
             foreach ($constructor->getParameters() as $parameter) {
                 $type = $parameter->getType();
-                if (!$type instanceof ReflectionNamedType || $type->getName() !== ErrorStream::class) {
+                if (!$type instanceof ReflectionNamedType || !\in_array($type->getName(), [ErrorStream::class, WorkerDiagnosticsInterface::class], true)) {
                     continue;
                 }
 

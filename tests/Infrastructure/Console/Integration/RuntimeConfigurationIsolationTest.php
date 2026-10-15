@@ -62,6 +62,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         $customCacheDirectory = $this->temporaryDirectory . '/custom-cache';
 
         $runtimeConfigurator->resetRunState();
+        $defaultCacheDirectory = $this->cacheStore($runtimeConfigurator)->current()->directory;
         $customDocument = $this->document([
             'cache.dir' => $customCacheDirectory,
             'cache.enabled' => false,
@@ -70,15 +71,17 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         $projectRoot = \Qualimetrix\Core\Path\AbsolutePath::fromString($this->temporaryDirectory);
         $runtimeConfigurator->configure($customDocument, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($customDocument), $this->cacheConfiguration($customDocument, $projectRoot), $this->parallelConfiguration($customDocument)), $ruleInputValidator->resolve($customDocument, new ArrayInput([], $command->getDefinition())), new ArrayInput([], $command->getDefinition()), new BufferedOutput());
 
-        self::assertSame($customCacheDirectory, $this->cacheStore($runtimeConfigurator)->current()->directory->value());
-        self::assertFalse($this->cacheStore($runtimeConfigurator)->current()->enabled);
+        $configuredCache = $this->cacheStore($runtimeConfigurator)->current();
+        self::assertNotNull($configuredCache->directory);
+        self::assertSame($customCacheDirectory, $configuredCache->directory->value());
+        self::assertFalse($configuredCache->enabled);
         self::assertSame(0, $this->parallelStore($runtimeConfigurator)->current()->workers);
 
         $runtimeConfigurator->resetRunState();
         $defaultDocument = $this->document([]);
         $runtimeConfigurator->configure($defaultDocument, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($defaultDocument), $this->cacheConfiguration($defaultDocument, $projectRoot), $this->parallelConfiguration($defaultDocument)), $ruleInputValidator->resolve($defaultDocument, new ArrayInput([], $command->getDefinition())), new ArrayInput([], $command->getDefinition()), new BufferedOutput());
 
-        self::assertSame($this->temporaryDirectory . '/.qmx-cache', $this->cacheStore($runtimeConfigurator)->current()->directory->value());
+        self::assertEquals($defaultCacheDirectory, $this->cacheStore($runtimeConfigurator)->current()->directory);
         self::assertTrue($this->cacheStore($runtimeConfigurator)->current()->enabled);
         self::assertNull($this->parallelStore($runtimeConfigurator)->current()->workers);
     }

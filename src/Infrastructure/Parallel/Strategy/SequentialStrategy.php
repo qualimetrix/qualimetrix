@@ -42,8 +42,11 @@ final class SequentialStrategy implements ExecutionStrategyInterface
 
         foreach ($files as $file) {
             $profiler->start('collection.file', 'collection');
-            $results[] = $processor($file);
-            $profiler->stop('collection.file');
+            try {
+                $results[] = $processor($file);
+            } finally {
+                $profiler->stop('collection.file');
+            }
         }
 
         return $results;

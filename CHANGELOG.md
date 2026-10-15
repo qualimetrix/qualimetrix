@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- Unknown, partial, namespace-only and differently cased command names now refuse with exit 3 and a suggestion. Use an exact command name; `list`, `help` and completion retain their own behavior.
+- An empty `--working-dir`/`-d` or `baseline:explain --channel=` now refuses with exit 3. Supply a nonempty value or omit the option.
+- Coordinator memory exhaustion now exits 4 with a limit/source hint and a JSON error envelope for JSON formats instead of exiting 255. The shutdown path does not create a new profile or leave newly claimed report/profile targets empty; an already published profile is not rolled back.
+- `-q`, `--silent` and `SHELL_VERBOSITY=-1|-2` no longer suppress a command answer or terminal error. Redirect stdout when the caller needs only the exit code; action/status output still follows the command contract.
+- The default AST cache moves from checkout `.qmx-cache` to the `qmx` subdirectory of the user cache directory, shared by that user’s projects. Old `.qmx-cache` entries are not read. Docker defaults to `/cache`; mount a volume to retain it, with a separate volume per uid.
+- An explicit `--cache-dir` or `cache.dir` inside the project root now refuses with exit 3 when caching is enabled or `--clear-cache` uses that location. `--no-cache` without clearing does not judge an unused cache root. An implicit default inside the checkout disables caching with a warning. CI cache paths inside the checkout, including GitLab `cache:paths`, are unsupported for caching.
+- An explicitly selected cache root owned by another user or writable by group/others now refuses as an environment error (exit 3) when caching is enabled or `--clear-cache` uses it; the same problem in the implicit default disables caching with a warning. `--no-cache` without clearing does not judge the unused root. This is a POSIX-path/root check, not an ancestor trust guarantee.
+- AST cache entries no longer use igbinary, and earlier cache formats are not read. `ext-igbinary` is removed from Composer suggestions; let the new cache warm again.
+- `--clear-cache` now removes qmx entries only, rather than everything in the cache directory, but does so for all projects and worktrees sharing this user cache root.
+- `NUMBER_OF_PROCESSORS` is read only on Windows; there, a value that is not a positive decimal integer refuses with exit 3. Other platforms use their native worker-count source.
+- For an eligible run with explicit `--workers=N>1` or `parallel.workers`, a worker that cannot start or answer its first probe within 10 seconds now causes environment exit 3 instead of silent sequential execution. Automatic selection falls back to sequential with a warning; an unavailable worker can add 10 seconds before either outcome.
+- Thread transport through `ext-parallel` is removed, and the extension is no longer suggested. Parallel collection uses worker processes only.
+- `--report=git:*` without `proc_open` now reports an environment error (exit 3) instead of an internal error. Hook commands retain their directory-walk fallback when Git is unavailable.
+- `--memory-limit` above `PHP_INT_MAX` bytes now refuses with exit 3 instead of overflowing or deferring the failure.
+- `baseline:update` and `baseline:cleanup` now refuse with exit 3 and a stderr reason, rather than exit 1 and a stdout reason, when the run does not cover the baseline's recorded scope and `--force` is absent. Run over at least that scope or review it before forcing a write.
+- `graph:export` with no PHP files now publishes an empty graph and exits 0, with an explanatory stderr line, rather than exiting 1 and writing the message to stdout.
+- `bin/qmx` on PHP older than 8.4 or without its autoloader now exits 3. Update PHP/install dependencies before invoking the binary.
+- Baseline lock timeouts, a changed baseline during update, and unreadable baseline input now report environment exit 3; unrelated `RuntimeException` defects exit 5 instead of being treated as refusals.
+- `--profile` is published after an analysis run completes through its command and before the report. A profile-write failure follows the run error envelope; parallel runs include `collection.workers`. Coordinator shutdown OOM before publication writes no new profile, while a profile already published before a later report OOM remains.
+- Text, summary and health reports now identify at most the first ten unprocessed files and say “and N more” for the remainder. Consumers comparing prose output should accept this bounded list.
+- Worker stdout and stderr no longer pass through raw to coordinator streams. PHP warnings are rendered as in sequential runs, and a worker death reason appears with the affected file.
+- A missing collector class, a collector without its required marker, or a dependency-traversal class that is missing or does not implement its interface now causes one internal error (exit 5) in the coordinator before worker startup, instead of reporting one failure per file with incomplete-analysis exit 4. Failures during worker construction or its first probe retain startup refusal (explicit request) or sequential fallback (automatic selection).
+
 - `complexity.npath` now gives `??` and `??=` the ternary value-selection contribution (+2 ordinary paths per operator) instead of the previous 0/+1 at statement boundaries. `return $x ?? 5` changes from 1 to 2; two chained coalesces change from 2 to 4. Re-run analysis and review NPath limits and accepted baseline magnitudes. Boolean operators and nullsafe hops keep their contributions; metric keys and default thresholds are unchanged. See [ADR 0020](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0020-method-size-and-npath-semantics.md).
 - Incomplete inheritance depth is now report metadata instead of being discoverable only through raw `design.dit-unresolved` metrics and the enabled DIT rule's warning. Successful JSON and HTML payloads always include `inheritanceDepthOutcomes` (previously absent): groups of `status`, `count` and up to five sorted canonical declaration `examples`, or `[]`. Read `lower-bound` and `absent-depth` separately from `abstentions` and `computedMetricOutcomes`; finding selection and disabling `design.dit` do not remove collected outcomes. Text, summary and health add bounded explanations, HTML adds a banner, and SARIF adds an invocation note with descriptor `QMX-INHERITANCE-DEPTH-INCOMPLETE`; Checkstyle and GitLab retain findings only. Adapt strict document schemas and consume this metadata without adding findings or changing the exit verdict. See [ADR 0117](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0117-inheritance-depth-completeness-publication.md).
 - Cohesion values now use effective class methods, including resolvable trait methods and adaptations. Constructor and destructor names are excluded after trait composition: aliasing an ordinary trait method to a lifecycle name excludes that effective method, while aliasing a lifecycle body to an ordinary name keeps the ordinary alias eligible. LCOM call edges use PHP case-insensitive names and instance calls through `$this`, `self` and `static`; called stateless methods keep a graph vertex, while only uncalled stateless constant methods merge. A class with no eligible LCOM vertex publishes no `cohesion.lcom` instead of 0. TCC/LCC follow calls to instance helpers for property access. Re-evaluate saved class and aggregate cohesion values and accepted findings; distinguish an absent value from zero and inspect `cohesion.unread-trait-count` when trait composition is incomplete. All seven composed outputs now declare Run reach because trait evidence can be outside the selected file; raw facts remain Members. Use full-run coverage for comparison with a whole-project baseline.
@@ -1431,6 +1454,8 @@ What changes for a configuration you already have:
 
 ### Changed
 
+- AST entries unused for 30 days are swept incrementally; each cache format has a 2 GiB post-sweep target with oldest entries evicted, plus intervening writes and one oversized newest entry per shard. `short_open_tag` participates in the AST cache key and is propagated to worker processes.
+
 - Affected higher-is-worse threshold messages now say `reaches` at equality
   and `exceeds` only above the selected effective threshold, comparing raw
   values before display rounding. The inclusive `>=` finding boundary and
@@ -1675,6 +1700,7 @@ What changes for a configuration you already have:
 
 ### Fixed
 
+- Corrupt or foreign AST cache entries are discarded and reparsed; worker stdout/stderr are captured instead of contaminating machine report streams.
 - Cognitive recursion now follows resolved class names, including aliases and namespace-relative names. Re-evaluate `complexity.cognitive` values and accepted findings for affected recursive methods; imported foreign targets no longer count as own recursion. See ADR 0111.
 - Global namespace offender counts and density include its own findings, without treating named namespaces as descendants.
 - Formula evaluation no longer lets an independent missing key hide a reached

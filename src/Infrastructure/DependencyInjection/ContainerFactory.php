@@ -9,6 +9,10 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface;
+use Qualimetrix\Infrastructure\Console\ConsoleDiagnostics;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\CollectorCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationStageCompilerPass;
@@ -21,6 +25,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ParallelCollecto
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\TagPopulationFloorCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ThresholdValidatorMapCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\AnalysisConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ArchitectureConfigurator;
@@ -68,15 +73,27 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  */
 final class ContainerFactory
 {
+    /** @var array<string, positive-int> */
+    private const array REQUIRED_TAG_POPULATIONS = [
+        RuleCompilerPass::TAG => 1,
+        ConfigurationValidatorCompilerPass::TAG => 1,
+        CollectorCompilerPass::TAG => 1,
+        CollectorCompilerPass::TAG_DERIVED => 1,
+        GlobalCollectorCompilerPass::TAG => 1,
+        'qmx.cohesion.lcom_configurable_collector' => 1,
+        FileSetInspectionParticipantCompilerPass::TAG => 1,
+        FormatterCompilerPass::TAG => 1,
+        ConfigurationStageCompilerPass::TAG => 1,
+    ];
     /**
      * Create a fully configured container.
      *
      * The container starts with default owner-local state. RuntimeConfigurator
      * resolves each CLI/configuration run and applies it before pipeline execution.
      */
-    public function create(): ContainerBuilder
+    public function create(?ConsoleDiagnostics $diagnostics = null): ContainerBuilder
     {
-        $container = $this->configure();
+        $container = $this->configure($diagnostics);
         $container->compile();
 
         return $container;
@@ -87,7 +104,7 @@ final class ContainerFactory
      * not yet compiled — the container {@see create()} compiles, exposed so a
      * test can take one definition out of the real build and watch it refuse.
      */
-    public function configure(): ContainerBuilder
+    public function configure(?ConsoleDiagnostics $diagnostics = null): ContainerBuilder
     {
         $container = new ContainerBuilder();
 
@@ -126,6 +143,23 @@ final class ContainerFactory
 
         foreach ($configurators as $configurator) {
             $configurator->configure($container);
+        }
+
+        // One ErrorStream makes progress redraw around every diagnostic writer.
+        $container->register(ErrorStream::class)->setSynthetic(true)->setPublic(true);
+        $container->register(RefusalPresenter::class)->setSynthetic(true)->setPublic(true);
+        $container->register(OutOfMemoryHint::class)->setSynthetic(true)->setPublic(true);
+
+        $diagnostics ??= ConsoleDiagnostics::fresh();
+        foreach ([
+            ErrorStream::class => $diagnostics->errorStream,
+            RefusalPresenter::class => $diagnostics->refusalPresenter,
+            OutOfMemoryHint::class => $diagnostics->outOfMemoryHint,
+        ] as $id => $service) {
+            $definition = $container->getDefinition($id);
+            $container->set($id, $service);
+            // set() removes the definition that autowiring still needs.
+            $container->setDefinition($id, $definition);
         }
 
         // Add compiler passes
@@ -191,6 +225,11 @@ final class ContainerFactory
      */
     private function registerCompilerPasses(ContainerBuilder $container): void
     {
+        $container->addCompilerPass(
+            new TagPopulationFloorCompilerPass(self::REQUIRED_TAG_POPULATIONS),
+            PassConfig::TYPE_BEFORE_OPTIMIZATION,
+            75,
+        );
         // Ahead of every pass it checks: those at the default priority run
         // after it in this phase, and RuleOptionsCompilerPass/RuleCompilerPass
         // run in a later phase that renames and removes no definition first.

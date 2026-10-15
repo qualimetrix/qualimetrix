@@ -59,6 +59,7 @@ __pycache__/
 examples/
 *.json
 !/qmx-baseline.json
+!/tests/Infrastructure/Cache/Unit/ast-entry-producer.json
 /qmx-baseline.json.lock
 !/docs/internal/benchmark-baselines.json
 # The namespace/class half of the same guard. Written by the same command as

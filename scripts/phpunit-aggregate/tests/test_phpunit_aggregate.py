@@ -57,8 +57,8 @@ class PhpunitAggregateTest(unittest.TestCase):
 
     def test_refuses_residue_in_the_shard_directory_even_when_declared_for_the_execution_window(self):
         configuration = complete_configuration()
-        configuration["run"] = {"Unit": {"cwd_entries": [".qmx-cache"]}}
-        completed = self.run_runner(configuration)
+        configuration["run"] = {"Unit": {"cwd_entries": [".qmx-cache"], "residue": [".qmx-cache"]}}
+        completed = self.run_runner(configuration, declared_residue=(".qmx-cache",))
         self.assertNotEqual(0, completed.returncode)
         self.assertIn("shard cwd not empty: .qmx-cache", completed.stdout)
 
@@ -66,12 +66,12 @@ class PhpunitAggregateTest(unittest.TestCase):
         configuration = complete_configuration()
         configuration["run"] = {suite: {"residue": []} for suite in SUITES}
         configuration["run"]["Governance"] = {"residue": [".qmx-cache"]}
-        completed = self.run_runner(configuration)
+        completed = self.run_runner(configuration, declared_residue=(".qmx-cache",))
         self.assertEqual(0, completed.returncode, completed.stderr)
         self.assertIn("Governance declared residue: .qmx-cache", completed.stdout)
 
         configuration["run"]["Governance"] = {"residue": []}
-        stale = self.run_runner(configuration)
+        stale = self.run_runner(configuration, declared_residue=(".qmx-cache",))
         self.assertEqual(2, stale.returncode)
         self.assertIn("stale declared residue .qmx-cache", stale.stderr)
 
@@ -93,7 +93,7 @@ class PhpunitAggregateTest(unittest.TestCase):
         configuration = complete_configuration()
         configuration["run"] = {suite: {"residue": []} for suite in SUITES}
         configuration["run"]["Unit"]["exit"] = 1
-        completed = self.run_runner(configuration)
+        completed = self.run_runner(configuration, declared_residue=(".qmx-cache",))
         self.assertEqual(1, completed.returncode)
         self.assertNotIn("stale declared residue", completed.stderr)
 
@@ -122,8 +122,20 @@ class PhpunitAggregateTest(unittest.TestCase):
         *arguments: str,
         record_directory: Path | None = None,
         profile: bool = False,
+        declared_residue: tuple[str, ...] | None = None,
     ) -> subprocess.CompletedProcess[str]:
         with tempfile.TemporaryDirectory(prefix="qmx-phpunit-aggregate-test-") as directory:
+            runner_path = RUNNER
+            if declared_residue is not None:
+                runner_path = Path(directory) / "scripts/phpunit-aggregate.py"
+                runner_path.parent.mkdir()
+                runner_path.write_text(RUNNER.read_text(encoding="utf-8"), encoding="utf-8")
+                declaration_path = Path(directory) / "tests/TestSupport/WorkingDirectory/declared-residue.tsv"
+                declaration_path.parent.mkdir(parents=True)
+                declaration_path.write_text(
+                    "entry\treason\n" + "".join(f"{entry}\tSynthetic residue fixture\n" for entry in declared_residue),
+                    encoding="utf-8",
+                )
             configuration_path = Path(directory) / "configuration.json"
             configuration_path.write_text(json.dumps(configuration), encoding="utf-8")
             environment = os.environ.copy()
@@ -136,7 +148,7 @@ class PhpunitAggregateTest(unittest.TestCase):
             return subprocess.run(
                 [
                     sys.executable,
-                    str(RUNNER),
+                    str(runner_path),
                     f"--phpunit={FAKE_PHPUNIT}",
                     "--heartbeat=0.01",
                     *arguments,

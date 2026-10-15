@@ -116,27 +116,14 @@ final class ApplicationRefusalTest extends TestCase
         self::assertSame(self::REFUSAL, $run['exitCode']);
     }
 
-    /**
-     * Route 4: the interactive alternative to the case directly above.
-     * Symfony's own `Application::doRunCommand()` asks "Do you want to run
-     * X instead?" whenever exactly one alternative exists and the input is
-     * interactive — a property `ArgvInput` defaults to `true` for and only
-     * `--no-interaction`/`-n` (or `NO_INTERACTION`) turns off, regardless of
-     * whether stdin is an actual TTY. So this reaches the question with a
-     * plain piped, non-TTY stdin: no pty is required. An empty stream is a
-     * valid answer to the question (it defaults to "no", same as declining),
-     * and the run then exits the way declining the alternative always has —
-     * outside the refusal ladder entirely, since the question is answered
-     * and the command genuinely never ran; that exit code is not the subject
-     * here; the reproduction of the question on stdout is.
-     */
     #[Test]
-    public function itAsksToRunTheAlternativeInteractivelyInsteadOfRefusingOutright(): void
+    public function itRefusesTheAlternativeWithoutInteractiveConfirmation(): void
     {
         $run = $this->runBin(['chek'], stdin: '');
 
-        self::assertStringContainsString('Command "chek" is not defined.', $run['stdout']);
-        self::assertStringContainsString('Do you want to run "check" instead?', $run['stdout']);
+        self::assertSame(3, $run['exitCode']);
+        self::assertSame('', $run['stdout']);
+        self::assertStringContainsString('check', $run['stderr']);
     }
 
     /**
@@ -277,7 +264,7 @@ final class ApplicationRefusalTest extends TestCase
             use Symfony\\Component\\Console\\Output\\OutputInterface;
 
             \$errorStream = new ErrorStream();
-            \$app = new Application(\$errorStream, new RefusalPresenter(\$errorStream), new \\Qualimetrix\\Infrastructure\\Composer\\ComposerManifestReader());
+            \$app = new Application(\$errorStream, new RefusalPresenter(\$errorStream), static fn() => new \\Qualimetrix\\Infrastructure\\Composer\\ComposerManifestReader());
             \$app->setCatchErrors({$catch});
             \$app->addCommand(new class extends Command {
                 protected function configure(): void

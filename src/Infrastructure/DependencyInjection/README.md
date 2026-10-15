@@ -11,6 +11,9 @@ services compose their named subjects; `CohesionConfigurator` owns the LCOM
 resolver, store and tagged collectors. `OutputConfigurator` keeps ordinary
 services explicitly registered and autowired, with named loggers, the synthetic
 logger holder, lazy Options, factories and tagged collections bound explicitly.
+`ContainerFactory` registers the synthetic Console diagnostic trio and installs
+the instances held by one `ConsoleDiagnostics`; `OutputConfigurator` binds their
+consumers.
 Run preparation and observed scope reasons are services; their immutable result
 records are values constructed by the operation, never container services.
 
@@ -28,8 +31,9 @@ bindings; configuration and Health consume those same expression services.
 ## Invocation source bindings
 
 `ComposerManifestReaderInterface` and `ManifestSnapshotControlInterface` alias
-one Infrastructure Composer reader. `Application` begins its snapshot after
-working-directory selection and before the first read; each root caches success,
+one Infrastructure Composer reader. `Application` resolves its snapshot from
+the lazy product container at product execution, after working-directory
+selection and before the first read; each root caches success,
 absence and failure for that invocation. The next invocation clears them.
 Measurement's namespace resolver is likewise composed under both its read port
 and `ProjectNamespaceSourceControlInterface`. Console's
@@ -70,5 +74,18 @@ instead of producing a container with a step silently missing.
 uncompiled container (`ContainerFactory::configure()`) and requires that
 refusal.
 
-An empty set of tagged services is not refused: a registered consumer receiving
-no members is a legitimate container state.
+`CompilerPass/TagPopulationFloorCompilerPass` checks the product's explicit
+`ContainerFactory::REQUIRED_TAG_POPULATIONS` after interface tagging and before
+consumer registration checks. Rules, configuration validators, file collectors,
+derived collectors, global collectors, LCOM-configurable collectors, file-set
+inspection participants, formatters and configuration stages each require at
+least one service. The refusal names the empty tag and its required minimum.
+Tags outside that table have no implicit floor; a partial fixture container
+running an individual pass does not inherit the product table.
+
+`RuleOptionsCompilerPass` refuses a tagged definition with no class, a class
+that is not an executable rule, invalid Options metadata and an unresolved
+class-typed constructor collaborator. Optional constructor defaults cannot hide
+a missing product registration. Producer validation uses the rule-shape map:
+a diagnostic channel's inherited remediation minutes do not make it a rule
+that a configuration validator may borrow.

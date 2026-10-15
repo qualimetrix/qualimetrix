@@ -566,7 +566,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface, Con
         /** @var class-string<\Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface> $class */
         $producerRuleName = $class::producerRuleName();
 
-        if (!isset($minutesByRule[$producerRuleName])) {
+        if (!isset($shapeByRule[$producerRuleName])) {
             throw new LogicException(\sprintf(
                 'Configuration validator %s names producer "%s", which is not a registered rule. A validator'
                 . ' borrows its producer\'s name for selection, exclusion, options and presentation, so the'

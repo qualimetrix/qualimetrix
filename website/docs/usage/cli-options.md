@@ -216,7 +216,7 @@ SIGINT/SIGTERM before publication discard the run's own sibling and return
 ordinary atomic publication proceeds without replacing foreign handlers, and
 interruption may leave the private sibling. Replacing handlers during a guarded
 operation is unsupported. SIGKILL, failed cleanup and already published targets
-are also outside that cleanup guarantee. A later profile failure does not roll back a published report.
+are also outside that cleanup guarantee. A profile already published before a later report failure is not rolled back.
 
 A symbolic link is followed only when another user cannot place that directory
 entry; accepted links remain intact and write their resolved referents. This
@@ -480,7 +480,7 @@ as [`--namespace`](#--namespace) is.
 
 ## Cache options
 
-Qualimetrix caches parsed ASTs to speed up repeated runs.
+Qualimetrix caches parsed ASTs to speed up repeated runs. The default is the platform user cache directory under `qmx`, shared across this user's projects and worktrees; old checkout `.qmx-cache` entries are not read. `XDG_CACHE_HOME` takes precedence when it is a supported POSIX absolute path; otherwise Linux/BSD use `$HOME/.cache`, macOS uses `$HOME/Library/Caches`, and the Windows branch reads `LOCALAPPDATA`. Windows drive and UNC paths are not supported by the current path grammar. An unusable default disables caching with one warning.
 
 ### `--no-cache`
 
@@ -492,14 +492,16 @@ bin/qmx check src/ --no-cache
 
 ### `--cache-dir`
 
-Set a custom cache directory. Default: `.qmx-cache`.
+Set a cache directory that resolves to a supported POSIX path outside the project. Relative paths are resolved from the project root; for example, `../external-cache` can be used when it resolves outside the project. The default is the user cache directory under `qmx`. When the project root is `/` (for example, a cron invocation from `/`), containment is not checked; all other location judgements still apply.
 
 ```bash
 bin/qmx check src/ --cache-dir=/tmp/qmx-cache
 ```
 
-The path is judged without creating directories. An explicitly configured path
-that cannot provide a writable, searchable directory is refused with exit 3.
+When caching is enabled or `--clear-cache` uses the location, the path is judged without creating directories. `--no-cache` without clearing leaves an unused cache root unjudged. An explicitly configured path
+inside the project, owned by another user, writable by group/others, or unable
+to provide a writable, searchable directory is then refused with exit 3. The cache
+root is judged; this does not establish trust for every ancestor.
 An unusable implicit default disables caching and produces one warning.
 An eligible directory is created only after the remaining input checks succeed.
 
@@ -516,7 +518,9 @@ temporary sibling inside the physical cache root refuses before clearing or
 analysis, including through a symbolic link. A cache entry that
 cannot be removed produces an environment error (exit 3), naming the directory,
 the remaining entry count and the reason. An incomplete clear never prints
-"Cache cleared.".
+"Cache cleared.". Clearing removes only qmx entries, but includes entries
+from every project sharing this user root. Entries not read for 30 days are
+swept incrementally. Each open sweeps 16 of 256 shards; after 16 successful sweep steps, the per-format target is 2 GiB plus entries written since each shard's last sweep and one oversized newest entry per shard, rather than an immediate hard quota.
 
 ---
 
@@ -669,7 +673,7 @@ bin/qmx check src/ --report=git:main..HEAD --report-strict
 Control parallel processing. Default: auto-detect based on CPU count.
 
 ```bash
-# Disable parallel processing (single-threaded)
+# Disable parallel processing (single process)
 bin/qmx check src/ --workers=1
 
 # Disable parallel processing (sequential)
@@ -680,7 +684,7 @@ bin/qmx check src/ --workers=4
 ```
 
 !!! tip
-    Use `--workers=1` for debugging or single-process environments. `--workers=0` disables parallelism (sequential execution); auto-detect is the default when the option is omitted.
+    Use `--workers=1` for debugging or single-process environments. `--workers=0` disables parallelism (sequential execution); auto-detect is the default when omitted. Worker transport uses processes, not threads or forks. It requires `proc_open` and, outside Windows, `ext-posix`. On an eligible run, an explicit count above one refuses with environment exit 3 if the first worker cannot start or answer within 10 seconds; automatic selection warns and falls back to sequential processing. `NUMBER_OF_PROCESSORS` is read only on Windows and must be a positive decimal integer there.
 
 ### `--memory-limit`
 
@@ -696,7 +700,7 @@ bin/qmx check src/ --memory-limit=1G
 bin/qmx check src/ --memory-limit=-1
 ```
 
-Valid formats: `-1` (unlimited), or a positive integer with optional `K`/`M`/`G` suffix (e.g., `512M`, `2G`). `0` and a leading zero (`010M`, which PHP would read as octal) are refused with exit code 3.
+Valid formats: `-1` (unlimited), or a positive integer with optional `K`/`M`/`G` suffix (e.g., `512M`, `2G`). `0`, a leading zero (`010M`, which PHP would read as octal), and values above `PHP_INT_MAX` bytes are refused with exit code 3. Coordinator OOM after diagnostics binding and reserve allocation exits 4 with the effective limit and its source; an earlier foreign shutdown callback can overwrite the last PHP error before this handler observes it.
 
 Equivalent YAML: `memory_limit: 1G`
 
@@ -743,8 +747,8 @@ refused with exit 3 instead of falling back to a default.
 
 Without `-v` the level can only narrow the console: `--log-level=error` hides
 warnings, while `--log-level=debug --log-file=qmx.log` writes a detailed file and
-leaves the terminal as quiet as it was. `-q` silences the console whatever the
-level; the file still receives its lines.
+leaves the terminal as quiet as it was. `-q` silences console logs whatever the
+level, while command answers and terminal errors remain; the file still receives its lines.
 
 ### `--no-progress`
 
@@ -781,21 +785,12 @@ bin/qmx check src/ --silent
 bin/qmx check src/ -q
 ```
 
-!!! warning "`--silent` no longer guarantees zero bytes on every exit code"
-    `--silent` and `-q`/`--quiet` currently behave identically: both suppress the
-    report on standard output, but a configuration or input refusal (e.g. a path
-    that does not exist) is still written to **standard error**. A run refused
-    before analysis starts produces 0 bytes on stdout and a human-readable error
-    line on stderr, whichever of the two flags was passed:
-
-    ```bash
-    bin/qmx check src/DoesNotExist --silent
-    # exit code 3, empty stdout, error message on stderr
-    ```
-
-    A CI wrapper built on the older assumption that `--silent` means "zero output
-    on any exit code" will see that stderr text on a refusal. Redirect standard
-    error too (`--silent 2>/dev/null`) if that assumption must hold.
+`--silent` and `-q`/`--quiet` suppress progress and status logs, but preserve
+the answer of an answer-producing command and terminal error messages.
+`SHELL_VERBOSITY=-1` or `-2` has the same answer behavior. A refused input
+still writes its reason to **stderr** for prose formats, while JSON formats publish a JSON error envelope on **stdout**; a successful `check --format=json`
+writes its complete JSON document to stdout. To consume only the exit code,
+redirect stdout; redirect stderr as well only if diagnostics are unwanted.
 
 ---
 
@@ -816,20 +811,17 @@ bin/qmx check src/ --profile
 bin/qmx check src/ --profile=profile.json
 ```
 
-A target that cannot be written is refused with exit code 3 before analysis
-starts, by the same rules as [`--output`](#--output--o): a directory or a name
-ending in `/`, a file in a directory that does not exist or cannot be written,
-or a file that is not writable. Named regular profiles share the staging, atomic
-publication and signal capability boundary of `--output`. An empty `--profile=`
-is refused the same way. A
-write that still fails after the run also exits with code 3, never reported
-beside a finished run. The report is already published by then, so the reason
-goes to stderr and stdout keeps the report as its only document, even under
-`--format=json`.
-
-If cleanup also fails after that completed report, both causes are printed on
-stderr and stdout retains one report. An internal failure keeps exit 5; an
-environment cleanup failure takes exit 3 over the findings exit code.
+A target that cannot be written is refused with exit 3 before analysis by
+the same target rules as [`--output`](#--output--o). An empty `--profile=` is
+also refused. A refusal before analysis starts, including an invalid baseline,
+does not publish a profile. Once analysis has started and the command reaches
+its completion path, the profile is published before the report; parallel runs
+include `collection.workers`. A profile write failure follows the run error
+envelope instead of leaving a successful report on stdout. A coordinator OOM
+before profile publication writes no new profile. A profile already published
+before a later report OOM remains; published targets are not rolled back.
+Unpublished named targets are released on the bound OOM path. The guarantee
+begins after diagnostics are bound and reserve memory is allocated.
 
 ### `--profile-format`
 

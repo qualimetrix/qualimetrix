@@ -28,7 +28,7 @@ use SplFileInfo;
  *
  * @implements Task<FileProcessingResult, mixed, mixed>
  *
- * @qmx-threshold coupling.instability warning=0.818182 -- The worker task binds collection, configuration and transport with few coordinator consumers; extracting that protocol transfers its adapter dependencies.
+ * @qmx-threshold coupling.instability warning=0.833334 -- The worker task binds collection, configuration and transport with few coordinator consumers; extracting that protocol transfers its adapter dependencies.
  */
 final class FileProcessingTask implements Task
 {
@@ -67,22 +67,28 @@ final class FileProcessingTask implements Task
         // Check for cancellation before starting work
         $cancellation->throwIfRequested();
 
-        $this->applyMemoryLimit();
+        WorkerBootstrap::initializeWorker();
+        WorkerFatalNotes::workingOnFile($this->filePath);
+        try {
+            $this->applyMemoryLimit();
 
-        // Get or create FileProcessor via WorkerBootstrap
-        // WorkerBootstrap caches the processor for reuse across tasks in the same worker
-        $processor = WorkerBootstrap::getFileProcessor(
-            projectRoot: $this->projectRoot,
-            composition: $this->composition,
-            cacheDir: $this->cacheDir,
-            lcomConfiguration: $this->lcomConfiguration,
-            documentForms: $this->documentForms,
-        );
+            // Get or create FileProcessor via WorkerBootstrap
+            // WorkerBootstrap caches the processor for reuse across tasks in the same worker
+            $processor = WorkerBootstrap::getFileProcessor(
+                projectRoot: $this->projectRoot,
+                composition: $this->composition,
+                cacheDir: $this->cacheDir,
+                lcomConfiguration: $this->lcomConfiguration,
+                documentForms: $this->documentForms,
+            );
 
-        // Process the file
-        $file = new SplFileInfo($this->filePath->value());
+            // Process the file
+            $file = new SplFileInfo($this->filePath->value());
 
-        return $processor->process($file);
+            return $processor->process($file);
+        } finally {
+            WorkerFatalNotes::workingOnFile(null);
+        }
     }
 
     private function applyMemoryLimit(): void

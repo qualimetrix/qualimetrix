@@ -158,13 +158,13 @@ final class CheckCommandDefinition
                 'cache-dir',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Cache directory (created when missing). Refused when it cannot be created or is not writable',
+                'Writable private cache directory outside the project root (default: user cache directory)',
             )
             ->addOption(
                 'clear-cache',
                 null,
                 InputOption::VALUE_NONE,
-                'Clear cache before analysis',
+                "Delete qmx's cached entries for all projects of this user before analysis",
             );
     }
 

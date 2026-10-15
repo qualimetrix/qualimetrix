@@ -122,10 +122,6 @@ final class BaselineCleanupCommand extends BaselineCommand
     {
         $measured = $this->measureAgainstBaseline($this->baselineRun, $this->loader, $input, $output, $document);
 
-        if ($measured === null) {
-            return self::FAILURE;
-        }
-
         $context = $measured->context;
         $baseline = $measured->baseline;
 

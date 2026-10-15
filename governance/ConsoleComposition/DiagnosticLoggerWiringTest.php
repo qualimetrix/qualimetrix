@@ -47,9 +47,10 @@ use Symfony\Component\DependencyInjection\Reference;
  *
  * **Why definitions and not instances.** {@see ErrorStreamContainerIdentityTest}
  * can walk the composed object graph because a holder keeps its stream in a
- * property. `CacheKeyGenerator` does not keep its logger: it warns in the
- * constructor and drops it. No object walk can see that argument, so the
- * measurement is taken where the argument is written.
+ * property. A logger passed to a constructor need not be retained in a
+ * property, so the measurement is taken where the argument is written.
+ * Cache diagnostics now belong to `CacheFactory`, whose logger is configured
+ * by `RuntimeConfigurator` after construction rather than by this census.
  *
  * **What a green run here does not prove.** Reaching the user is a longer
  * chain than being handed the owner — {@see \Qualimetrix\Tests\Infrastructure\Git\Integration\GitDiagnosticWiringTest}
@@ -81,7 +82,6 @@ final class DiagnosticLoggerWiringTest extends TestCase
         'Qualimetrix\\Analysis\\Run\\Collection\\CollectionOrchestrator',
         'Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline',
         'Qualimetrix\\Infrastructure\\Ast\\PhpFileParser',
-        'Qualimetrix\\Infrastructure\\Cache\\CacheKeyGenerator',
         'Qualimetrix\\Infrastructure\\Composer\\ComposerAutoloadMap',
         'Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand',
         'Qualimetrix\\Infrastructure\\Git\\GitScopeResolver',
@@ -128,9 +128,9 @@ final class DiagnosticLoggerWiringTest extends TestCase
     /**
      * The half the container cannot see: production code building a holder itself.
      *
-     * A worker builds its own parser and key generator because it has no
-     * container, and both signatures default to silence. Silence may well be
-     * the right answer there — it is written out so that it is an answer.
+     * A worker builds its own parser because it has no container, and that
+     * signature defaults to silence. Silence may well be the right answer
+     * there — it is written out so that it is an answer.
      */
     #[Test]
     public function itLeavesNoProductionConstructionSiteOnTheSignatureDefault(): void

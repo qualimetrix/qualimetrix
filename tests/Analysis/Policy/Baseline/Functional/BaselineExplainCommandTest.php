@@ -35,6 +35,7 @@ use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -122,6 +123,7 @@ final class BaselineExplainCommandTest extends TestCase
         self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringContainsString('1 named path(s) left out by exclude patterns', $tester->getErrorOutput());
         self::assertStringNotContainsString('Subject:', $tester->getDisplay());
+        self::assertStringContainsString(ProductIdentity::pointerText(), $tester->getDisplay());
     }
 
     /**

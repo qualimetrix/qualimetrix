@@ -52,10 +52,11 @@
 # PHP memory limit (default: php.ini value)
 # memory_limit: 1G
 
-# Cache settings (both default to true/.qmx-cache)
+# Cache defaults to enabled in the user cache directory under qmx.
+# When caching or clearing uses it, an explicit directory must resolve outside the project to a supported POSIX path.
 # cache:
 #   enabled: true
-#   dir: .qmx-cache
+#   dir: /home/user/.cache/qmx
 
 # Parallel processing
 # parallel:

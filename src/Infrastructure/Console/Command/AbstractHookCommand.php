@@ -42,19 +42,26 @@ abstract class AbstractHookCommand extends Command
         $this->setHelp(\sprintf('Docs: %s', ProductIdentity::llmsTxtUrl()));
     }
 
-    /**
-     * Shared by the three hook commands: whatever `doExecute()` reports, the
-     * pointer follows it. None of the three has a machine-readable format to
-     * protect, unlike the baseline family this mirrors.
-     */
     final protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->files->begin();
         $exitCode = $this->doExecute($input, $output);
 
-        $output->writeln(\sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));
+        if (!$this->publishesAnswer()) {
+            $this->appendDocsPointer($output);
+        }
 
         return $exitCode;
+    }
+
+    protected function publishesAnswer(): bool
+    {
+        return false;
+    }
+
+    final protected function appendDocsPointer(OutputInterface $output): void
+    {
+        $output->writeln(\sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));
     }
 
     abstract protected function doExecute(InputInterface $input, OutputInterface $output): int;

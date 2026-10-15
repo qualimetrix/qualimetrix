@@ -101,10 +101,6 @@ final class BaselineUpdateCommand extends BaselineCommand
             ? new LoadedBaselineRun($this->baselineRun->measure($input, $output), $this->loader->load($invocation->document))
             : $this->measureAgainstBaseline($this->baselineRun, $this->loader, $input, $output, $invocation->document);
 
-        if ($measured === null) {
-            return self::FAILURE;
-        }
-
         $context = $measured->context;
 
         $result = $invocation->update($this->updater, $measured, $this->ruleCoverage);

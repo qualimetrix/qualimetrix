@@ -34,7 +34,9 @@
         "ext-xmlwriter": "*",
         "composer-runtime-api": "^2.0",
         "amphp/amp": "^3.0",
+        "amphp/byte-stream": "^2.1.2",
         "amphp/parallel": "^2.0",
+        "amphp/socket": "^2.4.0",
         "amphp/sync": "^2.0",
         "nikic/php-parser": "^5.0",
         "psr/log": "^3.0",
@@ -56,10 +58,8 @@
         "phpunit/phpunit": "^12.0"
     },
     "suggest": {
-        "ext-igbinary": "For faster serialization in parallel processing",
-        "ext-pcntl": "Required for parallel processing on Unix (alternative to ext-parallel)",
-        "ext-parallel": "For true parallel processing with threads (alternative to ext-pcntl)",
-        "ext-posix": "For effective process ownership checks without a temporary-file probe"
+        "ext-pcntl": "Enables optional interruption cleanup for staged output targets",
+        "ext-posix": "Required for process workers on Unix; also supports effective process ownership checks"
     },
     "autoload": {
         "psr-4": {

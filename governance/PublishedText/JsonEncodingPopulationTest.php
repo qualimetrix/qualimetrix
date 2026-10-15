@@ -42,6 +42,7 @@ final class JsonEncodingPopulationTest extends TestCase
         \Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry::class => 'Input was already accepted by json_decode.',
         \Qualimetrix\Infrastructure\Console\Command\ChannelRenameReporter::class => 'Renamed channels come from parsed baseline documents.',
         \Qualimetrix\Infrastructure\Logging\LoggerHelperTrait::class => 'Invalid strings are escaped after the native UTF-8 refusal.',
+        \Qualimetrix\Infrastructure\Parallel\WorkerFatalNotes::class => 'Worker diagnostics and fatal notes carry untrusted PHP messages and source paths; JSON_INVALID_UTF8_SUBSTITUTE repairs those bytes before the nonce-framed base64 transport.',
         \Qualimetrix\Infrastructure\Profiler\Export\ChromeTracingExporter::class => 'Span names are product vocabulary.',
         \Qualimetrix\Infrastructure\Profiler\Export\JsonExporter::class => 'Span names are product vocabulary.',
         \Qualimetrix\Reporting\DrillDown\OutOfScopeFindings::class => 'Occurrence-preserving multiset keys contain canonical published identities.',

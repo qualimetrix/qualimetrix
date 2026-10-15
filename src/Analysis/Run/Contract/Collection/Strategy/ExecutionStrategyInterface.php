@@ -11,9 +11,8 @@ use SplFileInfo;
  * Strategy for executing file processing.
  *
  * Abstracts the execution model (sequential vs parallel) from the orchestrator.
- * Different implementations may use different parallelization mechanisms:
- * - SequentialStrategy: processes files one by one
- * - PcntlForkStrategy: uses pcntl_fork for parallel processing (Unix only)
+ * Sequential collection runs in-process; parallel collection uses separate
+ * processes. Actual worker startup is judged during execution, not selection.
  */
 interface ExecutionStrategyInterface
 {
@@ -29,7 +28,7 @@ interface ExecutionStrategyInterface
     public function execute(array $files, callable $processor, bool $canParallelize = true): array;
 
     /**
-     * Returns whether parallel execution is available on this system.
+     * Returns whether this strategy supports attempting parallel execution.
      */
     public function isParallelAvailable(): bool;
 }

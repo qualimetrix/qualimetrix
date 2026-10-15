@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\Console\RunTarget;
 
 use Qualimetrix\Core\FileTarget\FileTargetFailure;
 use Qualimetrix\Core\FileTarget\ResolvedTarget;
+use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
 use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
 use Throwable;
 
@@ -18,9 +19,9 @@ final class RunTargets
     private bool $reportOnStandardOutput = false;
     private readonly RunTargetClaimLifecycle $claims;
 
-    public function __construct(LoggerFactoryInterface $loggerFactory)
+    public function __construct(LoggerFactoryInterface $loggerFactory, OutOfMemoryHint $memoryHint)
     {
-        $this->claims = new RunTargetClaimLifecycle($loggerFactory);
+        $this->claims = new RunTargetClaimLifecycle($loggerFactory, $memoryHint);
     }
 
     public static function judgement(string $subject, string $spelling): ResolvedTarget

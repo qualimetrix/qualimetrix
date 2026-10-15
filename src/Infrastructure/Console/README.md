@@ -15,6 +15,9 @@ CLI application based on Symfony Console with support for:
 ```
 Console/
 ├── Application.php
+├── ConsoleDiagnostics.php       # immutable process/container diagnostic identity
+├── ProductCommandLoader.php     # product name map and lazy container boundary
+├── ContainerBuildFailure.php    # internal composition failure, never an input refusal
 ├── CliSelectorDecoder.php       # explicit kind:value scalar → Core path/namespace pattern
 ├── CliOptionsParser.php
 ├── AuthoredRuleOptionWrites.php    # preserves authored occurrences across input adapters
@@ -56,6 +59,7 @@ Console/
 ├── ChannelExclusionKeyValidator.php  # Whether one suppress_namespace_channels key can exclude anything
 ├── ChannelExclusionKeyHints.php      # What to say when it cannot
 ├── ResultPresenter.php
+├── RenderedCheckReport.php          # rendered check answer awaiting profile and report publication
 ├── ReportCoverageProjection.php     # The run's coverage as a report publishes it, failures relative to the project
 ├── RunTarget/
 │   ├── RunTargets.php               # shared preparation, publication and teardown for report/profile/log
@@ -69,7 +73,7 @@ Console/
 ├── FormatOptionPairs.php            # The --format-opt door: every written pair judged, a repeated key and two spellings of one value refused
 ├── CheckCommandDefinition.php
 ├── FilteredInputDefinition.php      # InputDefinition that hides rule-specific options from --help
-├── OutputHelper.php                 # Line-by-line output with flush (avoids PTY truncation)
+├── OutputHelper.php                 # answer publication at quiet verbosity with checked stream writes
 ├── RunningBinaryLocator.php         # Where the qmx binary running this process lives on disk
 ├── RunningBinaryLocatorInterface.php
 ├── Hook/
@@ -236,14 +240,14 @@ state that the policy is disabled instead of claiming an active diagnostic.
 
 **Exit codes:**
 
-| Code | Description                                             |
-| ---- | ------------------------------------------------------- |
-| 0    | No findings                                             |
-| 1    | Warnings present (but no errors)                        |
-| 2    | Errors present                                          |
-| 3    | Configuration, input or environment refusal             |
-| 4    | Analysis incomplete; policy result is not authoritative |
-| 5    | Internal error                                          |
+| Code | Description                                 |
+| ---- | ------------------------------------------- |
+| 0    | No findings                                 |
+| 1    | Warnings present (but no errors)            |
+| 2    | Errors present                              |
+| 3    | Configuration, input or environment refusal |
+| 4    | Analysis incomplete or coordinator OOM      |
+| 5    | Internal error                              |
 
 Missing inferred autoload targets are attributed to `composer.json`, with the
 offending target and a single error prefix. Explicit paths retain their own source. Automatic
@@ -272,10 +276,14 @@ access mode is left to the actual write and its typed environment refusal.
 
 Check and Graph report every judged directory exposure on stderr before claiming
 targets or entering analysis, naming the option, target, directory and actor.
-`OutputHelper` checks complete writes and flush for the actual borrowed
-`StreamOutput` resource and preserves raw bytes and the NORMAL verbosity
-threshold, including SILENT and QUIET. Other `OutputInterface` implementations
-retain their own write contract.
+`OutputHelper` publishes command answers at QUIET verbosity. `-q`, `--silent`
+and `SHELL_VERBOSITY=-1|-2` keep answers while muting progress and status.
+For a borrowed `StreamOutput` resource it checks complete writes and flush,
+preserving raw bytes; other `OutputInterface` implementations retain their own
+write contract. Multiline answers are assembled in a `BufferedOutput` with the
+caller's formatter and decoration before publication.
+The styled Docs pointer for `directives`, `hook:status`, and `baseline:explain`
+is included in that same answer publication, not written to the stream later.
 
 Preparation happens after configuration, scope, selector and baseline input
 checks, before cache clearing or analysis. Named regular report, profile and graph
@@ -305,8 +313,14 @@ Revolt's public callback inspection does not expose the signal number, so even a
 pending callback for another signal prevents guard installation. Replacing
 handlers during a guarded operation is unsupported. Without a safely attached
 guard, interruption may leave the private sibling; cleanup is also not guaranteed
-for SIGKILL, cleanup failure or an already published target. Each target has its own atomic
-publication; later profile failure does not roll back a published report.
+for SIGKILL, cleanup failure or an already published target. Each target has
+its own atomic publication. Check renders a report in memory, publishes its
+profile, and then publishes the report. A failed profile export therefore
+produces a run refusal in place of an unpublished report. Coordinator OOM
+before profile publication releases claimed unwritten targets without exporting
+a profile. If OOM occurs after a profile is atomically published but before
+the report is complete, that published profile remains; an existing profile
+is never removed to mimic a rollback.
 The shared logger buffers early records, attaches its claimed target, latches
 append failures and reports lost records at settle before report publication.
 `RunTargetSession` runs Check and Graph actions, attempts target cleanup, then
@@ -359,8 +373,11 @@ sources in the refusal envelope's `source` form.
 The adapter and runtime resolvers read `fail_on`, `memory_limit` and `format`
 from resolved leaves. When PHP rejects a requested memory limit, the runtime
 wrapper preserves the refusal's sources, position, summary and previous cause
-through `ConfigurationRefusal::acrossLayers()`; there is no origin getter to
-reconstruct.
+through `ConfigurationRefusal::acrossLayers()`. `RuntimeLimits` refuses a
+byte count above `PHP_INT_MAX` before changing ini, without a float conversion.
+The controller sends the successfully applied leaf's `ConfigurationOrigin` to
+the shared `OutOfMemoryHint`; resetting the run restores the startup limit and
+clears that authored source, so an unconfigured run reports `php.ini`.
 
 ### BaselineCleanupCommand
 
@@ -453,11 +470,11 @@ not against the working directory `--working-dir` has since changed.
 
 ### Caching
 
-| Option          | Default      | Description                 |
-| --------------- | ------------ | --------------------------- |
-| `--no-cache`    | false        | Disable caching             |
-| `--cache-dir`   | `.qmx-cache` | Cache directory             |
-| `--clear-cache` | false        | Clear cache before analysis |
+| Option          | Default          | Description                                             |
+| --------------- | ---------------- | ------------------------------------------------------- |
+| `--no-cache`    | false            | Disable caching                                         |
+| `--cache-dir`   | user cache `qmx` | Directory resolving outside the project to a POSIX path |
+| `--clear-cache` | false            | Clear cache before analysis                             |
 
 ### Git Integration
 
@@ -582,6 +599,11 @@ frame at the bottom of the screen: a log line, a preflight warning, a report
 note or an uncaught throwable erases the frame, is written permanently, and the
 frame is redrawn beneath it. Progress and detailed logging are therefore both
 shown at `-v`, `-vv` and `-vvv`; neither erases the other.
+`ErrorStream` implements Parallel's `WorkerDiagnosticsInterface` for the
+strategy and its worker-note reader. The container passes the same run-bound
+instance, so child diagnostics cannot enter report stdout or bypass the
+progress frame. The command's memory refusal remains with `OutOfMemoryHint`;
+worker fatal-note state belongs to Parallel.
 
 **Features:**
 - Shown only for projects > 10 files
@@ -685,11 +707,23 @@ to classify configuration refusals, environment refusals and raw Core environmen
 failures. Refusals exit with code 3; unrelated exceptions remain internal errors
 with code 5. Configuration source metadata, including import chains, survives
 the shared `RefusalInterface`. A failure after report publication is written to
-stderr so stdout retains one report document. If the Duplication detector
-exhausts PHP memory, its shutdown hint writes a short diagnostic to stderr with
-the failure site, current `memory_limit`, and `--memory-limit`/`qmx.yaml`
-remediation, then uses environment exit 4. Fatal OOM can interrupt a streamed
-report, so the adapter does not promise valid or complete JSON in that case.
+stderr so stdout retains one report document. `Application::forProduct()` shares
+one `ConsoleDiagnostics` with the container and places its lazy construction
+inside the exit ladder. `--version` and a rejected top-level command name never
+build the container. Vendor lists, help and completion retain their resolution
+and can build it. Top-level names require exact spelling and case; suggestions
+never execute another command. The snapshot resolver obtains the same container's
+`ManifestSnapshotControlInterface` at product execution, after working-directory
+selection; a later invocation begins a fresh snapshot.
+
+After the memory hint is registered and bound, coordinator exhaustion uses exit
+4 and the requested JSON envelope or a text diagnostic on stderr. It names the
+failure site, current `memory_limit`, authored limit source (otherwise `php.ini`)
+and remediation. Exhaustion before registration, or a foreign shutdown callback
+that overwrites PHP's last error before this callback runs, can retain PHP's exit
+255. The hint captures its decision before its own target-release callbacks;
+their warnings and exceptions cannot replace the outcome. Fatal OOM can interrupt
+a streamed report, so already published bytes may precede the envelope.
 
 For a stream output, the JSON refusal writer verifies every write and the final
 flush. If stdout cannot accept the envelope, the same terminal diagnostic is

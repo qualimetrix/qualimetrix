@@ -6,25 +6,9 @@ declare(strict_types=1);
 namespace Qualimetrix;
 
 use Qualimetrix\Infrastructure\Console\Application;
-use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
-use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineRenameChannelsCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
-use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
-use Qualimetrix\Infrastructure\Console\Command\DirectivesCommand;
-use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
-use Qualimetrix\Infrastructure\Console\Command\HookInstallCommand;
-use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
-use Qualimetrix\Infrastructure\Console\Command\HookUninstallCommand;
-use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
-use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\Console\ConsoleDiagnostics;
 use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
-use Symfony\Component\Console\CommandLoader\ContainerCommandLoader;
 
 // Before the autoloader, because src/ uses syntax older interpreters cannot
 // parse: without this the first failure is a parse error naming a file the
@@ -34,9 +18,9 @@ use Symfony\Component\Console\CommandLoader\ContainerCommandLoader;
 if (\PHP_VERSION_ID < 80400) {
     fwrite(
         \STDERR,
-        \sprintf("Qualimetrix needs PHP 8.4 or newer; this is PHP %s.\n", \PHP_VERSION),
+        \sprintf("Environment error: Qualimetrix needs PHP 8.4 or newer; this is PHP %s.\n", \PHP_VERSION),
     );
-    exit(1);
+    exit(3);
 }
 
 // Find autoloader
@@ -55,56 +39,12 @@ foreach ($autoloadPaths as $autoloadPath) {
 }
 
 if (!$autoloaderFound) {
-    fwrite(\STDERR, "Error: Could not find autoloader. Run 'composer install'.\n");
-    exit(1);
+    fwrite(\STDERR, "Environment error: Could not find autoloader. Run 'composer install'.\n");
+    exit(3);
 }
 
-OutOfMemoryHint::register();
-
-// Create single container with default configuration
-// Runtime configuration (CLI options, config file) will be applied
-// through ConfigurationProvider and RuleOptionsFactory before analysis
-$containerFactory = new ContainerFactory();
-$container = $containerFactory->create();
-
-// Create application with lazy command loading.
-// Commands are only instantiated when actually executed, avoiding eager
-// resolution of the entire dependency tree for lightweight operations
-// like --help or hook:status.
-// The application shares the container's error-stream owner so an uncaught
-// throwable is rendered through the same sections as the progress frame, and
-// the container's single RefusalPresenter so the ladder in Application::doRun()
-// prints through the same framing every command uses — a second instance here
-// would be a second, silently diverging diagnostic dialect
-// (`01-refusal-exit-ladder.md` §3).
-$application = new Application($container->get(ErrorStream::class), $container->get(RefusalPresenter::class), $container->get(ManifestSnapshotControlInterface::class));
-
-// setCatchErrors(true) turns a PHP Error reaching Symfony's own run() —
-// specifically during its configureIO() call, the one window before
-// Application::doRun()'s own ladder is entered — into a caught throwable
-// instead of a PHP fatal (`01-refusal-exit-ladder.md` §2.4). Measured, not
-// assumed: an Error thrown from inside doRun() itself (command construction,
-// execute()) is already caught by doRun()'s own `catch (Throwable)` clause
-// regardless of this flag, because that clause wraps the call to
-// parent::doRun() the same way any other try/catch would — run()'s
-// setCatchErrors gate is never consulted for it. This call is what stands
-// between a fatal and exit 255 for the one window the ladder does not cover.
-$application->setCatchErrors(true);
-
-$application->setCommandLoader(new ContainerCommandLoader($container, [
-    'check' => CheckCommand::class,
-    'baseline:generate' => BaselineGenerateCommand::class,
-    'baseline:update' => BaselineUpdateCommand::class,
-    'baseline:cleanup' => BaselineCleanupCommand::class,
-    'baseline:explain' => BaselineExplainCommand::class,
-    'baseline:rename-channels' => BaselineRenameChannelsCommand::class,
-    'debug:layer-assignment' => LayerAssignmentCommand::class,
-    'directives' => DirectivesCommand::class,
-    'graph:export' => GraphExportCommand::class,
-    'hook:install' => HookInstallCommand::class,
-    'hook:uninstall' => HookUninstallCommand::class,
-    'hook:status' => HookStatusCommand::class,
-    'rules' => RulesCommand::class,
-]));
-
-exit($application->run());
+$hint = OutOfMemoryHint::register();
+exit(Application::forProduct(
+    static fn(ConsoleDiagnostics $diagnostics) => (new ContainerFactory())->create($diagnostics),
+    $hint,
+)->run());

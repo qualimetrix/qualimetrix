@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
+use Qualimetrix\Core\Environment\EnvironmentFailureInterface;
 use RuntimeException;
 
 /**
@@ -16,4 +17,4 @@ use RuntimeException;
  * that actually occurred, and a write that succeeds cannot have overwritten
  * anyone.
  */
-final class BaselineConflictException extends RuntimeException {}
+final class BaselineConflictException extends RuntimeException implements EnvironmentFailureInterface {}

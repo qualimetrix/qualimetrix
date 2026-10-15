@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionShapeMatcher;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionShapeWording;
 
@@ -283,6 +284,15 @@ final class Stand
             $omitted = $sides[$axis . "\0" . $base . "\0" . 'omitted'] ?? null;
             $equivalent = $sides[$axis . "\0" . $base . "\0" . 'equivalent'] ?? null;
 
+            foreach ($this->declarations->formNames() as $form) {
+                $key = $row->key() . '|' . $form;
+                $unplanned = $sides[$axis . "\0" . $key . "\0" . 'unplanned'] ?? null;
+
+                if ($unplanned !== null) {
+                    $cells[] = new Cell($axis, $key, $form, 'optionsObject', Verdict::NOT_OBSERVABLE, $unplanned->text, $row->status);
+                }
+            }
+
             if ($omitted === null || $equivalent === null) {
                 continue;
             }
@@ -318,6 +328,14 @@ final class Stand
         }
 
         foreach ($this->ledger->pairs as $row) {
+            $unplanned = $sides['B' . "\0" . $row->key() . "\0" . 'unplanned'] ?? null;
+
+            if ($unplanned !== null) {
+                $cells[] = new Cell('B', $row->key(), 'both', 'optionsObject', Verdict::NOT_OBSERVABLE, $unplanned->text, $row->status);
+
+                continue;
+            }
+
             $omitted = $sides['B' . "\0" . $row->key() . "\0" . 'omitted'] ?? null;
             $a = $sides['B' . "\0" . $row->key() . "\0" . 'onlyA'] ?? null;
             $b = $sides['B' . "\0" . $row->key() . "\0" . 'onlyB'] ?? null;
@@ -490,6 +508,22 @@ final class Stand
         return $cells;
     }
 
+    private function unavailableOption(string $rule, string $key): ?string
+    {
+        if ($this->inProcess->nativeProfile() !== 'typed') {
+            return null;
+        }
+
+        $class = $this->inProcess->optionsClasses[$rule] ?? null;
+
+        if ($class === null || RuleOptionSurface::of($class)->locate($key) !== null) {
+            return null;
+        }
+
+        return 'outside the measured population: ' . $rule . '.' . $key
+            . ' has no writable address in the native declaration; the frozen ledger is historical';
+    }
+
     /** @return list<Cell> */
     public function axisA(): array
     {
@@ -509,6 +543,18 @@ final class Stand
             }
 
             [$rule, $option] = $split;
+            $unavailable = $this->unavailableOption($rule, $option);
+
+            if ($unavailable !== null) {
+                foreach ($this->declarations->formNames() as $form) {
+                    $key = $row->key() . '|' . $form;
+                    $cells[] = new Cell('A', $key, $form, 'optionsObject', Verdict::NOT_OBSERVABLE, $unavailable, $row->status);
+                    $this->record('A', $key, 'unplanned', new Observation(Observation::ACCEPTED, $unavailable));
+                }
+
+                continue;
+            }
+
             $omitted = $this->write($row, $rule, $option, null);
             $reference = $this->referenceForm($row, $rule, $option, $omitted);
             // The declared hit replaces the MAGNITUDE of the reference form
@@ -609,6 +655,16 @@ final class Stand
 
             if (!isset($this->inProcess->optionsClasses[$rule])) {
                 $cells[] = new Cell('B', $row->key(), 'both', 'optionsObject', Verdict::MISCOMPOSED, 'no registered producer owns this rule', $row->status, true);
+
+                continue;
+            }
+
+            $unavailable = $this->unavailableOption($rule, rtrim($row->keyA, ':'))
+                ?? $this->unavailableOption($rule, rtrim($row->keyB, ':'));
+
+            if ($unavailable !== null) {
+                $cells[] = new Cell('B', $row->key(), 'both', 'optionsObject', Verdict::NOT_OBSERVABLE, $unavailable, $row->status);
+                $this->record('B', $row->key(), 'unplanned', new Observation(Observation::ACCEPTED, $unavailable));
 
                 continue;
             }
@@ -1278,6 +1334,13 @@ final class Stand
         string $cellKey,
     ): Judgement {
         $promised = \in_array($form, $row->promisedForms, true);
+
+        if ($row->path === 'cache.dir'
+            && $value->outcome === Observation::REFUSED_FRAMED
+            && str_contains($value->text, 'is inside the project root')) {
+            return new Judgement(Verdict::REFUSES, 'the canonical relative cache path is inside the project root');
+        }
+
         $limitRow = $this->limits()->rowFor($row->door, $row->path, $form);
 
         if ($limitRow !== null) {

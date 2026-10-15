@@ -14,10 +14,7 @@ namespace Qualimetrix\Core;
  * rather than merged into it: a version number and a documentation address are
  * two facts from two sources, not one fact with two fields.
  *
- * @qmx-threshold coupling.cbo 26 -- Documentation identity has 24 incoming readers and one outgoing Version dependency.
- *                Separate JSON and text assignment presenters consume that same identity;
- *                splitting its address by output would duplicate a product fact. Raw CBO 25
- *                retains one-edge headroom at the inclusive threshold of 26.
+ * @qmx-threshold coupling.cbo 27 -- Published product identity has one outgoing version dependency; splitting its incoming readers would duplicate the product facts across delivery channels.
  */
 final class ProductIdentity
 {

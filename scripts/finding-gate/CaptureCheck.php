@@ -87,7 +87,7 @@ final class CaptureCheck implements SurfaceStage, RunCheck
                 }
                 $exitKey = Surfaces::key($descriptor['scope'], 'exit:' . ($descriptor['surface'] === 'baseline-file' ? 'baseline:generate' : $descriptor['surface']));
                 $rawExit = $artifacts[$exitKey] ?? '';
-                $allowed = $key === 'tree|graph:export' ? ['1'] : match ($descriptor['commandClass']) {
+                $allowed = $key === 'tree|graph:export' ? ['0', '1'] : match ($descriptor['commandClass']) {
                     'check' => ['0', '1', '2'],
                     'directives' => ['0', '2'],
                     default => ['0'],
@@ -95,9 +95,10 @@ final class CaptureCheck implements SurfaceStage, RunCheck
                 $populationExit = !$whole && $side === 'candidate' && !\in_array($rawExit, $allowed, true)
                     ? (ValueCheck::create($this->run)->referenceExitFor($descriptor['commandClass'], $key, $rawExit) ?? $rawExit)
                     : $rawExit;
-                if ($key === 'tree|graph:export' && $populationExit !== '1') {
+                if ($key === 'tree|graph:export' && $populationExit !== '1'
+                    && !($populationExit === '0' && ($artifacts[$key] ?? '') !== '')) {
                     $valid = false;
-                    $this->publicationFailure($side . ' / ' . $key, 'The neutral empty-directory graph must end in its explicit exit-1 outcome.');
+                    $this->publicationFailure($side . ' / ' . $key, 'The neutral empty-directory graph must publish output on success or retain its historical exit-1 outcome.');
                 }
                 if ($population && $analyzing && !\in_array($populationExit, $allowed, true)) {
                     $valid = false;

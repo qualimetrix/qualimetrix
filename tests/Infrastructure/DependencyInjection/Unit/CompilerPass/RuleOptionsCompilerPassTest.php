@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis;
 use Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellOptions;
 use Qualimetrix\Analysis\Evidence\CodeSmell\CountInLoopRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\DebugCodeRule;
@@ -17,6 +19,7 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\GotoRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\SuperglobalsRule;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceResolverInterface;
 use Qualimetrix\Analysis\Evidence\Security\CommandInjectionRule;
 use Qualimetrix\Analysis\Evidence\Security\SecurityPatternOptions;
 use Qualimetrix\Analysis\Evidence\Security\SqlInjectionRule;
@@ -25,8 +28,12 @@ use Qualimetrix\Analysis\Evidence\Size\ClassCountRule;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Subprocess\ChildProcess;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
+
+require_once \dirname(__DIR__, 5) . '/scripts/subprocess/ChildProcess.php';
 
 #[CoversClass(RuleOptionsCompilerPass::class)]
 final class RuleOptionsCompilerPassTest extends TestCase
@@ -81,7 +88,7 @@ final class RuleOptionsCompilerPassTest extends TestCase
     }
 
     #[Test]
-    public function itSkipsTaggedServicesWithoutAClass(): void
+    public function itRefusesTaggedServicesWithoutAClass(): void
     {
         $container = new ContainerBuilder();
         $container->register(RuleOptionsRegistry::class)->setSynthetic(true);
@@ -89,17 +96,59 @@ final class RuleOptionsCompilerPassTest extends TestCase
             ->addTag(RuleCompilerPass::TAG);
 
         $pass = new RuleOptionsCompilerPass();
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('Tagged rule service "rule.null_class" has no class.');
         $pass->process($container);
+    }
 
-        // The pass skips it rather than throwing: the definition it could not
-        // read a class from comes back with no options argument, and the pass
-        // registered nothing beside the two definitions the container started
-        // with.
-        self::assertSame([], $container->getDefinition('rule.null_class')->getArguments());
-        self::assertSame(
-            ['service_container', RuleOptionsRegistry::class, 'rule.null_class'],
-            array_keys($container->getDefinitions()),
-        );
+    #[Test]
+    public function itRefusesATagOnACollaboratorThatIsNotARule(): void
+    {
+        $container = new ContainerBuilder();
+        $container->register(RuleOptionsRegistry::class)->setSynthetic(true);
+        $container->register(CircularDependencyAnalysis::class, CircularDependencyAnalysis::class)->addTag(RuleCompilerPass::TAG);
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage(CircularDependencyAnalysis::class . ': it does not implement');
+        (new RuleOptionsCompilerPass())->process($container);
+    }
+
+    #[Test]
+    public function itRefusesAnUnavailableClassTypedConstructorDependencyDuringTheBuild(): void
+    {
+        $container = (new ContainerFactory())->configure();
+        $container->removeAlias(ProjectNamespaceResolverInterface::class);
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('DistanceRule::$namespaceResolver: service "' . ProjectNamespaceResolverInterface::class . '" is not registered.');
+        $container->compile();
+    }
+
+    #[Test]
+    public function itRefusesMalformedOptionsMetadataInsteadOfSkippingTheRule(): void
+    {
+        // The fixture deliberately breaks the class-string PHPDoc contract;
+        // a subprocess keeps that invalid declaration outside static fixtures.
+        $script = <<<'PHP'
+require $argv[1];
+final class WrongOptionsRule extends \Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule {
+    public const string NAME = 'fixture.wrong-options';
+    public static function getOptionsClass(): string { return stdClass::class; }
+    public function analyze(\Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext $context): array { return []; }
+}
+$c = new \Symfony\Component\DependencyInjection\ContainerBuilder();
+$c->register(\Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry::class)->setSynthetic(true);
+$c->register(WrongOptionsRule::class, WrongOptionsRule::class)->addTag('qmx.rule');
+try {
+    (new \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass())->process($c);
+    exit(1);
+} catch (LogicException $failure) {
+    echo $failure->getMessage();
+    exit(0);
+}
+PHP;
+        $result = ChildProcess::run([\PHP_BINARY, '-d', 'xdebug.mode=off', '-r', $script, \dirname(__DIR__, 5) . '/vendor/autoload.php']);
+        self::assertSame(0, $result['exitCode'], $result['stderr']);
+        self::assertStringContainsString('WrongOptionsRule::getOptionsClass() did not name', $result['stdout']);
+        self::assertSame('', $result['stderr']);
     }
 
     #[Test]

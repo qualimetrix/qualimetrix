@@ -15,6 +15,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Infrastructure\Cache\CacheConfigurationStore;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
+use Qualimetrix\Infrastructure\Cache\Contract\CacheOpener;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfiguration;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
 use Qualimetrix\Infrastructure\Parallel\Runtime\ParallelConfigurationStore;
@@ -86,19 +87,29 @@ final class StrategySelectorTest extends TestCase
         self::assertNull((new ReflectionProperty(AmphpParallelStrategy::class, 'cacheDir'))->getValue($parallel));
     }
 
+    #[Test]
+    public function itOpensTheCacheBeforeReturningTheSequentialStrategy(): void
+    {
+        $opener = $this->createMock(CacheOpener::class);
+        $opener->expects(self::once())->method('open')->willReturn(null);
+        [$selector, , $sequential] = $this->selector(0, opener: $opener);
+        self::assertSame($sequential, $selector->select(AbsolutePath::fromString(__DIR__)));
+    }
+
     /**
      * @return array{StrategySelector, AmphpParallelStrategy, SequentialStrategy}
      */
     private function selector(
         ?int $workers,
         ?CacheConfiguration $cache = null,
+        ?CacheOpener $opener = null,
     ): array {
         $profiler = self::createStub(ProfilerInterface::class);
         $parallel = new AmphpParallelStrategy(new FileProcessingTaskFactory(
             new LcomCollectionConfigurationStore(),
             new RuleOptionDocumentForms(),
             DependencyVisitor::class,
-        ));
+        ), new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()), new \Qualimetrix\Infrastructure\Profiler\ProfileSession(), new \Qualimetrix\Infrastructure\Console\ErrorStream());
         $sequential = new SequentialStrategy($profiler);
 
         $parallelStore = new ParallelConfigurationStore();
@@ -108,12 +119,18 @@ final class StrategySelectorTest extends TestCase
             AbsolutePath::fromString(__DIR__ . '/.qmx-cache'),
         ));
 
+        if ($opener === null) {
+            $opener = self::createStub(CacheOpener::class);
+            $configuration = $cacheStore->current();
+            $opener->method('open')->willReturn($configuration->enabled ? $configuration->directory : null);
+        }
+
         return [
             new StrategySelector(
                 $parallel,
                 $sequential,
                 $parallelStore,
-                $cacheStore,
+                $opener,
                 new WorkerCountDetector(),
                 new NullLogger(),
             ),

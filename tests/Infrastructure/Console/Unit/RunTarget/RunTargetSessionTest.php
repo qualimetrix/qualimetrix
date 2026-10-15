@@ -43,6 +43,7 @@ final class RunTargetSessionTest extends TestCase
 require $argv[1];
 $targets = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets(
     new \Qualimetrix\Infrastructure\Logging\LoggerFactory(),
+    \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register(),
 );
 $session = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession(
     $targets,
@@ -110,8 +111,8 @@ PHP;
     #[DataProvider('workerSignals')]
     public function itDoesNotPublishAfterARealAmpWorkerWasInterrupted(int $signal): void
     {
-        if (!\function_exists('pcntl_fork')) {
-            self::markTestSkipped('Fork workers are unavailable on this host.');
+        if (!\function_exists('proc_open') || !\extension_loaded('posix')) {
+            self::markTestSkipped('Process workers are unavailable on this host.');
         }
         $directory = sys_get_temp_dir() . '/qmx-session-worker-' . bin2hex(random_bytes(6));
         mkdir($directory);
@@ -130,11 +131,11 @@ $factory = new \Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory(
     \Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor::class,
     [\Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\SignalWorkerCollector::class],
 );
-$strategy = new \Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy($factory);
+$strategy = new \Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy($factory, new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()), new \Qualimetrix\Infrastructure\Profiler\ProfileSession(), new \Qualimetrix\Infrastructure\Console\ErrorStream());
 $strategy->setMinFilesForParallel(1);
 $strategy->setWorkerCount(2);
 $strategy->setProjectRoot(\Qualimetrix\Core\Path\AbsolutePath::fromString($argv[3]));
-$targets = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets(new \Qualimetrix\Infrastructure\Logging\LoggerFactory());
+$targets = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets(new \Qualimetrix\Infrastructure\Logging\LoggerFactory(), \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register());
 $session = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession(
     $targets,
     new \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter(new \Qualimetrix\Infrastructure\Console\ErrorStream()),
@@ -212,7 +213,7 @@ PHP;
         $factory->expects(self::once())
             ->method('reset')
             ->willThrowException(new InvalidArgumentException('logger reset failed'));
-        $session = new RunTargetSession(new RunTargets($factory), new RefusalPresenter(new ErrorStream()));
+        $session = new RunTargetSession(new RunTargets($factory, \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register()), new RefusalPresenter(new ErrorStream()));
         $output = new BufferedOutput();
 
         $exit = $session->run($output, 'json', static fn(): int => 0);

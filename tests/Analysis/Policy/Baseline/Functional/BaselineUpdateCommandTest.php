@@ -152,8 +152,8 @@ final class BaselineUpdateCommandTest extends TestCase
         $before = (string) file_get_contents($this->baselinePath);
         $tester = $this->execute([self::finding(self::LOWER_CHANNEL, 70.0)], [], ['src']);
 
-        self::assertSame(Command::FAILURE, $tester->getStatusCode());
-        self::assertStringContainsString('does not cover tests', $tester->getDisplay());
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertStringContainsString('does not cover tests', $tester->getErrorOutput());
         self::assertSame($before, file_get_contents($this->baselinePath));
     }
 
@@ -248,8 +248,9 @@ final class BaselineUpdateCommandTest extends TestCase
             StubRuleCoverage::everyRuleRan(),
         );
 
+        $command->setRefusalPresenter(new \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter(new \Qualimetrix\Infrastructure\Console\ErrorStream()));
         $tester = new CommandTester($command);
-        $tester->execute(['baseline' => $this->baselinePath, 'paths' => $runScope, ...$options]);
+        $tester->execute(['baseline' => $this->baselinePath, 'paths' => $runScope, ...$options], ['capture_stderr_separately' => true]);
 
         return $tester;
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use LogicException;
+use Qualimetrix\Infrastructure\Parallel\Contract\WorkerDiagnosticsInterface;
 use Qualimetrix\Reporting\Formatter\Prose\GlyphMode;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\ConsoleSectionOutput;
@@ -38,7 +39,7 @@ use Symfony\Component\Console\Output\StreamOutput;
  * the two channels are separated at all. The one message exempt from that is
  * the uncaught throwable that ends the run: see {@see self::boundWriter()}.
  */
-final class ErrorStream
+final class ErrorStream implements WorkerDiagnosticsInterface
 {
     /**
      * Shared by every section this class hands out; the reference is what makes
@@ -120,6 +121,11 @@ final class ErrorStream
     public function write(OutputInterface $output, string $message): void
     {
         $this->writer($output)->writeln($message);
+    }
+
+    public function diagnostic(string $message): void
+    {
+        $this->boundWriter(new NullOutput())->writeln($message, OutputInterface::OUTPUT_RAW | OutputInterface::VERBOSITY_QUIET);
     }
 
     /**

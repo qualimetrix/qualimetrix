@@ -31,6 +31,37 @@ final class ResolvedDocumentObservationTest extends TestCase
     }
 
     #[Test]
+    public function itSeparatesCacheLocationRefusalFromThePromisedStringForm(): void
+    {
+        $root = \dirname(__DIR__, 3);
+        $scratch = sys_get_temp_dir() . '/qmx-cache-location-' . bin2hex(random_bytes(6));
+
+        try {
+            $stand = new Stand($root, Ledger::load($root), Declarations::load($root), new InProcess($scratch), new ProcessProbe($root, $scratch));
+            $key = 'form|yaml|cache.dir';
+            $cells = $stand->before([
+                ['D', $key, 'omitted', Observation::ACCEPTED, 'default cache'],
+                ['D', $key, 'equivalent', Observation::REFUSED_FRAMED, 'exit=3 Configuration error: Cache directory is inside the project root'],
+                ['D', $key . '|string-nonnumber', 'value', Observation::REFUSED_FRAMED, 'exit=3 Configuration error: Cache directory is inside the project root'],
+                ['D', $key . '|string-number', 'value', Observation::REFUSED_FRAMED, 'exit=3 Configuration error: another reason'],
+            ]);
+            $byKey = [];
+
+            foreach ($cells as $cell) {
+                $byKey[$cell->key] = $cell;
+            }
+
+            self::assertSame(Verdict::REFUSES, $byKey[$key . '|string-nonnumber']->verdict);
+            self::assertFalse($byKey[$key . '|string-nonnumber']->defect);
+            self::assertSame('the canonical relative cache path is inside the project root', $byKey[$key . '|string-nonnumber']->decidedBy);
+            self::assertSame(Verdict::REFUSES, $byKey[$key . '|string-number']->verdict);
+            self::assertTrue($byKey[$key . '|string-number']->defect);
+        } finally {
+            (new Filesystem())->remove($scratch);
+        }
+    }
+
+    #[Test]
     public function itObservesResolvedValuesAndAllRuleRoots(): void
     {
         $scratch = sys_get_temp_dir() . '/qmx-resolved-observation-' . bin2hex(random_bytes(6));

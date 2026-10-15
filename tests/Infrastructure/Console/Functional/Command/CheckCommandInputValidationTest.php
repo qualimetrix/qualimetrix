@@ -87,7 +87,7 @@ final class CheckCommandInputValidationTest extends TestCase
             self::assertInstanceOf(\Symfony\Component\Console\Command\Command::class, $command);
             $presenter = $container->get(RefusalPresenter::class);
             self::assertInstanceOf(RefusalPresenter::class, $presenter);
-            (new Application(new ErrorStream(), $presenter, new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()))->addCommand($command);
+            (new Application(new ErrorStream(), $presenter, static fn() => new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()))->addCommand($command);
             $tester = new CommandTester($command);
             $input = $commandClass === \Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand::class
                 ? ['baseline' => $root . '/baseline.json']
@@ -511,7 +511,7 @@ final class CheckCommandInputValidationTest extends TestCase
         $container = self::container();
         /** @var RefusalPresenter $refusalPresenter */
         $refusalPresenter = $container->get(RefusalPresenter::class);
-        $app = new Application(new ErrorStream(), $refusalPresenter, new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
+        $app = new Application(new ErrorStream(), $refusalPresenter, static fn() => new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $app->setAutoExit(false);
         $app->setCatchExceptions(false);
 
@@ -573,7 +573,7 @@ final class CheckCommandInputValidationTest extends TestCase
         $command = $container->get(CheckCommand::class);
         /** @var RefusalPresenter $refusalPresenter */
         $refusalPresenter = $container->get(RefusalPresenter::class);
-        $application = new Application(new ErrorStream(), $refusalPresenter, new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
+        $application = new Application(new ErrorStream(), $refusalPresenter, static fn() => new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $application->addCommand($command);
 
         return new CommandTester($command);

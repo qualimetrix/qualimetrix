@@ -87,7 +87,7 @@ Reporting/
     ├── GithubActionsFormatter.php          # GitHub Actions annotation output
     ├── MetricsJsonFormatter.php            # Raw metrics JSON export
     ├── AcceptedLevelNarrator.php            # "accepted at 25, now 31" fragment for a breach or not-compared group
-    ├── CoverageNarrator.php                 # Complete/empty/incomplete human coverage summary
+    ├── CoverageNarrator.php                 # Complete/empty/incomplete human coverage summary and bounded failed paths
     ├── Prose/                              # Prose narration and publication
     │   ├── ComputedMetricAbsenceNarrator.php # Bounded computed-value absence groups
     │   ├── RuleAbstentionNarrator.php        # Compact or verbose unjudged rule populations
@@ -627,6 +627,9 @@ terminal entries. Named exclusions are outside that sum; failures may name
 directories, links or special entries rather than PHP files. A complete
 intentionally empty run and an incomplete run remain distinct; failure has
 priority and its policy/health result is not authoritative.
+Text, summary and health name the first ten failed paths in report order, then count
+the remainder. The published prose path encoding keeps those names readable
+even when a filesystem path contains bytes outside UTF-8.
 
 **`configurationDiagnostics`:** always present, `[]` when the configuration drew no warning. Each entry is `{message, source}`: the warning as `check` also prints it on stderr, and `source` every layer it is about, lowest precedence first, each as the refusal envelope's `source` entries are — `{kind, name, imported_by}`. The entries arrive already published (`Infrastructure\Console\ConfigurationInputAdapter::publishedDiagnostics()`), so `Reporting` does not read the configuration document.
 

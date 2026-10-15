@@ -23,8 +23,8 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\DirectiveObservations;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
-use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
+use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry;
@@ -107,8 +107,8 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
                 subjectCoverage: $prepared->subjectCoverage,
             ),
             directives: new DirectiveObservations(
-                suppressions: $prepared->collection->suppressions,
-                thresholdOverrides: $prepared->collection->thresholdOverrides,
+                suppressions: $prepared->suppressions,
+                thresholdOverrides: $prepared->thresholdOverrides,
             ),
             ruleExecution: $prepared->ruleExecution,
             latePublished: $latePublished,
@@ -231,19 +231,20 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         $collectionResult = $this->collectionOrchestrator->collect($files, $repository, $configuration->projectRoot);
         $profiler->stop('collection');
 
-        $collectionTime = (hrtime(true) - $phaseStartTime) / 1e9;
-        $this->logger->info('Collection completed', [
+        $this->logPhaseCompleted('Collection', $phaseStartTime, [
             'processed' => $collectionResult->filesAnalyzed,
             'errors' => $collectionResult->filesSkipped,
             'dependencies' => \count($collectionResult->dependencies),
-            'duration' => \sprintf('%.2fs', $collectionTime),
         ]);
 
+        $filesAnalyzed = $collectionResult->filesAnalyzed;
+        $analyzedFiles = $collectionResult->analyzedFiles;
+        $collectionFailures = $collectionResult->failures;
+        $suppressions = $collectionResult->suppressions;
+        $thresholdOverrides = $collectionResult->thresholdOverrides;
+        $thresholdDiagnostics = $collectionResult->thresholdDiagnostics;
+
         // Phase 2.5: Build dependency graph from collected dependencies.
-        // The raw dependency list is not released here: the same
-        // CollectionPhaseOutput carries the suppressions and counters the rest
-        // of the run needs, so it stays reachable until the run ends. An
-        // `unset()` of a second name for it used to claim otherwise.
         $this->logger->debug('Building dependency graph', [
             'dependencies' => \count($collectionResult->dependencies),
         ]);
@@ -252,6 +253,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             $collectionResult->dependencies,
             $collectionResult->classLikeDeclarations,
         );
+        unset($collectionResult);
         $graph = $graphBuild->graph;
         $profiler->stop('dependency');
         $this->reportMixedSpellings([...$repository->mixedSpellings(), ...$graphBuild->mixedSpellings]);
@@ -269,7 +271,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         $namespaceTree = $this->measurementAggregation->aggregate($repository, $graph);
 
         // Phase 4: Computed metric evaluation.
-        $computedMetricEvaluation = $this->computedMetricEvaluation->evaluate($repository, $collectionResult->filesAnalyzed);
+        $computedMetricEvaluation = $this->computedMetricEvaluation->evaluate($repository, $filesAnalyzed);
 
         // Phase 5: Circular dependency preparation.
         $this->ruleProducerPreparation->prepareCircularDependencies(
@@ -288,9 +290,9 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         // capability, so the rule that reports on them reads prepared state
         // rather than receiving it through the shared analysis context.
         $this->inlineDirectiveRun->prepare(
-            $collectionResult->suppressions,
-            $collectionResult->thresholdOverrides,
-            $collectionResult->thresholdDiagnostics,
+            $suppressions,
+            $thresholdOverrides,
+            $thresholdDiagnostics,
         );
 
         // Phase 7: Rule execution.
@@ -302,7 +304,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             metrics: $repository,
             dependencyGraph: $graph,
             namespaceTree: $namespaceTree,
-            thresholdOverrides: $collectionResult->thresholdOverrides,
+            thresholdOverrides: $thresholdOverrides,
             projectScope: $measuredScope->judgement(),
         );
         $ruleExecution = $this->ruleExecutor->execute($context);
@@ -315,10 +317,8 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         }
         $profiler->stop('rules');
 
-        $analysisTime = (hrtime(true) - $phaseStartTime) / 1e9;
-        $this->logger->info('Analysis completed', [
+        $this->logPhaseCompleted('Analysis', $phaseStartTime, [
             'violations' => \count($ruleExecution->published),
-            'duration' => \sprintf('%.2fs', $analysisTime),
         ]);
 
         $profiler->stop('analysis');
@@ -326,7 +326,8 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         $coverage = self::buildCoverage(
             $eligiblePaths,
             $generatedExcludedFiles,
-            $collectionResult,
+            $analyzedFiles,
+            $collectionFailures,
             $skippedFailures,
             $discoveredFiles->namedExcluded,
             $inspectionFailures,
@@ -339,7 +340,8 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
 
         return [new PreparedRun(
             namespaceTree: $namespaceTree,
-            collection: $collectionResult,
+            suppressions: $suppressions,
+            thresholdOverrides: $thresholdOverrides,
             context: $context,
             ruleExecution: $ruleExecution,
             coverage: $coverage,
@@ -349,6 +351,15 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             discoveryPopulation: $discoveryPopulation,
             populationPublication: $populationPublication,
         ), $measuredScope];
+    }
+
+    /** @param array<string, int> $counts */
+    private function logPhaseCompleted(string $phase, int $startTime, array $counts): void
+    {
+        $this->logger->info($phase . ' completed', [
+            ...$counts,
+            'duration' => \sprintf('%.2fs', (hrtime(true) - $startTime) / 1e9),
+        ]);
     }
 
     /**
@@ -404,6 +415,8 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
     /**
      * @param list<RelativePath> $eligiblePaths
      * @param list<RelativePath> $generatedExcludedFiles
+     * @param list<RelativePath> $analyzedFiles
+     * @param list<FileProcessingResult> $collectionFailures
      * @param list<AnalysisFailure> $skippedFailures published during discovery
      * @param list<RelativePath> $namedExcluded
      * @param list<AnalysisFailure> $inspectionFailures
@@ -411,7 +424,8 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
     private static function buildCoverage(
         array $eligiblePaths,
         array $generatedExcludedFiles,
-        CollectionPhaseOutput $collectionResult,
+        array $analyzedFiles,
+        array $collectionFailures,
         array $skippedFailures,
         array $namedExcluded,
         array $inspectionFailures,
@@ -428,7 +442,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
                     $failure->error(),
                 );
             },
-            $collectionResult->failures,
+            $collectionFailures,
         );
 
         $collectionFailurePaths = [];
@@ -445,7 +459,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         }
 
         $analyzed = array_values(array_filter(
-            $collectionResult->analyzedFiles,
+            $analyzedFiles,
             static fn(RelativePath $path): bool => !isset($lateFailures[$path->value()]),
         ));
 

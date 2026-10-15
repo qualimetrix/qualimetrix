@@ -1,0 +1,17 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 450
++visible 426
+@@ -6,5 +6,4 @@
+-Failed file: src/linked
+-Technical debt: 10min
+-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
+-
+-invocation-show-suppressed 450
++Technical debt: 10min
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-show-suppressed 426
+@@ -15,1 +14,0 @@
+-Failed file: src/linked

@@ -6,6 +6,7 @@ namespace Qualimetrix\Governance\PackageVersion;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode;
 
 /**
  * `bin/qmx`'s interpreter floor against `composer.json`'s `php` constraint.
@@ -46,6 +47,12 @@ final class EntryPointRefusesTheVersionsComposerRefusesTest extends TestCase
                 self::spell($declared),
                 self::spell($guarded),
             ),
+        );
+        $source = (string) file_get_contents(self::projectRoot() . '/bin/qmx');
+        self::assertSame(2, preg_match_all('/exit\((\d+)\);/', $source, $exits));
+        self::assertSame(
+            [ConsoleExitCode::Refusal->value, ConsoleExitCode::Refusal->value],
+            array_map(intval(...), $exits[1]),
         );
     }
 

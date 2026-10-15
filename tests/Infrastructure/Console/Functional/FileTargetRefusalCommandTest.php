@@ -35,7 +35,7 @@ final class FileTargetRefusalCommandTest extends TestCase
     {
         $failure = self::failure();
         $errorStream = new ErrorStream();
-        $application = new Application($errorStream, new RefusalPresenter($errorStream), new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
+        $application = new Application($errorStream, new RefusalPresenter($errorStream), static fn() => new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $application->setAutoExit(false);
         $application->addCommand(new class ($failure) extends Command {
             public function __construct(private readonly Exception $failure)

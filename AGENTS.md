@@ -244,7 +244,7 @@ the command into the Architecture slice would force the slice to depend on
 ### Infrastructure
 - **Parallel Processing**: Multi-worker file processing via amphp/parallel
 - **Profiler**: Internal span-based profiler for performance diagnostics
-- **Serialization**: Automatic selection of the best serializer (igbinary/PHP serialize)
+- **AST cache codec**: Current-format allowlisted AST records; legacy and igbinary entries are cache misses
 - **Git Integration**: Analysis of changed files only, staged files
 - **Baseline Support**: Ignoring known issues, @qmx-ignore tags
 - **Multiple Formats**: Text, JSON, Metrics, Checkstyle, SARIF, GitLab Code Quality, Health
@@ -391,7 +391,8 @@ and cleans its temporary name on failure. Report streams instead use
 `HeldTarget`; appending log records uses its `append()` operation.
 
 Hook removal and backup restoration retain their subject-owned native operations
-with identity checks. Serializer-marker writes retain their separate implementation.
+with identity checks. AST cache entries use the Cache-owned codec and ordinary
+Core file-target lifecycle; there is no serializer-marker exception.
 This is a boundary for the named current destinations, not a lexical guarantee
 about every future filesystem call. See ADR 0096 for races and platform limits.
 

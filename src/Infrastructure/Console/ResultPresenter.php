@@ -67,18 +67,17 @@ final class ResultPresenter
     }
 
     /**
-     * Outputs formatted results and returns exit code.
+     * Renders the report without publishing its destination.
      *
      * @param list<Finding> $findings
      * @param list<array{message: string, source: list<array<string, mixed>>}> $configurationDiagnostics
      */
-    public function presentResults(
+    public function renderResults(
         array $findings,
         AnalysisResult $analysisResult,
         InputInterface $input,
         OutputInterface $output,
         AbsolutePath $projectRoot,
-        RunTargets $runTargets,
         OutputFormat $outputFormat,
         ExitPolicy $exitPolicy,
         ?GitScope $reportScope = null,
@@ -87,69 +86,68 @@ final class ResultPresenter
         ?NamespacePattern $namespacePattern = null,
         ?ReportProjectScope $projectScope = null,
         array $configurationDiagnostics = [],
-    ): int {
+    ): RenderedCheckReport {
         $profiler = $this->profiler;
         $profiler->start('reporting', 'pipeline');
+        try {
+            $format = $outputFormat->value;
 
-        $format = $outputFormat->value;
+            $formatter = $this->formatterRegistry->get($format);
+            $context = $this->formatterContextFactory->create(
+                $input,
+                $output,
+                $formatter,
+                $projectRoot,
+                $reportScope !== null,
+                $namespacePattern,
+            );
 
-        $formatter = $this->formatterRegistry->get($format);
-        $context = $this->formatterContextFactory->create(
-            $input,
-            $output,
-            $formatter,
-            $projectRoot,
-            $reportScope !== null,
-            $namespacePattern,
-        );
+            $this->assertDrillDownBinds($context, $analysisResult);
 
-        $this->assertDrillDownBinds($context, $analysisResult);
+            // Apply --namespace/--class drill-down filter centrally (all formatters benefit)
+            $fileNamespaces = FileNamespaceIndex::fromRepository($analysisResult->measured->repository);
+            $filteredFindings = $this->findingFilter->filterFindings($findings, $context, $fileNamespaces);
 
-        // Apply --namespace/--class drill-down filter centrally (all formatters benefit)
-        $fileNamespaces = FileNamespaceIndex::fromRepository($analysisResult->measured->repository);
-        $filteredFindings = $this->findingFilter->filterFindings($findings, $context, $fileNamespaces);
+            // Build the report with filtered findings; publication follows profile export.
+            $coverage = ReportCoverageProjection::of($analysisResult->measured->coverage, $projectRoot);
 
-        // Build and output report with filtered findings
-        $coverage = ReportCoverageProjection::of($analysisResult->measured->coverage, $projectRoot);
+            $reportBuilder = ReportBuilder::create()
+                ->fileNamespaces($fileNamespaces)
+                ->addFindings($filteredFindings)
+                ->filesAnalyzed($analysisResult->measured->coverage->analyzedFilesCount())
+                ->filesSkipped($analysisResult->measured->coverage->skippedFilesCount())
+                ->duration($analysisResult->measured->duration)
+                ->metrics($analysisResult->measured->repository)
+                ->namespaceTree($analysisResult->measured->namespaceTree)
+                ->coverage($coverage)
+                ->configurationDiagnostics($configurationDiagnostics);
+            $reportBuilder->computedMetricEvaluation($analysisResult->computedMetricEvaluation);
+            $reportBuilder->population($this->mergedPopulation($analysisResult, $filterResult));
 
-        $reportBuilder = ReportBuilder::create()
-            ->fileNamespaces($fileNamespaces)
-            ->addFindings($filteredFindings)
-            ->filesAnalyzed($analysisResult->measured->coverage->analyzedFilesCount())
-            ->filesSkipped($analysisResult->measured->coverage->skippedFilesCount())
-            ->duration($analysisResult->measured->duration)
-            ->metrics($analysisResult->measured->repository)
-            ->namespaceTree($analysisResult->measured->namespaceTree)
-            ->coverage($coverage)
-            ->configurationDiagnostics($configurationDiagnostics);
-        $reportBuilder->computedMetricEvaluation($analysisResult->computedMetricEvaluation);
-        $reportBuilder->population($this->mergedPopulation($analysisResult, $filterResult));
+            if ($context->namespace !== null || $context->class !== null) {
+                $reportBuilder->outOfScope(OutOfScopeFindings::between($findings, $filteredFindings));
+            }
+            if ($projectScope !== null) {
+                $reportBuilder->projectScope($projectScope);
+            }
 
-        if ($context->namespace !== null || $context->class !== null) {
-            $reportBuilder->outOfScope(OutOfScopeFindings::between($findings, $filteredFindings));
+            $this->attachSuppressionComposition($reportBuilder, $format, $input, $analysisResult, $filterResult, $projectionOptions);
+
+            $report = $reportBuilder->build();
+            $report = $this->summaryEnricher->enrich($report);
+            $formattedOutput = $formatter->format($report, $context);
+            if ($formatter->publicationKind() === PublicationKind::Prose) {
+                $published = ProseText::publish($formattedOutput->body, $this->errorStream->glyphMode());
+                $formattedOutput = new FormattedReport($published->body, $formattedOutput->escapedStrings + $published->escapedStrings);
+            }
+            if ($formattedOutput->escapedStrings > 0) {
+                $this->errorStream->write($output, PublishedUtf8::describe($formattedOutput->escapedStrings));
+            }
+
+            return new RenderedCheckReport($formattedOutput, $format, $this->exitCodeResolver->resolve($findings, $coverage, $exitPolicy));
+        } finally {
+            $profiler->stop('reporting');
         }
-        if ($projectScope !== null) {
-            $reportBuilder->projectScope($projectScope);
-        }
-
-        $this->attachSuppressionComposition($reportBuilder, $format, $input, $analysisResult, $filterResult, $projectionOptions);
-
-        $report = $reportBuilder->build();
-        $report = $this->summaryEnricher->enrich($report);
-        $formattedOutput = $formatter->format($report, $context);
-        if ($formatter->publicationKind() === PublicationKind::Prose) {
-            $published = ProseText::publish($formattedOutput->body, $this->errorStream->glyphMode());
-            $formattedOutput = new FormattedReport($published->body, $formattedOutput->escapedStrings + $published->escapedStrings);
-        }
-        if ($formattedOutput->escapedStrings > 0) {
-            $this->errorStream->write($output, PublishedUtf8::describe($formattedOutput->escapedStrings));
-        }
-
-        $this->writeOutput($formattedOutput, $format, $input, $output, $runTargets);
-
-        $profiler->stop('reporting');
-
-        return $this->exitCodeResolver->resolve($findings, $coverage, $exitPolicy);
     }
 
     private function mergedPopulation(AnalysisResult $analysisResult, ?FindingProjectionResult $filterResult): JudgedPopulation
@@ -244,11 +242,17 @@ final class ResultPresenter
         }
     }
 
-    /**
-     * Outputs profiling results if profiling was enabled.
-     */
-    public function presentProfile(InputInterface $input, OutputInterface $output, RunTargets $runTargets): void
+    /** Publishes an answer after the profile target is complete. */
+    public function publishReport(RenderedCheckReport $report, InputInterface $input, OutputInterface $output, RunTargets $runTargets): void
     {
+        $this->writeOutput($report->formatted, $report->format, $input, $output, $runTargets);
+    }
+
+    /** Records the classified outcome and publishes an enabled profile. */
+    public function presentProfile(InputInterface $input, OutputInterface $output, RunTargets $runTargets, string $outcome): void
+    {
+        $this->profiler->start('run.outcome', 'outcome', ['outcome' => $outcome]);
+        $this->profiler->stop('run.outcome');
         $this->profilePresenter->present($input, $output, $runTargets);
     }
 
@@ -306,17 +310,7 @@ final class ResultPresenter
             );
         }
 
-        if ($format === 'json') {
-            // The application normalizes --silent to quiet so refusals survive;
-            // a successful report still honors the original silent request.
-            if ($input->hasParameterOption('--silent', true)) {
-                return;
-            }
-
-            OutputHelper::writeJsonReport($output, $formattedOutput->body);
-        } else {
-            OutputHelper::write($output, $formattedOutput->body);
-        }
+        OutputHelper::write($output, $formattedOutput->body);
     }
 
     private function isOutputTty(OutputInterface $output): bool

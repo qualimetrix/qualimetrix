@@ -174,6 +174,8 @@ jobs:
 <!-- llms:skip-begin -->
 ## 3. Docker
 
+The image caches ASTs below `/cache`. Mount a persistent volume there, separate for each uid, to retain them across runs. The old checkout `.qmx-cache` is not read; `--clear-cache` affects all projects sharing this user cache. Automatic process-worker selection can warn and fall back to sequential after a failed ten-second first-start probe.
+
 Run analysis in a container without installing PHP locally.
 
 ### Building the Image
@@ -212,7 +214,10 @@ services:
     volumes:
       - .:/app:ro
       - ./baseline.json:/app/baseline.json
+      - qmx-cache:/cache
     command: check src/ --baseline=baseline.json
+volumes:
+  qmx-cache:
 ```
 
 ```bash

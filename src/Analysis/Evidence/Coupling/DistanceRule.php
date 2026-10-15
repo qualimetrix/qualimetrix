@@ -7,7 +7,6 @@ namespace Qualimetrix\Analysis\Evidence\Coupling;
 use Psr\Log\LoggerInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceResolverInterface;
-use Qualimetrix\Analysis\Evidence\Measurement\Namespace_\ProjectNamespaceResolver;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
@@ -73,8 +72,8 @@ final class DistanceRule extends AbstractRule
 
     public function __construct(
         RuleOptionsInterface $options,
-        private readonly ?ProjectNamespaceResolverInterface $namespaceResolver = null,
-        private readonly ?LoggerInterface $logger = null,
+        private readonly ProjectNamespaceResolverInterface $namespaceResolver,
+        private readonly LoggerInterface $logger,
     ) {
         parent::__construct($options);
         $this->includeMatcher = $options instanceof DistanceOptions
@@ -109,7 +108,7 @@ final class DistanceRule extends AbstractRule
 
         // Warn when namespaces exist but none matched project namespace filter
         if ($analyzedNamespaces === 0 && $totalNamespaces > 0) {
-            $this->logger?->warning(
+            $this->logger->warning(
                 'Distance rule: no project namespaces detected among {total} namespaces. '
                 . "Use --rule-opt='coupling.distance:include-namespaces=subtree:App' to specify a namespace selector for vendor code analysis.",
                 ['total' => $totalNamespaces],
@@ -193,8 +192,7 @@ final class DistanceRule extends AbstractRule
      *
      * Logic:
      * 1. If includeNamespaces is set, check against that list
-     * 2. If ProjectNamespaceResolver is provided, use it
-     * 3. Otherwise, include all namespaces
+     * 2. Otherwise, use the composed project namespace resolver
      *
      * Note: suppress_namespaces is handled at framework level by RuleExecution.
      */
@@ -207,13 +205,7 @@ final class DistanceRule extends AbstractRule
             return $this->includeMatcher->matches($namespace) !== null;
         }
 
-        // Use resolver if available
-        if ($this->namespaceResolver !== null) {
-            return $this->namespaceResolver->isProjectNamespace($namespace);
-        }
-
-        // Include all namespaces by default
-        return true;
+        return $this->namespaceResolver->isProjectNamespace($namespace);
     }
 
     /**

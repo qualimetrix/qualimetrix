@@ -53,7 +53,7 @@ final class ErrorStreamOwnershipTest extends TestCase
         $frame = self::frameOn($errorStream, $output);
 
         $factory = new LoggerFactory();
-        $logger = (new RuntimeLoggerConfigurator($factory, new LoggerHolder(), $errorStream, new RunTargets($factory)))
+        $logger = (new RuntimeLoggerConfigurator($factory, new LoggerHolder(), $errorStream, new RunTargets($factory, \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register())))
             ->configure(self::input(), $output);
         $logger->debug('a line from the collection phase');
 
@@ -70,7 +70,7 @@ final class ErrorStreamOwnershipTest extends TestCase
         $report = self::createStub(ProfileReportInterface::class);
         $report->method('isEnabled')->willReturn(true);
         $target = sys_get_temp_dir() . '/qmx-profile-frame-' . bin2hex(random_bytes(6)) . '.json';
-        $targets = new RunTargets(new LoggerFactory());
+        $targets = new RunTargets(new LoggerFactory(), \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register());
         $targets->judge('--profile', $target);
         $targets->claim();
 
@@ -98,7 +98,7 @@ final class ErrorStreamOwnershipTest extends TestCase
         // Symfony hands `renderThrowable()` the already-resolved error stream,
         // never the console output, which is why the owner is asked for the
         // writer it is already bound to.
-        (new Application($errorStream, new RefusalPresenter($errorStream), new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()))->renderThrowable(
+        (new Application($errorStream, new RefusalPresenter($errorStream), static fn() => new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()))->renderThrowable(
             new RuntimeException('a failure with the frame still up'),
             $output->getErrorOutput(),
         );
@@ -151,7 +151,7 @@ final class ErrorStreamOwnershipTest extends TestCase
         $errorStream = new ErrorStream();
         $output = new BufferedOutput();
 
-        $application = new Application($errorStream, new RefusalPresenter($errorStream), new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
+        $application = new Application($errorStream, new RefusalPresenter($errorStream), static fn() => new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $application->setAutoExit(false);
         $application->addCommand(self::commandThatBindsThenThrows($errorStream, 'a failure with nowhere to go'));
 

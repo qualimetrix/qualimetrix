@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
+use Closure;
+use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
 use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
+use Qualimetrix\Core\Environment\EnvironmentFailureInterface;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\AnalysisInputPathValidator;
 use Qualimetrix\Infrastructure\Console\CheckConfigurationResolvers;
@@ -26,6 +31,7 @@ use Symfony\Component\Console\Exception\ExceptionInterface as ConsoleExceptionIn
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Throwable;
 
 #[AsCommand(
     name: 'check',
@@ -159,15 +165,29 @@ final class CheckCommand extends Command
     {
         $format = self::formatOption($input);
 
-        return $this->runTargetSession->run($output, $format, fn(): int => $this->doExecute($input, $output));
+        $profileFinished = false;
+        $finishProfile = function (string $outcome) use ($input, $output, &$profileFinished): void {
+            if ($profileFinished) {
+                return;
+            }
+            $profileFinished = true;
+            $this->resultPresenter->presentProfile($input, $output, $this->runTargetSession->targets(), $outcome);
+            $this->runTargetSession->targets()->settle();
+        };
+
+        return $this->runTargetSession->run($output, $format, fn(): int => $this->doExecute($input, $output, $finishProfile));
     }
 
     /**
      * Executes the analysis.
      *
-     * Separated from execute() to keep error handling at the top level.
+     * Every return after analysis publishes the profile before the rendered answer.
+     * Coordinator OOM exits from shutdown and releases unpublished targets.
+     * A profile already published before report publication is not rolled back.
+     *
+     * @param Closure(string): void $finishProfile
      */
-    private function doExecute(InputInterface $input, OutputInterface $output): int
+    private function doExecute(InputInterface $input, OutputInterface $output, Closure $finishProfile): int
     {
         $this->runtimeConfigurator->resetRunState();
 
@@ -233,55 +253,67 @@ final class CheckCommand extends Command
         );
         $this->claimRunTargets($input, $output);
 
-        if ($input->hasOption('clear-cache') && $input->getOption('clear-cache') === true) {
-            $this->runTargetSession->targets()->assertCacheClearSafe($resolved->run->cacheConfiguration->directory->value());
-        }
-
-        if ($this->runtimeConfigurator->clearCacheIfRequested($input)) {
-            $this->resultPresenter->writeDiagnostic($output, '<info>Cache cleared.</info>');
-        }
+        $this->clearCacheIfRequested($input, $output, $resolved->run->cacheConfiguration->directory?->value());
 
         // Named, and carrying the coverage answer with the paths it is about:
         // rebuilding this positionally lost every field added to the run
         // configuration after the call site was written, silently and once per
         // field.
         $scopedRunConfiguration = $runConfiguration->withProjectScope($resolvedScope->measurement);
-        $result = $this->runAnalysis($scopedRunConfiguration);
+        try {
+            $result = $this->runAnalysis($scopedRunConfiguration);
 
-        $filterResult = $this->findingFilterOrchestrator->filterAndReport(
-            $result,
-            $input,
-            $output,
-            $resolvedScope,
-            $projectionOptions,
-            $scopedRunConfiguration,
-        );
-        $filteredFindings = $filterResult->findings;
-        $this->runTargetSession->targets()->settle();
+            $filterResult = $this->findingFilterOrchestrator->filterAndReport(
+                $result,
+                $input,
+                $output,
+                $resolvedScope,
+                $projectionOptions,
+                $scopedRunConfiguration,
+            );
+            $filteredFindings = $filterResult->findings;
+            $this->runTargetSession->targets()->settle();
 
-        // `check` no longer writes baselines — `bin/qmx baseline:generate` does —
-        // so ResultPresenter no longer has a "baseline was just captured, report
-        // success regardless" path to opt into here.
-        $exitCode = $this->resultPresenter->presentResults(
-            $filteredFindings,
-            $result,
-            $input,
-            $output,
-            $projectRoot,
-            runTargets: $this->runTargetSession->targets(),
-            outputFormat: $outputFormat,
-            exitPolicy: $exitPolicy,
-            reportScope: $scopeResolution->reportScope,
-            filterResult: $filterResult,
-            projectionOptions: $projectionOptions,
-            namespacePattern: $namespacePattern,
-            projectScope: $this->findingFilterOrchestrator->projectScope($resolvedScope, $result, $projectionOptions),
-            configurationDiagnostics: $this->configurationInputAdapter->publishedDiagnostics($document, $findingConfiguration->diagnostics),
-        );
+            // `check` no longer writes baselines — `bin/qmx baseline:generate` does —
+            // so ResultPresenter no longer has a "baseline was just captured, report
+            // success regardless" path to opt into here.
+            $report = $this->resultPresenter->renderResults(
+                $filteredFindings,
+                $result,
+                $input,
+                $output,
+                $projectRoot,
+                outputFormat: $outputFormat,
+                exitPolicy: $exitPolicy,
+                reportScope: $scopeResolution->reportScope,
+                filterResult: $filterResult,
+                projectionOptions: $projectionOptions,
+                namespacePattern: $namespacePattern,
+                projectScope: $this->findingFilterOrchestrator->projectScope($resolvedScope, $result, $projectionOptions),
+                configurationDiagnostics: $this->configurationInputAdapter->publishedDiagnostics($document, $findingConfiguration->diagnostics),
+            );
 
-        $this->runTargetSession->markOutputPublished();
+            $finishProfile($result->measured->coverage->isComplete() ? 'complete' : 'incomplete');
+            $this->resultPresenter->publishReport($report, $input, $output, $this->runTargetSession->targets());
+            $this->runTargetSession->markOutputPublished();
 
-        return $this->presentProfile($input, $output, $exitCode);
+            return $report->exitCode;
+        } catch (Throwable $failure) {
+            $finishProfile(self::profileOutcome($failure));
+            throw $failure;
+        }
+    }
+
+    private function clearCacheIfRequested(InputInterface $input, OutputInterface $output, ?string $cacheDirectory): void
+    {
+        if ($input->hasOption('clear-cache') && $input->getOption('clear-cache') === true && $cacheDirectory !== null) {
+            $this->runTargetSession->targets()->assertCacheClearSafe($cacheDirectory);
+        }
+
+        if ($this->runtimeConfigurator->clearCacheIfRequested($input)) {
+            $this->resultPresenter->writeDiagnostic($output, '<info>Cache cleared.</info>');
+        }
+
     }
 
     private function claimRunTargets(InputInterface $input, OutputInterface $output): void
@@ -308,16 +340,15 @@ final class CheckCommand extends Command
         $this->runTargetSession->targets()->claim();
     }
 
-    /**
-     * The report is on stdout by now, so whatever ends the run here is
-     * presented without a second stdout document, whatever the format.
-     */
-    private function presentProfile(InputInterface $input, OutputInterface $output, int $exitCode): int
+    private static function profileOutcome(Throwable $failure): string
     {
-        return $this->runTargetSession->afterPublishedReport(function () use ($input, $output): void {
-            $this->resultPresenter->presentProfile($input, $output, $this->runTargetSession->targets());
-            $this->runTargetSession->targets()->settle();
-        }, $exitCode);
+        if ($failure instanceof IncompleteAnalysisException) {
+            return 'incomplete';
+        }
+
+        return $failure instanceof RefusalInterface
+            || $failure instanceof EnvironmentFailureInterface
+            || $failure instanceof InvalidArgumentException ? 'refused' : 'internal';
     }
 
     /**

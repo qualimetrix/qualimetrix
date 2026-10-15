@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\RunTarget;
 
+use Closure;
 use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
@@ -16,10 +17,15 @@ use Qualimetrix\Core\FileTarget\TargetKind;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
 use Qualimetrix\Infrastructure\Console\Refusal\FileTargetRefusal;
+use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
 use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
 use Throwable;
 
-/** Owns claimed targets and interruption cleanup for one console run. */
+/**
+ * Owns claimed targets and interruption cleanup for one console run.
+ *
+ * @qmx-threshold complexity.wmc 53 -- Claim, publication, interruption and exhaustion share the same held target identities; splitting their owner would duplicate lifecycle state.
+ */
 final class RunTargetClaimLifecycle
 {
     /** @var array<string, HeldTarget> */
@@ -31,7 +37,11 @@ final class RunTargetClaimLifecycle
     private ?StagedSignalGuard $signals = null;
     private ?int $lastSignal = null;
 
-    public function __construct(private readonly LoggerFactoryInterface $loggerFactory) {}
+    private ?Closure $removeExhaustion = null;
+    /** @var array<string, true> */
+    private array $unwritten = [];
+
+    public function __construct(private readonly LoggerFactoryInterface $loggerFactory, private readonly OutOfMemoryHint $memoryHint) {}
 
     public function beginClaim(): void
     {
@@ -41,6 +51,7 @@ final class RunTargetClaimLifecycle
     /** @param array<string, ResolvedTarget> $judged */
     public function claim(array $judged, bool $hasStandardOutputReport): void
     {
+        $this->removeExhaustion = $this->memoryHint->onExhaustion($this->abandon(...));
         $this->startSignalsForStagedOutput($judged);
         $this->claimTargets($judged);
         TargetCollisions::assertAfterClaim(
@@ -72,6 +83,7 @@ final class RunTargetClaimLifecycle
                 } else {
                     $this->held[$subject] = HeldTarget::claim($target);
                 }
+                $this->unwritten[$subject] = true;
             } catch (FileTargetFailure $failure) {
                 throw self::refusalFor($subject, $failure);
             }
@@ -90,6 +102,7 @@ final class RunTargetClaimLifecycle
         }
         $this->loggerFactory->attachFileTarget($this->held['--log-file']);
         $this->held['--log-file']->markAttached();
+        $this->markWritten('--log-file');
         $this->settle();
     }
 
@@ -105,11 +118,13 @@ final class RunTargetClaimLifecycle
                     $this->signals === null ? null : $this->signals->assertNotInterrupted(...),
                 );
                 unset($this->prepared[$subject]);
+                $this->markWritten($subject);
 
                 return;
             }
             $target = $this->held[$subject] ?? throw new LogicException('Target has not been claimed: ' . $subject);
             $target->write($content);
+            $this->markWritten($subject);
         } catch (FileTargetFailure $failure) {
             throw self::refusalFor($subject, $failure);
         }
@@ -124,8 +139,20 @@ final class RunTargetClaimLifecycle
         }
     }
 
+    private function markWritten(string $subject): void
+    {
+        unset($this->unwritten[$subject]);
+        if ($this->unwritten === []) {
+            $this->removeExhaustion?->__invoke();
+            $this->removeExhaustion = null;
+        }
+    }
+
     public function abandon(): void
     {
+        $this->removeExhaustion?->__invoke();
+        $this->removeExhaustion = null;
+        $this->unwritten = [];
         $this->signals?->beginCleanup();
         $failure = self::releaseAll($this->prepared, static fn(PreparedTarget $target) => $target->discard());
         $this->prepared = [];

@@ -87,6 +87,24 @@ use Throwable;
 #[CoversClass(BaselineCommand::class)]
 final class BaselineCommandFailureReportingTest extends TestCase
 {
+    #[Test]
+    public function itKeepsASuccessfulBaselineCommandSuccessfulWithoutRequiringSignalSupport(): void
+    {
+        $command = new class ('baseline:probe') extends BaselineCommand {
+            protected function doExecute(InputInterface $input, OutputInterface $output): int
+            {
+                return 0;
+            }
+        };
+        $command->setRefusalPresenter(new RefusalPresenter(new ErrorStream()));
+        $tester = new CommandTester($command);
+
+        $tester->execute([]);
+
+        self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringNotContainsString('Internal error:', $tester->getDisplay());
+    }
+
     /**
      * @return iterable<string, array{Throwable, string, int}>
      */
@@ -96,12 +114,6 @@ final class BaselineCommandFailureReportingTest extends TestCase
             new RuntimeException('Baseline file not found: b.json'),
             'Baseline file not found: b.json',
             5,
-        ];
-
-        yield 'a file somebody else rewrote' => [
-            new BaselineConflictException('Baseline file b.json changed since it was read'),
-            'changed since it was read',
-            1,
         ];
 
         yield 'a defect in the tool itself' => [
@@ -163,6 +175,11 @@ final class BaselineCommandFailureReportingTest extends TestCase
             ),
             'Configuration error: qmx.yaml was not found',
         ];
+        yield 'a file somebody else rewrote' => [
+            new BaselineConflictException('Baseline file b.json changed since it was read'),
+            'Environment error: Baseline file b.json changed since it was read',
+        ];
+
     }
 
     #[Test]
@@ -281,7 +298,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
         $errorStream = new ErrorStream();
 
         return new RuntimeConfigurator(
-            new RuntimeLoggerConfigurator($loggerFactory, new LoggerHolder(), $errorStream, new RunTargets($loggerFactory)),
+            new RuntimeLoggerConfigurator($loggerFactory, new LoggerHolder(), $errorStream, new RunTargets($loggerFactory, \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register())),
             new ProgressConfigurator(new SwitchableProgressReporter(), $errorStream),
             new ProfileSession(),
             new AnalysisRuntimeConfigurator(
@@ -295,7 +312,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
             ),
             new CacheFactory($cacheStore),
             $parallelStore,
-            new RuntimeLimitsController(),
+            new RuntimeLimitsController(\Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register()),
             new \Qualimetrix\Infrastructure\Console\ProjectSourceConfigurator(
                 new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(),
                 new \Qualimetrix\Analysis\Evidence\Measurement\Namespace_\ProjectNamespaceResolver(),

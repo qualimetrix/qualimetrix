@@ -17,9 +17,9 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * An export that cannot happen is refused, never reported beside a finished
  * run: {@see self::refuseImpossibleExport()} before analysis, and a typed
- * refusal from {@see self::present()} when the write itself fails. The latter
- * comes after the report is published, so the command presents it on stderr
- * and leaves stdout to the report.
+ * refusal from {@see self::present()} when the write itself fails. Check
+ * publishes this profile before its rendered report, so a failed export
+ * replaces the report with the run's refusal envelope.
  */
 final class ProfilePresenter
 {

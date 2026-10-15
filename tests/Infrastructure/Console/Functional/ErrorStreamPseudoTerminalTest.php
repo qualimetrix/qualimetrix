@@ -60,6 +60,21 @@ final class ErrorStreamPseudoTerminalTest extends TestCase
         }
     }
 
+    #[Test]
+    public function itPassesTheSuiteCacheHomeToTheTerminalProcess(): void
+    {
+        $expected = getenv('XDG_CACHE_HOME');
+        self::assertIsString($expected);
+        self::assertNotSame('', $expected);
+        $run = PseudoTerminalRun::execute(
+            [\PHP_BINARY, '-r', 'echo getenv("XDG_CACHE_HOME");'],
+            $this->fixture,
+        );
+
+        self::assertSame(0, $run->exitCode);
+        self::assertSame($expected, $run->stdout);
+    }
+
     /** @return iterable<string, array{list<string>}> */
     public static function provideVerbosityCases(): iterable
     {

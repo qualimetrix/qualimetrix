@@ -37,7 +37,7 @@ A	form|cli-alias|rules.architecture.unassigned-class.mode|int	int	optionsObject	
 A	form|cli-alias|rules.architecture.unassigned-class.mode|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.architecture.unassigned-class.mode|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
 A	form|cli-alias|rules.architecture.unassigned-class.mode|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|cli-alias|rules.architecture.unassigned-class.mode|string-nonnumber	string-nonnumber	optionsObject	REFUSES	yes	DECIDED	refused a form it promised; lost at nowhere
+A	form|cli-alias|rules.architecture.unassigned-class.mode|string-nonnumber	string-nonnumber	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.architecture.unassigned-class.mode|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|cli-alias|rules.code-smell.constructor-overinjection.error|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.code-smell.constructor-overinjection.error|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
@@ -679,14 +679,14 @@ A	form|rule-opt|rules.architecture.circular-dependency.max-cycle-size|map	map	op
 A	form|rule-opt|rules.architecture.circular-dependency.max-cycle-size|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.architecture.circular-dependency.max-cycle-size|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.architecture.circular-dependency.max-cycle-size|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
-A	form|rule-opt|rules.architecture.layer-violation.empty-template-severity|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|rule-opt|rules.architecture.layer-violation.empty-template-severity|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|rule-opt|rules.architecture.layer-violation.empty-template-severity|int	int	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|rule-opt|rules.architecture.layer-violation.empty-template-severity|list	list	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|rule-opt|rules.architecture.layer-violation.empty-template-severity|map	map	optionsObject	NOT OBSERVABLE	no	PROMISED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
-A	form|rule-opt|rules.architecture.layer-violation.empty-template-severity|null	null	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|rule-opt|rules.architecture.layer-violation.empty-template-severity|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|rule-opt|rules.architecture.layer-violation.empty-template-severity|string-number	string-number	optionsObject	NOT OBSERVABLE	no	PROMISED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
+A	form|rule-opt|rules.architecture.layer-violation.empty-template-severity|bool	bool	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.empty-template-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.architecture.layer-violation.empty-template-severity|float	float	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.empty-template-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.architecture.layer-violation.empty-template-severity|int	int	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.empty-template-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.architecture.layer-violation.empty-template-severity|list	list	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.empty-template-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.architecture.layer-violation.empty-template-severity|map	map	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.empty-template-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.architecture.layer-violation.empty-template-severity|null	null	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.empty-template-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.architecture.layer-violation.empty-template-severity|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.empty-template-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.architecture.layer-violation.empty-template-severity|string-number	string-number	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.empty-template-severity has no writable address in the native declaration; the frozen ledger is historical
 A	form|rule-opt|rules.architecture.layer-violation.enabled|bool	bool	optionsObject	NOT OBSERVABLE	no	DECIDED	omitted == equivalent; lost at optionsObject
 A	form|rule-opt|rules.architecture.layer-violation.enabled|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.architecture.layer-violation.enabled|int	int	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
@@ -695,14 +695,14 @@ A	form|rule-opt|rules.architecture.layer-violation.enabled|map	map	optionsObject
 A	form|rule-opt|rules.architecture.layer-violation.enabled|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.architecture.layer-violation.enabled|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.architecture.layer-violation.enabled|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
-A	form|rule-opt|rules.architecture.layer-violation.potential-shadow-severity|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|rule-opt|rules.architecture.layer-violation.potential-shadow-severity|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|rule-opt|rules.architecture.layer-violation.potential-shadow-severity|int	int	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|rule-opt|rules.architecture.layer-violation.potential-shadow-severity|list	list	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|rule-opt|rules.architecture.layer-violation.potential-shadow-severity|map	map	optionsObject	NOT OBSERVABLE	no	PROMISED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
-A	form|rule-opt|rules.architecture.layer-violation.potential-shadow-severity|null	null	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|rule-opt|rules.architecture.layer-violation.potential-shadow-severity|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|rule-opt|rules.architecture.layer-violation.potential-shadow-severity|string-number	string-number	optionsObject	NOT OBSERVABLE	no	PROMISED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
+A	form|rule-opt|rules.architecture.layer-violation.potential-shadow-severity|bool	bool	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.potential-shadow-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.architecture.layer-violation.potential-shadow-severity|float	float	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.potential-shadow-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.architecture.layer-violation.potential-shadow-severity|int	int	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.potential-shadow-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.architecture.layer-violation.potential-shadow-severity|list	list	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.potential-shadow-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.architecture.layer-violation.potential-shadow-severity|map	map	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.potential-shadow-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.architecture.layer-violation.potential-shadow-severity|null	null	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.potential-shadow-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.architecture.layer-violation.potential-shadow-severity|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.potential-shadow-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.architecture.layer-violation.potential-shadow-severity|string-number	string-number	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.potential-shadow-severity has no writable address in the native declaration; the frozen ledger is historical
 A	form|rule-opt|rules.architecture.layer-violation.severity|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.architecture.layer-violation.severity|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.architecture.layer-violation.severity|int	int	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
@@ -711,14 +711,14 @@ A	form|rule-opt|rules.architecture.layer-violation.severity|map	map	optionsObjec
 A	form|rule-opt|rules.architecture.layer-violation.severity|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.architecture.layer-violation.severity|string-nonnumber	string-nonnumber	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.architecture.layer-violation.severity|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
-A	form|rule-opt|rules.architecture.layer-violation.unreachable-layer-severity|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|rule-opt|rules.architecture.layer-violation.unreachable-layer-severity|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|rule-opt|rules.architecture.layer-violation.unreachable-layer-severity|int	int	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|rule-opt|rules.architecture.layer-violation.unreachable-layer-severity|list	list	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|rule-opt|rules.architecture.layer-violation.unreachable-layer-severity|map	map	optionsObject	NOT OBSERVABLE	no	PROMISED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
-A	form|rule-opt|rules.architecture.layer-violation.unreachable-layer-severity|null	null	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|rule-opt|rules.architecture.layer-violation.unreachable-layer-severity|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|rule-opt|rules.architecture.layer-violation.unreachable-layer-severity|string-number	string-number	optionsObject	NOT OBSERVABLE	no	PROMISED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
+A	form|rule-opt|rules.architecture.layer-violation.unreachable-layer-severity|bool	bool	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.unreachable-layer-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.architecture.layer-violation.unreachable-layer-severity|float	float	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.unreachable-layer-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.architecture.layer-violation.unreachable-layer-severity|int	int	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.unreachable-layer-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.architecture.layer-violation.unreachable-layer-severity|list	list	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.unreachable-layer-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.architecture.layer-violation.unreachable-layer-severity|map	map	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.unreachable-layer-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.architecture.layer-violation.unreachable-layer-severity|null	null	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.unreachable-layer-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.architecture.layer-violation.unreachable-layer-severity|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.unreachable-layer-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.architecture.layer-violation.unreachable-layer-severity|string-number	string-number	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.unreachable-layer-severity has no writable address in the native declaration; the frozen ledger is historical
 A	form|rule-opt|rules.architecture.unassigned-class.enabled|bool	bool	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.architecture.unassigned-class.enabled|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.architecture.unassigned-class.enabled|int	int	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
@@ -733,7 +733,7 @@ A	form|rule-opt|rules.architecture.unassigned-class.mode|int	int	optionsObject	R
 A	form|rule-opt|rules.architecture.unassigned-class.mode|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.architecture.unassigned-class.mode|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
 A	form|rule-opt|rules.architecture.unassigned-class.mode|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.architecture.unassigned-class.mode|string-nonnumber	string-nonnumber	optionsObject	REFUSES	yes	DECIDED	refused a form it promised; lost at nowhere
+A	form|rule-opt|rules.architecture.unassigned-class.mode|string-nonnumber	string-nonnumber	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.architecture.unassigned-class.mode|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.code-smell.boolean-argument.allowed-prefixes|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.code-smell.boolean-argument.allowed-prefixes|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
@@ -1559,14 +1559,14 @@ A	form|rule-opt|rules.coupling.distance.max-distance-warning|map	map	optionsObje
 A	form|rule-opt|rules.coupling.distance.max-distance-warning|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.coupling.distance.max-distance-warning|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.coupling.distance.max-distance-warning|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
-A	form|rule-opt|rules.coupling.distance.min-class-count|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.coupling.distance.min-class-count|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.coupling.distance.min-class-count|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
-A	form|rule-opt|rules.coupling.distance.min-class-count|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.coupling.distance.min-class-count|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
-A	form|rule-opt|rules.coupling.distance.min-class-count|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.coupling.distance.min-class-count|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.coupling.distance.min-class-count|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
+A	form|rule-opt|rules.coupling.distance.min-class-count|bool	bool	optionsObject	NOT OBSERVABLE	no	DECIDED	outside the measured population: coupling.distance.min-class-count has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.coupling.distance.min-class-count|float	float	optionsObject	NOT OBSERVABLE	no	DECIDED	outside the measured population: coupling.distance.min-class-count has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.coupling.distance.min-class-count|int	int	optionsObject	NOT OBSERVABLE	no	DECIDED	outside the measured population: coupling.distance.min-class-count has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.coupling.distance.min-class-count|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	outside the measured population: coupling.distance.min-class-count has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.coupling.distance.min-class-count|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	outside the measured population: coupling.distance.min-class-count has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.coupling.distance.min-class-count|null	null	optionsObject	NOT OBSERVABLE	no	DECIDED	outside the measured population: coupling.distance.min-class-count has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.coupling.distance.min-class-count|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	DECIDED	outside the measured population: coupling.distance.min-class-count has no writable address in the native declaration; the frozen ledger is historical
+A	form|rule-opt|rules.coupling.distance.min-class-count|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	outside the measured population: coupling.distance.min-class-count has no writable address in the native declaration; the frozen ledger is historical
 A	form|rule-opt|rules.coupling.distance.threshold|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.coupling.distance.threshold|float	float	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.coupling.distance.threshold|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
@@ -2383,14 +2383,14 @@ A	form|yaml|rules.architecture.circular-dependency.suppress-paths|map	map	option
 A	form|yaml|rules.architecture.circular-dependency.suppress-paths|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
 A	form|yaml|rules.architecture.circular-dependency.suppress-paths|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a path list; `abc` names no file in the fixture; lost at nowhere
 A	form|yaml|rules.architecture.circular-dependency.suppress-paths|string-number	string-number	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a path list; every other form still writes 7331, which names no file; lost at nowhere
-A	form|yaml|rules.architecture.layer-violation.empty-template-severity|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.architecture.layer-violation.empty-template-severity|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.architecture.layer-violation.empty-template-severity|int	int	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.architecture.layer-violation.empty-template-severity|list	list	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.architecture.layer-violation.empty-template-severity|map	map	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.architecture.layer-violation.empty-template-severity|null	null	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.architecture.layer-violation.empty-template-severity|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.architecture.layer-violation.empty-template-severity|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.architecture.layer-violation.empty-template-severity|bool	bool	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.empty-template-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.architecture.layer-violation.empty-template-severity|float	float	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.empty-template-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.architecture.layer-violation.empty-template-severity|int	int	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.empty-template-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.architecture.layer-violation.empty-template-severity|list	list	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.empty-template-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.architecture.layer-violation.empty-template-severity|map	map	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.empty-template-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.architecture.layer-violation.empty-template-severity|null	null	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.empty-template-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.architecture.layer-violation.empty-template-severity|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.empty-template-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.architecture.layer-violation.empty-template-severity|string-number	string-number	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.empty-template-severity has no writable address in the native declaration; the frozen ledger is historical
 A	form|yaml|rules.architecture.layer-violation.enabled|bool	bool	optionsObject	NOT OBSERVABLE	no	PROMISED	omitted == equivalent; lost at optionsObject
 A	form|yaml|rules.architecture.layer-violation.enabled|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.architecture.layer-violation.enabled|int	int	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
@@ -2399,14 +2399,14 @@ A	form|yaml|rules.architecture.layer-violation.enabled|map	map	optionsObject	REF
 A	form|yaml|rules.architecture.layer-violation.enabled|null	null	optionsObject	NOT OBSERVABLE	no	PROMISED	omitted == equivalent; lost at optionsObject
 A	form|yaml|rules.architecture.layer-violation.enabled|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.architecture.layer-violation.enabled|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.architecture.layer-violation.potential-shadow-severity|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.architecture.layer-violation.potential-shadow-severity|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.architecture.layer-violation.potential-shadow-severity|int	int	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.architecture.layer-violation.potential-shadow-severity|list	list	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.architecture.layer-violation.potential-shadow-severity|map	map	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.architecture.layer-violation.potential-shadow-severity|null	null	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.architecture.layer-violation.potential-shadow-severity|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.architecture.layer-violation.potential-shadow-severity|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.architecture.layer-violation.potential-shadow-severity|bool	bool	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.potential-shadow-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.architecture.layer-violation.potential-shadow-severity|float	float	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.potential-shadow-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.architecture.layer-violation.potential-shadow-severity|int	int	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.potential-shadow-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.architecture.layer-violation.potential-shadow-severity|list	list	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.potential-shadow-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.architecture.layer-violation.potential-shadow-severity|map	map	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.potential-shadow-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.architecture.layer-violation.potential-shadow-severity|null	null	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.potential-shadow-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.architecture.layer-violation.potential-shadow-severity|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.potential-shadow-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.architecture.layer-violation.potential-shadow-severity|string-number	string-number	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.potential-shadow-severity has no writable address in the native declaration; the frozen ledger is historical
 A	form|yaml|rules.architecture.layer-violation.severity|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.layer-violation.severity|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.layer-violation.severity|int	int	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
@@ -2439,14 +2439,14 @@ A	form|yaml|rules.architecture.layer-violation.suppress-paths|map	map	optionsObj
 A	form|yaml|rules.architecture.layer-violation.suppress-paths|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
 A	form|yaml|rules.architecture.layer-violation.suppress-paths|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a path list; `abc` names no file in the fixture; lost at nowhere
 A	form|yaml|rules.architecture.layer-violation.suppress-paths|string-number	string-number	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a path list; every other form still writes 7331, which names no file; lost at nowhere
-A	form|yaml|rules.architecture.layer-violation.unreachable-layer-severity|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.architecture.layer-violation.unreachable-layer-severity|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.architecture.layer-violation.unreachable-layer-severity|int	int	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.architecture.layer-violation.unreachable-layer-severity|list	list	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.architecture.layer-violation.unreachable-layer-severity|map	map	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.architecture.layer-violation.unreachable-layer-severity|null	null	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.architecture.layer-violation.unreachable-layer-severity|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.architecture.layer-violation.unreachable-layer-severity|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
+A	form|yaml|rules.architecture.layer-violation.unreachable-layer-severity|bool	bool	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.unreachable-layer-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.architecture.layer-violation.unreachable-layer-severity|float	float	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.unreachable-layer-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.architecture.layer-violation.unreachable-layer-severity|int	int	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.unreachable-layer-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.architecture.layer-violation.unreachable-layer-severity|list	list	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.unreachable-layer-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.architecture.layer-violation.unreachable-layer-severity|map	map	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.unreachable-layer-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.architecture.layer-violation.unreachable-layer-severity|null	null	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.unreachable-layer-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.architecture.layer-violation.unreachable-layer-severity|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.unreachable-layer-severity has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.architecture.layer-violation.unreachable-layer-severity|string-number	string-number	optionsObject	NOT OBSERVABLE	no	PROMISED	outside the measured population: architecture.layer-violation.unreachable-layer-severity has no writable address in the native declaration; the frozen ledger is historical
 A	form|yaml|rules.architecture.unassigned-class.enabled|bool	bool	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.enabled|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.enabled|int	int	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
@@ -2461,7 +2461,7 @@ A	form|yaml|rules.architecture.unassigned-class.mode|int	int	optionsObject	REFUS
 A	form|yaml|rules.architecture.unassigned-class.mode|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.mode|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.mode|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.architecture.unassigned-class.mode|string-nonnumber	string-nonnumber	optionsObject	REFUSES	yes	DECIDED	refused a form it promised; lost at nowhere
+A	form|yaml|rules.architecture.unassigned-class.mode|string-nonnumber	string-nonnumber	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.mode|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.suppress-namespace-channels|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.suppress-namespace-channels|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
@@ -3839,14 +3839,14 @@ A	form|yaml|rules.coupling.distance.max-distance-warning|map	map	optionsObject	R
 A	form|yaml|rules.coupling.distance.max-distance-warning|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at mergedDocument
 A	form|yaml|rules.coupling.distance.max-distance-warning|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.coupling.distance.max-distance-warning|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.coupling.distance.min-class-count|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.coupling.distance.min-class-count|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.coupling.distance.min-class-count|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
-A	form|yaml|rules.coupling.distance.min-class-count|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.coupling.distance.min-class-count|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.coupling.distance.min-class-count|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.coupling.distance.min-class-count|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.coupling.distance.min-class-count|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
+A	form|yaml|rules.coupling.distance.min-class-count|bool	bool	optionsObject	NOT OBSERVABLE	no	DECIDED	outside the measured population: coupling.distance.min-class-count has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.coupling.distance.min-class-count|float	float	optionsObject	NOT OBSERVABLE	no	DECIDED	outside the measured population: coupling.distance.min-class-count has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.coupling.distance.min-class-count|int	int	optionsObject	NOT OBSERVABLE	no	DECIDED	outside the measured population: coupling.distance.min-class-count has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.coupling.distance.min-class-count|list	list	optionsObject	NOT OBSERVABLE	no	DECIDED	outside the measured population: coupling.distance.min-class-count has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.coupling.distance.min-class-count|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	outside the measured population: coupling.distance.min-class-count has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.coupling.distance.min-class-count|null	null	optionsObject	NOT OBSERVABLE	no	DECIDED	outside the measured population: coupling.distance.min-class-count has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.coupling.distance.min-class-count|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	DECIDED	outside the measured population: coupling.distance.min-class-count has no writable address in the native declaration; the frozen ledger is historical
+A	form|yaml|rules.coupling.distance.min-class-count|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	outside the measured population: coupling.distance.min-class-count has no writable address in the native declaration; the frozen ledger is historical
 A	form|yaml|rules.coupling.distance.suppress-namespace-channels|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.coupling.distance.suppress-namespace-channels|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.coupling.distance.suppress-namespace-channels|int	int	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
@@ -5251,10 +5251,10 @@ B	pair|annotation.directive|enabled|unused-directive-severity|same-source|6-gate
 B	pair|architecture.circular-dependency|direct-as-error|enabled|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the alternate magnitude
 B	pair|architecture.circular-dependency|direct-as-error|max-cycle-size|same-source|6-gate-vs-severity	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the per-side magnitude
 B	pair|architecture.circular-dependency|enabled|max-cycle-size|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the per-side magnitude
-B	pair|architecture.layer-violation|empty-template-severity|severity|same-source|6-superseded-refused	both	optionsObject	COEXISTENCE_OK	no	DECIDED	refused, as promised; A wrote the canonical magnitude, which no declared value here can improve on, B the canonical magnitude
+B	pair|architecture.layer-violation|empty-template-severity|severity|same-source|6-superseded-refused	both	optionsObject	NOT OBSERVABLE	no	DECIDED	outside the measured population: architecture.layer-violation.empty-template-severity has no writable address in the native declaration; the frozen ledger is historical
 B	pair|architecture.layer-violation|enabled|severity|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present; A wrote the alternate magnitude, B the canonical magnitude
-B	pair|architecture.layer-violation|potential-shadow-severity|severity|same-source|6-superseded-refused	both	optionsObject	COEXISTENCE_OK	no	DECIDED	refused, as promised; A wrote the canonical magnitude, which no declared value here can improve on, B the canonical magnitude
-B	pair|architecture.layer-violation|severity|unreachable-layer-severity|same-source|6-superseded-refused	both	optionsObject	COEXISTENCE_OK	no	DECIDED	refused, as promised; A wrote the canonical magnitude, B the canonical magnitude, which no declared value here can improve on
+B	pair|architecture.layer-violation|potential-shadow-severity|severity|same-source|6-superseded-refused	both	optionsObject	NOT OBSERVABLE	no	DECIDED	outside the measured population: architecture.layer-violation.potential-shadow-severity has no writable address in the native declaration; the frozen ledger is historical
+B	pair|architecture.layer-violation|severity|unreachable-layer-severity|same-source|6-superseded-refused	both	optionsObject	NOT OBSERVABLE	no	DECIDED	outside the measured population: architecture.layer-violation.unreachable-layer-severity has no writable address in the native declaration; the frozen ledger is historical
 B	pair|architecture.unassigned-class|enabled|mode|same-source|6-contradiction-refused	both	optionsObject	MISCOMPOSED	yes	DECIDED	composed where the ledger promised a refusal: accepted; A wrote the alternate magnitude, B the canonical magnitude, which no declared value here can improve on
 B	pair|code-smell.boolean-argument|allowed-prefixes|enabled|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present; A wrote the canonical magnitude, B the alternate magnitude
 B	pair|code-smell.boolean-argument|allowed-prefixes|flag-promoted-properties|same-source|6-subject-vs-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the canonical magnitude, B the canonical magnitude
@@ -5510,17 +5510,17 @@ B	pair|coupling.class-rank|threshold|warning|same-source|1-threshold-group-decla
 B	pair|coupling.distance|enabled|include-namespaces|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the canonical magnitude
 B	pair|coupling.distance|enabled|max-distance-error|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the per-side magnitude
 B	pair|coupling.distance|enabled|max-distance-warning|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed; A wrote the alternate magnitude, B the per-side magnitude, which no declared value here can improve on
-B	pair|coupling.distance|enabled|min-class-count|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the per-side magnitude
+B	pair|coupling.distance|enabled|min-class-count|same-source|6-gate	both	optionsObject	NOT OBSERVABLE	no	DECIDED	outside the measured population: coupling.distance.min-class-count has no writable address in the native declaration; the frozen ledger is historical
 B	pair|coupling.distance|enabled|threshold|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the per-side magnitude
 B	pair|coupling.distance|include-namespaces|max-distance-error|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the canonical magnitude, B the per-side magnitude
 B	pair|coupling.distance|include-namespaces|max-distance-warning|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed; A wrote the canonical magnitude, B the per-side magnitude, which no declared value here can improve on
 B	pair|coupling.distance|include-namespaces|threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the canonical magnitude, B the per-side magnitude
 B	pair|coupling.distance|max-distance-error|max-distance-warning|same-source|1-threshold-group-declared	both	optionsObject	MISCOMPOSED	yes	PROMISED	one half alone is not writable: accepted/refused-framed; A wrote the canonical magnitude, B the per-side magnitude, which no declared value here can improve on
-B	pair|coupling.distance|max-distance-error|min-class-count|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the canonical magnitude, B the per-side magnitude
+B	pair|coupling.distance|max-distance-error|min-class-count|same-source|6-subject-filter	both	optionsObject	NOT OBSERVABLE	no	DECIDED	outside the measured population: coupling.distance.min-class-count has no writable address in the native declaration; the frozen ledger is historical
 B	pair|coupling.distance|max-distance-error|threshold|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised; A wrote the canonical magnitude, B the per-side magnitude
-B	pair|coupling.distance|max-distance-warning|min-class-count|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed; A wrote the canonical magnitude, which no declared value here can improve on, B the per-side magnitude
+B	pair|coupling.distance|max-distance-warning|min-class-count|same-source|6-subject-filter	both	optionsObject	NOT OBSERVABLE	no	DECIDED	outside the measured population: coupling.distance.min-class-count has no writable address in the native declaration; the frozen ledger is historical
 B	pair|coupling.distance|max-distance-warning|threshold|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised; A wrote the canonical magnitude, which no declared value here can improve on, B the per-side magnitude
-B	pair|coupling.distance|min-class-count|threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the canonical magnitude, B the per-side magnitude
+B	pair|coupling.distance|min-class-count|threshold|same-source|6-subject-filter	both	optionsObject	NOT OBSERVABLE	no	DECIDED	outside the measured population: coupling.distance.min-class-count has no writable address in the native declaration; the frozen ledger is historical
 B	pair|coupling.instability|class.enabled|class.max-error|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the per-side magnitude
 B	pair|coupling.instability|class.enabled|class.max-warning|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed; A wrote the alternate magnitude, B the per-side magnitude, which no declared value here can improve on
 B	pair|coupling.instability|class.enabled|class.min-afferent|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the per-side magnitude
@@ -5724,14 +5724,14 @@ C	composition|composition-triple|complexity.ccn|callable@warning|preset#1/preset
 C	composition|composition-triple|complexity.ccn|callable@warning|preset#1/preset#2/preset#3|T3|optionsObject	both	optionsObject	COMPOSED_AS_PROMISED	no	DECIDED	every slot carries its topmost writer's value, and the untouched slot the omitted one; promised survives; L1 writes callable.warning and callable.error, L2 writes callable.threshold, L3 writes callable.error alone
 C	composition|composition-triple|complexity.ccn|callable@warning|preset#1/preset#2/qmx.yaml|T1|optionsObject	both	optionsObject	COMPOSED_AS_PROMISED	no	DECIDED	every slot carries its topmost writer's value, and the untouched slot the omitted one; promised survives; L1 writes callable.warning and callable.error, L2 writes callable.threshold, L3 writes callable.error alone
 C	composition|composition-triple|complexity.ccn|callable@warning|preset#1/qmx.yaml/cli-bucket|T4|optionsObject	both	optionsObject	COMPOSED_AS_PROMISED	no	DECIDED	every slot carries its topmost writer's value, and the untouched slot the omitted one; promised survives; L1 writes callable.warning and callable.error, L2 writes callable.threshold, L3 writes callable.error alone
-D	form|cli-root|cache.dir|bool	bool	report	OK	no	DECIDED	effect distinguishable and the producer reachable
-D	form|cli-root|cache.dir|float	float	report	OK	no	DECIDED	effect distinguishable and the producer reachable
-D	form|cli-root|cache.dir|int	int	report	OK	no	DECIDED	effect distinguishable and the producer reachable
-D	form|cli-root|cache.dir|list	list	report	NOT OBSERVABLE	no	DECIDED	a CLI door has no list syntax: the brackets arrive as characters
-D	form|cli-root|cache.dir|map	map	report	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters
+D	form|cli-root|cache.dir|bool	bool	report	REFUSES	no	DECIDED	the canonical relative cache path is inside the project root
+D	form|cli-root|cache.dir|float	float	report	REFUSES	no	DECIDED	the canonical relative cache path is inside the project root
+D	form|cli-root|cache.dir|int	int	report	REFUSES	no	DECIDED	the canonical relative cache path is inside the project root
+D	form|cli-root|cache.dir|list	list	report	REFUSES	no	DECIDED	the canonical relative cache path is inside the project root
+D	form|cli-root|cache.dir|map	map	report	REFUSES	no	DECIDED	the canonical relative cache path is inside the project root
 D	form|cli-root|cache.dir|null	null	report	REFUSES	no	DECIDED	refused
-D	form|cli-root|cache.dir|string-nonnumber	string-nonnumber	report	OK	no	DECIDED	effect distinguishable and the producer reachable
-D	form|cli-root|cache.dir|string-number	string-number	report	OK	no	DECIDED	effect distinguishable and the producer reachable
+D	form|cli-root|cache.dir|string-nonnumber	string-nonnumber	report	REFUSES	no	DECIDED	the canonical relative cache path is inside the project root
+D	form|cli-root|cache.dir|string-number	string-number	report	REFUSES	no	DECIDED	the canonical relative cache path is inside the project root
 D	form|cli-root|cache.enabled|bool	bool	report	OK	no	DECIDED	effect distinguishable and the producer reachable
 D	form|cli-root|cache.enabled|float	float	report	NOT OBSERVABLE	no	DECIDED	a valueless flag carries no spelling for this form
 D	form|cli-root|cache.enabled|int	int	report	NOT OBSERVABLE	no	DECIDED	a valueless flag carries no spelling for this form
@@ -6034,8 +6034,8 @@ D	form|yaml|cache.dir|int	int	report	REFUSES	no	DECIDED	refused
 D	form|yaml|cache.dir|list	list	report	REFUSES	no	DECIDED	refused
 D	form|yaml|cache.dir|map	map	report	REFUSES	no	DECIDED	refused
 D	form|yaml|cache.dir|null	null	report	OK	no	DECIDED	`~` behaved as an omitted key
-D	form|yaml|cache.dir|string-nonnumber	string-nonnumber	report	OK	no	DECIDED	effect distinguishable and the producer reachable
-D	form|yaml|cache.dir|string-number	string-number	report	OK	no	DECIDED	effect distinguishable and the producer reachable
+D	form|yaml|cache.dir|string-nonnumber	string-nonnumber	report	REFUSES	no	DECIDED	the canonical relative cache path is inside the project root
+D	form|yaml|cache.dir|string-number	string-number	report	REFUSES	no	DECIDED	the canonical relative cache path is inside the project root
 D	form|yaml|cache.enabled|bool	bool	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
 D	form|yaml|cache.enabled|float	float	report	REFUSES	no	PROMISED	refused
 D	form|yaml|cache.enabled|int	int	report	REFUSES	no	PROMISED	refused
@@ -6776,7 +6776,7 @@ E	neighbourhood|coupling.class-rank|warning|threshold|1-threshold-group-declared
 E	neighbourhood|coupling.distance|enabled|include-namespaces|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.distance|enabled|max-distance-error|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.distance|enabled|max-distance-warning|6-gate	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-gate; the neighbour wrote the canonical magnitude, which no declared value here can improve on
-E	neighbourhood|coupling.distance|enabled|min-class-count|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the canonical magnitude
+E	neighbourhood|coupling.distance|enabled|min-class-count|6-gate	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour has no declared shape to write: pair probe: "coupling.distance.min-class-count" — no declaration recognises the key normalized as "minClassCount"
 E	neighbourhood|coupling.distance|enabled|threshold|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.distance|include-namespaces|enabled|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
 E	neighbourhood|coupling.distance|include-namespaces|max-distance-error|6-subject-filter	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter; the neighbour wrote the canonical magnitude
@@ -6785,18 +6785,18 @@ E	neighbourhood|coupling.distance|include-namespaces|threshold|6-subject-filter	
 E	neighbourhood|coupling.distance|max-distance-error|enabled|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
 E	neighbourhood|coupling.distance|max-distance-error|include-namespaces|6-subject-filter	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.distance|max-distance-error|max-distance-warning|1-threshold-group-declared	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 1-threshold-group-declared; the neighbour wrote the canonical magnitude, which no declared value here can improve on
-E	neighbourhood|coupling.distance|max-distance-error|min-class-count|6-subject-filter	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter; the neighbour wrote the canonical magnitude
+E	neighbourhood|coupling.distance|max-distance-error|min-class-count|6-subject-filter	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour has no declared shape to write: pair probe: "coupling.distance.min-class-count" — no declaration recognises the key normalized as "minClassCount"
 E	neighbourhood|coupling.distance|max-distance-error|threshold|1-threshold-group-declared	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.distance|max-distance-warning|enabled|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
 E	neighbourhood|coupling.distance|max-distance-warning|include-namespaces|6-subject-filter	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.distance|max-distance-warning|max-distance-error|1-threshold-group-declared	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared; the neighbour wrote the canonical magnitude
-E	neighbourhood|coupling.distance|max-distance-warning|min-class-count|6-subject-filter	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter; the neighbour wrote the canonical magnitude
+E	neighbourhood|coupling.distance|max-distance-warning|min-class-count|6-subject-filter	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour has no declared shape to write: pair probe: "coupling.distance.min-class-count" — no declaration recognises the key normalized as "minClassCount"
 E	neighbourhood|coupling.distance|max-distance-warning|threshold|1-threshold-group-declared	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.distance|threshold|enabled|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
 E	neighbourhood|coupling.distance|threshold|include-namespaces|6-subject-filter	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.distance|threshold|max-distance-error|1-threshold-group-declared	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.distance|threshold|max-distance-warning|1-threshold-group-declared	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 1-threshold-group-declared; the neighbour wrote the canonical magnitude, which no declared value here can improve on
-E	neighbourhood|coupling.distance|threshold|min-class-count|6-subject-filter	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter; the neighbour wrote the canonical magnitude
+E	neighbourhood|coupling.distance|threshold|min-class-count|6-subject-filter	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour has no declared shape to write: pair probe: "coupling.distance.min-class-count" — no declaration recognises the key normalized as "minClassCount"
 E	neighbourhood|coupling.instability|class.enabled|class.max-error|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the canonical magnitude
 E	neighbourhood|coupling.instability|class.enabled|class.max-warning|6-gate	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-gate; the neighbour wrote the canonical magnitude, which no declared value here can improve on
 E	neighbourhood|coupling.instability|class.enabled|class.min-afferent|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the canonical magnitude

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
-use RuntimeException;
+use LogicException;
 use stdClass;
 
 /**
@@ -66,7 +66,7 @@ final class BaselineDocumentLayout
         $previous = ini_set('serialize_precision', '-1');
 
         if ($previous === false) {
-            throw new RuntimeException(
+            throw new LogicException(
                 'Failed to pin serialize_precision for the baseline write; the file would not be '
                 . 'reproducible across environments.',
             );

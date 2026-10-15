@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
@@ -14,9 +14,9 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Core\FileTarget\PreparedTarget;
 use Qualimetrix\Core\FileTarget\ResolvedTarget;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\RunTarget\StagedSignalGuard;
-use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -35,9 +35,6 @@ use Throwable;
  */
 abstract class BaselineCommand extends Command
 {
-    /** Analysis/tool failure, distinct from policy and input/configuration outcomes. */
-    protected const int EXIT_ANALYSIS_INCOMPLETE = 4;
-
     /**
      * Setter rather than a constructor argument: five concrete commands
      * extend this class, each with its own constructor and DI registration,
@@ -62,7 +59,7 @@ abstract class BaselineCommand extends Command
             // four declare no `--format` and this stays `null` for them), which
             // is exactly the guard that keeps its machine-readable branch a
             // document a script can still parse.
-            if ($format !== 'json' && !\in_array($exitCode, [128 + \SIGINT, 128 + \SIGTERM], true)) {
+            if ($format !== 'json' && !$this->publishesAnswer() && !StagedSignalGuard::isInterruptionExitCode($exitCode)) {
                 $output->writeln(\sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));
             }
 
@@ -70,19 +67,20 @@ abstract class BaselineCommand extends Command
         } catch (RefusalInterface $refusal) {
             return $this->refusalPresenter->refusal($output, $format, $refusal);
         } catch (IncompleteAnalysisException $e) {
-            return $this->fail($output, $e->getMessage(), $e, self::EXIT_ANALYSIS_INCOMPLETE);
-        } catch (BaselineConflictException $e) {
-            return $this->fail($output, $e->getMessage(), $e);
+            return $this->fail($output, $e->getMessage(), $e, ConsoleExitCode::AnalysisIncomplete->value);
         } catch (InvalidArgumentException $e) {
             // The named secondary signal for code 3: an `InvalidArgumentException`
             // that never became a carrier. No trace even under -v — a refusal
             // is the user's to fix, not ours to explain with a stack.
             return $this->refusalPresenter->fallbackRefusal($output, $format, $e);
-        } catch (RuntimeException $e) {
-            return $this->refusalPresenter->unhandled($output, $format, $e);
         } catch (Throwable $e) {
             return $this->refusalPresenter->unhandled($output, $format, $e);
         }
+    }
+
+    protected function publishesAnswer(): bool
+    {
+        return false;
     }
 
     /**
@@ -169,8 +167,6 @@ abstract class BaselineCommand extends Command
      * than the file remembers, which is harmless — so only the narrowing
      * direction is refused, and `--force` overrides it.
      *
-     * Returns `true` when the command may proceed.
-     *
      * @param list<string> $recordedScope
      */
     protected function assertScopeCovers(
@@ -178,11 +174,11 @@ abstract class BaselineCommand extends Command
         array $recordedScope,
         bool $force,
         OutputInterface $output,
-    ): bool {
+    ): void {
         $uncovered = $runScope->uncoveredPaths($recordedScope);
 
         if ($uncovered === []) {
-            return true;
+            return;
         }
 
         if ($force) {
@@ -191,16 +187,14 @@ abstract class BaselineCommand extends Command
                 implode(', ', $uncovered),
             ));
 
-            return true;
+            return;
         }
 
-        $output->writeln(\sprintf(
-            '<error>This run does not cover %s, which the baseline records as its scope. '
-            . 'Re-run over at least the recorded scope, or pass --force to write anyway.</error>',
+        throw ConfigurationRefusal::aboutCommandLineInput('--force', \sprintf(
+            'This run does not cover %s, which the baseline records as its scope. '
+            . 'Re-run over at least the recorded scope, or pass --force to write anyway.',
             implode(', ', $uncovered),
         ));
-
-        return false;
     }
 
     /**
@@ -212,9 +206,6 @@ abstract class BaselineCommand extends Command
      * then refuse when the run's scope does not cover what the file records.
      * Document grammar needs no declaration, and an invalid file should not
      * cost a whole analysis.
-     *
-     * Returns `null` when the caller must answer with `self::FAILURE`; the
-     * scope guard has already written its own message to `$output`.
      */
     protected function measureAgainstBaseline(
         BaselineRunInterface $baselineRun,
@@ -222,15 +213,13 @@ abstract class BaselineCommand extends Command
         InputInterface $input,
         OutputInterface $output,
         BaselineDocument $document,
-    ): ?LoadedBaselineRun {
+    ): LoadedBaselineRun {
         $force = $input->getOption('force') === true;
 
         $context = $baselineRun->measure($input, $output);
         $baseline = $loader->load($document);
 
-        if (!$this->assertScopeCovers($context->scope, $baseline->scope, $force, $output)) {
-            return null;
-        }
+        $this->assertScopeCovers($context->scope, $baseline->scope, $force, $output);
 
         return new LoadedBaselineRun($context, $baseline);
     }
