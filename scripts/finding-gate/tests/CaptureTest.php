@@ -62,7 +62,7 @@ final class CaptureTest extends TestCase
         $temporary = Fs::temporaryDirectory('detailed-text-capture-test-');
         try {
             $corpus = Corpus::load($root);
-            $plan = CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate'));
+            $plan = self::planForSurfaces(CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), $corpus->cases[0]->id, ['format:text-detail']);
             $capture = (new TreeRun($root, $temporary, 'candidate', RenameMaps::fromPairs([]), false, $plan, DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0]);
             $document = json_decode($capture->artifacts['case:alpha|format:text-detail'], true, 512, \JSON_THROW_ON_ERROR);
             self::assertIsArray($document);
@@ -730,7 +730,7 @@ final class CaptureTest extends TestCase
         $temporary = Fs::temporaryDirectory('baseline-ranking-capture-');
         try {
             $corpus = Corpus::load($root);
-            $plan = CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate'));
+            $plan = self::planForSurfaces(CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), $corpus->cases[0]->id, ['format:json', 'check:baseline-source', 'baseline-file', 'check:baseline']);
             $capture = (new TreeRun($root, $temporary, 'candidate', RenameMaps::fromPairs([]), false, $plan, DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0]);
             self::assertSame(['case:alpha|format:json', 'case:alpha|check:baseline-source', 'case:alpha|check:baseline'], array_keys($capture->rankings));
             foreach (['check:baseline-source', 'check:baseline'] as $view) {
@@ -831,7 +831,7 @@ final class CaptureTest extends TestCase
             try {
                 $corpus = Corpus::load($root);
                 try {
-                    (new TreeRun($root, $temporary, 'candidate', RenameMaps::fromPairs([]), false, CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0]);
+                    (new TreeRun($root, $temporary, 'candidate', RenameMaps::fromPairs([]), false, self::planForSurfaces(CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), $corpus->cases[0]->id, ['format:json']), DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0]);
                     self::fail('An unknown or overflowing ranking population was accepted.');
                 } catch (GateError $error) {
                     self::assertStringContainsString('requires nonnegative total and boolean truncation metadata', $error->getMessage());
@@ -851,7 +851,8 @@ final class CaptureTest extends TestCase
         $definition = json_decode($tree['declarations']['cases/alpha/case.json'], true, 512, \JSON_THROW_ON_ERROR);
         $definition['args'] = ['--namespace=subtree:Replay', '--show-suppressed', ...$measuredArguments];
         $tree['declarations']['cases/alpha/case.json'] = json_encode($definition, \JSON_THROW_ON_ERROR) . "\n";
-        foreach (['directives', 'graph:export', 'rules', 'debug:layer-assignment:Replay\\Alpha', 'check:parallel', 'check:baseline-source', 'baseline-file', 'explain:file:src/Alpha.php', 'check:baseline'] as $surface) {
+        $surfaces = ['directives', 'graph:export', 'rules', 'debug:layer-assignment:Replay\\Alpha', 'check:parallel', 'check:baseline-source', 'baseline-file', 'explain:file:src/Alpha.php', 'check:baseline'];
+        foreach ($surfaces as $surface) {
             $tree['candidateAnswers']['case:alpha|' . $surface] = ['env' => true];
         }
         $root = SyntheticTree::create($tree);
@@ -860,7 +861,7 @@ final class CaptureTest extends TestCase
             $corpus = Corpus::load($root);
             $case = $corpus->cases[0];
             $maps = RenameMaps::load($root . '/finding-gate/maps', MetricVocabulary::ofTree($root));
-            $run = new TreeRun($root, $temporary, 'candidate', $maps, false, CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), DeclaredStructuralMaps::load($root . '/finding-gate'));
+            $run = new TreeRun($root, $temporary, 'candidate', $maps, false, self::planForSurfaces(CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), $case->id, $surfaces), DeclaredStructuralMaps::load($root . '/finding-gate'));
             $artifacts = $run->forCase($case)->artifacts;
             $read = static fn(string $surface): array => json_decode($artifacts['case:alpha|' . $surface], true, 512, \JSON_THROW_ON_ERROR);
             self::assertSame(['graph:export', 'src', '--no-ansi'], $read('graph:export')['argv']);
@@ -907,7 +908,7 @@ final class CaptureTest extends TestCase
         $temporary = Fs::temporaryDirectory('capture-sides-');
         try {
             $corpus = Corpus::load($root);
-            $plan = CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate'));
+            $plan = self::planForSurfaces(CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), $corpus->cases[0]->id, ['format:health', 'format:json']);
             $maps = RenameMaps::load($root . '/finding-gate/maps', MetricVocabulary::ofTree($root));
             $candidate = (new TreeRun($root, $temporary, 'candidate', $maps, false, $plan, DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0])->artifacts;
             $reference = (new TreeRun($root, $temporary, 'reference', $maps, true, $plan, DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0])->artifacts;
@@ -932,7 +933,7 @@ final class CaptureTest extends TestCase
         try {
             $corpus = Corpus::load($root);
             $maps = RenameMaps::load($root . '/finding-gate/maps', MetricVocabulary::ofTree($root));
-            $run = new TreeRun($root, $temporary, 'candidate', $maps, false, CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), DeclaredStructuralMaps::load($root . '/finding-gate'));
+            $run = new TreeRun($root, $temporary, 'candidate', $maps, false, self::planForSurfaces(CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), $corpus->cases[0]->id, ['check:baseline-source', 'baseline-file']), DeclaredStructuralMaps::load($root . '/finding-gate'));
             try {
                 $run->forCase($corpus->cases[0])->artifacts;
                 self::fail('An empty cache directory established no parser cache record.');
@@ -951,6 +952,12 @@ final class CaptureTest extends TestCase
         $surfaces = $refusal
             ? ['format:json', 'check:baseline-source', 'baseline-file', 'check:output', 'check:baseline', 'baseline:update', 'baseline:cleanup', 'baseline:rename-channels']
             : ['format:json', 'check:output'];
+        return self::planForSurfaces($full, $caseId, $surfaces);
+    }
+
+    /** @param non-empty-list<string> $surfaces */
+    private static function planForSurfaces(CapturePlan $full, string $caseId, array $surfaces): CapturePlan
+    {
         $descriptors = [];
         $artifacts = [];
         $changes = [];
@@ -967,6 +974,9 @@ final class CaptureTest extends TestCase
             if ($change !== null) {
                 $changes[$key] = $change;
             }
+        }
+        if ($descriptors === [] || \count($descriptors) !== \count($surfaces)) {
+            throw new LogicException('The capture fixture requires every named surface.');
         }
         // The private constructor bypasses validation, so retain only bindings from the validated plan.
         $reflection = new ReflectionClass(CapturePlan::class);
