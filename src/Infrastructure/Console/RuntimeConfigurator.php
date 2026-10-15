@@ -22,6 +22,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 final class RuntimeConfigurator
 {
+    private bool $runFinished = false;
+
     /**
      * @qmx-threshold code-smell.constructor-overinjection warning=9 error=10 -- This class composes a run's unrelated per-run concerns (logging, progress, profiling, cache, parallelism, limits) and the eighth is the autoload anchor DIT's ancestor walk needs before the pipeline starts. Splitting the composition is its own subject, not this metric's campaign; the ceiling is one slot: a ninth parameter reports again.
      * @qmx-threshold code-smell.long-parameter-list warning=9 error=10 -- Same constructor, same reason: the list is the composition, and a ninth parameter reports again.
@@ -40,6 +42,7 @@ final class RuntimeConfigurator
     /** Resets every mutable per-run seam before configuration resolution starts. */
     public function resetRunState(): void
     {
+        $this->runFinished = false;
         $this->cacheFactory->resetConfiguration();
         $this->parallelConfigurationStore->reset();
         $this->analysisRuntimeConfigurator->resetRunState();
@@ -119,6 +122,10 @@ final class RuntimeConfigurator
 
     public function finishRun(): void
     {
+        if ($this->runFinished) {
+            return;
+        }
+        $this->runFinished = true;
         $this->cacheFactory->reportDiscardedEntries();
     }
 

@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
 use Qualimetrix\Core\Environment\EnvironmentFailureInterface;
 use Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
 
@@ -22,6 +23,7 @@ final class RunTargetSession
     public function __construct(
         private readonly RunTargets $runTargets,
         private readonly RefusalPresenter $refusalPresenter,
+        private readonly ?RuntimeConfigurator $runtimeConfigurator = null,
     ) {}
 
     public function targets(): RunTargets
@@ -44,9 +46,16 @@ final class RunTargetSession
         }
 
         try {
-            $this->runTargets->abandon();
+            $this->runtimeConfigurator?->finishRun();
+            $this->runTargets->settle();
         } catch (Throwable $failure) {
             $cleanup = $failure;
+        }
+
+        try {
+            $this->runTargets->abandon();
+        } catch (Throwable $failure) {
+            $cleanup ??= $failure;
         }
 
         try {

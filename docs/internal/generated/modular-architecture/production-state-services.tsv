@@ -137,6 +137,7 @@ src/Infrastructure/Console/RunTarget/RunTargetClaimLifecycle.php	Qualimetrix\Inf
 src/Infrastructure/Console/RunTarget/RunTargetSession.php	Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession	Infrastructure.Console	"adapter session or cache"	-	outputPublished	-
 src/Infrastructure/Console/RunTarget/RunTargets.php	Qualimetrix\Infrastructure\Console\RunTarget\RunTargets	Infrastructure.Console	"adapter session or cache"	-	judged,reportOnStandardOutput	settle
 src/Infrastructure/Console/RunTarget/StagedSignalGuard.php	Qualimetrix\Infrastructure\Console\RunTarget\StagedSignalGuard	Infrastructure.Console	"adapter session or cache"	-	closing,interrupted,previousAsync,previousHandlers	register
+src/Infrastructure/Console/RuntimeConfigurator.php	Qualimetrix\Infrastructure\Console\RuntimeConfigurator	Infrastructure.Console	"adapter session or cache"	-	runFinished	clearCacheIfRequested,configure,configureProfiler,resetRunState
 src/Infrastructure/Git/GitClient.php	Qualimetrix\Infrastructure\Git\GitClient	Infrastructure.Git	"adapter session or cache"	-	gitToplevelCache	-
 src/Infrastructure/Git/NameStatusListing.php	Qualimetrix\Infrastructure\Git\NameStatusListing	Infrastructure.Git	"adapter session or cache"	-	skipped	-
 src/Infrastructure/Logging/FileLogger.php	Qualimetrix\Infrastructure\Logging\FileLogger	Infrastructure.Logging	"adapter session or cache"	-	failure,lostRecords,pending,target	settle

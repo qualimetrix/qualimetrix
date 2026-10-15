@@ -315,6 +315,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(RunTargets::class),
                 new Reference(RefusalPresenter::class),
+                new Reference(RuntimeConfigurator::class),
             ]);
 
         $container->register(ProgressConfigurator::class)

@@ -10707,6 +10707,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itRefusesTheGlobalDisplayLabelButSelectsTheEmptyNamespace
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ArchitectureCeilingRefusalTest::itRefusesAnExceededTemplateExpansionCeilingOnBaselineGenerate
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ArchitectureCeilingRefusalTest::itRefusesAnExceededTemplateExpansionCeilingOnCheck
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CacheDiscardLogLifecycleTest::itPublishesOneCompleteReportAndLogsDiscardBeforeClosingTheTarget
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itReadsAnIntegerAsItsDigitsAndAFlagWrittenAsTrueAsTheFlag
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAReportScopeNoCommandLineSpells"a list"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAReportScopeNoCommandLineSpells"a number, read as its digits"
