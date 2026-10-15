@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Cache;
 
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
@@ -24,16 +25,21 @@ final class CacheConfigurationResolver implements CacheConfigurationResolverInte
         $winner = $writers[\count($writers) - 1];
         $source = CacheSource::explicit($winner);
         if ($enabled) {
-            $reason = CacheLocationJudgement::reason($path, $projectRoot);
-            if ($reason !== null) {
-                $configured->refuse($reason);
-            }
-            $trust = CacheLocationJudgement::trustReason($path);
-            if ($trust !== null) {
-                throw new CacheRootUntrusted($source->spelling . ': ' . $trust);
-            }
+            $this->judgeExplicitDirectory($configured, $path, $projectRoot, $source);
         }
 
         return new CacheConfiguration($path, $enabled, source: $source, projectRoot: $projectRoot);
+    }
+
+    private function judgeExplicitDirectory(ResolvedValueInterface $configured, AbsolutePath $path, AbsolutePath $projectRoot, CacheSource $source): void
+    {
+        $reason = CacheLocationJudgement::reason($path, $projectRoot);
+        if ($reason !== null) {
+            $configured->refuse($reason);
+        }
+        $trust = CacheLocationJudgement::trustReason($path);
+        if ($trust !== null) {
+            throw new CacheRootUntrusted($source->spelling . ': ' . $trust);
+        }
     }
 }

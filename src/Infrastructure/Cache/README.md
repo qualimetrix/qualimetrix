@@ -52,6 +52,10 @@ The resolver captures `getenv()` for a configured run. The store captures cwd
 and environment at its first runtime read after reset, never during container
 construction. `CacheSource` retains the explicit writer or default source.
 
+The resolver separates directory selection and provenance from the explicit
+directory judgement. Location refusals retain the resolved value and its writers;
+trust failures retain the winning source spelling.
+
 Explicit directories are judged before analysis when caching is enabled or
 `--clear-cache` uses the location. `--no-cache` without clearing does not judge
 an unused root. A canonical root equal to or
