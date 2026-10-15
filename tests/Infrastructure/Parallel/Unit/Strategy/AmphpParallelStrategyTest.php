@@ -13,10 +13,14 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
+use Qualimetrix\Analysis\Run\Contract\Collection\SuccessfulFileProcessing;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
 use Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy;
 use RecursiveDirectoryIterator;
@@ -41,12 +45,6 @@ final class AmphpParallelStrategyTest extends TestCase
         if (is_dir($this->tempDir)) {
             $this->removeDirectory($this->tempDir);
         }
-    }
-
-    #[Test]
-    public function itDeclaresProcessParallelCapabilityWithoutGuessingMachineAvailability(): void
-    {
-        self::assertTrue($this->strategy->isParallelAvailable());
     }
 
     #[Test]
@@ -81,10 +79,10 @@ final class AmphpParallelStrategyTest extends TestCase
         // We can't directly read the private property, but we can verify behavior
         // by checking that small file sets fall back to sequential
         $files = $this->createTestFiles(50);
-        $processor = fn(SplFileInfo $file): string => $file->getPathname();
+        $processor = fn(SplFileInfo $file): FileProcessingResult => self::resultFor($file);
 
         // With 50 files and threshold of 200, should fall back to sequential
-        $results = $this->strategy->execute($files, $processor, canParallelize: true);
+        $results = $this->strategy->execute($files, $processor);
 
         self::assertCount(50, $results);
     }
@@ -107,7 +105,6 @@ final class AmphpParallelStrategyTest extends TestCase
 
         self::assertCount(2, $results);
         foreach ($results as $result) {
-            self::assertInstanceOf(FileProcessingResult::class, $result);
             self::assertTrue($result->isSuccessful());
         }
     }
@@ -137,10 +134,8 @@ final class AmphpParallelStrategyTest extends TestCase
             );
 
             self::assertCount(2, $results);
-            self::assertInstanceOf(FileProcessingResult::class, $results[0]);
             self::assertTrue($results[0]->isSuccessful());
             self::assertSame('src/Named.php', $results[0]->filePath->value());
-            self::assertInstanceOf(FileProcessingResult::class, $results[1]);
             self::assertFalse($results[1]->isSuccessful());
             self::assertSame('src/Missing.php', $results[1]->filePath->value());
         } finally {
@@ -150,32 +145,15 @@ final class AmphpParallelStrategyTest extends TestCase
     }
 
     #[Test]
-    public function itFallsBackToSequentialWhenCannotParallelize(): void
-    {
-        $files = $this->createTestFiles(2);
-
-        $callCount = 0;
-        $processor = function (SplFileInfo $file) use (&$callCount): string {
-            $callCount++;
-            return $file->getPathname();
-        };
-
-        $results = $this->strategy->execute($files, $processor, canParallelize: false);
-
-        self::assertSame(2, $callCount);
-        self::assertCount(2, $results);
-    }
-
-    #[Test]
     public function itHandlesEmptyFilesList(): void
     {
         $callCount = 0;
-        $processor = function (SplFileInfo $file) use (&$callCount): string {
+        $processor = function (SplFileInfo $file) use (&$callCount): FileProcessingResult {
             $callCount++;
-            return $file->getPathname();
+            return self::resultFor($file);
         };
 
-        $results = $this->strategy->execute([], $processor, canParallelize: true);
+        $results = $this->strategy->execute([], $processor);
 
         self::assertSame(0, $callCount);
         self::assertSame([], $results);
@@ -188,12 +166,12 @@ final class AmphpParallelStrategyTest extends TestCase
         $files = $this->createTestFiles(50);
 
         $callCount = 0;
-        $processor = function (SplFileInfo $file) use (&$callCount): string {
+        $processor = function (SplFileInfo $file) use (&$callCount): FileProcessingResult {
             $callCount++;
-            return $file->getPathname();
+            return self::resultFor($file);
         };
 
-        $results = $this->strategy->execute($files, $processor, canParallelize: true);
+        $results = $this->strategy->execute($files, $processor);
 
         self::assertSame(50, $callCount);
         self::assertCount(50, $results);
@@ -209,12 +187,12 @@ final class AmphpParallelStrategyTest extends TestCase
         // Don't set projectRoot - should cause fallback
 
         $callCount = 0;
-        $processor = function (SplFileInfo $file) use (&$callCount): string {
+        $processor = function (SplFileInfo $file) use (&$callCount): FileProcessingResult {
             $callCount++;
-            return $file->getPathname();
+            return self::resultFor($file);
         };
 
-        $results = $this->strategy->execute($files, $processor, canParallelize: true);
+        $results = $this->strategy->execute($files, $processor);
 
         // Should fall back to sequential
         self::assertSame(20, $callCount);
@@ -231,12 +209,12 @@ final class AmphpParallelStrategyTest extends TestCase
         $this->strategy->setProjectRoot(AbsolutePath::fromString($this->tempDir));
 
         $callCount = 0;
-        $processor = function (SplFileInfo $file) use (&$callCount): string {
+        $processor = function (SplFileInfo $file) use (&$callCount): FileProcessingResult {
             $callCount++;
-            return $file->getPathname();
+            return self::resultFor($file);
         };
 
-        $results = $this->strategy->execute($files, $processor, canParallelize: true);
+        $results = $this->strategy->execute($files, $processor);
 
         // Should fall back to sequential
         self::assertSame(20, $callCount);
@@ -249,19 +227,19 @@ final class AmphpParallelStrategyTest extends TestCase
         $files = $this->createTestFiles(5);
 
         $processedFiles = [];
-        $processor = function (SplFileInfo $file) use (&$processedFiles): string {
+        $processor = function (SplFileInfo $file) use (&$processedFiles): FileProcessingResult {
             $processedFiles[] = $file->getPathname();
-            return $file->getPathname();
+            return self::resultFor($file);
         };
 
-        $results = $this->strategy->execute($files, $processor, canParallelize: false);
+        $results = $this->strategy->execute($files, $processor);
 
         self::assertCount(5, $results);
         self::assertCount(5, $processedFiles);
 
         // Verify all files were processed
         foreach ($files as $index => $file) {
-            self::assertSame($file->getPathname(), $results[$index]);
+            self::assertSame($file->getPathname(), $results[$index]->error());
             self::assertSame($file->getPathname(), $processedFiles[$index]);
         }
     }
@@ -283,9 +261,9 @@ final class AmphpParallelStrategyTest extends TestCase
         $strategy->setMinFilesForParallel(100);
 
         $files = $this->createTestFiles(50);
-        $processor = fn(SplFileInfo $file): string => $file->getPathname();
+        $processor = fn(SplFileInfo $file): FileProcessingResult => self::resultFor($file);
 
-        $strategy->execute($files, $processor, canParallelize: true);
+        $strategy->execute($files, $processor);
     }
 
     #[Test]
@@ -300,9 +278,9 @@ final class AmphpParallelStrategyTest extends TestCase
         $strategy->setMinFilesForParallel(10);
 
         $files = $this->createTestFiles(20);
-        $processor = fn(SplFileInfo $file): string => $file->getPathname();
+        $processor = fn(SplFileInfo $file): FileProcessingResult => self::resultFor($file);
 
-        $strategy->execute($files, $processor, canParallelize: true);
+        $strategy->execute($files, $processor);
     }
 
     #[Test]
@@ -321,9 +299,9 @@ final class AmphpParallelStrategyTest extends TestCase
         // Don't set collector classes
 
         $files = $this->createTestFiles(20);
-        $processor = fn(SplFileInfo $file): string => $file->getPathname();
+        $processor = fn(SplFileInfo $file): FileProcessingResult => self::resultFor($file);
 
-        $strategy->execute($files, $processor, canParallelize: true);
+        $strategy->execute($files, $processor);
     }
 
     #[Test]
@@ -343,19 +321,36 @@ final class AmphpParallelStrategyTest extends TestCase
     }
 
     #[Test]
-    public function itHandlesProcessorReturningDifferentTypes(): void
+    public function itPreservesRichProcessorResultsDuringSequentialFallback(): void
     {
         $files = $this->createTestFiles(3);
+        $expected = [];
+        foreach ($files as $index => $file) {
+            $expected[] = FileProcessingResult::success(
+                RelativePath::fromString($file->getFilename()),
+                new SuccessfulFileProcessing(
+                    MetricBag::fromArray([MetricName::SIZE_LOC => $index + 1])
+                        ->withEntry('fixture', ['path' => $file->getFilename(), 'index' => $index]),
+                    classLikeDeclarations: [],
+                ),
+            );
+        }
 
-        $processor = fn(SplFileInfo $file): array => ['path' => $file->getPathname(), 'size' => $file->getSize()];
+        $processedFiles = [];
+        $processor = static function (SplFileInfo $file) use (&$processedFiles, $expected): FileProcessingResult {
+            $processedFiles[] = $file->getFilename();
 
-        $results = $this->strategy->execute($files, $processor, canParallelize: false);
+            return $expected[\count($processedFiles) - 1];
+        };
 
-        self::assertCount(3, $results);
-        foreach ($results as $result) {
-            self::assertIsArray($result);
-            self::assertArrayHasKey('path', $result);
-            self::assertArrayHasKey('size', $result);
+        $results = $this->strategy->execute($files, $processor);
+
+        self::assertSame($expected, $results);
+        self::assertSame(array_map(static fn(SplFileInfo $file): string => $file->getFilename(), $files), $processedFiles);
+        foreach ($results as $index => $result) {
+            self::assertSame($files[$index]->getFilename(), $result->filePath->value());
+            self::assertSame($index + 1, $result->fileBag()->get(MetricName::SIZE_LOC));
+            self::assertSame([['path' => $files[$index]->getFilename(), 'index' => $index]], $result->fileBag()->entries('fixture'));
         }
     }
 
@@ -420,12 +415,12 @@ PHP;
         $files = $this->createTestFiles(10);
 
         $processedOrder = [];
-        $processor = function (SplFileInfo $file) use (&$processedOrder): int {
+        $processor = function (SplFileInfo $file) use (&$processedOrder): FileProcessingResult {
             $processedOrder[] = $file->getFilename();
-            return 1;
+            return self::resultFor($file);
         };
 
-        $this->strategy->execute($files, $processor, canParallelize: false);
+        $this->strategy->execute($files, $processor);
 
         // Verify files were processed in the same order
         self::assertCount(10, $processedOrder);
@@ -443,11 +438,16 @@ PHP;
         // Create 1 file - should still fall back to sequential
         // due to missing configuration (projectRoot, collectors)
         $files = $this->createTestFiles(1);
-        $processor = fn(SplFileInfo $file): string => $file->getPathname();
+        $processor = fn(SplFileInfo $file): FileProcessingResult => self::resultFor($file);
 
-        $results = $this->strategy->execute($files, $processor, canParallelize: true);
+        $results = $this->strategy->execute($files, $processor);
 
         self::assertCount(1, $results);
+    }
+
+    private static function resultFor(SplFileInfo $file): FileProcessingResult
+    {
+        return FileProcessingResult::failure(RelativePath::fromString($file->getFilename()), $file->getPathname());
     }
 
     /**

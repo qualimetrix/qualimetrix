@@ -28,7 +28,7 @@ use Qualimetrix\Analysis\Run\Discovery\ProjectWalk;
 use Qualimetrix\Analysis\Run\Discovery\ScopeFacts;
 use Qualimetrix\Analysis\Run\Pipeline\DependencyGraphAnalyzer;
 use Qualimetrix\Core\Ast\FileParserInterface;
-use Qualimetrix\Core\Exception\ParseException;
+use Qualimetrix\Core\Ast\ParseException;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 use ReflectionClass;
@@ -300,7 +300,7 @@ PHP);
     private function configuration(): RunConfiguration
     {
         $root = AbsolutePath::fromString($this->tempDir);
-        return new RunConfiguration([], $root, GeneratedFilePolicy::Exclude, new ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: ProjectScopeState::Covered, uncoveredRoots: []), [], AutoloadDevPolicy::Exclude);
+        return new RunConfiguration([], $root, GeneratedFilePolicy::Exclude, new ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: [], manifestFacts: (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root)), paths: [$root], scopeState: ProjectScopeState::Covered, uncoveredRoots: []), [], AutoloadDevPolicy::Exclude);
     }
 
     private function parser(): FileParserInterface

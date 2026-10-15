@@ -282,6 +282,7 @@ final class ProjectWalkTest extends TestCase
                 [],
                 true,
                 [],
+                (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($run->projectRoot),
             );
             $walked = (new ProjectWalk(new EntryInspector()))->walk(new WalkRequest($run->withProjectScope(
                 new ProjectScopeMeasurement($universe, $run->paths, ProjectScopeState::Covered, []),
@@ -350,9 +351,18 @@ final class ProjectWalkTest extends TestCase
         };
         $root = AbsolutePath::fromString($this->root);
         $configuration = $this->configuration([$this->root . '/src/A.php'], []);
-        $universe = new ProjectScopeUniverse($root, true, [
-            ['target' => '.', 'path' => $root],
-        ], [], [], true, []);
+        $universe = new ProjectScopeUniverse(
+            $root,
+            true,
+            [
+                ['target' => '.', 'path' => $root],
+            ],
+            [],
+            [],
+            true,
+            [],
+            (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root),
+        );
         $configuration = $configuration->withProjectScope(new ProjectScopeMeasurement(
             $universe,
             $configuration->paths,
@@ -792,6 +802,7 @@ final class ProjectWalkTest extends TestCase
                 [],
                 true,
                 [],
+                (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($run->projectRoot),
             );
             $walked = (new ProjectWalk(new EntryInspector()))->walk(new WalkRequest($run->withProjectScope(
                 new ProjectScopeMeasurement($universe, $run->paths, ProjectScopeState::Covered, []),
@@ -901,9 +912,18 @@ final class ProjectWalkTest extends TestCase
     {
         $root = AbsolutePath::fromString($this->root);
         $absolutePaths = array_map(AbsolutePath::fromString(...), $paths);
-        $universe = new ProjectScopeUniverse($root, true, [
-            ['target' => 'src', 'path' => AbsolutePath::fromString($this->root . '/src')],
-        ], [], [], true, []);
+        $universe = new ProjectScopeUniverse(
+            $root,
+            true,
+            [
+                ['target' => 'src', 'path' => AbsolutePath::fromString($this->root . '/src')],
+            ],
+            [],
+            [],
+            true,
+            [],
+            (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root),
+        );
 
         return new RunConfiguration(
             pathExcludes: array_map(static fn(AuthoredExclude $selector): PathPattern => $selector->pattern, $selectors),

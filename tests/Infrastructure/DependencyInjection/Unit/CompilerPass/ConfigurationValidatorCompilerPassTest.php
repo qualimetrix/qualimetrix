@@ -37,15 +37,15 @@ final class ConfigurationValidatorCompilerPassTest extends TestCase
     {
         $container = new ContainerBuilder();
         $container->setDefinition(ConfigurationValidatorRegistry::class, new Definition(stdClass::class));
-        $container->setDefinition('Qualimetrix\\Analysis\\Finding\\RuleExecution', new Definition(stdClass::class));
+        $container->setDefinition('Qualimetrix\\Analysis\\Finding\\RuleMaterialization', new Definition(stdClass::class));
         $container->register('validator.arriving', ArrivingValidator::class)
             ->addTag(ConfigurationValidatorCompilerPass::TAG);
 
         (new ConfigurationValidatorCompilerPass())->process($container);
 
         $executorArgument = $container
-            ->getDefinition('Qualimetrix\\Analysis\\Finding\\RuleExecution')
-            ->getArgument('$configurationValidators');
+            ->getDefinition('Qualimetrix\\Analysis\\Finding\\RuleMaterialization')
+            ->getArgument('$validators');
         self::assertIsArray($executorArgument);
         self::assertEquals([
             ['producer' => 'test.rule', 'create' => new ServiceClosureArgument(new Reference('validator.arriving'))],

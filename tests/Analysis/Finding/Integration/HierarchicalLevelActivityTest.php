@@ -144,6 +144,8 @@ final class HierarchicalLevelActivityTest extends TestCase
         $execution = $container->get(RuleExecutionInterface::class);
         self::assertInstanceOf(RuleExecutionInterface::class, $execution);
 
-        return $execution->levelActivity()->toMap();
+        $publication = $container->get(\Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface::class, $publication);
+        return $publication->levelActivity()->toMap();
     }
 }

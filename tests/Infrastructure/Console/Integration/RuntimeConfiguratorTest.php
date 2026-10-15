@@ -772,7 +772,7 @@ PHP, var_export(\dirname(__DIR__, 4) . '/vendor/autoload.php', true));
             [],
             $root,
             GeneratedFilePolicy::Include,
-            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: false, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Unmeasured, uncoveredRoots: []),
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: false, pathResolutions: [], manifestFacts: (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root)), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Unmeasured, uncoveredRoots: []),
             authoredPathExcludes: [],
             autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         );

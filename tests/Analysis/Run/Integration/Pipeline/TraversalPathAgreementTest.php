@@ -126,7 +126,7 @@ final class TraversalPathAgreementTest extends TestCase
     private function configuration(): RunConfiguration
     {
         $root = $this->projectRoot();
-        return new RunConfiguration([], $root, GeneratedFilePolicy::Exclude, new ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: ProjectScopeState::Covered, uncoveredRoots: []), [], AutoloadDevPolicy::Exclude);
+        return new RunConfiguration([], $root, GeneratedFilePolicy::Exclude, new ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: [], manifestFacts: (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root)), paths: [$root], scopeState: ProjectScopeState::Covered, uncoveredRoots: []), [], AutoloadDevPolicy::Exclude);
     }
 
     private function projectRoot(): AbsolutePath

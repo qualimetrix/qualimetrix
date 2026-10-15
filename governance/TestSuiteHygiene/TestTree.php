@@ -46,12 +46,9 @@ use SplFileInfo;
  * here, or anywhere in this group.** Only whether a given class appeared in a
  * listing, which is measured.
  *
- * **Declarations are read from the syntax tree, not from reflection.** The tree
- * still carries test files whose namespace does not follow their path — they
- * are the ones {@see NamespacePathAllowList} tracks, and `composer
- * dump-autoload -o` skips them outright — so loading a class by the name its
- * path implies would miss exactly the files most likely to be wrong. Parsing
- * reads every file the same way and needs no autoloader.
+ * **Declarations are read from the syntax tree, not from reflection.** Parsing
+ * reads every file the same way and needs no autoloader; it also lets the
+ * namespace guard report declarations that an autoloader would skip.
  */
 final class TestTree
 {
@@ -169,8 +166,7 @@ final class TestTree
     /**
      * Every `*Test.php` under the dev roots, named once.
      *
-     * A root nested inside another is a shape {@see NamespacePathAllowList}
-     * already resolves, so it reaches here too, and a file under both would
+     * A root nested inside another reaches here too, and a file under both would
      * otherwise be counted twice — inflating the floors that are the only thing
      * standing between a scan that read nothing and a green guard.
      *

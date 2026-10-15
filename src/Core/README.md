@@ -32,10 +32,9 @@ Core/
 ├── Ast/
 │   ├── FileParserInterface.php            # AST parsing contract
 │   ├── NameResolution.php                 # Class-name resolution before collection
+│   ├── ParseException.php                 # Parse error value
 │   ├── ResolvedName.php                   # Resolved declaration-name query
 │   └── SuperglobalRead.php               # Finite direct superglobal read shapes
-├── Exception/
-│   └── ParseException.php                 # Parse error value
 ├── Environment/
 │   └── EnvironmentFailureInterface.php    # Neutral delivery/storage failure marker
 ├── FileTarget/
@@ -206,7 +205,7 @@ Analogous to `CallableMetricsProviderInterface` but for class-level data. Allows
 **Methods:**
 - `getClassesWithMetrics(RelativePath $file): list<ClassWithMetrics>` — returns class metrics after AST traversal
 
-**Usage:** Implemented by collectors that gather class-level metrics (e.g., TccLccCollector, RfcCollector).
+**Usage:** Implemented by collectors that gather class-level metrics (e.g., TccLccCollector, [`RfcCollector`](../Analysis/Evidence/Coupling/Rfc/RfcCollector.php)).
 
 ### NamespaceMetricProviderInterface
 
@@ -1067,7 +1066,7 @@ Determines whether a namespace belongs to the project (not an external dependenc
 ### ParseException
 
 **Fields:**
-- `file: string` — path to the file with error
+- `filePath: AbsolutePath` — path to the file with error
 - `message: string` — parse error description
 
 ---

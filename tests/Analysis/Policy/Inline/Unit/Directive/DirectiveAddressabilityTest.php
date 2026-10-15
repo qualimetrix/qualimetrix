@@ -73,8 +73,8 @@ final class DirectiveAddressabilityTest extends TestCase
      * identical — the premise this test exists to check disappeared, and
      * `problemWithThreshold()` started returning `null` because the name now
      * resolves as a rule. `code-smell.parameter-count` keeps the premise
-     * true: it is the metric {@see \Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule}
-     * and {@see \Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionRule}
+     * true: it is the metric {@see \Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\LongParameterListRule}
+     * and {@see \Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ConstructorOverinjectionRule}
      * both judge, and it is nine edits from the one channel this fixture
      * declares for it, so the near-spelling search cannot reach the answer:
      * without the declared relation the author is told nothing is close to

@@ -36,7 +36,7 @@ final class GitScopeResolverTest extends TestCase
                 pathExcludes: self::patterns('vendor', 'node_modules', '.git'),
                 projectRoot: $projectRoot,
                 generatedFilePolicy: GeneratedFilePolicy::Exclude,
-                projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $projectRoot, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [AbsolutePath::fromString($projectRoot->value() . '/src')], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
+                projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $projectRoot, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: [], manifestFacts: (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($projectRoot)), paths: [AbsolutePath::fromString($projectRoot->value() . '/src')], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
                 authoredPathExcludes: [],
                 autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
             );
@@ -59,7 +59,7 @@ final class GitScopeResolverTest extends TestCase
             pathExcludes: self::patterns('vendor', 'node_modules', '.git'),
             projectRoot: $projectRoot,
             generatedFilePolicy: GeneratedFilePolicy::Exclude,
-            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $projectRoot, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [AbsolutePath::fromString('/some/project/src')], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $projectRoot, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: [], manifestFacts: (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($projectRoot)), paths: [AbsolutePath::fromString('/some/project/src')], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
             authoredPathExcludes: [],
             autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         );
@@ -79,7 +79,7 @@ final class GitScopeResolverTest extends TestCase
             pathExcludes: self::patterns('vendor', 'tests'),
             projectRoot: $projectRoot,
             generatedFilePolicy: GeneratedFilePolicy::Exclude,
-            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $projectRoot, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [AbsolutePath::fromString('/some/project/src'), AbsolutePath::fromString('/some/project/tests')], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $projectRoot, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: [], manifestFacts: (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($projectRoot)), paths: [AbsolutePath::fromString('/some/project/src'), AbsolutePath::fromString('/some/project/tests')], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
             authoredPathExcludes: [],
             autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         );
@@ -100,7 +100,7 @@ final class GitScopeResolverTest extends TestCase
             pathExcludes: self::patterns('vendor', 'node_modules', '.git'),
             projectRoot: $projectRoot,
             generatedFilePolicy: GeneratedFilePolicy::Exclude,
-            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $projectRoot, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [AbsolutePath::fromString('/some/project/src')], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $projectRoot, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: [], manifestFacts: (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($projectRoot)), paths: [AbsolutePath::fromString('/some/project/src')], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
             authoredPathExcludes: [],
             autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         );

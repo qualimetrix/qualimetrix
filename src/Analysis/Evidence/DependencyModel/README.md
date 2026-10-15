@@ -232,12 +232,13 @@ or allow other modules to import extraction internals.
 The module owns these Unit test classes under
 `tests/Analysis/Evidence/DependencyModel/Unit/`:
 
-- `DependencyTest`
-- `DependencyGraphTest`
-- `DependencyGraphBuilderTest`
-- `DependencyResolverTest`
-- `DependencyVisitorTest`
-- `TypeDependencyHelperTest`
+- `DependencyTest`, `DependencyGraphTest`, `DependencyGraphBuilderTest`,
+  `NamespaceCouplingsTest`, and `StringSetTest` at the root
+- `AttributeSiteTest`, `ClassLikeDeclarationTest`, and `TypeShapeTest` in
+  `Contract/`
+- `DependencyResolverTest`, `DependencyVisitorTest`, and
+  `DuplicateDeclarationEdgeSourceTest` in `Extraction/`
+- `TypeDependencyHelperTest` in `Extraction/Handler/`
 
 Run them with:
 

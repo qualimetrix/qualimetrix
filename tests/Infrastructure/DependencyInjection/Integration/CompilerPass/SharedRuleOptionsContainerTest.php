@@ -134,7 +134,16 @@ final class SharedRuleOptionsContainerTest extends TestCase
         $firstAggregate = $container->get('Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricProducerOptions');
         $firstRule = $container->get('Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricRule');
         self::assertTrue($firstOptions->isEnabled());
-        self::assertTrue($execution->levelActivity()->toMap()['health.complexity']['project']);
+        $publication = $container->get(\Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface::class, $publication);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\RuleExecution::class, $execution);
+        self::assertSame($publication, (new ReflectionProperty(\Qualimetrix\Analysis\Finding\RuleExecution::class, 'publication'))->getValue($execution));
+        self::assertSame(
+            (new ReflectionProperty(\Qualimetrix\Analysis\Finding\RuleExecution::class, 'materialization'))->getValue($execution),
+            (new ReflectionProperty(\Qualimetrix\Analysis\Finding\FindingPublication::class, 'materialization'))->getValue($publication),
+        );
+        self::assertProducerActivityAgrees($execution, $publication);
+        self::assertTrue($publication->levelActivity()->toMap()['health.complexity']['project']);
         self::assertFalse($registry->resolvedOptions()->for('computed')->isEnabled());
         $second = $preflight->resolve(new ArrayInput([
             'paths' => [__DIR__], '--no-cache' => true, '--workers' => '1',
@@ -143,9 +152,26 @@ final class SharedRuleOptionsContainerTest extends TestCase
         self::assertNotSame($first->findingConfiguration?->resolvedOptions, $second->findingConfiguration?->resolvedOptions);
         self::assertNotSame($firstOptions, $registry->resolvedOptions()->for('health.complexity'));
         self::assertFalse($registry->resolvedOptions()->for('health.complexity')->isEnabled());
-        self::assertFalse($execution->levelActivity()->toMap()['health.complexity']['project']);
+        self::assertProducerActivityAgrees($execution, $publication);
+        self::assertFalse($publication->levelActivity()->toMap()['health.complexity']['project']);
         self::assertNotSame($firstAggregate, $container->get('Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricProducerOptions'));
         self::assertNotSame($firstRule, $container->get('Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricRule'));
+    }
+
+    private static function assertProducerActivityAgrees(
+        RuleExecutionInterface $execution,
+        \Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface $publication,
+    ): void {
+        $rules = $execution->allRules();
+        self::assertCount(56, $rules);
+        $activity = $publication->levelActivity()->toMap();
+        foreach ($rules as $rule) {
+            if (!isset($activity[$rule->name])) {
+                self::assertFalse($rule->active, $rule->name);
+                continue;
+            }
+            self::assertSame($rule->active, \in_array(true, $activity[$rule->name], true), $rule->name);
+        }
     }
 
     private function createContainer(): ContainerBuilder

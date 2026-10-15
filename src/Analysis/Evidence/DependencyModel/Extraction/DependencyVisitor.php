@@ -99,8 +99,7 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
     /**
      * Resets the visitor state between files.
      *
-     * Called automatically by beginFile(), but can also be called directly
-     * when reusing the visitor for multiple files in the same traverser.
+     * Called automatically by beginFile().
      */
     public function reset(): void
     {

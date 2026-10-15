@@ -12,7 +12,7 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
-use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement;
@@ -376,7 +376,7 @@ final class UnboundSuppressionAuditTest extends TestCase
     public function itReadsEachInvocationSnapshotFromTheSameAuditInstance(): void
     {
         $registry = new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry();
-        $execution = self::createStub(RuleExecutionInterface::class);
+        $execution = self::createStub(RulePublicationInterface::class);
         $execution->method('publishable')->willReturnArgument(0);
         $audit = new UnboundSuppressionAudit($execution, $registry);
         $producer = \Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::NAME;
@@ -413,7 +413,7 @@ final class UnboundSuppressionAuditTest extends TestCase
         foreach (['all', 'pathExclusions', 'namespaceExclusions', 'namespaceChannelExclusions'] as $rawDoor) {
             $configuration->method($rawDoor)->willThrowException(new LogicException('The audit must read typed suppression.'));
         }
-        $execution = self::createStub(RuleExecutionInterface::class);
+        $execution = self::createStub(RulePublicationInterface::class);
         $execution->method('publishable')->willReturnArgument(0);
         $audit = new UnboundSuppressionAudit($execution, $configuration);
         $findings = $audit->auditResult([], [], [], null, $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths])), self::populationPublication())['findings'];
@@ -448,7 +448,7 @@ final class UnboundSuppressionAuditTest extends TestCase
         array $namespaceLedger = [],
         array $channelLedger = [],
     ): UnboundSuppressionAudit {
-        $execution = self::createStub(RuleExecutionInterface::class);
+        $execution = self::createStub(RulePublicationInterface::class);
         // Selection is proved on a real run; here the audit's own arithmetic is
         // the subject, so `publishable()` passes everything through.
         $execution->method('publishable')->willReturnArgument(0);

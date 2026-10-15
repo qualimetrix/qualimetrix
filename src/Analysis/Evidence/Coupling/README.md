@@ -233,18 +233,19 @@ sum/average/max/p95/count aggregates sample the final declarations once.
 
 ```text
 Coupling/
-├── RfcCollector.php          # entry-only per-file facts
-├── RfcVisitor.php            # exact named declaration traversal
-├── RfcClassFacts.php         # scalar row extraction
-├── RfcBodyResponses.php      # invocation traversal
-├── RfcReceiverTypes.php      # declared/local receiver type evidence
-├── RfcLocalFlow.php          # local invalidation across uncertain control flow
-├── RfcDeclarationFacts.php   # global row decoding
-├── RfcDeclarationIndex.php   # exact declaration/name/parent index
-├── RfcEffectiveMembers.php   # trait members, hook and property sources
-├── RfcPropertyTypes.php      # declared property type context and ancestry
-├── RfcResponseResolver.php   # declared targets and response membership
-└── RfcGlobalCollector.php    # sole final metric publisher
+└── Rfc/
+    ├── RfcCollector.php          # entry-only per-file facts
+    ├── RfcVisitor.php            # exact named declaration traversal
+    ├── RfcClassFacts.php         # scalar row extraction
+    ├── RfcBodyResponses.php      # invocation traversal
+    ├── RfcReceiverTypes.php      # declared/local receiver type evidence
+    ├── RfcLocalFlow.php          # local invalidation across uncertain control flow
+    ├── RfcDeclarationFacts.php   # global row decoding
+    ├── RfcDeclarationIndex.php   # exact declaration/name/parent index
+    ├── RfcEffectiveMembers.php   # trait members, hook and property sources
+    ├── RfcPropertyTypes.php      # declared property type context and ancestry
+    ├── RfcResponseResolver.php   # declared targets and response membership
+    └── RfcGlobalCollector.php    # sole final metric publisher
 ```
 
 These internal subjects change for different reasons: type recognition when

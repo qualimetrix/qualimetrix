@@ -67,7 +67,7 @@ final class DirectiveAuditSummaryProjectionTest extends TestCase
     {
         $root = AbsolutePath::fromString('/project');
         $scope = new ProjectScopeMeasurement(
-            new ProjectScopeUniverse($root, true, [], [], [], true, []),
+            new ProjectScopeUniverse($root, true, [], [], [], true, [], (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root)),
             [$root->joinRelative(RelativePath::fromString('src'))],
             ProjectScopeState::Narrowed,
             ['src/Other.php'],
@@ -184,7 +184,7 @@ final class DirectiveAuditSummaryProjectionTest extends TestCase
         $root = AbsolutePath::fromString('/project');
 
         return new ProjectScopeMeasurement(
-            new ProjectScopeUniverse($root, true, [], [], [], true, []),
+            new ProjectScopeUniverse($root, true, [], [], [], true, [], (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root)),
             [$root],
             ProjectScopeState::Covered,
             [],

@@ -286,7 +286,7 @@ final class EntryComparabilityTest extends TestCase
             RunScope::fromRecorded($scope),
             new AnalysisCoverage($analyzed, [], []),
             $exclusions,
-            new ProjectScopeUniverse($root, true, [['target' => 'src', 'path' => $root->joinRelative(RelativePath::fromString('src'))]], [], [], false, []),
+            new ProjectScopeUniverse($root, true, [['target' => 'src', 'path' => $root->joinRelative(RelativePath::fromString('src'))]], [], [], false, [], (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root)),
             [],
             $tree,
             \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), $analyzed, []),

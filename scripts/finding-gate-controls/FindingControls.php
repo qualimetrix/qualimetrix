@@ -173,7 +173,7 @@ final class FindingControls
     public static function ceilingMutation(): Mutation
     {
         return Mutation::edit(
-            'src/Analysis/Evidence/CodeSmell/UnusedPrivateRule.php',
+            'src/Analysis/Evidence/CodeSmell/UnusedPrivate/UnusedPrivateRule.php',
             ['metricValue: $total,' => 'metricValue: $total + 1,'],
             'the unused-private count each finding records is one higher',
         );

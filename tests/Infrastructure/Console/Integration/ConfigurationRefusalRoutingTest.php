@@ -46,7 +46,7 @@ use Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
-use Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException;
+use Qualimetrix\Infrastructure\Rule\ConflictingCliAliasException;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
 use Qualimetrix\Tests\TestSupport\WorkingDirectory\RunsFromRepositoryRoot;

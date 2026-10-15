@@ -30,7 +30,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * {@see AnalysisContext} — nor may it become part of it, since ADR 0022
  * forbids a new port into rule execution for it. So the finding is assembled
  * by {@see UnmatchedExcludeAudit} on Run's own side of the pipeline and passed
- * through `RuleExecutionInterface::publishable()`, exactly as
+ * through `RulePublicationInterface::publishable()`, exactly as
  * `annotation.unused-directive` is. This class is what makes that assembled
  * finding a *channel*: without a registered rule there is no entry in
  * `qmx rules`, no `--disable-rule`, no severity and no baseline identity.

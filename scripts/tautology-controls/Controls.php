@@ -52,9 +52,9 @@ final class Controls
             'Qualimetrix.Tests.Infrastructure.Parallel.Unit.Strategy.AmphpParallelStrategyTest::itUsesLoggerForDebugMessages',
             'Qualimetrix.Tests.Infrastructure.Rule.Unit.RuleRegistryTest::itReadsMetadataOffARuleClassItCouldNotHaveBuilt',
             'Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.Configurator.DeclaredChannelFileScopeTest::itKeepsDeclaredProjectChannelsExemptAndLayerViolationsFileScoped',
-            'Qualimetrix.Tests.Unit.Core.Symbol.CallableKindTest::itUsesValuesNoCompositeKeyCanSplitInTheWrongPlace',
-            'Qualimetrix.Tests.Unit.Core.Symbol.SymbolInfoTest::itKeepsTheExactSubjectItWasConstructedFrom',
-            'Qualimetrix.Tests.Unit.Core.Symbol.SymbolInfoTest::itRefusesAWriteToAConstructedSymbolInfo',
+            'Qualimetrix.Tests.Core.Symbol.Unit.CallableKindTest::itUsesValuesNoCompositeKeyCanSplitInTheWrongPlace',
+            'Qualimetrix.Tests.Core.Symbol.Unit.SymbolInfoTest::itKeepsTheExactSubjectItWasConstructedFrom',
+            'Qualimetrix.Tests.Core.Symbol.Unit.SymbolInfoTest::itRefusesAWriteToAConstructedSymbolInfo',
         ];
     }
 
@@ -88,7 +88,7 @@ final class Controls
                 'SymbolInfo refuses a write after construction',
                 'src/Core/Symbol/SymbolInfo.php',
                 ['final readonly class SymbolInfo' => 'final class SymbolInfo'],
-                ['Qualimetrix.Tests.Unit.Core.Symbol.SymbolInfoTest::itRefusesAWriteToAConstructedSymbolInfo'],
+                ['Qualimetrix.Tests.Core.Symbol.Unit.SymbolInfoTest::itRefusesAWriteToAConstructedSymbolInfo'],
             ),
 
             Control::breaking(
@@ -97,7 +97,16 @@ final class Controls
                 'SymbolInfo keeps the exact subject it was constructed from',
                 'src/Core/Symbol/SymbolInfo.php',
                 ['$this->subject = $symbolPath instanceof MetricSubject ? $symbolPath : null;' => '$this->subject = null;'],
-                ['Qualimetrix.Tests.Unit.Core.Symbol.SymbolInfoTest::itKeepsTheExactSubjectItWasConstructedFrom'],
+                ['Qualimetrix.Tests.Core.Symbol.Unit.SymbolInfoTest::itKeepsTheExactSubjectItWasConstructedFrom'],
+            )->alsoReddens(
+                'the stored ownership case also checks that SymbolInfo retains its exact subject',
+                ['Qualimetrix.Tests.Core.Symbol.Unit.SymbolInfoTest::itStoresOnlyExactNamedMemberOwnership'],
+            )->alsoReddens(
+                'both configured-container cases add exact declaration metrics through MetricSubjectIndex, which refuses SymbolInfo without its subject',
+                [
+                    'Qualimetrix.Tests.Infrastructure.DependencyInjection.Integration.ContainerFactoryTest::itCapturesFreshOffenderDefinitionsInOneConfiguredContainer',
+                    'Qualimetrix.Tests.Infrastructure.DependencyInjection.Integration.ContainerFactoryTest::itCreatesFreshRepositoriesFromTheConfiguredComputedCatalog',
+                ],
             ),
 
             Control::breaking(
@@ -106,7 +115,7 @@ final class Controls
                 'a CallableKind value cannot carry a separator the composite keys built from it use',
                 'src/Core/Symbol/CallableKind.php',
                 ["case Method = 'method';" => "case Method = 'met:hod';"],
-                ['Qualimetrix.Tests.Unit.Core.Symbol.CallableKindTest::itUsesValuesNoCompositeKeyCanSplitInTheWrongPlace'],
+                ['Qualimetrix.Tests.Core.Symbol.Unit.CallableKindTest::itUsesValuesNoCompositeKeyCanSplitInTheWrongPlace'],
             ),
 
             Control::breaking(

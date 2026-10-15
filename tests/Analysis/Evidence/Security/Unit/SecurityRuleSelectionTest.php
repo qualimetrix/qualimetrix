@@ -81,7 +81,7 @@ final class SecurityRuleSelectionTest extends TestCase
         $universe->method('producerOf')->willReturn($rule->getName());
         $configuration = self::createStub(RuleConfigurationInterface::class);
         $configuration->method('channelUniverse')->willReturn($universe);
-        $publication = new FindingPublication($configuration);
+        $publication = new FindingPublication($configuration, new \Qualimetrix\Analysis\Finding\RuleMaterialization([], [], []));
         $publication->begin();
         $removed = [];
         self::assertSame($findings, $publication->published($rule->getName(), $findings, $enablement, null, $removed));

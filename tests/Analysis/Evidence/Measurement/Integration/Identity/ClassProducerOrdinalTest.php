@@ -9,11 +9,11 @@ use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateCollector;
+use Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\UnusedPrivateCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\TccLccCollector;
 use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector;
-use Qualimetrix\Analysis\Evidence\Coupling\RfcCollector;
+use Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcCollector;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
@@ -52,11 +52,11 @@ final class ClassProducerOrdinalTest extends TestCase
      * @var array<class-string<ClassMetricsProviderInterface>, string>
      */
     private const array PRODUCERS = [
-        UnusedPrivateCollector::class => 'src/Analysis/Evidence/CodeSmell/UnusedPrivateCollector.php',
+        UnusedPrivateCollector::class => 'src/Analysis/Evidence/CodeSmell/UnusedPrivate/UnusedPrivateCollector.php',
         LcomCollector::class => 'src/Analysis/Evidence/Cohesion/LcomCollector.php',
         TccLccCollector::class => 'src/Analysis/Evidence/Cohesion/TccLccCollector.php',
         CyclomaticComplexityCollector::class => 'src/Analysis/Evidence/Complexity/CyclomaticComplexityCollector.php',
-        RfcCollector::class => 'src/Analysis/Evidence/Coupling/RfcCollector.php',
+        RfcCollector::class => 'src/Analysis/Evidence/Coupling/Rfc/RfcCollector.php',
         TypeCoverageCollector::class => 'src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageVisitor.php',
         LocCollector::class => 'src/Analysis/Evidence/Size/LocCollector.php',
         MethodCountCollector::class => 'src/Analysis/Evidence/Size/MethodCountCollector.php',

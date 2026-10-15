@@ -5,12 +5,16 @@ declare(strict_types=1);
 
 /**
  * Regenerates the versioned snapshot of what a self-analysis run of `src/`
- * suppresses — `docs/internal/generated/suppression/{composition,inert}.tsv`.
+ * suppresses — `docs/internal/generated/suppression/composition.tsv`.
  *
  * The snapshot makes suppression-composition drift visible: `--check`
  * compares a fresh measurement with the versioned oracle. This is necessary
  * because changing a point threshold can alter suppressed counts without
  * affecting ordinary output, exit codes, or unrelated tests.
+ * A self-analysis with any `neverMatched` suppressor refuses both generation
+ * and checking with exit 3 before writing the composition snapshot. The
+ * diagnostic lists every inert mechanism and suppressor. NarrowControl's
+ * deliberately inert directives remain part of parallel-equivalence checking.
  *
  * **Run parameters are fixed here, not left to a caller.** The composition
  * is a function of them, and a forgotten flag would make the snapshot
@@ -135,7 +139,6 @@ function generateSuppressionSnapshot(): int
 
     $root = dirname(__DIR__);
     $compositionPath = $root . '/docs/internal/generated/suppression/composition.tsv';
-    $inertPath = $root . '/docs/internal/generated/suppression/inert.tsv';
 
     $controlFailure = verifyParallelSuppressionMeasurement($root);
 
@@ -153,28 +156,36 @@ function generateSuppressionSnapshot(): int
         return 2;
     }
 
-    [$compositionContent, $inertContent, $rowCount, $inertCount] = $measurement;
+    [$compositionContent, $inertContent, $rowCount] = $measurement;
+
+    return finishSuppressionSnapshot($compositionPath, $compositionContent, $inertContent, $rowCount, $check);
+}
+
+function finishSuppressionSnapshot(
+    string $compositionPath,
+    string $compositionContent,
+    string $inertContent,
+    int $rowCount,
+    bool $check,
+): int {
+    $inertRefusal = describeInertSuppressors($inertContent);
+    if ($inertRefusal !== null) {
+        fwrite(STDERR, $inertRefusal);
+
+        return 3;
+    }
 
     if ($check) {
-        // Both are checked unconditionally (not short-circuited) so a run with
-        // both files stale reports both mismatches in one invocation.
-        $compositionStale = checkOne($compositionPath, $compositionContent);
-        $inertStale = checkOne($inertPath, $inertContent);
-
-        return $compositionStale || $inertStale
+        return checkOne($compositionPath, $compositionContent)
             ? 1
-            : reportUpToDate($compositionPath, $inertPath, $rowCount, $inertCount);
+            : reportUpToDate($compositionPath, $rowCount);
     }
 
     writeSuppressionSnapshotAtomically($compositionPath, $compositionContent);
-    writeSuppressionSnapshotAtomically($inertPath, $inertContent);
-
     fwrite(STDOUT, sprintf(
-        "Wrote %s (%d rows) and %s (%d rows).\n",
+        "Wrote %s (%d rows).\n",
         $compositionPath,
         $rowCount,
-        $inertPath,
-        $inertCount,
     ));
 
     return 0;
@@ -406,6 +417,23 @@ function renderInert(array $keys): string
     return $header . "\n" . ($keys === [] ? '' : implode("\n", $keys) . "\n");
 }
 
+function describeInertSuppressors(string $inertContent): ?string
+{
+    $lines = array_values(array_filter(
+        explode("\n", trim($inertContent)),
+        static fn(string $line): bool => $line !== '',
+    ));
+    array_shift($lines);
+
+    if ($lines === []) {
+        return null;
+    }
+
+    return "Self-analysis has inert suppressors (mechanism, suppressor):\n"
+        . implode("\n", array_map(static fn(string $line): string => '  ' . $line, $lines))
+        . "\nRemove each inert suppressor before regenerating the snapshot.\n";
+}
+
 function checkOne(string $path, string $fresh): bool
 {
     $onDisk = is_file($path) ? file_get_contents($path) : false;
@@ -425,14 +453,12 @@ function checkOne(string $path, string $fresh): bool
     return false;
 }
 
-function reportUpToDate(string $compositionPath, string $inertPath, int $rowCount, int $inertCount): int
+function reportUpToDate(string $compositionPath, int $rowCount): int
 {
     fwrite(STDOUT, sprintf(
-        "Checked %s (%d rows) and %s (%d rows): up to date.\n",
+        "Checked %s (%d rows): up to date.\n",
         $compositionPath,
         $rowCount,
-        $inertPath,
-        $inertCount,
     ));
 
     return 0;

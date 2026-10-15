@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
 use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
-use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
 use Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression;
 use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 use Qualimetrix\Core\Path\RelativePath;
@@ -63,7 +63,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final readonly class UnboundSuppressionAudit
 {
     public function __construct(
-        private RuleExecutionInterface $ruleExecution,
+        private RulePublicationInterface $rulePublication,
         private RuleConfigurationInterface $ruleConfiguration,
     ) {}
 
@@ -126,7 +126,7 @@ final readonly class UnboundSuppressionAudit
         }
 
         unset($value);
-        return ['findings' => $this->ruleExecution->publishable($findings), 'population' => $session->freeze()];
+        return ['findings' => $this->rulePublication->publishable($findings), 'population' => $session->freeze()];
     }
 
     /**

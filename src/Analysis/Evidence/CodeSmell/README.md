@@ -113,9 +113,12 @@ the visitor evaluates the chain once, at its head.
 - `ControlFlow/AttemptWork.php` — recognizes work before a chain-of-attempts exit
 - `Debug/DebugCodeSmells.php` — debug-call recognition
 - `BooleanArgument/BooleanArgumentSmells.php` — boolean-argument and promoted-property policy
-- `UsageTrackingTrait.php` — records private member references while visiting a class or trait
-- `OwnClassReference.php` — recognizes resolved references to the inspected class and its instances
-- `LiteralCallableUse.php` — recognizes literal array and string callables targeting that class
+- `UnusedPrivate/UsageTrackingTrait.php` — records private member references while visiting a class or trait
+- `UnusedPrivate/OwnClassReference.php` — recognizes resolved references to the inspected class and its instances
+- `UnusedPrivate/LiteralCallableUse.php` — recognizes literal array and string callables targeting that class
+- `UnusedPrivate/` — declaration facts, collector, visitor, rule, options, trait usage resolver, and usage tracking
+- `UnreachableCode/` — collector, visitor, rule, and options for unreachable statements
+- `ParameterCount/` — parameter collector and visitor, long parameter list rule, constructor overinjection rule, and their options
 
 `CodeSmellVisitor` owns AST traversal/delegation and only three residual one-node projections: `eval`, error suppression (including its direct function-name payload), and direct superglobal access. `ControlFlowSmells` owns only empty catches (including the foreach chain-of-attempts exception), `goto`, `exit`/`die`, and `count`/`sizeof` calls in `for`, `while`, and `do` conditions. Debug and boolean-argument policy stay in their named child subjects.
 

@@ -15,7 +15,7 @@ use Symfony\Component\DependencyInjection\Reference;
 
 /**
  * Collects all services tagged with 'qmx.rule' and injects them into the
- * the Finding-owned executor. Adapters consume its metadata contract.
+ * Finding's rule materialization service. Adapters consume its metadata contract.
  *
  * Rule instances always come from the container — a rule may declare
  * constructor dependencies beyond its Options object, so consumers must never
@@ -32,13 +32,13 @@ final class RuleCompilerPass implements CompilerPassInterface, ConsumerBoundPass
      * named argument to avoid conflicts with the TYPE_BEFORE_REMOVING phase.
      *
      * Spelled as a literal, unlike the other passes that write into
-     * RuleExecution: the architecture generator derives a composition binding
+     * RuleMaterialization: the architecture generator derives a composition binding
      * only from a `getDefinition()` whose argument names the class, and this
      * loop names it through a variable, so an imported `::class` here would be
      * an edge the manifest cannot declare.
      */
     private const array CONSUMERS = [
-        'Qualimetrix\\Analysis\\Finding\\RuleExecution' => 0,
+        'Qualimetrix\\Analysis\\Finding\\RuleMaterialization' => 0,
     ];
 
     public static function consumerServiceIds(): array
@@ -48,9 +48,23 @@ final class RuleCompilerPass implements CompilerPassInterface, ConsumerBoundPass
 
     public function process(ContainerBuilder $container): void
     {
+        $rules = $this->collectRules($container);
+
+        foreach (self::CONSUMERS as $consumerId => $argumentIndex) {
+            if (!$container->hasDefinition($consumerId)) {
+                continue;
+            }
+
+            $container->getDefinition($consumerId)->setArgument($argumentIndex, $rules);
+        }
+    }
+
+    /** @return list<array{metadata: \Symfony\Component\DependencyInjection\Definition, create: ServiceClosureArgument}> */
+    private function collectRules(ContainerBuilder $container): array
+    {
         $rules = [];
 
-        foreach ($container->findTaggedServiceIds(self::TAG) as $id => $tags) {
+        foreach ($container->findTaggedServiceIds(self::TAG) as $id => $_tags) {
             $definition = $container->getDefinition($id);
             $class = $definition->getClass();
             if ($class === null || !class_exists($class)) {
@@ -69,12 +83,6 @@ final class RuleCompilerPass implements CompilerPassInterface, ConsumerBoundPass
             ];
         }
 
-        foreach (self::CONSUMERS as $consumerId => $argumentIndex) {
-            if (!$container->hasDefinition($consumerId)) {
-                continue;
-            }
-
-            $container->getDefinition($consumerId)->setArgument($argumentIndex, $rules);
-        }
+        return $rules;
     }
 }

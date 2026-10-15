@@ -11,7 +11,6 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ExecutionStrategyInterface;
-use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ParallelCapableInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
@@ -30,10 +29,9 @@ use Throwable;
  * Executes process workers after a bounded bootstrap probe, with in-process
  * fallback below the threshold and for an unavailable automatic request.
  *
- * @qmx-threshold coupling.cbo 21 -- This adapter coordinates process transport, worker requests and collection results; extracting submission or result handling transfers those same dependencies.
  * @qmx-threshold coupling.instability warning=0.900001 -- This execution adapter binds worker, cancellation and collection contracts with few strategy consumers; splitting it transfers the same transport dependencies.
  */
-final class AmphpParallelStrategy implements ExecutionStrategyInterface, ParallelCapableInterface
+final class AmphpParallelStrategy implements ExecutionStrategyInterface
 {
     private const int DEFAULT_MIN_FILES_FOR_PARALLEL = 100;
     private const int BATCH_SIZE = 500;
@@ -45,11 +43,6 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
     public function __construct(private readonly FileProcessingTaskFactory $fileProcessingTaskFactory, private readonly SequentialStrategy $sequentialStrategy, private readonly ProfilerInterface $profiler, private readonly WorkerDiagnosticsInterface $errorStream, private readonly LoggerInterface $logger = new NullLogger())
     {
         $this->request = new WorkerRequest(4);
-    }
-
-    public function isParallelAvailable(): bool
-    {
-        return true;
     }
 
     public function setWorkerRequest(WorkerRequest $request): void
@@ -85,13 +78,13 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
 
     /**
      * @param list<SplFileInfo> $files
-     * @param callable(SplFileInfo): mixed $processor Used only for in-process collection.
+     * @param callable(SplFileInfo): FileProcessingResult $processor Used only for in-process collection.
      *
-     * @return list<mixed>
+     * @return list<FileProcessingResult>
      */
-    public function execute(array $files, callable $processor, bool $canParallelize = true): array // @phpstan-ignore method.childReturnType
+    public function execute(array $files, callable $processor): array
     {
-        if (!$canParallelize || $files === []) {
+        if ($files === []) {
             return $this->executeSequential($files, $processor);
         }
         if (\count($files) < $this->minFilesForParallel) {
@@ -116,9 +109,9 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
 
     /**
      * @param list<SplFileInfo> $files
-     * @param callable(SplFileInfo): mixed $processor
+     * @param callable(SplFileInfo): FileProcessingResult $processor
      *
-     * @return list<mixed>
+     * @return list<FileProcessingResult>
      */
     private function startupFallback(array $files, callable $processor, WorkerStartFailure $failure): array
     {
@@ -131,9 +124,9 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
 
     /**
      * @param list<SplFileInfo> $files
-     * @param callable(SplFileInfo): mixed $processor
+     * @param callable(SplFileInfo): FileProcessingResult $processor
      *
-     * @return list<mixed>
+     * @return list<FileProcessingResult>
      */
     private function executeParallel(array $files, callable $processor): array
     {
@@ -170,9 +163,9 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
 
     /**
      * @param list<SplFileInfo> $files
-     * @param callable(SplFileInfo): mixed $processor
+     * @param callable(SplFileInfo): FileProcessingResult $processor
      *
-     * @return list<mixed>
+     * @return list<FileProcessingResult>
      */
     private function processFiles(WorkerPool $pool, array $files, callable $processor): array
     {
@@ -293,12 +286,12 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
 
     /**
      * @param list<SplFileInfo> $files
-     * @param callable(SplFileInfo): mixed $processor
+     * @param callable(SplFileInfo): FileProcessingResult $processor
      *
-     * @return list<mixed>
+     * @return list<FileProcessingResult>
      */
     private function executeSequential(array $files, callable $processor): array
     {
-        return $this->sequentialStrategy->execute($files, $processor, false);
+        return $this->sequentialStrategy->execute($files, $processor);
     }
 }

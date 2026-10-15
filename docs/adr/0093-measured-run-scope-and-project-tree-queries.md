@@ -55,6 +55,18 @@ context rather than duplicating scope. Console publishes final measurement; an
 initial omitted target-directory state is not the final PHP-path verdict.
 Pure narrowing retains evidence without another IO read.
 
+The universe requires the original `ComposerManifestFacts`, including a typed
+absent or damaged-manifest result. After discovery, the final measurement
+constructs one Finding-owned `ValueScopeJudgement` from those facts, its final
+paths and the shared scope judgement. Both production and development PSR-4
+roots locate configured values, even when development roots are excluded from
+the coverage denominator. Late suppression findings and Console's skipped-value
+report read that same object. Console also derives the main manifest's source
+and state from the captured facts. Rebuilding an equivalent-looking answer in
+each reader would allow their inputs to diverge; counting calls to a cached
+manifest reader would not prove a single physical read. Reading the value
+judgement before discovery refuses explicitly.
+
 ### Ask the two measured questions separately
 
 `judgesNamespaceClaims()` asks whether namespace/declaration absence can be judged.

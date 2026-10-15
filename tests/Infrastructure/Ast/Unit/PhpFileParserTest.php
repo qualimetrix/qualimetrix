@@ -14,7 +14,7 @@ use PHPUnit\Framework\Constraint\IsType;
 use PHPUnit\Framework\NativeType;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Ast\FileParserInterface;
-use Qualimetrix\Core\Exception\ParseException;
+use Qualimetrix\Core\Ast\ParseException;
 use Qualimetrix\Infrastructure\Ast\PhpFileParser;
 use RuntimeException;
 use SplFileInfo;

@@ -138,8 +138,7 @@ Infrastructure/
 │   ├── RuleRegistry.php
 │   ├── ConfigurationValidatorRegistry.php  # The same, for the second producer kind
 │   ├── ChannelUniverse.php                 # One channel-identity instance behind Finding's narrow views
-│   └── Exception/
-│       └── ConflictingCliAliasException.php
+│   └── ConflictingCliAliasException.php
 └── Console/                          # -> See Console/README.md
     ├── Application.php
     ├── CliOptionsParser.php

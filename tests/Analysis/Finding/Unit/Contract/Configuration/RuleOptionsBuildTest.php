@@ -41,7 +41,6 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection;
-use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassOptions;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
@@ -147,7 +146,7 @@ final class RuleOptionsBuildTest extends TestCase
             public array $options = [];
             public int $validators = 0;
         };
-        $execution = new RuleExecution(
+        $execution = ResolvedOptionsFixture::executionFromLookups(
             [[
                 'metadata' => new RuleMetadata(GotoRule::NAME, CodeSmellOptions::class, GotoRule::getDescription(), [], false),
                 'create' => static function () use ($registry, $observed): GotoRule {
@@ -211,7 +210,7 @@ final class RuleOptionsBuildTest extends TestCase
         self::assertSame($first->resolvedOptions?->for(GotoRule::NAME), $observed->options[0]);
         $registry->resetRuntimeState();
         try {
-            $execution->levelActivity();
+            ResolvedOptionsFixture::publicationFor($execution)->levelActivity();
             self::fail('Activity read an unconfigured invocation.');
         } catch (LogicException $error) {
             self::assertSame('Rule options are unavailable before analysis preflight.', $error->getMessage());
@@ -220,7 +219,7 @@ final class RuleOptionsBuildTest extends TestCase
         self::assertCount(1, $observed->rules);
         $second = $prepare(FindingConfiguration::fromDocument(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::document([['source' => 'config', 'values' => ['rules' => [GotoRule::NAME => ['enabled' => false]]]]], \Qualimetrix\Core\Path\AbsolutePath::fromString('/project'))));
         $registry->replace($second);
-        self::assertFalse($execution->levelActivity()->toMap()[GotoRule::NAME]['callable']);
+        self::assertFalse(ResolvedOptionsFixture::publicationFor($execution)->levelActivity()->toMap()[GotoRule::NAME]['callable']);
         self::assertCount(1, $observed->rules);
         self::assertSame(1, $observed->validators);
         $execution->execute($context);
@@ -233,7 +232,7 @@ final class RuleOptionsBuildTest extends TestCase
 
         $third = $prepare(FindingConfiguration::fromDocument(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::document([['source' => 'config', 'values' => ['rules' => [GotoRule::NAME => ['enabled' => true]]]]], \Qualimetrix\Core\Path\AbsolutePath::fromString('/project'))));
         $registry->replace($third);
-        self::assertTrue($execution->levelActivity()->toMap()[GotoRule::NAME]['callable']);
+        self::assertTrue(ResolvedOptionsFixture::publicationFor($execution)->levelActivity()->toMap()[GotoRule::NAME]['callable']);
         self::assertCount(1, $observed->rules);
         self::assertSame(1, $observed->validators);
         $execution->execute($context);
@@ -512,7 +511,7 @@ final class RuleOptionsBuildTest extends TestCase
         $prepared = self::prepareLayers([self::file(['complexity.npath' => ['class' => ['threshold' => 22]]])]);
         $registry = new RuleOptionsRegistry();
         $registry->replace($prepared);
-        $execution = new RuleExecution([[
+        $execution = ResolvedOptionsFixture::executionFromLookups([[
             'metadata' => new RuleMetadata('complexity.npath', NpathComplexityOptions::class, '', [], false),
             'create' => static function () use ($registry): NpathComplexityRule {
                 $options = $registry->optionsFor('complexity.npath', NpathComplexityOptions::class);
@@ -522,10 +521,10 @@ final class RuleOptionsBuildTest extends TestCase
                 return new NpathComplexityRule($options);
             },
         ]], self::createStub(ProfilerInterface::class), $registry);
-        self::assertTrue($execution->levelActivity()->toMap()['complexity.npath']['class']);
+        self::assertTrue(ResolvedOptionsFixture::publicationFor($execution)->levelActivity()->toMap()['complexity.npath']['class']);
         $disabled = self::prepareLayers([self::file(['complexity.npath' => ['class' => ['enabled' => false, 'threshold' => 22]]])]);
         $registry->replace($disabled);
-        self::assertFalse($execution->levelActivity()->toMap()['complexity.npath']['class']);
+        self::assertFalse(ResolvedOptionsFixture::publicationFor($execution)->levelActivity()->toMap()['complexity.npath']['class']);
     }
 
     #[Test]

@@ -889,7 +889,7 @@ final class BoundaryExplanationServiceTest extends TestCase
             \Qualimetrix\Analysis\Policy\Baseline\RunScope::fromRecorded(['src']),
             new \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage(array_map(RelativePath::fromString(...), $analyzed), [], []),
             $exclusions ?? self::fixtureExclusions(),
-            new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse($root, true, $captured ? [['target' => 'src', 'path' => $root->joinRelative(RelativePath::fromString('src'))]] : [], [], [], true, []),
+            new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse($root, true, $captured ? [['target' => 'src', 'path' => $root->joinRelative(RelativePath::fromString('src'))]] : [], [], [], true, [], (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root)),
             ['App\\' => ['src/']],
             $tree,
             \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), array_map(RelativePath::fromString(...), $analyzed), []),

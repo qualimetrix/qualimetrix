@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\Contract\Configuration;
 
+use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts;
 use Qualimetrix\Core\Path\AbsolutePath;
 
 /** Captured source evidence shared unchanged by every narrowed selection. */
@@ -23,6 +24,7 @@ final readonly class ProjectScopeUniverse
         public array $reasons,
         public bool $namespaceMapUsable,
         public array $pathResolutions,
+        public ComposerManifestFacts $manifestFacts,
     ) {}
 
     /**

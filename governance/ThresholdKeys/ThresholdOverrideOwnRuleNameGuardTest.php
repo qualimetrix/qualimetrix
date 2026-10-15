@@ -118,7 +118,7 @@ final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
      * @var array<string, list<string>> relative path => enclosing method names
      */
     private const array KNOWN_CALL_SITES = [
-        'src/Analysis/Evidence/CodeSmell/LongParameterListRule.php' => ['checkVoConstructor'],
+        'src/Analysis/Evidence/CodeSmell/ParameterCount/LongParameterListRule.php' => ['checkVoConstructor'],
         'src/Analysis/Finding/Contract/Rule/AbstractRule.php' => ['getEffectiveOptions'],
     ];
 

@@ -2020,15 +2020,15 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionOptions": {
-      "path": "src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionOptions.php",
+    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionOptions": {
+      "path": "src/Analysis/Evidence/CodeSmell/ParameterCount/ConstructorOverinjectionOptions.php",
       "kind": "class",
       "owner": "Analysis.Evidence.CodeSmell",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule": {
-      "path": "src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionRule.php",
+    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionRule": {
+      "path": "src/Analysis/Evidence/CodeSmell/ParameterCount/ConstructorOverinjectionRule.php",
       "kind": "class",
       "owner": "Analysis.Evidence.CodeSmell",
       "visibility": "internal",
@@ -2139,43 +2139,43 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LiteralCallableUse": {
-      "path": "src/Analysis/Evidence/CodeSmell/LiteralCallableUse.php",
+    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\LiteralCallableUse": {
+      "path": "src/Analysis/Evidence/CodeSmell/UnusedPrivate/LiteralCallableUse.php",
       "kind": "class",
       "owner": "Analysis.Evidence.CodeSmell",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListOptions": {
-      "path": "src/Analysis/Evidence/CodeSmell/LongParameterListOptions.php",
+    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListOptions": {
+      "path": "src/Analysis/Evidence/CodeSmell/ParameterCount/LongParameterListOptions.php",
       "kind": "class",
       "owner": "Analysis.Evidence.CodeSmell",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule": {
-      "path": "src/Analysis/Evidence/CodeSmell/LongParameterListRule.php",
+    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListRule": {
+      "path": "src/Analysis/Evidence/CodeSmell/ParameterCount/LongParameterListRule.php",
       "kind": "class",
       "owner": "Analysis.Evidence.CodeSmell",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\OwnClassReference": {
-      "path": "src/Analysis/Evidence/CodeSmell/OwnClassReference.php",
+    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\OwnClassReference": {
+      "path": "src/Analysis/Evidence/CodeSmell/UnusedPrivate/OwnClassReference.php",
       "kind": "class",
       "owner": "Analysis.Evidence.CodeSmell",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCountCollector": {
-      "path": "src/Analysis/Evidence/CodeSmell/ParameterCountCollector.php",
+    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ParameterCountCollector": {
+      "path": "src/Analysis/Evidence/CodeSmell/ParameterCount/ParameterCountCollector.php",
       "kind": "class",
       "owner": "Analysis.Evidence.CodeSmell",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCountVisitor": {
-      "path": "src/Analysis/Evidence/CodeSmell/ParameterCountVisitor.php",
+    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ParameterCountVisitor": {
+      "path": "src/Analysis/Evidence/CodeSmell/ParameterCount/ParameterCountVisitor.php",
       "kind": "class",
       "owner": "Analysis.Evidence.CodeSmell",
       "visibility": "internal",
@@ -2230,78 +2230,78 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\TraitUsageResolver": {
-      "path": "src/Analysis/Evidence/CodeSmell/TraitUsageResolver.php",
+    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\TraitUsageResolver": {
+      "path": "src/Analysis/Evidence/CodeSmell/UnusedPrivate/TraitUsageResolver.php",
       "kind": "class",
       "owner": "Analysis.Evidence.CodeSmell",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeCollector": {
-      "path": "src/Analysis/Evidence/CodeSmell/UnreachableCodeCollector.php",
+    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeCollector": {
+      "path": "src/Analysis/Evidence/CodeSmell/UnreachableCode/UnreachableCodeCollector.php",
       "kind": "class",
       "owner": "Analysis.Evidence.CodeSmell",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeOptions": {
-      "path": "src/Analysis/Evidence/CodeSmell/UnreachableCodeOptions.php",
+    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeOptions": {
+      "path": "src/Analysis/Evidence/CodeSmell/UnreachableCode/UnreachableCodeOptions.php",
       "kind": "class",
       "owner": "Analysis.Evidence.CodeSmell",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule": {
-      "path": "src/Analysis/Evidence/CodeSmell/UnreachableCodeRule.php",
+    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeRule": {
+      "path": "src/Analysis/Evidence/CodeSmell/UnreachableCode/UnreachableCodeRule.php",
       "kind": "class",
       "owner": "Analysis.Evidence.CodeSmell",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeVisitor": {
-      "path": "src/Analysis/Evidence/CodeSmell/UnreachableCodeVisitor.php",
+    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeVisitor": {
+      "path": "src/Analysis/Evidence/CodeSmell/UnreachableCode/UnreachableCodeVisitor.php",
       "kind": "class",
       "owner": "Analysis.Evidence.CodeSmell",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateClassData": {
-      "path": "src/Analysis/Evidence/CodeSmell/UnusedPrivateClassData.php",
+    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateClassData": {
+      "path": "src/Analysis/Evidence/CodeSmell/UnusedPrivate/UnusedPrivateClassData.php",
       "kind": "class",
       "owner": "Analysis.Evidence.CodeSmell",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateCollector": {
-      "path": "src/Analysis/Evidence/CodeSmell/UnusedPrivateCollector.php",
+    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateCollector": {
+      "path": "src/Analysis/Evidence/CodeSmell/UnusedPrivate/UnusedPrivateCollector.php",
       "kind": "class",
       "owner": "Analysis.Evidence.CodeSmell",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateOptions": {
-      "path": "src/Analysis/Evidence/CodeSmell/UnusedPrivateOptions.php",
+    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateOptions": {
+      "path": "src/Analysis/Evidence/CodeSmell/UnusedPrivate/UnusedPrivateOptions.php",
       "kind": "class",
       "owner": "Analysis.Evidence.CodeSmell",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule": {
-      "path": "src/Analysis/Evidence/CodeSmell/UnusedPrivateRule.php",
+    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateRule": {
+      "path": "src/Analysis/Evidence/CodeSmell/UnusedPrivate/UnusedPrivateRule.php",
       "kind": "class",
       "owner": "Analysis.Evidence.CodeSmell",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateVisitor": {
-      "path": "src/Analysis/Evidence/CodeSmell/UnusedPrivateVisitor.php",
+    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateVisitor": {
+      "path": "src/Analysis/Evidence/CodeSmell/UnusedPrivate/UnusedPrivateVisitor.php",
       "kind": "class",
       "owner": "Analysis.Evidence.CodeSmell",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UsageTrackingTrait": {
-      "path": "src/Analysis/Evidence/CodeSmell/UsageTrackingTrait.php",
+    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UsageTrackingTrait": {
+      "path": "src/Analysis/Evidence/CodeSmell/UnusedPrivate/UsageTrackingTrait.php",
       "kind": "trait",
       "owner": "Analysis.Evidence.CodeSmell",
       "visibility": "internal",
@@ -3449,15 +3449,15 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector": {
-      "path": "src/Analysis/Evidence/Coupling/RfcCollector.php",
+    "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcCollector": {
+      "path": "src/Analysis/Evidence/Coupling/Rfc/RfcCollector.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Coupling",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcVisitor": {
-      "path": "src/Analysis/Evidence/Coupling/RfcVisitor.php",
+    "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcVisitor": {
+      "path": "src/Analysis/Evidence/Coupling/Rfc/RfcVisitor.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Coupling",
       "visibility": "internal",
@@ -3669,11 +3669,11 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationIndex"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcDeclarationIndex"
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcGlobalCollector"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -3765,7 +3765,7 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationIndex"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcDeclarationIndex"
         }
       ]
     },
@@ -4238,22 +4238,22 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Maintainability\\HalsteadCollector": {
-      "path": "src/Analysis/Evidence/Maintainability/HalsteadCollector.php",
+    "Qualimetrix\\Analysis\\Evidence\\Maintainability\\Halstead\\HalsteadCollector": {
+      "path": "src/Analysis/Evidence/Maintainability/Halstead/HalsteadCollector.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Maintainability",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Maintainability\\HalsteadMetrics": {
-      "path": "src/Analysis/Evidence/Maintainability/HalsteadMetrics.php",
+    "Qualimetrix\\Analysis\\Evidence\\Maintainability\\Halstead\\HalsteadMetrics": {
+      "path": "src/Analysis/Evidence/Maintainability/Halstead/HalsteadMetrics.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Maintainability",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Maintainability\\HalsteadVisitor": {
-      "path": "src/Analysis/Evidence/Maintainability/HalsteadVisitor.php",
+    "Qualimetrix\\Analysis\\Evidence\\Maintainability\\Halstead\\HalsteadVisitor": {
+      "path": "src/Analysis/Evidence/Maintainability/Halstead/HalsteadVisitor.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Maintainability",
       "visibility": "internal",
@@ -4376,7 +4376,7 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCountCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ParameterCountCollector"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
@@ -4384,11 +4384,11 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeCollector"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateCollector"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -4416,7 +4416,7 @@
         },
         {
           "owner": "Analysis.Evidence.Maintainability",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\HalsteadCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\Halstead\\HalsteadCollector"
         },
         {
           "owner": "Analysis.Evidence.Security",
@@ -4448,7 +4448,7 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcCollector"
         }
       ]
     },
@@ -4460,11 +4460,11 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCountCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ParameterCountCollector"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeCollector"
         },
         {
           "owner": "Analysis.Evidence.Complexity",
@@ -4524,7 +4524,7 @@
         },
         {
           "owner": "Analysis.Evidence.Maintainability",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\HalsteadCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\Halstead\\HalsteadCollector"
         },
         {
           "owner": "Analysis.Evidence.Maintainability",
@@ -4560,7 +4560,7 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcGlobalCollector"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -4576,11 +4576,11 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCountCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ParameterCountCollector"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeCollector"
         },
         {
           "owner": "Analysis.Evidence.Complexity",
@@ -4596,7 +4596,7 @@
         },
         {
           "owner": "Analysis.Evidence.Maintainability",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\HalsteadCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\Halstead\\HalsteadCollector"
         },
         {
           "owner": "Analysis.Evidence.Size",
@@ -4632,7 +4632,7 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateCollector"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -4664,7 +4664,7 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcCollector"
         }
       ]
     },
@@ -4704,7 +4704,7 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCountVisitor"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ParameterCountVisitor"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
@@ -4712,11 +4712,11 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeVisitor"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeVisitor"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateCollector"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -4740,7 +4740,7 @@
         },
         {
           "owner": "Analysis.Evidence.Maintainability",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\HalsteadVisitor"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\Halstead\\HalsteadVisitor"
         },
         {
           "owner": "Analysis.Evidence.Security",
@@ -4772,7 +4772,7 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcCollector"
         },
         {
           "owner": "Analysis.Evidence.Complexity",
@@ -4788,7 +4788,7 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateCollector"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -4816,7 +4816,7 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcCollector"
         }
       ]
     },
@@ -4956,7 +4956,7 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcGlobalCollector"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -4996,11 +4996,11 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCountCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ParameterCountCollector"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCountVisitor"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ParameterCountVisitor"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
@@ -5008,15 +5008,15 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeCollector"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeVisitor"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeVisitor"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateCollector"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -5084,11 +5084,11 @@
         },
         {
           "owner": "Analysis.Evidence.Maintainability",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\HalsteadCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\Halstead\\HalsteadCollector"
         },
         {
           "owner": "Analysis.Evidence.Maintainability",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\HalsteadVisitor"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\Halstead\\HalsteadVisitor"
         },
         {
           "owner": "Analysis.Evidence.Maintainability",
@@ -5152,15 +5152,15 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateRule"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -5200,7 +5200,7 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcCollector"
         },
         {
           "owner": "Analysis.Evidence.Complexity",
@@ -5236,11 +5236,11 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCountCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ParameterCountCollector"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeCollector"
         },
         {
           "owner": "Analysis.Evidence.Complexity",
@@ -5288,7 +5288,7 @@
         },
         {
           "owner": "Analysis.Evidence.Maintainability",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\HalsteadCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\Halstead\\HalsteadCollector"
         },
         {
           "owner": "Analysis.Evidence.Maintainability",
@@ -5312,7 +5312,7 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateCollector"
         },
         {
           "owner": "Infrastructure.DependencyInjection",
@@ -5320,7 +5320,7 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcGlobalCollector"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -5336,35 +5336,35 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCountCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ParameterCountCollector"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCountVisitor"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ParameterCountVisitor"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeCollector"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateCollector"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateRule"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -5504,11 +5504,11 @@
         },
         {
           "owner": "Analysis.Evidence.Maintainability",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\HalsteadCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\Halstead\\HalsteadCollector"
         },
         {
           "owner": "Analysis.Evidence.Maintainability",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\HalsteadVisitor"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\Halstead\\HalsteadVisitor"
         },
         {
           "owner": "Analysis.Evidence.Maintainability",
@@ -5596,7 +5596,7 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcGlobalCollector"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -5776,11 +5776,11 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationIndex"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcDeclarationIndex"
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcGlobalCollector"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -5948,7 +5948,7 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCountVisitor"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ParameterCountVisitor"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
@@ -5956,11 +5956,11 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeVisitor"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeVisitor"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateVisitor"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateVisitor"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -5984,7 +5984,7 @@
         },
         {
           "owner": "Analysis.Evidence.Maintainability",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\HalsteadVisitor"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\Halstead\\HalsteadVisitor"
         },
         {
           "owner": "Analysis.Evidence.Security",
@@ -6016,7 +6016,7 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcVisitor"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcVisitor"
         },
         {
           "owner": "Analysis.Evidence.Complexity",
@@ -6052,7 +6052,7 @@
         },
         {
           "owner": "Analysis.Evidence.Maintainability",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\HalsteadVisitor"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\Halstead\\HalsteadVisitor"
         },
         {
           "owner": "Analysis.Evidence.Size",
@@ -6076,7 +6076,7 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCountVisitor"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ParameterCountVisitor"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
@@ -6084,7 +6084,7 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeVisitor"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeVisitor"
         },
         {
           "owner": "Analysis.Evidence.Complexity",
@@ -6096,7 +6096,7 @@
         },
         {
           "owner": "Analysis.Evidence.Maintainability",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\HalsteadVisitor"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\Halstead\\HalsteadVisitor"
         },
         {
           "owner": "Analysis.Evidence.Security",
@@ -6725,7 +6725,7 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
@@ -6733,7 +6733,7 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateRule"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -7177,7 +7177,7 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
@@ -7185,15 +7185,15 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateRule"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -7410,6 +7410,10 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ChannelDeclarationCompilerPass"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ConfigurationValidatorCompilerPass"
         }
       ]
     },
@@ -7703,7 +7707,7 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
@@ -7711,15 +7715,15 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateRule"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -8119,7 +8123,7 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionRule"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -8303,7 +8307,7 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
@@ -8311,11 +8315,11 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateRule"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -8847,10 +8851,6 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\RunRuleCoverage"
-        },
-        {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Directive\\ThresholdDirectiveAuditInput"
         },
@@ -8885,10 +8885,6 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\InlineDirectiveRun"
-        },
-        {
-          "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryAudit"
         }
       ]
     },
@@ -8986,7 +8982,7 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
@@ -8994,15 +8990,15 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateRule"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -9142,7 +9138,7 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
@@ -9150,15 +9146,15 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateRule"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -9350,15 +9346,15 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeRule"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -9458,15 +9454,15 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionOptions"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListOptions"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeOptions"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -9821,7 +9817,7 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListOptions"
         }
       ]
     },
@@ -9917,15 +9913,15 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionOptions"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListOptions"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeOptions"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -10069,7 +10065,7 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionOptions"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
@@ -10081,15 +10077,15 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListOptions"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeOptions"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateOptions"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -10381,19 +10377,19 @@
         {
           "owner": "Analysis.Evidence.CodeSmell",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionOptions",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionSurface"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListOptions",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionSurface"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeOptions",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeOptions",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionSurface"
         },
         {
@@ -10556,7 +10552,7 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionOptions"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
@@ -10568,15 +10564,15 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListOptions"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeOptions"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateOptions"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -10800,7 +10796,7 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionOptions"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
@@ -10808,11 +10804,11 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListOptions"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeOptions"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -10956,15 +10952,15 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionOptions"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListOptions"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeOptions"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -11127,7 +11123,7 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionOptions"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
@@ -11139,15 +11135,15 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListOptions"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeOptions"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateOptions"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -11346,15 +11342,15 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionOptions"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListOptions"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeOptions"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -11478,15 +11474,15 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionOptions"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListOptions"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeOptions"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -11822,11 +11818,11 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionOptions"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
@@ -11862,23 +11858,23 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListOptions"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeOptions"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateOptions"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateOptions"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateRule"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -12262,7 +12258,7 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListRule"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -12391,7 +12387,18 @@
       "kind": "class",
       "owner": "Analysis.Finding",
       "visibility": "internal",
-      "consumers": []
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\FindingConfigurator",
+          "operations": [
+            "service_alias",
+            "service_reference",
+            "service_registration"
+          ]
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionActivityResolution": {
       "path": "src/Analysis/Finding/RuleConfiguration/OptionActivityResolution.php",
@@ -12536,6 +12543,23 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\FindingConfigurator",
+          "operations": [
+            "service_alias",
+            "service_registration"
+          ]
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Finding\\RuleMaterialization": {
+      "path": "src/Analysis/Finding/RuleMaterialization.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ChannelDeclarationCompilerPass",
           "operations": [
             "definition_argument_mutation"
@@ -12554,18 +12578,11 @@
           "relation": "composition_binding",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\FindingConfigurator",
           "operations": [
-            "service_alias",
+            "service_reference",
             "service_registration"
           ]
         }
       ]
-    },
-    "Qualimetrix\\Analysis\\Finding\\RuleMaterialization": {
-      "path": "src/Analysis/Finding/RuleMaterialization.php",
-      "kind": "class",
-      "owner": "Analysis.Finding",
-      "visibility": "internal",
-      "consumers": []
     },
     "Qualimetrix\\Analysis\\Finding\\Rule\\InMemoryRuleChannelRegistry": {
       "path": "src/Analysis/Finding/Rule/InMemoryRuleChannelRegistry.php",
@@ -12688,6 +12705,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
         }
       ]
     },
@@ -14549,12 +14570,6 @@
         {
           "owner": "Infrastructure.Console",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ProjectSourceConfigurator",
           "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
         },
@@ -14562,6 +14577,12 @@
           "owner": "Reporting",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlProjectMetadata",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        },
+        {
+          "owner": "Analysis.Run",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeUniverse",
           "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
         }
       ]
@@ -14625,12 +14646,6 @@
         {
           "owner": "Infrastructure.Console",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestReaderInterface"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ProjectSourceConfigurator",
           "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestReaderInterface"
         },
@@ -14643,6 +14658,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ManifestScopeEvidence"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeUniverse"
         }
       ]
     },
@@ -14667,10 +14686,6 @@
         {
           "owner": "Infrastructure.Composer",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Composer\\ComposerManifestReader"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator"
         },
         {
           "owner": "Infrastructure.Console",
@@ -14764,6 +14779,12 @@
           "owner": "Reporting",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlProjectMetadata",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        },
+        {
+          "owner": "Analysis.Run",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeUniverse",
           "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
         }
       ]
@@ -14879,12 +14900,6 @@
         {
           "owner": "Infrastructure.Console",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ProjectSourceConfigurator",
           "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
         },
@@ -14901,6 +14916,12 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ObservedProjectScopeReasons"
+        },
+        {
+          "owner": "Analysis.Run",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeUniverse",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
         }
       ]
     },
@@ -15132,18 +15153,6 @@
         {
           "owner": "Infrastructure.Parallel",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\Strategy\\StrategySelector"
-        }
-      ]
-    },
-    "Qualimetrix\\Analysis\\Run\\Contract\\Collection\\Strategy\\ParallelCapableInterface": {
-      "path": "src/Analysis/Run/Contract/Collection/Strategy/ParallelCapableInterface.php",
-      "kind": "interface",
-      "owner": "Analysis.Run",
-      "visibility": "contract",
-      "consumers": [
-        {
-          "owner": "Infrastructure.Parallel",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\Strategy\\AmphpParallelStrategy"
         }
       ]
     },
@@ -16256,11 +16265,11 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\OwnClassReference"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\OwnClassReference"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\TraitUsageResolver"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\TraitUsageResolver"
         },
         {
           "owner": "Analysis.Evidence.Security",
@@ -16280,11 +16289,11 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcClassFacts"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcClassFacts"
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcReceiverTypes"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcReceiverTypes"
         },
         {
           "owner": "Analysis.Evidence.Complexity",
@@ -16312,8 +16321,8 @@
         }
       ]
     },
-    "Qualimetrix\\Core\\Exception\\ParseException": {
-      "path": "src/Core/Exception/ParseException.php",
+    "Qualimetrix\\Core\\Ast\\ParseException": {
+      "path": "src/Core/Ast/ParseException.php",
       "kind": "class",
       "owner": "Core.Neutral",
       "visibility": "contract",
@@ -16488,7 +16497,7 @@
         },
         {
           "owner": "Core.Neutral",
-          "source_fqcn": "Qualimetrix\\Core\\Exception\\ParseException"
+          "source_fqcn": "Qualimetrix\\Core\\Ast\\ParseException"
         },
         {
           "owner": "Infrastructure.Ast",
@@ -16537,10 +16546,6 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ConfigurationInputAdapter"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator"
         },
         {
           "owner": "Infrastructure.Console",
@@ -16757,6 +16762,10 @@
         {
           "owner": "Infrastructure.Parallel",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\WorkerFatalNotes"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
         }
       ]
     },
@@ -16852,23 +16861,23 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCountCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ParameterCountCollector"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCountVisitor"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ParameterCountVisitor"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeCollector"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeVisitor"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeVisitor"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateCollector"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -16936,11 +16945,11 @@
         },
         {
           "owner": "Analysis.Evidence.Maintainability",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\HalsteadCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\Halstead\\HalsteadCollector"
         },
         {
           "owner": "Analysis.Evidence.Maintainability",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\HalsteadVisitor"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\Halstead\\HalsteadVisitor"
         },
         {
           "owner": "Analysis.Evidence.Maintainability",
@@ -17252,7 +17261,7 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcCollector"
         },
         {
           "owner": "Analysis.Evidence.Complexity",
@@ -17918,7 +17927,7 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationIndex"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcDeclarationIndex"
         }
       ]
     },
@@ -18090,7 +18099,7 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationFacts"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcDeclarationFacts"
         }
       ]
     },
@@ -18210,11 +18219,11 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeRule"
         },
         {
           "owner": "Analysis.Evidence.Complexity",
@@ -18514,11 +18523,11 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationIndex"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcDeclarationIndex"
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcGlobalCollector"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -18634,19 +18643,19 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateRule"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -18754,7 +18763,7 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationIndex"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcDeclarationIndex"
         },
         {
           "owner": "Reporting",
@@ -18778,7 +18787,7 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
@@ -18786,23 +18795,23 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCountCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ParameterCountCollector"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeCollector"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateRule"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -18990,7 +18999,7 @@
         },
         {
           "owner": "Analysis.Evidence.Maintainability",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\HalsteadCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\Halstead\\HalsteadCollector"
         },
         {
           "owner": "Analysis.Evidence.Maintainability",
@@ -19290,7 +19299,7 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateCollector"
         },
         {
           "owner": "Analysis.Evidence.Measurement",
@@ -19418,7 +19427,7 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcGlobalCollector"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -19482,7 +19491,7 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateCollector"
         },
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
@@ -19818,7 +19827,7 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcCollector"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -19838,15 +19847,15 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateRule"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -22452,8 +22461,8 @@
         }
       ]
     },
-    "Qualimetrix\\Infrastructure\\Rule\\Exception\\ConflictingCliAliasException": {
-      "path": "src/Infrastructure/Rule/Exception/ConflictingCliAliasException.php",
+    "Qualimetrix\\Infrastructure\\Rule\\ConflictingCliAliasException": {
+      "path": "src/Infrastructure/Rule/ConflictingCliAliasException.php",
       "kind": "class",
       "owner": "Infrastructure.Rule",
       "visibility": "internal",
@@ -24368,7 +24377,7 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcGlobalCollector"
         },
         {
           "owner": "Analysis.Evidence.Coupling",
@@ -25907,11 +25916,11 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationIndex"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcDeclarationIndex"
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcResponseResolver"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcResponseResolver"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -26549,19 +26558,19 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\LongParameterListRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCode\\UnreachableCodeRule"
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivate\\UnusedPrivateRule"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -26923,7 +26932,7 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ConstructorOverinjectionRule"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -27244,7 +27253,7 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcEffectiveMembers"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcEffectiveMembers"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -27260,11 +27269,11 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcEffectiveMembers"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcEffectiveMembers"
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationFacts"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcDeclarationFacts"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -27284,7 +27293,7 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationFacts"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcDeclarationFacts"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -27304,7 +27313,7 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationFacts"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcDeclarationFacts"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -27331,7 +27340,7 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcEffectiveMembers"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcEffectiveMembers"
         }
       ]
     },
@@ -27342,71 +27351,71 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcBodyResponses": {
-      "path": "src/Analysis/Evidence/Coupling/RfcBodyResponses.php",
+    "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcBodyResponses": {
+      "path": "src/Analysis/Evidence/Coupling/Rfc/RfcBodyResponses.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Coupling",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcClassFacts": {
-      "path": "src/Analysis/Evidence/Coupling/RfcClassFacts.php",
+    "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcClassFacts": {
+      "path": "src/Analysis/Evidence/Coupling/Rfc/RfcClassFacts.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Coupling",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcGlobalCollector": {
-      "path": "src/Analysis/Evidence/Coupling/RfcGlobalCollector.php",
+    "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcGlobalCollector": {
+      "path": "src/Analysis/Evidence/Coupling/Rfc/RfcGlobalCollector.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Coupling",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationFacts": {
-      "path": "src/Analysis/Evidence/Coupling/RfcDeclarationFacts.php",
+    "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcDeclarationFacts": {
+      "path": "src/Analysis/Evidence/Coupling/Rfc/RfcDeclarationFacts.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Coupling",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcResponseResolver": {
-      "path": "src/Analysis/Evidence/Coupling/RfcResponseResolver.php",
+    "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcResponseResolver": {
+      "path": "src/Analysis/Evidence/Coupling/Rfc/RfcResponseResolver.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Coupling",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcEffectiveMembers": {
-      "path": "src/Analysis/Evidence/Coupling/RfcEffectiveMembers.php",
+    "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcEffectiveMembers": {
+      "path": "src/Analysis/Evidence/Coupling/Rfc/RfcEffectiveMembers.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Coupling",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcDeclarationIndex": {
-      "path": "src/Analysis/Evidence/Coupling/RfcDeclarationIndex.php",
+    "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcDeclarationIndex": {
+      "path": "src/Analysis/Evidence/Coupling/Rfc/RfcDeclarationIndex.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Coupling",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcLocalFlow": {
-      "path": "src/Analysis/Evidence/Coupling/RfcLocalFlow.php",
+    "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcLocalFlow": {
+      "path": "src/Analysis/Evidence/Coupling/Rfc/RfcLocalFlow.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Coupling",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcReceiverTypes": {
-      "path": "src/Analysis/Evidence/Coupling/RfcReceiverTypes.php",
+    "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcReceiverTypes": {
+      "path": "src/Analysis/Evidence/Coupling/Rfc/RfcReceiverTypes.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Coupling",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcPropertyTypes": {
-      "path": "src/Analysis/Evidence/Coupling/RfcPropertyTypes.php",
+    "Qualimetrix\\Analysis\\Evidence\\Coupling\\Rfc\\RfcPropertyTypes": {
+      "path": "src/Analysis/Evidence/Coupling/Rfc/RfcPropertyTypes.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Coupling",
       "visibility": "internal",
@@ -27563,6 +27572,34 @@
       "owner": "Infrastructure.Console",
       "visibility": "internal",
       "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\RulePublicationInterface": {
+      "path": "src/Analysis/Finding/Contract/RulePublicationInterface.php",
+      "kind": "interface",
+      "owner": "Analysis.Finding",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryAudit"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\RunRuleCoverage"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\FindingConfigurator"
+        }
+      ]
     }
   },
   "enforcement_seams": {}

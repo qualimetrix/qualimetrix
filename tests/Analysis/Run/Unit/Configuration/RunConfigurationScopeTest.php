@@ -99,10 +99,23 @@ final class RunConfigurationScopeTest extends TestCase
 
     private static function projectScope(): ProjectScopeMeasurement
     {
-        return new ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: AbsolutePath::fromString('/project'), pathsAuthored: true, denominator: [[
-            'target' => 'src/',
-            'path' => AbsolutePath::fromString('/project/src'),
-        ]], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [AbsolutePath::fromString('/project/src')], scopeState: ProjectScopeState::Covered, uncoveredRoots: []);
+        $root = AbsolutePath::fromString('/project');
+
+        return new ProjectScopeMeasurement(
+            universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(
+                projectRoot: $root,
+                pathsAuthored: true,
+                denominator: [['target' => 'src/', 'path' => $root->joinRelative(RelativePath::fromString('src'))]],
+                prunedTargets: [],
+                reasons: [],
+                namespaceMapUsable: true,
+                pathResolutions: [],
+                manifestFacts: (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root),
+            ),
+            paths: [$root->joinRelative(RelativePath::fromString('src'))],
+            scopeState: ProjectScopeState::Covered,
+            uncoveredRoots: [],
+        );
     }
 
     private static function pathPattern(string $value): PathPattern

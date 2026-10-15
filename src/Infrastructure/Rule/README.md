@@ -51,6 +51,7 @@ and the public `ChannelPresentationInterface` alias resolves to this decorator.
 Rule/
 ├── ChannelUniverse.php                       # the one channel-identity instance
 ├── ComputedMetricChannelPresentation.php     # layers the computed-metric description override
+├── ConflictingCliAliasException.php          # rejects duplicate CLI aliases
 ├── Contract/
 │   └── RuleChannelSnapshotFactoryInterface.php
 ├── RuleRegistry.php

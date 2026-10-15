@@ -24,7 +24,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleShapeReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader;
-use Qualimetrix\Analysis\Finding\RuleExecution;
+use Qualimetrix\Analysis\Finding\RuleMaterialization;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -142,7 +142,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface, Con
     {
         return [
             ChannelUniverse::class,
-            RuleExecution::class,
+            RuleMaterialization::class,
             ChannelPresentationView::class,
             RemediationTimeRegistry::class,
         ];
@@ -189,8 +189,22 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface, Con
             ->setArgument('$staticChannelKeysByProducer', $channelKeysByProducer)
             ->setArgument('$thresholdOverrideSupportByRule', $thresholdOverrideSupport);
 
-        if ($container->hasDefinition(RuleExecution::class)) {
-            $container->getDefinition(RuleExecution::class)
+        $this->publishProducerFacts($container, $classlessProducers, $docsPageByRule, $minutesByRule);
+    }
+
+    /**
+     * @param list<ProducerDeclaration> $classlessProducers
+     * @param array<string, string> $docsPageByRule
+     * @param array<string, int> $minutesByRule
+     */
+    private function publishProducerFacts(
+        ContainerBuilder $container,
+        array $classlessProducers,
+        array $docsPageByRule,
+        array $minutesByRule,
+    ): void {
+        if ($container->hasDefinition(RuleMaterialization::class)) {
+            $container->getDefinition(RuleMaterialization::class)
                 ->setArgument('$classlessProducers', $classlessProducers);
         }
 
@@ -564,6 +578,40 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface, Con
         array $shapeByRule,
     ): void {
         /** @var class-string<\Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface> $class */
+        [$producerRuleName, $shape] = $this->validatedValidatorProducer($class, $shapeByRule);
+
+        $validatorDeclarations = $class::channelDeclarations();
+
+        if ($validatorDeclarations === []) {
+            throw new LogicException(\sprintf(
+                'Configuration validator %s declares no channels. A validator exists to own diagnostics; one'
+                . ' with none is a producer nothing can address.',
+                $class,
+            ));
+        }
+
+        foreach ($validatorDeclarations as $key => $declaration) {
+            $this->assertUnclaimed($key, $class, $declarations, $producerByCode, $producerRuleName);
+            JudgedMetricDeclarationGuard::assertDeclarable($key, $class, $producerRuleName, $shape, $declaration);
+            $this->assertShapeAgreesWithDirection($key, $class, $producerRuleName, $shape, $declaration);
+            self::assertDescribedOnce($key, $class, $producerRuleName, $declaration);
+
+            $channel = new FindingChannel($key);
+            $minutesByRule[$channel->code] ??= $minutesByRule[$producerRuleName];
+            $producerByCode[$channel->code] = $producerRuleName;
+            $declarations[$key] = $declaration->asConfigurationError();
+            $channelKeysByProducer[$producerRuleName][] = $key;
+        }
+    }
+
+    /**
+     * @param class-string<\Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface> $class
+     * @param array<string, ChannelShape> $shapeByRule
+     *
+     * @return array{string, ChannelShape}
+     */
+    private function validatedValidatorProducer(string $class, array $shapeByRule): array
+    {
         $producerRuleName = $class::producerRuleName();
 
         if (!isset($shapeByRule[$producerRuleName])) {
@@ -590,28 +638,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface, Con
             ));
         }
 
-        $validatorDeclarations = $class::channelDeclarations();
-
-        if ($validatorDeclarations === []) {
-            throw new LogicException(\sprintf(
-                'Configuration validator %s declares no channels. A validator exists to own diagnostics; one'
-                . ' with none is a producer nothing can address.',
-                $class,
-            ));
-        }
-
-        foreach ($validatorDeclarations as $key => $declaration) {
-            $this->assertUnclaimed($key, $class, $declarations, $producerByCode, $producerRuleName);
-            JudgedMetricDeclarationGuard::assertDeclarable($key, $class, $producerRuleName, $shape, $declaration);
-            $this->assertShapeAgreesWithDirection($key, $class, $producerRuleName, $shape, $declaration);
-            self::assertDescribedOnce($key, $class, $producerRuleName, $declaration);
-
-            $channel = new FindingChannel($key);
-            $minutesByRule[$channel->code] ??= $minutesByRule[$producerRuleName];
-            $producerByCode[$channel->code] = $producerRuleName;
-            $declarations[$key] = $declaration->asConfigurationError();
-            $channelKeysByProducer[$producerRuleName][] = $key;
-        }
+        return [$producerRuleName, $shape];
     }
 
     /**

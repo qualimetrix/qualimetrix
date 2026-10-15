@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface;
@@ -284,6 +285,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 new Reference(self::UNMATCHED_EXCLUDE_AUDIT_CLASS),
                 new Reference(CollectionOrchestratorInterface::class),
                 new Reference(RuleExecutionInterface::class),
+                new Reference(RulePublicationInterface::class),
                 new Reference(self::RULE_PRODUCER_PREPARATION),
                 new Reference(self::INLINE_DIRECTIVE_RUN),
                 new Reference(MeasurementAggregationInterface::class),

@@ -12,16 +12,23 @@ use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
+use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
 use Qualimetrix\Analysis\Finding\Contract\SelectionTrace;
 use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 
-/** Projects produced findings through the existing exclusion ledger and selection. */
-final readonly class FindingPublication
+/**
+ * Projects produced findings through the existing exclusion ledger and selection.
+ *
+ * @qmx-threshold coupling.instability warning=0.86 -- Publication joins rule selection, exclusion, population and snapshot vocabulary for its executor and external readers; the small incoming population understates those distinct uses, and this ceiling keeps another outgoing dependency visible.
+ */
+final readonly class FindingPublication implements RulePublicationInterface
 {
     private FindingExclusionLedger $exclusions;
 
-    public function __construct(private RuleConfigurationInterface $ruleConfiguration)
-    {
+    public function __construct(
+        private RuleConfigurationInterface $ruleConfiguration,
+        private RuleMaterialization $materialization,
+    ) {
         $this->exclusions = new FindingExclusionLedger($ruleConfiguration);
     }
 
@@ -33,6 +40,11 @@ final readonly class FindingPublication
     public function begin(): void
     {
         $this->exclusions->begin();
+    }
+
+    public function prepareSnapshot(): void
+    {
+        $this->materialization->begin($this->ruleConfiguration->resolvedOptions());
     }
 
     /**
@@ -104,8 +116,9 @@ final readonly class FindingPublication
      *
      * @return list<Finding>
      */
-    public function publishable(array $findings, RuleEnablement $enablement): array
+    public function publishable(array $findings): array
     {
+        $enablement = $this->readyEnablement();
         $kept = [];
         foreach ($findings as $finding) {
             // The producer lookup also refuses a static/computed channel name collision.
@@ -117,6 +130,29 @@ final readonly class FindingPublication
         }
 
         return $kept;
+    }
+
+    public function publication(): ChannelPublication
+    {
+        return new ChannelPublication($this->readyEnablement());
+    }
+
+    public function levelActivity(): LevelActivity
+    {
+        $this->prepareSnapshot();
+
+        return $this->readyEnablement()->levelActivity();
+    }
+
+    public function enablement(): ?RuleEnablement
+    {
+        return $this->ruleConfiguration->enablement();
+    }
+
+    public function readyEnablement(): RuleEnablement
+    {
+        return $this->enablement()
+            ?? throw new LogicException('Rule enablement is unavailable before analysis preflight.');
     }
 
     /** The final universe identifies hosted channels; undeclared codes retain the instance name. */

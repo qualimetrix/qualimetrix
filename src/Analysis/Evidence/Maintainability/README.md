@@ -16,9 +16,10 @@ bounded DI registration for this internal leaf.
 
 ```text
 Maintainability/
-├── HalsteadCollector.php
-├── HalsteadMetrics.php
-├── HalsteadVisitor.php
+├── Halstead/
+│   ├── HalsteadCollector.php
+│   ├── HalsteadMetrics.php
+│   └── HalsteadVisitor.php
 ├── MaintainabilityIndexCalculator.php
 ├── MaintainabilityIndexCollector.php
 ├── MaintainabilityOptions.php
@@ -269,7 +270,7 @@ Read this README with:
 - `tests/Analysis/Evidence/Maintainability/Unit/` for the Halstead algorithm,
   MI calculation and derived-collector ordering, and rule/default behavior.
 
-Changes are complete when the seven flat leaf declarations retain collector
+Changes are complete when the seven leaf declarations retain collector
 name `halstead`, all five `maintainability.halstead.*` metrics, derived requirements exactly
 `halstead`, `cyclomatic-complexity`, and `method-statement-count`, and the
 `maintainability.mi` ID, aliases, channels, option defaults and thresholds,

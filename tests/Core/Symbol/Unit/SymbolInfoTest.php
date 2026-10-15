@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Core\Symbol;
+namespace Qualimetrix\Tests\Core\Symbol\Unit;
 
 use Error;
 use InvalidArgumentException;

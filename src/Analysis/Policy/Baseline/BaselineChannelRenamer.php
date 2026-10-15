@@ -53,22 +53,7 @@ use RuntimeException;
  * What is left for this class alone is the map, and the one collision a carry
  * can create that no other writer would.
  *
- * @qmx-threshold coupling.instability warning=0.82 error=0.95 -- Measured Ca=2, Ce=9
- *                (I=0.818182): the two afferent edges are one real consumer,
- *                `BaselineRenameChannelsCommand`, counted twice because its
- *                `OutputConfigurator` DI registration is a second constructor
- *                reference to the same class — the shape `min_afferent: 2`
- *                exists to discount, just one edge short of Ca=1. The nine
- *                efferent edges are the loader, writer and layout this class's
- *                own docblock defers correctness to, plus the map, refusal,
- *                report and payload types of its one tested contract — none
- *                droppable without moving a metric rather than a design flaw.
- *                Refactoring the metric's own cure — adding a dependent to cut
- *                Ca's discount, or splitting a two-subject writer/layout pair
- *                the docblock above argues for keeping separate — does not
- *                apply to a leaf orchestrator with one caller. The raised
- *                warning stays live: one more efferent edge (Ce=10) trips it
- *                again at I=0.833.
+ * @qmx-threshold coupling.instability warning=0.800001 error=0.95 -- Channel carry composes the existing loader, writer, layout, and map vocabulary for one command. Extracting a single-reader wrapper would move the same dependencies; the ceiling keeps added dependencies visible.
  */
 final readonly class BaselineChannelRenamer
 {

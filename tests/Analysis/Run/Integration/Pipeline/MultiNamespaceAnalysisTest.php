@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
 use Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy;
+use Qualimetrix\Infrastructure\Parallel\WorkerPool;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
@@ -171,7 +172,9 @@ PHP
                 DependencyVisitor::class,
                 [LocCollector::class, ClassCountCollector::class],
             ), new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()), new \Qualimetrix\Infrastructure\Profiler\ProfileSession(), new \Qualimetrix\Infrastructure\Console\ErrorStream());
-            self::assertTrue($strategy->isParallelAvailable(), 'The IPC integration requires amphp workers');
+            if (WorkerPool::unavailableCapability() !== null) {
+                self::markTestSkipped('Parallel worker transport is unavailable.');
+            }
             $strategy->setWorkerCount(2);
             $canonicalFixtureDir = realpath($fixtureDir);
             self::assertIsString($canonicalFixtureDir);

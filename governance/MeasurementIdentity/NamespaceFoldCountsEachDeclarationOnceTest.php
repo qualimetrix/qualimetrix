@@ -563,6 +563,7 @@ final class NamespaceFoldCountsEachDeclarationOnceTest extends TestCase
                     reasons: [],
                     namespaceMapUsable: true,
                     pathResolutions: [],
+                    manifestFacts: (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read(AbsolutePath::fromString($root)),
                 ),
                 paths: [AbsolutePath::fromString($root)],
                 scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered,

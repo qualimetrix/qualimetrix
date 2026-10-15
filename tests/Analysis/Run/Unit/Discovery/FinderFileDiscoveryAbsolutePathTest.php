@@ -125,7 +125,7 @@ final class FinderFileDiscoveryAbsolutePathTest extends TestCase
     private function files(array $paths): DiscoveredProjectFiles
     {
         $root = AbsolutePath::fromString($this->fixturesDir);
-        $universe = new ProjectScopeUniverse($root, true, [], [], [], true, []);
+        $universe = new ProjectScopeUniverse($root, true, [], [], [], true, [], (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root));
         $run = new RunConfiguration(
             pathExcludes: [],
             projectRoot: $root,

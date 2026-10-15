@@ -16,7 +16,7 @@ use Qualimetrix\Infrastructure\Parallel\WorkerRequest;
 use RuntimeException;
 
 /**
- * Selects and configures the best available execution strategy.
+ * Selects and configures an execution strategy from the worker request.
  *
  * Priority order:
  * 1. AmphpParallelStrategy - when requested workers exceed one
@@ -40,7 +40,7 @@ final class StrategySelector implements StrategySelectorInterface
     ) {}
 
     /**
-     * Returns the best available strategy for the current system and configuration.
+     * Returns the configured strategy; parallel worker startup is judged during execution.
      *
      * Configures the strategy based on:
      * - workers setting (null = auto-detect, 0/1 = sequential, >1 = parallel)

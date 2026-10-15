@@ -14,7 +14,6 @@ use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
-use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
@@ -413,7 +412,7 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
                 }
             },
             unusedEntryAudit: new UnusedEntryAudit((function () {
-                $execution = self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+                $execution = self::createStub(\Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface::class);
                 $execution->method('publishable')->willReturnCallback(static fn(array $findings): array => $findings);
 
                 return $execution;
@@ -428,7 +427,6 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
             $pipeline,
             new ErrorStream(),
             self::silentSuppressionAudit(),
-            $reader,
             new \Qualimetrix\Infrastructure\Console\ObservedProjectScopeReasons($reader, new \Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap($reader)),
             new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
             new \Qualimetrix\Infrastructure\Console\BaselineProjectionCoverage($reader, $tree, StubRuleCoverage::everyRuleRan()),
@@ -449,7 +447,7 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
             [new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata(\Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::NAME, UnboundSuppressionOptions::class, '', [], false)],
         );
         $configuration->method('resolvedOptions')->willReturn($snapshot);
-        return new UnboundSuppressionAudit(self::createStub(RuleExecutionInterface::class), $configuration);
+        return new UnboundSuppressionAudit(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface::class), $configuration);
     }
 
     private static function diagnosticConsole(BufferedOutput $diagnostics): ConsoleOutput
@@ -490,7 +488,7 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
                 repository: $repository,
                 coverage: new AnalysisCoverage([RelativePath::fromString('src/Legacy/bootstrap.php')], [], []),
                 namespaceTree: null,
-                projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(AbsolutePath::fromString($this->tempRoot), true, [], [], [], true, []), [AbsolutePath::fromString($this->tempRoot)], \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, [], new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement()),
+                projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(AbsolutePath::fromString($this->tempRoot), true, [], [], [], true, [], (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read(AbsolutePath::fromString($this->tempRoot))), [AbsolutePath::fromString($this->tempRoot)], \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, [], new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement()),
                 duration: 0.1,
                 subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [RelativePath::fromString('src/Legacy/bootstrap.php')], []),
             ),

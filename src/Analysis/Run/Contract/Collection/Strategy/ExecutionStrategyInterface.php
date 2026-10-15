@@ -21,14 +21,8 @@ interface ExecutionStrategyInterface
      *
      * @param list<SplFileInfo> $files Files to process
      * @param callable(SplFileInfo): FileProcessingResult $processor Function to process each file
-     * @param bool $canParallelize Whether parallel execution is allowed for this batch
      *
      * @return list<FileProcessingResult> Results from all files
      */
-    public function execute(array $files, callable $processor, bool $canParallelize = true): array;
-
-    /**
-     * Returns whether this strategy supports attempting parallel execution.
-     */
-    public function isParallelAvailable(): bool;
+    public function execute(array $files, callable $processor): array;
 }

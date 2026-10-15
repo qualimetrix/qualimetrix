@@ -49,12 +49,12 @@ file	role	declared_pairs	declared_paths	subject_sites	frozen_lines	why
 src/Analysis/Evidence/CircularDependency/CircularDependencyOptions.php	options-class	2	direct-as-error,max-cycle-size	3	-	declares 2 axis-A pairs over 2 key paths; carries 3 subject sites of form-deciding-sites.tsv
 src/Analysis/Evidence/CodeSmell/BooleanArgumentOptions.php	options-class	2	allowed-prefixes,flag-promoted-properties	7	-	declares 2 axis-A pairs over 2 key paths; carries 7 subject sites of form-deciding-sites.tsv
 src/Analysis/Evidence/CodeSmell/CodeSmellOptions.php	form-deciding, declares nothing	0	-	1	-	carries 1 subject sites of form-deciding-sites.tsv
-src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionOptions.php	options-class	3	error,threshold,warning	4	-	declares 3 axis-A pairs over 3 key paths; carries 4 subject sites of form-deciding-sites.tsv
 src/Analysis/Evidence/CodeSmell/ErrorSuppressionOptions.php	options-class	1	allowed-functions	5	-	declares 1 axis-A pairs over 1 key paths; carries 5 subject sites of form-deciding-sites.tsv
 src/Analysis/Evidence/CodeSmell/IdenticalSubExpressionOptions.php	form-deciding, declares nothing	0	-	1	-	carries 1 subject sites of form-deciding-sites.tsv
-src/Analysis/Evidence/CodeSmell/LongParameterListOptions.php	options-class	6	error,threshold,vo-error,vo-threshold,vo-warning,warning	8	-	declares 6 axis-A pairs over 6 key paths; carries 8 subject sites of form-deciding-sites.tsv
-src/Analysis/Evidence/CodeSmell/UnreachableCodeOptions.php	options-class	3	error,threshold,warning	4	-	declares 3 axis-A pairs over 3 key paths; carries 4 subject sites of form-deciding-sites.tsv
-src/Analysis/Evidence/CodeSmell/UnusedPrivateOptions.php	form-deciding, declares nothing	0	-	1	-	carries 1 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/CodeSmell/ParameterCount/ConstructorOverinjectionOptions.php	options-class	3	error,threshold,warning	4	-	declares 3 axis-A pairs over 3 key paths; carries 4 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/CodeSmell/ParameterCount/LongParameterListOptions.php	options-class	6	error,threshold,vo-error,vo-threshold,vo-warning,warning	8	-	declares 6 axis-A pairs over 6 key paths; carries 8 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/CodeSmell/UnreachableCode/UnreachableCodeOptions.php	options-class	3	error,threshold,warning	4	-	declares 3 axis-A pairs over 3 key paths; carries 4 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/CodeSmell/UnusedPrivate/UnusedPrivateOptions.php	form-deciding, declares nothing	0	-	1	-	carries 1 subject sites of form-deciding-sites.tsv
 src/Analysis/Evidence/Cohesion/LcomOptions.php	options-class	6	error,exclude-methods,exclude-readonly,min-methods,threshold,warning	9	promise-docblock:104-107	declares 6 axis-A pairs over 6 key paths; carries 9 subject sites of form-deciding-sites.tsv
 src/Analysis/Evidence/Complexity/ClassCognitiveComplexityOptions.php	options-class	4	class.enabled,class.max-error,class.max-warning,class.threshold	3	-	declares 4 axis-A pairs over 4 key paths; carries 3 subject sites of form-deciding-sites.tsv
 src/Analysis/Evidence/Complexity/ClassComplexityOptions.php	options-class	4	class.enabled,class.max-error,class.max-warning,class.threshold	4	-	declares 4 axis-A pairs over 4 key paths; carries 4 subject sites of form-deciding-sites.tsv

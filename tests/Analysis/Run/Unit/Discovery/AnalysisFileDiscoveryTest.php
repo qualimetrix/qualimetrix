@@ -123,7 +123,7 @@ final class AnalysisFileDiscoveryTest extends TestCase
     {
         $root = AbsolutePath::fromString($this->root);
         $absolutePaths = array_map(AbsolutePath::fromString(...), $paths);
-        $universe = new ProjectScopeUniverse($root, true, [], [], [], true, []);
+        $universe = new ProjectScopeUniverse($root, true, [], [], [], true, [], (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root));
         $run = new RunConfiguration(
             pathExcludes: [],
             projectRoot: $root,

@@ -41,7 +41,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\DerivedMetricExtractor;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
-use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
@@ -49,7 +48,6 @@ use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
-use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
@@ -58,7 +56,6 @@ use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
-use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory;
@@ -203,8 +200,6 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $execution = self::createStub(RuleExecutionInterface::class);
         $execution->method('allRules')->willReturn([]);
         $execution->method('execute')->willReturn(new RuleExecutionResult([], [], new RuleExclusionStats(), LevelActivity::empty()));
-        $execution->method('publication')->willReturn(new ChannelPublication(new RuleEnablement([], null)));
-        $execution->method('publishable')->willReturn([]);
         $computed = self::createStub(ComputedMetricEvaluator::class);
         $computed->method('evaluate')->willReturn(new ComputedMetricEvaluationSummary());
         $configuration = new RuleOptionsRegistry();
@@ -382,8 +377,6 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             new RuleExclusionStats(),
             LevelActivity::empty(),
         ));
-        $ruleExecutor->method('publication')->willReturn(new ChannelPublication(new RuleEnablement([], null)));
-        $ruleExecutor->method('publishable')->willReturn([]);
         $producerGate = new RuleSelectorProducerGate($registry);
         $computed = self::createStub(ComputedMetricEvaluator::class);
         $computed->method('evaluate')->willReturn(new ComputedMetricEvaluationSummary());
@@ -473,7 +466,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $metadata = new RuleMetadata('test.spy', \Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellOptions::class, '', [], false);
         $configuration = FindingConfiguration::none();
         $registry->replace(ResolvedOptionsFixture::ready($configuration, [$metadata]));
-        $ruleExecutor = new RuleExecution([['metadata' => $metadata, 'create' => static fn(): RuleInterface => $spyRule]], $this->profiler, $registry);
+        $ruleExecutor = ResolvedOptionsFixture::executionFromLookups([['metadata' => $metadata, 'create' => static fn(): RuleInterface => $spyRule]], $this->profiler, $registry);
 
         $pipeline = $this->createPipelineWithDependencies(
             $dependencies,
@@ -542,7 +535,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $lookup = ResolvedOptionsFixture::lookup($rule);
         $configuration = FindingConfiguration::none();
         $registry->replace(ResolvedOptionsFixture::ready($configuration, [$lookup['metadata']]));
-        $ruleExecutor = new RuleExecution([$lookup], $this->profiler, $registry);
+        $ruleExecutor = ResolvedOptionsFixture::executionFromLookups([$lookup], $this->profiler, $registry);
 
         // Pre-populate the repository with the classes so CouplingCollector can find them
         $repository = new InMemoryMetricRepository();
@@ -658,7 +651,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
                 pathExcludes: [],
                 projectRoot: AbsolutePath::fromString($fixtureRoot),
                 generatedFilePolicy: GeneratedFilePolicy::Include,
-                projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: AbsolutePath::fromString($fixtureRoot), pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [AbsolutePath::fromString($path)], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
+                projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: AbsolutePath::fromString($fixtureRoot), pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: [], manifestFacts: (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read(AbsolutePath::fromString($fixtureRoot))), paths: [AbsolutePath::fromString($path)], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
                 authoredPathExcludes: [],
                 autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
             ));
@@ -768,7 +761,6 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             new \Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats(),
             \Qualimetrix\Analysis\Finding\Contract\LevelActivity::empty(),
         ));
-        $ruleExecutor->method('publication')->willReturn(new ChannelPublication(new RuleEnablement([], null)));
 
         $pipeline = $this->createPipelineWithGlobalCollectors(
             $dependencies,
@@ -1467,7 +1459,7 @@ PHP);
             pathExcludes: [],
             projectRoot: $root,
             generatedFilePolicy: GeneratedFilePolicy::Include,
-            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: [], manifestFacts: (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root)), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
             authoredPathExcludes: [],
             autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         );
@@ -1480,7 +1472,7 @@ PHP);
             pathExcludes: [],
             projectRoot: $root,
             generatedFilePolicy: GeneratedFilePolicy::Include,
-            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Narrowed, uncoveredRoots: ['uncovered']),
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: [], manifestFacts: (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root)), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Narrowed, uncoveredRoots: ['uncovered']),
             authoredPathExcludes: [],
             autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         );

@@ -56,6 +56,10 @@ explicitly requested. Before collecting files, `WorkerPool` runs a
 Only process workers are supported; `ext-parallel` threads and forks are not
 alternative transports.
 `WorkerRequest` owns the shared ten-second startup and diagnostic-drain bound.
+The Run-owned execution strategy port only accepts files and a processor.
+`AmphpParallelStrategy` checks process capability and probes the current
+worker pool before submitting file tasks. Explicit requests refuse startup
+failure; automatic requests warn and collect in-process.
 `WorkerContextFactory` gives process startup that deadline and
 returns a `WorkerStartFailure` with the request and native cause when it cannot
 connect. `WorkerPhpFailure` carries a worker's private PHP fatal diagnostic back

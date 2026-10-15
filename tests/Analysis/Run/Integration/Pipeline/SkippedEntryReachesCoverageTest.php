@@ -15,10 +15,8 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricEvalu
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MeasurementAggregationService;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector;
-use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
-use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
@@ -140,10 +138,6 @@ final class SkippedEntryReachesCoverageTest extends TestCase
         $ruleExecutor->method('execute')->willReturn(
             new RuleExecutionResult([], [], new RuleExclusionStats(), LevelActivity::empty()),
         );
-        $ruleExecutor->method('publication')->willReturn(new ChannelPublication(new RuleEnablement([], null)));
-        $ruleExecutor->method('publishable')->willReturnCallback(
-            static fn(array $findings): array => $findings,
-        );
 
         $configuration = new RuleOptionsRegistry();
         $configuration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), []));
@@ -175,7 +169,7 @@ final class SkippedEntryReachesCoverageTest extends TestCase
             pathExcludes: [],
             projectRoot: $root,
             generatedFilePolicy: GeneratedFilePolicy::Exclude,
-            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [AbsolutePath::fromString($this->root . '/src')], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: [], manifestFacts: (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root)), paths: [AbsolutePath::fromString($this->root . '/src')], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
             authoredPathExcludes: [],
             autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         ));

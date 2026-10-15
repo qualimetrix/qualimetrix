@@ -127,7 +127,7 @@ Qualimetrix\Analysis\Finding\Contract\ChannelPublication	Analysis.Finding	12	4
 Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole	Analysis.Finding	3	3
 Qualimetrix\Analysis\Finding\Contract\ChannelShape	Analysis.Finding	49	17
 Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface	Analysis.Finding	4	3
-Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface	Analysis.Finding	2	2
+Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface	Analysis.Finding	3	3
 Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration	Analysis.Finding	11	3
 Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\Control\ControlScope	Analysis.Finding	6	1
@@ -168,10 +168,11 @@ Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface	Analysis.Findin
 Qualimetrix\Analysis\Finding\Contract\RuleEnablement	Analysis.Finding	3	2
 Qualimetrix\Analysis\Finding\Contract\RuleExclusionAttribution	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats	Analysis.Finding	1	1
-Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface	Analysis.Finding	11	5
+Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface	Analysis.Finding	9	4
 Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult	Analysis.Finding	6	3
 Qualimetrix\Analysis\Finding\Contract\RuleMetadata	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\RuleOptionForms	Analysis.Finding	3	1
+Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface	Analysis.Finding	5	3
 Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule	Analysis.Finding	37	15
 Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext	Analysis.Finding	51	15
 Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias	Analysis.Finding	26	9
@@ -227,7 +228,7 @@ Qualimetrix\Analysis\Finding\Contract\ValueReach	Analysis.Finding	6	3
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser	Analysis.Finding	2	1
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit	Analysis.Finding	1	1
-Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement	Analysis.Finding	1	1
+Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement	Analysis.Finding	2	2
 Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels	Analysis.Policy.Architecture	3	3
 Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface	Analysis.Policy.Architecture	2	2
 Qualimetrix\Analysis\Policy\Architecture\Contract\ExternalSupertypeSourceInterface	Analysis.Policy.Architecture	2	2
@@ -294,8 +295,8 @@ Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor	Analysis.Policy
 Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor	Analysis.Policy.Inline	3	2
 Qualimetrix\Analysis\ProjectManifest\Contract\ComposerAutoloadSection	Analysis.ProjectManifest	1	1
 Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestDecoder	Analysis.ProjectManifest	2	2
-Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts	Analysis.ProjectManifest	5	3
-Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface	Analysis.ProjectManifest	11	6
+Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts	Analysis.ProjectManifest	6	3
+Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface	Analysis.ProjectManifest	10	6
 Qualimetrix\Analysis\ProjectManifest\Contract\ManifestIssue	Analysis.ProjectManifest	2	2
 Qualimetrix\Analysis\ProjectManifest\Contract\ManifestIssueKind	Analysis.ProjectManifest	2	1
 Qualimetrix\Analysis\ProjectManifest\Contract\ManifestReadState	Analysis.ProjectManifest	4	3
@@ -306,7 +307,6 @@ Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput	Analysis.Run	
 Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult	Analysis.Run	3	1
 Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface	Analysis.Run	2	2
 Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ExecutionStrategyInterface	Analysis.Run	3	1
-Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ParallelCapableInterface	Analysis.Run	1	1
 Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterface	Analysis.Run	3	2
 Qualimetrix\Analysis\Run\Contract\Configuration\AuthoredExclude	Analysis.Run	1	1
 Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy	Analysis.Run	2	1
@@ -336,10 +336,10 @@ Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException	Analysis.
 Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface	Analysis.Run	4	2
 Qualimetrix\Core\Ast\FileParserInterface	Core.Neutral	9	3
 Qualimetrix\Core\Ast\NameResolution	Core.Neutral	4	3
+Qualimetrix\Core\Ast\ParseException	Core.Neutral	3	2
 Qualimetrix\Core\Ast\ResolvedName	Core.Neutral	10	7
 Qualimetrix\Core\Ast\SuperglobalRead	Core.Neutral	2	2
 Qualimetrix\Core\Environment\EnvironmentFailureInterface	Core.Environment	12	6
-Qualimetrix\Core\Exception\ParseException	Core.Neutral	3	2
 Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	4	2
 Qualimetrix\Core\FileTarget\FileReplacement	Core.FileTarget	4	3
 Qualimetrix\Core\FileTarget\FileTargetFailure	Core.FileTarget	14	4

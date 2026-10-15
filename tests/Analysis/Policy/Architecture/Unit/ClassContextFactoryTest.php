@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer;
+namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit;
 
 use Closure;
 use PhpParser\NodeTraverser;

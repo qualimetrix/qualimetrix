@@ -30,36 +30,23 @@ final class FileSetInspectionParticipantCompilerPass implements CompilerPassInte
             );
         }
 
-        /** @var array<string, array{class: class-string<FileSetInspectionParticipantInterface>, reference: Reference}> $participants */
+        $participants = $this->collectParticipants($container);
+        uksort($participants, strcmp(...));
+
+        $container->getDefinition(self::COMPOSITE_SERVICE_ID)->setArgument(
+            '$participants',
+            array_values(array_column($participants, 'reference')),
+        );
+    }
+
+    /** @return array<string, array{class: class-string<FileSetInspectionParticipantInterface>, reference: Reference}> */
+    private function collectParticipants(ContainerBuilder $container): array
+    {
         $participants = [];
 
         foreach ($container->findTaggedServiceIds(self::TAG) as $serviceId => $_tags) {
             $class = $this->resolveClass($container, $serviceId);
-
-            if (!is_a($class, FileSetInspectionParticipantInterface::class, true)) {
-                throw new InvalidArgumentException(\sprintf(
-                    'File-set inspection service "%s" (%s) must implement %s.',
-                    $serviceId,
-                    $class,
-                    FileSetInspectionParticipantInterface::class,
-                ));
-            }
-
-            $participantId = $class::participantId();
-            if (trim($participantId) === '') {
-                throw new InvalidArgumentException(\sprintf(
-                    'File-set inspection participant %s::participantId() must return a non-empty string.',
-                    $class,
-                ));
-            }
-
-            $producerRuleName = $class::producerRuleName();
-            if (trim($producerRuleName) === '') {
-                throw new InvalidArgumentException(\sprintf(
-                    'File-set inspection participant %s::producerRuleName() must return a non-empty string.',
-                    $class,
-                ));
-            }
+            [$participantId, $class] = $this->validatedParticipant($serviceId, $class);
 
             if (isset($participants[$participantId])) {
                 throw new InvalidArgumentException(\sprintf(
@@ -76,12 +63,42 @@ final class FileSetInspectionParticipantCompilerPass implements CompilerPassInte
             ];
         }
 
-        uksort($participants, strcmp(...));
+        return $participants;
+    }
 
-        $container->getDefinition(self::COMPOSITE_SERVICE_ID)->setArgument(
-            '$participants',
-            array_values(array_column($participants, 'reference')),
-        );
+    /**
+     * @param class-string $class
+     *
+     * @return array{string, class-string<FileSetInspectionParticipantInterface>}
+     */
+    private function validatedParticipant(string $serviceId, string $class): array
+    {
+        if (!is_a($class, FileSetInspectionParticipantInterface::class, true)) {
+            throw new InvalidArgumentException(\sprintf(
+                'File-set inspection service "%s" (%s) must implement %s.',
+                $serviceId,
+                $class,
+                FileSetInspectionParticipantInterface::class,
+            ));
+        }
+
+        $participantId = $class::participantId();
+        if (trim($participantId) === '') {
+            throw new InvalidArgumentException(\sprintf(
+                'File-set inspection participant %s::participantId() must return a non-empty string.',
+                $class,
+            ));
+        }
+
+        $producerRuleName = $class::producerRuleName();
+        if (trim($producerRuleName) === '') {
+            throw new InvalidArgumentException(\sprintf(
+                'File-set inspection participant %s::producerRuleName() must return a non-empty string.',
+                $class,
+            ));
+        }
+
+        return [$participantId, $class];
     }
 
     /** @return class-string */

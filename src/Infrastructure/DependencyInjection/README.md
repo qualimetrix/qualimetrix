@@ -19,10 +19,11 @@ records are values constructed by the operation, never container services.
 
 `Registration/EvidenceRegistration` creates a fresh loader and fresh collector
 and lazy rule prototypes for Cohesion, Complexity, Coupling, Maintainability
-and Size. Their configurators retain the literal `registerClasses()` calls,
-namespace and exact owned resource roots. LCOM tagged collections and Coupling
-aliases remain explicit in their respective configurators. Prototypes and
-loaders are not cached or registered as services.
+and Size. Coupling and Maintainability pass their ordered exact collector roots
+to its registration method; the other configurators keep their own
+`registerClasses()` calls. LCOM tagged collections and Coupling aliases remain
+explicit in their respective configurators. Prototypes and loaders are not
+cached or registered as services.
 
 `ComputedMetricsConfigurator` registers configuration and evaluation separately.
 Its expression and evaluator aliases retain their explicit shared implementation

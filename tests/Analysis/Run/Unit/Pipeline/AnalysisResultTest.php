@@ -476,7 +476,7 @@ final class AnalysisResultTest extends TestCase
         $leftTree = new NamespaceTree(['Left']);
         $rightTree = new NamespaceTree(['Right']);
         $root = AbsolutePath::fromString(sys_get_temp_dir());
-        $universe = new ProjectScopeUniverse($root, true, [], [], [], true, []);
+        $universe = new ProjectScopeUniverse($root, true, [], [], [], true, [], (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root));
         $leftScope = new ProjectScopeMeasurement($universe, [$root], ProjectScopeState::Covered, [], new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement());
         $rightScope = new ProjectScopeMeasurement($universe, [$root], ProjectScopeState::Narrowed, [], new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement());
 
@@ -577,7 +577,7 @@ final class AnalysisResultTest extends TestCase
         $late = $this->createFinding(Severity::Info, 'late.php');
         $tree = new NamespaceTree(['App']);
         $root = AbsolutePath::fromString(sys_get_temp_dir());
-        $universe = new ProjectScopeUniverse($root, true, [], [], [], true, []);
+        $universe = new ProjectScopeUniverse($root, true, [], [], [], true, [], (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root));
         $scope = new ProjectScopeMeasurement($universe, [$root], ProjectScopeState::Covered, [], new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement());
         $ruleExecution = new RuleExecutionResult(
             produced: [$finding],

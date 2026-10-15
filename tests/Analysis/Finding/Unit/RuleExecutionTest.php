@@ -151,7 +151,7 @@ final class RuleExecutionTest extends TestCase
         $channels = new ChannelUniverse($declarations, $channelsByProducer, array_fill_keys(array_keys($channelsByProducer), false), new ResolvedComputedMetricDefinitions([]), ...self::unusedReachPorts());
         $registry = new RuleOptionsRegistry();
         $registry->replace(ResolvedOptionsFixture::ready(ResolvedOptionsFixture::authoredConfiguration([], $metadata), $metadata, channels: $channels));
-        return new RuleExecution($lookups, self::createStub(ProfilerInterface::class), $registry);
+        return ResolvedOptionsFixture::executionFromLookups($lookups, self::createStub(ProfilerInterface::class), $registry);
     }
 
     #[Test]
@@ -169,7 +169,7 @@ final class RuleExecutionTest extends TestCase
         $channels = new ChannelUniverse($declarations, $channelsByProducer, array_fill_keys(array_keys($channelsByProducer), false), new ResolvedComputedMetricDefinitions([]), ...self::unusedReachPorts());
         $registry = new RuleOptionsRegistry();
         $registry->replace(ResolvedOptionsFixture::ready(ResolvedOptionsFixture::authoredConfiguration([], $metadata), $metadata, channels: $channels));
-        $execution = new RuleExecution($lookups, self::createStub(ProfilerInterface::class), $registry);
+        $execution = ResolvedOptionsFixture::executionFromLookups($lookups, self::createStub(ProfilerInterface::class), $registry);
         $file = RelativePath::fromString('src/Native.php');
         $repository = new \Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository();
         $repository->add(SymbolPath::forFile($file), (new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag())->withEntry('security.sql_injection', ['subjectKind' => 'file', 'line' => 1, 'superglobal' => ''])->withEntry('codeSmell.error_suppression', ['subjectKind' => 'file', 'line' => 2]), $file, 1);
@@ -958,8 +958,8 @@ final class RuleExecutionTest extends TestCase
             $this->createConfiguredProvider(['disabled' => ['complexity:class']]),
         );
 
-        self::assertFalse($executor->publication()->publishes('complexity', $channel, SymbolLevel::Class_));
-        self::assertTrue($executor->publication()->publishes('complexity', $channel, SymbolLevel::Callable));
+        self::assertFalse(ResolvedOptionsFixture::publicationFor($executor)->publication()->publishes('complexity', $channel, SymbolLevel::Class_));
+        self::assertTrue(ResolvedOptionsFixture::publicationFor($executor)->publication()->publishes('complexity', $channel, SymbolLevel::Callable));
     }
 
     /**
@@ -1005,8 +1005,8 @@ final class RuleExecutionTest extends TestCase
             fileRules: $fileRules,
         );
 
-        self::assertFalse($executor->publication()->publishes('complexity.cognitive', $channel, SymbolLevel::Class_));
-        self::assertTrue($executor->publication()->publishes('complexity.cognitive', $channel, SymbolLevel::Callable));
+        self::assertFalse(ResolvedOptionsFixture::publicationFor($executor)->publication()->publishes('complexity.cognitive', $channel, SymbolLevel::Class_));
+        self::assertTrue(ResolvedOptionsFixture::publicationFor($executor)->publication()->publishes('complexity.cognitive', $channel, SymbolLevel::Callable));
     }
 
     #[Test]
@@ -1015,18 +1015,14 @@ final class RuleExecutionTest extends TestCase
         $channel = new FindingChannel('complexity');
         $rules = [$this->createRule('complexity', [], ['complexity' => ['callable' => true]])];
 
-        self::assertFalse(
-            $this->createExecution($rules, $this->createConfiguredProvider(['disabled' => ['complexity']]))
-                ->publication()->publishes('complexity', $channel, SymbolLevel::Callable),
+        $disabled = $this->createExecution($rules, $this->createConfiguredProvider(['disabled' => ['complexity']]));
+        self::assertFalse(ResolvedOptionsFixture::publicationFor($disabled)->publication()->publishes('complexity', $channel, SymbolLevel::Callable));
+        $otherOnly = $this->createExecution(
+            $rules,
+            $this->createConfiguredProvider(['only' => ['other']]),
+            classlessProducers: [new ProducerDeclaration('other', 'complexity', RuleExecutionFixtureOptions::class, 'Other producer')],
         );
-        self::assertFalse(
-            $this->createExecution(
-                $rules,
-                $this->createConfiguredProvider(['only' => ['other']]),
-                classlessProducers: [new ProducerDeclaration('other', 'complexity', RuleExecutionFixtureOptions::class, 'Other producer')],
-            )
-                ->publication()->publishes('complexity', $channel, SymbolLevel::Callable),
-        );
+        self::assertFalse(ResolvedOptionsFixture::publicationFor($otherOnly)->publication()->publishes('complexity', $channel, SymbolLevel::Callable));
     }
 
     /**
@@ -1047,7 +1043,7 @@ final class RuleExecutionTest extends TestCase
             )],
         );
 
-        self::assertTrue($executor->publication()->publishes('health.complexity', new FindingChannel('health.complexity'), SymbolLevel::Namespace_));
+        self::assertTrue(ResolvedOptionsFixture::publicationFor($executor)->publication()->publishes('health.complexity', new FindingChannel('health.complexity'), SymbolLevel::Namespace_));
     }
 
     // --- Namespace exclusion tests ---
@@ -1550,7 +1546,7 @@ final class RuleExecutionTest extends TestCase
                 $registry->configurePathExclusions($producer, $paths);
             }
         }
-        return new RuleExecution(
+        return ResolvedOptionsFixture::executionFromLookups(
             $lookups,
             self::createStub(ProfilerInterface::class),
             $registry,

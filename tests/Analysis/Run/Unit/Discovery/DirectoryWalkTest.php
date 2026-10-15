@@ -111,7 +111,7 @@ final class DirectoryWalkTest extends TestCase
         };
         $root = AbsolutePath::fromString($this->root);
         $path = AbsolutePath::fromString($this->root . '/tree');
-        $universe = new ProjectScopeUniverse($root, true, [], [], [], true, []);
+        $universe = new ProjectScopeUniverse($root, true, [], [], [], true, [], (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root));
         $run = new RunConfiguration(
             pathExcludes: [],
             projectRoot: $root,

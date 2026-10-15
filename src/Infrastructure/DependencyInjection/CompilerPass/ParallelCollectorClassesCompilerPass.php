@@ -34,32 +34,26 @@ final class ParallelCollectorClassesCompilerPass implements CompilerPassInterfac
             return;
         }
 
-        // Collect class names for base collectors
-        $collectorClasses = [];
-        foreach ($container->findTaggedServiceIds(CollectorCompilerPass::TAG) as $id => $tags) {
-            $definition = $container->getDefinition($id);
-            $collectorClasses[] = $definition->getClass() ?? $id;
-        }
-
-        // Collect class names for derived collectors
-        $derivedCollectorClasses = [];
-        foreach ($container->findTaggedServiceIds(CollectorCompilerPass::TAG_DERIVED) as $id => $tags) {
-            $definition = $container->getDefinition($id);
-            $derivedCollectorClasses[] = $definition->getClass() ?? $id;
-        }
-
-        // Collect rule class names (workers rebuild the threshold-override validator map locally)
-        $ruleClasses = [];
-        foreach ($container->findTaggedServiceIds(RuleRegistryCompilerPass::TAG) as $id => $tags) {
-            $definition = $container->getDefinition($id);
-            $ruleClasses[] = $definition->getClass() ?? $id;
-        }
+        $collectorClasses = $this->classesForTag($container, CollectorCompilerPass::TAG);
+        $derivedCollectorClasses = $this->classesForTag($container, CollectorCompilerPass::TAG_DERIVED);
+        $ruleClasses = $this->classesForTag($container, RuleRegistryCompilerPass::TAG);
 
         /** @var list<class-string<RuleDefinitionInterface>> $ruleClasses */
-        // Pass collector and rule classes to FileProcessingTaskFactory
         $definition = $container->getDefinition(FileProcessingTaskFactory::class);
         $definition->setArgument('$collectorClasses', $collectorClasses);
         $definition->setArgument('$derivedCollectorClasses', $derivedCollectorClasses);
         $definition->setArgument('$ruleClasses', $ruleClasses);
+    }
+
+    /** @return list<string> */
+    private function classesForTag(ContainerBuilder $container, string $tag): array
+    {
+        $classes = [];
+
+        foreach ($container->findTaggedServiceIds($tag) as $id => $_tags) {
+            $classes[] = $container->getDefinition($id)->getClass() ?? $id;
+        }
+
+        return $classes;
     }
 }

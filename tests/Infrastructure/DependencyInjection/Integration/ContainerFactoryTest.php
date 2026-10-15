@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolution
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\BooleanArgumentRule;
-use Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\CountInLoopRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\DebugCodeRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\EmptyCatchRule;
@@ -22,10 +21,15 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\EvalRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ExitRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\GotoRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\IdenticalSubExpressionRule;
-use Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ConstructorOverinjectionRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\LongParameterListRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ParameterCountCollector;
+use Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionCollector;
 use Qualimetrix\Analysis\Evidence\CodeSmell\SuperglobalsRule;
-use Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeRule;
-use Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCode\UnreachableCodeCollector;
+use Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCode\UnreachableCodeRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\UnusedPrivateCollector;
+use Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\UnusedPrivateRule;
 use Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurableInterface;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration;
@@ -56,7 +60,8 @@ use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfig
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
 use Qualimetrix\Analysis\Evidence\Coupling\DistanceRule;
 use Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule;
-use Qualimetrix\Analysis\Evidence\Coupling\RfcCollector;
+use Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcCollector;
+use Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcGlobalCollector;
 use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
@@ -72,7 +77,7 @@ use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
-use Qualimetrix\Analysis\Evidence\Maintainability\HalsteadCollector;
+use Qualimetrix\Analysis\Evidence\Maintainability\Halstead\HalsteadCollector;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityIndexCollector;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MeasurementAggregationService;
@@ -95,9 +100,11 @@ use Qualimetrix\Analysis\Evidence\Size\MethodCountCollector;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountRule;
 use Qualimetrix\Analysis\Evidence\Size\PropertyCountRule;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule;
@@ -137,6 +144,7 @@ use Qualimetrix\Infrastructure\Console\MeasuredFindingSet;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RunConfigurationPreparation;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CodeSmellConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\DependencyInjection\Registration\EvidenceRegistration;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
@@ -152,12 +160,16 @@ use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface;
+use Qualimetrix\Subprocess\ChildProcess;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use ReflectionClass;
 use ReflectionProperty;
 use SplFileInfo;
 
+require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
+
 #[CoversClass(ContainerFactory::class)]
+#[CoversClass(CodeSmellConfigurator::class)]
 #[CoversClass(EvidenceRegistration::class)]
 final class ContainerFactoryTest extends TestCase
 {
@@ -596,7 +608,7 @@ PHP;
         self::assertCount(2, $measuredFindingSetConstructor->getParameters());
         $pipelineConstructor = (new ReflectionClass(AnalysisPipeline::class))->getConstructor();
         self::assertNotNull($pipelineConstructor);
-        self::assertCount(12, $pipelineConstructor->getParameters());
+        self::assertCount(13, $pipelineConstructor->getParameters());
 
         $runtimeConfigurator = $container->get(RuntimeConfigurator::class);
         self::assertInstanceOf(RuntimeConfigurator::class, $runtimeConfigurator);
@@ -794,9 +806,11 @@ PHP;
         self::assertInstanceOf(RuleConfigurationInterface::class, $ruleOptionsRegistry);
         $ruleExecution = $container->get(RuleExecutionInterface::class);
         self::assertInstanceOf(RuleExecutionInterface::class, $ruleExecution);
+        $publication = $container->get(RulePublicationInterface::class);
+        self::assertInstanceOf(RulePublicationInterface::class, $publication);
         self::assertSame(
             $ruleOptionsRegistry,
-            (new ReflectionProperty($ruleExecution, 'ruleOptionsRegistry'))->getValue($ruleExecution),
+            (new ReflectionProperty($publication, 'ruleConfiguration'))->getValue($publication),
         );
 
         $finding = ResolvedOptionsFixture::authoredConfiguration([], $ruleExecution->allRules(), cliOptions: ['complexity.ccn' => ['callable.warning' => 20, 'callable.error' => 40]]);
@@ -904,6 +918,10 @@ PHP;
             LcomCollector::class,
             TccLccCollector::class,
             RfcCollector::class,
+            ParameterCountCollector::class,
+            IdenticalSubExpressionCollector::class,
+            UnreachableCodeCollector::class,
+            UnusedPrivateCollector::class,
         ];
 
         foreach ($expectedCollectors as $expectedClass) {
@@ -962,6 +980,10 @@ PHP;
         self::assertContainsOnlyInstancesOf(GlobalContextCollectorInterface::class, $collectors);
         self::assertContains(
             DitGlobalCollector::class,
+            array_map(static fn(object $collector): string => $collector::class, $collectors),
+        );
+        self::assertContains(
+            RfcGlobalCollector::class,
             array_map(static fn(object $collector): string => $collector::class, $collectors),
         );
         $cohesion = array_values(array_filter($collectors, static fn(object $collector): bool => $collector instanceof CohesionCompositionCollector));
@@ -1080,6 +1102,55 @@ PHP;
             $registeredClasses,
             'RuleRegistry should contain exactly ' . \count($expectedRuleClasses) . ' rules',
         );
+    }
+
+    #[Test]
+    public function itPreservesRulesAndChannelOrderWhenLoadedFromPhar(): void
+    {
+        $script = <<<'PHP'
+require $argv[1] . '/vendor/autoload.php';
+$archive = new Phar($argv[2]);
+$archive->buildFromDirectory($argv[1] . '/src', '/\.php$/');
+$archive->setStub('<?php __HALT_COMPILER();');
+$prefix = 'phar://' . $argv[2];
+spl_autoload_register(static function (string $class) use ($prefix): void {
+    if (str_starts_with($class, 'Qualimetrix\\')) {
+        require $prefix . '/' . str_replace('\\', '/', substr($class, strlen('Qualimetrix\\'))) . '.php';
+    }
+}, true, true);
+$container = (new Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory())->create();
+$rules = $container->get(Qualimetrix\Infrastructure\Rule\RuleRegistryInterface::class);
+$channels = $container->get(Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface::class);
+echo json_encode([
+    'sources' => [
+        (new ReflectionClass(Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory::class))->getFileName(),
+        (new ReflectionClass(Qualimetrix\Infrastructure\DependencyInjection\Configurator\CodeSmellConfigurator::class))->getFileName(),
+    ],
+    'rules' => $rules->getClasses(),
+    'channels' => array_map(static fn($channel) => $channel->code, $channels->channels()),
+], JSON_THROW_ON_ERROR);
+PHP;
+        $archive = $this->tempDir . '/source.phar';
+        $result = ChildProcess::run([\PHP_BINARY, '-d', 'phar.readonly=0', '-r', $script, \dirname(__DIR__, 4), $archive]);
+        self::assertSame(0, $result['exitCode'], $result['stderr']);
+        self::assertSame('', $result['stderr']);
+        $actual = json_decode($result['stdout'], true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($actual);
+        $archivePath = realpath($archive);
+        self::assertNotFalse($archivePath);
+        self::assertSame([
+            'phar://' . $archivePath . '/Infrastructure/DependencyInjection/ContainerFactory.php',
+            'phar://' . $archivePath . '/Infrastructure/DependencyInjection/Configurator/CodeSmellConfigurator.php',
+        ], $actual['sources']);
+
+        $container = $this->factory->create();
+        $rules = $container->get(RuleRegistryInterface::class);
+        self::assertInstanceOf(RuleRegistryInterface::class, $rules);
+        $channels = $container->get(ChannelUniverseInterface::class);
+        self::assertInstanceOf(ChannelUniverseInterface::class, $channels);
+        self::assertNotEmpty($rules->getClasses());
+        self::assertSame($rules->getClasses(), $actual['rules']);
+        self::assertSame(array_map(static fn($channel) => $channel->code, $channels->channels()), $actual['channels']);
     }
 
     #[Test]
