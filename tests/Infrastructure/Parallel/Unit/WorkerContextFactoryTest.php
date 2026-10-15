@@ -43,8 +43,10 @@ try {
 }
 echo json_encode(['worker' => $result, 'expected' => [getenv('PATH'), getenv('QMX_CONTEXT_TEST_MARKER'), ini_get('short_open_tag'), ini_get('zend.multibyte'), ini_get('zend.script_encoding')], 'closed' => !is_dir($directory)], JSON_THROW_ON_ERROR);
 PHP;
+        $scanDirectory = getenv('PHP_INI_SCAN_DIR');
+        $scanDirectory = ($scanDirectory === false ? \PHP_CONFIG_FILE_SCAN_DIR : $scanDirectory) . \PATH_SEPARATOR . '/absent-qmx-ini-scan';
         try {
-            $process = new \Symfony\Component\Process\Process([\PHP_BINARY, '-d', 'short_open_tag=1', '-r', $coordinator, \dirname(__DIR__, 4) . '/vendor/autoload.php', $script], env: ['QMX_CONTEXT_TEST_MARKER' => 'carried-value', 'PHP_INI_SCAN_DIR' => '/absent-qmx-ini-scan']);
+            $process = new \Symfony\Component\Process\Process([\PHP_BINARY, '-d', 'short_open_tag=1', '-r', $coordinator, \dirname(__DIR__, 4) . '/vendor/autoload.php', $script], env: ['QMX_CONTEXT_TEST_MARKER' => 'carried-value', 'PHP_INI_SCAN_DIR' => $scanDirectory]);
             $process->mustRun();
             $record = json_decode($process->getOutput(), true, flags: \JSON_THROW_ON_ERROR);
             self::assertSame($record['expected'][0], $record['worker'][0]);
@@ -54,7 +56,7 @@ PHP;
             self::assertSame($record['expected'][3], $record['worker'][4]);
             self::assertSame($record['expected'][4], $record['worker'][5]);
             self::assertSame('process', $record['worker'][6]);
-            self::assertSame('/absent-qmx-ini-scan', $record['worker'][7]);
+            self::assertSame($scanDirectory, $record['worker'][7]);
             self::assertTrue($record['closed']);
             $text = $process->getErrorOutput();
             self::assertStringContainsString('worker: payload poison', $text);
