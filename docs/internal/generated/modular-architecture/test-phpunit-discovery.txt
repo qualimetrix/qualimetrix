@@ -8732,6 +8732,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itAnswersARefusalOnStderrWithExitThreeAndNoTrace"a configuration that will not load"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itAnswersARefusalOnStderrWithExitThreeAndNoTrace"a file somebody else rewrote"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itAnswersARefusalOnStderrWithExitThreeAndNoTrace"an InvalidArgumentException nothing normalized"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itKeepsASuccessfulBaselineCommandSuccessfulWithoutRequiringSignalSupport
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itReportsAFailureAsOneSentence"a defect in the tool itself"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itReportsAFailureAsOneSentence"an unreadable baseline envelope"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandFailureReportingTest::itResetsSharedBaselineRuntimeBeforeConfigurationLoadingFails
@@ -11127,6 +11128,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"-vv"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"-vvv"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"default"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itPassesTheSuiteCacheHomeToTheTerminalProcess
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ExhaustionReleasesTargetsTest::itReleasesUnpublishedReportAndProfileTargetsWhenTheCoordinatorRunsOutOfMemory
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itClassifiesAnUnsupportedGraphTargetWithoutWritingAReport
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itClassifiesEnvironmentFailureBeforeCheckReport
