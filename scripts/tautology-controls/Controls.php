@@ -48,7 +48,7 @@ final class Controls
             'Qualimetrix.Tests.Analysis.Finding.Unit.LocationTest::itRefusesAWriteToAConstructedLocation',
             'Qualimetrix.Tests.Analysis.Policy.Baseline.Unit.ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared with data set "one-row"',
             'Qualimetrix.Tests.Infrastructure.DependencyInjection.Integration.ContainerFactoryTest::itLetsTheConfigurationPipelineAddressAProducerNoRuleClassDeclares',
-            'Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.CompilerPass.RuleCompilerPassTest::itInjectsIntoEveryConsumerItDeclaresAndIntoNothingElse',
+            'Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.RuleCatalog.RuleCompilerPassTest::itInjectsIntoEveryConsumerItDeclaresAndIntoNothingElse',
             'Qualimetrix.Tests.Infrastructure.Parallel.Unit.Strategy.AmphpParallelStrategyTest::itUsesLoggerForDebugMessages',
             'Qualimetrix.Tests.Infrastructure.Rule.Unit.RuleRegistryTest::itReadsMetadataOffARuleClassItCouldNotHaveBuilt',
             'Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.Configurator.DeclaredChannelFileScopeTest::itKeepsDeclaredProjectChannelsExemptAndLayerViolationsFileScoped',
@@ -204,11 +204,11 @@ final class Controls
                 'RuleCompilerPass injects the tagged rules into every consumer it declares',
                 'src/Infrastructure/DependencyInjection/RuleCatalog/RuleCompilerPass.php',
                 ['$container->getDefinition($consumerId)->setArgument($argumentIndex, $rules);' => '$container->getDefinition($consumerId)->setArgument($argumentIndex, []);'],
-                ['Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.CompilerPass.RuleCompilerPassTest::itInjectsIntoEveryConsumerItDeclaresAndIntoNothingElse'],
+                ['Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.RuleCatalog.RuleCompilerPassTest::itInjectsIntoEveryConsumerItDeclaresAndIntoNothingElse'],
             )->alsoReddens(
                 'the first case in the file reads the same injected argument',
                 [
-                    'Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.CompilerPass.RuleCompilerPassTest::itCollectsTaggedRulesIntoRuleExecution',
+                    'Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.RuleCatalog.RuleCompilerPassTest::itCollectsTaggedRulesIntoRuleExecution',
                     'Qualimetrix.Tests.Infrastructure.DependencyInjection.Integration.ContainerFactoryTest::itInjectsRulesIntoRuleExecution',
                     'Qualimetrix.Tests.Infrastructure.DependencyInjection.Integration.ContainerFactoryTest::itWiresTheDuplicationCapabilityThroughItsContractAndRegistries',
                 ],
