@@ -32,3 +32,11 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === 'phpunit') {
     }
     define('QMX_TEST_PROCESS_ROOT', $processRoot);
 }
+
+$cacheHome = QMX_TEST_PROCESS_ROOT . '/xdg-cache';
+if (!is_dir($cacheHome) && !mkdir($cacheHome, 0o700)) {
+    throw new RuntimeException('Cannot create PHPUnit cache home: ' . $cacheHome);
+}
+putenv('XDG_CACHE_HOME=' . $cacheHome);
+$_SERVER['XDG_CACHE_HOME'] = $cacheHome;
+$_ENV['XDG_CACHE_HOME'] = $cacheHome;

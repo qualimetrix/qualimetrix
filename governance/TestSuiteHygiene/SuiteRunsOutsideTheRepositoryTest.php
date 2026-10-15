@@ -45,7 +45,6 @@ final class SuiteRunsOutsideTheRepositoryTest extends TestCase
         yield 'filter and random order' => [['--filter=itRuns', '--order-by=random', '--stop-on-defect'], ''];
         yield 'isolated child preserves globals' => [['--process-isolation'], ''];
         yield 'isolated child drops globals' => [['--process-isolation'], '#[\\PHPUnit\\Framework\\Attributes\\PreserveGlobalState(false)]'];
-        yield 'declared cache residue' => [[], 'cache'];
     }
 
     /** @param list<string> $arguments */
@@ -124,7 +123,6 @@ final class SuiteRunsOutsideTheRepositoryTest extends TestCase
         $hook = $mode === 'leak' ? 'public static function setUpBeforeClass(): void { chdir(__DIR__); }' : '';
         $write = match ($mode) {
             'file' => 'file_put_contents("rel.txt", "left");',
-            'cache' => 'mkdir(".qmx-cache");',
             default => '',
         };
         $cwdAssertion = \in_array($mode, ['bypass', 'leak'], true)

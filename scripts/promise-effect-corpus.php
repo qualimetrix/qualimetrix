@@ -20,7 +20,7 @@ declare(strict_types=1);
  * trusted chain"): `--no-cache` does not hold in this tree, so it is never
  * used. Every run gets its own cache directory, named explicitly and unique
  * to the document, deleted before the run. If the product's default
- * `.qmx-cache` appears in the run's working directory afterwards, that run
+ * `qmx/` appears in the run's private XDG home afterwards, that run
  * FAILS the probe outright (the product ignored the directory it was given)
  * rather than being reported as a normal outcome.
  *
@@ -211,10 +211,10 @@ function buildCorpus(string $repositoryRoot): array
  *
  * @return array{exit: int, stdout: string, stderr: string}
  */
-function runProcess(array $command, string $workingDirectory): array
+function runProcess(array $command, string $workingDirectory, string $xdgHome): array
 {
     try {
-        $result = ChildProcess::run($command, $workingDirectory);
+        $result = ChildProcess::run($command, $workingDirectory, environment: array_merge(getenv(), ['XDG_CACHE_HOME' => $xdgHome]));
     } catch (RuntimeException $error) {
         // ProbeProtocolFailure, not the bare RuntimeException run() throws:
         // main() catches ProbeProtocolFailure by name to stop the corpus run
@@ -268,14 +268,18 @@ function probe(Document $document, string $scratchRoot, string $phpBinary, strin
 {
     $slug = preg_replace('/[^A-Za-z0-9_.-]+/', '-', $document->identifier) ?? $document->identifier;
     $cacheDirectory = $scratchRoot . '/cache/' . $slug;
-    $defaultCacheDirectory = $document->directory . '/.qmx-cache';
+    $xdgHome = $scratchRoot . '/xdg/' . $slug;
+    $defaultCacheDirectory = $xdgHome . '/qmx';
 
     // Step 1 & 2 of the cache protocol: unique explicit directory, deleted
     // before the run; the default directory is also cleared first so a
     // leftover from a previous, unrelated run cannot be mistaken for this
     // run having ignored --cache-dir.
     removeRecursively($cacheDirectory);
-    removeRecursively($defaultCacheDirectory);
+    removeRecursively($xdgHome);
+    if (!mkdir($xdgHome, 0o700, true)) {
+        throw new ProbeProtocolFailure('Cannot create isolated cache home for ' . $document->identifier);
+    }
 
     $command = [$phpBinary, $qmxBin, 'check', ...$document->paths];
 
@@ -297,13 +301,14 @@ function probe(Document $document, string $scratchRoot, string $phpBinary, strin
         $command[] = $extraArgument;
     }
 
-    $result = runProcess($command, $document->directory);
+    $result = runProcess($command, $document->directory, $xdgHome);
 
     // Step 4: the default cache directory appearing means the product
     // ignored the directory it was explicitly given. That is a defect in the
     // probe's own trust chain, not a legitimate-configuration outcome.
     if (is_dir($defaultCacheDirectory)) {
         removeRecursively($cacheDirectory);
+        removeRecursively($xdgHome);
         throw new ProbeProtocolFailure(\sprintf(
             'Probe protocol failure for %s: the default %s appeared despite an explicit --cache-dir. '
             . 'The product ignored the cache directory it was given; this run cannot be trusted.',
@@ -313,6 +318,7 @@ function probe(Document $document, string $scratchRoot, string $phpBinary, strin
     }
 
     removeRecursively($cacheDirectory);
+    removeRecursively($xdgHome);
 
     $exit = $result['exit'];
     $framed = str_contains($result['stdout'] . $result['stderr'], 'Configuration error:');

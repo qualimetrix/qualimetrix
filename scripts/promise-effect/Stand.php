@@ -1278,6 +1278,13 @@ final class Stand
         string $cellKey,
     ): Judgement {
         $promised = \in_array($form, $row->promisedForms, true);
+
+        if ($row->path === 'cache.dir'
+            && $value->outcome === Observation::REFUSED_FRAMED
+            && str_contains($value->text, 'is inside the project root')) {
+            return new Judgement(Verdict::REFUSES, 'the canonical relative cache path is inside the project root');
+        }
+
         $limitRow = $this->limits()->rowFor($row->door, $row->path, $form);
 
         if ($limitRow !== null) {

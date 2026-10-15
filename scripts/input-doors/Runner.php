@@ -88,7 +88,9 @@ final class Runner
     private function side(GridRow $row, Probe $probe, CommandProfile $profile, string $observable, ?string $value, bool $fresh = false): Observation
     {
         $fixture = $probe->fixture !== '' ? $probe->fixture : $profile->fixture;
-        $plan = $this->plan($row, $profile, $observable, $value, $fixture);
+        $externalCache = $value !== null && \in_array($row->door, ['--cache-dir', 'cache.dir'], true) && str_contains($value, 'qmx-cache')
+            ? $this->scratchRoot . '/cache/' . md5($row->key()) : null;
+        $plan = $this->plan($row, $profile, $observable, $externalCache === null ? $value : str_replace('qmx-cache', $externalCache, $value), $fixture);
         $prepare = self::prepareSteps($this->repositoryRoot . '/input-doors/fixtures/' . $fixture);
         $memoKey = $fixture . "\0" . $prepare . "\0" . $observable . "\0" . implode("\0", $plan['argv']) . "\0" . $plan['config'];
 
@@ -103,12 +105,22 @@ final class Runner
 
         $this->materialize($fixture, $runDir);
         $this->prepare($prepare, $runDir);
+        if ($externalCache !== null && is_dir($externalCache)) {
+            self::removeTree($externalCache);
+        }
+        $xdgHome = $this->scratchRoot . '/xdg/' . md5($memoKey . ($fresh ? '-repeat' : ''));
+        if (is_dir($xdgHome)) {
+            self::removeTree($xdgHome);
+        }
+        if (!mkdir($xdgHome, 0o700, true)) {
+            throw new DeclarationError('cannot create isolated cache home ' . $xdgHome);
+        }
 
         if ($plan['config'] !== '') {
             file_put_contents($runDir . '/qmx.probe.yaml', $plan['config']);
         }
 
-        $observation = $this->execute($plan['argv'], $runDir, $observable);
+        $observation = $this->execute($plan['argv'], $runDir, $observable, ['XDG_CACHE_HOME' => $xdgHome], $externalCache);
         ++$this->runs;
         $this->memo[$memoKey] = $observation;
 
@@ -304,7 +316,7 @@ final class Runner
     /** @param list<string> $argv
      * @param array<string, string> $extraEnv
      */
-    private function execute(array $argv, string $cwd, string $observable, array $extraEnv = []): Observation
+    private function execute(array $argv, string $cwd, string $observable, array $extraEnv = [], ?string $externalCache = null): Observation
     {
         $environment = array_merge(getenv(), $extraEnv, ['NO_COLOR' => '1', 'COLUMNS' => '120']);
 
@@ -331,7 +343,9 @@ final class Runner
         $exit = $result['exitCode'];
 
         $fileTarget = str_starts_with($observable, 'file:') ? $cwd . '/' . substr($observable, 5) : null;
-        $dirTarget = str_starts_with($observable, 'dir:') ? $cwd . '/' . substr($observable, 4) : null;
+        $dirTarget = $observable === 'dir:qmx-cache' && $externalCache !== null
+            ? $externalCache
+            : (str_starts_with($observable, 'dir:') ? $cwd . '/' . substr($observable, 4) : null);
 
         return new Observation(
             $exit,
