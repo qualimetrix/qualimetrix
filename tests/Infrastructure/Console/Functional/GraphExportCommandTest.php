@@ -57,6 +57,9 @@ final class GraphExportCommandTest extends TestCase
         if (is_dir($this->tempDir)) {
             $this->removeDirectory($this->tempDir);
         }
+        if (is_dir($this->tempDir . '-cache')) {
+            $this->removeDirectory($this->tempDir . '-cache');
+        }
     }
 
     #[Test]
@@ -193,7 +196,7 @@ final class GraphExportCommandTest extends TestCase
     }
 
     #[Test]
-    public function itFailsWhenNoFilesFound(): void
+    public function itExportsAnEmptyGraphWhenNoFilesFound(): void
     {
         // Create empty directory
         $emptyDir = $this->tempDir . '/empty';
@@ -215,12 +218,13 @@ final class GraphExportCommandTest extends TestCase
         $commandTester = new CommandTester($command);
         $commandTester->execute([
             'paths' => [$emptyDir],
-        ]);
+        ], ['capture_stderr_separately' => true]);
 
-        // Assert failure
-        self::assertSame(1, $commandTester->getStatusCode());
+        // The empty graph is still an authoritative complete result.
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        self::assertStringContainsString('No files found', $output);
+        self::assertStringContainsString('digraph', $output);
+        self::assertStringContainsString('No PHP files', $commandTester->getErrorOutput());
     }
 
     #[Test]
@@ -467,12 +471,13 @@ final class GraphExportCommandTest extends TestCase
     #[Test]
     public function itCommitsGraphRuntimeOptionsToTheSameStoresItsAnalyzerReads(): void
     {
+        $cacheDir = $this->tempDir . '-cache';
         file_put_contents($this->tempDir . '/Sample.php', '<?php namespace App; final class Sample {}');
-        file_put_contents($this->tempDir . '/qmx.yaml', "paths: ['{$this->tempDir}']\ncache: {dir: '{$this->tempDir}/cache', enabled: true}\nparallel: {workers: 2}\ncoupling: {framework_namespaces: [{subtree: Framework}]}\n");
+        file_put_contents($this->tempDir . '/qmx.yaml', "paths: ['{$this->tempDir}']\ncache: {dir: '{$cacheDir}', enabled: true}\nparallel: {workers: 2}\ncoupling: {framework_namespaces: [{subtree: Framework}]}\n");
         $tester = new CommandTester($this->containerCommand());
         self::assertSame(0, $tester->execute(['--config' => $this->tempDir . '/qmx.yaml']));
-        self::assertDirectoryExists($this->tempDir . '/cache');
-        $this->removeDirectory($this->tempDir . '/cache');
+        self::assertDirectoryExists($cacheDir);
+        $this->removeDirectory($cacheDir);
 
         self::assertSame(0, $tester->execute([
             '--config' => $this->tempDir . '/qmx.yaml',
@@ -481,7 +486,7 @@ final class GraphExportCommandTest extends TestCase
             '--workers' => '0',
             '--memory-limit' => '768M',
         ]), $tester->getDisplay());
-        self::assertDirectoryDoesNotExist($this->tempDir . '/cache');
+        self::assertDirectoryDoesNotExist($cacheDir);
         self::assertSame('768M', \ini_get('memory_limit'));
         $runtime = (new ReflectionProperty(AnalysisPreflight::class, 'runtimeConfigurator'))->getValue($this->preflight());
         $parallel = (new ReflectionProperty($runtime, 'parallelConfigurationStore'))->getValue($runtime);
@@ -495,9 +500,9 @@ final class GraphExportCommandTest extends TestCase
         self::assertTrue($coupling->isFramework('Framework\\Library'));
         self::assertFalse($coupling->isFramework('App\\Sample'));
 
-        file_put_contents($this->tempDir . '/qmx.yaml', "paths: ['{$this->tempDir}']\ncache: {dir: '{$this->tempDir}/cache', enabled: false}\n");
+        file_put_contents($this->tempDir . '/qmx.yaml', "paths: ['{$this->tempDir}']\ncache: {dir: '{$cacheDir}', enabled: false}\n");
         self::assertSame(0, $tester->execute(['--config' => $this->tempDir . '/qmx.yaml']));
-        self::assertDirectoryDoesNotExist($this->tempDir . '/cache');
+        self::assertDirectoryDoesNotExist($cacheDir);
     }
 
     #[Test]

@@ -131,7 +131,7 @@ final class BaselineAcceptNewTest extends TestCase
             '--no-progress' => true,
         ], ['capture_stderr_separately' => true]);
 
-        self::assertSame(1, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
         self::assertSame(1, $pipeline->calls);
         self::assertStringContainsString('does not cover', $tester->getDisplay() . $tester->getErrorOutput());
         self::assertSame($before, file_get_contents($this->path));

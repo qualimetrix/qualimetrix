@@ -228,8 +228,8 @@ final class BaselineCleanupCommandTest extends TestCase
 
         $tester = $this->execute([], ['src']);
 
-        self::assertSame(Command::FAILURE, $tester->getStatusCode());
-        self::assertStringContainsString('does not cover tests', $tester->getDisplay());
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertStringContainsString('does not cover tests', $tester->getErrorOutput());
     }
 
     #[Test]

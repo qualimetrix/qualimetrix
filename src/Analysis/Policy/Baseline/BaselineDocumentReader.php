@@ -7,12 +7,13 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
 use Qualimetrix\Core\FileTarget\FileIdentity;
+use Qualimetrix\Core\FileTarget\NativeCall;
 use Qualimetrix\Core\FileTarget\TargetPath;
 
 /** Reads and judges one held baseline document before analysis starts. */
 final readonly class BaselineDocumentReader
 {
-    /** @throws ConfigurationRefusal if the file is unreadable or its document grammar is invalid */
+    /** @throws ConfigurationRefusal if the input file or its document grammar is invalid */
     public function preflight(string $path): BaselineDocument
     {
         $this->assertReadable($path);
@@ -39,31 +40,34 @@ final readonly class BaselineDocumentReader
     {
         $resolvedPath = $target->path?->value();
         if ($resolvedPath === null || $target->identity === null) {
-            throw ConfigurationRefusal::aboutBaselineFileDocument($path, "Failed to read baseline file: {$path}");
+            throw new BaselineReadFailure($path, 'the resolved target has no readable file identity');
         }
 
-        $handle = @fopen($resolvedPath, 'rb');
+        [$handle, $warning] = NativeCall::attempt(static fn() => fopen($resolvedPath, 'rb'));
         if ($handle === false) {
-            throw ConfigurationRefusal::aboutBaselineFileDocument($path, "Failed to read baseline file: {$path}");
+            throw new BaselineReadFailure($path, $warning ?? 'the filesystem refused opening the file');
         }
         try {
-            $stat = fstat($handle);
-            if ($stat === false || !$target->identity->sameAs(FileIdentity::fromStat($stat))) {
-                throw ConfigurationRefusal::aboutBaselineFileDocument($path, "Baseline file changed before reading: {$path}");
+            [$stat, $warning] = NativeCall::attempt(static fn() => fstat($handle));
+            if ($stat === false) {
+                throw new BaselineReadFailure($path, $warning ?? 'the filesystem refused inspecting the held file');
             }
-            $content = stream_get_contents($handle);
+            if (!$target->identity->sameAs(FileIdentity::fromStat($stat))) {
+                throw new BaselineConflictException("Baseline file {$path} changed before reading. Re-run the command to pick up the current file.");
+            }
+            [$content, $warning] = NativeCall::attempt(static fn() => stream_get_contents($handle));
         } finally {
             fclose($handle);
         }
 
         if ($content === false) {
-            throw ConfigurationRefusal::aboutBaselineFileDocument($path, "Failed to read baseline file: {$path}");
+            throw new BaselineReadFailure($path, $warning ?? 'the filesystem refused reading the held file');
         }
 
         return $content;
     }
 
-    /** @throws ConfigurationRefusal if the file is missing, not a regular file, or unreadable */
+    /** @throws ConfigurationRefusal if the file is missing or not a regular file */
     public function assertReadable(string $path): void
     {
         if (!file_exists($path)) {
@@ -73,7 +77,7 @@ final readonly class BaselineDocumentReader
             throw ConfigurationRefusal::aboutBaselineFileDocument($path, "Baseline path is not a regular file: {$path}");
         }
         if (!is_readable($path)) {
-            throw ConfigurationRefusal::aboutBaselineFileDocument($path, "Baseline file is not readable: {$path}");
+            throw new BaselineReadFailure($path, 'read access is unavailable');
         }
     }
 }

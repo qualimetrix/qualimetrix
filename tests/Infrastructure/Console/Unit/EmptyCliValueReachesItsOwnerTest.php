@@ -28,6 +28,32 @@ use Symfony\Component\Console\Input\InputOption;
  */
 final class EmptyCliValueReachesItsOwnerTest extends TestCase
 {
+    #[Test]
+    public function itRefusesAnEmptyBaselineChannelAtItsConsoleOwner(): void
+    {
+        $root = sys_get_temp_dir() . '/qmx-empty-channel-' . bin2hex(random_bytes(6));
+        mkdir($root, 0700);
+        file_put_contents($root . '/A.php', '<?php namespace App; final class A {}');
+        file_put_contents($root . '/qmx.yaml', '{}');
+        try {
+            $app = \Qualimetrix\Infrastructure\Console\Application::forProduct(
+                static fn(\Qualimetrix\Infrastructure\Console\ConsoleDiagnostics $diagnostics) => (new \Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory())->create($diagnostics),
+                \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register(),
+            );
+            $app->setAutoExit(false);
+            $tester = new \Symfony\Component\Console\Tester\ApplicationTester($app);
+            $code = $tester->run(['command' => 'baseline:explain', 'subject' => 'class:App\\A', 'paths' => ['A.php'], '--working-dir' => $root, '--channel' => '', '--no-cache' => true, '--workers' => '0'], ['capture_stderr_separately' => true]);
+            self::assertSame(3, $code, $tester->getErrorOutput());
+            self::assertSame('', $tester->getDisplay());
+            self::assertStringContainsString('--channel', $tester->getErrorOutput());
+            self::assertStringContainsString('must not be empty', $tester->getErrorOutput());
+        } finally {
+            unlink($root . '/A.php');
+            unlink($root . '/qmx.yaml');
+            rmdir($root);
+        }
+    }
+
     /** @return iterable<string, array{string, string}> */
     public static function provideScalarDoors(): iterable
     {

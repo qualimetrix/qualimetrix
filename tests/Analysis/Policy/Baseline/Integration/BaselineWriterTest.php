@@ -903,6 +903,11 @@ final class BaselineWriterTest extends TestCase
 
         try {
             $this->writer->write($this->baseline(), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+        } catch (\Qualimetrix\Analysis\Policy\Baseline\BaselineLockFailure $failure) {
+            $cause = $failure->getPrevious();
+            self::assertInstanceOf(FileTargetFailure::class, $cause);
+
+            return $cause;
         } catch (FileTargetFailure $refusal) {
             return $refusal;
         } finally {

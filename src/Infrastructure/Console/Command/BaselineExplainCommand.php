@@ -165,8 +165,11 @@ final class BaselineExplainCommand extends BaselineCommand
     {
         $raw = CommandLineSpelling::option($input, 'channel');
 
-        if ($raw === null || $raw === '') {
+        if ($raw === null) {
             return null;
+        }
+        if ($raw === '') {
+            throw ConfigurationRefusal::aboutCommandLineInput('--channel', 'The --channel value must not be empty.');
         }
 
         try {

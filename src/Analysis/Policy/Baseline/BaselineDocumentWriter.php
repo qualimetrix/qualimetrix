@@ -66,7 +66,12 @@ final readonly class BaselineDocumentWriter
     {
         self::assertDocumentTarget($target);
         $path = $target->path?->value() ?? throw new LogicException('Baseline target has no path');
-        $lock = HeldLock::acquire(TargetPath::resolve($path . '.lock'), $this->lockTimeoutSeconds);
+        $lockTarget = TargetPath::resolve($path . '.lock');
+        try {
+            $lock = HeldLock::acquire($lockTarget, $this->lockTimeoutSeconds);
+        } catch (FileTargetFailure $failure) {
+            throw new BaselineLockFailure($target->spelling, $failure);
+        }
 
         try {
             self::assertExpectation($target, $expectedHash);

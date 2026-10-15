@@ -98,12 +98,6 @@ final class BaselineCommandFailureReportingTest extends TestCase
             5,
         ];
 
-        yield 'a file somebody else rewrote' => [
-            new BaselineConflictException('Baseline file b.json changed since it was read'),
-            'changed since it was read',
-            1,
-        ];
-
         yield 'a defect in the tool itself' => [
             new LogicException('the invariant nobody expected to break'),
             'Internal error: the invariant nobody expected to break',
@@ -163,6 +157,11 @@ final class BaselineCommandFailureReportingTest extends TestCase
             ),
             'Configuration error: qmx.yaml was not found',
         ];
+        yield 'a file somebody else rewrote' => [
+            new BaselineConflictException('Baseline file b.json changed since it was read'),
+            'Environment error: Baseline file b.json changed since it was read',
+        ];
+
     }
 
     #[Test]

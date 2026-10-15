@@ -358,8 +358,8 @@ PHP;
             file_put_contents($this->baselinePath, 'written by somebody else');
         });
 
-        self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
-        self::assertStringContainsString('appeared since it was read as absent', $tester->getDisplay());
+        self::assertSame(3, $tester->getStatusCode(), $tester->getErrorOutput());
+        self::assertStringContainsString('appeared since it was read as absent', $tester->getErrorOutput());
         self::assertSame('written by somebody else', file_get_contents($this->baselinePath));
     }
 
@@ -475,8 +475,8 @@ PHP;
             file_put_contents($this->baselinePath, 'somebody else got here first');
         });
 
-        self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
-        self::assertStringContainsString('changed since it was read', $tester->getDisplay());
+        self::assertSame(3, $tester->getStatusCode(), $tester->getErrorOutput());
+        self::assertStringContainsString('changed since it was read', $tester->getErrorOutput());
         self::assertSame('somebody else got here first', file_get_contents($this->baselinePath));
     }
 

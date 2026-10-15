@@ -191,14 +191,7 @@ final class GraphExportCommand extends Command
             return self::EXIT_ANALYSIS_INCOMPLETE;
         }
 
-        if ($result->coverage->discoveredFiles() === 0 && !$result->coverage->isIntentionallyEmpty()) {
-            // An analysis outcome, not an input refusal.
-            $output->writeln('<error>No files found to analyze</error>');
-
-            return self::FAILURE;
-        }
-
-        if ($result->coverage->isIntentionallyEmpty()) {
+        if ($result->coverage->discoveredFiles() === 0 || $result->coverage->isIntentionallyEmpty()) {
             $coverage = $result->coverage;
             $this->errorStream->write($output, \Qualimetrix\Reporting\Formatter\CoverageNarrator::describe(new \Qualimetrix\Reporting\ReportCoverage(
                 $coverage->discoveredFiles(),
