@@ -9,14 +9,19 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
 use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
+use Qualimetrix\Infrastructure\Console\ConsoleDiagnostics;
 use Qualimetrix\Infrastructure\Console\OutputHelper;
+use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Subprocess\ChildProcess;
+use RuntimeException;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Output\StreamOutput;
+use Symfony\Component\Console\Tester\ApplicationTester;
 use Symfony\Component\Filesystem\Filesystem;
 
 require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
@@ -38,13 +43,12 @@ final class QuietKeepsTheAnswerTest extends TestCase
     {
         $directory = self::fixtureDirectory();
         try {
-            $args = ['check', 'Source.php', '--workers=0', '--no-cache', '--no-progress', '--format=' . $format];
-            $normal = self::runCommand($directory, $args);
+            $normal = self::runCheckThroughApplication($directory, $format);
             self::assertSame(0, $normal['exitCode'], $normal['stdout'] . $normal['stderr']);
             self::assertNotSame('', $normal['stdout']);
             self::assertSame('', $normal['stderr']);
             foreach (['-q', '--silent'] as $flag) {
-                $quiet = self::runCommand($directory, [...$args, $flag]);
+                $quiet = self::runCheckThroughApplication($directory, $format, $flag);
                 self::assertSame(0, $quiet['exitCode'], $quiet['stdout'] . $quiet['stderr']);
                 self::assertSame('', $quiet['stderr']);
                 self::assertSame(self::stableAnswer($normal['stdout'], $format), self::stableAnswer($quiet['stdout'], $format));
@@ -218,6 +222,56 @@ final class QuietKeepsTheAnswerTest extends TestCase
     private static function runCommand(string $directory, array $args, ?array $environment = null): array
     {
         return ChildProcess::run([\PHP_BINARY, \dirname(__DIR__, 4) . '/bin/qmx', ...$args], $directory, environment: $environment);
+    }
+
+    /**
+     * The eleven-format matrix exercises Symfony's quiet/silent input path,
+     * while the process-only cases retain their native binary coverage.
+     *
+     * @return array{stdout: string, stderr: string, exitCode: int}
+     */
+    private static function runCheckThroughApplication(string $directory, string $format, ?string $quietFlag = null): array
+    {
+        $previousDirectory = getcwd();
+        $previousErrorReporting = error_reporting();
+        $previousDisplayErrors = \ini_get('display_errors');
+        if ($previousDirectory === false || !chdir($directory)) {
+            throw new RuntimeException('Could not enter the check fixture directory.');
+        }
+
+        try {
+            $application = Application::forProduct(
+                static fn(ConsoleDiagnostics $diagnostics) => (new ContainerFactory())->create($diagnostics),
+                OutOfMemoryHint::register(),
+            );
+            $application->setAutoExit(false);
+            $tester = new ApplicationTester($application);
+            $input = [
+                'command' => 'check',
+                'paths' => ['Source.php'],
+                '--workers' => '0',
+                '--no-cache' => true,
+                '--no-progress' => true,
+                '--format' => $format,
+            ];
+            if ($quietFlag !== null) {
+                $input[$quietFlag] = true;
+            }
+
+            $tester->run($input, ['capture_stderr_separately' => true]);
+
+            return [
+                'stdout' => $tester->getDisplay(),
+                'stderr' => $tester->getErrorOutput(),
+                'exitCode' => $tester->getStatusCode(),
+            ];
+        } finally {
+            error_reporting($previousErrorReporting);
+            if ($previousDisplayErrors !== false) {
+                ini_set('display_errors', $previousDisplayErrors);
+            }
+            chdir($previousDirectory);
+        }
     }
 
     #[Test]
