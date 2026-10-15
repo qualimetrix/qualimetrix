@@ -257,6 +257,7 @@ final class QuietKeepsTheAnswerTest extends TestCase
         $previousDirectory = getcwd();
         $previousErrorReporting = error_reporting();
         $previousDisplayErrors = \ini_get('display_errors');
+        $terminalEnvironment = ['LINES' => getenv('LINES'), 'COLUMNS' => getenv('COLUMNS')];
         if ($previousDirectory === false || !chdir($directory)) {
             throw new RuntimeException('Could not enter the command fixture directory.');
         }
@@ -283,6 +284,9 @@ final class QuietKeepsTheAnswerTest extends TestCase
             error_reporting($previousErrorReporting);
             if ($previousDisplayErrors !== false) {
                 ini_set('display_errors', $previousDisplayErrors);
+            }
+            foreach ($terminalEnvironment as $name => $value) {
+                putenv($name . ($value === false ? '' : '=' . $value));
             }
             chdir($previousDirectory);
         }
