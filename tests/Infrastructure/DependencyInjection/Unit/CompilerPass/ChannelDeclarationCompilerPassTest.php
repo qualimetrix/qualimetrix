@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass
 use LogicException;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -57,6 +58,34 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 #[CoversClass(ChannelDeclarationCompilerPass::class)]
 final class ChannelDeclarationCompilerPassTest extends TestCase
 {
+    /** @return iterable<string, array{bool}> */
+    public static function producerRegistrationOrders(): iterable
+    {
+        yield 'rule first' => [true];
+        yield 'validator first' => [false];
+    }
+
+    #[Test]
+    #[DataProvider('producerRegistrationOrders')]
+    public function itRefusesAValidatorThatNamesAChannelInsteadOfAProducerInEitherOrder(bool $ruleFirst): void
+    {
+        $container = new ContainerBuilder();
+        self::registerUniverse($container);
+        $definitions = [
+            LayerDeclarationRule::class => RuleRegistryCompilerPass::TAG,
+            FixtureValidatorNamingAChannel::class => ConfigurationValidatorCompilerPass::TAG,
+        ];
+        if (!$ruleFirst) {
+            $definitions = array_reverse($definitions, true);
+        }
+        foreach ($definitions as $class => $tag) {
+            $container->register($class, $class)->addTag($tag);
+        }
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('names producer "architecture.unmatched-exclude", which is not a registered rule');
+        (new ChannelDeclarationCompilerPass())->process($container);
+    }
     #[Test]
     public function itCollectsDeclarationsFromEveryTaggedRuleIntoTheRegistry(): void
     {
@@ -892,6 +921,30 @@ final class FixtureValidatorWithDisagreeingShape implements ConfigurationValidat
                 SymbolLevel::Project,
             ),
         ];
+    }
+
+    public function validate(AnalysisContext $context): array
+    {
+        return [];
+    }
+}
+
+/** @internal A channel can carry remediation minutes without being a producer. */
+final class FixtureValidatorNamingAChannel implements ConfigurationValidatorInterface
+{
+    public static function producerRuleName(): string
+    {
+        return ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME;
+    }
+
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Occurrence;
+    }
+
+    public static function channelDeclarations(): array
+    {
+        return [];
     }
 
     public function validate(AnalysisContext $context): array

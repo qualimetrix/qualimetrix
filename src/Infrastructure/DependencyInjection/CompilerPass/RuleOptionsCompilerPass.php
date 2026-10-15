@@ -49,21 +49,18 @@ final class RuleOptionsCompilerPass implements CompilerPassInterface, ConsumerBo
         }
 
         foreach ($container->findTaggedServiceIds(RuleCompilerPass::TAG) as $ruleId => $tags) {
-            $this->registerRuleOptions($container, $container->getDefinition($ruleId));
+            $this->registerRuleOptions($container, $container->getDefinition($ruleId), $ruleId);
         }
     }
 
-    private function registerRuleOptions(ContainerBuilder $container, Definition $ruleDefinition): void
+    private function registerRuleOptions(ContainerBuilder $container, Definition $ruleDefinition, string $ruleId): void
     {
         $ruleClass = $ruleDefinition->getClass();
-        if ($ruleClass === null || !is_a($ruleClass, self::RULE_INTERFACE, true)) {
-            return;
+        if ($ruleClass === null) {
+            throw new LogicException(\sprintf('Tagged rule service "%s" has no class.', $ruleId));
         }
 
-        $optionsClass = (new ReflectionClass($ruleClass))->getMethod('getOptionsClass')->invoke(null);
-        if (!\is_string($optionsClass) || !is_a($optionsClass, RuleOptionsInterface::class, true)) {
-            return;
-        }
+        $optionsClass = self::optionsClassForRule($ruleClass);
 
         $ruleName = RuleNameReader::read($ruleClass);
         $optionsServiceId = self::optionsServiceId($ruleName, $optionsClass);
@@ -125,6 +122,18 @@ final class RuleOptionsCompilerPass implements CompilerPassInterface, ConsumerBo
      */
     public static function optionsServiceIdForRule(string $ruleClass): string
     {
+        $optionsClass = self::optionsClassForRule($ruleClass);
+
+        return self::optionsServiceId(RuleNameReader::read($ruleClass), $optionsClass);
+    }
+
+    /**
+     * @phpstan-assert class-string $ruleClass
+     *
+     * @return class-string<RuleOptionsInterface>
+     */
+    private static function optionsClassForRule(string $ruleClass): string
+    {
         if (!is_a($ruleClass, self::RULE_INTERFACE, true)) {
             throw new LogicException(\sprintf(
                 'Cannot derive an Options service id from %s: it does not implement %s.',
@@ -143,7 +152,7 @@ final class RuleOptionsCompilerPass implements CompilerPassInterface, ConsumerBo
             ));
         }
 
-        return self::optionsServiceId(RuleNameReader::read($ruleClass), $optionsClass);
+        return $optionsClass;
     }
 
     /**
@@ -208,15 +217,15 @@ final class RuleOptionsCompilerPass implements CompilerPassInterface, ConsumerBo
         }
 
         $typeClass = $type->getName();
-        if (is_a($typeClass, RuleOptionsInterface::class, true)) {
-            return;
-        }
-
-        // Rules are not autowired. An unavailable service leaves the constructor's
-        // null/default handling, or the container's missing-argument refusal, intact.
         $serviceId = $this->resolveServiceId($typeClass, $container);
-        if ($serviceId !== null) {
-            $ruleDefinition->setArgument($paramName, new Reference($serviceId));
+        if ($serviceId === null) {
+            throw new LogicException(\sprintf(
+                'Cannot bind %s::%s: service "%s" is not registered.',
+                $param->getDeclaringClass()?->getName() ?? 'rule constructor',
+                $paramName,
+                $typeClass,
+            ));
         }
+        $ruleDefinition->setArgument($paramName, new Reference($serviceId));
     }
 }

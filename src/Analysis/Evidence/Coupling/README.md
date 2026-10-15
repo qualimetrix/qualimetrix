@@ -387,6 +387,10 @@ the CLI takes one typed scalar, for example
 Auto-detected Composer namespaces remain a separate exact inferred set when
 the override is absent.
 
+`DistanceRule` requires the composed project namespace resolver and diagnostic
+logger. Missing registrations refuse container construction, so namespace
+admission and warnings cannot silently disappear through constructor defaults.
+
 ### Main Sequence
 
 Ideal packages lie on the line `A + I = 1`:

@@ -25,6 +25,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ParallelCollecto
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\TagPopulationFloorCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ThresholdValidatorMapCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\AnalysisConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ArchitectureConfigurator;
@@ -72,6 +73,18 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  */
 final class ContainerFactory
 {
+    /** @var array<string, positive-int> */
+    private const array REQUIRED_TAG_POPULATIONS = [
+        RuleCompilerPass::TAG => 1,
+        ConfigurationValidatorCompilerPass::TAG => 1,
+        CollectorCompilerPass::TAG => 1,
+        CollectorCompilerPass::TAG_DERIVED => 1,
+        GlobalCollectorCompilerPass::TAG => 1,
+        'qmx.cohesion.lcom_configurable_collector' => 1,
+        FileSetInspectionParticipantCompilerPass::TAG => 1,
+        FormatterCompilerPass::TAG => 1,
+        ConfigurationStageCompilerPass::TAG => 1,
+    ];
     /**
      * Create a fully configured container.
      *
@@ -207,6 +220,11 @@ final class ContainerFactory
      */
     private function registerCompilerPasses(ContainerBuilder $container): void
     {
+        $container->addCompilerPass(
+            new TagPopulationFloorCompilerPass(self::REQUIRED_TAG_POPULATIONS),
+            PassConfig::TYPE_BEFORE_OPTIMIZATION,
+            75,
+        );
         // Ahead of every pass it checks: those at the default priority run
         // after it in this phase, and RuleOptionsCompilerPass/RuleCompilerPass
         // run in a later phase that renames and removes no definition first.

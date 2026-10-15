@@ -48,7 +48,7 @@ final class DistanceRuleTest extends TestCase
     #[Test]
     public function itReturnsCorrectName(): void
     {
-        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 0));
+        $rule = self::rule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 0));
 
         self::assertSame('coupling.distance', $rule->getName());
     }
@@ -56,7 +56,7 @@ final class DistanceRuleTest extends TestCase
     #[Test]
     public function itReturnsCorrectDescription(): void
     {
-        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 0));
+        $rule = self::rule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 0));
 
         self::assertSame(
             'Checks distance from main sequence at namespace level',
@@ -85,7 +85,7 @@ final class DistanceRuleTest extends TestCase
     #[Test]
     public function itReturnsEmptyWhenDisabled(): void
     {
-        $rule = new DistanceRule(
+        $rule = self::rule(
             new DistanceOptions(enabled: false),
         );
 
@@ -100,7 +100,7 @@ final class DistanceRuleTest extends TestCase
     #[Test]
     public function itReturnsEmptyWhenNoNamespaces(): void
     {
-        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 0));
+        $rule = self::rule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 0));
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -114,7 +114,7 @@ final class DistanceRuleTest extends TestCase
     #[Test]
     public function itSkipsNamespacesWithoutDistanceMetric(): void
     {
-        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 0));
+        $rule = self::rule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 0));
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
@@ -135,7 +135,7 @@ final class DistanceRuleTest extends TestCase
     #[Test]
     public function itGeneratesWarningWhenDistanceExceedsThreshold(): void
     {
-        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 0));
+        $rule = self::rule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 0));
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
@@ -170,7 +170,7 @@ final class DistanceRuleTest extends TestCase
     #[Test]
     public function itGeneratesErrorWhenDistanceExceedsErrorThreshold(): void
     {
-        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 0));
+        $rule = self::rule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 0));
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
@@ -200,7 +200,7 @@ final class DistanceRuleTest extends TestCase
     #[Test]
     public function itEmitsNoFindingWhenOnMainSequence(): void
     {
-        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 0));
+        $rule = self::rule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 0));
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
@@ -228,7 +228,7 @@ final class DistanceRuleTest extends TestCase
     #[Test]
     public function itAnalyzesMultipleNamespaces(): void
     {
-        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 0));
+        $rule = self::rule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 0));
 
         $nsPath1 = SymbolPath::forNamespace('App\Service');
         $nsInfo1 = self::subjectInfo($nsPath1, RelativePath::fromString('src/Service'), null);
@@ -326,7 +326,7 @@ final class DistanceRuleTest extends TestCase
         float $error,
         ?Severity $expectedSeverity,
     ): void {
-        $rule = new DistanceRule(
+        $rule = self::rule(
             new DistanceOptions(maxDistanceWarning: $warning, maxDistanceError: $error, includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 0),
         );
 
@@ -378,7 +378,7 @@ final class DistanceRuleTest extends TestCase
     #[Test]
     public function itSkipsNamespaceWithTooFewClasses(): void
     {
-        $rule = new DistanceRule(
+        $rule = self::rule(
             new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 3),
         );
 
@@ -409,7 +409,7 @@ final class DistanceRuleTest extends TestCase
     #[Test]
     public function itReportsFindingWhenClassCountMeetsMinimum(): void
     {
-        $rule = new DistanceRule(
+        $rule = self::rule(
             new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 3),
         );
 
@@ -472,7 +472,7 @@ final class DistanceRuleTest extends TestCase
             1,
         );
 
-        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 1));
+        $rule = self::rule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 1));
         $findings = $rule->analyze(new AnalysisContext($repository));
 
         self::assertSame(1, $repository->get(SymbolPath::forNamespace($namespace))->get('size.class-count'));
@@ -483,7 +483,7 @@ final class DistanceRuleTest extends TestCase
     #[Test]
     public function itAnalyzesAllWhenMinTypeCountIsZero(): void
     {
-        $rule = new DistanceRule(
+        $rule = self::rule(
             new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 0),
         );
 
@@ -546,7 +546,7 @@ final class DistanceRuleTest extends TestCase
         self::expectExceptionMessage('Expected');
 
         $invalidOptions = self::createStub(\Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface::class);
-        new DistanceRule($invalidOptions);
+        self::rule($invalidOptions);
     }
 
     #[Test]
@@ -564,7 +564,7 @@ final class DistanceRuleTest extends TestCase
                 self::equalTo(['total' => 1]),
             );
 
-        $rule = new DistanceRule(
+        $rule = self::rule(
             new DistanceOptions(minTypeCount: 0),
             $resolver,
             $logger,
@@ -590,7 +590,7 @@ final class DistanceRuleTest extends TestCase
         $logger->expects(self::never())
             ->method('warning');
 
-        $rule = new DistanceRule(
+        $rule = self::rule(
             new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 0),
             null,
             $logger,
@@ -623,7 +623,7 @@ final class DistanceRuleTest extends TestCase
         $logger->expects(self::never())
             ->method('warning');
 
-        $rule = new DistanceRule(
+        $rule = self::rule(
             new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 0),
             null,
             $logger,
@@ -652,7 +652,7 @@ final class DistanceRuleTest extends TestCase
                 self::anything(),
             );
 
-        $rule = new DistanceRule(
+        $rule = self::rule(
             new DistanceOptions(minTypeCount: 0),
             $resolver,
             $logger,
@@ -695,7 +695,7 @@ final class DistanceRuleTest extends TestCase
             ]),
         );
 
-        $findings = (new DistanceRule(
+        $findings = (self::rule(
             new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 0),
             $resolver,
         ))->analyze(new AnalysisContext($repository));
@@ -730,7 +730,7 @@ final class DistanceRuleTest extends TestCase
         $logger = $this->createMock(LoggerInterface::class);
         $logger->expects(self::never())->method('warning');
 
-        $findings = (new DistanceRule(
+        $findings = (self::rule(
             new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 3),
             logger: $logger,
         ))->analyze(new AnalysisContext($repository));
@@ -755,7 +755,7 @@ final class DistanceRuleTest extends TestCase
             'coupling.distance-own' => 0.8, 'coupling.ca-own' => 1, 'coupling.ce-own' => 1,
             'coupling.distance' => 0.8,
         ]), $file, 2);
-        $findings = (new DistanceRule(new DistanceOptions(minTypeCount: 3)))->analyze(new AnalysisContext($repository));
+        $findings = (self::rule(new DistanceOptions(minTypeCount: 3)))->analyze(new AnalysisContext($repository));
         self::assertCount(1, $findings);
         self::assertSame('App\\Own', $findings[0]->symbolPath->namespace);
         self::assertSame(0.8, $findings[0]->metricValue);
@@ -795,7 +795,7 @@ final class DistanceRuleTest extends TestCase
             new AuthoredCellDecision(CellSwitch::On, CellAdmission::Direct),
         )], null));
         $session = new PopulationSession(($publication)->publishes(...));
-        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 3));
+        $rule = self::rule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 3));
         self::assertSame([], $rule->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
         self::assertSame(0, $session->freeze()->judgedCount());
         self::assertSame(2, $session->freeze()->unjudgedCount());
@@ -820,4 +820,17 @@ final class DistanceRuleTest extends TestCase
             $kind === \Qualimetrix\Core\Symbol\CallableKind::Method ? \Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forClass($symbolPath->namespace ?? '', $symbolPath->type ?? ''), $file, \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)) : null,
         );
     }
+    private static function rule(
+        \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface $options,
+        ?ProjectNamespaceResolverInterface $namespaceResolver = null,
+        ?LoggerInterface $logger = null,
+    ): DistanceRule {
+        if ($namespaceResolver === null) {
+            $namespaceResolver = self::createStub(ProjectNamespaceResolverInterface::class);
+            $namespaceResolver->method('isProjectNamespace')->willReturn(true);
+        }
+
+        return new DistanceRule($options, $namespaceResolver, $logger ?? new \Psr\Log\NullLogger());
+    }
+
 }
