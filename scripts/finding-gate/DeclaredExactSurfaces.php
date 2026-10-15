@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace QmxFindingGate;
 
-/** Exact case and surface intentions for residuals no semantic form expresses. */
+/** Exact scope and surface intentions for residuals no semantic form expresses. */
 final class DeclaredExactSurfaces
 {
     public const INDEX = 'declared-exact-surfaces.tsv';
@@ -36,7 +36,10 @@ final class DeclaredExactSurfaces
             if ($case === '' || $case === '*' || str_contains($case, '|') || $surface === '' || str_contains($surface, '|')) {
                 throw new GateError('An exact surface intention requires one concrete case and surface.');
             }
-            $key = 'case:' . $case . '|' . $surface;
+            if ($case === 'tree' && is_file($root . '/cases/tree/case.json')) {
+                throw new GateError('An exact surface intention for tree is ambiguous with the corpus case named tree.');
+            }
+            $key = ($case === 'tree' ? 'tree' : 'case:' . $case) . '|' . $surface;
             if (isset($entries[$key]) || $ordinary->hasSurfaceIntention($key)) {
                 throw new GateError('An exact surface intention overlaps another declaration: ' . $key);
             }
