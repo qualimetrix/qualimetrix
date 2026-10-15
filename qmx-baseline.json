@@ -603,8 +603,8 @@
       {"channel":"size.class-count","magnitudes":[15]}
     ],
     "ns:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator": [
-      {"channel":"coupling.cbo","magnitudes":[78]},
-      {"channel":"coupling.instability","magnitudes":[0.98995]},
+      {"channel":"coupling.cbo","magnitudes":[79]},
+      {"channel":"coupling.instability","magnitudes":[0.99]},
       {"channel":"size.class-count","magnitudes":[24]}
     ],
     "ns:Qualimetrix\\Infrastructure\\Git": [
