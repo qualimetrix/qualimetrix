@@ -157,6 +157,11 @@ What follows from the decision: trade-offs, constraints, and implications.
 
 - [0117 — Inheritance depth completeness publication](0117-inheritance-depth-completeness-publication.md) — bounded collected-measurement outcomes survive rule activation and finding selection.
 - [0118 — PHPUnit execution working directory](0118-phpunit-execution-working-directory.md) — parent-owned execution windows, reasoned residue and native Git fixtures.
+- [0119 — The Process Edge Answers Every Ending](0119-process-edge-answers-every-ending.md) — one Console process boundary owns refusals, diagnostic streams and answer publication.
+- [0120 — AST Cache Is Untrusted Input Outside the Checkout](0120-ast-cache-untrusted-outside-checkout.md) — shared external cache location, current-format decoding and bounded cleanup.
+- [0121 — Parallel Collection Is Judged by Worker Start](0121-parallel-collection-judged-by-worker-start.md) — process-worker selection is judged by a bounded first probe and explicit-start refusals.
+- [0122 — Self-Analysis Exceptions Remain Bounded](0122-self-analysis-exceptions-remain-bounded.md) — accepted quality debt keeps exact finite ceilings; live structural and contract-hub exclusions remain narrow.
+- [0123 — Worker Process Boundary and Strategy Port](0123-worker-process-boundary-and-strategy-port.md) — Parallel owns both sides of its task protocol, and runtime startup determines worker availability.
 
 ## Superseded history
 
