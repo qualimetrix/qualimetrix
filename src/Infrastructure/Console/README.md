@@ -588,11 +588,11 @@ frame at the bottom of the screen: a log line, a preflight warning, a report
 note or an uncaught throwable erases the frame, is written permanently, and the
 frame is redrawn beneath it. Progress and detailed logging are therefore both
 shown at `-v`, `-vv` and `-vvv`; neither erases the other.
-The parallel strategy and its worker-note reader use this same run-bound
-`ErrorStream` for child diagnostics, so worker output cannot enter report stdout
-or bypass the progress frame. Worker bootstrap and file tasks use
-`OutOfMemoryHint` only to mark the active worker file and emit a bounded
-diagnostic on a worker fatal; the command's memory refusal remains Console-owned.
+`ErrorStream` implements Parallel's `WorkerDiagnosticsInterface` for the
+strategy and its worker-note reader. The container passes the same run-bound
+instance, so child diagnostics cannot enter report stdout or bypass the
+progress frame. The command's memory refusal remains with `OutOfMemoryHint`;
+worker fatal-note state belongs to Parallel.
 
 **Features:**
 - Shown only for projects > 10 files

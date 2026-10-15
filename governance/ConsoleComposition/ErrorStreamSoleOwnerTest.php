@@ -48,7 +48,9 @@ final class ErrorStreamSoleOwnerTest extends TestCase
         'src/Infrastructure/Console/ConsoleDiagnostics.php'
             => 'the single constructor shared by the application and its product container',
         'src/Infrastructure/Console/Refusal/OutOfMemoryHint.php'
-            => 'coordinator fatal-memory emergency diagnostic and worker note: the worker has no ErrorStream, and the coordinator parses the line',
+            => 'coordinator fatal-memory emergency diagnostic without a bound ErrorStream',
+        'src/Infrastructure/Parallel/WorkerFatalNotes.php'
+            => 'worker fatal note: the worker has no ErrorStream, and the coordinator parses the line',
         'src/Infrastructure/Console/ErrorStream.php'
             => 'the owner itself',
         'src/Infrastructure/Git/GitClient.php'

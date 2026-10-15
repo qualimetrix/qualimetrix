@@ -20,7 +20,6 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Ast\WorkerParserFactory;
-use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
 use RuntimeException;
 
 /**
@@ -106,7 +105,7 @@ final class WorkerBootstrap
     {
         $nonce = getenv('QMX_WORKER_NOTE_NONCE');
         if (\defined('AMP_WORKER') && \is_string($nonce) && $nonce !== '') {
-            OutOfMemoryHint::forWorker($nonce);
+            WorkerFatalNotes::forWorker($nonce);
         }
     }
 

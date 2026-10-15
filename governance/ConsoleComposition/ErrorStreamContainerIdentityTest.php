@@ -12,6 +12,7 @@ use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Infrastructure\Parallel\Contract\WorkerDiagnosticsInterface;
 use ReflectionClass;
 use ReflectionNamedType;
 use ReflectionObject;
@@ -73,6 +74,7 @@ final class ErrorStreamContainerIdentityTest extends TestCase
         'Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter',
         'Qualimetrix\\Infrastructure\\Console\\ResultPresenter',
         'Qualimetrix\\Infrastructure\\Console\\RuntimeLoggerConfigurator',
+        'Qualimetrix\\Infrastructure\\Parallel\\Strategy\\AmphpParallelStrategy',
     ];
 
     #[Test]
@@ -124,7 +126,7 @@ final class ErrorStreamContainerIdentityTest extends TestCase
 
             foreach ($constructor->getParameters() as $parameter) {
                 $type = $parameter->getType();
-                if (!$type instanceof ReflectionNamedType || $type->getName() !== ErrorStream::class) {
+                if (!$type instanceof ReflectionNamedType || !\in_array($type->getName(), [ErrorStream::class, WorkerDiagnosticsInterface::class], true)) {
                     continue;
                 }
 

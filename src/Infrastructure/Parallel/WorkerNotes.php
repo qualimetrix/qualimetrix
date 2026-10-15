@@ -11,9 +11,7 @@ use Amp\DeferredFuture;
 use Amp\Future;
 use Amp\TimeoutCancellation;
 use JsonException;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
-use Symfony\Component\Console\Output\NullOutput;
-use Symfony\Component\Console\Output\OutputInterface;
+use Qualimetrix\Infrastructure\Parallel\Contract\WorkerDiagnosticsInterface;
 use Throwable;
 
 use function Amp\async;
@@ -29,7 +27,7 @@ final class WorkerNotes
     private array $readers = [];
     private readonly DeferredCancellation $cancel;
 
-    public function __construct(private readonly ErrorStream $errorStream)
+    public function __construct(private readonly WorkerDiagnosticsInterface $diagnostics)
     {
         $this->cancel = new DeferredCancellation();
     }
@@ -83,7 +81,7 @@ final class WorkerNotes
 
     public function diagnostic(string $message): void
     {
-        $this->errorStream->boundWriter(new NullOutput())->writeln($message, OutputInterface::OUTPUT_RAW | OutputInterface::VERBOSITY_QUIET);
+        $this->diagnostics->diagnostic($message);
     }
 
     public function deathFor(string $file): ?string

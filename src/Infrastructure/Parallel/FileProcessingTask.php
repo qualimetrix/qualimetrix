@@ -12,7 +12,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
 use RuntimeException;
 use SplFileInfo;
 
@@ -69,7 +68,7 @@ final class FileProcessingTask implements Task
         $cancellation->throwIfRequested();
 
         WorkerBootstrap::initializeWorker();
-        OutOfMemoryHint::workingOnFile($this->filePath->value());
+        WorkerFatalNotes::workingOnFile($this->filePath);
         try {
             $this->applyMemoryLimit();
 
@@ -88,7 +87,7 @@ final class FileProcessingTask implements Task
 
             return $processor->process($file);
         } finally {
-            OutOfMemoryHint::workingOnFile(null);
+            WorkerFatalNotes::workingOnFile(null);
         }
     }
 

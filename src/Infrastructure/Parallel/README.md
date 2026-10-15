@@ -69,10 +69,11 @@ back to the bounded shutdown-note drain and then a generic cause. `WorkerPool`
 re-submits a task the dead worker refused before starting it and routes pool
 crash notices to the log instead of stdout. The private log is removed when
 the pool closes.
-`WorkerNotes` writes child diagnostics through Console's run-bound
-`ErrorStream`; worker bootstrap and file tasks use Console's `OutOfMemoryHint`
-to name the active file in fatal notes. Both are exact cross-owner contracts
-for these worker consumers.
+`WorkerNotes` sends child diagnostics through the Parallel-owned
+`WorkerDiagnosticsInterface`; Console's run-bound `ErrorStream` implements this
+one-method port. `WorkerFatalNotes` owns the worker's nonce, active-file state,
+error handler and shutdown note. Console retains only the coordinator's memory
+refusal, keeping dependencies in the Console-to-Parallel direction.
 
 An unavailable local IPC socket or startup-log directory is a worker startup
 failure. An explicit worker count is refused with its native cause; automatic

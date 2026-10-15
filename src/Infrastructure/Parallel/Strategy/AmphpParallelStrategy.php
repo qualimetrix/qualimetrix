@@ -17,7 +17,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Parallel\Contract\WorkerDiagnosticsInterface;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
 use Qualimetrix\Infrastructure\Parallel\WorkerContextFactory;
 use Qualimetrix\Infrastructure\Parallel\WorkerNotes;
@@ -42,7 +42,7 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
     private ?AbsolutePath $projectRoot = null;
     private ?AbsolutePath $cacheDir = null;
 
-    public function __construct(private readonly FileProcessingTaskFactory $fileProcessingTaskFactory, private readonly SequentialStrategy $sequentialStrategy, private readonly ProfilerInterface $profiler, private readonly ErrorStream $errorStream, private readonly LoggerInterface $logger = new NullLogger())
+    public function __construct(private readonly FileProcessingTaskFactory $fileProcessingTaskFactory, private readonly SequentialStrategy $sequentialStrategy, private readonly ProfilerInterface $profiler, private readonly WorkerDiagnosticsInterface $errorStream, private readonly LoggerInterface $logger = new NullLogger())
     {
         $this->request = new WorkerRequest(4);
     }

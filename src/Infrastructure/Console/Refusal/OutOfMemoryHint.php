@@ -13,8 +13,6 @@ final class OutOfMemoryHint
 {
     private static ?self $registered = null;
     private ?string $reserve;
-    private ?string $workerNonce = null;
-    private ?string $workerFile = null;
     private ?RefusalPresenter $presenter = null;
     private ?OutputInterface $output = null;
     private ?string $format = null;
@@ -43,64 +41,6 @@ final class OutOfMemoryHint
         register_shutdown_function($hint->onShutdown(...));
 
         return $hint;
-    }
-
-    public static function forWorker(string $nonce): void
-    {
-        $hint = self::$registered ??= new self(error_reporting());
-        if ($hint->workerNonce !== null) {
-            return;
-        }
-        $hint->workerNonce = $nonce;
-        ini_set('display_errors', '0');
-        // PHP writes a fatal to the worker's private log before shutdown. The
-        // parent can read it even if the event loop keeps the child alive.
-        ini_set('log_errors', '1');
-        set_error_handler(static function (int $level, string $message, string $file, int $line) use ($hint): bool {
-            if ((error_reporting() & $level) === 0) {
-                return true;
-            }
-            $severity = match ($level) {
-                \E_NOTICE, \E_USER_NOTICE => 'Notice',
-                \E_DEPRECATED, \E_USER_DEPRECATED => 'Deprecated',
-                default => 'Warning',
-            };
-            $hint->workerNote(['kind' => 'diagnostic', 'message' => $message, 'file' => $file, 'line' => $line, 'severity' => $severity]);
-            return true;
-        }, \E_WARNING | \E_NOTICE | \E_USER_WARNING | \E_USER_NOTICE | \E_DEPRECATED | \E_USER_DEPRECATED);
-        register_shutdown_function($hint->workerShutdown(...));
-    }
-
-    public static function workingOnFile(?string $file): void
-    {
-        if (self::$registered?->workerNonce !== null) {
-            $error = error_get_last();
-            if ($file === null && $error !== null && \in_array($error['type'], [\E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_COMPILE_ERROR, \E_USER_ERROR], true)) {
-                return;
-            }
-            self::$registered->workerFile = $file;
-        }
-    }
-
-    /** @param array<string, int|string> $note */
-    private function workerNote(array $note): void
-    {
-        fwrite(\STDERR, 'QMX-WORKER-NOTE ' . $this->workerNonce . ' ' . base64_encode(json_encode($note, \JSON_THROW_ON_ERROR | \JSON_INVALID_UTF8_SUBSTITUTE)) . "\n");
-    }
-
-    private function workerShutdown(): void
-    {
-        $error = error_get_last();
-        $this->reserve = null;
-        if ($error === null || !\in_array($error['type'], [\E_ERROR, \E_PARSE, \E_CORE_ERROR, \E_COMPILE_ERROR, \E_USER_ERROR], true) || $this->workerFile === null) {
-            return;
-        }
-        $this->workerNote([
-            'kind' => 'death',
-            'file' => $this->workerFile,
-            'message' => $error['message'] . ' in ' . $error['file'] . ' on line ' . $error['line'],
-            'limit' => (string) \ini_get('memory_limit'),
-        ]);
     }
 
     public function answerThrough(RefusalPresenter $presenter, OutputInterface $output, ?string $format): void
